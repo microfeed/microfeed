@@ -8,7 +8,10 @@ module.exports = {
   "parserOptions": {
     "ecmaVersion": 12
   },
-  "rules": {},
+  "rules": {
+    "react/jsx-uses-react": "error",
+    "react/jsx-uses-vars": "error"
+  },
 
   "overrides": [
     {
@@ -26,10 +29,7 @@ module.exports = {
         "HTMLRewriter": "readonly"
       },
       "plugins": ["react"],
-      "rules": {
-        "react/jsx-uses-react": "error",
-        "react/jsx-uses-vars": "error"
-      }
+      "rules": {}
     },
     {
       "files": ["**/client-src/**/*.{js,jsx}"],
@@ -48,8 +48,6 @@ module.exports = {
       },
       "plugins": ["react"],
       "rules": {
-        "react/jsx-uses-react": "error",
-        "react/jsx-uses-vars": "error"
       }
     }
   ]
