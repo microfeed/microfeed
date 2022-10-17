@@ -1,11 +1,12 @@
 const path = require('path');
 const BundleTracker = require('webpack-bundle-tracker');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const prod = process.env.NODE_ENV === 'production';
-const devPort = 9000;
+const devPort = 9001;
 let publicPath = `http://localhost:${devPort}/`;
 if (prod === 'production') {
-    publicPath = '/build/js/';
+  publicPath = '/build/js/';
 }
 
 const entry = {
@@ -14,21 +15,27 @@ const entry = {
 
 module.exports = {
 
-    context: path.resolve(__dirname, './src'),
+  context: path.resolve(__dirname, './src'),
 
-    entry,
+  entry,
 
-    output: {
-        path: path.resolve(__dirname, './public/build/js/'),
-        filename: '[name]-[fullhash].js',
-        publicPath,
-    },
+  output: {
+    path: path.resolve(__dirname, './public/build/js/'),
+    filename: '[name]-[fullhash].js',
+    publicPath,
+  },
 
-    plugins: [
-        new BundleTracker({ filename: './functions/webpack-stats.json' }),
-    ],
+  plugins: [
+    new ESLintPlugin({
+      extensions: ['jsx', 'js'],
+      exclude: [
+        'node_modules',
+      ],
+    }),
+    new BundleTracker({filename: './functions/webpack-stats.json'}),
+  ],
 
-    module: {
+  module: {
     rules: [
       {
         test: /\.(js|jsx)$/,
@@ -82,23 +89,23 @@ module.exports = {
     ],
   },
 
-    devServer: {
-        static: [
-            {
-                directory: path.join(__dirname, './public/'),
-            },
-            {
-                directory: path.join(__dirname, './src/'),
-            },
-        ],
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-        },
-        compress: true,
-        port: 9000,
+  devServer: {
+    static: [
+      {
+        directory: path.join(__dirname, './public/'),
+      },
+      {
+        directory: path.join(__dirname, './src/'),
+      },
+    ],
+    headers: {
+      'Access-Control-Allow-Origin': '*',
     },
+    compress: true,
+    port: devPort,
+  },
   resolve: {
     extensions: ['*', '.js', '.jsx'],
   },
-    mode: prod ? 'production' : 'development',
+  mode: prod ? 'production' : 'development',
 };
