@@ -1,7 +1,6 @@
 import React from 'react';
-// import './App.css';
 
-export default class App extends React.Component {
+export default class ClientHomeApp extends React.Component {
   constructor(props) {
     super(props);
 
@@ -14,7 +13,7 @@ export default class App extends React.Component {
   }
 
   render() {
-    return (<div>
+    return (<div className="font-semibold text-xl text-blue-500">
       Rendered from client-side react
     </div>);
   }

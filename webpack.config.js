@@ -2,6 +2,7 @@ const path = require('path');
 const BundleTracker = require('webpack-bundle-tracker');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const prod = process.env.NODE_ENV === 'production';
 const devPort = 9001;
@@ -12,7 +13,7 @@ if (prod === 'production') {
 
 const entry = {
   base_css: './common/base.css',
-  index_js: './index.js',
+  index_js: './ClientHomeApp/index.js',
 };
 
 module.exports = {
@@ -36,6 +37,18 @@ module.exports = {
     }),
 
     new BundleTracker({filename: './functions/webpack-stats.json'}),
+
+    // Delete stale assets before each build
+    new CleanWebpackPlugin({
+      cleanOnceBeforeBuildPatterns: [
+        '*.js',
+        '*.css',
+        '*.png',
+        '*.txt',
+      ],
+      verbose: true,
+      dry: false,
+    }),
 
     new MiniCssExtractPlugin({
       filename: '[name]-[fullhash].css',

@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOMServer from "react-dom/server";
-import HomeApp from '../edge-src/HomeApp';
+import EdgeHomeApp from '../edge-src/EdgeHomeApp';
 
 class ServerSideElementHandler {
   async element(element) {
-    const fromReact = ReactDOMServer.renderToString(<HomeApp name="World" />);
+    const fromReact = ReactDOMServer.renderToString(<EdgeHomeApp name="World" />);
     element.replace(fromReact, { html: true });
   }
 }

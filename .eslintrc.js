@@ -24,10 +24,15 @@ module.exports = {
       },
       "globals": {
         "HTMLRewriter": "readonly"
+      },
+      "plugins": ["react"],
+      "rules": {
+        "react/jsx-uses-react": "error",
+        "react/jsx-uses-vars": "error"
       }
     },
     {
-      "files": ["**/client-src/*"],
+      "files": ["**/client-src/**/*.{js,jsx}"],
       "env": {
         "node": false,
         "worker": false,

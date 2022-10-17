@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Home Page</title>
-    <webpack-js src="index_js"></webpack-js>
-    <webpack-css src="base_css"></webpack-css>
+  <meta charset="UTF-8">
+  <title>Home Page</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <link rel="mask-icon" href="/assets/safari-pinned-tab.svg" color="#b82f00">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <!-- Webpack bundles that will be imported in functions/index.js -->
+  <webpack-js src="index_js"></webpack-js>
+  <webpack-css src="base_css"></webpack-css>
 </head>
 <body>
 <div>
-    Rendered from html directly.
+  Rendered from html directly.
 </div>
 
 <div id="edge-side-root"></div>
