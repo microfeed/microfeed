@@ -7,7 +7,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const prod = process.env.NODE_ENV === 'production';
 const devPort = 9001;
 let publicPath = `http://localhost:${devPort}/`;
-if (prod === 'production') {
+if (prod) {
   publicPath = '/build/js/';
 }
 
