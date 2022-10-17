@@ -6,9 +6,10 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const prod = process.env.NODE_ENV === 'production';
 const devPort = 9001;
+const buildDir = 'build/';
 let publicPath = `http://localhost:${devPort}/`;
 if (prod) {
-  publicPath = '/build/js/';
+  publicPath = `/${buildDir}`;
 }
 
 const entry = {
@@ -23,7 +24,7 @@ module.exports = {
   entry,
 
   output: {
-    path: path.resolve(__dirname, './public/build/'),
+    path: path.resolve(__dirname, `./public/${buildDir}`),
     filename: '[name]-[fullhash].js',
     publicPath,
   },
