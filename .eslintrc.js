@@ -12,7 +12,7 @@ module.exports = {
 
   "overrides": [
     {
-      "files": ["**/functions/**/*.js"],
+      "files": ["**/functions/**/*.{js,jsx}", "**/edge-src/**/*.{js,jsx}"],
       "env": {
         "node": false,
         "worker": true,
@@ -27,7 +27,7 @@ module.exports = {
       }
     },
     {
-      "files": ["**/src/*"],
+      "files": ["**/client-src/*"],
       "env": {
         "node": false,
         "worker": false,

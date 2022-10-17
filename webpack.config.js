@@ -1,6 +1,7 @@
 const path = require('path');
 const BundleTracker = require('webpack-bundle-tracker');
 const ESLintPlugin = require('eslint-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const prod = process.env.NODE_ENV === 'production';
 const devPort = 9001;
@@ -10,17 +11,18 @@ if (prod === 'production') {
 }
 
 const entry = {
+  base_css: './common/base.css',
   index_js: './index.js',
 };
 
 module.exports = {
 
-  context: path.resolve(__dirname, './src'),
+  context: path.resolve(__dirname, './client-src'),
 
   entry,
 
   output: {
-    path: path.resolve(__dirname, './public/build/js/'),
+    path: path.resolve(__dirname, './public/build/'),
     filename: '[name]-[fullhash].js',
     publicPath,
   },
@@ -32,7 +34,12 @@ module.exports = {
         'node_modules',
       ],
     }),
+
     new BundleTracker({filename: './functions/webpack-stats.json'}),
+
+    new MiniCssExtractPlugin({
+      filename: '[name]-[fullhash].css',
+    }),
   ],
 
   module: {
@@ -49,35 +56,35 @@ module.exports = {
           },
         ],
       },
-      // {
-      //   test: /\.less$/,
-      //   use: [{
-      //     loader: 'style-loader',
-      //   }, {
-      //     loader: 'css-loader',
-      //   }, {
-      //     loader: 'less-loader',
-      //   }],
-      // },
-      // {
-      //   test: /base.*\.css$/,
-      //   use: [
-      //     MiniCssExtractPlugin.loader,
-      //     { loader: 'css-loader', options: { url: false } },
-      //     'postcss-loader',
-      //   ],
-      // },
-      // {
-      //   test: /\.css$/,
-      //   exclude: /base.*\.css$/,
-      //   use: [
-      //     {
-      //       loader: 'style-loader',
-      //     },
-      //     { loader: 'css-loader', options: { url: false } },
-      //     'postcss-loader',
-      //   ],
-      // },
+      {
+        test: /\.less$/,
+        use: [{
+          loader: 'style-loader',
+        }, {
+          loader: 'css-loader',
+        }, {
+          loader: 'less-loader',
+        }],
+      },
+      {
+        test: /base.*\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          { loader: 'css-loader', options: { url: false } },
+          'postcss-loader',
+        ],
+      },
+      {
+        test: /\.css$/,
+        exclude: /base.*\.css$/,
+        use: [
+          {
+            loader: 'style-loader',
+          },
+          { loader: 'css-loader', options: { url: false } },
+          // 'postcss-loader',
+        ],
+      },
       // {
       //   test: /\.png$/,
       //   use: 'url-loader?name=[name]-[hash].[ext]&limit=8192&mimetype=image/png',
@@ -95,7 +102,7 @@ module.exports = {
         directory: path.join(__dirname, './public/'),
       },
       {
-        directory: path.join(__dirname, './src/'),
+        directory: path.join(__dirname, './client-src/'),
       },
     ],
     headers: {

@@ -1,18 +1,11 @@
 import React from "react";
 import ReactDOMServer from "react-dom/server";
-
-class HelloMessage extends React.Component {
-  render() {
-    return <div>Hello, {this.props.name} from React server-side rendering</div>;
-  }
-}
+import HomeApp from '../edge-src/HomeApp';
 
 class ServerSideElementHandler {
   async element(element) {
-    const fromReact = ReactDOMServer.renderToString(<HelloMessage name="World" />);
-    element.replace(
-      '<div class="text-xl font-bold">Rendered from Functions (server-side)</div>' + fromReact,
-      { html: true });
+    const fromReact = ReactDOMServer.renderToString(<HomeApp name="World" />);
+    element.replace(fromReact, { html: true });
   }
 }
 
@@ -22,7 +15,16 @@ class WebpackAssetsHandler {
     const webpackStats = require('./webpack-stats.json');
     const realPath = webpackStats.assets[webpackStats.chunks[scriptName][0]].publicPath;
     element.setAttribute('src', realPath);
-    element.replace(`<script defer src="${realPath}"></script>`, { html: true });
+    switch (element.tagName) {
+      case 'webpack-js':
+        element.replace(`<script defer src="${realPath}"></script>`, {html: true});
+        break;
+      case 'webpack-css':
+        element.replace(`<link rel="stylesheet" href="${realPath}">`, {html: true});
+        break;
+      default:
+        break;
+    }
   }
 }
 
