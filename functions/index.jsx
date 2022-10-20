@@ -60,8 +60,8 @@ export async function onRequestGet({request, env, params, waitUntil, next, data}
   const response = await next();
   const newResponse = new Response(response.body, response);
   const rewriter = new HTMLRewriter()
-    .on('title', new MetaElementHandler(jsonData.name, null))
-    .on('meta[name=description]', new MetaElementHandler(jsonData.description, 'content'))
+    // .on('title', new MetaElementHandler(jsonData.name, null))
+    // .on('meta[name=description]', new MetaElementHandler(jsonData.description, 'content'))
     .on('div#edge-side-root', new ServerSideElementHandler(jsonData))
     .on('webpack-js', new WebpackAssetsHandler())
     .on('webpack-css', new WebpackAssetsHandler())
