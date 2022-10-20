@@ -19,11 +19,11 @@ class MetaElementHandler {
     this.attributeName = attributeName;
   }
   async element(element) {
-    if (this.attributeName) {
-      element.setAttribute(this.attributeName, this.text);
-    } else {
-      element.setInnerContent(this.text);
-    }
+    // if (this.attributeName) {
+    //   element.setAttribute(this.attributeName, this.text);
+    // } else {
+    //   element.setInnerContent(this.text);
+    // }
   }
 }
 
@@ -61,7 +61,7 @@ export async function onRequestGet({request, env, params, waitUntil, next, data}
   const newResponse = new Response(response.body, response);
   const rewriter = new HTMLRewriter()
     .on('title', new MetaElementHandler(jsonData.name))
-    // .on('meta[name=description]', new MetaElementHandler(jsonData.description, 'content'))
+    .on('meta[name=description]', new MetaElementHandler(jsonData.description, 'content'))
     .on('div#edge-side-root', new ServerSideElementHandler(jsonData))
     .on('webpack-js', new WebpackAssetsHandler())
     .on('webpack-css', new WebpackAssetsHandler())
