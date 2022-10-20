@@ -1,11 +1,8 @@
-// import React from "react";
-// import ReactDOMServer from "react-dom/server";
-// import FeedApp from '../edge-src/FeedApp';
 import PodcastData from "../edge-src/common/PodcastData";
 
 const { XMLBuilder } = require('fast-xml-parser');
 
-export async function onRequestGet({request, env, params, waitUntil, next, data}) {
+export async function onRequestGet({request}) {
   const podcastData = new PodcastData();
   const jsonData = await podcastData.getData();
 

@@ -5,7 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const prod = process.env.NODE_ENV === 'production';
-const devPort = 9004;
+const devPort = 9000;
 const buildDir = 'build/';
 let publicPath = `http://localhost:${devPort}/`;
 if (prod) {
