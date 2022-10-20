@@ -1,6 +1,5 @@
 import React from 'react';
 import HeaderSection from './components/HeaderSection';
-import SubscribeSection from "./components/SubscribeSection";
 import AboutSection from './components/AboutSection';
 import EpisodeListSection from "./components/EpisodeListSection";
 

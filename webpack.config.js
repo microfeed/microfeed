@@ -8,15 +8,29 @@ const WebpackShellPluginNext = require('webpack-shell-plugin-next');
 const prod = process.env.NODE_ENV === 'production';
 const devPort = 9000;
 const buildDir = 'build/';
+const plugins = [];
 let publicPath = `http://localhost:${devPort}/`;
 if (prod) {
   publicPath = `/${buildDir}`;
+} else {
+  plugins.push(new WebpackShellPluginNext({
+    onBuildStart: {
+      // XXX: when edge-src/ has syntax error, webpack dev server will crash; after we restart, previous
+      // node processes may still be alive, which would take up the same PORT number and prevent dev server
+      // to run again. We have to kill all node process
+      scripts: ['pkill node'],
+      blocking: true,
+      parallel: false
+    },
+  }));
 }
 
 const entry = {
   base_css: './common/base.css',
   index_js: './ClientHomeApp/index.js',
 };
+
+
 
 module.exports = {
 
@@ -31,16 +45,7 @@ module.exports = {
   },
 
   plugins: [
-    new WebpackShellPluginNext({
-      onBuildStart:{
-        // XXX: when edge-src/ has syntax error, webpack dev server will crash; after we restart, previous
-        // node processes may still be alive, which would take up the same PORT number and prevent dev server
-        // to run again. We have to kill all node process
-        scripts: ['pkill node'],
-        blocking: true,
-        parallel: false
-      },
-    }),
+    ...plugins,
 
     new ESLintPlugin({
       extensions: ['jsx', 'js'],
@@ -117,10 +122,10 @@ module.exports = {
       //   test: /\.png$/,
       //   use: 'url-loader?name=[name]-[hash].[ext]&limit=8192&mimetype=image/png',
       // },
-      {
-        test: /\.svg$/,
-        use: ['@svgr/webpack'],
-      },
+      // {
+      //   test: /\.svg$/,
+      //   use: ['@svgr/webpack'],
+      // },
     ],
   },
 
