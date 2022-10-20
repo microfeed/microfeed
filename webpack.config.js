@@ -3,6 +3,7 @@ const BundleTracker = require('webpack-bundle-tracker');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const WebpackShellPluginNext = require('webpack-shell-plugin-next');
 
 const prod = process.env.NODE_ENV === 'production';
 const devPort = 9000;
@@ -30,11 +31,24 @@ module.exports = {
   },
 
   plugins: [
+    new WebpackShellPluginNext({
+      onBuildStart:{
+        // XXX: when edge-src/ has syntax error, webpack dev server will crash; after we restart, previous
+        // node processes may still be alive, which would take up the same PORT number and prevent dev server
+        // to run again. We have to kill all node process
+        scripts: ['pkill node'],
+        blocking: true,
+        parallel: false
+      },
+    }),
+
     new ESLintPlugin({
       extensions: ['jsx', 'js'],
       exclude: [
         'node_modules',
       ],
+      emitWarning: true,
+      failOnError: false,
     }),
 
     new BundleTracker({filename: './functions/webpack-stats.json'}),
@@ -103,10 +117,10 @@ module.exports = {
       //   test: /\.png$/,
       //   use: 'url-loader?name=[name]-[hash].[ext]&limit=8192&mimetype=image/png',
       // },
-      // {
-      //   test: /\.svg$/,
-      //   use: ['@svgr/webpack'],
-      // },
+      {
+        test: /\.svg$/,
+        use: ['@svgr/webpack'],
+      },
     ],
   },
 

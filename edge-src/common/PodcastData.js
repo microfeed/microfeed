@@ -11,6 +11,7 @@ export default class PodcastData {
     const response = await client.fetchPlaylistById({
       id: 'dummy-id',
     })
+    response.data.creator = 'Wenbin Fang'
     return response.data;
   }
 }

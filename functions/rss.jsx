@@ -35,7 +35,7 @@ export async function onRequestGet({request}) {
         '@_type': 'application/rss+xml',
       },
       'link': jsonData.listennotes_url,
-      'itunes:author': 'Wenbin Fang',
+      'itunes:author': jsonData.creator,
       'image': {
         'title': jsonData.name,
         'url': jsonData.image,
