@@ -1,12 +1,8 @@
-// import React from "react";
-// import ReactDOMServer from "react-dom/server";
-// import EdgeHomeApp from '../edge-src/EdgeHomeApp';
+import PodcastData from '../edge-src/common/PodcastData';
 
-export async function onRequestGet({request, env, params, waitUntil, next, data}) {
-  const jsonObj = {
-    'hello': 'world',
-  };
-  return new Response(JSON.stringify(jsonObj), {
+export async function onRequestGet() {
+  const podcastData = new PodcastData();
+  return new Response(JSON.stringify(await podcastData.getData()), {
       headers: {
         'content-type': 'application/json;charset=UTF-8',
       },

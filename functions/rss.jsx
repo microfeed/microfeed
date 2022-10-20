@@ -1,36 +1,51 @@
 // import React from "react";
 // import ReactDOMServer from "react-dom/server";
 // import FeedApp from '../edge-src/FeedApp';
+import PodcastData from "../edge-src/common/PodcastData";
+
 const { XMLBuilder } = require('fast-xml-parser');
 
 export async function onRequestGet({request, env, params, waitUntil, next, data}) {
-  const items = [
-    {
-      'title': 'Revolutionizing podcasting + standards vs. innovation with Anchor Co-Founder Mike Mignano | E1520',
-      'pubDate': 'Thu, 28 Jul 2022 16:10:02 -0700',
-    },
-    {
-      'title': '#1014 Oscar Merry On Pioneering Listen To Earn With Bitcoin',
-      'pubDate': 'Thu, 28 Jul 2022 16:10:02 -0700',
-    }
-  ];
+  const podcastData = new PodcastData();
+  const jsonData = await podcastData.getData();
+
+  const items = [];
+  jsonData.items.forEach((item) => {
+    items.push({
+      'title': item.data.title,
+      'description': {
+        '@cdata': item.data.description,
+      },
+      'itunes:summary': {
+        '@cdata': item.data.description,
+      },
+      'itunes:duration': item.data.audio_length_sec,
+      'guid': item.data.listennotes_url,
+      'pubDate': item.data.pub_date_ms,
+      'enclosure': {
+        '@_url': item.data.audio,
+        '@_type': 'audio/mpeg',
+      },
+    });
+  });
+
   const input = {
     "channel": {
-      'title': 'Podcasts about podcasting',
+      'title': jsonData.name,
       'atom:link': {
         '@_rel': 'self',
-        '@_href': 'https://www.listennotes.com/listen/podcasts-about-podcasting-m1pe7z60bsw/rss/?sort_type=recent_added_first',
+        '@_href': request.url,
         '@_type': 'application/rss+xml',
       },
-      'link': 'https://www.listennotes.com/playlists/podcasts-about-podcasting-m1pe7z60bsw/episodes/',
-      'itunes:author': 'Wenbin Fang / Listen Notes',
+      'link': jsonData.listennotes_url,
+      'itunes:author': 'Wenbin Fang',
       'image': {
-        'title': 'Podcasts about podcasting',
-        'url': 'https://production.listennotes.com/podcast-playlists/podcasts-about-podcasting-4bU7MZIlEVO-m1pe7z60bsw.1600x1600.jpg',
-        'link': 'https://www.listennotes.com/playlists/podcasts-about-podcasting-m1pe7z60bsw/episodes/',
+        'title': jsonData.name,
+        'url': jsonData.image,
+        'link': jsonData.listennotes_url,
       },
       'description': {
-        '@cdata': 'A curated playlist of podcasts by Wenbin Fang.'
+        '@cdata': jsonData.description,
       },
       'item': items,
     }
