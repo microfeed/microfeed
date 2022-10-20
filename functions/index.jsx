@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOMServer from "react-dom/server";
 import EdgeHomeApp from '../edge-src/EdgeHomeApp';
-import PodcastData from "../edge-src/common/PodcastData";
+import PodcastData from "../edge-src/common/PodcastData"
 
 class ServerSideElementHandler {
   constructor(jsonData) {
