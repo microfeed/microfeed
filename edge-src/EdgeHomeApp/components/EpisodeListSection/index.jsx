@@ -19,21 +19,13 @@ function EpisodeItem({ item }) {
           <span dangerouslySetInnerHTML={{__html: '&middot;'}} className="mx-1" />
           <span className="break-all">{descriptionText}</span>
         </div>
-        <div className="flex items-center">
-          <div>
-            <a
-              href="#"
-              className="hover:opacity-50"
-              data-url={data.audio}
-            >
-              <img src="/assets/icons/play.svg" className="w-10" />
-            </a>
-          </div>
-          <div className="text-sm ml-4">
-            {toHHMMSS(data.audio_length_sec)}
-          </div>
-        </div>
       </div>
+    </div>
+    <div className="mt-2">
+      <audio controls preload="metadata" className="w-full">
+        <source src={data.audio} type="audio/mpeg"/>
+        Your browser does not support the audio element.
+      </audio>
     </div>
   </div>);
 }

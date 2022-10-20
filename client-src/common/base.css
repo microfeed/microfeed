@@ -7,7 +7,7 @@
 }
 
 .lh-episode-image {
-  @apply w-24 md:w-36;
+  @apply w-24;
 }
 
 .lh-section-header {
