@@ -14,14 +14,20 @@ function EpisodeItem({ item }) {
         <img src={data.image} className="lh-podcast-image lh-episode-image" />
       </div>
       <div className="flex-1">
-        <div className="mb-4 text-sm line-clamp-2">
+        <div className="mb-4 text-sm line-clamp-3">
           <span className="text-gray-500">{humanizeMs(data.pub_date_ms)}</span>
           <span dangerouslySetInnerHTML={{__html: '&middot;'}} className="mx-1" />
-          <span>{descriptionText}</span>
+          <span className="break-all">{descriptionText}</span>
         </div>
         <div className="flex items-center">
           <div>
-            <img src="/assets/icons/play.svg" className="w-10" />
+            <a
+              href="#"
+              className="hover:opacity-50"
+              data-url={data.audio}
+            >
+              <img src="/assets/icons/play.svg" className="w-10" />
+            </a>
           </div>
           <div className="text-sm ml-4">
             {toHHMMSS(data.audio_length_sec)}
