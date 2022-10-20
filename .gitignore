@@ -105,3 +105,4 @@ dist
 
 build/
 webpack-stats.json
+.idea
