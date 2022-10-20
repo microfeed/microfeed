@@ -14,6 +14,7 @@ export default class EdgeHomeApp extends React.Component {
           <AboutSection jsonData={jsonData} />
           <EpisodeListSection jsonData={jsonData} />
         </div>
+        <div className="hidden lg:block lg:col-span-2 xl:col-span-3" />
       </div>
     );
   }

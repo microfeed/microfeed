@@ -6,6 +6,11 @@
   @apply rounded shadow w-32 md:w-48;
 }
 
-.lh-section-header {
-  @apply text-lg font-semibold border-b mb-2 pb-2;
+.lh-episode-image {
+  @apply w-24 md:w-36;
 }
+
+.lh-section-header {
+  @apply text-lg font-bold border-b mb-4 pb-2;
+}
+
