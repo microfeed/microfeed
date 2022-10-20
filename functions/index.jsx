@@ -19,10 +19,10 @@ class MetaElementHandler {
     this.attributeName = attributeName;
   }
   async element(element) {
-    if (!this.attributeName) {
-      element.setInnerContent(this.text);
-    } else {
+    if (this.attributeName) {
       element.setAttribute(this.attributeName, this.text);
+    } else {
+      element.setInnerContent(this.text);
     }
   }
 }
