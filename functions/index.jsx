@@ -14,7 +14,7 @@ class ServerSideElementHandler {
 }
 
 class MetaElementHandler {
-  constructor(text, attributeName = null) {
+  constructor(text, attributeName) {
     this.text = text;
     this.attributeName = attributeName;
   }
