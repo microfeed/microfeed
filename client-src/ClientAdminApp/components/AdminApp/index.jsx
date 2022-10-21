@@ -15,15 +15,8 @@ export default class AdminApp extends React.Component {
   }
 
   async handleChange(event) {
-    /*
-lastModified: 1664045743901
-lastModifiedDate: Sat Sep 24 2022 11:55:43 GMT-0700 (Pacific Daylight Time) {}
-name: "podcast-db-claritas-2022-09-24.db"
-size: 7766495232
-type: ""
-webkitRelativePath: ""
-     */
-    // console.log(event.target.files[0]);
+    const file = event.target.files[0];
+
     const {size, name} = event.target.files[0];
     const rawResponse = await fetch('/api/r2-ops', {
       method: 'POST',
@@ -36,7 +29,23 @@ webkitRelativePath: ""
         name,
       })
     });
-    console.log(await rawResponse.json());
+    const res = await rawResponse.json();
+
+    const fileReader = new FileReader();
+    fileReader.onloadend = async (e) => {
+      const arrayBuffer = e.target.result;
+      // XXX: Not working for now:
+      // No 'Access-Control-Allow-Origin' header is present on the requested resource.
+      // https://github.com/cloudflare/cloudflare-docs/issues/4455
+      // https://community.cloudflare.com/t/upload-files-to-r2-using-cloudflare-pages-browser-js-file-uploader-presigned-url-from-functions/428622
+      const response = await fetch(res.url, {
+        method: 'PUT',
+        body: arrayBuffer,
+      });
+      console.log(response);
+      console.log(await response.json());
+    };
+    fileReader.readAsArrayBuffer(file);
   }
 
   render() {
@@ -44,7 +53,6 @@ webkitRelativePath: ""
       <form>
         <h1>Upload large file</h1>
         <input type="file" onChange={this.handleChange}/>
-        <button type="submit" className="border p-2">Upload</button>
       </form>
     </div>);
   }
