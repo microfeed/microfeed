@@ -34,16 +34,11 @@ export default class AdminApp extends React.Component {
     const fileReader = new FileReader();
     fileReader.onloadend = async (e) => {
       const arrayBuffer = e.target.result;
-      // XXX: Not working for now:
-      // No 'Access-Control-Allow-Origin' header is present on the requested resource.
-      // https://github.com/cloudflare/cloudflare-docs/issues/4455
-      // https://community.cloudflare.com/t/upload-files-to-r2-using-cloudflare-pages-browser-js-file-uploader-presigned-url-from-functions/428622
       const response = await fetch(res.url, {
         method: 'PUT',
         body: arrayBuffer,
       });
-      console.log(response);
-      console.log(await response.json());
+      // console.log(response.ok);
     };
     fileReader.readAsArrayBuffer(file);
   }
