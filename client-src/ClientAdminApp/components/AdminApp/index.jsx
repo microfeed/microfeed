@@ -38,7 +38,7 @@ export default class AdminApp extends React.Component {
         method: 'PUT',
         body: arrayBuffer,
       });
-      // console.log(response.ok);
+      console.log(response.ok);
     };
     fileReader.readAsArrayBuffer(file);
   }
