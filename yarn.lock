@@ -737,6 +737,11 @@ autoprefixer@^10.4.12:
     picocolors "^1.0.0"
     postcss-value-parser "^4.2.0"
 
+aws4fetch@^1.0.16:
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/aws4fetch/-/aws4fetch-1.0.16.tgz#7fc65e4716003f1e1a6211a3f1645f7ff1b834cf"
+  integrity sha512-S3C81MM1adgOH8XL4Ur2QSwEgBI57rHq0XkuJj5GExXQoM8Ohy26xEad2/cx1kv0hTuvf2JAHyaZZSuR5/24eQ==
+
 axios@^0.21.1:
   version "0.21.4"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.4.tgz#c67b90dc0568e5c1cf2b0b858c43ba28e2eda575"
