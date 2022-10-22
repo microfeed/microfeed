@@ -10,5 +10,6 @@ export async function onRequestGet({next}) {
     // .on('div#edge-side-root', new ServerSideElementHandler(jsonData))
     .on('webpack-js', new WebpackAssetsHandler())
     .on('webpack-css', new WebpackAssetsHandler())
+  console.log('in admin');
   return rewriter.transform(newResponse);
 }
