@@ -33,8 +33,8 @@ async function getPresignedUrlFromS3(env, bucket, key) {
 
 export async function onRequestPost({request, env}) {
   const inputParams = await request.json();
-  // const url = await getPresignedUrlFromR2(env, 'tmp-files', inputParams.name);
-  const url = await getPresignedUrlFromS3(env, 'temp-data-listennotes-com', inputParams.name);
+  const url = await getPresignedUrlFromR2(env, 'tmp-files', inputParams.name);
+  // const url = await getPresignedUrlFromS3(env, 'temp-data-listennotes-com', inputParams.name);
   const retData = {
     url,
   }
