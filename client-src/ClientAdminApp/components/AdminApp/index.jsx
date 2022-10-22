@@ -31,7 +31,7 @@ export default class AdminApp extends React.Component {
       },
       body: JSON.stringify({
         size,
-        name,
+        key: name,
         type,
       })
     });
@@ -42,7 +42,6 @@ export default class AdminApp extends React.Component {
       const arrayBuffer = e.target.result;
       if (arrayBuffer) {
         console.log(res.url);
-        console.log();
         axios.request({
           method: 'put',
           url: res.url,
@@ -51,7 +50,7 @@ export default class AdminApp extends React.Component {
           // },
           data: arrayBuffer,
           onUploadProgress: (p) => {
-            console.log(p);
+            console.log(p.loaded / p.total);
             //this.setState({
             //fileprogress: p.loaded / p.total
             //})
