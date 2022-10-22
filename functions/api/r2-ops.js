@@ -1,11 +1,14 @@
-import * as AWS from 'aws-sdk';
+// import * as AWS from 'aws-sdk';
+import S3 from 'aws-sdk/clients/s3';
+import { Credentials } from 'aws-sdk/lib/core';
+import { Endpoint } from 'aws-sdk/lib/core';
 
 async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, bucket, key) {
-  const s3 = new AWS.S3({
+  const s3 = new S3({
     region,
     signatureVersion: 'v4',
-    credentials: new AWS.Credentials(accessKeyId, secretAccessKey),
-    endpoint: new AWS.Endpoint(endpoint),
+    credentials: new Credentials(accessKeyId, secretAccessKey),
+    endpoint: new Endpoint(endpoint),
   });
 
   return s3.getSignedUrl('putObject', {
@@ -30,10 +33,10 @@ async function getPresignedUrlFromS3(env, bucket, key) {
   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, bucket, key);
 }
 
-
 export async function onRequestPost({request, env}) {
   const inputParams = await request.json();
   const url = await getPresignedUrlFromR2(env, 'tmp-files', inputParams.name);
+
   // const url = await getPresignedUrlFromS3(env, 'temp-data-listennotes-com', inputParams.name);
   const retData = {
     url,
