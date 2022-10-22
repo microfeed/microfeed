@@ -1,4 +1,7 @@
 // import * as AWS from 'aws-sdk';
+if (global === undefined) {
+  var global = {};
+}
 import S3 from 'aws-sdk/clients/s3';
 import { Credentials } from 'aws-sdk/lib/core';
 import { Endpoint } from 'aws-sdk/lib/core';
