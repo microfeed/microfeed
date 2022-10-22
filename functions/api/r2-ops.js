@@ -10,9 +10,9 @@ async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, 
 
   const request = new Request(endpoint, {
     method: 'PUT',
-    headers: {
-      'Content-Type': type,
-    },
+    // headers: {
+    //   'Content-Type': type,
+    // },
   });
 
   const presigned = await aws.sign(request, { aws: { signQuery: true }})

@@ -1,5 +1,4 @@
 import React from 'react';
-const axios = require('axios').default;
 
 export default class AdminApp extends React.Component {
   constructor(props) {
@@ -41,27 +40,18 @@ export default class AdminApp extends React.Component {
     fileReader.onloadend = async (e) => {
       const arrayBuffer = e.target.result;
       if (arrayBuffer) {
-        console.log(res.url);
-        axios.request({
-          method: 'put',
-          url: res.url,
-          // headers: {
-          //   'Content-Type': type,
-          // },
-          data: arrayBuffer,
-          onUploadProgress: (p) => {
-            console.log(p.loaded / p.total);
-            //this.setState({
-            //fileprogress: p.loaded / p.total
-            //})
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", res.url, true);
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            console.log("upload progress:", event.loaded / event.total);
           }
-        }).then(data => {
-          console.log('done');
-          console.log(data);
-          //this.setState({
-          //fileprogress: 1.0,
-          //})
         });
+        xhr.addEventListener("loadend", () => {
+          console.log('done!');
+          console.log(xhr.readyState === 4 && xhr.status === 200);
+        });
+        xhr.send(arrayBuffer);
       }
     };
     fileReader.readAsArrayBuffer(file);
