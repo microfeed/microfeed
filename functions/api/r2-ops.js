@@ -1,8 +1,4 @@
-if (typeof global === 'undefined') {
-  var global = {};
-}
-
-import * as AWS from 'aws-sdk';
+// import * as AWS from 'aws-sdk';
 
 async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, bucket, key) {
   const s3 = new AWS.S3({
