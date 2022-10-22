@@ -10,6 +10,7 @@
   "dependencies": {
     "@tailwindcss/line-clamp": "^0.4.2",
     "aws4fetch": "^1.0.16",
+    "axios": "0.27.0",
     "fast-xml-parser": "^4.0.11",
     "html-to-text": "^8.2.1",
     "podcast-api": "^2.0.2",

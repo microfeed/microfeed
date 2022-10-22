@@ -1,9 +1,6 @@
 import { AwsClient } from 'aws4fetch'
 
-// 5MB
-const MAX_PART_SIZE = 1024 * 1024 * 5;
-
-async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, size) {
+async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, size, type) {
   const aws = new AwsClient({
     accessKeyId,
     secretAccessKey,
@@ -11,25 +8,23 @@ async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, 
     region,
   });
 
-  if (size > MAX_PART_SIZE) {
-    // multi-part
-  } else {
-    // putObject
-  }
-
   const request = new Request(endpoint, {
     method: 'PUT',
+    // headers: {
+    //   'Content-Type': type,
+    // },
   });
 
   const presigned = await aws.sign(request, { aws: { signQuery: true }})
   return presigned.url;
 }
 
-async function getPresignedUrlFromR2(env, bucket, key, size) {
+async function getPresignedUrlFromR2(env, bucket, inputParams) {
+  const { key, size, type } = inputParams;
   const accessKeyId = `${env.ACCESS_KEY_ID}`
   const secretAccessKey = `${env.SECRET_ACCESS_KEY}`;
   const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
-  return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto', size);
+  return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto', size, type);
 }
 
 /*
@@ -45,7 +40,7 @@ async function getPresignedUrlFromR2(env, bucket, key, size) {
 
 export async function onRequestPost({request, env}) {
   const inputParams = await request.json();
-  const url = await getPresignedUrlFromR2(env, env.BUCKET, inputParams.name, inputParams.size);
+  const url = await getPresignedUrlFromR2(env, env.BUCKET, inputParams);
 
   const retData = {
     url,

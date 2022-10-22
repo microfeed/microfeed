@@ -1,4 +1,5 @@
 import React from 'react';
+const axios = require('axios').default;
 
 export default class AdminApp extends React.Component {
   constructor(props) {
@@ -17,7 +18,11 @@ export default class AdminApp extends React.Component {
   async handleChange(event) {
     const file = event.target.files[0];
 
-    const {size, name} = event.target.files[0];
+    const {
+      size,
+      name,
+      type,
+    } = event.target.files[0];
     const rawResponse = await fetch('/api/r2-ops', {
       method: 'POST',
       headers: {
@@ -27,6 +32,7 @@ export default class AdminApp extends React.Component {
       body: JSON.stringify({
         size,
         name,
+        type,
       })
     });
     const res = await rawResponse.json();
@@ -34,11 +40,30 @@ export default class AdminApp extends React.Component {
     const fileReader = new FileReader();
     fileReader.onloadend = async (e) => {
       const arrayBuffer = e.target.result;
-      const response = await fetch(res.url, {
-        method: 'PUT',
-        body: arrayBuffer,
-      });
-      console.log(response.ok);
+      if (arrayBuffer) {
+        console.log(res.url);
+        console.log();
+        axios.request({
+          method: 'put',
+          url: res.url,
+          // headers: {
+          //   'Content-Type': type,
+          // },
+          data: arrayBuffer,
+          onUploadProgress: (p) => {
+            console.log(p);
+            //this.setState({
+            //fileprogress: p.loaded / p.total
+            //})
+          }
+        }).then(data => {
+          console.log('done');
+          console.log(data);
+          //this.setState({
+          //fileprogress: 1.0,
+          //})
+        });
+      }
     };
     fileReader.readAsArrayBuffer(file);
   }
