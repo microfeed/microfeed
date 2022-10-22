@@ -7,7 +7,7 @@ export default class AdminApp extends React.Component {
     this.handleChange = this.handleChange.bind(this);
 
     this.state = {
-      text: '',
+      mediaUrl: null,
     }
   }
 
@@ -40,14 +40,17 @@ export default class AdminApp extends React.Component {
     fileReader.onloadend = async (e) => {
       const arrayBuffer = e.target.result;
       if (arrayBuffer) {
+        const { mediaBaseUrl, presignedUrl } = res;
         const xhr = new XMLHttpRequest();
-        xhr.open("PUT", res.url, true);
+        xhr.open("PUT", presignedUrl, true);
         xhr.upload.addEventListener("progress", (event) => {
           if (event.lengthComputable) {
             console.log("upload progress:", event.loaded / event.total);
           }
         });
         xhr.addEventListener("loadend", () => {
+          const mediaUrl = `${mediaBaseUrl}/${name}`;
+          this.setState({mediaUrl});
           console.log('done!');
           console.log(xhr.readyState === 4 && xhr.status === 200);
         });
@@ -58,10 +61,12 @@ export default class AdminApp extends React.Component {
   }
 
   render() {
+    const { mediaUrl } = this.state;
     return (<div>
       <form>
         <h1>Upload large file</h1>
         <input type="file" onChange={this.handleChange}/>
+        {mediaUrl && <div><a href={mediaUrl}>{mediaUrl}</a></div>}
       </form>
     </div>);
   }

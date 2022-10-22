@@ -13,11 +13,23 @@
 
   <!-- Webpack bundles that will be imported in functions/index.js -->
   <webpack-js src="admin_js"></webpack-js>
-  <webpack-css src="admin_styles_css"></webpack-css>
+  <webpack-css src="base_css"></webpack-css>
 </head>
 <body>
 <div>
-  This is admin page!
+  Settings:
+  1) site-wide settings
+    - environment variables: initially from .dev.vars;
+    - KV: toggles, e.g., html enabled, rss enabled, json enabled, yaml enabled...
+    - purge cache
+  2) website settings in KV
+    - favicon
+    - seo things
+    - color scheme
+    - custom css
+  3) automation
+    - push: webhooks
+    - pull: json
 </div>
 
 <div id="client-side-root"></div>

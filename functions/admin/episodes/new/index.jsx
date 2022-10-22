@@ -1,5 +1,5 @@
 // import React from "react";
-import WebpackAssetsHandler from '../edge-src/common/WebpackAssetsHandler';
+import WebpackAssetsHandler from '../../../../edge-src/common/WebpackAssetsHandler';
 
 export async function onRequestGet({next}) {
   const response = await next();

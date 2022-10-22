@@ -26,7 +26,8 @@ if (prod) {
 }
 
 const entry = {
-  base_css: './common/base.css',
+  admin_styles_css: './common/admin_styles.css',
+  public_default_css: './common/public_default_styles.css',
   index_js: './ClientHomeApp/index.js',
   admin_js: './ClientAdminApp/index.js',
 };
@@ -101,22 +102,11 @@ module.exports = {
         }],
       },
       {
-        test: /base.*\.css$/,
+        test: /\.css$/,
         use: [
           MiniCssExtractPlugin.loader,
           { loader: 'css-loader', options: { url: false } },
           'postcss-loader',
-        ],
-      },
-      {
-        test: /\.css$/,
-        exclude: /base.*\.css$/,
-        use: [
-          {
-            loader: 'style-loader',
-          },
-          { loader: 'css-loader', options: { url: false } },
-          // 'postcss-loader',
         ],
       },
       // {
