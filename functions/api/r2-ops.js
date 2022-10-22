@@ -1,30 +1,26 @@
-// import * as AWS from 'aws-sdk';
-if (global === undefined) {
-  var global = {};
-}
-import S3 from 'aws-sdk/clients/s3';
-import { Credentials } from 'aws-sdk/lib/core';
-import { Endpoint } from 'aws-sdk/lib/core';
+import { AwsClient } from 'aws4fetch'
 
 async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, bucket, key) {
-  const s3 = new S3({
-    region,
-    signatureVersion: 'v4',
-    credentials: new Credentials(accessKeyId, secretAccessKey),
-    endpoint: new Endpoint(endpoint),
+
+  const aws = new AwsClient({
+    accessKeyId,
+    secretAccessKey,
+    service: 's3',
+    'region': 'auto',
   });
 
-  return s3.getSignedUrl('putObject', {
-    Bucket: bucket,
-    Key: key,
-    Expires: 300
+  const request = new Request(endpoint, {
+    method: 'PUT',
   });
+
+  const presigned = await aws.sign(request, { aws: { signQuery: true }})
+  return presigned.url;
 }
 
 async function getPresignedUrlFromR2(env, bucket, key) {
   const accessKeyId = `${env.ACCESS_KEY_ID}`
   const secretAccessKey = `${env.SECRET_ACCESS_KEY}`;
-  const endpoint = `https://${env.ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto', bucket, key);
 }
 
