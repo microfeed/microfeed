@@ -1,13 +1,21 @@
 import { AwsClient } from 'aws4fetch'
 
-async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region) {
+// 5MB
+const MAX_PART_SIZE = 1024 * 1024 * 5;
 
+async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region, size) {
   const aws = new AwsClient({
     accessKeyId,
     secretAccessKey,
     'service': 's3',
     region,
   });
+
+  if (size > MAX_PART_SIZE) {
+    // multi-part
+  } else {
+    // putObject
+  }
 
   const request = new Request(endpoint, {
     method: 'PUT',
@@ -17,26 +25,28 @@ async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region) 
   return presigned.url;
 }
 
-async function getPresignedUrlFromR2(env, bucket, key) {
+async function getPresignedUrlFromR2(env, bucket, key, size) {
   const accessKeyId = `${env.ACCESS_KEY_ID}`
   const secretAccessKey = `${env.SECRET_ACCESS_KEY}`;
   const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
-  return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto');
+  return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto', size);
 }
 
-async function getPresignedUrlFromS3(env, bucket, key) {
-  const accessKeyId = `${env.AWS_ACCESS_KEY_ID}`
-  const secretAccessKey = `${env.AWS_SECRET_ACCESS_KEY}`;
-  const region = 'us-west-2';
-  const endpoint = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-  return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region);
-}
+/*
+  const url = await getPresignedUrlFromS3(env, env.AWS_BUCKET, inputParams.name);
+ */
+// async function getPresignedUrlFromS3(env, bucket, key) {
+//   const accessKeyId = `${env.AWS_ACCESS_KEY_ID}`
+//   const secretAccessKey = `${env.AWS_SECRET_ACCESS_KEY}`;
+//   const region = 'us-west-2';
+//   const endpoint = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+//   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region);
+// }
 
 export async function onRequestPost({request, env}) {
   const inputParams = await request.json();
-  const url = await getPresignedUrlFromR2(env, env.BUCKET, inputParams.name);
+  const url = await getPresignedUrlFromR2(env, env.BUCKET, inputParams.name, inputParams.size);
 
-  // const url = await getPresignedUrlFromS3(env, env.AWS_BUCKET, inputParams.name);
   const retData = {
     url,
   }
