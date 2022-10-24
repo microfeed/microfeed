@@ -15,6 +15,7 @@ const ALLOWED_VARS = [
   'ADMIN_PASSWORD',
   "NODE_VERSION",
   'LISTEN_HOST_VERSION',
+  'ENVIRONMENT',
 ];
 
 const getEnvVarsFromFilesJson = (envName) => {
