@@ -13,9 +13,10 @@ const ALLOWED_VARS = [
   'MEDIA_BASE_URL',
   'ADMIN_USERNAME',
   'ADMIN_PASSWORD',
+  "NODE_VERSION",
 ];
 
-const getEnvVarsJson = (envName) => {
+const getEnvVarsFromFilesJson = (envName) => {
   const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
   const envJson = dotenv.parse(bufferForEnv);
 
@@ -33,39 +34,55 @@ const getEnvVarsJson = (envName) => {
   return envVarsJson;
 };
 
+const updateEnvVars = (data, onSuccess) => {
 
-const data = JSON.stringify({
+  const options = {
+    hostname: 'api.cloudflare.com',
+    port: 443,
+    path: `/client/v4/accounts/${env.ACCOUNT_ID}/pages/projects/${env.PROJECT_NAME}`,
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${env.PAGES_SECRET_ACCESS_KEY}`,
+      'Content-Type': 'application/json',
+      'Content-Length': data.length,
+    },
+  };
+
+  const req = https.request(options, (res) => {
+    // console.log('statusCode:', res.statusCode);
+    // console.log('headers:', res.headers);
+    let body = '';
+    res.on('data', (d) => {
+      // d.result.deployment_configs.preview
+      // d.result.deployment_configs.production
+      // process.stdout.write(d);
+      // onSuccess(d);
+      body += d;
+    });
+    res.on("end", () => {
+      try {
+        let json = JSON.parse(body);
+        onSuccess(json);
+      } catch (error) {
+        console.error(error.message);
+      }
+    });
+  });
+
+  req.on('error', (e) => {
+    console.error(e);
+  });
+  req.write(data)
+  req.end();
+};
+
+const varsToAddOrUpdate = JSON.stringify({
   'deployment_configs': {
-    ...getEnvVarsJson('preview'),
-    ...getEnvVarsJson('production'),
+    ...getEnvVarsFromFilesJson('preview'),
+    ...getEnvVarsFromFilesJson('production'),
   }
 });
 
-const options = {
-  hostname: 'api.cloudflare.com',
-  port: 443,
-  path: `/client/v4/accounts/${env.ACCOUNT_ID}/pages/projects/${env.PROJECT_NAME}`,
-  method: 'PATCH',
-  headers: {
-    'Authorization': `Bearer ${env.PAGES_SECRET_ACCESS_KEY}`,
-    'Content-Type': 'application/json',
-    'Content-Length': data.length,
-  },
-};
-
-const req = https.request(options, (res) => {
-  console.log('statusCode:', res.statusCode);
-  console.log('headers:', res.headers);
-
-  res.on('data', (d) => {
-    // d.result.deployment_configs.preview
-    // d.result.deployment_configs.production
-    process.stdout.write(d);
-  });
+updateEnvVars(varsToAddOrUpdate, () => {
+  console.log('Updated successfully!');
 });
-
-req.on('error', (e) => {
-  console.error(e);
-});
-req.write(data)
-req.end();

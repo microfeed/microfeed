@@ -2,12 +2,29 @@
 
 Prerequisites
 
-Create a .dev.vars file in root directory of this project - same level as package.json.
+Create a .*.vars file in root directory of this project - same level as package.json.
+* .dev.vars
+* .production.vars
+* .preview.vars
 
-This .dev.vars will have the following key/value pairs:
+Put all environment variables in ```.dev.vars``` and overwrite some variables in ```.production.vars``` for production,
+and ```.preview.vars``` for preview.
+
+Supported environment variables are:
 ```
+PROJECT_NAME = "pages-project-name"
 ACCOUNT_ID = ""
-ACCESS_KEY_ID = ""
-SECRET_ACCESS_KEY = ""
-BUCKET = ""
+
+R2_ACCESS_KEY_ID = ""
+R2_SECRET_ACCESS_KEY = ""
+R2_BUCKET = "bucket-name"
+MEDIA_BASE_URL = "https://bucket-name.your-custom-domain.com"
+
+PAGES_SECRET_ACCESS_KEY = ""
+
+CUSTOM_DOMAINS = "custom-domain1.com,custom-domain2.com,custom-domain3.com"
+ADMIN_USERNAME = ""
+ADMIN_PASSWORD = ""
+
+NODE_VERSION = "17.0"
 ```
