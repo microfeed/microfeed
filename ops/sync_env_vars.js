@@ -5,6 +5,16 @@ const https = require('https');
 const buffer = fs.readFileSync('.dev.vars');
 const env = dotenv.parse(buffer);
 
+const ALLOWED_VARS = [
+  'ACCOUNT_ID',
+  'R2_ACCESS_KEY_ID',
+  'R2_SECRET_ACCESS_KEY',
+  'R2_BUCKET',
+  'MEDIA_BASE_URL',
+  'ADMIN_USERNAME',
+  'ADMIN_PASSWORD',
+];
+
 const data = JSON.stringify({
   'deployment_configs': {
     'preview': {
@@ -32,6 +42,8 @@ const req = https.request(options, (res) => {
   console.log('headers:', res.headers);
 
   res.on('data', (d) => {
+    // TODO: Check output and delete all environment variables that are NOT in ALLOWED_VARS
+    // env_var: null
     process.stdout.write(d);
   });
 });
