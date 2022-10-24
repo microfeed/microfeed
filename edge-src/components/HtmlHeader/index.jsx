@@ -28,7 +28,6 @@ export default class HtmlHeader extends React.Component {
         {description && <meta name="description" content={description}/>}
         {webpackJsList && webpackJsList.length > 0 && webpackJsList.map((js) => {
           const realUrl = this.getWebpackRealUrl(js);
-          console.log(js);
           return (realUrl ? <script key={js} type="text/javascript" src={realUrl} defer/> : '');
         })}
         {webpackCssList && webpackCssList.length > 0 && webpackCssList.map((css) => {
