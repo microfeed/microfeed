@@ -22,7 +22,7 @@ export default class AdminApp extends React.Component {
       name,
       type,
     } = event.target.files[0];
-    const rawResponse = await fetch('/api/r2-ops', {
+    const rawResponse = await fetch('/ajax/r2-ops', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
