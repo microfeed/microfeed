@@ -1,3 +1,5 @@
+var global = {};
+
 import React from 'react';
 import {Helmet} from "react-helmet";
 import ReactDOMServer from "react-dom/server";
