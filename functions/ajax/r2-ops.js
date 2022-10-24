@@ -22,26 +22,15 @@ async function getPresignedUrlFromR2(env, bucket, inputParams) {
     // size,
     // type,
   } = inputParams;
-  const accessKeyId = `${env.ACCESS_KEY_ID}`
-  const secretAccessKey = `${env.SECRET_ACCESS_KEY}`;
+  const accessKeyId = `${env.R2_ACCESS_KEY_ID}`
+  const secretAccessKey = `${env.R2_SECRET_ACCESS_KEY}`;
   const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto');
 }
 
-/*
-  const url = await getPresignedUrlFromS3(env, env.AWS_BUCKET, inputParams.name);
- */
-// async function getPresignedUrlFromS3(env, bucket, key) {
-//   const accessKeyId = `${env.AWS_ACCESS_KEY_ID}`
-//   const secretAccessKey = `${env.AWS_SECRET_ACCESS_KEY}`;
-//   const region = 'us-west-2';
-//   const endpoint = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-//   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region);
-// }
-
 export async function onRequestPost({request, env}) {
   const inputParams = await request.json();
-  const presignedUrl = await getPresignedUrlFromR2(env, env.BUCKET, inputParams);
+  const presignedUrl = await getPresignedUrlFromR2(env, env.R2_BUCKET, inputParams);
   const jsonData = {
     presignedUrl,
     mediaBaseUrl: env.MEDIA_BASE_URL,

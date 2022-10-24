@@ -106,7 +106,4 @@ dist
 build/
 webpack-stats.json
 .idea
-.dev.vars
-.env.toml
-
-
+*.vars

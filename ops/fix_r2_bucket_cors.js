@@ -13,7 +13,7 @@ const endpoint = `https://${env.ACCOUNT_ID}.r2.cloudflarestorage.com`;
 const s3 = new AWS.S3({
   region: 'auto',
   signatureVersion: 'v4',
-  credentials: new AWS.Credentials(env.ACCESS_KEY_ID, env.SECRET_ACCESS_KEY),
+  credentials: new AWS.Credentials(env.R2_ACCESS_KEY_ID, env.R2_SECRET_ACCESS_KEY),
   endpoint: new AWS.Endpoint(endpoint),
 });
 
