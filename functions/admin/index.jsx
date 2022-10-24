@@ -1,15 +1,12 @@
-// import React from "react";
-import WebpackAssetsHandler from '../../edge-src/common/WebpackAssetsHandler';
+import React from "react";
+import AdminHomeApp from '../../edge-src/AdminHomeApp';
+import ReactDOMServer from "react-dom/server";
 
-export async function onRequestGet({next}) {
-  const response = await next();
-  const newResponse = new Response(response.body, response);
-  const rewriter = new HTMLRewriter()
-    // .on('title', new MetaElementHandler(jsonData.name, null))
-    // .on('meta[name=description]', new MetaElementHandler(jsonData.description, 'content'))
-    // .on('div#edge-side-root', new ServerSideElementHandler(jsonData))
-    .on('webpack-js', new WebpackAssetsHandler())
-    .on('webpack-css', new WebpackAssetsHandler())
-  console.log('in admin');
-  return rewriter.transform(newResponse);
+export async function onRequestGet() {
+  const fromReact = ReactDOMServer.renderToString(<AdminHomeApp />);
+  return new Response(fromReact, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+    },
+  });
 }
