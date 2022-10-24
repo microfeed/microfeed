@@ -15,13 +15,29 @@ const ALLOWED_VARS = [
   'ADMIN_PASSWORD',
 ];
 
+const getEnvVarsJson = (envName) => {
+  const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
+  const envJson = dotenv.parse(bufferForEnv);
+
+  const envVarsJson = {
+    [envName]: {
+      'env_vars': {},
+    }
+  };
+  ALLOWED_VARS.forEach((varName) => {
+    const varValue = envJson[varName] || env[varName];
+    envVarsJson[envName]['env_vars'][varName] = {
+      value: varValue,
+    };
+  });
+  return envVarsJson;
+};
+
+
 const data = JSON.stringify({
   'deployment_configs': {
-    'preview': {
-      'env_vars': {
-        'ADMIN_USERNAME': {'value': env.ADMIN_USERNAME},
-      }
-    }
+    ...getEnvVarsJson('preview'),
+    ...getEnvVarsJson('production'),
   }
 });
 
@@ -42,8 +58,8 @@ const req = https.request(options, (res) => {
   console.log('headers:', res.headers);
 
   res.on('data', (d) => {
-    // TODO: Check output and delete all environment variables that are NOT in ALLOWED_VARS
-    // env_var: null
+    // d.result.deployment_configs.preview
+    // d.result.deployment_configs.production
     process.stdout.write(d);
   });
 });
