@@ -1,14 +1,14 @@
 import React from 'react';
 import HtmlHeader from "../components/HtmlHeader";
 
-export default class AdminHomeApp extends React.Component {
+export default class AdminPodcastApp extends React.Component {
   render() {
     return (
       <html>
       <HtmlHeader
-        title="Admin Home"
+        title="Edit Podcast | Admin"
         description=""
-        webpackJsList={['admin_js']}
+        webpackJsList={['edit_podcast_js']}
         webpackCssList={['admin_styles_css']}
         favicon={{
           'apple-touch-icon': '/assets/apple-touch-icon.png',

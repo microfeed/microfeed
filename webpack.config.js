@@ -26,10 +26,22 @@ if (prod) {
 }
 
 const entry = {
+  //
+  // CSS
+  //
   admin_styles_css: './common/admin_styles.css',
   public_default_css: './common/public_default_styles.css',
+
+  //
+  // JS
+  //
+
+  // Public
   index_js: './ClientHomeApp/index.js',
-  admin_js: './ClientAdminApp/index.js',
+
+  // Admin
+  new_episode_js: './ClientAdminEpisodesApp/New/index.js',
+  edit_podcast_js: './ClientAdminPodcastApp/index.js',
 };
 
 

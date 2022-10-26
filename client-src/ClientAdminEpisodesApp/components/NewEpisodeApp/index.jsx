@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default class AdminApp extends React.Component {
+export default class NewEpisodeApp extends React.Component {
   constructor(props) {
     super(props);
 

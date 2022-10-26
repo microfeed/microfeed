@@ -13,8 +13,8 @@ export default class ClientHomeApp extends React.Component {
   }
 
   render() {
-    return (<div className="font-semibold text-xl text-red-500">
-      Rendered from client-side react
+    return (<div className="text-center text-xs mt-32 mb-8 text-gray-400">
+      powered by listen.host
     </div>);
   }
 }
