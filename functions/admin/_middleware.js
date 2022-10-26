@@ -74,13 +74,17 @@ const basicAuth = async ({request, next, env}) => {
     response.headers.set('Cache-Control', 'no-store');
     return response;
   } catch (err) {
-    return new Response('Failed to login.', {
-      status: 401,
-      headers: {
-        // Prompts the user for credentials.
-        'WWW-Authenticate': 'Basic realm="my scope", charset="UTF-8"',
-      },
-    });
+    if (err instanceof UnauthorizedException) {
+      return new Response('Failed to login.', {
+        status: 401,
+        headers: {
+          // Prompts the user for credentials.
+          'WWW-Authenticate': 'Basic realm="my scope", charset="UTF-8"',
+        },
+      });
+    } else {
+      throw err;
+    }
   }
 };
 

@@ -5,7 +5,7 @@
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
     "fix_cors": "node ops/fix_r2_bucket_cors.js",
-    "dev": "wrangler pages dev -- webpack serve --host localhost --mode development"
+    "dev": "wrangler pages dev --kv LH_DB -- webpack serve --host localhost --mode development"
   },
   "dependencies": {
     "@tailwindcss/line-clamp": "^0.4.2",
