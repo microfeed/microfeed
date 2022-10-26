@@ -13,7 +13,7 @@ export default class EditPodcastApp extends React.Component {
 
   render() {
     return (<div>
-      edit podcast
+      edit podcasts
     </div>);
   }
 }
