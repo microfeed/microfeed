@@ -7,8 +7,23 @@ export default class Feed {
     this.content = null;
   }
 
+  initFeed() {
+    return {
+      podcast: {
+      },
+      episodes: {
+      },
+    };
+  }
+
   async getContent() {
-    this.content = await this.LH_DB.get(this.KEY);
+    const res = await this.LH_DB.get(this.KEY);
+    if (!res) {
+      console.log('init');
+      this.content = await this.putContent(this.initFeed());
+    } else {
+      this.content = await res.json();
+    }
     return this.content;
   }
 
@@ -18,5 +33,9 @@ export default class Feed {
       });
     this.content = contentDict;
     return this.content;
+  }
+
+  async destroy() {
+    await this.LH_DB.delete(this.KEY);
   }
 }

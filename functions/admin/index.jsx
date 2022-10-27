@@ -7,15 +7,8 @@ export async function onRequestGet({ env }) {
   const feed = new Feed(env);
   let content = await feed.getContent();
   console.log(content);
-  content = await feed.putContent({
-    podcast: {
-      title: 'hello',
-    },
-    episodes: {
-      'id1': {
-      },
-    },
-  });
+  await feed.destroy();
+  content = await feed.getContent();
   console.log(content);
   const fromReact = ReactDOMServer.renderToString(<AdminPodcastApp />);
   return new Response(fromReact, {
