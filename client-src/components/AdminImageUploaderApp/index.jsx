@@ -1,6 +1,6 @@
 import React from 'react';
-
 import clsx from 'clsx';
+import Requests from '../../common/requests';
 
 const UPLOAD_STATUS__START = 1;
 
@@ -76,46 +76,16 @@ export default class AdminImageUploaderApp extends React.Component {
 
     this.setState({ uploadStatus: UPLOAD_STATUS__START });
 
-    const {size, name, type} = file;
+    const {name} = file;
     const previewUrl = URL.createObjectURL(file);
     this.setState({currentImageUrl: previewUrl});
     const cdnFilename = `images/${name}`; // TODO: Generate filename
-    const rawResponse = await fetch('/admin/ajax/r2-ops', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        size,
-        key: cdnFilename,
-        type,
-      })
+    Requests.upload(file, cdnFilename, (percentage) => {
+      this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
+    }, (cdnUrl) => {
+      this.props.onImageUploaded(cdnUrl);
+      this.setState({progressText: null, uploadStatus: null});
     });
-    const res = await rawResponse.json();
-    const fileReader = new FileReader();
-    fileReader.onloadend = async (e) => {
-      const arrayBuffer = e.target.result;
-      if (arrayBuffer) {
-        const { mediaBaseUrl, presignedUrl } = res;
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", presignedUrl, true);
-        xhr.upload.addEventListener("progress", (event) => {
-          if (event.lengthComputable) {
-            this.setState({progressText: `${parseFloat(event.loaded / event.total * 100.0).toFixed(2)}%`});
-          }
-        });
-        xhr.addEventListener("loadend", () => {
-          const mediaUrl = `${mediaBaseUrl}/${cdnFilename}`;
-          if (xhr.readyState === 4 && xhr.status === 200) {
-            this.props.onImageUploaded(mediaUrl);
-          }
-          this.setState({progressText: null, uploadStatus: null});
-        });
-        xhr.send(arrayBuffer);
-      }
-    };
-    fileReader.readAsArrayBuffer(file);
   }
 
   render() {
