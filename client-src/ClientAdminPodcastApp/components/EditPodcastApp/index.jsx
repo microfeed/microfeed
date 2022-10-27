@@ -30,8 +30,8 @@ export default class EditPodcastApp extends React.Component {
     }))
   }
 
-  onUpdatePodcastMeta(e, keyName) {
-    this.onUpdateFeed({[keyName]: e.target.value});
+  onUpdatePodcastMeta(keyName, value) {
+    this.onUpdateFeed({[keyName]: value});
   }
 
   onSubmit(e) {
@@ -52,7 +52,10 @@ export default class EditPodcastApp extends React.Component {
       <form className="lh-page-card mx-4 grid grid-cols-1 gap-4">
         <div className="flex">
           <div className="flex-none">
-            <AdminImageUploaderApp />
+            <AdminImageUploaderApp
+              currentImageUrl={feed.image}
+              onImageUploaded={(cdnUrl) => this.onUpdatePodcastMeta('image', cdnUrl)}
+            />
           </div>
           <div className="flex-1 ml-8">
             <label>
@@ -61,7 +64,7 @@ export default class EditPodcastApp extends React.Component {
                 <input
                   type="text"
                   value={feed.title || ''}
-                  onChange={(e) => this.onUpdatePodcastMeta(e, 'title')}
+                  onChange={(e) => this.onUpdatePodcastMeta('title', e.target.value)}
                 />
               </div>
             </label>

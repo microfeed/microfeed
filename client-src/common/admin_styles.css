@@ -40,3 +40,10 @@ a {
 .lh-page-card {
   @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light;;
 }
+
+/*
+  Images
+ */
+.lh-upload-image-size {
+  @apply w-64 h-64;
+}
