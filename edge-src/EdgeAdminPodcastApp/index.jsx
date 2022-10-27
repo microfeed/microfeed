@@ -7,6 +7,7 @@ export default class AdminPodcastApp extends React.Component {
   }
 
   render() {
+    const {feedContent} = this.props;
     return (
       <html>
       <HtmlHeader
@@ -29,6 +30,11 @@ export default class AdminPodcastApp extends React.Component {
       />
       <body>
       <div id="client-side-root"/>
+      <script
+        id="feed-content"
+        type="application/json"
+        dangerouslySetInnerHTML={{__html: JSON.stringify(feedContent)}}
+      />
       </body>
       </html>
     );

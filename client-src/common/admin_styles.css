@@ -2,15 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-.lh-podcast-image {
-  @apply rounded shadow w-32 md:w-48;
+body {
+  @apply bg-bgsecondary-color;
 }
 
-.lh-episode-image {
-  @apply w-24;
+a {
+  @apply text-brand-dark hover:text-brand-light font-semibold;
 }
 
-.lh-section-header {
-  @apply text-lg font-bold border-b mb-4 pb-2;
+/*
+   Buttons
+ */
+.lh-btn {
+  @apply hover:opacity-50 text-white font-semibold py-2 px-4 min-w-max inline-block;
+  @apply disabled:opacity-50;
 }
 
+.lh-btn-secondary {
+  @apply bg-bgsecondary-color text-fgsecondary-color border border-bdgray-color text-sm;
+}
+
+.lh-btn-brand-dark {
+  @apply bg-brand-dark text-white text-sm border border-brand-dark;
+}
+
+.lh-btn-sm {
+  @apply text-sm py-1 px-2;
+}
+
+.lh-btn-lg {
+  @apply text-lg py-3 px-5;
+}

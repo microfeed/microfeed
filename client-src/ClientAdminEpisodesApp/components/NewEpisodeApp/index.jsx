@@ -1,4 +1,5 @@
 import React from 'react';
+import AdminNavApp from '../../../components/AdminNavApp';
 
 export default class NewEpisodeApp extends React.Component {
   constructor(props) {
@@ -62,12 +63,12 @@ export default class NewEpisodeApp extends React.Component {
 
   render() {
     const { mediaUrl } = this.state;
-    return (<div>
+    return (<AdminNavApp currentPage="new_episode">
       <form>
         <h1>Upload large file</h1>
         <input type="file" onChange={this.handleChange}/>
         {mediaUrl && <div><a href={mediaUrl}>{mediaUrl}</a></div>}
       </form>
-    </div>);
+    </AdminNavApp>);
   }
 }

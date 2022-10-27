@@ -5,12 +5,8 @@ import Feed from '../../edge-src/models/Feed';
 
 export async function onRequestGet({ env }) {
   const feed = new Feed(env);
-  let content = await feed.getContent();
-  console.log(content);
-  await feed.destroy();
-  content = await feed.getContent();
-  console.log(content);
-  const fromReact = ReactDOMServer.renderToString(<AdminPodcastApp />);
+  const content = await feed.getContent();
+  const fromReact = ReactDOMServer.renderToString(<AdminPodcastApp feedContent={content} />);
   return new Response(fromReact, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',

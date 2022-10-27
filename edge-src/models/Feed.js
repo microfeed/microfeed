@@ -9,8 +9,6 @@ export default class Feed {
 
   initFeed() {
     return {
-      podcast: {
-      },
       episodes: {
       },
     };
