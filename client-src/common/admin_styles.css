@@ -14,7 +14,7 @@ a {
    Buttons
  */
 .lh-btn {
-  @apply hover:opacity-50 text-white font-semibold py-2 px-4 min-w-max inline-block;
+  @apply text-white font-semibold py-2 px-4 min-w-max inline-block;
   @apply disabled:opacity-50;
 }
 
@@ -23,7 +23,7 @@ a {
 }
 
 .lh-btn-brand-dark {
-  @apply bg-brand-dark text-white text-sm border border-brand-dark;
+  @apply bg-brand-dark text-white text-sm border border-brand-dark hover:bg-brand-light hover:border-brand-light;
 }
 
 .lh-btn-sm {
@@ -32,4 +32,11 @@ a {
 
 .lh-btn-lg {
   @apply text-lg py-3 px-5;
+}
+
+/*
+  Cards
+ */
+.lh-page-card {
+  @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light;;
 }
