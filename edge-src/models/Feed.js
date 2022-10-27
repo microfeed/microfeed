@@ -13,7 +13,9 @@ export default class Feed {
   }
 
   async putContent(contentDict) {
-    await this.LH_DB.put(this.KEY, JSON.stringify(contentDict));
+    await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {
+      'Content-Type': 'application/json; charset=UTF-8',
+      });
     this.content = contentDict;
     return this.content;
   }
