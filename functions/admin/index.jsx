@@ -1,12 +1,23 @@
 import React from "react";
 import ReactDOMServer from 'react-dom/server';
 import AdminPodcastApp from '../../edge-src/EdgeAdminPodcastApp';
-import Podcast from '../../edge-src/models/Podcast';
+import Feed from '../../edge-src/models/Feed';
 
 export async function onRequestGet({ env }) {
-  const pod = new Podcast(env);
-  const podMeta = await pod.getValue();
-  const fromReact = ReactDOMServer.renderToString(<AdminPodcastApp podMeta={podMeta} />);
+  const feed = new Feed(env);
+  let content = await feed.getContent();
+  console.log(content);
+  content = await feed.putContent({
+    podcast: {
+      title: 'hello',
+    },
+    episodes: {
+      'id1': {
+      },
+    },
+  });
+  console.log(content);
+  const fromReact = ReactDOMServer.renderToString(<AdminPodcastApp />);
   return new Response(fromReact, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
