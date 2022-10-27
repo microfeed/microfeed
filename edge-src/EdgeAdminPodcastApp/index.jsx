@@ -2,6 +2,11 @@ import React from 'react';
 import HtmlHeader from "../components/HtmlHeader";
 
 export default class AdminPodcastApp extends React.Component {
+  constructor(props) {
+    super(props);
+    console.log(props.podMeta);
+  }
+
   render() {
     return (
       <html>
