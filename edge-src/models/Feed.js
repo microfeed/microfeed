@@ -1,7 +1,9 @@
+import {projectPrefix} from "../../common-src/R2Utils";
+
 export default class Feed {
   constructor(env) {
     const {LISTEN_HOST_VERSION, LH_DATABASE} = env;
-    this.KEY = `database/${LISTEN_HOST_VERSION}-feed.json`;
+    this.KEY = `${projectPrefix(env)}/database/${LISTEN_HOST_VERSION}-feed.json`;
     this.LH_DB = LH_DATABASE;
 
     this.content = null;

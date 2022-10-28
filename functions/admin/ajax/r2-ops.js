@@ -1,4 +1,5 @@
 import { AwsClient } from 'aws4fetch'
+import {projectPrefix} from "../../../common-src/R2Utils";
 
 async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region) {
   const aws = new AwsClient({
@@ -24,7 +25,7 @@ async function getPresignedUrlFromR2(env, bucket, inputParams) {
   } = inputParams;
   const accessKeyId = `${env.R2_ACCESS_KEY_ID}`
   const secretAccessKey = `${env.R2_SECRET_ACCESS_KEY}`;
-  const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
+  const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${projectPrefix(env)}/${key}`;
   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto');
 }
 
@@ -33,7 +34,7 @@ export async function onRequestPost({request, env}) {
   const presignedUrl = await getPresignedUrlFromR2(env, env.R2_BUCKET, inputParams);
   const jsonData = {
     presignedUrl,
-    mediaBaseUrl: env.MEDIA_BASE_URL,
+    mediaBaseUrl: `${env.MEDIA_BASE_URL}/${projectPrefix(env)}`,
   };
   return new Response(JSON.stringify(jsonData), {
     headers: {

@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import Requests from '../../common/requests';
+import {randomHex} from '../../../common-src/CodeUtils';
 
 const UPLOAD_STATUS__START = 1;
 
@@ -77,9 +78,14 @@ export default class AdminImageUploaderApp extends React.Component {
     this.setState({ uploadStatus: UPLOAD_STATUS__START });
 
     const {name} = file;
+    const extension = name.slice((name.lastIndexOf(".") - 1 >>> 0) + 2);
+    let newFilename = `${randomHex(32)}`;
+    if (extension && extension.length > 0) {
+      newFilename += `.${extension}`;
+    }
     const previewUrl = URL.createObjectURL(file);
     this.setState({currentImageUrl: previewUrl});
-    const cdnFilename = `images/${name}`; // TODO: Generate filename
+    const cdnFilename = `images/${newFilename}`;
     Requests.upload(file, cdnFilename, (percentage) => {
       this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
     }, (cdnUrl) => {
