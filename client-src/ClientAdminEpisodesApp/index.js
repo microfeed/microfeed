@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import EditEpisodeApp from "../components/EditEpisodeApp";
+import EpisodeListApp from './components/EpisodeListApp';
 
 document.addEventListener('DOMContentLoaded', () => {
   const $rootDom = document.getElementById('client-side-root');
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const root = ReactDOM.createRoot($rootDom);
     root.render(
       <React.StrictMode>
-        <EditEpisodeApp/>
+        <EpisodeListApp/>
       </React.StrictMode>
     );
   }

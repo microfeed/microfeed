@@ -2,6 +2,7 @@ import React from 'react';
 import Requests from '../../../common/requests';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminImageUploaderApp from '../../../components/AdminImageUploaderApp';
+import AdminInput from "../../../components/AdminInput";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -39,9 +40,8 @@ export default class EditPodcastApp extends React.Component {
     const {feed} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.post('/admin/ajax/feed/', feed)
-      .then((data) => {
+      .then(() => {
         this.setState({submitStatus: null});
-        console.log(data);
       });
   }
 
@@ -53,21 +53,22 @@ export default class EditPodcastApp extends React.Component {
         <div className="flex">
           <div className="flex-none">
             <AdminImageUploaderApp
+              mediaType="pod"
               currentImageUrl={feed.image}
               onImageUploaded={(cdnUrl) => this.onUpdatePodcastMeta('image', cdnUrl)}
             />
           </div>
           <div className="flex-1 ml-8">
-            <label>
-              Podcast title
-              <div>
-                <input
-                  type="text"
-                  value={feed.title || ''}
-                  onChange={(e) => this.onUpdatePodcastMeta('title', e.target.value)}
-                />
-              </div>
-            </label>
+            <AdminInput
+              label="Podcast title"
+              value={feed.title}
+              onChange={(e) => this.onUpdatePodcastMeta('title', e.target.value)}
+            />
+            <AdminInput
+              label="Publisher"
+              value={feed.publisher}
+              onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+            />
           </div>
         </div>
         <div className="text-center">

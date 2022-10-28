@@ -44,6 +44,7 @@ export default class AdminImageUploaderApp extends React.Component {
       currentImageUrl: props.currentImageUrl || null,
       uploadStatus: null,
       progressText: null,
+      mediaType: props.mediaType || 'pod',
     };
   }
 
@@ -65,6 +66,7 @@ export default class AdminImageUploaderApp extends React.Component {
 
   async onFileUpload(event) {
     const [file] = event.target.files;
+    const {mediaType} = this.state;
     if (!file) {
       return;
     }
@@ -79,7 +81,7 @@ export default class AdminImageUploaderApp extends React.Component {
 
     const {name} = file;
     const extension = name.slice((name.lastIndexOf(".") - 1 >>> 0) + 2);
-    let newFilename = `${randomHex(32)}`;
+    let newFilename = `${mediaType}-${randomHex(32)}`;
     if (extension && extension.length > 0) {
       newFilename += `.${extension}`;
     }
