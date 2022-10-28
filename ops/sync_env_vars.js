@@ -16,6 +16,7 @@ const ALLOWED_VARS = [
   "NODE_VERSION",
   'LISTEN_HOST_VERSION',
   'ENVIRONMENT',
+  'PROJECT_NAME',
 ];
 
 const getEnvVarsFromFilesJson = (envName) => {
