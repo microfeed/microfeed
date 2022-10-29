@@ -2,7 +2,7 @@ import React from 'react';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
-import {randomHex} from '../../../../common-src/CodeUtils';
+import {randomShortUUID} from '../../../../common-src/CodeUtils';
 
 const SUBMIT_STATUS__START = 1;
 
@@ -18,7 +18,7 @@ export default class EditEpisodeApp extends React.Component {
     this.state = {
       feed,
       submitStatus: null,
-      episodeId: props.episodeId || randomHex(32),
+      episodeId: props.episodeId || randomShortUUID(),
     }
   }
 

@@ -4,6 +4,10 @@ module.exports = {
     "commonjs": true,
     "es2021": true
   },
+  "globals": {
+    "test": "true",
+    "expect": "true"
+  },
   "extends": "eslint:recommended",
   "parserOptions": {
     "ecmaVersion": 2021,
@@ -35,6 +39,14 @@ module.exports = {
         "worker": false,
         "browser": true,
       },
-    }
+    },
+    {
+      "files": ["**/common-src/**/*.{js,jsx}"],
+      "env": {
+        "node": true,
+        "worker": true,
+        "browser": true,
+      },
+    },
   ]
 };
