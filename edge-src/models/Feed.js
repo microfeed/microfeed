@@ -26,6 +26,20 @@ export default class Feed {
     return this.content;
   }
 
+  async getContentPublic() {
+    const content = await this.getContent();
+    const publicContent = {};
+
+    publicContent.title = content.title;
+    publicContent.description = content.description;
+    publicContent.image = content.image;
+    publicContent.publisher = content.publisher;
+
+    publicContent.episodes = [];
+
+    return publicContent;
+  }
+
   async putContent(contentDict) {
     await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {
       'Content-Type': 'application/json; charset=UTF-8',
