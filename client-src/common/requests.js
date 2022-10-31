@@ -40,7 +40,7 @@ async function uploadFile(file, cdnFilename, onProgress, onUploaded) {
         const mediaUrl = `${mediaBaseUrl}/${cdnFilename}`;
         if (xhr.readyState === 4 && xhr.status === 200) {
           // this.props.onImageUploaded(mediaUrl);
-          onUploaded(mediaUrl);
+          onUploaded(mediaUrl, arrayBuffer);
         }
         // this.setState({progressText: null, uploadStatus: null});
       });

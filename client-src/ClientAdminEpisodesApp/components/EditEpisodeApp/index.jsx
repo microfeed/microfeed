@@ -37,12 +37,15 @@ export default class EditEpisodeApp extends React.Component {
     }))
   }
 
-  onUpdateEpisodeMeta(episodeId, keyName, value) {
+  onUpdateEpisodeMeta(episodeId, attrDict) {
     let existingEpisode = this.state.feed.episodes[episodeId];
     if (!existingEpisode) {
       existingEpisode = {};
     }
-    existingEpisode[keyName] = value;
+    existingEpisode = {
+      ...existingEpisode,
+      ...attrDict,
+    };
     const episodesBundle = {
       ...this.state.feed.episodes,
       [episodeId]: {...existingEpisode},
@@ -76,17 +79,32 @@ export default class EditEpisodeApp extends React.Component {
       currentPage = 'all_episodes';
     }
 
+    console.log(episode);
+
     return (<AdminNavApp currentPage={currentPage}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
-            <AudioUploaderApp />
+            <AudioUploaderApp
+              audio={episode.audio}
+              audioDurationSecond={episode.audioDurationSecond}
+              audioFileSizeByte={episode.audioFileSizeByte}
+              audioFileType={episode.audioFileType}
+              onUploaded={(cdnUrl, duration, size, type) => {
+                this.onUpdateEpisodeMeta(episodeId, {
+                  'audio': cdnUrl,
+                  'audioDurationSecond': duration,
+                  'audioFileSizeByte': size,
+                  'audioFileType': type,
+                });
+              }}
+            />
           </div>
           <div className="lh-page-card">
             <AdminInput
               label="Episode title"
               value={episode.title}
-              onChange={(e) => this.onUpdateEpisodeMeta(episodeId, 'title', e.target.value)}
+              onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'title': e.target.value})}
             />
           </div>
         </div>

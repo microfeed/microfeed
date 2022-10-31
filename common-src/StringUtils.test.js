@@ -1,4 +1,4 @@
-import {randomShortUUID} from "./CodeUtils";
+import {randomShortUUID} from "./StringUtils";
 
 test('randomShortUUID', () => {
   expect(randomShortUUID().length).toBe(11);
