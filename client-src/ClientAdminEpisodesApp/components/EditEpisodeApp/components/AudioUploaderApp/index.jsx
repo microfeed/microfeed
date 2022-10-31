@@ -7,7 +7,7 @@ const UPLOAD_STATUS__START = 1;
 
 function PreviewCurrentAudio({audio, audioFileType, audioFileSizeByte}) {
   return (<div className="mb-8">
-      <h3 className="lh-page-subtitle">Current audio</h3>
+      <div className="lh-page-subtitle">Current audio</div>
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-1">
           <audio controls preload="metadata">
@@ -95,14 +95,14 @@ export default class AudioUploaderApp extends React.Component {
       />}
       {audio && <div className="border-t pt-2 mb-2" />}
       <div className="">
-        <h3 className="lh-page-subtitle">Upload a new audio file</h3>
+        <div className="lh-page-subtitle">Upload a new audio file</div>
         <FileUploader
           handleChange={this.onFileUpload}
           name="audioUploader"
           types={fileTypes}
           disabled={uploading}
         >
-          <div className="w-full p-4 text-center border-dashed border-2 border-brand-light hover:cursor-pointer">
+          <div className="w-full lh-upload-box p-4">
             {uploading ? <div className="">
               {progressText}
             </div> : <div className="text-brand-light">

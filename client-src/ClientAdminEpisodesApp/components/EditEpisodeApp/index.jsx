@@ -5,6 +5,7 @@ import Requests from "../../../common/requests";
 import {randomShortUUID, ADMIN_URLS} from '../../../../common-src/StringUtils';
 import AudioUploaderApp from './components/AudioUploaderApp';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
+import AdminTextarea from "../../../components/AdminTextarea";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -108,11 +109,73 @@ export default class EditEpisodeApp extends React.Component {
                   onImageUploaded={(cdnUrl) => this.onUpdateEpisodeMeta(episodeId, {'image': cdnUrl})}
                 />
               </div>
-              <div className="ml-8 flex-1">
+              <div className="ml-8 flex-1 grid grid-cols-1 gap-4">
                 <AdminInput
                   label="Episode title"
                   value={episode.title}
                   onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'title': e.target.value})}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <AdminInput
+                    label="Published date"
+                    value={episode.pubDateMs}
+                    onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'pubDateMs': e.target.value})}
+                  />
+                  <AdminInput
+                    label="Link"
+                    value={episode.link}
+                    onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'link': e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <AdminInput
+                    label="Explicit"
+                    value={episode.link}
+                    onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 pt-8 border-t">
+              <AdminTextarea
+                label="Episode description"
+                value={episode.description}
+                onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'description': e.target.value})}
+              />
+            </div>
+            <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <AdminInput
+                  label="<itunes:episodeType>"
+                  value={episode.link}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                />
+                <AdminInput
+                  label="<itunes:season>"
+                  value={episode.link}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                />
+                <AdminInput
+                  label="<itunes:episode>"
+                  value={episode.link}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <AdminInput
+                  label="<itunes:block>"
+                  value={episode.link}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                />
+                <AdminInput
+                  label="<guid>"
+                  value={episode.link}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                />
+                <AdminInput
+                  label="<itunes:title>"
+                  value={episode.link}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
                 />
               </div>
             </div>

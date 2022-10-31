@@ -46,12 +46,16 @@ a {
 }
 
 .lh-page-subtitle {
-  @apply font-semibold text-gray-500 mb-4;
+  @apply font-semibold text-gray-500 mb-2;
 }
 
 /*
-  Images
+  Images / Audio
  */
 .lh-upload-image-size {
   @apply w-64 h-64;
+}
+
+.lh-upload-box {
+  @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50;
 }
