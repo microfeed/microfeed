@@ -19,7 +19,6 @@ export default class Feed {
   async getContent() {
     const res = await this.LH_DB.get(this.KEY);
     if (!res) {
-      console.log('init');
       this.content = await this.putContent(this.initFeed());
     } else {
       this.content = await res.json();

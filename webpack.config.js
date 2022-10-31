@@ -43,6 +43,7 @@ const entry = {
   edit_episode_js: './ClientAdminEpisodesApp/EditEpisode/index.js',
   all_episodes_js: './ClientAdminEpisodesApp/index.js',
   edit_podcast_js: './ClientAdminPodcastApp/index.js',
+  settings_js: './ClientAdminSettingsApp/index.js',
 };
 
 

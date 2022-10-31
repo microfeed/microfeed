@@ -40,7 +40,6 @@ export default class AdminNavApp extends React.Component {
           <NavItem url="/admin/episodes/new/" title="Add new episode" navId="new_episode" currentId={currentPage} />
           <NavItem url="/admin/episodes/" title="See all episodes" navId="all_episodes" currentId={currentPage} />
           <NavItem url="/admin/settings/" title="Settings" navId="settings" currentId={currentPage} />
-          <NavItem url="/admin/integrations/" title="Integrations" navId="integrations" currentId={currentPage} />
         </nav>
       </div>
       <div className="flex-1">
