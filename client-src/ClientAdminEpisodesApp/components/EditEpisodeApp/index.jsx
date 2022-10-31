@@ -3,6 +3,7 @@ import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
 import {randomShortUUID, ADMIN_URLS} from '../../../../common-src/StringUtils';
+import AudioUploaderApp from './components/AudioUploaderApp';
 
 const SUBMIT_STATUS__START = 1;
 
@@ -49,16 +50,17 @@ export default class EditEpisodeApp extends React.Component {
     this.onUpdateFeed({'episodes': episodesBundle});
   }
 
-  onSubmit(e, onFinished) {
+  onSubmit(e) {
     e.preventDefault();
-    const {feed} = this.state;
+    const {feed, episodeId} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.post(ADMIN_URLS.ajaxFeed(), feed)
-      .then((data) => {
-        this.setState({submitStatus: null});
-        if (onFinished) {
-          onFinished(data);
-        }
+      .then(() => {
+        this.setState({submitStatus: null}, () => {
+          if (episodeId) {
+            location.href = ADMIN_URLS.pageEditEpisode(episodeId);
+          }
+        });
       });
   }
 
@@ -69,34 +71,36 @@ export default class EditEpisodeApp extends React.Component {
 
     let buttonText = 'Create';
     let currentPage = 'new_episode';
-    let onFinished = () => location.href = ADMIN_URLS.pageEditEpisode(episodeId);
     if (episode && Object.keys(episode).length > 0) {
       buttonText = 'Update';
       currentPage = 'all_episodes';
-      onFinished = () => {};
     }
 
     return (<AdminNavApp currentPage={currentPage}>
-      <form className="lh-page-card mx-4 grid grid-cols-1 gap-4">
-        <div>
-          Upload audio
+      <form className="grid grid-cols-12 gap-4">
+        <div className="col-span-9 grid grid-cols-1 gap-4">
+          <div className="lh-page-card">
+            <AudioUploaderApp />
+          </div>
+          <div className="lh-page-card">
+            <AdminInput
+              label="Episode title"
+              value={episode.title}
+              onChange={(e) => this.onUpdateEpisodeMeta(episodeId, 'title', e.target.value)}
+            />
+          </div>
         </div>
-        <div>
-          <AdminInput
-            label="Episode title"
-            value={episode.title}
-            onChange={(e) => this.onUpdateEpisodeMeta(episodeId, 'title', e.target.value)}
-          />
-        </div>
-        <div className="text-center">
-          <button
-            type="submit"
-            className="lh-btn lh-btn-brand-dark lh-btn-lg"
-            onClick={(e) => this.onSubmit(e, onFinished)}
-            disabled={submitting}
-          >
-            {submitting ? '...' : buttonText}
-          </button>
+        <div className="col-span-3">
+          <div className="lh-page-card">
+            <button
+              type="submit"
+              className="lh-btn lh-btn-brand-dark lh-btn-lg"
+              onClick={this.onSubmit}
+              disabled={submitting}
+            >
+              {submitting ? '...' : buttonText}
+            </button>
+          </div>
         </div>
       </form>
     </AdminNavApp>);

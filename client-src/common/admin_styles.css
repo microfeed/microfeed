@@ -41,6 +41,9 @@ a {
   @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light;;
 }
 
+.lh-page-title {
+  @apply text-lg font-bold text-gray-500 mb-4;
+}
 /*
   Images
  */
