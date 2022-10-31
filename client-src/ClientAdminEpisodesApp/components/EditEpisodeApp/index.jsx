@@ -4,6 +4,7 @@ import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
 import {randomShortUUID, ADMIN_URLS} from '../../../../common-src/StringUtils';
 import AudioUploaderApp from './components/AudioUploaderApp';
+import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -78,9 +79,6 @@ export default class EditEpisodeApp extends React.Component {
       buttonText = 'Update';
       currentPage = 'all_episodes';
     }
-
-    console.log(episode);
-
     return (<AdminNavApp currentPage={currentPage}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
@@ -101,11 +99,23 @@ export default class EditEpisodeApp extends React.Component {
             />
           </div>
           <div className="lh-page-card">
-            <AdminInput
-              label="Episode title"
-              value={episode.title}
-              onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'title': e.target.value})}
-            />
+            <h2 className="lh-page-title">Episode metadata</h2>
+            <div className="flex">
+              <div>
+                <AdminImageUploaderApp
+                  mediaType="eps"
+                  currentImageUrl={episode.image}
+                  onImageUploaded={(cdnUrl) => this.onUpdateEpisodeMeta(episodeId, {'image': cdnUrl})}
+                />
+              </div>
+              <div className="ml-8 flex-1">
+                <AdminInput
+                  label="Episode title"
+                  value={episode.title}
+                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'title': e.target.value})}
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div className="col-span-3">

@@ -93,6 +93,7 @@ export default class AudioUploaderApp extends React.Component {
         audioFileType={audioFileType}
         audioFileSizeByte={audioFileSizeByte}
       />}
+      {audio && <div className="border-t pt-2 mb-2" />}
       <div className="">
         <h3 className="lh-page-subtitle">Upload a new audio file</h3>
         <FileUploader
