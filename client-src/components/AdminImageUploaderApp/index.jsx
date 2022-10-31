@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import Requests from '../../common/requests';
-import {randomHex} from '../../../common-src/CodeUtils';
+import {randomHex} from '../../../common-src/StringUtils';
 
 const UPLOAD_STATUS__START = 1;
 

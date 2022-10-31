@@ -2,7 +2,7 @@ import React from 'react';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
-import {randomShortUUID} from '../../../../common-src/CodeUtils';
+import {randomShortUUID, ADMIN_URLS} from '../../../../common-src/StringUtils';
 
 const SUBMIT_STATUS__START = 1;
 
@@ -14,12 +14,14 @@ export default class EditEpisodeApp extends React.Component {
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdateEpisodeMeta = this.onUpdateEpisodeMeta.bind(this);
 
-    const feed = JSON.parse(document.getElementById('feed-content').innerHTML);
+    const $feedContent = document.getElementById('feed-content');
+    const episodeId = $feedContent.getAttribute('data-episode-id');
+    const feed = JSON.parse($feedContent.innerHTML);
     this.state = {
       feed,
       submitStatus: null,
-      episodeId: props.episodeId || randomShortUUID(),
-    }
+      episodeId: episodeId || randomShortUUID(),
+    };
   }
 
   componentDidMount() {
@@ -47,14 +49,16 @@ export default class EditEpisodeApp extends React.Component {
     this.onUpdateFeed({'episodes': episodesBundle});
   }
 
-  onSubmit(e) {
+  onSubmit(e, onFinished) {
     e.preventDefault();
     const {feed} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.post('/admin/ajax/feed/', feed)
+    Requests.post(ADMIN_URLS.ajaxFeed(), feed)
       .then((data) => {
         this.setState({submitStatus: null});
-        console.log(data);
+        if (onFinished) {
+          onFinished(data);
+        }
       });
   }
 
@@ -63,7 +67,16 @@ export default class EditEpisodeApp extends React.Component {
     const episode = feed.episodes[episodeId] || {};
     const submitting = submitStatus === SUBMIT_STATUS__START;
 
-    return (<AdminNavApp currentPage="new_episode">
+    let buttonText = 'Create';
+    let currentPage = 'new_episode';
+    let onFinished = () => location.href = ADMIN_URLS.pageEditEpisode(episodeId);
+    if (episode && Object.keys(episode).length > 0) {
+      buttonText = 'Update';
+      currentPage = 'all_episodes';
+      onFinished = () => {};
+    }
+
+    return (<AdminNavApp currentPage={currentPage}>
       <form className="lh-page-card mx-4 grid grid-cols-1 gap-4">
         <div>
           Upload audio
@@ -79,10 +92,10 @@ export default class EditEpisodeApp extends React.Component {
           <button
             type="submit"
             className="lh-btn lh-btn-brand-dark lh-btn-lg"
-            onClick={this.onSubmit}
+            onClick={(e) => this.onSubmit(e, onFinished)}
             disabled={submitting}
           >
-            {submitting ? 'Creating...' : 'Create'}
+            {submitting ? '...' : buttonText}
           </button>
         </div>
       </form>

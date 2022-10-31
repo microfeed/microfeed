@@ -1,12 +1,12 @@
 import React from 'react';
 import WholeHtml from "../../components/WholeHtml";
 
-export default class AdminEpisodesNewApp extends React.Component {
+export default class AdminEpisodesEditApp extends React.Component {
   render() {
-    const {feedContent} = this.props;
+    const {feedContent, episodeId} = this.props;
     return (
       <WholeHtml
-        title="Create New Episode | Admin"
+        title="Edit Episode | Admin"
         description=""
         webpackJsList={['edit_episode_js']}
         webpackCssList={['admin_styles_css']}
@@ -14,7 +14,7 @@ export default class AdminEpisodesNewApp extends React.Component {
         <script
           id="feed-content"
           type="application/json"
-          // data-episode-id=""
+          data-episode-id={episodeId}
           dangerouslySetInnerHTML={{__html: JSON.stringify(feedContent)}}
         />
       </WholeHtml>

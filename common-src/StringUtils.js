@@ -13,3 +13,14 @@ export function randomShortUUID(length = 11) {
   }
   return result;
 }
+
+/**
+ * Admin urls
+ */
+const ADMIN_HOME = '/admin';
+
+export const ADMIN_URLS = {
+  home: () => ADMIN_HOME,
+  pageEditEpisode: (episodeId) => `${ADMIN_HOME}/episodes/${episodeId}/`,
+  ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,
+};

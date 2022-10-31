@@ -40,7 +40,7 @@ const entry = {
   index_js: './ClientHomeApp/index.js',
 
   // Admin
-  new_episode_js: './ClientAdminEpisodesApp/New/index.js',
+  edit_episode_js: './ClientAdminEpisodesApp/EditEpisode/index.js',
   all_episodes_js: './ClientAdminEpisodesApp/index.js',
   edit_podcast_js: './ClientAdminPodcastApp/index.js',
 };
