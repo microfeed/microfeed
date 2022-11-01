@@ -7,7 +7,7 @@ import AudioUploaderApp from './components/AudioUploaderApp';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminTextarea from "../../../components/AdminTextarea";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
-import {datetimeLocalStringToMs} from "../../../../common-src/TimeUtils";
+import {datetimeLocalStringToMs, datetimeLocalToString} from "../../../../common-src/TimeUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -18,67 +18,72 @@ export default class EditEpisodeApp extends React.Component {
     this.onSubmit = this.onSubmit.bind(this);
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdateEpisodeMeta = this.onUpdateEpisodeMeta.bind(this);
+    this.onUpdateEpisodeToFeed = this.onUpdateEpisodeToFeed.bind(this);
 
     const $feedContent = document.getElementById('feed-content');
     const episodeId = $feedContent.getAttribute('data-episode-id');
+    const action = episodeId ? 'edit' : 'create';
     const feed = JSON.parse($feedContent.innerHTML);
+    const episode = feed.episodes[episodeId] || {
+      pubDateMs: datetimeLocalToString(new Date()),
+    };
     this.state = {
       feed,
+      episode,
       submitStatus: null,
       episodeId: episodeId || randomShortUUID(),
+      action,
     };
   }
 
   componentDidMount() {
   }
 
-  onUpdateFeed(props) {
+  onUpdateFeed(props, onSuccess) {
     this.setState(prevState => ({
       feed: {
         ...prevState.feed,
         ...props,
       },
-    }))
+    }), () => onSuccess())
   }
 
-  onUpdateEpisodeMeta(episodeId, attrDict) {
-    let existingEpisode = this.state.feed.episodes[episodeId];
-    if (!existingEpisode) {
-      existingEpisode = {};
-    }
-    existingEpisode = {
-      ...existingEpisode,
-      ...attrDict,
-    };
+  onUpdateEpisodeMeta(attrDict) {
+    this.setState(prevState => ({episode: {...prevState.episode, ...attrDict}}));
+  }
+
+  onUpdateEpisodeToFeed(onSuccess) {
+    let {episode, episodeId, feed} = this.state;
     const episodesBundle = {
-      ...this.state.feed.episodes,
-      [episodeId]: {...existingEpisode},
+      ...feed.episodes,
+      [episodeId]: {...episode},
     };
-    this.onUpdateFeed({'episodes': episodesBundle});
+    this.onUpdateFeed({'episodes': episodesBundle}, onSuccess);
   }
 
   onSubmit(e) {
     e.preventDefault();
-    const {feed, episodeId} = this.state;
-    this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.post(ADMIN_URLS.ajaxFeed(), feed)
-      .then(() => {
-        this.setState({submitStatus: null}, () => {
-          if (episodeId) {
-            location.href = ADMIN_URLS.pageEditEpisode(episodeId);
-          }
+    this.onUpdateEpisodeToFeed(() => {
+      const {feed, episodeId} = this.state;
+      this.setState({submitStatus: SUBMIT_STATUS__START});
+      Requests.post(ADMIN_URLS.ajaxFeed(), feed)
+        .then(() => {
+          this.setState({submitStatus: null}, () => {
+            if (episodeId) {
+              location.href = ADMIN_URLS.pageEditEpisode(episodeId);
+            }
+          });
         });
-      });
+    });
   }
 
   render() {
-    const {submitStatus, feed, episodeId} = this.state;
-    const episode = feed.episodes[episodeId] || {};
+    const {submitStatus, episodeId, episode, action} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
 
     let buttonText = 'Create';
     let currentPage = 'new_episode';
-    if (episode && Object.keys(episode).length > 0) {
+    if (action === 'edit') {
       buttonText = 'Update';
       currentPage = 'all_episodes';
     }
@@ -92,7 +97,7 @@ export default class EditEpisodeApp extends React.Component {
               audioFileSizeByte={episode.audioFileSizeByte}
               audioFileType={episode.audioFileType}
               onUploaded={(cdnUrl, duration, size, type) => {
-                this.onUpdateEpisodeMeta(episodeId, {
+                this.onUpdateEpisodeMeta({
                   'audio': cdnUrl,
                   'audioDurationSecond': duration,
                   'audioFileSizeByte': size,
@@ -108,34 +113,34 @@ export default class EditEpisodeApp extends React.Component {
                 <AdminImageUploaderApp
                   mediaType="eps"
                   currentImageUrl={episode.image}
-                  onImageUploaded={(cdnUrl) => this.onUpdateEpisodeMeta(episodeId, {'image': cdnUrl})}
+                  onImageUploaded={(cdnUrl) => this.onUpdateEpisodeMeta({'image': cdnUrl})}
                 />
               </div>
               <div className="ml-8 flex-1 grid grid-cols-1 gap-4">
                 <AdminInput
                   label="Episode title"
                   value={episode.title}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'title': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'title': e.target.value})}
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <AdminDatetimePicker
                     label="Published date"
                     value={episode.pubDateMs}
                     onChange={(e) => {
-                      this.onUpdateEpisodeMeta(episodeId, {'pubDateMs': datetimeLocalStringToMs(e.target.value)});
+                      this.onUpdateEpisodeMeta({'pubDateMs': datetimeLocalStringToMs(e.target.value)});
                     }}
                   />
                   <AdminInput
                     label="Link"
                     value={episode.link || PUBLIC_URLS.pageEpisode(episodeId, episode.title)}
-                    onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'link': e.target.value})}
+                    onChange={(e) => this.onUpdateEpisodeMeta({'link': e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <AdminInput
                     label="Explicit"
                     value={episode.link}
-                    onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                    onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                   />
                 </div>
               </div>
@@ -144,7 +149,7 @@ export default class EditEpisodeApp extends React.Component {
               <AdminTextarea
                 label="Episode description"
                 value={episode.description}
-                onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'description': e.target.value})}
+                onChange={(e) => this.onUpdateEpisodeMeta({'description': e.target.value})}
               />
             </div>
             <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">
@@ -152,34 +157,34 @@ export default class EditEpisodeApp extends React.Component {
                 <AdminInput
                   label="<itunes:episodeType>"
                   value={episode.link}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:season>"
                   value={episode.link}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:episode>"
                   value={episode.link}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <AdminInput
                   label="<itunes:block>"
                   value={episode.link}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<guid>"
                   value={episode.link}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:title>"
                   value={episode.link}
-                  onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'explicit': e.target.value})}
+                  onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
               </div>
             </div>
