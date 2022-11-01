@@ -18,7 +18,7 @@ const s3 = new AWS.S3({
 });
 
 const params = {
-  Bucket: env.BUCKET,
+  Bucket: env.R2_BUCKET,
   CORSConfiguration: {
     CORSRules: [{
       AllowedMethods: ['DELETE', 'POST', 'PUT'],
