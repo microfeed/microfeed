@@ -36,5 +36,10 @@ export const ADMIN_URLS = {
  * Public urls
  */
 export const PUBLIC_URLS = {
-  pageEpisode: (episodeId, episodeTitle) => `/episodes/${slugify(episodeTitle)}-${episodeId}/`
+  pageEpisode: (episodeId, episodeTitle) => {
+    if (!episodeTitle) {
+      return '';
+    }
+    return `/episodes/${slugify(episodeTitle)}-${episodeId}/`;
+  }
 };

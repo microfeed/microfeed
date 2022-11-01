@@ -14,3 +14,10 @@
   @apply text-lg font-bold border-b mb-4 pb-2;
 }
 
+.lh-icon-arrow-right:before {
+  content: "→";
+}
+
+.lh-icon-arrow-left:before {
+  content: "←";
+}
