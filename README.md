@@ -1,6 +1,6 @@
 # Listen Host
 
-Prerequisites
+## Prerequisites
 
 Create a .*.vars file in root directory of this project - same level as package.json.
 * .dev.vars
@@ -28,3 +28,7 @@ ADMIN_PASSWORD = ""
 
 NODE_VERSION = "17.0"
 ```
+
+## Bind R2 Bucket to Pages
+
+Go to page -> settings -> functions then add R2 binding for LH_DATABASE
