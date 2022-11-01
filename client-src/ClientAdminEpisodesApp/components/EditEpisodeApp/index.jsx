@@ -2,10 +2,12 @@ import React from 'react';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
-import {randomShortUUID, ADMIN_URLS} from '../../../../common-src/StringUtils';
+import {randomShortUUID, ADMIN_URLS, PUBLIC_URLS} from '../../../../common-src/StringUtils';
 import AudioUploaderApp from './components/AudioUploaderApp';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminTextarea from "../../../components/AdminTextarea";
+import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
+import {datetimeLocalStringToMs} from "../../../../common-src/TimeUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -116,14 +118,16 @@ export default class EditEpisodeApp extends React.Component {
                   onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'title': e.target.value})}
                 />
                 <div className="grid grid-cols-2 gap-4">
-                  <AdminInput
+                  <AdminDatetimePicker
                     label="Published date"
                     value={episode.pubDateMs}
-                    onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'pubDateMs': e.target.value})}
+                    onChange={(e) => {
+                      this.onUpdateEpisodeMeta(episodeId, {'pubDateMs': datetimeLocalStringToMs(e.target.value)});
+                    }}
                   />
                   <AdminInput
                     label="Link"
-                    value={episode.link}
+                    value={episode.link || PUBLIC_URLS.pageEpisode(episodeId, episode.title)}
                     onChange={(e) => this.onUpdateEpisodeMeta(episodeId, {'link': e.target.value})}
                   />
                 </div>
