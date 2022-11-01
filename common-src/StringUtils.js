@@ -21,6 +21,12 @@ export function humanFileSize(size) {
     return (size / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
 }
 
+export function buildAudioUrlWithTracking(audioUrl, trackingUrls) {
+  const finalUrl = '';
+  // const urlObj = new URL();
+  return finalUrl;
+}
+
 /**
  * Admin urls
  */
@@ -36,10 +42,16 @@ export const ADMIN_URLS = {
  * Public urls
  */
 export const PUBLIC_URLS = {
-  pageEpisode: (episodeId, episodeTitle) => {
+  feedRss: (baseUrl='') => {
+    return `${baseUrl}/feed/rss/`;
+  },
+  feedJson: (baseUrl='') => {
+    return `${baseUrl}/feed/json/`;
+  },
+  pageEpisode: (episodeId, episodeTitle, baseUrl='') => {
     if (!episodeTitle) {
       return '';
     }
-    return `/episodes/${slugify(episodeTitle)}-${episodeId}/`;
+    return `${baseUrl}/episodes/${slugify(episodeTitle)}-${episodeId}/`;
   }
 };

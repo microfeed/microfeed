@@ -6,7 +6,7 @@ export default class EpisodeListApp extends React.Component {
     super(props);
 
     const feed = JSON.parse(document.getElementById('feed-content').innerHTML);
-    const {episodes} = feed;
+    const episodes = feed.episodes || [];
     const episodeList = [];
     Object.keys(episodes).forEach((epsId) => {
       const eps = episodes[epsId];

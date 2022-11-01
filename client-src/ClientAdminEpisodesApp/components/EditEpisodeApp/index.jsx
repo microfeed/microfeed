@@ -7,9 +7,16 @@ import AudioUploaderApp from './components/AudioUploaderApp';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminTextarea from "../../../components/AdminTextarea";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
-import {datetimeLocalStringToMs, datetimeLocalToString} from "../../../../common-src/TimeUtils";
+import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src/TimeUtils";
+import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 
 const SUBMIT_STATUS__START = 1;
+
+function initEpisode() {
+  return ({
+    pubDateMs: datetimeLocalToMs(new Date()),
+  });
+}
 
 export default class EditEpisodeApp extends React.Component {
   constructor(props) {
@@ -24,9 +31,10 @@ export default class EditEpisodeApp extends React.Component {
     const episodeId = $feedContent.getAttribute('data-episode-id');
     const action = episodeId ? 'edit' : 'create';
     const feed = JSON.parse($feedContent.innerHTML);
-    const episode = feed.episodes[episodeId] || {
-      pubDateMs: datetimeLocalToString(new Date()),
-    };
+    if (!feed.episodes) {
+      feed.episodes = {};
+    }
+    const episode = feed.episodes[episodeId] || initEpisode();
     this.state = {
       feed,
       episode,
@@ -132,7 +140,7 @@ export default class EditEpisodeApp extends React.Component {
                   />
                   <AdminInput
                     label="Link"
-                    value={episode.link || PUBLIC_URLS.pageEpisode(episodeId, episode.title)}
+                    value={episode.link || PUBLIC_URLS.pageEpisode(episodeId, episode.title, getPublicBaseUrl())}
                     onChange={(e) => this.onUpdateEpisodeMeta({'link': e.target.value})}
                   />
                 </div>

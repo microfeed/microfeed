@@ -3,9 +3,21 @@ import Requests from '../../../common/requests';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminImageUploaderApp from '../../../components/AdminImageUploaderApp';
 import AdminInput from "../../../components/AdminInput";
+import AdminRadio from "../../../components/AdminRadio";
 import AdminTextarea from "../../../components/AdminTextarea";
+import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
+import {PUBLIC_URLS} from '../../../../common-src/StringUtils';
 
 const SUBMIT_STATUS__START = 1;
+
+function initPodcast() {
+  return {
+    link: getPublicBaseUrl(),
+    language: 'en-us',
+    explicit: false,
+    category: [],
+  };
+}
 
 export default class EditPodcastApp extends React.Component {
   constructor(props) {
@@ -13,41 +25,56 @@ export default class EditPodcastApp extends React.Component {
 
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdatePodcastMeta = this.onUpdatePodcastMeta.bind(this);
+    this.onUpdatePodcastMetaToFeed = this.onUpdatePodcastMetaToFeed.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
 
     const feed = JSON.parse(document.getElementById('feed-content').innerHTML);
-
+    const podcast = feed.podcast || initPodcast();
     this.state = {
       feed,
+      podcast,
       submitStatus: null,
     }
   }
 
-  onUpdateFeed(props) {
+  onUpdateFeed(props, onSucceed) {
     this.setState(prevState => ({
       feed: {
-        ...prevState.feed,
-        ...props,
+        podcast: {
+          ...prevState.podcast,
+          ...props,
+        },
       },
-    }))
+    }), () => onSucceed())
   }
 
   onUpdatePodcastMeta(keyName, value) {
-    this.onUpdateFeed({[keyName]: value});
+    this.setState((prevState) => ({
+      podcast: {
+        ...prevState.podcast,
+        [keyName]: value,
+      }
+    }));
+  }
+
+  onUpdatePodcastMetaToFeed(onSucceed) {
+    this.onUpdateFeed(this.state.podcast, onSucceed);
   }
 
   onSubmit(e) {
     e.preventDefault();
-    const {feed} = this.state;
-    this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.post('/admin/ajax/feed/', feed)
-      .then(() => {
-        this.setState({submitStatus: null});
-      });
+    this.onUpdatePodcastMetaToFeed(() => {
+      const {feed} = this.state;
+      this.setState({submitStatus: SUBMIT_STATUS__START});
+      Requests.post('/admin/ajax/feed/', feed)
+        .then(() => {
+          this.setState({submitStatus: null});
+        });
+    });
   }
 
   render() {
-    const {feed, submitStatus} = this.state;
+    const {feed, submitStatus, podcast} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp>
       <form className="grid grid-cols-12 gap-4">
@@ -56,51 +83,59 @@ export default class EditPodcastApp extends React.Component {
             <div className="flex-none">
               <AdminImageUploaderApp
                 mediaType="pod"
-                currentImageUrl={feed.image}
+                currentImageUrl={podcast.image}
                 onImageUploaded={(cdnUrl) => this.onUpdatePodcastMeta('image', cdnUrl)}
               />
             </div>
             <div className="flex-1 ml-8 grid grid-cols-1 gap-3">
               <AdminInput
                 label="Podcast title"
-                value={feed.title}
+                value={podcast.title}
                 onChange={(e) => this.onUpdatePodcastMeta('title', e.target.value)}
               />
               <div className="grid grid-cols-2 gap-4">
                 <AdminInput
                   label="Publisher"
-                  value={feed.publisher}
+                  value={podcast.publisher}
                   onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
                 />
                 <AdminInput
                   label="Website"
-                  value={feed.publisher}
-                  onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                  value={podcast.link}
+                  onChange={(e) => this.onUpdatePodcastMeta('link', e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <AdminInput
                   label="Category"
-                  value=""
-                  onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                  value={podcast.category.join(',')}
+                  onChange={(e) => this.onUpdatePodcastMeta('category', e.target.value.split(','))}
                 />
                 <AdminInput
                   label="Language"
-                  value=""
-                  onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                  value={podcast.language}
+                  onChange={(e) => this.onUpdatePodcastMeta('language', e.target.value)}
                 />
-                <AdminInput
+                <AdminRadio
                   label="Explicit"
-                  value=""
-                  onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                  groupName="lh-explicit"
+                  buttons={[{
+                   'name': 'Yes',
+                   'checked': podcast.explicit,
+                  }, {
+                    'name': 'No',
+                   'checked': !podcast.explicit,
+                  }]}
+                  value={podcast.explicit}
+                  onChange={(e) => this.onUpdatePodcastMeta('explicit', e.target.value === 'Yes')}
                 />
               </div>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t">
             <AdminTextarea
-              label="Episode description"
-              value={feed.description}
+              label="Podcast description"
+              value={podcast.description}
               onChange={(e) => this.onUpdatePodcastMeta('description', e.target.value)}
             />
           </div>
@@ -158,6 +193,11 @@ export default class EditPodcastApp extends React.Component {
             >
               {submitting ? 'Updating...' : 'Update'}
             </button>
+          </div>
+          <div className="text-center lh-page-card mt-4">
+            <a className="mr-2" href="/" target="_blank">Web</a>
+            <a className="mr-2" href={PUBLIC_URLS.feedRss()} target="_blank">RSS</a>
+            <a href={PUBLIC_URLS.feedJson()} target="_blank">JSON</a>
           </div>
         </div>
       </form>

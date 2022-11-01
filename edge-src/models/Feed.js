@@ -11,8 +11,6 @@ export default class Feed {
 
   initFeed() {
     return {
-      episodes: {
-      },
     };
   }
 
@@ -28,15 +26,20 @@ export default class Feed {
 
   async getContentPublic() {
     const content = await this.getContent();
-    const publicContent = {};
-
-    publicContent.title = content.title;
-    publicContent.description = content.description;
-    publicContent.image = content.image;
-    publicContent.publisher = content.publisher;
-
-    publicContent.episodes = [];
-
+    const publicContent = {
+      podcast: {...content.podcast},
+      episodes: [],
+    };
+    const settings = content.settings || {};
+    const {trackingUrls} = settings;
+    Object.keys(content.episodes).forEach((episodeId) => {
+      const eps = content.episodes[episodeId];
+      publicContent.episodes.push({
+        ...eps,
+        id: episodeId,
+      });
+    })
+    publicContent.episodes.sort((a, b) => b.pubDateMs - a.pubDateMs);
     return publicContent;
   }
 
