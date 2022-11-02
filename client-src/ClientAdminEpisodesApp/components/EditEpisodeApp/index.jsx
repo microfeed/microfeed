@@ -43,6 +43,7 @@ export default class EditEpisodeApp extends React.Component {
       submitStatus: null,
       episodeId: episodeId || randomShortUUID(),
       action,
+      userChangedLink: false,
     };
   }
 
@@ -58,8 +59,8 @@ export default class EditEpisodeApp extends React.Component {
     }), () => onSuccess())
   }
 
-  onUpdateEpisodeMeta(attrDict) {
-    this.setState(prevState => ({episode: {...prevState.episode, ...attrDict}}));
+  onUpdateEpisodeMeta(attrDict, extraDict) {
+    this.setState(prevState => ({episode: {...prevState.episode, ...attrDict,}, ...extraDict}));
   }
 
   onUpdateEpisodeToFeed(onSuccess) {
@@ -130,7 +131,13 @@ export default class EditEpisodeApp extends React.Component {
                 <AdminInput
                   label="Episode title"
                   value={episode.title}
-                  onChange={(e) => this.onUpdateEpisodeMeta({'title': e.target.value})}
+                  onChange={(e) => {
+                    const attrDict = {'title': e.target.value};
+                    if (action !== 'edit' && !this.state.userChangedLink) {
+                      attrDict.link = PUBLIC_URLS.pageEpisode(episodeId, episode.title, getPublicBaseUrl());
+                    }
+                    this.onUpdateEpisodeMeta(attrDict);
+                  }}
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <AdminDatetimePicker
@@ -142,8 +149,8 @@ export default class EditEpisodeApp extends React.Component {
                   />
                   <AdminInput
                     label="Link"
-                    value={episode.link || PUBLIC_URLS.pageEpisode(episodeId, episode.title, getPublicBaseUrl())}
-                    onChange={(e) => this.onUpdateEpisodeMeta({'link': e.target.value})}
+                    value={episode.link}
+                    onChange={(e) => this.onUpdateEpisodeMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
