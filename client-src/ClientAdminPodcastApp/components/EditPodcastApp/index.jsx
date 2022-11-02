@@ -44,6 +44,7 @@ export default class EditPodcastApp extends React.Component {
           ...prevState.podcast,
           ...props,
         },
+        ...prevState.feed,
       },
     }), () => onSucceed())
   }
@@ -54,7 +55,6 @@ export default class EditPodcastApp extends React.Component {
         ...prevState.podcast,
         [keyName]: value,
       },
-      ...prevState.feed,
     }));
   }
 
