@@ -5,12 +5,13 @@ export default class Feed {
     const {LISTEN_HOST_VERSION, LH_DATABASE} = env;
     this.KEY = `${projectPrefix(env)}/database/${LISTEN_HOST_VERSION}-feed.json`;
     this.LH_DB = LH_DATABASE;
-
+    this.LISTEN_HOST_VERSION = LISTEN_HOST_VERSION;
     this.content = null;
   }
 
   initFeed() {
     return {
+      version: this.LISTEN_HOST_VERSION,
     };
   }
 
@@ -27,6 +28,7 @@ export default class Feed {
   async getContentPublic() {
     const content = await this.getContent();
     const publicContent = {
+      version: content.version,
       podcast: {...content.podcast},
       episodes: [],
     };
@@ -45,6 +47,7 @@ export default class Feed {
   }
 
   async putContent(contentDict) {
+    contentDict.version = this.LISTEN_HOST_VERSION;
     await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {
       'Content-Type': 'application/json; charset=UTF-8',
       });

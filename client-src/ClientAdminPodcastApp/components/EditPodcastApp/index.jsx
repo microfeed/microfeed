@@ -7,6 +7,7 @@ import AdminRadio from "../../../components/AdminRadio";
 import AdminTextarea from "../../../components/AdminTextarea";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import {PUBLIC_URLS} from '../../../../common-src/StringUtils';
+import {showToast} from "../../../common/ToastUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -69,7 +70,14 @@ export default class EditPodcastApp extends React.Component {
       this.setState({submitStatus: SUBMIT_STATUS__START});
       Requests.post('/admin/ajax/feed/', feed)
         .then(() => {
-          this.setState({submitStatus: null});
+          this.setState({submitStatus: null}, () => {
+            showToast('Updated!', 'success');
+          });
+        })
+        .catch(() => {
+          this.setState({submitStatus: null}, () => {
+            showToast('Failed to update. Please try again.', 'error');
+          });
         });
     });
   }

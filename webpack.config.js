@@ -116,9 +116,18 @@ module.exports = {
         }],
       },
       {
-        test: /\.css$/,
+        test: /.*styles\.css$/,
         use: [
           MiniCssExtractPlugin.loader,
+          { loader: 'css-loader', options: { url: false } },
+          'postcss-loader',
+        ],
+      },
+      {
+        test: /\.css$/,
+        exclude: /.*styles\.css$/,
+        use: [
+          { loader: 'style-loader' },
           { loader: 'css-loader', options: { url: false } },
           'postcss-loader',
         ],

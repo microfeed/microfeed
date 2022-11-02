@@ -1,5 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function NavItem({url, title, navId, currentId}) {
   return (
@@ -50,6 +52,9 @@ export default class AdminNavApp extends React.Component {
           {this.props.children}
         </div>
       </div>
+      <ToastContainer
+        newestOnTop
+      />
     </div>);
   }
 }

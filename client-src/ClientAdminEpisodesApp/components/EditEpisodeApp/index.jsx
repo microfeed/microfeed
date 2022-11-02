@@ -10,6 +10,7 @@ import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src/TimeUtils";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import AdminRadio from "../../../components/AdminRadio";
+import {showToast} from "../../../common/ToastUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -75,15 +76,24 @@ export default class EditEpisodeApp extends React.Component {
   onSubmit(e) {
     e.preventDefault();
     this.onUpdateEpisodeToFeed(() => {
-      const {feed, episodeId} = this.state;
+      const {feed, episodeId, action} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
       Requests.post(ADMIN_URLS.ajaxFeed(), feed)
         .then(() => {
-          this.setState({submitStatus: null}, () => {
-            if (episodeId) {
-              location.href = ADMIN_URLS.pageEditEpisode(episodeId);
-            }
-          });
+          if (action === 'edit') {
+            this.setState({submitStatus: null}, () => {
+              showToast('Updated!', 'success');
+            });
+          } else {
+            showToast('Created!', 'success');
+            setTimeout(() => {
+              this.setState({submitStatus: null}, () => {
+                if (episodeId) {
+                  location.href = ADMIN_URLS.pageEditEpisode(episodeId);
+                }
+              });
+            }, 3000);
+          }
         });
     });
   }
@@ -93,9 +103,11 @@ export default class EditEpisodeApp extends React.Component {
     const submitting = submitStatus === SUBMIT_STATUS__START;
 
     let buttonText = 'Create';
+    let submittingButtonText = 'Creating...';
     let currentPage = 'new_episode';
     if (action === 'edit') {
       buttonText = 'Update';
+      submittingButtonText = 'Updating...';
       currentPage = 'all_episodes';
     }
     return (<AdminNavApp currentPage={currentPage}>
@@ -216,14 +228,14 @@ export default class EditEpisodeApp extends React.Component {
           </div>
         </div>
         <div className="col-span-3">
-          <div className="lh-page-card">
+          <div className="lh-page-card text-center">
             <button
               type="submit"
               className="lh-btn lh-btn-brand-dark lh-btn-lg"
               onClick={this.onSubmit}
               disabled={submitting}
             >
-              {submitting ? '...' : buttonText}
+              {submitting ? submittingButtonText : buttonText}
             </button>
           </div>
         </div>
