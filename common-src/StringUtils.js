@@ -21,10 +21,30 @@ export function humanFileSize(size) {
     return (size / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
 }
 
-export function buildAudioUrlWithTracking(audioUrl, trackingUrls) {
-  const finalUrl = '';
-  // const urlObj = new URL();
-  return finalUrl;
+export function buildAudioUrlWithTracking(audioUrl, trackingUrls, protocal='https') {
+  if (!audioUrl) {
+    return '';
+  }
+  if (!trackingUrls || trackingUrls.length === 0) {
+    return audioUrl;
+  }
+
+  try {
+    const protocalRegex = /^https?:\/\//;
+    const audioUrlNoProtocal = audioUrl.replace(protocalRegex, '');
+    const trackingUrlsNoProtocal = trackingUrls.map(u => u.replace(protocalRegex, ''));
+
+    let finalUrl = `${protocal}://${trackingUrlsNoProtocal[0]}`;
+    trackingUrlsNoProtocal.shift();
+    trackingUrlsNoProtocal.forEach((u) => {
+      const obj = new URL(u, finalUrl);
+      finalUrl = obj.href;
+    });
+    const finalUrlObj = new URL(audioUrlNoProtocal, finalUrl);
+    return finalUrlObj.href;
+  } catch(e) {
+    return audioUrl;
+  }
 }
 
 /**

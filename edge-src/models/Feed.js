@@ -1,4 +1,5 @@
 import {projectPrefix} from "../../common-src/R2Utils";
+import {buildAudioUrlWithTracking} from "../../common-src/StringUtils";
 
 export default class Feed {
   constructor(env) {
@@ -32,14 +33,15 @@ export default class Feed {
       podcast: {...content.podcast},
       episodes: [],
     };
-    // const settings = content.settings || {};
-    // const {trackingUrls} = settings;
+    const settings = content.settings || {};
+    const trackingUrls = settings.trackingUrls || [];
     const existingEpisodes = content.episodes || {};
     Object.keys(existingEpisodes).forEach((episodeId) => {
       const eps = existingEpisodes[episodeId];
       publicContent.episodes.push({
         ...eps,
         id: episodeId,
+        audio: buildAudioUrlWithTracking(eps.audio, trackingUrls),
       });
     })
     publicContent.episodes.sort((a, b) => b.pubDateMs - a.pubDateMs);
