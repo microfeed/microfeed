@@ -53,7 +53,8 @@ export default class EditPodcastApp extends React.Component {
       podcast: {
         ...prevState.podcast,
         [keyName]: value,
-      }
+      },
+      ...prevState.feed,
     }));
   }
 
