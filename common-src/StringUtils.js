@@ -63,10 +63,10 @@ export const ADMIN_URLS = {
  */
 export const PUBLIC_URLS = {
   feedRss: (baseUrl='') => {
-    return `${baseUrl}/feed/rss/`;
+    return `${baseUrl}/rss/`;
   },
   feedJson: (baseUrl='') => {
-    return `${baseUrl}/feed/json/`;
+    return `${baseUrl}/json/`;
   },
   pageEpisode: (episodeId, episodeTitle, baseUrl='') => {
     if (!episodeTitle) {

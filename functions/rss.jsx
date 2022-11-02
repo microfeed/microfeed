@@ -1,48 +1,48 @@
-import PodcastData from "../edge-src/common/PodcastData";
+import Feed from "../edge-src/models/Feed";
 
 const { XMLBuilder } = require('fast-xml-parser');
 
-export async function onRequestGet({request}) {
-  const podcastData = new PodcastData();
-  const jsonData = await podcastData.getData();
+export async function onRequestGet({request, env}) {
+  const feed = new Feed(env);
+  const jsonData = await feed.getContentPublic();
 
   const items = [];
-  jsonData.items.forEach((item) => {
+  jsonData.episodes.forEach((item) => {
     items.push({
-      'title': item.data.title,
+      'title': item.title,
       'description': {
-        '@cdata': item.data.description,
+        '@cdata': item.description,
       },
       'itunes:summary': {
-        '@cdata': item.data.description,
+        '@cdata': item.description,
       },
-      'itunes:duration': item.data.audio_length_sec,
-      'guid': item.data.listennotes_url,
-      'pubDate': item.data.pub_date_ms,
+      'itunes:duration': item.audioDurationSecond,
+      'guid': item.guid,
+      'pubDate': item.pubDateMs,
       'enclosure': {
-        '@_url': item.data.audio,
-        '@_type': 'audio/mpeg',
+        '@_url': item.audio,
+        '@_type': item.audioFileType,
       },
     });
   });
 
   const input = {
     "channel": {
-      'title': jsonData.name,
+      'title': jsonData.podcast.title,
       'atom:link': {
         '@_rel': 'self',
         '@_href': request.url,
         '@_type': 'application/rss+xml',
       },
-      'link': jsonData.listennotes_url,
-      'itunes:author': jsonData.creator,
+      'link': jsonData.podcast.link,
+      'itunes:author': jsonData.podcast.publisher,
       'image': {
-        'title': jsonData.name,
-        'url': jsonData.image,
-        'link': jsonData.listennotes_url,
+        'title': jsonData.podcast.title,
+        'url': jsonData.podcast.image,
+        'link': jsonData.podcast.link,
       },
       'description': {
-        '@cdata': jsonData.description,
+        '@cdata': jsonData.podcast.description,
       },
       'item': items,
     }

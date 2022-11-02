@@ -1,4 +1,5 @@
 import React from 'react';
+import {PUBLIC_URLS} from "../../../../common-src/StringUtils";
 
 function SubscribeButton({brand, logoStyle, url}) {
   return (<a href={url} className="hover:opacity-50 mr-2 md:mr-4 mb-2">
@@ -20,8 +21,8 @@ export default function SubscribeSection({jsonData}) {
     <div className="flex flex-wrap">
       <SubscribeButton brand="apple" logoStyle="w-3.5"/>
       <SubscribeButton brand="spotify" logoStyle="w-4"/>
-      <SubscribeButton brand="rss" logoStyle="w-4" url="/rss"/>
-      <SubscribeButton brand="json" logoStyle="w-4" url="/json"/>
+      <SubscribeButton brand="rss" logoStyle="w-4" url={PUBLIC_URLS.feedRss()}/>
+      <SubscribeButton brand="json" logoStyle="w-4" url={PUBLIC_URLS.feedJson()}/>
     </div>
   </div>);
 }

@@ -6,7 +6,7 @@ export default function HeaderSection({ feed, episode }){
   return (<div>
     <div className="mb-4">
       <a href="/">
-        <div className="lh-icon-arrow-left">{feed.title}</div>
+        <div className="lh-icon-arrow-left">{feed.podcast.title}</div>
       </a>
     </div>
     <div>
