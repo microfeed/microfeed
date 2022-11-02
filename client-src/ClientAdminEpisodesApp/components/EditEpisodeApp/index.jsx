@@ -9,12 +9,14 @@ import AdminTextarea from "../../../components/AdminTextarea";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src/TimeUtils";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
+import AdminRadio from "../../../components/AdminRadio";
 
 const SUBMIT_STATUS__START = 1;
 
 function initEpisode() {
   return ({
     pubDateMs: datetimeLocalToMs(new Date()),
+    explicit: false,
   });
 }
 
@@ -145,10 +147,18 @@ export default class EditEpisodeApp extends React.Component {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <AdminInput
+                  <AdminRadio
                     label="Explicit"
-                    value={episode.link}
-                    onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
+                    groupName="lh-explicit"
+                    buttons={[{
+                      'name': 'Yes',
+                      'checked': episode.explicit,
+                    }, {
+                      'name': 'No',
+                      'checked': !episode.explicit,
+                    }]}
+                    value={episode.explicit}
+                    onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value === 'Yes'})}
                   />
                 </div>
               </div>
@@ -164,34 +174,34 @@ export default class EditEpisodeApp extends React.Component {
               <div className="grid grid-cols-3 gap-4">
                 <AdminInput
                   label="<itunes:episodeType>"
-                  value={episode.link}
+                  value=""
                   onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:season>"
-                  value={episode.link}
+                  value=""
                   onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:episode>"
-                  value={episode.link}
+                  value=""
                   onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <AdminInput
                   label="<itunes:block>"
-                  value={episode.link}
+                  value=""
                   onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<guid>"
-                  value={episode.link}
+                  value=""
                   onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:title>"
-                  value={episode.link}
+                  value=""
                   onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value})}
                 />
               </div>
