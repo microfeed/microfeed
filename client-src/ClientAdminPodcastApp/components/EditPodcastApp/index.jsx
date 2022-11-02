@@ -40,11 +40,11 @@ export default class EditPodcastApp extends React.Component {
   onUpdateFeed(props, onSucceed) {
     this.setState(prevState => ({
       feed: {
+        ...prevState.feed,
         podcast: {
           ...prevState.podcast,
           ...props,
         },
-        ...prevState.feed,
       },
     }), () => onSucceed())
   }
