@@ -30,10 +30,11 @@ export default class Feed {
       podcast: {...content.podcast},
       episodes: [],
     };
-    const settings = content.settings || {};
-    const {trackingUrls} = settings;
-    Object.keys(content.episodes).forEach((episodeId) => {
-      const eps = content.episodes[episodeId];
+    // const settings = content.settings || {};
+    // const {trackingUrls} = settings;
+    const existingEpisodes = content.episodes || {};
+    Object.keys(existingEpisodes).forEach((episodeId) => {
+      const eps = existingEpisodes[episodeId];
       publicContent.episodes.push({
         ...eps,
         id: episodeId,
