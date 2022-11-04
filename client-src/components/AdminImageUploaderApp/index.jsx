@@ -1,8 +1,9 @@
 import React from 'react';
 import clsx from 'clsx';
 import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.min.css';
 import {FileUploader} from "react-drag-drop-files";
-// import Requests from '../../common/requests';
+import Requests from '../../common/requests';
 import {randomHex} from '../../../common-src/StringUtils';
 import LhDialog from "../LhDialog";
 
@@ -19,16 +20,16 @@ function EmptyImage({fileTypes}) {
   </div>);
 }
 
-function PreviewImage({url, progressText}) {
+function PreviewImage({url}) {
   return (<div className="relative flex justify-center">
     <img
       src={url}
       className={clsx('lh-upload-image-size object-cover', 'gradient-mask-b-20')}
     />
     <div className="absolute bottom-4 text-sm font-normal text-brand-light">
-      {progressText ? <em>uploading: {progressText}</em> : <em>
-        click or drag here to change image
-      </em>}
+      <em>
+        Click or drag here to change image
+      </em>
     </div>
   </div>);
 }
@@ -48,14 +49,18 @@ export default class AdminImageUploaderApp extends React.Component {
 
     this.onFileUploadClick = this.onFileUploadClick.bind(this);
     this.onFileUpload = this.onFileUpload.bind(this);
+    this.onFileUploadToR2 = this.onFileUploadToR2.bind(this);
 
     this.state = {
-      previewImageUrl: null,
       currentImageUrl: props.currentImageUrl || null,
       uploadStatus: null,
-      progressText: null,
+      progressText: '0.00%',
       mediaType: props.mediaType || 'pod',
+
       showModal: false,
+      previewImageUrl: null,
+      cropper: null,
+      cdnFilename: null,
     };
   }
 
@@ -75,7 +80,7 @@ export default class AdminImageUploaderApp extends React.Component {
     this.inputFile.click();
   }
 
-  async onFileUpload(file) {
+  onFileUpload(file) {
     const {mediaType} = this.state;
     if (!file) {
       return;
@@ -87,8 +92,6 @@ export default class AdminImageUploaderApp extends React.Component {
       return;
     }
 
-    // this.setState({ uploadStatus: UPLOAD_STATUS__START });
-
     const {name} = file;
     const extension = name.slice((name.lastIndexOf(".") - 1 >>> 0) + 2);
     let newFilename = `${mediaType}-${randomHex(32)}`;
@@ -99,17 +102,34 @@ export default class AdminImageUploaderApp extends React.Component {
     this.setState({
       previewImageUrl: previewUrl,
       showModal: true,
+      cdnFilename: `images/${newFilename}`,
     })
-    // this.setState({currentImageUrl: previewUrl});
-    const cdnFilename = `images/${newFilename}`;
-    console.log(cdnFilename);
-    // Requests.upload(file, cdnFilename, (percentage) => {
-    //   this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
-    // }, (cdnUrl) => {
-    //   console.log(cdnUrl);
-    //   this.props.onImageUploaded(cdnUrl);
-    //   this.setState({currentImageUrl: cdnUrl, progressText: null, uploadStatus: null});
-    // });
+  }
+
+  onFileUploadToR2() {
+    const {cropper, cdnFilename} = this.state;
+    if (!cropper) {
+      return;
+    }
+    this.setState({ uploadStatus: UPLOAD_STATUS__START });
+    cropper.getCroppedCanvas().toBlob((blob) => {
+      cropper.disable();
+
+      Requests.upload(blob, cdnFilename, (percentage) => {
+        this.setState({
+          progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`,
+        });
+      }, (cdnUrl) => {
+        this.props.onImageUploaded(cdnUrl);
+        this.setState({
+          currentImageUrl: cdnUrl,
+          progressText: null,
+          uploadStatus: null,
+          showModal: false,
+          previewImageUrl: null,
+        });
+      });
+    }, 'image/png');
   }
 
   render() {
@@ -125,7 +145,7 @@ export default class AdminImageUploaderApp extends React.Component {
         classes="lh-upload-fileinput"
       >
         <div className="lh-upload-image-size lh-upload-box">
-          {currentImageUrl ? <PreviewImage url={currentImageUrl} progressText={progressText}/> :
+          {currentImageUrl ? <PreviewImage url={currentImageUrl}/> :
             <EmptyImage fileTypes={fileTypes} />}
         </div>
       </FileUploader>
@@ -135,27 +155,32 @@ export default class AdminImageUploaderApp extends React.Component {
       <LhDialog
         isOpen={showModal}
         setIsOpen={(trueOrFalse) => this.setState({showModal: trueOrFalse})}
+        disabledClose={uploading}
       >
-        {previewImageUrl && <img
-          src={previewImageUrl}
-          className="w-full h-full"
-          onLoad={(e) => {
-            const cropper = new Cropper(e.target, {
-              aspectRatio: 1.0,
-              crop(event) {
-                console.log(event.detail);
-                console.log(event.detail.y);
-                console.log(event.detail.width);
-                console.log(event.detail.height);
-                console.log(event.detail.rotate);
-                console.log(event.detail.scaleX);
-                console.log(event.detail.scaleY);
-              },
-            });
-            console.log(cropper);
-            console.log(cropper.getCropperImage());
-          }}
-        />}
+        {previewImageUrl && <div>
+          <img
+            className="w-full"
+            src={previewImageUrl}
+            onLoad={(e) => {
+              const {clientWidth, clientHeight} = e.target;
+              const size = Math.min(clientWidth, clientHeight);
+              const cropper = new Cropper(e.target, {
+                aspectRatio: 1.0,
+                viewMode: 3,
+                minCropBoxHeight: size,
+                minCropBoxWidth: size,
+                cropBoxResizable: false,
+                crop() {},
+              });
+              this.setState({cropper});
+            }}
+          />
+        </div>}
+        <div className="mt-4 flex justify-center">
+          <button className="lh-btn lh-btn-brand-dark" onClick={this.onFileUploadToR2} disabled={uploading}>
+            {uploading ? `Uploading... ${progressText}` : 'Upload'}
+          </button>
+        </div>
       </LhDialog>
     </div>);
   }
