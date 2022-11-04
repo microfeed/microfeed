@@ -51,16 +51,20 @@ export default class AdminImageUploaderApp extends React.Component {
     this.onFileUpload = this.onFileUpload.bind(this);
     this.onFileUploadToR2 = this.onFileUploadToR2.bind(this);
 
-    this.state = {
+    this.initState = {
       currentImageUrl: props.currentImageUrl || null,
+      mediaType: props.mediaType || 'pod',
       uploadStatus: null,
       progressText: '0.00%',
-      mediaType: props.mediaType || 'pod',
 
       showModal: false,
       previewImageUrl: null,
       cropper: null,
       cdnFilename: null,
+    };
+
+    this.state = {
+      ...this.initState,
     };
   }
 
@@ -121,12 +125,10 @@ export default class AdminImageUploaderApp extends React.Component {
         });
       }, (cdnUrl) => {
         this.props.onImageUploaded(cdnUrl);
+        cropper.destroy();
         this.setState({
+          ...this.initState,
           currentImageUrl: cdnUrl,
-          progressText: null,
-          uploadStatus: null,
-          showModal: false,
-          previewImageUrl: null,
         });
       });
     }, 'image/png');
@@ -164,20 +166,27 @@ export default class AdminImageUploaderApp extends React.Component {
             onLoad={(e) => {
               const {clientWidth, clientHeight} = e.target;
               const size = Math.min(clientWidth, clientHeight);
-              const cropper = new Cropper(e.target, {
+              const options = {
                 aspectRatio: 1.0,
                 viewMode: 3,
-                minCropBoxHeight: size,
-                minCropBoxWidth: size,
-                cropBoxResizable: false,
-                crop() {},
-              });
+                cropBoxResizable: true,
+              };
+              if (clientWidth === clientHeight) {
+                options.minCropBoxHeight = size;
+                options.minCropBoxWidth = size;
+                options.cropBoxResizable = false;
+              }
+              const cropper = new Cropper(e.target, options);
               this.setState({cropper});
             }}
           />
         </div>}
         <div className="mt-4 flex justify-center">
-          <button className="lh-btn lh-btn-brand-dark" onClick={this.onFileUploadToR2} disabled={uploading}>
+          <button
+            className="lh-btn lh-btn-brand-dark"
+            onClick={this.onFileUploadToR2}
+            disabled={uploading}
+          >
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>
         </div>
