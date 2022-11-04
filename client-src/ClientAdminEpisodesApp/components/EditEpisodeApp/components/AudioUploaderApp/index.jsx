@@ -5,12 +5,12 @@ import {randomHex, humanFileSize} from '../../../../../../common-src/StringUtils
 
 const UPLOAD_STATUS__START = 1;
 
-function PreviewCurrentAudio({audio, audioFileType, audioFileSizeByte}) {
+function PreviewCurrentAudio({audio, audioFileType, audioFileSizeByte, setRef}) {
   return (<div className="mb-8">
       <div className="lh-page-subtitle">Current audio</div>
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-1">
-          <audio controls preload="metadata">
+          <audio controls preload="metadata" ref={setRef}>
             <source src={audio} type={audioFileType}/>
             Your browser does not support the audio element.
           </audio>
@@ -44,7 +44,7 @@ export default class AudioUploaderApp extends React.Component {
       audioFileSizeByte: props.audioFileSizeByte || 0,
 
       uploadStatus: null,
-      progressText: null,
+      progressText: '0.00%',
     };
   }
 
@@ -60,6 +60,7 @@ export default class AudioUploaderApp extends React.Component {
       newFilename += `.${extension}`;
     }
     const cdnFilename = `media/${newFilename}`;
+    // console.log(cdnFilename, size, type);
     Requests.upload(file, cdnFilename, (percentage) => {
       this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
     }, (cdnUrl, arrayBuffer) => {
@@ -75,13 +76,17 @@ export default class AudioUploaderApp extends React.Component {
           audioFileSizeByte: size,
         }, () => {
           this.props.onUploaded(cdnUrl, duration, size, type);
+          if (this.audioRef) {
+            this.audioRef.pause();
+            this.audioRef.load();
+          }
         });
       });
     });
   }
 
   render() {
-    const fileTypes = ['MP3', 'M4A'];
+    const fileTypes = ['MP3'];
     const {uploadStatus, progressText, audio, audioFileType, audioFileSizeByte} = this.state;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (<div>
@@ -92,19 +97,22 @@ export default class AudioUploaderApp extends React.Component {
         audio={audio}
         audioFileType={audioFileType}
         audioFileSizeByte={audioFileSizeByte}
+        setRef={(ref) => this.audioRef = ref}
       />}
       {audio && <div className="border-t pt-2 mb-2" />}
-      <div className="">
+      <div className="lh-upload-wrapper">
         <div className="lh-page-subtitle">Upload a new audio file</div>
         <FileUploader
           handleChange={this.onFileUpload}
           name="audioUploader"
           types={fileTypes}
           disabled={uploading}
+          classes="lh-upload-fileinput"
         >
-          <div className="w-full lh-upload-box p-4">
-            {uploading ? <div className="">
-              {progressText}
+          <div className="w-full h-24 lh-upload-box p-4 flex items-center justify-center">
+            {uploading ? <div className="text-helper-color">
+              <div className="font-semibold">Uploading...</div>
+              <div className="text-sm">{progressText}</div>
             </div> : <div className="text-brand-light">
               <div className="font-semibold">Click to upload or Drag and drop</div>
               <div className="text-sm">{fileTypes.join(',')}</div>
