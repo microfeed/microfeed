@@ -107,12 +107,13 @@ export default class AdminImageUploaderApp extends React.Component {
     const {uploadStatus, currentImageUrl, progressText} = this.state;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
-    return (<div className="">
+    return (<div className="lh-upload-wrapper">
       <FileUploader
         handleChange={this.onFileUpload}
         name="imageUploader"
         types={fileTypes}
         disabled={uploading}
+        classes="lh-upload-fileinput"
       >
         <div className="lh-upload-image-size lh-upload-box">
           {currentImageUrl ? <PreviewImage url={currentImageUrl} progressText={progressText}/> :

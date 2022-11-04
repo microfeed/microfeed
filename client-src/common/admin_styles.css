@@ -59,3 +59,7 @@ a {
 .lh-upload-box {
   @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50;
 }
+
+.lh-upload-wrapper .lh-upload-fileinput.is-disabled {
+  @apply border-0;
+}
