@@ -61,6 +61,8 @@ export default class AdminImageUploaderApp extends React.Component {
       previewImageUrl: null,
       cropper: null,
       cdnFilename: null,
+      imageWidth: 0,
+      imageHeight: 0,
     };
 
     this.state = {
@@ -135,9 +137,10 @@ export default class AdminImageUploaderApp extends React.Component {
   }
 
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth, imageHeight} = this.state;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
+    const sizeTooSmall = imageWidth < 1400 || imageHeight < 1400;
     return (<div className="lh-upload-wrapper">
       <FileUploader
         handleChange={this.onFileUpload}
@@ -170,6 +173,10 @@ export default class AdminImageUploaderApp extends React.Component {
                 aspectRatio: 1.0,
                 viewMode: 3,
                 cropBoxResizable: true,
+                crop: (event) => {
+                  const {width, height} = event.detail;
+                  this.setState({imageWidth: width, imageHeight: height});
+                },
               };
               if (clientWidth === clientHeight) {
                 options.minCropBoxHeight = size;
@@ -185,11 +192,15 @@ export default class AdminImageUploaderApp extends React.Component {
           <button
             className="lh-btn lh-btn-brand-dark"
             onClick={this.onFileUploadToR2}
-            disabled={uploading}
+            disabled={uploading || sizeTooSmall}
           >
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>
         </div>
+        {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", sizeTooSmall ? 'text-red-500' : 'text-green-500')}>
+          {sizeTooSmall ? <div>Image too small: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels. Please make sure the image has 1400 x 1400 to 3000 x 3000 pixels.</div> :
+            <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
+        </div>}
       </LhDialog>
     </div>);
   }
