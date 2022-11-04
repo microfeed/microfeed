@@ -1,8 +1,10 @@
 import React from 'react';
 import clsx from 'clsx';
+import Cropper from 'cropperjs';
 import {FileUploader} from "react-drag-drop-files";
-import Requests from '../../common/requests';
+// import Requests from '../../common/requests';
 import {randomHex} from '../../../common-src/StringUtils';
+import LhDialog from "../LhDialog";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -48,10 +50,12 @@ export default class AdminImageUploaderApp extends React.Component {
     this.onFileUpload = this.onFileUpload.bind(this);
 
     this.state = {
+      previewImageUrl: null,
       currentImageUrl: props.currentImageUrl || null,
       uploadStatus: null,
       progressText: null,
       mediaType: props.mediaType || 'pod',
+      showModal: false,
     };
   }
 
@@ -83,7 +87,7 @@ export default class AdminImageUploaderApp extends React.Component {
       return;
     }
 
-    this.setState({ uploadStatus: UPLOAD_STATUS__START });
+    // this.setState({ uploadStatus: UPLOAD_STATUS__START });
 
     const {name} = file;
     const extension = name.slice((name.lastIndexOf(".") - 1 >>> 0) + 2);
@@ -92,19 +96,24 @@ export default class AdminImageUploaderApp extends React.Component {
       newFilename += `.${extension}`;
     }
     const previewUrl = URL.createObjectURL(file);
-    this.setState({currentImageUrl: previewUrl});
+    this.setState({
+      previewImageUrl: previewUrl,
+      showModal: true,
+    })
+    // this.setState({currentImageUrl: previewUrl});
     const cdnFilename = `images/${newFilename}`;
-    Requests.upload(file, cdnFilename, (percentage) => {
-      this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
-    }, (cdnUrl) => {
-      console.log(cdnUrl);
-      this.props.onImageUploaded(cdnUrl);
-      this.setState({currentImageUrl: cdnUrl, progressText: null, uploadStatus: null});
-    });
+    console.log(cdnFilename);
+    // Requests.upload(file, cdnFilename, (percentage) => {
+    //   this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
+    // }, (cdnUrl) => {
+    //   console.log(cdnUrl);
+    //   this.props.onImageUploaded(cdnUrl);
+    //   this.setState({currentImageUrl: cdnUrl, progressText: null, uploadStatus: null});
+    // });
   }
 
   render() {
-    const {uploadStatus, currentImageUrl, progressText} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl} = this.state;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (<div className="lh-upload-wrapper">
@@ -123,6 +132,31 @@ export default class AdminImageUploaderApp extends React.Component {
       {currentImageUrl && <div className="text-sm text-center">
         <a href={currentImageUrl} target="_blank">preview image</a>
       </div>}
+      <LhDialog
+        isOpen={showModal}
+        setIsOpen={(trueOrFalse) => this.setState({showModal: trueOrFalse})}
+      >
+        {previewImageUrl && <img
+          src={previewImageUrl}
+          className="w-full h-full"
+          onLoad={(e) => {
+            const cropper = new Cropper(e.target, {
+              aspectRatio: 1.0,
+              crop(event) {
+                console.log(event.detail);
+                console.log(event.detail.y);
+                console.log(event.detail.width);
+                console.log(event.detail.height);
+                console.log(event.detail.rotate);
+                console.log(event.detail.scaleX);
+                console.log(event.detail.scaleY);
+              },
+            });
+            console.log(cropper);
+            console.log(cropper.getCropperImage());
+          }}
+        />}
+      </LhDialog>
     </div>);
   }
 }
