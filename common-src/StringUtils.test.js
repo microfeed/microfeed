@@ -7,12 +7,21 @@ test('randomShortUUID', () => {
 
 test('buildAudioUrlWithTracking', () => {
   const audioUrl = 'https://www.audio.com/audio.mp3'
-  const trackingUrls = [
-    'http://firsturl.com',
+  let trackingUrls = [
+    'http://firsturl.com/123',
     'https://secondurl.com/abc/',
     'https://thridurl.com/aaa/bbb',
     'www.noprotocal.com/asdfsad',
   ];
-  const finalUrl = 'https://firsturl.com/secondurl.com/abc/thridurl.com/aaa/www.noprotocal.com/www.audio.com/audio.mp3';
+  const finalUrl = 'https://firsturl.com/123/secondurl.com/abc/thridurl.com/aaa/bbb/www.noprotocal.com/asdfsad/www.audio.com/audio.mp3';
   expect(buildAudioUrlWithTracking(audioUrl, trackingUrls)).toBe(finalUrl);
+
+  trackingUrls = [];
+  expect(buildAudioUrlWithTracking(audioUrl, trackingUrls)).toBe(audioUrl);
+
+  trackingUrls = ['http://firsturl.com/123/'];
+  expect(buildAudioUrlWithTracking(audioUrl, trackingUrls)).toBe("https://firsturl.com/123/www.audio.com/audio.mp3");
+
+  trackingUrls = [''];
+  expect(buildAudioUrlWithTracking(audioUrl, trackingUrls)).toBe(audioUrl);
 });
