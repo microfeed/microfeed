@@ -1,4 +1,6 @@
 import Feed from "../edge-src/models/Feed";
+import {msToUtcString} from "../common-src/TimeUtils";
+import {secondsToHHMMSS} from "../common-src/StringUtils";
 
 const { XMLBuilder } = require('fast-xml-parser');
 
@@ -9,16 +11,17 @@ export async function onRequestGet({request, env}) {
   const items = [];
   jsonData.episodes.forEach((item) => {
     items.push({
-      'title': item.title,
+      'title': item.title || 'Untitled',
       'description': {
         '@cdata': item.description,
       },
       'itunes:summary': {
         '@cdata': item.description,
       },
-      'itunes:duration': item.audioDurationSecond,
+      'link': item.link,
+      'itunes:duration': secondsToHHMMSS(item.audioDurationSecond),
       'guid': item.guid,
-      'pubDate': item.pubDateMs,
+      'pubDate': msToUtcString(item.pubDateMs),
       'enclosure': {
         '@_url': item.audio,
         '@_type': item.audioFileType,

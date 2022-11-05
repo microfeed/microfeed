@@ -7,6 +7,11 @@ export function msToDatetimeLocalString(ms) {
   return datetimeLocalToString(dt);
 }
 
+export function msToUtcString(ms) {
+  const dt = new Date(ms);
+  return dt.toUTCString();
+}
+
 export function datetimeLocalToMs(dt) {
   return dt.getTime();
 }

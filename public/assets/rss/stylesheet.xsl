@@ -124,7 +124,7 @@
               </span>
             </p>
             <p>
-              <xsl:value-of select="/rss/channel/description"/>
+              <xsl:value-of select="/rss/channel/description" disable-output-escaping="yes"/>
             </p>
             <p class="view-website-link">
               <a>
@@ -132,7 +132,7 @@
                   <xsl:value-of select="/rss/channel/link[last()]"/>
                 </xsl:attribute>
                 <xsl:attribute name="target">_blank</xsl:attribute>
-                View on listennotes.com &#x2192;
+                Podcast website &#x2192;
               </a>
             </p>
           </div>
