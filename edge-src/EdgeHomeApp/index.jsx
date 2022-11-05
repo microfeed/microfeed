@@ -10,7 +10,7 @@ export default class EdgeHomeApp extends React.Component {
     return (
       <html>
       <HtmlHeader
-        title={jsonData.podcast.name}
+        title={jsonData.podcast.title}
         description={jsonData.podcast.description}
         webpackJsList={['index_js']}
         webpackCssList={['public_default_css']}
