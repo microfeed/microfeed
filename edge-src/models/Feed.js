@@ -34,7 +34,10 @@ export default class Feed {
       episodes: [],
     };
     const settings = content.settings || {};
-    const trackingUrls = settings.trackingUrls || [];
+    let trackingUrls = [];
+    if (settings.analytics && settings.analytics.urls) {
+      trackingUrls = settings.analytics.urls || [];
+    }
     const existingEpisodes = content.episodes || {};
     Object.keys(existingEpisodes).forEach((episodeId) => {
       const eps = existingEpisodes[episodeId];
