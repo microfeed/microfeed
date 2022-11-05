@@ -33,7 +33,6 @@ export function buildAudioUrlWithTracking(audioUrl, trackingUrls, protocal='http
     const protocalRegex = /^https?:\/\//;
     const audioUrlNoProtocal = audioUrl.replace(protocalRegex, '');
     const trackingUrlsNoProtocal = trackingUrls.map(u => u.replace(protocalRegex, ''));
-
     let finalUrl = `${protocal}://${trackingUrlsNoProtocal[0]}`;
     trackingUrlsNoProtocal.shift();
     trackingUrlsNoProtocal.forEach((u) => {

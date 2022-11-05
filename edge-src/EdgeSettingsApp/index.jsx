@@ -7,6 +7,7 @@ export default class AdminSettingsApp extends React.Component {
   }
 
   render() {
+    const {feedContent} = this.props;
     return (
       <WholeHtml
         title="Settings | Admin"
@@ -14,6 +15,11 @@ export default class AdminSettingsApp extends React.Component {
         webpackJsList={['settings_js']}
         webpackCssList={['admin_styles_css']}
       >
+        <script
+          id="feed-content"
+          type="application/json"
+          dangerouslySetInnerHTML={{__html: JSON.stringify(feedContent)}}
+        />
       </WholeHtml>
     );
   }
