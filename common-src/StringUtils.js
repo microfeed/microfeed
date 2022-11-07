@@ -132,6 +132,7 @@ const ADMIN_HOME = '/admin';
 export const ADMIN_URLS = {
   home: () => ADMIN_HOME,
   pageEditEpisode: (episodeId) => `${ADMIN_HOME}/episodes/${episodeId}/`,
+  rssStylingSettings: () => `${ADMIN_HOME}/settings/styling/rss/`,
   ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,
 };
 

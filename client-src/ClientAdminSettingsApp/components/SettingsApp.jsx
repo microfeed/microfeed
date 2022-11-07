@@ -23,7 +23,6 @@ export default class SettingsApp extends React.Component {
     this.state = {
       feed,
       submitStatus: null,
-      submitForType: null,
     }
   }
 

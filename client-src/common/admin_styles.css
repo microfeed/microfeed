@@ -63,3 +63,14 @@ a {
 .lh-upload-wrapper .lh-upload-fileinput.is-disabled {
   @apply border-0;
 }
+
+/*
+  Simple icons
+ */
+.lh-icon-arrow-right:before {
+  content: "→";
+}
+
+.lh-icon-arrow-left:before {
+  content: "←";
+}

@@ -1,6 +1,6 @@
-import Feed from "../edge-src/models/Feed";
-import {msToUtcString} from "../common-src/TimeUtils";
-import {secondsToHHMMSS} from "../common-src/StringUtils";
+import Feed from "../../edge-src/models/Feed";
+import {msToUtcString} from "../../common-src/TimeUtils";
+import {secondsToHHMMSS} from "../../common-src/StringUtils";
 
 const { XMLBuilder } = require('fast-xml-parser');
 

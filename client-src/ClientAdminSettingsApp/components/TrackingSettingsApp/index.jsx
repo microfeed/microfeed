@@ -25,7 +25,7 @@ export default class TrackingSettingsApp extends React.Component {
 
   render() {
     const {trackingUrls, currentType} = this.state;
-    const {submitting, submitForType} = this.state;
+    const {submitting, submitForType} = this.props;
     const submittingForThis = submitForType === currentType;
     const urls = trackingUrls.trim() !== '' ? trackingUrls.trim().split(/\n/) : [];
     const exampleAudio = 'https://example.com/audio.mp3';
