@@ -21,9 +21,8 @@ class CodeInjector {
 export async function getResponseForPage(getComponent, env) {
   const feed = new Feed(env);
   const content = await feed.getContent();
-  const jsonData = await feed.getContentPublic(content);
   const settings = await feed.getSettings(content);
-  const fromReact = ReactDOMServer.renderToString(getComponent(jsonData, settings));
+  const fromReact = ReactDOMServer.renderToString(await getComponent(feed, content));
   const res = new Response(fromReact, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',

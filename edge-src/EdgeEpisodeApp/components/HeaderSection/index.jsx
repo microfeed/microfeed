@@ -2,7 +2,6 @@ import React from 'react';
 import {msToDatetimeLocalString} from "../../../../common-src/TimeUtils";
 
 export default function HeaderSection({ feed, episode }){
-  console.log(feed);
   return (<div>
     <div className="mb-4">
       <a href="/">
