@@ -1,4 +1,4 @@
-import Feed from "../edge-src/models/Feed";
+import Feed from "../../edge-src/models/Feed";
 
 export async function onRequestGet({env}) {
   const feed = new Feed(env);

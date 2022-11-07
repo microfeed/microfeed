@@ -26,8 +26,10 @@ export default class Feed {
     return this.content;
   }
 
-  async getContentPublic() {
-    const content = await this.getContent();
+  async getContentPublic(content=null) {
+    if (!content) {
+      content = await this.getContent();
+    }
     const publicContent = {
       version: content.version,
       podcast: {...content.podcast},
@@ -51,8 +53,10 @@ export default class Feed {
     return publicContent;
   }
 
-  async getSettings() {
-    const content = await this.getContent();
+  async getSettings(content=null) {
+    if (!content) {
+      content = await this.getContent();
+    }
     return content.settings;
   }
 

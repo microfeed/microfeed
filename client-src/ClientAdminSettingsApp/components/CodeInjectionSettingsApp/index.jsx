@@ -39,7 +39,7 @@ export default class CodeInjectionSettingsApp extends React.Component {
     >
       <div>
         <div className="lh-page-subtitle">Site Header</div>
-        <div className="text-xs text-muted-color">Code here will be placed right before the <b>{'</header>'}</b> tag on every html page of the site</div>
+        <div className="text-xs text-muted-color">Code here will be placed right before the <b>{'</head>'}</b> tag on every html page of the site</div>
         <AdminTextarea value={headerCode} onChange={(e) => this.setState({headerCode: e.target.value})}/>
       </div>
       <div className="mt-4">
