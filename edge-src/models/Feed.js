@@ -51,6 +51,11 @@ export default class Feed {
     return publicContent;
   }
 
+  async getSettings() {
+    const content = await this.getContent();
+    return content.settings;
+  }
+
   async putContent(contentDict) {
     contentDict.version = this.LISTEN_HOST_VERSION;
     await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {

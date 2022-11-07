@@ -6,7 +6,11 @@ import HtmlHeader from "../components/HtmlHeader";
 
 export default class EdgeHomeApp extends React.Component {
   render() {
-    const {jsonData} = this.props;
+    const {jsonData, settings} = this.props;
+    let customFooterCode = '';
+    if (settings && settings.codeInjection) {
+      customFooterCode = settings.codeInjection.footerCode || '';
+    }
     return (
       <html>
       <HtmlHeader
@@ -38,6 +42,7 @@ export default class EdgeHomeApp extends React.Component {
         <div className="hidden lg:block lg:col-span-2 xl:col-span-3"/>
       </div>
       <div id="client-side-root"/>
+      <div dangerouslySetInnerHTML={{__html: customFooterCode}} />
       </body>
       </html>
     );

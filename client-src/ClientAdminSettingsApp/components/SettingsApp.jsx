@@ -73,7 +73,12 @@ export default class SettingsApp extends React.Component {
             <BrandingSettingsApp />
           </div>
           <div className="col-span-1">
-            <CodeInjectionSettingsApp />
+            <CodeInjectionSettingsApp
+              submitting={submitting}
+              submitForType={submitForType}
+              feed={feed}
+              onSubmit={this.onSubmit}
+            />
           </div>
         </div>
       </div>
