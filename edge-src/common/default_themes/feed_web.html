@@ -1,0 +1,79 @@
+<div class="grid grid-cols-12 py-12">
+  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
+  <div class="col-span-12 lg:col-span-8 xl:col-span-6 px-4 grid grid-cols-1 gap-8">
+    <div class="mb-4">
+      <h1 class="font-bold text-2xl md:text-4xl">{{podcast.title}}</h1>
+    </div>
+    <div class="flex">
+      <div class="flex-none">
+        <img alt="{{podcast.title}}" src="{{podcast.image}}" class="lh-podcast-image"/>
+      </div>
+      <div class="flex-1 ml-4">
+        <div class="mt-2 md:mt-4 mb-4 md:mb-8">
+          By <span class="font-semibold text-xl">{{podcast.publisher}}</span>
+        </div>
+        <div>
+          <div class="hidden md:block text-gray-500 text-sm mb-4">
+            Subscribe:
+          </div>
+          <div class="flex flex-wrap">
+            <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+                <div class="flex items-center">
+                  <img src="/assets/brands/apple.svg" class="w-3.5"/>
+                </div>
+                <div class="ml-2 text-sm md:text-lg">apple</div>
+              </div>
+            </a>
+            <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+                <div class="flex items-center">
+                  <img src="/assets/brands/spotify.svg" class="w-3.5"/>
+                </div>
+                <div class="ml-2 text-sm md:text-lg">spotify</div>
+              </div>
+            </a>
+            <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+                <div class="flex items-center">
+                  <img src="/assets/brands/rss.svg" class="w-3.5"/>
+                </div>
+                <div class="ml-2 text-sm md:text-lg">rss</div>
+              </div>
+            </a>
+            <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+                <div class="flex items-center">
+                  <img src="/assets/brands/json.svg" class="w-3.5"/>
+                </div>
+                <div class="ml-2 text-sm md:text-lg">json</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="lh-section-header">About</h2>
+      <div>{{{podcast.description}}}</div>
+    </div>
+
+    <div>
+      <h2 class="lh-section-header">
+        Recent episodes
+      </h2>
+
+      <div class="grid grid-cols-1 gap-6">
+        {{#episodes}}
+          <div>
+            <h3 class="font-semibold mb-3">
+              {{title}}
+            </h3>
+          </div>
+        {{/episodes}}
+      </div>
+    </div>
+  </div>
+  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
+</div>
