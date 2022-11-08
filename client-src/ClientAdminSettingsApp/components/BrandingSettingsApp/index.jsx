@@ -32,12 +32,12 @@ export default class BrandingSettingsApp extends React.Component {
           publicUrl={PUBLIC_URLS.feedRss(getPublicBaseUrl())}
         />
         <NavBlock
-          url={ADMIN_URLS.rssStylingSettings()}
+          url={ADMIN_URLS.feedWebStylingSettings()}
           text="Feed Web Styling"
           publicUrl={getPublicBaseUrl()}
         />
         <NavBlock
-          url={ADMIN_URLS.rssStylingSettings()}
+          url={ADMIN_URLS.episodeWebStylingSettings()}
           text="Episode Web Styling"
           publicUrl={PUBLIC_URLS.pageEpisode('123456789ab', 'an episode', getPublicBaseUrl())}
         />
