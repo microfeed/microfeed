@@ -124,6 +124,23 @@ export function buildAudioUrlWithTracking(audioUrl, trackingUrls, protocal='http
   }
 }
 
+export function escapeHtml(htmlStr) {
+  return htmlStr.replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function unescapeHtml(htmlStr) {
+  htmlStr = htmlStr.replace(/&lt;/g, "<");
+  htmlStr = htmlStr.replace(/&gt;/g, ">");
+  htmlStr = htmlStr.replace(/&quot;/g, "\"");
+  htmlStr = htmlStr.replace(/&#39;/g, "'");
+  htmlStr = htmlStr.replace(/&amp;/g, "&");
+  return htmlStr;
+}
+
 /**
  * Admin urls
  */

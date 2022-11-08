@@ -7,7 +7,7 @@ import SocialAccountSettingsApp from "./SocialAccountSettingsApp";
 import BrandingSettingsApp from "./BrandingSettingsApp";
 import CodeInjectionSettingsApp from "./CodeInjectionSettingsApp";
 import Requests from "../../common/requests";
-import {ADMIN_URLS} from "../../../common-src/StringUtils";
+import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
 import {showToast} from "../../common/ToastUtils";
 
 const SUBMIT_STATUS__START = 1;
@@ -19,7 +19,7 @@ export default class SettingsApp extends React.Component {
     this.onSubmit = this.onSubmit.bind(this);
 
     const $feedContent = document.getElementById('feed-content');
-    const feed = JSON.parse($feedContent.innerHTML);
+    const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
     this.state = {
       feed,
       submitStatus: null,

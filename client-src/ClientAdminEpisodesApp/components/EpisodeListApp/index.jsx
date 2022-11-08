@@ -1,11 +1,12 @@
 import React from 'react';
 import AdminNavApp from '../../../components/AdminNavApp';
+import {unescapeHtml} from "../../../../common-src/StringUtils";
 
 export default class EpisodeListApp extends React.Component {
   constructor(props) {
     super(props);
 
-    const feed = JSON.parse(document.getElementById('feed-content').innerHTML);
+    const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
     const episodes = feed.episodes || [];
     const episodeList = [];
     Object.keys(episodes).forEach((epsId) => {

@@ -11,6 +11,7 @@ import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
+import {unescapeHtml} from "../../../../common-src/StringUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -31,9 +32,10 @@ export default class EditEpisodeApp extends React.Component {
     this.onUpdateEpisodeToFeed = this.onUpdateEpisodeToFeed.bind(this);
 
     const $feedContent = document.getElementById('feed-content');
-    const episodeId = $feedContent.getAttribute('data-episode-id');
+    const $dataParams = document.getElementById('lh-data-params');
+    const episodeId = $dataParams ? $dataParams.getAttribute('data-episode-id') : null;
     const action = episodeId ? 'edit' : 'create';
-    const feed = JSON.parse($feedContent.innerHTML);
+    const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
     if (!feed.episodes) {
       feed.episodes = {};
     }

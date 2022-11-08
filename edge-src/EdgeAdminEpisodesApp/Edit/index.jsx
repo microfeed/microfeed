@@ -1,23 +1,19 @@
 import React from 'react';
-import WholeHtml from "../../components/WholeHtml";
+import AdminWholeHtml from "../../components/AdminWholeHtml";
 
 export default class AdminEpisodesEditApp extends React.Component {
   render() {
     const {feedContent, episodeId} = this.props;
     return (
-      <WholeHtml
+      <AdminWholeHtml
         title="Edit Episode | Admin"
         description=""
         webpackJsList={['edit_episode_js']}
         webpackCssList={['admin_styles_css']}
+        feedContent={feedContent}
       >
-        <script
-          id="feed-content"
-          type="application/json"
-          data-episode-id={episodeId}
-          dangerouslySetInnerHTML={{__html: JSON.stringify(feedContent)}}
-        />
-      </WholeHtml>
+        <div id="lh-data-params" data-episode-id={episodeId} />
+      </AdminWholeHtml>
     );
   }
 }

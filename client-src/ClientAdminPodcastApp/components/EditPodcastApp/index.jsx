@@ -6,7 +6,7 @@ import AdminInput from "../../../components/AdminInput";
 import AdminRadio from "../../../components/AdminRadio";
 import AdminTextarea from "../../../components/AdminTextarea";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
-import {PUBLIC_URLS} from '../../../../common-src/StringUtils';
+import {PUBLIC_URLS, unescapeHtml} from '../../../../common-src/StringUtils';
 import {showToast} from "../../../common/ToastUtils";
 
 const SUBMIT_STATUS__START = 1;
@@ -29,7 +29,7 @@ export default class EditPodcastApp extends React.Component {
     this.onUpdatePodcastMetaToFeed = this.onUpdatePodcastMetaToFeed.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
 
-    const feed = JSON.parse(document.getElementById('feed-content').innerHTML);
+    const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
     const podcast = feed.podcast || initPodcast();
     this.state = {
       feed,

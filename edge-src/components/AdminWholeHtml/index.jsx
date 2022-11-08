@@ -1,9 +1,10 @@
 import React from 'react';
 import HtmlHeader from "../HtmlHeader";
+import {escapeHtml} from "../../../common-src/StringUtils";
 
-export default class WholeHtml extends React.Component {
+export default class AdminWholeHtml extends React.Component {
   render() {
-    const {title, description, webpackJsList, webpackCssList} = this.props;
+    const {title, description, webpackJsList, webpackCssList, feedContent} = this.props;
     return (
       <html>
       <HtmlHeader
@@ -27,6 +28,11 @@ export default class WholeHtml extends React.Component {
       <body>
       <div id="client-side-root"/>
       {this.props.children}
+      {feedContent && <script
+        id="feed-content"
+        type="application/json"
+        dangerouslySetInnerHTML={{__html: escapeHtml(JSON.stringify(feedContent))}}
+      />}
       </body>
       </html>
     );
