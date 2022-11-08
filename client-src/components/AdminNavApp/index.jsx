@@ -32,6 +32,7 @@ export default class AdminNavApp extends React.Component {
 
   render() {
     const {currentPage} = this.state;
+    const {upperLevel} = this.props;
     return (<div className="flex min-h-screen min-w-screen">
       <div className="bg-black flex-none">
         <h1 className="p-4 text-white font-bold text-lg mb-8">
@@ -45,8 +46,13 @@ export default class AdminNavApp extends React.Component {
         </nav>
       </div>
       <div className="flex-1">
-        <div className="bg-white p-4 text-right">
-          <a href="/admin/logout/" className="hover:opacity-50 text-brand-dark font-semibold text-sm">Logout</a>
+        <div className="bg-white p-4 flex">
+          {upperLevel && <div className="flex-1">
+            <a href={upperLevel.url}><span className="lh-icon-arrow-left" /> {upperLevel.name}</a>
+          </div>}
+          <div className="flex-1 text-right">
+            <a href="/admin/logout/" className="hover:opacity-50 text-brand-dark font-semibold text-sm">Logout</a>
+          </div>
         </div>
         <div className="p-4">
           {this.props.children}

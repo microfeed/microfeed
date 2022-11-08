@@ -12,7 +12,7 @@ export default class AdminSettingsApp extends React.Component {
       <AdminWholeHtml
         title="Episode Web Styling Settings | Admin"
         description=""
-        webpackJsList={['']}
+        webpackJsList={['episode_web_styling_settings_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
       />

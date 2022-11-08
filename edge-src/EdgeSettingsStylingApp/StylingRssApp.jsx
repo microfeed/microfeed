@@ -12,7 +12,7 @@ export default class AdminSettingsApp extends React.Component {
       <AdminWholeHtml
         title="Rss Styling Settings | Admin"
         description=""
-        webpackJsList={['']}
+        webpackJsList={['rss_styling_settings_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
       />
