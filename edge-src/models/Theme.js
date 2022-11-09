@@ -22,9 +22,14 @@ function descriptionText() {
 }
 
 export default class Theme {
-  constructor(jsonData, theme = null) {
+  constructor(jsonData, settings=null) {
     this.jsonData = jsonData;
-    this.theme = theme || 'default';
+    this.settings = settings;
+
+    this.theme = 'default';
+    if (settings && settings.styles && settings.styles.currentTheme) {
+      this.theme = settings.styles.currentTheme;
+    }
     // const {LISTEN_HOST_VERSION, LH_DATABASE} = env;
     // this.KEY = `${projectPrefix(env)}/database/${LISTEN_HOST_VERSION}-feed.json`;
     // this.LH_DB = LH_DATABASE;
@@ -47,7 +52,7 @@ export default class Theme {
     if (this.theme === 'default') {
       tmpl = require('../common/default_themes/web_header.html');
     } else {
-      console.log(this.theme);
+      tmpl = this.settings.styles.themes[this.theme].webHeader;
     }
     return tmpl;
   }
@@ -63,7 +68,7 @@ export default class Theme {
     if (this.theme === 'default') {
       tmpl = require('../common/default_themes/web_footer.html');
     } else {
-      console.log(this.theme);
+      tmpl = this.settings.styles.themes[this.theme].webFooter;
     }
     return tmpl;
   }
@@ -75,7 +80,7 @@ export default class Theme {
       // TODO: configure esbuild to load xsl?
       tmpl = require('../common/default_themes/rss_stylesheet.html');
     } else {
-      console.log(this.theme);
+      tmpl = this.settings.styles.themes[this.theme].rssStylesheet;
     }
     return tmpl;
   }
@@ -108,7 +113,7 @@ export default class Theme {
     if (this.theme === 'default') {
       tmpl = require('../common/default_themes/feed_web.html');
     } else {
-      console.log(this.theme);
+      tmpl = this.settings.styles.themes[this.theme].feedWeb;
     }
     return tmpl;
   }
@@ -131,7 +136,7 @@ export default class Theme {
     if (this.theme === 'default') {
       tmpl = require('../common/default_themes/episode_web.html');
     } else {
-      console.log(this.theme);
+      tmpl = this.settings.styles.themes[this.theme].episodeWeb;
     }
     return tmpl;
   }

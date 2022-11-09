@@ -143,6 +143,7 @@ export default class RssStylingApp extends React.Component {
           </div>
           <div className="text-center lh-page-card mt-4">
             <a className="mr-2" href={viewUrl} target="_blank">View live page</a>
+            <div className="text-muted-color text-xs">{viewUrl}</div>
           </div>
         </div>
       </form>

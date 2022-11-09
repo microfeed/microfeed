@@ -28,7 +28,7 @@ export async function getResponseForPage(getComponent, env) {
   const feed = new Feed(env);
   const content = await feed.getContent();
   const settings = await feed.getSettings(content);
-  const theme = new Theme(await feed.getContentPublic(content), null);
+  const theme = new Theme(await feed.getContentPublic(content), settings);
   const fromReact = ReactDOMServer.renderToString(await getComponent(feed, content, theme));
   const res = new Response(fromReact, {
     headers: {
