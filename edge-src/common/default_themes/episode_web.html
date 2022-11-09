@@ -1,0 +1,84 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<style type="text/tailwindcss">
+
+</style>
+<div class="grid grid-cols-12 py-12">
+  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
+  <div class="col-span-12 lg:col-span-8 xl:col-span-6 px-4 grid grid-cols-1 gap-8">
+
+    <div class="mb-4">
+      <a href="/">
+        <div class="lh-icon-arrow-left">{{podcast.title}}</div>
+      </a>
+    </div>
+    <div>
+      <h1 class="font-bold text-2xl md:text-4xl">{{episode.title}}</h1>
+      <div class="mt-4">
+        <time>{{episode.pubDate}}</time>
+      </div>
+    </div>
+
+    <div>
+      <div class="hidden md:block text-gray-500 text-sm mb-4">
+        Listen:
+      </div>
+      <audio controls preload="metadata" class="w-full">
+        <source src="{{episode.audio}}" type="{{episode.audioFileType}}"/>
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+    <div>
+      <div>
+        <div class="hidden md:block text-gray-500 text-sm mb-4">
+          Subscribe:
+        </div>
+        <div class="flex flex-wrap">
+          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+              <div class="flex items-center">
+                <img src="/assets/brands/apple.svg" class="w-3.5"/>
+              </div>
+              <div class="ml-2 text-sm md:text-lg">apple</div>
+            </div>
+          </a>
+          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+              <div class="flex items-center">
+                <img src="/assets/brands/spotify.svg" class="w-3.5"/>
+              </div>
+              <div class="ml-2 text-sm md:text-lg">spotify</div>
+            </div>
+          </a>
+          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+              <div class="flex items-center">
+                <img src="/assets/brands/rss.svg" class="w-3.5"/>
+              </div>
+              <div class="ml-2 text-sm md:text-lg">rss</div>
+            </div>
+          </a>
+          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+              <div class="flex items-center">
+                <img src="/assets/brands/json.svg" class="w-3.5"/>
+              </div>
+              <div class="ml-2 text-sm md:text-lg">json</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+    <h2 class="lh-section-header">About</h2>
+    <div class="grid grid-cols-1 gap-4">
+      {{#episode.image}}
+      <div>
+        <img src={{episode.image}} width="250" height="250"/>
+      </div>
+      {{/episode.image}}
+      {{#episode.description}}
+      {{{description}}}
+      {{/episode.description}}
+    </div>
+  </div>
+  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
+</div>

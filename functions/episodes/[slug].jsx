@@ -9,9 +9,9 @@ export async function onRequestGet({params, env}) {
   if (ok) {
     const episodeId = ok[1];
     if (episodeId) {
-      return await getResponseForPage(async (feed, content) => {
+      return await getResponseForPage(async (feed, content, theme) => {
         const episode = content.episodes[episodeId];
-        return <EdgeEpisodeApp episode={episode} feed={content}/>;
+        return <EdgeEpisodeApp episode={episode} theme={theme}/>;
       }, env);
     }
   }
