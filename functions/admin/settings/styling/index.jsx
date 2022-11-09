@@ -14,13 +14,14 @@ export async function onRequestGet({env}) {
       // in feed.json:
       styling: {
         currentTheme: 'unique-theme-name1',
+        themes: {
+          'unique-theme-name1': {
+            feedWeb: '',
+            episodeWeb: '',
+            ...
+          }
+        }
       }
-
-      // in r2's themes/unique-theme-name1/ folder (or in KV / D1 or any db
-      // - feedWeb.html
-      // - episodeWeb.html
-      // -
-      // - rssStylesheet.xsl
      */
   }
   const theme = new Theme(content, currentTheme);

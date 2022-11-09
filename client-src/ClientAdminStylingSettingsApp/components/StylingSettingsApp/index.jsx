@@ -1,17 +1,18 @@
 import React from 'react';
+import CodeEditor from '@uiw/react-textarea-code-editor';
 import AdminNavApp from '../../../components/AdminNavApp';
 import {ADMIN_URLS, PUBLIC_URLS, unescapeHtml} from "../../../../common-src/StringUtils";
 import {showToast} from "../../../common/ToastUtils";
+import Requests from "../../../common/requests";
 
 const SUBMIT_STATUS__START = 1;
-
-const TMPL_TYPE__RSS_STYLESHEET = 1;
 
 export default class RssStylingApp extends React.Component {
   constructor(props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
+    this.onUpdateFeed = this.onUpdateFeed.bind(this);
 
     const themeTmplJson = JSON.parse(unescapeHtml(document.getElementById('theme-tmpl-json').innerHTML));
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
@@ -25,7 +26,7 @@ export default class RssStylingApp extends React.Component {
     } = themeTmplJson;
 
     this.state = {
-      currentType: TMPL_TYPE__RSS_STYLESHEET,
+      currentType: 'rssStylesheet',
       submitStatus: null,
 
       rssStylesheet,
@@ -38,22 +39,71 @@ export default class RssStylingApp extends React.Component {
     };
   }
 
+  onUpdateFeed(themeName, themeTmpls, onSucceed) {
+    this.setState(prevState => ({
+      feed: {
+        ...prevState.feed,
+        settings: {
+          ...prevState.feed.settings,
+          styles: {
+            // TODO: if we support multiple themes, then don't set currentTheme here.
+            currentTheme: themeName,
+            themes: {
+              [themeName]: {
+                ...themeTmpls,
+              }
+            },
+          }
+        }
+      },
+    }), () => onSucceed())
+  }
+
   onSubmit(e) {
     e.preventDefault();
     this.setState({submitStatus: SUBMIT_STATUS__START});
-    setTimeout(() => {
-      this.setState({submitStatus: null}, () => {
-        showToast('Updated!', 'success');
-      });
-    }, 2000);
+
+    // TODO: allow users to set theme name later
+    const themeName = 'custom';
+    const {
+      rssStylesheet,
+      episodeWeb,
+      feedWeb,
+      webFooter,
+      webHeader,
+    } = this.state;
+    this.onUpdateFeed(themeName, {
+      rssStylesheet,
+      episodeWeb,
+      feedWeb,
+      webFooter,
+      webHeader,
+    }, () => {
+      Requests.post('/admin/ajax/feed/', this.state.feed)
+        .then(() => {
+          this.setState({submitStatus: null}, () => {
+            showToast('Updated!', 'success');
+          });
+        })
+        .catch(() => {
+          this.setState({submitStatus: null}, () => {
+            showToast('Failed to update. Please try again.', 'error')});
+        });
+    });
   }
 
   render() {
     const {currentType, submitStatus} = this.state;
-    let viewUrl;
+    const code = this.state[currentType];
+    let language = 'html';
+    let viewUrl = '/';
     switch(currentType) {
-      case TMPL_TYPE__RSS_STYLESHEET:
+      case 'rssStylesheet':
         viewUrl = PUBLIC_URLS.feedRss();
+        language = 'css';
+        break;
+      case 'episodeWeb':
+        // TODO: check if there's episode, then get an first episode's url.
         break;
       default:
         break;
@@ -65,7 +115,20 @@ export default class RssStylingApp extends React.Component {
     >
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
-          todo
+          <CodeEditor
+            value={code}
+            language={language}
+            placeholder="Please enter code here"
+            onChange={(e) => this.setState({[currentType]: e.target.value})}
+            // prefixCls="h-1/2"
+            style={{
+              height: '80vh',
+              overflow: 'auto',
+              fontSize: 12,
+              backgroundColor: "#f5f5f5",
+              fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
+            }}
+          />
         </div>
         <div className="col-span-3">
           <div className="text-center lh-page-card">
