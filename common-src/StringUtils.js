@@ -150,9 +150,7 @@ export const ADMIN_URLS = {
   home: () => ADMIN_HOME,
   pageEditEpisode: (episodeId) => `${ADMIN_HOME}/episodes/${episodeId}/`,
   settings: () => `${ADMIN_HOME}/settings/`,
-  rssStylingSettings: () => `${ADMIN_HOME}/settings/styling/rss/`,
-  feedWebStylingSettings: () => `${ADMIN_HOME}/settings/styling/feed-web/`,
-  episodeWebStylingSettings: () => `${ADMIN_HOME}/settings/styling/episode-web/`,
+  sylingSettings: () => `${ADMIN_HOME}/settings/styling/`,
 
   ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,
 };

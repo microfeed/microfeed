@@ -4,7 +4,7 @@ import TrackingSettingsApp from "./TrackingSettingsApp";
 import PodcastAccessSettingsApp from "./PodcastAccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
 import SocialAccountSettingsApp from "./SocialAccountSettingsApp";
-import BrandingSettingsApp from "./BrandingSettingsApp";
+import StylingSettingsApp from "./StylingSettingsApp";
 import CodeInjectionSettingsApp from "./CodeInjectionSettingsApp";
 import Requests from "../../common/requests";
 import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
@@ -70,7 +70,7 @@ export default class SettingsApp extends React.Component {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1">
-            <BrandingSettingsApp />
+            <StylingSettingsApp />
           </div>
           <div className="col-span-1">
             <CodeInjectionSettingsApp

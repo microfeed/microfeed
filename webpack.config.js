@@ -43,9 +43,7 @@ const entry = {
   all_episodes_js: './ClientAdminEpisodesApp/index.js',
   edit_podcast_js: './ClientAdminPodcastApp/index.js',
   settings_js: './ClientAdminSettingsApp/index.js',
-  feed_web_styling_settings_js: './ClientAdminStylingSettingsApp/FeedWebStylingApp.js',
-  episode_web_styling_settings_js: './ClientAdminStylingSettingsApp/EpisodeWebStylingApp.js',
-  rss_styling_settings_js: './ClientAdminStylingSettingsApp/RssStylingApp.js',
+  styling_settings_js: './ClientAdminStylingSettingsApp/index.js',
 };
 
 

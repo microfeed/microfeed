@@ -49,6 +49,8 @@ export default class AdminNavApp extends React.Component {
         <div className="bg-white p-4 flex">
           {upperLevel && <div className="flex-1">
             <a href={upperLevel.url}><span className="lh-icon-arrow-left" /> {upperLevel.name}</a>
+            <span className="mx-2">/</span>
+            <span className="text-muted-color">{upperLevel.childName}</span>
           </div>}
           <div className="flex-1 text-right">
             <a href="/admin/logout/" className="hover:opacity-50 text-brand-dark font-semibold text-sm">Logout</a>

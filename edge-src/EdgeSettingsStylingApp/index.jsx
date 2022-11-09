@@ -10,9 +10,9 @@ export default class AdminSettingsApp extends React.Component {
     const {feedContent} = this.props;
     return (
       <AdminWholeHtml
-        title="Feed Web Styling Settings | Admin"
+        title="Rss Styling Settings | Admin"
         description=""
-        webpackJsList={['feed_web_styling_settings_js']}
+        webpackJsList={['styling_settings_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
       />

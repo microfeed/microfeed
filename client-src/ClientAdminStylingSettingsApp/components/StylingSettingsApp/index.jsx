@@ -2,7 +2,7 @@ import React from 'react';
 import AdminNavApp from '../../../components/AdminNavApp';
 import {ADMIN_URLS} from "../../../../common-src/StringUtils";
 
-export default class FeedWebStylingApp extends React.Component {
+export default class RssStylingApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -10,8 +10,11 @@ export default class FeedWebStylingApp extends React.Component {
   }
 
   render() {
-    return (<AdminNavApp currentPage="settings" upperLevel={{name: 'Settings', url: ADMIN_URLS.settings()}}>
-      episode styling
+    return (<AdminNavApp
+      currentPage="settings"
+      upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Styling'}}
+    >
+      rss styling
     </AdminNavApp>);
   }
 }
