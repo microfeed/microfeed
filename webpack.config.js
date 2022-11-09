@@ -139,10 +139,6 @@ module.exports = {
       //   test: /\.png$/,
       //   use: 'url-loader?name=[name]-[hash].[ext]&limit=8192&mimetype=image/png',
       // },
-      // {
-      //   test: /\.svg$/,
-      //   use: ['@svgr/webpack'],
-      // },
     ],
   },
 

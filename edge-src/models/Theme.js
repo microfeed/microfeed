@@ -45,6 +45,8 @@ export default class Theme {
   getRssStylesheet() {
     let tmpl = null;
     if (this.theme === 'default') {
+      // XXX: this should've been .xsl, instead of .html. But esbuild can't load xsl.
+      // TODO: configure esbuild to load xsl?
       tmpl = require('../common/default_themes/rss_stylesheet.html');
     } else {
       console.log(this.theme);
