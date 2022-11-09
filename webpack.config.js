@@ -30,7 +30,6 @@ const entry = {
   // CSS
   //
   admin_styles_css: './common/admin_styles.css',
-  public_default_css: './common/public_default_styles.css',
 
   //
   // JS
