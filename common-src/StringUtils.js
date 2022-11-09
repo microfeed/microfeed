@@ -159,8 +159,14 @@ export const ADMIN_URLS = {
  * Public urls
  */
 export const PUBLIC_URLS = {
+  feedWeb: (baseUrl = '') => {
+    return `${baseUrl}/`;
+  },
   feedRss: (baseUrl='') => {
     return `${baseUrl}/rss/`;
+  },
+  feedRssStylesheet: (baseUrl='') => {
+    return `${baseUrl}/rss/stylesheet/`;
   },
   feedJson: (baseUrl='') => {
     return `${baseUrl}/json/`;

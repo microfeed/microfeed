@@ -10,7 +10,7 @@ export default class EdgeHomeApp extends React.Component {
       <HtmlHeader
         title={jsonData.podcast.title}
         description={jsonData.podcast.description}
-        webpackJsList={['index_js']}
+        webpackJsList={[]}
         webpackCssList={[]}
         favicon={{
           'apple-touch-icon': '/assets/apple-touch-icon.png',

@@ -1,6 +1,7 @@
 import Feed from "../../edge-src/models/Feed";
 import {msToUtcString} from "../../common-src/TimeUtils";
 import {secondsToHHMMSS} from "../../common-src/StringUtils";
+import {PUBLIC_URLS} from "../../common-src/StringUtils";
 
 const { XMLBuilder } = require('fast-xml-parser');
 
@@ -62,7 +63,7 @@ export async function onRequestGet({request, env}) {
   const xmlOutput = builder.build(input);
 
   const xmlContent = "<?xml version='1.0' encoding='UTF-8'?>\n" +
-    '<?xml-stylesheet href="/rss/stylesheet/" type="text/xsl"?>\n' +
+    `<?xml-stylesheet href="${PUBLIC_URLS.feedRssStylesheet()}" type="text/xsl"?>\n` +
     "<rss xmlns:content='http://purl.org/rss/1.0/modules/content/' xmlns:taxo='http://purl.org/rss/1.0/modules/taxonomy/' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' xmlns:itunes='http://www.itunes.com/dtds/podcast-1.0.dtd' xmlns:googleplay=\"http://www.google.com/schemas/play-podcasts/1.0\" xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:podbridge='http://www.podbridge.com/podbridge-ad.dtd' version='2.0'>\n" +
     xmlOutput +
     '</rss>';

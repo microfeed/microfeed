@@ -35,9 +35,6 @@ const entry = {
   // JS
   //
 
-  // Public
-  index_js: './ClientHomeApp/index.js',
-
   // Admin
   edit_episode_js: './ClientAdminEpisodesApp/EditEpisode/index.js',
   all_episodes_js: './ClientAdminEpisodesApp/index.js',
