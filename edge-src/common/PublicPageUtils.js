@@ -13,10 +13,12 @@ class CodeInjector {
     }
 
     if (element.tagName === 'head') {
-      element.append(this.theme.getWebHeader(), {html: true});
+      const {html} = this.theme.getWebHeader();
+      element.append(html, {html: true});
       element.append(this.settings.codeInjection.headerCode || '', {html: true});
     } else if (element.tagName === 'body') {
-      element.append(this.theme.getWebFooter(), {html: true});
+      const {html} = this.theme.getWebFooter();
+      element.append(html, {html: true});
       element.append(this.settings.codeInjection.footerCode || '', {html: true});
     }
   }

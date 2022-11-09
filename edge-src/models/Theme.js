@@ -1,7 +1,7 @@
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
 import {humanizeMs} from "../common/TimeUtils";
 import {convert} from "html-to-text";
-import tmpl from "../common/default_themes/web_header.html";
+import tmpl from "../common/default_themes/web_footer.html";
 
 const Mustache = require('mustache');
 
@@ -32,17 +32,43 @@ export default class Theme {
     // this.content = null;
   }
 
+  name() {
+    return this.theme;
+  }
+
   getWebHeader() {
-    const tmpl = require('../common/default_themes/web_header.html');
-    return Mustache.render(tmpl, {});
+    const tmpl = this.getWebHeaderTmpl();
+    const html = Mustache.render(tmpl, {});
+    return {html};
+  }
+
+  getWebHeaderTmpl() {
+    let tmpl = null;
+    if (this.theme === 'default') {
+      tmpl = require('../common/default_themes/web_header.html');
+    } else {
+      console.log(this.theme);
+    }
+    return tmpl;
   }
 
   getWebFooter() {
-    const tmpl = require('../common/default_themes/web_footer.html');
-    return Mustache.render(tmpl, {});
+    const tmpl = this.getWebFooterTmpl();
+    const html = Mustache.render(tmpl, {});
+    return {html};
   }
 
-  getRssStylesheet() {
+  getWebFooterTmpl() {
+    let tmpl = null;
+    if (this.theme === 'default') {
+      tmpl = require('../common/default_themes/web_footer.html');
+    } else {
+      console.log(this.theme);
+    }
+    return tmpl;
+  }
+
+  getRssStylesheetTmpl() {
     let tmpl = null;
     if (this.theme === 'default') {
       // XXX: this should've been .xsl, instead of .html. But esbuild can't load xsl.
@@ -51,6 +77,11 @@ export default class Theme {
     } else {
       console.log(this.theme);
     }
+    return tmpl;
+  }
+
+  getRssStylesheet() {
+    const tmpl = this.getRssStylesheetTmpl();
     const stylesheet = Mustache.render(tmpl, {});
     return {
       stylesheet,
@@ -59,12 +90,7 @@ export default class Theme {
 
   getFeedWeb() {
     const {podcast, episodes} = this.jsonData;
-    let tmpl = null;
-    if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/feed_web.html');
-    } else {
-      console.log(this.theme);
-    }
+    const tmpl = this.getFeedWebTmpl();
     const html = Mustache.render(tmpl, {
       podcast,
       episodes,
@@ -77,15 +103,20 @@ export default class Theme {
     };
   }
 
-  getEpisodeWeb(episode) {
-    const {podcast} = this.jsonData;
-    episode.pubDate = pubDate(episode);
+  getFeedWebTmpl() {
     let tmpl = null;
     if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/episode_web.html');
+      tmpl = require('../common/default_themes/feed_web.html');
     } else {
       console.log(this.theme);
     }
+    return tmpl;
+  }
+
+  getEpisodeWeb(episode) {
+    const {podcast} = this.jsonData;
+    episode.pubDate = pubDate(episode);
+    const tmpl = this.getEpisodeWebTmpl();
     const html = Mustache.render(tmpl, {
       episode,
       podcast,
@@ -95,6 +126,13 @@ export default class Theme {
     };
   }
 
-  getRssStyle() {
+  getEpisodeWebTmpl() {
+    let tmpl = null;
+    if (this.theme === 'default') {
+      tmpl = require('../common/default_themes/episode_web.html');
+    } else {
+      console.log(this.theme);
+    }
+    return tmpl;
   }
 }
