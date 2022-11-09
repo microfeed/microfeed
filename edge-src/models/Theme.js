@@ -42,6 +42,19 @@ export default class Theme {
     return Mustache.render(tmpl, {});
   }
 
+  getRssStylesheet() {
+    let tmpl = null;
+    if (this.theme === 'default') {
+      tmpl = require('../common/default_themes/rss_stylesheet.html');
+    } else {
+      console.log(this.theme);
+    }
+    const stylesheet = Mustache.render(tmpl, {});
+    return {
+      stylesheet,
+    };
+  }
+
   getFeedWeb() {
     const {podcast, episodes} = this.jsonData;
     let tmpl = null;
