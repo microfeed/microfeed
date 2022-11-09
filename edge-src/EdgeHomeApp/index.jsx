@@ -3,22 +3,43 @@ import React from 'react';
 // import AboutSection from './components/AboutSection';
 // import EpisodeListSection from "./components/EpisodeListSection";
 import HtmlHeader from "../components/HtmlHeader";
+import {PUBLIC_URLS} from "../../common-src/StringUtils";
+import {humanizeMs} from "../common/TimeUtils";
+import {convert} from "html-to-text";
 
 const Mustache = require('mustache');
 const FEED_WEB = require('../common/default_themes/feed_web.html');
+
+function episodeUrl() {
+  return PUBLIC_URLS.pageEpisode(this.id, this.title);
+}
+
+function pubDate() {
+  return humanizeMs(this.pubDateMs);
+}
+
+function descriptionText() {
+  return convert(this.description, {});
+}
 
 export default class EdgeHomeApp extends React.Component {
   render() {
     const {jsonData} = this.props;
     const {podcast, episodes} = jsonData;
-    const html = Mustache.render(FEED_WEB, {podcast, episodes});
+    const html = Mustache.render(FEED_WEB, {
+      podcast,
+      episodes,
+      episodeUrl,
+      pubDate,
+      descriptionText,
+    });
     return (
       <html>
       <HtmlHeader
         title={jsonData.podcast.title}
         description={jsonData.podcast.description}
         webpackJsList={['index_js']}
-        webpackCssList={['public_default_css']}
+        webpackCssList={['']}
         favicon={{
           'apple-touch-icon': '/assets/apple-touch-icon.png',
           '32x32': '/assets/favicon-32x32.png',

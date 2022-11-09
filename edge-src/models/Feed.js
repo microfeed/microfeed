@@ -46,6 +46,7 @@ export default class Feed {
       publicContent.episodes.push({
         ...eps,
         id: episodeId,
+        title: eps.title || 'Untitled',
         audio: buildAudioUrlWithTracking(eps.audio, trackingUrls),
       });
     })
