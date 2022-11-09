@@ -48,7 +48,7 @@ export default class SettingsApp extends React.Component {
     return (<AdminNavApp currentPage="settings">
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-1">
+          <div className="col-span-1 h-full">
             <TrackingSettingsApp
               submitting={submitting}
               submitForType={submitForType}
@@ -56,23 +56,39 @@ export default class SettingsApp extends React.Component {
               onSubmit={this.onSubmit}
             />
           </div>
-          <div className="col-span-1">
-            <PodcastAccessSettingsApp />
+          <div className="col-span-1 h-full">
+            <PodcastAccessSettingsApp
+              submitting={submitting}
+              submitForType={submitForType}
+              feed={feed}
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-1">
-            <SubscribeSettingsApp />
+          <div className="col-span-1 h-full">
+            <SubscribeSettingsApp
+              submitting={submitting}
+              submitForType={submitForType}
+              feed={feed}
+            />
           </div>
-          <div className="col-span-1">
-            <SocialAccountSettingsApp />
+          <div className="col-span-1 h-full">
+            <SocialAccountSettingsApp
+              submitting={submitting}
+              submitForType={submitForType}
+              feed={feed}
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-1">
-            <StylingSettingsApp />
+          <div className="col-span-1 h-full">
+            <StylingSettingsApp
+              submitting={submitting}
+              submitForType={submitForType}
+              feed={feed}
+            />
           </div>
-          <div className="col-span-1">
+          <div className="col-span-1 h-full">
             <CodeInjectionSettingsApp
               submitting={submitting}
               submitForType={submitForType}

@@ -1,23 +1,29 @@
 import React from 'react';
+import SettingsBase from "../SettingsBase";
 
 export default class SubscribeSettingsApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-    }
+      currentType: 'subscribeMethods',
+    };
   }
 
   render() {
-    return (<form className="lh-page-card">
-      <h2 className="lh-page-title">
-        <div className="flex">
-          <div className="flex-1">Subscribe methods</div>
-          <div className="flex-none">Button</div>
-        </div>
-      </h2>
-      <div>
-        public / pass code
-      </div>
-    </form>);
+    const {currentType} = this.state;
+    const {submitting, submitForType} = this.props;
+    return (<SettingsBase
+      title="Subscribe methods"
+      submitting={submitting}
+      submitForType={submitForType}
+      currentType={currentType}
+      onSubmit={() => {
+        // this.props.onSubmit(e, currentType, {
+        //   urls,
+        // });
+      }}
+    >
+      Subscribe
+    </SettingsBase>);
   }
 }

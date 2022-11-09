@@ -184,7 +184,7 @@ export default class RssStylingApp extends React.Component {
         viewUrl = PUBLIC_URLS.feedWeb();
         title = 'Web Footer';
         description = <div>The code is inserted right before the <span
-          dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put a Google Analytics tag or any 3rd-party js code here.</div>
+          dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.</div>
         break;
       default:
         break;
