@@ -2,7 +2,8 @@ import React from 'react';
 import clsx from 'clsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Cog6ToothIcon, PlusIcon, ListBulletIcon, RssIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, PlusIcon, ListBulletIcon, RssIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
+import {ADMIN_URLS} from "../../../common-src/StringUtils";
 
 function NavItem({url, title, navId, currentId, Icon}) {
   return (
@@ -83,7 +84,12 @@ export default class AdminNavApp extends React.Component {
             <span className="text-muted-color">{upperLevel.childName}</span>
           </div>}
           <div className="flex-1 text-right">
-            <a href="/admin/logout/" className="hover:opacity-50 text-brand-dark font-semibold text-sm">Logout</a>
+            <a href={ADMIN_URLS.logout()} className="hover:opacity-50 text-brand-dark font-semibold text-sm">
+              <div className="flex items-center justify-end">
+                <div className="mr-1"><ArrowLeftOnRectangleIcon className="w-4" /></div>
+                <div>Logout</div>
+              </div>
+            </a>
           </div>
         </div>
         <div className="p-4">

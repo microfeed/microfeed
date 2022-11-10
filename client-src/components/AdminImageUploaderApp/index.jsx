@@ -6,7 +6,7 @@ import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../common/requests';
 import {randomHex} from '../../../common-src/StringUtils';
 import LhDialog from "../LhDialog";
-import { CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
 
 const UPLOAD_STATUS__START = 1;

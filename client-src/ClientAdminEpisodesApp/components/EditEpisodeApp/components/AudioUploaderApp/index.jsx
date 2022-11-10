@@ -2,6 +2,7 @@ import React from 'react';
 import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../../../../common/requests';
 import {randomHex, humanFileSize} from '../../../../../../common-src/StringUtils';
+import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 
 const UPLOAD_STATUS__START = 1;
 
@@ -114,7 +115,10 @@ export default class AudioUploaderApp extends React.Component {
               <div className="font-semibold">Uploading...</div>
               <div className="text-sm">{progressText}</div>
             </div> : <div className="text-brand-light">
-              <div className="font-semibold">Click to upload or Drag and drop</div>
+              <div className="flex items-center">
+                <div className="mr-1"><CloudArrowUpIcon className="w-8"/></div>
+                <div className="font-semibold">Click or drag here to upload audio</div>
+              </div>
               <div className="text-sm">{fileTypes.join(',')}</div>
             </div>}
           </div>

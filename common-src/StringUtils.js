@@ -151,6 +151,7 @@ export const ADMIN_URLS = {
   pageEditEpisode: (episodeId) => `${ADMIN_HOME}/episodes/${episodeId}/`,
   settings: () => `${ADMIN_HOME}/settings/`,
   sylingSettings: () => `${ADMIN_HOME}/settings/styling/`,
+  logout: () => `${ADMIN_HOME}/logout/`,
 
   ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,
 };
