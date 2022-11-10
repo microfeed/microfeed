@@ -12,6 +12,7 @@ import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
+import ExternalLink from "../../../components/ExternalLink";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -240,6 +241,9 @@ export default class EditEpisodeApp extends React.Component {
               {submitting ? submittingButtonText : buttonText}
             </button>
           </div>
+          {action === 'edit' && <div className="lh-page-card mt-4 flex justify-center">
+            <ExternalLink url={PUBLIC_URLS.pageEpisode(episodeId, episode.title)} text="Episode Web" />
+          </div>}
         </div>
       </form>
     </AdminNavApp>);

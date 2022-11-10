@@ -6,11 +6,16 @@ import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../common/requests';
 import {randomHex} from '../../../common-src/StringUtils';
 import LhDialog from "../LhDialog";
+import { CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import ExternalLink from "../ExternalLink";
 
 const UPLOAD_STATUS__START = 1;
 
 function EmptyImage({fileTypes}) {
   return (<div className="text-brand-light text-sm flex flex-col justify-center items-center h-full">
+    <div className="mb-2">
+      <CloudArrowUpIcon className="w-8" />
+    </div>
     <div className="font-semibold">
       Click or drag here to upload image
     </div>
@@ -154,8 +159,8 @@ export default class AdminImageUploaderApp extends React.Component {
             <EmptyImage fileTypes={fileTypes} />}
         </div>
       </FileUploader>
-      {currentImageUrl && <div className="text-sm text-center">
-        <a href={currentImageUrl} target="_blank">preview image</a>
+      {currentImageUrl && <div className="text-sm flex justify-center mt-1">
+        <ExternalLink text="preview image" url={currentImageUrl} />
       </div>}
       <LhDialog
         isOpen={showModal}

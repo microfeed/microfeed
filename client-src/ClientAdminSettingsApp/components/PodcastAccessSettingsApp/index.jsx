@@ -78,7 +78,7 @@ export default class PodcastAccessSettingsApp extends React.Component {
           <AccessOption
             value="public"
             header="Public"
-            description="Make the entire site publicly accessible."
+            description="Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed."
           />
           {/*<AccessOption*/}
           {/*  value="passcode"*/}
@@ -88,7 +88,7 @@ export default class PodcastAccessSettingsApp extends React.Component {
           <AccessOption
             value="offline"
             header="Offline"
-            description="Make the entire site offline. All web pages, rss feed and json feed will be 404-ed."
+            description="Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed."
           />
         </div>
       </RadioGroup>

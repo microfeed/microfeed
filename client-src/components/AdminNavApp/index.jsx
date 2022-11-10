@@ -2,18 +2,24 @@ import React from 'react';
 import clsx from 'clsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Cog6ToothIcon, PlusIcon, ListBulletIcon, RssIcon } from '@heroicons/react/24/outline'
 
-function NavItem({url, title, navId, currentId}) {
+function NavItem({url, title, navId, currentId, Icon}) {
   return (
     <a
       href={url}
       className={clsx('text-white')}
     >
       <div
-        className={clsx('p-4 hover:text-brand-light',
+        className={clsx('p-4 hover:text-brand-light flex items-center',
         navId === currentId ? 'font-semibold bg-brand-light hover:text-white hover:opacity-80' : '')}
       >
-        {title}
+        {Icon && <div className="mr-2">
+          <Icon className="w-5" />
+        </div>}
+        <div>
+          {title}
+        </div>
       </div>
     </a>
   );
@@ -39,10 +45,34 @@ export default class AdminNavApp extends React.Component {
           Admin Dashboard
         </h1>
         <nav>
-          <NavItem url="/admin/" title="Edit podcast" navId="edit_podcast" currentId={currentPage} />
-          <NavItem url="/admin/episodes/new/" title="Add new episode" navId="new_episode" currentId={currentPage} />
-          <NavItem url="/admin/episodes/" title="See all episodes" navId="all_episodes" currentId={currentPage} />
-          <NavItem url="/admin/settings/" title="Settings" navId="settings" currentId={currentPage} />
+          <NavItem
+            url="/admin/"
+            title="Edit podcast"
+            navId="edit_podcast"
+            currentId={currentPage}
+            Icon={RssIcon}
+          />
+          <NavItem
+            url="/admin/episodes/new/"
+            title="Add new episode"
+            navId="new_episode"
+            currentId={currentPage}
+            Icon={PlusIcon}
+          />
+          <NavItem
+            url="/admin/episodes/"
+            title="See all episodes"
+            navId="all_episodes"
+            currentId={currentPage}
+            Icon={ListBulletIcon}
+          />
+          <NavItem
+            url="/admin/settings/"
+            title="Settings"
+            navId="settings"
+            currentId={currentPage}
+            Icon={Cog6ToothIcon}
+          />
         </nav>
       </div>
       <div className="flex-1">
