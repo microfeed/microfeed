@@ -1,6 +1,6 @@
 import React from "react";
 import EdgeEpisodeApp from "../../edge-src/EdgeEpisodeApp";
-import {getResponseForPage} from '../../edge-src/common/PublicPageUtils';
+import {WebResponseBuilder} from '../../edge-src/common/PublicPageUtils';
 
 export async function onRequestGet({params, env}) {
   const {slug} = params;
@@ -9,14 +9,14 @@ export async function onRequestGet({params, env}) {
   if (ok) {
     const episodeId = ok[1];
     if (episodeId) {
-      return await getResponseForPage(async (feed, content, theme) => {
-        const episode = content.episodes[episodeId];
-        return <EdgeEpisodeApp episode={episode} theme={theme}/>;
-      }, env);
+      const webResponseBuilder = new WebResponseBuilder(env);
+      return webResponseBuilder.getResponse({
+        getComponent: (content, jsonData, theme) => {
+          const episode = content.episodes[episodeId];
+          return <EdgeEpisodeApp episode={episode} theme={theme}/>;
+        },
+      });
     }
   }
-  return new Response('Not Found', {
-    status: 404,
-    statusText: 'Not Found',
-  });
+  return WebResponseBuilder.Response404();
 }

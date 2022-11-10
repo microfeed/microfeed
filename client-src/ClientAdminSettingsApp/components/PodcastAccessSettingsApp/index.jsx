@@ -1,16 +1,27 @@
 import React from 'react';
 import { RadioGroup } from '@headlessui/react'
-import SettingsBase from '../SettingsBase';
 import clsx from "clsx";
+import { CheckIcon } from '@heroicons/react/20/solid'
+import SettingsBase from '../SettingsBase';
 
 function AccessOption({value, header, description}) {
   return (<RadioGroup.Option value={value}>
     {({checked}) => (
       <div className={clsx('border p-2 hover:cursor-pointer',
-        checked ? 'bg-brand-light border-brand-light' : '')}>
-        <div className={clsx('text-sm font-semibold', checked ? 'text-white' : '')}>{header}</div>
-        <div className={clsx('text-xs', checked ? 'text-white' : 'text-muted-color')}>
-          {description}
+        checked ? 'border-brand-light' : '')}>
+        <div className="flex">
+          <div className="flex-none mr-4">
+            <CheckIcon className={clsx(checked ? 'bg-brand-light border-white' : '',
+              'w-6 border rounded-full text-white')} />
+          </div>
+          <div>
+            <div className={clsx('text-sm font-semibold')}>
+              {header}
+            </div>
+            <div className={clsx('text-xs', 'text-muted-color')}>
+              {description}
+            </div>
+          </div>
         </div>
       </div>
     )}
@@ -52,10 +63,11 @@ export default class PodcastAccessSettingsApp extends React.Component {
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
-      onSubmit={() => {
-        // this.props.onSubmit(e, currentType, {
-        //   urls,
-        // });
+      onSubmit={(e) => {
+        e.preventDefault();
+        this.props.onSubmit(e, currentType, {
+          ...access,
+        });
       }}
     >
       <RadioGroup

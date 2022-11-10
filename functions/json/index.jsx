@@ -1,11 +1,6 @@
-import Feed from "../../edge-src/models/Feed";
+import {JsonResponseBuilder} from "../../edge-src/common/PublicPageUtils";
 
 export async function onRequestGet({env}) {
-  const feed = new Feed(env);
-  const jsonData = await feed.getContentPublic();
-  return new Response(JSON.stringify(jsonData), {
-      headers: {
-        'content-type': 'application/json;charset=UTF-8',
-      },
-  });
+  const jsonResponseBuilder = new JsonResponseBuilder(env);
+  return await jsonResponseBuilder.getResponse();
 }
