@@ -17,8 +17,8 @@ function initMethodsDict() {
   };
 }
 
-function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, moveCard}) {
-  const { id, name, type, editable, enabled, image } = method;
+function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, moveCard}) {
+  const { id, name, type, editable, enabled, image, deleted } = method;
   let { url } = method;
   if (!url && !editable) {
     switch (type) {
@@ -58,7 +58,7 @@ function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, mov
         <div className="col-span-4">
           <AdminInput
             value={name}
-            onChange={(e) => updateMethodsDict(id, 'name', e.target.value)}
+            onChange={(e) => updateMethodByAttr(id, 'name', e.target.value)}
             customClass="text-xs p-1"
           />
         </div>
@@ -67,7 +67,7 @@ function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, mov
             <AdminInput
               value={url}
               disabled={!editable || !enabled}
-              onChange={(e) => updateMethodsDict(id, 'url', e.target.value)}
+              onChange={(e) => updateMethodByAttr(id, 'url', e.target.value)}
               customClass="text-xs p-1"
             />
             <div className="flex-none ml-1">
@@ -81,21 +81,32 @@ function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, mov
           <AdminSwitch
             label="Visible"
             customLabelClass={clsx('text-xs', enabled ? 'text-black' : 'text-muted-color')}
-            enabled={enabled} setEnabled={(checked) => updateMethodsDict(id, 'enabled', checked)}
+            enabled={enabled} setEnabled={(checked) => updateMethodByAttr(id, 'enabled', checked)}
           />
         </div>
         <div className="ml-4">
-          {!editable && <a
+          {!editable && <div>
+            {!deleted ? <div><a
               href="#"
               className="text-red-500 text-xs"
               onClick={(e) => {
                 e.preventDefault();
-            }}>
-            <div className="flex items-center">
-              <div className="mr-1"><TrashIcon className="w-4"/></div>
-              <div>Delete</div>
-            </div>
-          </a>}
+                updateMethodByAttr(id, 'deleted', true);
+              }}>
+              <div className="flex items-center">
+                <div className="mr-1"><TrashIcon className="w-4"/></div>
+                <div>Delete</div>
+              </div>
+            </a></div> : <div className="text-xs text-muted-color">
+              <i>Click "Update" to sync up and actually delete it. Or <a
+                href="#"
+                className="text-brand-light text-xs"
+                onClick={(e) => {
+                  e.preventDefault();
+                  updateMethodByAttr(id, 'deleted', false);
+                }}>Undo</a>.</i>
+            </div>}
+          </div>}
         </div>
       </div>
     </div>
@@ -110,6 +121,7 @@ function AddNewMethod() {
         <div>Add new Subscribe Method</div>
       </div>
     </a>
+    <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify...</div>
   </div>);
 }
 
@@ -117,6 +129,7 @@ export default class SubscribeSettingsApp extends React.Component {
   constructor(props) {
     super(props);
     this.updateMethodsDict = this.updateMethodsDict.bind(this);
+    this.updateMethodByAttr = this.updateMethodByAttr.bind(this);
     this.moveCard = this.moveCard.bind(this);
 
     const currentType = 'subscribeMethods';
@@ -133,7 +146,7 @@ export default class SubscribeSettingsApp extends React.Component {
     };
   }
 
-  updateMethodsDict(methodId, attrName, attrValue) {
+  updateMethodByAttr(methodId, attrName, attrValue) {
     const {methods} = this.state.methodsDict;
     methods.forEach((method) => {
       if (method.id !== methodId) {
@@ -141,6 +154,10 @@ export default class SubscribeSettingsApp extends React.Component {
       }
       method[attrName] = attrValue;
     });
+    this.updateMethodsDict(methods);
+  }
+
+  updateMethodsDict(methods, callback) {
     this.setState((prevState) => ({
       methodsDict: {
         ...prevState.methodsDict,
@@ -148,7 +165,11 @@ export default class SubscribeSettingsApp extends React.Component {
           ...methods,
         ],
       },
-    }));
+    }), () => {
+      if (callback) {
+        callback();
+      }
+    });
   }
 
   moveCard(e, oldIndex, newIndex) {
@@ -156,14 +177,7 @@ export default class SubscribeSettingsApp extends React.Component {
     const {methods} = this.state.methodsDict;
     const element = methods.splice(oldIndex, 1)[0];
     methods.splice(newIndex, 0, element);
-    this.setState((prevState) => ({
-      methodsDict: {
-        ...prevState.methodsDict,
-        methods: [
-          ...methods,
-        ],
-      },
-    }));
+    this.updateMethodsDict(methods);
   }
 
   render() {
@@ -177,16 +191,20 @@ export default class SubscribeSettingsApp extends React.Component {
       currentType={currentType}
       onSubmit={(e) => {
         e.preventDefault();
-        this.props.onSubmit(e, currentType, {
-          ...methodsDict,
+        const newMethods = methods.filter(m => !m.deleted);
+        this.updateMethodsDict(newMethods, () => {
+          this.props.onSubmit(e, currentType, {
+            ...methodsDict,
+            methods: newMethods,
+          });
         });
       }}
     >
       <div className="mb-8">
         {methods.map((method, i) => <MethodRow
           method={method}
-          key={`${method.name}-row`}
-          updateMethodsDict={this.updateMethodsDict}
+          key={`${method.id}-row`}
+          updateMethodByAttr={this.updateMethodByAttr}
           index={i}
           firstIndex={i === 0}
           lastIndex={i === methods.length - 1}
