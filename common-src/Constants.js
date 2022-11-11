@@ -1,6 +1,23 @@
 const PREDEFINED_SUBSCRIBE_METHODS = {
+  'rss': {
+    name: 'RSS',
+    type: 'rss',
+    url: '',
+    image: '/assets/brands/subscribe/rss.png',
+    enabled: true,
+    editable: true,
+  },
+  'json': {
+    name: 'JSON',
+    type: 'json',
+    url: '',
+    image: '/assets/brands/subscribe/json.png',
+    enabled: true,
+    editable: true,
+  },
   'apple podcasts': {
     name: 'Apple Podcasts',
+    type: 'apple podcasts',
     url: '',
     image: '/assets/brands/subscribe/apple.png',
     enabled: true,
@@ -8,6 +25,7 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'spotify': {
     name: 'Spotify',
+    type: 'spotify',
     url: '',
     image: '/assets/brands/subscribe/spotify.png',
     enabled: true,
@@ -15,6 +33,7 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'amazon music': {
     name: 'Amazon Music',
+    type: 'amazon music',
     url: '',
     image: '/assets/brands/subscribe/amazon.png',
     enabled: true,
@@ -22,6 +41,7 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'listen notes': {
     name: 'Listen Notes',
+    type: 'listen notes',
     url: '',
     image: '/assets/brands/subscribe/listennotes.png',
     enabled: true,
@@ -29,6 +49,7 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'overcast': {
     name: 'Overcast',
+    type: 'overcast',
     url: '',
     image: '/assets/brands/subscribe/overcast.png',
     enabled: true,
@@ -36,6 +57,7 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'pocket casts': {
     name: 'Pocket Casts',
+    type: 'pocket casts',
     url: '',
     image: '/assets/brands/subscribe/pocketcasts.png',
     enabled: true,
@@ -45,54 +67,72 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
 
 const PREDEFINED_SOCIAL_ACCOUNTS = {
   'instagram': {
+    name: 'Instagram',
+    type: 'instagram',
     url: '',
     image: '/assets/brands/social/instagram.png',
     enabled: true,
     editable: true,
   },
   'linkedin': {
+    name: 'LinkedIn',
+    type: 'linkedin',
     url: '',
     image: '/assets/brands/social/linkedin.png',
     enabled: true,
     editable: true,
   },
   'pinterest': {
+    name: 'Pinterest',
+    type: 'pinterest',
     url: '',
     image: '/assets/brands/social/pinterest.png',
     enabled: true,
     editable: true,
   },
   'telegram': {
+    name: 'Telegram',
+    type: 'telegram',
     url: '',
     image: '/assets/brands/social/telegram.png',
     enabled: true,
     editable: true,
   },
   'tiktok': {
+    name: 'Tiktok',
+    type: 'tiktok',
     url: '',
     image: '/assets/brands/social/tiktok.png',
     enabled: true,
     editable: true,
   },
   'twitch': {
+    name: 'Twitch',
+    type: 'twitch',
     url: '',
     image: '/assets/brands/social/twitch.png',
     enabled: true,
     editable: true,
   },
   'twitter': {
+    name: 'Twitter',
+    type: 'twitter',
     url: '',
     image: '/assets/brands/social/twitter.png',
     enabled: true,
     editable: true,
   },
   'wechat': {
+    name: 'Wechat',
+    type: 'wechat',
     url: '',
     image: '/assets/brands/social/wechat.png',
     enabled: true,
     editable: true,
   },
   'youtube': {
+    name: 'YouTube',
+    type: 'youtube',
     url: '',
     image: '/assets/brands/social/youtube.png',
     enabled: true,

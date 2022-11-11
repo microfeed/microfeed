@@ -1,6 +1,6 @@
 import React from 'react';
 import SettingsBase from "../SettingsBase";
-import {PUBLIC_URLS} from "../../../../common-src/StringUtils";
+import {PUBLIC_URLS, randomShortUUID} from "../../../../common-src/StringUtils";
 import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from '@heroicons/react/24/outline';
 import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
@@ -11,17 +11,17 @@ import Constants from '../../../../common-src/Constants';
 function initMethodsDict() {
   return {
     methods: [
-      Constants.PREDEFINED_SUBSCRIBE_METHODS.rss,
-      Constants.PREDEFINED_SUBSCRIBE_METHODS.json,
+      {...Constants.PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false},
+      {...Constants.PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false},
     ],
   };
 }
 
 function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, moveCard}) {
-  const { name, editable, enabled } = method;
+  const { name, type, editable, enabled } = method;
   let { url } = method;
   if (!url && !editable) {
-    switch (name) {
+    switch (type) {
       case 'rss':
         url = PUBLIC_URLS.feedRss();
         break;
@@ -151,7 +151,7 @@ export default class SubscribeSettingsApp extends React.Component {
       onSubmit={(e) => {
         e.preventDefault();
         this.props.onSubmit(e, currentType, {
-          methods,
+          ...methodsDict,
         });
       }}
     >
