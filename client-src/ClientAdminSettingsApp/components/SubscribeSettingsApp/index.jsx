@@ -1,10 +1,11 @@
 import React from 'react';
 import SettingsBase from "../SettingsBase";
 import {PUBLIC_URLS} from "../../../../common-src/StringUtils";
-import { PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from '@heroicons/react/24/outline';
 import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
+import clsx from "clsx";
 
 function initMethodsDict() {
   return {
@@ -21,11 +22,23 @@ function initMethodsDict() {
         enabled: true,
         editable: false,
       },
+      {
+        name: 'apple podcasts',
+        url: '',
+        enabled: false,
+        editable: true,
+      },
+      {
+        name: 'spotify',
+        url: '',
+        enabled: false,
+        editable: true,
+      },
     ],
   };
 }
 
-function MethodRow({method, updateMethodsDict}) {
+function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, moveCard}) {
   const { name, editable, enabled } = method;
   let { url } = method;
   switch (name) {
@@ -38,12 +51,34 @@ function MethodRow({method, updateMethodsDict}) {
     default:
       break;
   }
-  return (<div className="grid grid-cols-12 gap-4">
-    <div className="col-span-2 flex items-center justify-start">
+
+  return (<div className={clsx('grid grid-cols-12 gap-2 py-2')}>
+    <div className="col-span-1 flex items-center justify-start">
+      <button
+        className={firstIndex ? 'text-muted-color' : 'hover:opacity-50'}
+        disabled={firstIndex}
+        onClick={(e) => moveCard(e, index, index - 1)}
+      >
+        <ArrowSmallUpIcon className="w-4" />
+      </button>
+      <button
+        className={clsx(lastIndex ? 'text-muted-color' : 'hover:opacity-50')}
+        disabled={lastIndex}
+        onClick={(e) => moveCard(e, index, index + 1)}
+      >
+        <ArrowSmallDownIcon className="w-4" />
+      </button>
+    </div>
+    <div className="col-span-2 flex items-center justify-end">
       <ExternalLink url={url} text={name} />
     </div>
-    <div className="col-span-6 flex items-center justify-start">
-      <AdminInput value={url} disabled={!editable} customClass="text-xs p-1" />
+    <div className="col-span-5 flex items-center justify-start">
+      <AdminInput
+        value={url}
+        disabled={!editable || !enabled}
+        onChange={(e) => updateMethodsDict(name, 'url', e.target.value)}
+        customClass="text-xs p-1"
+      />
     </div>
     <div className="col-span-2 flex items-center justify-center">
       <AdminSwitch enabled={enabled} setEnabled={(checked) => updateMethodsDict(name, 'enabled', checked)} />
@@ -74,6 +109,7 @@ export default class SubscribeSettingsApp extends React.Component {
   constructor(props) {
     super(props);
     this.updateMethodsDict = this.updateMethodsDict.bind(this);
+    this.moveCard = this.moveCard.bind(this);
 
     const currentType = 'subscribeMethods';
     const {settings} = props.feed;
@@ -107,6 +143,21 @@ export default class SubscribeSettingsApp extends React.Component {
     }));
   }
 
+  moveCard(e, oldIndex, newIndex) {
+    e.preventDefault();
+    const {methods} = this.state.methodsDict;
+    const element = methods.splice(oldIndex, 1)[0];
+    methods.splice(newIndex, 0, element);
+    this.setState((prevState) => ({
+      methodsDict: {
+        ...prevState.methodsDict,
+        methods: [
+          ...methods,
+        ],
+      },
+    }));
+  }
+
   render() {
     const {currentType, methodsDict} = this.state;
     const {submitting, submitForType} = this.props;
@@ -123,11 +174,15 @@ export default class SubscribeSettingsApp extends React.Component {
         });
       }}
     >
-      <div className="mb-8 grid grid-cols-1 gap-4">
-        {methods.map((method) => <MethodRow
+      <div className="mb-8">
+        {methods.map((method, i) => <MethodRow
           method={method}
           key={`${method.name}-row`}
           updateMethodsDict={this.updateMethodsDict}
+          index={i}
+          firstIndex={i === 0}
+          lastIndex={i === methods.length - 1}
+          moveCard={this.moveCard}
         />)}
       </div>
       <AddNewMethod />

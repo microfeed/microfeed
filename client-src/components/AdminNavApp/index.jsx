@@ -2,7 +2,13 @@ import React from 'react';
 import clsx from 'clsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Cog6ToothIcon, PlusIcon, ListBulletIcon, RssIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import {
+  Cog6ToothIcon,
+  PlusIcon,
+  ListBulletIcon,
+  PencilSquareIcon,
+  ArrowLeftOnRectangleIcon,
+} from '@heroicons/react/24/outline';
 import {ADMIN_URLS} from "../../../common-src/StringUtils";
 
 function NavItem({url, title, navId, currentId, Icon}) {
@@ -51,7 +57,7 @@ export default class AdminNavApp extends React.Component {
             title="Edit podcast"
             navId="edit_podcast"
             currentId={currentPage}
-            Icon={RssIcon}
+            Icon={PencilSquareIcon}
           />
           <NavItem
             url="/admin/episodes/new/"
