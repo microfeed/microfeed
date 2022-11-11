@@ -6,34 +6,13 @@ import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
 import clsx from "clsx";
+import Constants from '../../../../common-src/Constants';
 
 function initMethodsDict() {
   return {
     methods: [
-      {
-        name: 'rss',
-        url: '', // dynamically set from PUBLIC_URLS; no need to save to feed.json
-        enabled: true,
-        editable: false,
-      },
-      {
-        name: 'json',
-        url: '',
-        enabled: true,
-        editable: false,
-      },
-      {
-        name: 'apple podcasts',
-        url: '',
-        enabled: false,
-        editable: true,
-      },
-      {
-        name: 'spotify',
-        url: '',
-        enabled: false,
-        editable: true,
-      },
+      Constants.PREDEFINED_SUBSCRIBE_METHODS.rss,
+      Constants.PREDEFINED_SUBSCRIBE_METHODS.json,
     ],
   };
 }
@@ -41,15 +20,17 @@ function initMethodsDict() {
 function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, moveCard}) {
   const { name, editable, enabled } = method;
   let { url } = method;
-  switch (name) {
-    case 'rss':
-      url = PUBLIC_URLS.feedRss();
-      break;
-    case 'json':
-      url = PUBLIC_URLS.feedJson();
-      break;
-    default:
-      break;
+  if (!url && !editable) {
+    switch (name) {
+      case 'rss':
+        url = PUBLIC_URLS.feedRss();
+        break;
+      case 'json':
+        url = PUBLIC_URLS.feedJson();
+        break;
+      default:
+        break;
+    }
   }
 
   return (<div className={clsx('grid grid-cols-12 gap-2 py-2')}>
