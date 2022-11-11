@@ -18,7 +18,7 @@ function initMethodsDict() {
 }
 
 function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, moveCard}) {
-  const { name, type, editable, enabled } = method;
+  const { id, name, type, editable, enabled, image } = method;
   let { url } = method;
   if (!url && !editable) {
     switch (type) {
@@ -33,8 +33,8 @@ function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, mov
     }
   }
 
-  return (<div className={clsx('grid grid-cols-12 gap-2 py-2')}>
-    <div className="col-span-1 flex items-center justify-start">
+  return (<div className={clsx('flex py-4 border-b')}>
+    <div className="flex-none mr-2 flex items-center justify-start">
       <button
         className={firstIndex ? 'text-muted-color' : 'hover:opacity-50'}
         disabled={firstIndex}
@@ -50,27 +50,54 @@ function MethodRow({method, updateMethodsDict, index, firstIndex, lastIndex, mov
         <ArrowSmallDownIcon className="w-4" />
       </button>
     </div>
-    <div className="col-span-2 flex items-center justify-end">
-      <ExternalLink url={url} text={name} />
+    <div className="flex-none mr-2 flex items-center justify-end">
+      <img src={image} className="w-14" alt={name} />
     </div>
-    <div className="col-span-5 flex items-center justify-start">
-      <AdminInput
-        value={url}
-        disabled={!editable || !enabled}
-        onChange={(e) => updateMethodsDict(name, 'url', e.target.value)}
-        customClass="text-xs p-1"
-      />
-    </div>
-    <div className="col-span-2 flex items-center justify-center">
-      <AdminSwitch enabled={enabled} setEnabled={(checked) => updateMethodsDict(name, 'enabled', checked)} />
-    </div>
-    <div className="col-span-2 flex items-center justify-end">
-      {editable && <a href="#" className="text-red-500 text-xs">
-        <div className="flex items-center">
-          <div className="mr-1"><TrashIcon className="w-4" /></div>
-          <div>delete</div>
+    <div className="flex-1">
+      <div className="grid grid-cols-12 gap-2">
+        <div className="col-span-4">
+          <AdminInput
+            value={name}
+            onChange={(e) => updateMethodsDict(id, 'name', e.target.value)}
+            customClass="text-xs p-1"
+          />
         </div>
-      </a>}
+        <div className="col-span-8">
+          <div className="flex-1 flex items-center">
+            <AdminInput
+              value={url}
+              disabled={!editable || !enabled}
+              onChange={(e) => updateMethodsDict(id, 'url', e.target.value)}
+              customClass="text-xs p-1"
+            />
+            <div className="flex-none ml-1">
+              <ExternalLink url={url} text="" linkClass="text-xs"/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center">
+        <div className="">
+          <AdminSwitch
+            label="Visible"
+            customLabelClass={clsx('text-xs', enabled ? 'text-black' : 'text-muted-color')}
+            enabled={enabled} setEnabled={(checked) => updateMethodsDict(id, 'enabled', checked)}
+          />
+        </div>
+        <div className="ml-4">
+          {!editable && <a
+              href="#"
+              className="text-red-500 text-xs"
+              onClick={(e) => {
+                e.preventDefault();
+            }}>
+            <div className="flex items-center">
+              <div className="mr-1"><TrashIcon className="w-4"/></div>
+              <div>Delete</div>
+            </div>
+          </a>}
+        </div>
+      </div>
     </div>
   </div>);
 }
@@ -106,10 +133,10 @@ export default class SubscribeSettingsApp extends React.Component {
     };
   }
 
-  updateMethodsDict(methodName, attrName, attrValue) {
+  updateMethodsDict(methodId, attrName, attrValue) {
     const {methods} = this.state.methodsDict;
     methods.forEach((method) => {
-      if (method.name !== methodName) {
+      if (method.id !== methodId) {
         return;
       }
       method[attrName] = attrValue;

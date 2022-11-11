@@ -3,10 +3,9 @@ import clsx from "clsx";
 import { Switch } from '@headlessui/react'
 
 export default function AdminSwitch(
-  { label, enabled, setEnabled, customClass = '' }) {
-  return (<label className="">
-    {label && <div className="lh-page-subtitle">{label}</div>}
-    <div className="w-full">
+  { label, enabled, setEnabled, customClass = '', customLabelClass = '' }) {
+  return (<div className="flex items-center">
+    <div className="">
       <Switch
         checked={enabled}
         onChange={setEnabled}
@@ -21,5 +20,6 @@ export default function AdminSwitch(
         />
       </Switch>
     </div>
-  </label>);
+    {label && <div className={clsx('flex-none ml-1', customLabelClass)}>{label}</div>}
+  </div>);
 }
