@@ -71,6 +71,7 @@ export default class SettingsApp extends React.Component {
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
+              onSubmit={this.onSubmit}
             />
           </div>
           <div className="col-span-1 h-full">

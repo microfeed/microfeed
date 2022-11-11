@@ -3,7 +3,7 @@ import clsx from "clsx";
 
 export default function AdminInput(
   { label, value, onChange, placeholder = '', disabled = false, customClass = '' }) {
-  return (<label className="">
+  return (<label className="w-full">
     {label && <div className="lh-page-subtitle">{label}</div>}
     <div className="w-full">
       <input
