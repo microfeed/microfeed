@@ -2,7 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Cog6ToothIcon, PlusIcon, ListBulletIcon, RssIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, PlusIcon, ListBulletIcon, RssIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import {ADMIN_URLS} from "../../../common-src/StringUtils";
 
 function NavItem({url, title, navId, currentId, Icon}) {

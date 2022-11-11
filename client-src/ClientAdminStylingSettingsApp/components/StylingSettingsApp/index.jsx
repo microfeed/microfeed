@@ -5,6 +5,7 @@ import {ADMIN_URLS, PUBLIC_URLS, escapeHtml, unescapeHtml} from "../../../../com
 import {showToast} from "../../../common/ToastUtils";
 import Requests from "../../../common/requests";
 import clsx from "clsx";
+import ExternalLink from "../../../components/ExternalLink";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -154,35 +155,30 @@ export default class RssStylingApp extends React.Component {
     const code = this.state[currentType];
     let language = 'html';
     let viewUrl = '/';
-    let title, description;
+    let description;
     switch(currentType) {
       case 'rssStylesheet':
         viewUrl = PUBLIC_URLS.feedRss();
         language = 'css';
-        title = 'RSS Stylesheet';
         description = <div>The code is used for <a href={PUBLIC_URLS.feedRssStylesheet()} target="_blank">
           {PUBLIC_URLS.feedRssStylesheet()}</a>, which is included in <a
           href={PUBLIC_URLS.feedRss()} target="_blank">the RSS feed</a>.</div>;
         break;
       case 'episodeWeb':
         viewUrl = getFirstEpisodeUrl(feed);
-        title = 'Episode Web';
         description = <div>The code is used for an episode web page, which is good for SEO.</div>;
         break;
       case 'feedWeb':
         viewUrl = PUBLIC_URLS.feedWeb();
-        title = 'Feed Web';
         description = <div>The code is used for <a href={PUBLIC_URLS.feedWeb()} target="_blank">the public homepage of this site</a></div>;
         break;
       case 'webHeader':
         viewUrl = PUBLIC_URLS.feedWeb();
-        title = 'Web Header';
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.</div>
         break;
       case 'webFooter':
         viewUrl = PUBLIC_URLS.feedWeb();
-        title = 'Web Footer';
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.</div>
         break;
@@ -197,7 +193,6 @@ export default class RssStylingApp extends React.Component {
       <CodeTabs currentType={currentType} setState={this.setState} />
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
-          <h2 className="lh-page-subtitle">{title}</h2>
           <div className="text-xs text-muted-color mb-4">{description}</div>
           <CodeEditor
             value={code}
@@ -225,8 +220,8 @@ export default class RssStylingApp extends React.Component {
               {submitting ? 'Updating...' : 'Update'}
             </button>
           </div>
-          <div className="text-center lh-page-card mt-4">
-            <a className="mr-2" href={viewUrl} target="_blank">View live page</a>
+          <div className="lh-page-card mt-4 flex flex-col items-center">
+            <ExternalLink url={viewUrl} text="View live page" />
             <div className="text-muted-color text-xs">{viewUrl}</div>
           </div>
         </div>

@@ -39,13 +39,13 @@ export default class CodeInjectionSettingsApp extends React.Component {
     >
       <div>
         <div className="lh-page-subtitle">Site Header</div>
-        <div className="text-xs text-muted-color">Code here will be placed right before the <b>{'</head>'}</b> tag on every html page of the site</div>
+        <div className="text-xs text-muted-color">Code here will be placed right before the <b>{'</head>'}</b> tag on every public web page of the site.</div>
         <AdminTextarea value={headerCode} onChange={(e) => this.setState({headerCode: e.target.value})}/>
       </div>
       <div className="mt-4">
         <div className="lh-page-subtitle">Site Footer</div>
         <div className="text-xs text-muted-color">
-          Code here will be placed right before the <b>{'</body>'}</b> tag on every html page of the site. You can put a Google Analytics tag or any 3rd-party js code here.
+          Code here will be placed right before the <b>{'</body>'}</b> tag on every public web page of the site. You can put a Google Analytics tag or any 3rd-party js code here.
         </div>
         <AdminTextarea value={footerCode} onChange={(e) => this.setState({footerCode: e.target.value})}/>
       </div>
