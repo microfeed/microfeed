@@ -167,6 +167,10 @@ const PREDEFINED_SOCIAL_ACCOUNTS = {
 const Constants = {
   PREDEFINED_SUBSCRIBE_METHODS,
   PREDEFINED_SOCIAL_ACCOUNTS,
+
+  OUR_BRAND: {
+    domain: 'CurateKit.com',
+  },
 };
 
 export default Constants;

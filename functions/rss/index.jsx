@@ -2,6 +2,7 @@ import {msToUtcString} from "../../common-src/TimeUtils";
 import {secondsToHHMMSS} from "../../common-src/StringUtils";
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
 import {RssResponseBuilder} from "../../edge-src/common/PublicPageUtils";
+import Constants from '../../common-src/Constants';
 
 const {XMLBuilder} = require('fast-xml-parser');
 
@@ -16,7 +17,7 @@ export async function onRequestGet({request, env}) {
           'description': {
             '@cdata': item.description,
           },
-          'generator': 'CurateKit.com',
+          'generator': Constants.OUR_BRAND.domain,
           'itunes:summary': {
             '@cdata': item.description,
           },
