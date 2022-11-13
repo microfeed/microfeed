@@ -3,7 +3,6 @@ import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
 import {randomShortUUID, ADMIN_URLS, PUBLIC_URLS} from '../../../../common-src/StringUtils';
-import AudioUploaderApp from './components/AudioUploaderApp';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminTextarea from "../../../components/AdminTextarea";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
@@ -13,6 +12,7 @@ import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 import ExternalLink from "../../../components/ExternalLink";
+import EnclosureManager from "./components/EnclosureManager";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -117,7 +117,7 @@ export default class EditEpisodeApp extends React.Component {
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
-            <AudioUploaderApp
+            <EnclosureManager
               audio={episode.audio}
               audioDurationSecond={episode.audioDurationSecond}
               audioFileSizeByte={episode.audioFileSizeByte}

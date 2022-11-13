@@ -1,4 +1,4 @@
-const PREDEFINED_SUBSCRIBE_METHODS = {
+export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',
     type: 'apple podcasts',
@@ -89,7 +89,7 @@ const PREDEFINED_SUBSCRIBE_METHODS = {
   },
 };
 
-const PREDEFINED_SOCIAL_ACCOUNTS = {
+export const PREDEFINED_SOCIAL_ACCOUNTS = {
   'instagram': {
     name: 'Instagram',
     type: 'instagram',
@@ -164,13 +164,37 @@ const PREDEFINED_SOCIAL_ACCOUNTS = {
   },
 };
 
+export const OUR_BRAND = {
+  domain: 'Enclosure.co',
+};
+
+export const ENCLOSURE_CATEGORIES = {
+  AUDIO: 'audio',
+  DOCUMENT: 'document',
+  VIDEO: 'video',
+  IMAGE: 'image',
+  EXTERNAL_URL: 'external_url',
+};
+export const ENCLOSURE_CATEGORIES_DICT = {
+  [ENCLOSURE_CATEGORIES.AUDIO]: {
+    name: 'Audio',
+    fileTypes: ['mp3'],
+  },
+  [ENCLOSURE_CATEGORIES.DOCUMENT]: {
+    name: 'Document',
+    fileTypes: ['pdf'],
+  },
+  [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
+    name: 'External URL',
+    fileTypes: [],
+  },
+};
+
 const Constants = {
   PREDEFINED_SUBSCRIBE_METHODS,
   PREDEFINED_SOCIAL_ACCOUNTS,
-
-  OUR_BRAND: {
-    domain: 'CurateKit.com',
-  },
+  OUR_BRAND,
+  ENCLOSURE_CATEGORIES,
 };
 
 export default Constants;
