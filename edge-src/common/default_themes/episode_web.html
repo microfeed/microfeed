@@ -33,38 +33,16 @@
           Subscribe:
         </div>
         <div class="flex flex-wrap">
-          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
-            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
-              <div class="flex items-center">
-                <img src="/assets/brands/apple.svg" class="w-3.5"/>
+            {{#subscribeMethods}}
+              <a href="{{url}}" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
+              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
+                <div class="flex items-center">
+                  <img src="{{image}}" class="w-3.5"/>
+                </div>
+                <div class="ml-2 text-sm md:text-lg">{{name}}</div>
               </div>
-              <div class="ml-2 text-sm md:text-lg">apple</div>
-            </div>
-          </a>
-          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
-            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
-              <div class="flex items-center">
-                <img src="/assets/brands/spotify.svg" class="w-3.5"/>
-              </div>
-              <div class="ml-2 text-sm md:text-lg">spotify</div>
-            </div>
-          </a>
-          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
-            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
-              <div class="flex items-center">
-                <img src="/assets/brands/rss.svg" class="w-3.5"/>
-              </div>
-              <div class="ml-2 text-sm md:text-lg">rss</div>
-            </div>
-          </a>
-          <a href="" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
-            <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
-              <div class="flex items-center">
-                <img src="/assets/brands/json.svg" class="w-3.5"/>
-              </div>
-              <div class="ml-2 text-sm md:text-lg">json</div>
-            </div>
-          </a>
+            </a>
+            {{/subscribeMethods}}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import {projectPrefix} from "../../common-src/R2Utils";
-import {buildAudioUrlWithTracking} from "../../common-src/StringUtils";
+import {buildAudioUrlWithTracking, PUBLIC_URLS} from "../../common-src/StringUtils";
 
 export default class Feed {
   constructor(env) {
@@ -34,6 +34,21 @@ export default class Feed {
       version: content.version,
       podcast: {...content.podcast},
       episodes: [],
+      subscribeMethods: content.settings.subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+        if (!m.editable) {
+          switch (m.type) {
+            case 'rss':
+              m.url = PUBLIC_URLS.feedRss();
+              return m;
+            case 'json':
+              m.url = PUBLIC_URLS.feedJson();
+              return m;
+            default:
+              return m;
+          }
+        }
+        return m;
+      }),
     };
     const settings = content.settings || {};
     let trackingUrls = [];
@@ -51,6 +66,7 @@ export default class Feed {
       });
     })
     publicContent.episodes.sort((a, b) => b.pubDateMs - a.pubDateMs);
+
     return publicContent;
   }
 
