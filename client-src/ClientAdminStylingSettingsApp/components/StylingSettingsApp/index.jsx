@@ -55,7 +55,6 @@ function CodeTabs({currentType, setState}) {
 
 function getFirstEpisodeUrl(feed) {
   const {episodes} = feed;
-  console.log(episodes);
   if (episodes && Object.keys(episodes).length > 0) {
     const epsId = Object.keys(episodes)[0];
     const eps = episodes[epsId];
