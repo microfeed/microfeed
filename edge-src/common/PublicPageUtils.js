@@ -44,6 +44,18 @@ class ResponseBuilder {
     });
   }
 
+  static notEnabledResponse(subscribeMethods, type) {
+    let notFoundRes = null;
+    if (subscribeMethods && subscribeMethods.methods && subscribeMethods.methods.length > 0) {
+      subscribeMethods.methods.forEach((method) => {
+        if (method.type === type && !method.editable && !method.enabled) {
+          notFoundRes = ResponseBuilder.Response404();
+        }
+      });
+    }
+    return notFoundRes;
+  }
+
   //
   // Override these two methods
   //
@@ -76,6 +88,11 @@ export class RssResponseBuilder extends ResponseBuilder {
   }
   _getResponse(props) {
     const res = super._getResponse(props);
+    const {subscribeMethods} = this.settings;
+    let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'rss');
+    if (notFoundRes) {
+      return notFoundRes;
+    }
     return new Response(props.buildXmlFunc(this.jsonData), res);
   }
 }
@@ -87,6 +104,11 @@ export class JsonResponseBuilder extends ResponseBuilder {
 
   _getResponse(props) {
     const res = super._getResponse(props);
+    const {subscribeMethods} = this.settings;
+    let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'json');
+    if (notFoundRes) {
+      return notFoundRes;
+    }
     return new Response(JSON.stringify(this.jsonData), res);
   }
 }

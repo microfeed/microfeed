@@ -3,7 +3,6 @@ import AdminNavApp from '../../components/AdminNavApp';
 import TrackingSettingsApp from "./TrackingSettingsApp";
 import PodcastAccessSettingsApp from "./PodcastAccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
-import SocialAccountSettingsApp from "./SocialAccountSettingsApp";
 import StylingSettingsApp from "./StylingSettingsApp";
 import CodeInjectionSettingsApp from "./CodeInjectionSettingsApp";
 import Requests from "../../common/requests";
@@ -75,7 +74,7 @@ export default class SettingsApp extends React.Component {
             />
           </div>
           <div className="col-span-1 h-full">
-            <SocialAccountSettingsApp
+            <CodeInjectionSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
@@ -89,14 +88,6 @@ export default class SettingsApp extends React.Component {
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
-            />
-          </div>
-          <div className="col-span-1 h-full">
-            <CodeInjectionSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-              onSubmit={this.onSubmit}
             />
           </div>
         </div>
