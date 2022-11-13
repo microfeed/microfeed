@@ -1,12 +1,13 @@
 import React from 'react';
+import clsx from "clsx";
 import SettingsBase from "../SettingsBase";
 import {PUBLIC_URLS, randomShortUUID} from "../../../../common-src/StringUtils";
 import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from '@heroicons/react/24/outline';
 import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
-import clsx from "clsx";
 import Constants from '../../../../common-src/Constants';
+import NewSubscribeDialog from "./components/NewSubscribeDialog";
 
 function initMethodsDict() {
   return {
@@ -50,14 +51,15 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
         <ArrowSmallDownIcon className="w-4" />
       </button>
     </div>
-    <div className="flex-none mr-2 flex items-center justify-end">
-      <img src={image} className="w-14" alt={name} />
+    <div className="flex-none mr-4 flex items-center justify-end">
+      <img src={image} className={clsx('w-14', enabled ? '' : 'opacity-50')} alt={name} />
     </div>
     <div className="flex-1">
       <div className="grid grid-cols-12 gap-2">
         <div className="col-span-4">
           <AdminInput
             value={name}
+            disabled={!editable || !enabled}
             onChange={(e) => updateMethodByAttr(id, 'name', e.target.value)}
             customClass="text-xs p-1"
           />
@@ -85,7 +87,7 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
           />
         </div>
         <div className="ml-4">
-          {!editable && <div>
+          {editable && <div>
             {!deleted ? <div><a
               href="#"
               className="text-red-500 text-xs"
@@ -113,15 +115,26 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
   </div>);
 }
 
-function AddNewMethod() {
+function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
   return (<div>
-    <a href="#">
+    <a
+      href="#"
+      onClick={(e) => {
+        e.preventDefault();
+        setIsOpenNewMethod(true);
+      }}
+    >
       <div className="flex items-center justify-center">
         <div className="w-4 mr-1"><PlusCircleIcon/></div>
         <div>Add new Subscribe Method</div>
       </div>
     </a>
     <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify...</div>
+    <NewSubscribeDialog
+      isOpen={isOpenNewMethod}
+      setIsOpen={setIsOpenNewMethod}
+      addNewMethod={addNewMethod}
+    />
   </div>);
 }
 
@@ -130,6 +143,7 @@ export default class SubscribeSettingsApp extends React.Component {
     super(props);
     this.updateMethodsDict = this.updateMethodsDict.bind(this);
     this.updateMethodByAttr = this.updateMethodByAttr.bind(this);
+    this.addNewMethod = this.addNewMethod.bind(this);
     this.moveCard = this.moveCard.bind(this);
 
     const currentType = 'subscribeMethods';
@@ -143,6 +157,7 @@ export default class SubscribeSettingsApp extends React.Component {
     this.state = {
       currentType,
       methodsDict,
+      isOpenNewMethod: false,
     };
   }
 
@@ -154,6 +169,12 @@ export default class SubscribeSettingsApp extends React.Component {
       }
       method[attrName] = attrValue;
     });
+    this.updateMethodsDict(methods);
+  }
+
+  addNewMethod(newMethod) {
+    const {methods} = this.state.methodsDict;
+    methods.push(newMethod);
     this.updateMethodsDict(methods);
   }
 
@@ -181,7 +202,7 @@ export default class SubscribeSettingsApp extends React.Component {
   }
 
   render() {
-    const {currentType, methodsDict} = this.state;
+    const {currentType, methodsDict, isOpenNewMethod} = this.state;
     const {submitting, submitForType} = this.props;
     const {methods} = methodsDict;
     return (<SettingsBase
@@ -200,7 +221,7 @@ export default class SubscribeSettingsApp extends React.Component {
         });
       }}
     >
-      <div className="mb-8">
+      <div className="mb-4">
         {methods.map((method, i) => <MethodRow
           method={method}
           key={`${method.id}-row`}
@@ -211,7 +232,11 @@ export default class SubscribeSettingsApp extends React.Component {
           moveCard={this.moveCard}
         />)}
       </div>
-      <AddNewMethod />
+      <AddNewMethod
+        isOpenNewMethod={isOpenNewMethod}
+        setIsOpenNewMethod={(isOpen) => this.setState({isOpenNewMethod: isOpen})}
+        addNewMethod={this.addNewMethod}
+      />
     </SettingsBase>);
   }
 }

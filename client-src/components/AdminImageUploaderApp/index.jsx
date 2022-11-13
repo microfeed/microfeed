@@ -5,7 +5,7 @@ import 'cropperjs/dist/cropper.min.css';
 import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../common/requests';
 import {randomHex} from '../../../common-src/StringUtils';
-import LhDialog from "../LhDialog";
+import AdminDialog from "../AdminDialog";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
 
@@ -162,7 +162,7 @@ export default class AdminImageUploaderApp extends React.Component {
       {currentImageUrl && <div className="text-sm flex justify-center mt-1">
         <ExternalLink text="preview image" url={currentImageUrl} />
       </div>}
-      <LhDialog
+      <AdminDialog
         isOpen={showModal}
         setIsOpen={(trueOrFalse) => this.setState({showModal: trueOrFalse})}
         disabledClose={uploading}
@@ -209,7 +209,7 @@ export default class AdminImageUploaderApp extends React.Component {
           {sizeTooSmall ? <div>Image too small: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels. Please make sure the image has 1400 x 1400 to 3000 x 3000 pixels.</div> :
             <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
         </div>}
-      </LhDialog>
+      </AdminDialog>
     </div>);
   }
 }
