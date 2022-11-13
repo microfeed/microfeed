@@ -94,12 +94,9 @@ export default class Theme {
   }
 
   getFeedWeb() {
-    const {podcast, episodes, subscribeMethods} = this.jsonData;
     const tmpl = this.getFeedWebTmpl();
     const html = Mustache.render(tmpl, {
-      podcast,
-      episodes,
-      subscribeMethods,
+      ...this.jsonData,
 
       episodeUrl,
       pubDate,
@@ -121,13 +118,11 @@ export default class Theme {
   }
 
   getEpisodeWeb(episode) {
-    const {podcast, subscribeMethods} = this.jsonData;
     episode.pubDate = pubDate(episode);
     const tmpl = this.getEpisodeWebTmpl();
     const html = Mustache.render(tmpl, {
+      ...this.jsonData,
       episode,
-      podcast,
-      subscribeMethods,
     });
     return {
       html,
