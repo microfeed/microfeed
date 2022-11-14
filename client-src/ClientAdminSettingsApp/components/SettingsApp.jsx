@@ -8,6 +8,7 @@ import CodeInjectionSettingsApp from "./CodeInjectionSettingsApp";
 import Requests from "../../common/requests";
 import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
 import {showToast} from "../../common/ToastUtils";
+import {NAV_ITEMS} from "../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -44,7 +45,7 @@ export default class SettingsApp extends React.Component {
   render() {
     const {submitStatus, feed, submitForType} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    return (<AdminNavApp currentPage="settings">
+    return (<AdminNavApp currentPage={NAV_ITEMS.SETTINGS}>
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1 h-full">

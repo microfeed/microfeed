@@ -6,7 +6,7 @@ import {ENCLOSURE_CATEGORIES} from "../../common-src/Constants";
 const Mustache = require('mustache');
 
 function decorateMediaFileForEpisode(episode) {
-   episode.episodeUrl = PUBLIC_URLS.pageEpisode(episode.id, episode.title);
+   episode.episodeUrl = PUBLIC_URLS.itemWeb(episode.id, episode.title);
    episode.pubDate = humanizeMs(episode.pubDateMs);
    episode.descriptionText = convert(episode.description, {});
 

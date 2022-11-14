@@ -36,9 +36,9 @@ const entry = {
   //
 
   // Admin
-  edit_episode_js: './ClientAdminEpisodesApp/EditEpisode/index.js',
-  all_episodes_js: './ClientAdminEpisodesApp/index.js',
-  edit_podcast_js: './ClientAdminPodcastApp/index.js',
+  edit_item_js: './ClientAdminItemsApp/EditItem/index.js',
+  all_items_js: './ClientAdminItemsApp/index.js',
+  edit_channel_js: './ClientAdminChannelApp/index.js',
   settings_js: './ClientAdminSettingsApp/index.js',
   styling_settings_js: './ClientAdminStylingSettingsApp/index.js',
 };

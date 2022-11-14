@@ -10,6 +10,7 @@ import {
   ArrowLeftOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import {ADMIN_URLS} from "../../../common-src/StringUtils";
+import {NAV_ITEMS, NAV_ITEMS_DICT} from "../../../common-src/Constants";
 
 function NavItem({url, title, navId, currentId, Icon}) {
   return (
@@ -36,7 +37,7 @@ export default class AdminNavApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      'currentPage': props.currentPage || 'edit_podcast',
+      'currentPage': props.currentPage || NAV_ITEMS.EDIT_CHANNEL,
     }
   }
 
@@ -53,30 +54,30 @@ export default class AdminNavApp extends React.Component {
         </h1>
         <nav>
           <NavItem
-            url="/admin/"
-            title="Edit podcast"
-            navId="edit_podcast"
+            url={ADMIN_URLS.home()}
+            title={NAV_ITEMS_DICT[NAV_ITEMS.EDIT_CHANNEL].name}
+            navId={NAV_ITEMS.EDIT_CHANNEL}
             currentId={currentPage}
             Icon={PencilSquareIcon}
           />
           <NavItem
-            url="/admin/episodes/new/"
-            title="Add new episode"
-            navId="new_episode"
+            url={ADMIN_URLS.newItem()}
+            title={NAV_ITEMS_DICT[NAV_ITEMS.NEW_ITEM].name}
+            navId={NAV_ITEMS.NEW_ITEM}
             currentId={currentPage}
             Icon={PlusIcon}
           />
           <NavItem
-            url="/admin/episodes/"
-            title="See all episodes"
-            navId="all_episodes"
+            url={ADMIN_URLS.allItems()}
+            title={NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
+            navId={NAV_ITEMS.ALL_ITEMS}
             currentId={currentPage}
             Icon={ListBulletIcon}
           />
           <NavItem
-            url="/admin/settings/"
-            title="Settings"
-            navId="settings"
+            url={ADMIN_URLS.settings()}
+            title={NAV_ITEMS_DICT[NAV_ITEMS.SETTINGS].name}
+            navId={NAV_ITEMS.SETTINGS}
             currentId={currentPage}
             Icon={Cog6ToothIcon}
           />

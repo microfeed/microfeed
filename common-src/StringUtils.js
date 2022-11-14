@@ -147,9 +147,10 @@ export function unescapeHtml(htmlStr) {
 const ADMIN_HOME = '/admin';
 
 export const ADMIN_URLS = {
-  home: () => ADMIN_HOME,
-  pageEditEpisode: (episodeId) => `${ADMIN_HOME}/episodes/${episodeId}/`,
-  allEpisodes: () => `${ADMIN_HOME}/episodes/`,
+  home: () => `${ADMIN_HOME}/`,
+  editItem: (itemId) => `${ADMIN_HOME}/items/${itemId}/`,
+  newItem: () => `${ADMIN_HOME}/items/new/`,
+  allItems: () => `${ADMIN_HOME}/items/`,
   settings: () => `${ADMIN_HOME}/settings/`,
   sylingSettings: () => `${ADMIN_HOME}/settings/styling/`,
   logout: () => `${ADMIN_HOME}/logout/`,
@@ -173,10 +174,7 @@ export const PUBLIC_URLS = {
   feedJson: (baseUrl='') => {
     return `${baseUrl}/json/`;
   },
-  pageEpisode: (episodeId, episodeTitle, baseUrl='') => {
-    if (!episodeTitle) {
-      return '';
-    }
-    return `${baseUrl}/episodes/${slugify(episodeTitle)}-${episodeId}/`;
+  itemWeb: (itemId, itemTitle, baseUrl='') => {
+    return `${baseUrl}/i/${slugify(itemTitle || '')}-${itemId}/`;
   }
 };

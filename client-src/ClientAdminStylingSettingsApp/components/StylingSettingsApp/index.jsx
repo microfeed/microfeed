@@ -58,7 +58,7 @@ function getFirstEpisodeUrl(feed) {
   if (episodes && Object.keys(episodes).length > 0) {
     const epsId = Object.keys(episodes)[0];
     const eps = episodes[epsId];
-    return PUBLIC_URLS.pageEpisode(epsId, eps.title || 'Untitled');
+    return PUBLIC_URLS.itemWeb(epsId, eps.title || 'Untitled');
   }
   return '/'
 }
