@@ -33,7 +33,7 @@ export default class EpisodeListApp extends React.Component {
         </div>
         {episodeList.map((eps) => {
           return (<div key={`eps-${eps.id}`}>
-            <a href={ADMIN_URLS.editItem(eps.id)}>{eps.title}</a>
+            <a href={ADMIN_URLS.editItem(eps.id)}>{eps.title || 'Untitled'}</a>
           </div>);
         })}
       </form>

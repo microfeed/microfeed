@@ -1,4 +1,5 @@
 import React from 'react';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
@@ -12,7 +13,7 @@ import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 import ExternalLink from "../../../components/ExternalLink";
-import EnclosureManager from "./components/MediaManager";
+import MediaManager from "./components/MediaManager";
 import {NAV_ITEMS, NAV_ITEMS_DICT, ITEM_STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
@@ -29,6 +30,7 @@ export default class EditEpisodeApp extends React.Component {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
+    this.onDelete = this.onDelete.bind(this);
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdateEpisodeMeta = this.onUpdateEpisodeMeta.bind(this);
     this.onUpdateEpisodeToFeed = this.onUpdateEpisodeToFeed.bind(this);
@@ -75,6 +77,23 @@ export default class EditEpisodeApp extends React.Component {
       [itemId]: {...item},
     };
     this.onUpdateFeed({'episodes': episodesBundle}, onSuccess);
+  }
+
+  onDelete() {
+    const {feed, itemId} = this.state;
+    delete feed.episodes[itemId];
+    this.onUpdateFeed({'episodes': {...feed.episodes}}, () => {
+      this.setState({submitStatus: SUBMIT_STATUS__START});
+      Requests.post(ADMIN_URLS.ajaxFeed(), feed)
+        .then(() => {
+          showToast('Deleted!', 'success');
+          setTimeout(() => {
+            this.setState({submitStatus: null}, () => {
+              location.href = ADMIN_URLS.allItems();
+            });
+          }, 1000);
+        });
+    });
   }
 
   onSubmit(e) {
@@ -126,7 +145,7 @@ export default class EditEpisodeApp extends React.Component {
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
-            <EnclosureManager
+            <MediaManager
               mediaFile={mediaFile}
               onMediaFileUpdated={(newMediaFile) => {
                 this.onUpdateEpisodeMeta({
@@ -268,8 +287,27 @@ export default class EditEpisodeApp extends React.Component {
                 {submitting ? submittingButtonText : buttonText}
               </button>
             </div>
-            {action === 'edit' && <div className="lh-page-card mt-4 flex justify-center">
-              <ExternalLink url={PUBLIC_URLS.itemWeb(itemId, item.title)} text="Item Web"/>
+            {action === 'edit' && <div>
+              <div className="lh-page-card mt-4 flex justify-center">
+                <ExternalLink url={PUBLIC_URLS.itemWeb(itemId, item.title)} text="Item Web"/>
+              </div>
+              <div className="lh-page-card mt-4 flex justify-center">
+                <a
+                  href="#"
+                  className="text-red-500 text-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const ok = confirm('Are you going to permanently delete this item?');
+                    if (ok) {
+                      this.onDelete();
+                    }
+                  }
+                }><div className="flex items-center">
+                  <TrashIcon className="w-4" />
+                  <div className="ml-1">Delete this item</div>
+                  </div>
+                </a>
+              </div>
             </div>}
           </div>
         </div>
