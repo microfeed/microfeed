@@ -1,6 +1,8 @@
 import React from "react";
+import clsx from "clsx";
 
-export default function AdminRadio({ label, groupName, buttons, onChange, disabled = false}) {
+export default function AdminRadio(
+  { label, groupName, buttons, onChange, disabled = false, customLabelClass = ''}) {
   return (<fieldset className="flex flex-col justify-center">
     {label && <legend className="lh-page-subtitle">{label}</legend>}
     <div className="w-full flex">
@@ -13,7 +15,7 @@ export default function AdminRadio({ label, groupName, buttons, onChange, disabl
             className="text-brand-light"
             disabled={disabled}
           />
-          <div className="ml-1">{b.name}</div>
+          <div className={clsx('ml-1', customLabelClass)}>{b.name}</div>
         </label>
       ))}
     </div>

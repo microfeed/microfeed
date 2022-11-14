@@ -109,28 +109,20 @@ export default class EditEpisodeApp extends React.Component {
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
     let currentPage = 'new_episode';
+    let upperLevel;
     if (action === 'edit') {
       buttonText = 'Update';
       submittingButtonText = 'Updating...';
       currentPage = 'all_episodes';
+      upperLevel = {name: 'All episodes', url: ADMIN_URLS.allEpisodes(), childName: `Episode (id = ${episodeId})`};
     }
-    return (<AdminNavApp currentPage={currentPage}>
+    return (<AdminNavApp currentPage={currentPage} upperLevel={upperLevel}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
             <EnclosureManager
               mediaFile={mediaFile}
-              // audio={episode.audio}
-              // audioDurationSecond={episode.audioDurationSecond}
-              // audioFileSizeByte={episode.audioFileSizeByte}
-              // audioFileType={episode.audioFileType}
               onMediaFileUpdated={(mediaFile) => {
-                // this.onUpdateEpisodeMeta({
-                //   'audio': cdnUrl,
-                //   'audioDurationSecond': duration,
-                //   'audioFileSizeByte': size,
-                //   'audioFileType': type,
-                // });
                 this.onUpdateEpisodeMeta({ mediaFile });
               }}
             />
@@ -234,19 +226,21 @@ export default class EditEpisodeApp extends React.Component {
           </div>
         </div>
         <div className="col-span-3">
-          <div className="lh-page-card text-center">
-            <button
-              type="submit"
-              className="lh-btn lh-btn-brand-dark lh-btn-lg"
-              onClick={this.onSubmit}
-              disabled={submitting}
-            >
-              {submitting ? submittingButtonText : buttonText}
-            </button>
+          <div className="sticky top-8">
+            <div className="lh-page-card text-center">
+              <button
+                type="submit"
+                className="lh-btn lh-btn-brand-dark lh-btn-lg"
+                onClick={this.onSubmit}
+                disabled={submitting}
+              >
+                {submitting ? submittingButtonText : buttonText}
+              </button>
+            </div>
+            {action === 'edit' && <div className="lh-page-card mt-4 flex justify-center">
+              <ExternalLink url={PUBLIC_URLS.pageEpisode(episodeId, episode.title)} text="Episode Web"/>
+            </div>}
           </div>
-          {action === 'edit' && <div className="lh-page-card mt-4 flex justify-center">
-            <ExternalLink url={PUBLIC_URLS.pageEpisode(episodeId, episode.title)} text="Episode Web" />
-          </div>}
         </div>
       </form>
     </AdminNavApp>);

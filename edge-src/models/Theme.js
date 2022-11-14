@@ -1,24 +1,20 @@
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
 import {humanizeMs} from "../common/TimeUtils";
 import {convert} from "html-to-text";
-import tmpl from "../common/default_themes/web_footer.html";
+import {ENCLOSURE_CATEGORIES} from "../../common-src/Constants";
 
 const Mustache = require('mustache');
 
-function episodeUrl() {
-  return PUBLIC_URLS.pageEpisode(this.id, this.title);
-}
+function decorateMediaFileForEpisode(episode) {
+   episode.episodeUrl = PUBLIC_URLS.pageEpisode(episode.id, episode.title);
+   episode.pubDate = humanizeMs(episode.pubDateMs);
+   episode.descriptionText = convert(episode.description, {});
 
-function pubDate(episode=null) {
-  let eps = episode;
-  if (!episode) {
-    eps = this;
+  if (episode.mediaFile && episode.mediaFile.category) {
+    episode.mediaFile.isAudio = episode.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
+    episode.mediaFile.isDocument = episode.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
+    episode.mediaFile.isExternalUrl = episode.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
   }
-  return humanizeMs(eps.pubDateMs);
-}
-
-function descriptionText() {
-  return convert(this.description, {});
 }
 
 export default class Theme {
@@ -95,12 +91,9 @@ export default class Theme {
 
   getFeedWeb() {
     const tmpl = this.getFeedWebTmpl();
+    this.jsonData.episodes.forEach(eps => decorateMediaFileForEpisode(eps));
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
-
-      episodeUrl,
-      pubDate,
-      descriptionText,
     });
     return {
       html,
@@ -118,7 +111,7 @@ export default class Theme {
   }
 
   getEpisodeWeb(episode) {
-    episode.pubDate = pubDate(episode);
+    decorateMediaFileForEpisode(episode);
     const tmpl = this.getEpisodeWebTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,

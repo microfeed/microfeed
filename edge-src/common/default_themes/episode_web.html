@@ -19,13 +19,23 @@
     </div>
 
     <div>
+      {{#episode.mediaFile.isAudio}}
       <div class="hidden md:block text-gray-500 text-sm mb-4">
         Listen:
       </div>
       <audio controls preload="metadata" class="w-full">
-        <source src="{{episode.audio}}" type="{{episode.audioFileType}}"/>
+        <source src="{{episode.mediaFile.url}}" type="{{episode.mediaFile.contentType}}"/>
         Your browser does not support the audio element.
       </audio>
+      {{/episode.mediaFile.isAudio}}
+
+      {{#episode.mediaFile.isDocument}}
+      <a href="{{episode.mediaFile.url}}" class="font-bold text-lg">Download file &#8594;</a>
+      {{/episode.mediaFile.isDocument}}
+
+      {{#episode.mediaFile.isExternalUrl}}
+      <a href="{{episode.mediaFile.url}}" class="font-bold text-lg">View url &#8594;</a>
+      {{/episode.mediaFile.isExternalUrl}}
     </div>
     <div>
       <div>

@@ -200,7 +200,7 @@ export default class RssStylingApp extends React.Component {
             onChange={(e) => this.setState({[currentType]: e.target.value})}
             // prefixCls="h-1/2"
             style={{
-              height: '80vh',
+              minHeight: '50vh',
               overflow: 'auto',
               fontSize: 12,
               backgroundColor: "#f5f5f5",
@@ -209,19 +209,21 @@ export default class RssStylingApp extends React.Component {
           />
         </div>
         <div className="col-span-3">
-          <div className="text-center lh-page-card">
-            <button
-              type="submit"
-              className="lh-btn lh-btn-brand-dark lh-btn-lg"
-              onClick={this.onSubmit}
-              disabled={submitting}
-            >
-              {submitting ? 'Updating...' : 'Update'}
-            </button>
-          </div>
-          <div className="lh-page-card mt-4 flex flex-col items-center">
-            <ExternalLink url={viewUrl} text="View live page" />
-            <div className="text-muted-color text-xs">{viewUrl}</div>
+          <div className="sticky top-8">
+            <div className="text-center lh-page-card">
+              <button
+                type="submit"
+                className="lh-btn lh-btn-brand-dark lh-btn-lg"
+                onClick={this.onSubmit}
+                disabled={submitting}
+              >
+                {submitting ? 'Updating...' : 'Update'}
+              </button>
+            </div>
+            <div className="lh-page-card mt-4 flex flex-col items-center">
+              <ExternalLink url={viewUrl} text="View live page"/>
+              <div className="text-muted-color text-xs">{viewUrl}</div>
+            </div>
           </div>
         </div>
       </form>

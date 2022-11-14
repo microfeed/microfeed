@@ -194,22 +194,24 @@ export default class EditPodcastApp extends React.Component {
           </div>
         </div>
         <div className="col-span-3">
-          <div className="text-center lh-page-card">
-            <button
-              type="submit"
-              className="lh-btn lh-btn-brand-dark lh-btn-lg"
-              onClick={this.onSubmit}
-              disabled={submitting}
-            >
-              {submitting ? 'Updating...' : 'Update'}
-            </button>
-          </div>
-          <div className="text-center lh-page-card mt-4 flex justify-center">
-            <ExternalLink url={PUBLIC_URLS.feedWeb()} text="Web" />
-            <div className="w-4" />
-            <ExternalLink url={PUBLIC_URLS.feedRss()} text="RSS" />
-            <div className="w-4" />
-            <ExternalLink url={PUBLIC_URLS.feedJson()} text="JSON" />
+          <div className="sticky top-8">
+            <div className="text-center lh-page-card">
+              <button
+                type="submit"
+                className="lh-btn lh-btn-brand-dark lh-btn-lg"
+                onClick={this.onSubmit}
+                disabled={submitting}
+              >
+                {submitting ? 'Updating...' : 'Update'}
+              </button>
+            </div>
+            <div className="text-center lh-page-card mt-4 flex justify-center">
+              <ExternalLink url={PUBLIC_URLS.feedWeb()} text="Web"/>
+              <div className="w-4"/>
+              <ExternalLink url={PUBLIC_URLS.feedRss()} text="RSS"/>
+              <div className="w-4"/>
+              <ExternalLink url={PUBLIC_URLS.feedJson()} text="JSON"/>
+            </div>
           </div>
         </div>
       </form>
