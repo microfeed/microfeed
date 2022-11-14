@@ -1,8 +1,6 @@
 import React from 'react';
-// import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../../../../common/requests';
-import {humanFileSize, randomHex} from '../../../../../../common-src/StringUtils';
-// import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
+import {humanFileSize, randomHex, secondsToHHMMSS} from '../../../../../../common-src/StringUtils';
 import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT} from "../../../../../../common-src/Constants";
 import AdminRadio from "../../../../../components/AdminRadio";
 import AdminInput from "../../../../../components/AdminInput";
@@ -18,29 +16,32 @@ const SUPPORTED_ENCLOSURE_CATEGORIES = [
   ENCLOSURE_CATEGORIES.EXTERNAL_URL,
 ];
 
-function PreviewCurrentMediaFile({url, contentType, category, sizeByte, setRef}) {
+function PreviewCurrentMediaFile({url, contentType, category, durationSecond, sizeByte, setRef, updateDuration}) {
   return (<div className="mb-8">
       <div className="lh-page-subtitle">Current {category}</div>
       <div className="grid grid-cols-2 gap-4">
         {category === ENCLOSURE_CATEGORIES.AUDIO && <div className="col-span-1">
-          <audio controls preload="metadata" ref={setRef}>
+          <audio controls preload="metadata" ref={setRef} onLoadedMetadata={updateDuration}>
             <source src={url} type={contentType}/>
             Your browser does not support the audio element.
           </audio>
         </div>}
         {category === ENCLOSURE_CATEGORIES.VIDEO && <div className="col-span-1">
-          <video width="80%" preload="metadata" controls ref={setRef}>
+          <video width="80%" preload="metadata" controls ref={setRef} onLoadedMetadata={updateDuration}>
             <source src={url} type={contentType} />
             Your browser does not support the video tag.
           </video>
         </div>}
-        <div className="col-span-1 text-sm grid grid-cols-1 gap-1">
-          <div>
+        <div className="col-span-1 text-sm">
+          <div className="mb-1">
             <span className="text-helper-color">Content type:</span> {contentType}
           </div>
-          <div>
+          <div className="mb-1">
             <span className="text-helper-color">File size:</span> {humanFileSize(sizeByte)}
           </div>
+          {[ENCLOSURE_CATEGORIES.AUDIO, ENCLOSURE_CATEGORIES.VIDEO].includes(category) && <div className="mb-1">
+            <span className="text-helper-color">Duration:</span> {secondsToHHMMSS(durationSecond)}
+          </div>}
           <div className="break-all">
             <span className="text-helper-color">Download url:</span> <a href={url} className="text-xs" target="_blank">{url}</a>
           </div>
@@ -51,7 +52,7 @@ function PreviewCurrentMediaFile({url, contentType, category, sizeByte, setRef})
 }
 
 function MediaUploader(
-  {url, category, contentType, sizeByte, setRef, uploading, progressText, onFileUpload}) {
+  {url, category, contentType, sizeByte, durationSecond, setRef, uploading, progressText, onFileUpload, updateDuration}) {
   const {fileTypes} = ENCLOSURE_CATEGORIES_DICT[category];
   return (<div>
     {url && <PreviewCurrentMediaFile
@@ -59,7 +60,9 @@ function MediaUploader(
       category={category}
       contentType={contentType}
       sizeByte={sizeByte}
+      durationSecond={durationSecond}
       setRef={setRef}
+      updateDuration={updateDuration}
     />}
     {url && <div className="border-t pt-2 mb-2"/>}
     <div className="lh-upload-wrapper">
@@ -141,9 +144,6 @@ export default class EnclosureManager extends React.Component {
     };
   }
 
-  componentDidMount() {
-  }
-
   onFileUpload(file) {
     const {category} = this.state;
     this.setState({uploadStatus: UPLOAD_STATUS__START});
@@ -155,19 +155,17 @@ export default class EnclosureManager extends React.Component {
     }
     const cdnFilename = `media/${newFilename}`;
 
-    const updateState = (cdnUrl, duration) => {
+    const updateState = (cdnUrl) => {
       this.setState({
         progressText: null,
         uploadStatus: null,
 
         url: cdnUrl,
-        durationSecond: duration,
         contentType: type,
         sizeByte: size,
       }, () => {
         this.props.onMediaFileUpdated({
           url: cdnUrl,
-          durationSecond: duration,
           sizeByte: size,
           contentType: type,
           category,
@@ -184,22 +182,14 @@ export default class EnclosureManager extends React.Component {
 
     Requests.upload(file, cdnFilename, (percentage) => {
       this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
-    }, (cdnUrl, arrayBuffer) => {
-      if (category === ENCLOSURE_CATEGORIES.AUDIO) {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-          const duration = parseInt(buffer.duration, 10); // in seconds
-          updateState(cdnUrl, duration);
-        });
-      } else {
+    }, (cdnUrl) => {
         updateState(cdnUrl, 0);
-      }
     });
   }
 
   render() {
     const {
-      category, url, contentType, sizeByte,
+      category, url, contentType, sizeByte, durationSecond,
       uploadStatus, progressText,
     } = this.state;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
@@ -253,6 +243,22 @@ export default class EnclosureManager extends React.Component {
           category={category}
           contentType={contentType}
           sizeByte={sizeByte}
+          durationSecond={durationSecond}
+          updateDuration={(e) => {
+            try {
+              const newDurationSecond = parseInt(e.target.duration, 10);
+              if (newDurationSecond > 0) {
+                this.setState({
+                  durationSecond: newDurationSecond,
+                }, () => {
+                  this.props.onMediaFileUpdated({
+                    durationSecond: newDurationSecond,
+                  });
+                });
+              }
+            } catch (e) { // eslint-disable-line
+            }
+          }}
           setRef={(ref) => {
             if (category === ENCLOSURE_CATEGORIES.AUDIO) {
               this.audioRef = ref;

@@ -21,11 +21,11 @@ export async function onRequestGet({request, env}) {
             '@cdata': item.description,
           },
           'link': item.link,
-          'itunes:duration': secondsToHHMMSS(item.audioDurationSecond),
           'guid': item.guid,
           'pubDate': msToUtcString(item.pubDateMs),
         };
         const {mediaFile} = item;
+
         if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
           itemJson.enclosure = {
             '@_url': mediaFile.url,
@@ -35,6 +35,9 @@ export async function onRequestGet({request, env}) {
           }
           if (mediaFile.sizeByte && mediaFile.sizeByte > 0) {
             itemJson.enclosure['@_length'] = mediaFile.sizeByte;
+          }
+          if (mediaFile.durationSecond && mediaFile.durationSecond > 0) {
+            itemJson['itunes:duration'] = secondsToHHMMSS(item.mediaFile.durationSecond);
           }
         }
         items.push(itemJson);

@@ -122,8 +122,13 @@ export default class EditEpisodeApp extends React.Component {
           <div className="lh-page-card">
             <EnclosureManager
               mediaFile={mediaFile}
-              onMediaFileUpdated={(mediaFile) => {
-                this.onUpdateEpisodeMeta({ mediaFile });
+              onMediaFileUpdated={(newMediaFile) => {
+                this.onUpdateEpisodeMeta({
+                  mediaFile: {
+                    ...mediaFile,
+                    ...newMediaFile,
+                  },
+                });
               }}
             />
           </div>

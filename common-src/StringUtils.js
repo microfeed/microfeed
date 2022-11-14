@@ -18,7 +18,7 @@ export function randomShortUUID(length = 11) {
 
 export function secondsToHHMMSS(secs) {
   if (!secs) {
-    return '';
+    return '00:00:00';
   }
   const secNum = parseInt(secs, 10)
   const hours = Math.floor(secNum / 3600)
