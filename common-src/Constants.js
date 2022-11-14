@@ -216,11 +216,44 @@ export const NAV_ITEMS_DICT = {
   },
 };
 
+export const CHANNEL_STATUSES = {
+  PUBLIC: 'public',
+  OFFLINE: 'offline',
+  PASSCODE: 'passcode',
+};
+
+export const CHANNEL_STATUSES_DICT = {
+  [CHANNEL_STATUSES.PUBLIC]: {
+    name: 'Public',
+    description: 'Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed.',
+  },
+  [CHANNEL_STATUSES.OFFLINE]: {
+    name: 'Offline',
+    description: 'Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed.',
+  },
+  [CHANNEL_STATUSES.PASSCODE]: {
+    name: 'Passcode',
+    description: 'Protect all pages with a passcode.',
+  },
+};
+
+export const ITEM_STATUSES = {
+  PUBLISHED: 'published',
+  UNPUBLISHED: 'unpublished',
+};
+
+export const ITEM_STATUSES_DICT = {
+  [ITEM_STATUSES.PUBLISHED]: {
+    name: 'Published',
+    description: 'Visible to public',
+  },
+  [ITEM_STATUSES.UNPUBLISHED]: {
+    name: 'Unpublished',
+    description: 'Not visible to public. You can continue to edit and save it as a draft.'
+  },
+};
+
 const Constants = {
-  PREDEFINED_SUBSCRIBE_METHODS,
-  PREDEFINED_SOCIAL_ACCOUNTS,
-  OUR_BRAND,
-  ENCLOSURE_CATEGORIES,
 };
 
 export default Constants;

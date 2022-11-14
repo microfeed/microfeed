@@ -13,7 +13,7 @@ import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 import ExternalLink from "../../../components/ExternalLink";
 import EnclosureManager from "./components/MediaManager";
-import {NAV_ITEMS, NAV_ITEMS_DICT} from "../../../../common-src/Constants";
+import {NAV_ITEMS, NAV_ITEMS_DICT, ITEM_STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -35,18 +35,18 @@ export default class EditEpisodeApp extends React.Component {
 
     const $feedContent = document.getElementById('feed-content');
     const $dataParams = document.getElementById('lh-data-params');
-    const episodeId = $dataParams ? $dataParams.getAttribute('data-item-id') : null;
-    const action = episodeId ? 'edit' : 'create';
+    const itemId = $dataParams ? $dataParams.getAttribute('data-item-id') : null;
+    const action = itemId ? 'edit' : 'create';
     const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
     if (!feed.episodes) {
       feed.episodes = {};
     }
-    const episode = feed.episodes[episodeId] || initEpisode();
+    const item = feed.episodes[itemId] || initEpisode();
     this.state = {
       feed,
-      episode,
+      item,
       submitStatus: null,
-      episodeId: episodeId || randomShortUUID(),
+      itemId: itemId || randomShortUUID(),
       action,
       userChangedLink: false,
     };
@@ -65,14 +65,14 @@ export default class EditEpisodeApp extends React.Component {
   }
 
   onUpdateEpisodeMeta(attrDict, extraDict) {
-    this.setState(prevState => ({episode: {...prevState.episode, ...attrDict,}, ...extraDict}));
+    this.setState(prevState => ({item: {...prevState.item, ...attrDict,}, ...extraDict}));
   }
 
   onUpdateEpisodeToFeed(onSuccess) {
-    let {episode, episodeId, feed} = this.state;
+    let {item, itemId, feed} = this.state;
     const episodesBundle = {
       ...feed.episodes,
-      [episodeId]: {...episode},
+      [itemId]: {...item},
     };
     this.onUpdateFeed({'episodes': episodesBundle}, onSuccess);
   }
@@ -80,7 +80,7 @@ export default class EditEpisodeApp extends React.Component {
   onSubmit(e) {
     e.preventDefault();
     this.onUpdateEpisodeToFeed(() => {
-      const {feed, episodeId, action} = this.state;
+      const {feed, itemId, action} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
       Requests.post(ADMIN_URLS.ajaxFeed(), feed)
         .then(() => {
@@ -92,8 +92,8 @@ export default class EditEpisodeApp extends React.Component {
             showToast('Created!', 'success');
             setTimeout(() => {
               this.setState({submitStatus: null}, () => {
-                if (episodeId) {
-                  location.href = ADMIN_URLS.editItem(episodeId);
+                if (itemId) {
+                  location.href = ADMIN_URLS.editItem(itemId);
                 }
               });
             }, 3000);
@@ -103,9 +103,10 @@ export default class EditEpisodeApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, episodeId, episode, action} = this.state;
+    const {submitStatus, itemId, item, action} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    const {mediaFile} = episode;
+    const {mediaFile} = item;
+    const status = item.status || ITEM_STATUSES.PUBLISHED;
 
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
@@ -118,7 +119,7 @@ export default class EditEpisodeApp extends React.Component {
       upperLevel = {
         name: NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name,
         url: ADMIN_URLS.allItems(),
-        childName: `Item (id = ${episodeId})`,
+        childName: `Item (id = ${itemId})`,
       };
     }
     return (<AdminNavApp currentPage={currentPage} upperLevel={upperLevel}>
@@ -143,18 +144,18 @@ export default class EditEpisodeApp extends React.Component {
               <div>
                 <AdminImageUploaderApp
                   mediaType="eps"
-                  currentImageUrl={episode.image}
+                  currentImageUrl={item.image}
                   onImageUploaded={(cdnUrl) => this.onUpdateEpisodeMeta({'image': cdnUrl})}
                 />
               </div>
               <div className="ml-8 flex-1 grid grid-cols-1 gap-4">
                 <AdminInput
                   label="Episode title"
-                  value={episode.title}
+                  value={item.title}
                   onChange={(e) => {
                     const attrDict = {'title': e.target.value};
                     if (action !== 'edit' && !this.state.userChangedLink) {
-                      attrDict.link = PUBLIC_URLS.itemWeb(episodeId, episode.title, getPublicBaseUrl());
+                      attrDict.link = PUBLIC_URLS.itemWeb(itemId, item.title, getPublicBaseUrl());
                     }
                     this.onUpdateEpisodeMeta(attrDict);
                   }}
@@ -162,14 +163,14 @@ export default class EditEpisodeApp extends React.Component {
                 <div className="grid grid-cols-2 gap-4">
                   <AdminDatetimePicker
                     label="Published date"
-                    value={episode.pubDateMs}
+                    value={item.pubDateMs}
                     onChange={(e) => {
                       this.onUpdateEpisodeMeta({'pubDateMs': datetimeLocalStringToMs(e.target.value)});
                     }}
                   />
                   <AdminInput
                     label="Link"
-                    value={episode.link}
+                    value={item.link}
                     onChange={(e) => this.onUpdateEpisodeMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>
@@ -179,12 +180,12 @@ export default class EditEpisodeApp extends React.Component {
                     groupName="lh-explicit"
                     buttons={[{
                       'name': 'Yes',
-                      'checked': episode.explicit,
+                      'checked': item.explicit,
                     }, {
                       'name': 'No',
-                      'checked': !episode.explicit,
+                      'checked': !item.explicit,
                     }]}
-                    value={episode.explicit}
+                    value={item.explicit}
                     onChange={(e) => this.onUpdateEpisodeMeta({'explicit': e.target.value === 'Yes'})}
                   />
                 </div>
@@ -193,7 +194,7 @@ export default class EditEpisodeApp extends React.Component {
             <div className="mt-8 pt-8 border-t">
               <AdminTextarea
                 label="Episode description"
-                value={episode.description}
+                value={item.description}
                 onChange={(e) => this.onUpdateEpisodeMeta({'description': e.target.value})}
               />
             </div>
@@ -238,6 +239,26 @@ export default class EditEpisodeApp extends React.Component {
         <div className="col-span-3">
           <div className="sticky top-8">
             <div className="lh-page-card text-center">
+              <div className="mb-4">
+                <AdminRadio
+                  groupName="item-status"
+                  buttons={[
+                    {
+                      name: ITEM_STATUSES_DICT[ITEM_STATUSES.PUBLISHED].name,
+                      value: ITEM_STATUSES.PUBLISHED,
+                      checked: status === ITEM_STATUSES.PUBLISHED,
+                    },
+                    {
+                      name: ITEM_STATUSES_DICT[ITEM_STATUSES.UNPUBLISHED].name,
+                      value: ITEM_STATUSES.UNPUBLISHED,
+                      checked: status === ITEM_STATUSES.UNPUBLISHED,
+                    }]}
+                  onChange={(e) => {
+                    this.onUpdateEpisodeMeta({'status': e.target.value})
+                  }}
+                />
+                <div className="text-muted-color text-xs mt-1">{ITEM_STATUSES_DICT[status].description}</div>
+              </div>
               <button
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
@@ -248,7 +269,7 @@ export default class EditEpisodeApp extends React.Component {
               </button>
             </div>
             {action === 'edit' && <div className="lh-page-card mt-4 flex justify-center">
-              <ExternalLink url={PUBLIC_URLS.itemWeb(episodeId, episode.title)} text="Item Web"/>
+              <ExternalLink url={PUBLIC_URLS.itemWeb(itemId, item.title)} text="Item Web"/>
             </div>}
           </div>
         </div>

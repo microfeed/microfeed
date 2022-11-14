@@ -1,5 +1,6 @@
 import {projectPrefix} from "../../common-src/R2Utils";
 import {buildAudioUrlWithTracking, PUBLIC_URLS} from "../../common-src/StringUtils";
+import {ITEM_STATUSES} from "../../common-src/Constants";
 
 export default class Feed {
   constructor(env) {
@@ -56,16 +57,19 @@ export default class Feed {
       trackingUrls = settings.analytics.urls || [];
     }
     const existingEpisodes = content.episodes || {};
-    Object.keys(existingEpisodes).forEach((episodeId) => {
-      const eps = existingEpisodes[episodeId];
-      const mediaFile = eps.mediaFile || {};
+    Object.keys(existingEpisodes).forEach((itemId) => {
+      const item = existingEpisodes[itemId];
+      if (item.status === ITEM_STATUSES.UNPUBLISHED) {
+        return;
+      }
+      const mediaFile = item.mediaFile || {};
       const {url} = mediaFile;
       publicContent.episodes.push({
-        ...eps,
-        id: episodeId,
-        title: eps.title || 'Untitled',
+        ...item,
+        id: itemId,
+        title: item.title || 'Untitled',
         mediaFile: {
-          ...eps.mediaFile,
+          ...item.mediaFile,
           url: buildAudioUrlWithTracking(url, trackingUrls),
         },
       });

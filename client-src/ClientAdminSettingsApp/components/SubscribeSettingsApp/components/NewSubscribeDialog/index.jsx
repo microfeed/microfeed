@@ -1,11 +1,10 @@
 import React from 'react';
 import Select from 'react-select';
 import AdminDialog from "../../../../../components/AdminDialog";
-import Constants from '../../../../../../common-src/Constants';
+import {PREDEFINED_SUBSCRIBE_METHODS} from '../../../../../../common-src/Constants';
 import AdminInput from "../../../../../components/AdminInput";
 import {randomShortUUID} from "../../../../../../common-src/StringUtils";
 
-const {PREDEFINED_SUBSCRIBE_METHODS} = Constants;
 const METHODS_OPTIONS = Object.keys(PREDEFINED_SUBSCRIBE_METHODS).map((key) => {
   const m = PREDEFINED_SUBSCRIBE_METHODS[key];
   return {
