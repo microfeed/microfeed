@@ -58,11 +58,16 @@ export default class Feed {
     const existingEpisodes = content.episodes || {};
     Object.keys(existingEpisodes).forEach((episodeId) => {
       const eps = existingEpisodes[episodeId];
+      const mediaFile = eps.mediaFile || {};
+      const {url} = mediaFile;
       publicContent.episodes.push({
         ...eps,
         id: episodeId,
         title: eps.title || 'Untitled',
-        audio: buildAudioUrlWithTracking(eps.audio, trackingUrls),
+        mediaFile: {
+          ...eps.mediaFile,
+          url: buildAudioUrlWithTracking(url, trackingUrls),
+        },
       });
     })
     publicContent.episodes.sort((a, b) => b.pubDateMs - a.pubDateMs);

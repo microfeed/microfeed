@@ -12,12 +12,11 @@ export async function onRequestGet({request, env}) {
     buildXmlFunc: (jsonData) => {
       const items = [];
       jsonData.episodes.forEach((item) => {
-        items.push({
+        const itemJson = {
           'title': item.title || 'Untitled',
           'description': {
             '@cdata': item.description,
           },
-          'generator': Constants.OUR_BRAND.domain,
           'itunes:summary': {
             '@cdata': item.description,
           },
@@ -25,11 +24,20 @@ export async function onRequestGet({request, env}) {
           'itunes:duration': secondsToHHMMSS(item.audioDurationSecond),
           'guid': item.guid,
           'pubDate': msToUtcString(item.pubDateMs),
-          'enclosure': {
-            '@_url': item.audio,
-            '@_type': item.audioFileType,
-          },
-        });
+        };
+        const {mediaFile} = item;
+        if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
+          itemJson.enclosure = {
+            '@_url': mediaFile.url,
+          };
+          if (mediaFile.contentType) {
+            itemJson.enclosure['@_type'] = mediaFile.contentType;
+          }
+          if (mediaFile.sizeByte && mediaFile.sizeByte > 0) {
+            itemJson.enclosure['@_length'] = mediaFile.sizeByte;
+          }
+        }
+        items.push(itemJson);
       });
 
       const input = {
@@ -50,6 +58,7 @@ export async function onRequestGet({request, env}) {
           'description': {
             '@cdata': jsonData.podcast.description,
           },
+          'generator': Constants.OUR_BRAND.domain,
           'item': items,
         }
       };

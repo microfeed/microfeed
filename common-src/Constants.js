@@ -165,7 +165,7 @@ export const PREDEFINED_SOCIAL_ACCOUNTS = {
 };
 
 export const OUR_BRAND = {
-  domain: 'Enclosure.co',
+  domain: 'feedkit.org',
 };
 
 export const ENCLOSURE_CATEGORIES = {
