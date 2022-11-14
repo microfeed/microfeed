@@ -104,6 +104,7 @@ export default class EditEpisodeApp extends React.Component {
   render() {
     const {submitStatus, episodeId, episode, action} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
+    const {mediaFile} = episode;
 
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
@@ -118,17 +119,19 @@ export default class EditEpisodeApp extends React.Component {
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
             <EnclosureManager
-              audio={episode.audio}
-              audioDurationSecond={episode.audioDurationSecond}
-              audioFileSizeByte={episode.audioFileSizeByte}
-              audioFileType={episode.audioFileType}
-              onUploaded={(cdnUrl, duration, size, type) => {
-                this.onUpdateEpisodeMeta({
-                  'audio': cdnUrl,
-                  'audioDurationSecond': duration,
-                  'audioFileSizeByte': size,
-                  'audioFileType': type,
-                });
+              mediaFile={mediaFile}
+              // audio={episode.audio}
+              // audioDurationSecond={episode.audioDurationSecond}
+              // audioFileSizeByte={episode.audioFileSizeByte}
+              // audioFileType={episode.audioFileType}
+              onMediaFileUpdated={(mediaFile) => {
+                // this.onUpdateEpisodeMeta({
+                //   'audio': cdnUrl,
+                //   'audioDurationSecond': duration,
+                //   'audioFileSizeByte': size,
+                //   'audioFileType': type,
+                // });
+                this.onUpdateEpisodeMeta({ mediaFile });
               }}
             />
           </div>
