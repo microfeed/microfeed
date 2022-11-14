@@ -13,6 +13,7 @@ const UPLOAD_STATUS__START = 1;
 
 const SUPPORTED_ENCLOSURE_CATEGORIES = [
   ENCLOSURE_CATEGORIES.AUDIO,
+  ENCLOSURE_CATEGORIES.VIDEO,
   ENCLOSURE_CATEGORIES.DOCUMENT,
   ENCLOSURE_CATEGORIES.EXTERNAL_URL,
 ];
@@ -26,6 +27,12 @@ function PreviewCurrentMediaFile({url, contentType, category, sizeByte, setRef})
             <source src={url} type={contentType}/>
             Your browser does not support the audio element.
           </audio>
+        </div>}
+        {category === ENCLOSURE_CATEGORIES.VIDEO && <div className="col-span-1">
+          <video width="80%" preload="metadata" controls ref={setRef}>
+            <source src={url} type={contentType} />
+            Your browser does not support the video tag.
+          </video>
         </div>}
         <div className="col-span-1 text-sm grid grid-cols-1 gap-1">
           <div>
@@ -44,7 +51,7 @@ function PreviewCurrentMediaFile({url, contentType, category, sizeByte, setRef})
 }
 
 function MediaUploader(
-  {url, category, contentType, sizeByte, setAudioRef, uploading, progressText, onFileUpload}) {
+  {url, category, contentType, sizeByte, setRef, uploading, progressText, onFileUpload}) {
   const {fileTypes} = ENCLOSURE_CATEGORIES_DICT[category];
   return (<div>
     {url && <PreviewCurrentMediaFile
@@ -52,7 +59,7 @@ function MediaUploader(
       category={category}
       contentType={contentType}
       sizeByte={sizeByte}
-      setRef={setAudioRef}
+      setRef={setRef}
     />}
     {url && <div className="border-t pt-2 mb-2"/>}
     <div className="lh-upload-wrapper">
@@ -168,6 +175,9 @@ export default class EnclosureManager extends React.Component {
         if (this.audioRef && category === ENCLOSURE_CATEGORIES.AUDIO) {
           this.audioRef.pause();
           this.audioRef.load();
+        } else if (this.videoRef && category === ENCLOSURE_CATEGORIES.VIDEO) {
+          this.videoRef.pause();
+          this.videoRef.load();
         }
       });
     };
@@ -243,7 +253,13 @@ export default class EnclosureManager extends React.Component {
           category={category}
           contentType={contentType}
           sizeByte={sizeByte}
-          setAudioRef={(ref) => this.audioRef = ref}
+          setRef={(ref) => {
+            if (category === ENCLOSURE_CATEGORIES.AUDIO) {
+              this.audioRef = ref;
+            } else if (category ===  ENCLOSURE_CATEGORIES.VIDEO) {
+              this.videoRef = ref;
+            }
+          }}
           uploading={uploading}
           progressText={progressText}
           onFileUpload={this.onFileUpload}

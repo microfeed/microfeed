@@ -44,7 +44,7 @@
         {{#episodes}}
         <div>
           <h3 class="font-semibold mb-3">
-            <a href="{{episodeUrl}}">{{title}}</a>
+            <a href="{{episodeUrl}}">{{title}} <span class="lh-icon-arrow-right"></span></a>
           </h3>
           <div class="flex">
             {{#image}}
@@ -59,22 +59,6 @@
               </div>
             </div>
           </div>
-          {{#mediaFile.isAudio}}
-          <div class="mt-4">
-            <audio controls preload="metadata" class="w-full">
-              <source src="{{mediaFile.url}}" type="{{mediaFile.contentType}}"/>
-              Your browser does not support the audio element.
-            </audio>
-          </div>
-          {{/mediaFile.isAudio}}
-
-          {{#mediaFile.isDocument}}
-          <a href="{{mediaFile.url}}" class="font-bold text-lg">Download file &#8594;</a>
-          {{/mediaFile.isDocument}}
-
-          {{#mediaFile.isExternalUrl}}
-          <a href="{{mediaFile.url}}" class="font-bold text-lg">View url &#8594;</a>
-          {{/mediaFile.isExternalUrl}}
         </div>
         {{/episodes}}
       </div>

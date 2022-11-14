@@ -180,6 +180,10 @@ export const ENCLOSURE_CATEGORIES_DICT = {
     name: 'Audio',
     fileTypes: ['mp3'],
   },
+  [ENCLOSURE_CATEGORIES.VIDEO]: {
+    name: 'Video',
+    fileTypes: ['mp4', 'mov'],
+  },
   [ENCLOSURE_CATEGORIES.DOCUMENT]: {
     name: 'Document',
     fileTypes: ['pdf'],
