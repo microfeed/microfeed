@@ -258,7 +258,8 @@ export default class EditEpisodeApp extends React.Component {
         <div className="col-span-3">
           <div className="sticky top-8">
             <div className="lh-page-card text-center">
-              <div className="mb-4">
+              <div className="mb-8">
+                <div className="flex justify-center">
                 <AdminRadio
                   groupName="item-status"
                   buttons={[
@@ -276,6 +277,7 @@ export default class EditEpisodeApp extends React.Component {
                     this.onUpdateEpisodeMeta({'status': e.target.value})
                   }}
                 />
+                </div>
                 <div className="text-muted-color text-xs mt-1">{ITEM_STATUSES_DICT[status].description}</div>
               </div>
               <button

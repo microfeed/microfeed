@@ -89,83 +89,9 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
   },
 };
 
-export const PREDEFINED_SOCIAL_ACCOUNTS = {
-  'instagram': {
-    name: 'Instagram',
-    type: 'instagram',
-    url: '',
-    image: '/assets/brands/social/instagram.png',
-    enabled: true,
-    editable: true,
-  },
-  'linkedin': {
-    name: 'LinkedIn',
-    type: 'linkedin',
-    url: '',
-    image: '/assets/brands/social/linkedin.png',
-    enabled: true,
-    editable: true,
-  },
-  'pinterest': {
-    name: 'Pinterest',
-    type: 'pinterest',
-    url: '',
-    image: '/assets/brands/social/pinterest.png',
-    enabled: true,
-    editable: true,
-  },
-  'telegram': {
-    name: 'Telegram',
-    type: 'telegram',
-    url: '',
-    image: '/assets/brands/social/telegram.png',
-    enabled: true,
-    editable: true,
-  },
-  'tiktok': {
-    name: 'Tiktok',
-    type: 'tiktok',
-    url: '',
-    image: '/assets/brands/social/tiktok.png',
-    enabled: true,
-    editable: true,
-  },
-  'twitch': {
-    name: 'Twitch',
-    type: 'twitch',
-    url: '',
-    image: '/assets/brands/social/twitch.png',
-    enabled: true,
-    editable: true,
-  },
-  'twitter': {
-    name: 'Twitter',
-    type: 'twitter',
-    url: '',
-    image: '/assets/brands/social/twitter.png',
-    enabled: true,
-    editable: true,
-  },
-  'wechat': {
-    name: 'Wechat',
-    type: 'wechat',
-    url: '',
-    image: '/assets/brands/social/wechat.png',
-    enabled: true,
-    editable: true,
-  },
-  'youtube': {
-    name: 'YouTube',
-    type: 'youtube',
-    url: '',
-    image: '/assets/brands/social/youtube.png',
-    enabled: true,
-    editable: true,
-  },
-};
-
 export const OUR_BRAND = {
   domain: 'feedkit.org',
+  brandName: 'feedkit',
 };
 
 export const ENCLOSURE_CATEGORIES = {

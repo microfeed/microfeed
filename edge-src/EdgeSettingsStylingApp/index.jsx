@@ -1,6 +1,7 @@
 import React from 'react';
 import AdminWholeHtml from "../components/AdminWholeHtml";
 import {escapeHtml} from "../../common-src/StringUtils";
+import {OUR_BRAND} from "../../common-src/Constants";
 
 export default class AdminSettingsApp extends React.Component {
   constructor(props) {
@@ -19,7 +20,7 @@ export default class AdminSettingsApp extends React.Component {
     };
     return (
       <AdminWholeHtml
-        title="Rss Styling Settings | Admin"
+        title={`Styling Settings | ${OUR_BRAND.domain}`}
         description=""
         webpackJsList={['styling_settings_js']}
         webpackCssList={['admin_styles_css']}
