@@ -896,6 +896,18 @@
   resolved "https://registry.yarnpkg.com/@tailwindcss/line-clamp/-/line-clamp-0.4.2.tgz#f353c5a8ab2c939c6267ac5b907f012e5ee130f9"
   integrity sha512-HFzAQuqYCjyy/SX9sLGB1lroPzmcnWv1FHkIpmypte10hptf4oPUfucryMKovZh2u0uiS9U5Ty3GghWfEJGwVw==
 
+"@tanstack/react-table@^8.5.28":
+  version "8.5.28"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-table/-/react-table-8.5.28.tgz#b7482052f4a7605fd5bd97e45afc051ba9b72b96"
+  integrity sha512-Rj6oSi2Ef3pYnsv1aCQrN+fhkLJO/gIoVAvfBui/harFc+1+6OPfN0C6O4jOKt0bq0UyQI+yghYkfpAkhqJ31A==
+  dependencies:
+    "@tanstack/table-core" "8.5.28"
+
+"@tanstack/table-core@8.5.28":
+  version "8.5.28"
+  resolved "https://registry.yarnpkg.com/@tanstack/table-core/-/table-core-8.5.28.tgz#c6f33413cce2688d7578696d8599b1067e61218b"
+  integrity sha512-DTK/OdF6b+tls5/xsa46rbav16oXq7Sb3oKWAVuAkjc0VwQxR+afT8GWmAwemfLGUDIF/4qQOTjVQk0eG2b54g==
+
 "@types/babel__core@^7.1.7":
   version "7.1.19"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.1.19.tgz#7b497495b7d1b4812bdb9d02804d0576f43ee460"

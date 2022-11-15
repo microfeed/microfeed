@@ -8,6 +8,7 @@ export function SideQuickLink({url, text}) {
 
 export function AdminSideQuickLinks({AdditionalLink}) {
   return (<div className="lh-page-card mt-4 px-4">
+    <div className="lh-page-subtitle">Public pages</div>
     <div className="flex justify-between flex-wrap gap-2">
       {AdditionalLink}
       <SideQuickLink url={PUBLIC_URLS.feedWeb()} text="Feed Web" />
