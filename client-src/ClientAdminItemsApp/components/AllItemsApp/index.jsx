@@ -25,6 +25,7 @@ const columns = [
   columnHelper.accessor('id', {
     header: 'Item id',
     cell: info => info.getValue(),
+    enableSorting: false,
   }),
   columnHelper.accessor('status', {
     header: 'Status',
@@ -49,7 +50,12 @@ function ItemListTable({data}) {
   const [
     sorting,
     setSorting,
-  ] = React.useState([{id: 'pubDateMs', desc: true}, {id: 'status', desc: false}])
+  ] = React.useState([
+    {id: 'pubDateMs', desc: true},
+    {id: 'status', desc: false},
+    {id: 'mediaFile', desc: true},
+    {id: 'title', desc: true},
+  ])
   const table = useReactTable({
     data,
     columns,
