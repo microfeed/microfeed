@@ -17,9 +17,6 @@ export async function onRequestGet({request, env}) {
           'description': {
             '@cdata': item.description,
           },
-          'itunes:summary': {
-            '@cdata': item.description,
-          },
           'link': item.link,
           'guid': item.guid,
           'pubDate': msToUtcString(item.pubDateMs),
