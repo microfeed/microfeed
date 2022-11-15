@@ -11,7 +11,7 @@ export async function onRequestGet({request, env}) {
   return await rssResponseBuilder.getResponse({
     buildXmlFunc: (jsonData) => {
       const items = [];
-      jsonData.episodes.forEach((item) => {
+      jsonData.items.forEach((item) => {
         const itemJson = {
           'title': item.title || 'Untitled',
           'description': {

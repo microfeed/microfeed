@@ -34,7 +34,7 @@ export default class Feed {
     const publicContent = {
       version: content.version,
       channel: {...content.channel},
-      episodes: [],
+      items: [],
       subscribeMethods: content.settings.subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
         if (!m.editable) {
           switch (m.type) {
@@ -56,15 +56,15 @@ export default class Feed {
     if (settings.analytics && settings.analytics.urls) {
       trackingUrls = settings.analytics.urls || [];
     }
-    const existingEpisodes = content.episodes || {};
-    Object.keys(existingEpisodes).forEach((itemId) => {
-      const item = existingEpisodes[itemId];
+    const existingitems = content.items || {};
+    Object.keys(existingitems).forEach((itemId) => {
+      const item = existingitems[itemId];
       if (item.status === ITEM_STATUSES.UNPUBLISHED) {
         return;
       }
       const mediaFile = item.mediaFile || {};
       const {url} = mediaFile;
-      publicContent.episodes.push({
+      publicContent.items.push({
         ...item,
         id: itemId,
         title: item.title || 'Untitled',
@@ -74,7 +74,7 @@ export default class Feed {
         },
       });
     })
-    publicContent.episodes.sort((a, b) => b.pubDateMs - a.pubDateMs);
+    publicContent.items.sort((a, b) => b.pubDateMs - a.pubDateMs);
 
     return publicContent;
   }

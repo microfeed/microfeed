@@ -3,13 +3,13 @@ import HtmlHeader from "../components/HtmlHeader";
 
 export default class EdgeItemApp extends React.Component {
   render() {
-    const {episode, theme} = this.props;
-    const {html} = theme.getEpisodeWeb(episode);
+    const {item, theme} = this.props;
+    const {html} = theme.getItemWeb(item);
     return (
       <html>
       <HtmlHeader
-        title={episode.title}
-        description={episode.description}
+        title={item.title}
+        description={item.description}
         webpackJsList={[]}
         webpackCssList={[]}
         favicon={{

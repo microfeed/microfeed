@@ -36,9 +36,9 @@ function CodeTabs({currentType, setState}) {
       onClick={() => setState({currentType: 'feedWeb'})}
     />
     <TabButton
-      name="Episode Web"
-      selected={currentType === 'episodeWeb'}
-      onClick={() => setState({currentType: 'episodeWeb'})}
+      name="Item Web"
+      selected={currentType === 'itemWeb'}
+      onClick={() => setState({currentType: 'itemWeb'})}
     />
     <TabButton
       name="Web Header"
@@ -53,12 +53,12 @@ function CodeTabs({currentType, setState}) {
   </div>);
 }
 
-function getFirstEpisodeUrl(feed) {
-  const {episodes} = feed;
-  if (episodes && Object.keys(episodes).length > 0) {
-    const epsId = Object.keys(episodes)[0];
-    const eps = episodes[epsId];
-    return PUBLIC_URLS.itemWeb(epsId, eps.title || 'Untitled');
+function getFirstItemUrl(feed) {
+  const {items} = feed;
+  if (items && Object.keys(items).length > 0) {
+    const itemId = Object.keys(items)[0];
+    const item = items[itemId];
+    return PUBLIC_URLS.itemWeb(itemId, item.title || 'Untitled');
   }
   return '/'
 }
@@ -76,7 +76,7 @@ export default class RssStylingApp extends React.Component {
 
     const {
       rssStylesheet,
-      episodeWeb,
+      itemWeb,
       feedWeb,
       webFooter,
       webHeader,
@@ -87,7 +87,7 @@ export default class RssStylingApp extends React.Component {
       submitStatus: null,
 
       rssStylesheet,
-      episodeWeb,
+      itemWeb,
       feedWeb,
       webFooter,
       webHeader,
@@ -124,14 +124,14 @@ export default class RssStylingApp extends React.Component {
     const themeName = 'custom';
     const {
       rssStylesheet,
-      episodeWeb,
+      itemWeb,
       feedWeb,
       webFooter,
       webHeader,
     } = this.state;
     this.onUpdateFeed(themeName, {
       rssStylesheet,
-      episodeWeb,
+      itemWeb,
       feedWeb,
       webFooter,
       webHeader,
@@ -163,9 +163,9 @@ export default class RssStylingApp extends React.Component {
           {PUBLIC_URLS.feedRssStylesheet()}</a>, which is included in <a
           href={PUBLIC_URLS.feedRss()} target="_blank">the RSS feed</a>.</div>;
         break;
-      case 'episodeWeb':
-        viewUrl = getFirstEpisodeUrl(feed);
-        description = <div>The code is used for an episode web page, which is good for SEO.</div>;
+      case 'itemWeb':
+        viewUrl = getFirstItemUrl(feed);
+        description = <div>The code is used for an item web page, which is good for SEO.</div>;
         break;
       case 'feedWeb':
         viewUrl = PUBLIC_URLS.feedWeb();

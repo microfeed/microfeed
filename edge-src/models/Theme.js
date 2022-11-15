@@ -5,17 +5,17 @@ import {ENCLOSURE_CATEGORIES} from "../../common-src/Constants";
 
 const Mustache = require('mustache');
 
-function decorateMediaFileForEpisode(episode) {
-   episode.episodeUrl = PUBLIC_URLS.itemWeb(episode.id, episode.title);
-   episode.pubDate = humanizeMs(episode.pubDateMs);
-   episode.descriptionText = convert(episode.description, {});
+function decorateMediaFileForItem(item) {
+   item.webUrl = PUBLIC_URLS.itemWeb(item.id, item.title);
+   item.pubDate = humanizeMs(item.pubDateMs);
+   item.descriptionText = convert(item.description, {});
 
-  if (episode.mediaFile && episode.mediaFile.category) {
-    episode.mediaFile.isAudio = episode.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
-    episode.mediaFile.isDocument = episode.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
-    episode.mediaFile.isExternalUrl = episode.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
-    episode.mediaFile.isVideo = episode.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
-    episode.mediaFile.isImage = episode.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
+  if (item.mediaFile && item.mediaFile.category) {
+    item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
+    item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
+    item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
+    item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
+    item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
   }
 }
 
@@ -93,7 +93,7 @@ export default class Theme {
 
   getFeedWeb() {
     const tmpl = this.getFeedWebTmpl();
-    this.jsonData.episodes.forEach(eps => decorateMediaFileForEpisode(eps));
+    this.jsonData.items.forEach(item => decorateMediaFileForItem(item));
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
     });
@@ -112,24 +112,24 @@ export default class Theme {
     return tmpl;
   }
 
-  getEpisodeWeb(episode) {
-    decorateMediaFileForEpisode(episode);
-    const tmpl = this.getEpisodeWebTmpl();
+  getItemWeb(item) {
+    decorateMediaFileForItem(item);
+    const tmpl = this.getItemWebTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
-      episode,
+      item,
     });
     return {
       html,
     };
   }
 
-  getEpisodeWebTmpl() {
+  getItemWebTmpl() {
     let tmpl = null;
     if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/episode_web.html');
+      tmpl = require('../common/default_themes/item_web.html');
     } else {
-      tmpl = this.settings.styles.themes[this.theme].episodeWeb;
+      tmpl = this.settings.styles.themes[this.theme].itemWeb;
     }
     return tmpl;
   }

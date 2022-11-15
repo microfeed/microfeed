@@ -12,36 +12,36 @@
       </a>
     </div>
     <div>
-      <h1 class="font-bold text-2xl md:text-4xl">{{episode.title}}</h1>
+      <h1 class="font-bold text-2xl md:text-4xl">{{item.title}}</h1>
       <div class="mt-4">
-        <time>{{episode.pubDate}}</time>
+        <time>{{item.pubDate}}</time>
       </div>
     </div>
 
     <div>
-      {{#episode.mediaFile.isAudio}}
+      {{#item.mediaFile.isAudio}}
       <div class="hidden md:block text-gray-500 text-sm mb-4">
         Listen:
       </div>
       <audio controls preload="metadata" class="w-full">
-        <source src="{{episode.mediaFile.url}}" type="{{episode.mediaFile.contentType}}"/>
+        <source src="{{item.mediaFile.url}}" type="{{item.mediaFile.contentType}}"/>
         Your browser does not support the audio element.
       </audio>
-      {{/episode.mediaFile.isAudio}}
+      {{/item.mediaFile.isAudio}}
 
-      {{#episode.mediaFile.isDocument}}
-      <a href="{{episode.mediaFile.url}}" class="font-bold text-lg">Download file &#8594;</a>
-      {{/episode.mediaFile.isDocument}}
+      {{#item.mediaFile.isDocument}}
+      <a href="{{item.mediaFile.url}}" class="font-bold text-lg">Download file &#8594;</a>
+      {{/item.mediaFile.isDocument}}
 
-      {{#episode.mediaFile.isExternalUrl}}
-      <a href="{{episode.mediaFile.url}}" class="font-bold text-lg">View url &#8594;</a>
-      {{/episode.mediaFile.isExternalUrl}}
+      {{#item.mediaFile.isExternalUrl}}
+      <a href="{{item.mediaFile.url}}" class="font-bold text-lg">View url &#8594;</a>
+      {{/item.mediaFile.isExternalUrl}}
 
-      {{#episode.mediaFile.isImage}}
-      <a href="{{episode.mediaFile.url}}" target="_blank">
-        <img src="{{episode.mediaFile.url}}" width="80%" />
+      {{#item.mediaFile.isImage}}
+      <a href="{{item.mediaFile.url}}" target="_blank">
+        <img src="{{item.mediaFile.url}}" width="80%" />
       </a>
-      {{/episode.mediaFile.isImage}}
+      {{/item.mediaFile.isImage}}
     </div>
     <div>
       <div>
@@ -64,14 +64,14 @@
     </div>
     <h2 class="section-header">About</h2>
     <div class="grid grid-cols-1 gap-4">
-      {{#episode.image}}
+      {{#item.image}}
       <div>
-        <img src={{episode.image}} width="250" height="250"/>
+        <img src={{item.image}} width="250" height="250"/>
       </div>
-      {{/episode.image}}
-      {{#episode.description}}
-      {{{episode.description}}}
-      {{/episode.description}}
+      {{/item.image}}
+      {{#item.description}}
+      {{{item.description}}}
+      {{/item.description}}
     </div>
   </div>
   <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>

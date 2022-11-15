@@ -13,7 +13,7 @@ export default class AdminSettingsApp extends React.Component {
     const currentThemeTmplJson = {
       themeName: theme.name(),
       rssStylesheet: theme.getRssStylesheetTmpl(),
-      episodeWeb: theme.getEpisodeWebTmpl(),
+      itemWeb: theme.getItemWebTmpl(),
       feedWeb: theme.getFeedWebTmpl(),
       webFooter: theme.getWebFooterTmpl(),
       webHeader: theme.getWebHeaderTmpl(),

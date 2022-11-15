@@ -41,10 +41,10 @@
       </h2>
 
       <div class="grid grid-cols-1 gap-6">
-        {{#episodes}}
+        {{#items}}
         <div>
           <h3 class="font-semibold mb-3">
-            <a href="{{episodeUrl}}">{{title}} <span class="icon-arrow-right"></span></a>
+            <a href="{{webUrl}}">{{title}} <span class="icon-arrow-right"></span></a>
           </h3>
           <div class="flex">
             {{#image}}
@@ -60,7 +60,7 @@
             </div>
           </div>
         </div>
-        {{/episodes}}
+        {{/items}}
       </div>
     </div>
   </div>

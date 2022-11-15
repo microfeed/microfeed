@@ -3,21 +3,21 @@ import AdminNavApp from '../../../components/AdminNavApp';
 import {unescapeHtml, ADMIN_URLS} from "../../../../common-src/StringUtils";
 import {NAV_ITEMS, NAV_ITEMS_DICT} from "../../../../common-src/Constants";
 
-export default class EpisodeListApp extends React.Component {
+export default class AllItemsApp extends React.Component {
   constructor(props) {
     super(props);
 
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
-    const episodes = feed.episodes || [];
-    const episodeList = [];
-    Object.keys(episodes).forEach((epsId) => {
-      const eps = episodes[epsId];
-      eps.id = epsId;
-      episodeList.push(eps);
+    const items = feed.items || [];
+    const itemList = [];
+    Object.keys(items).forEach((itemId) => {
+      const item = items[itemId];
+      item.id = itemId;
+      itemList.push(item);
     });
     this.state = {
       feed,
-      episodeList,
+      itemList,
     };
   }
 
@@ -25,15 +25,15 @@ export default class EpisodeListApp extends React.Component {
   }
 
   render() {
-    const {episodeList} = this.state;
+    const {itemList} = this.state;
     return (<AdminNavApp currentPage={NAV_ITEMS.ALL_ITEMS}>
       <form className="lh-page-card mx-4 grid grid-cols-1 gap-4">
         <div>
           {NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
         </div>
-        {episodeList.map((eps) => {
-          return (<div key={`eps-${eps.id}`}>
-            <a href={ADMIN_URLS.editItem(eps.id)}>{eps.title || 'Untitled'}</a>
+        {itemList.map((item) => {
+          return (<div key={`item-${item.id}`}>
+            <a href={ADMIN_URLS.editItem(item.id)}>{item.title || 'Untitled'}</a>
           </div>);
         })}
       </form>
