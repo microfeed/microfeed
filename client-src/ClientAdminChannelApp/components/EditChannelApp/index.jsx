@@ -6,9 +6,9 @@ import AdminInput from "../../../components/AdminInput";
 import AdminRadio from "../../../components/AdminRadio";
 import AdminTextarea from "../../../components/AdminTextarea";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
-import {PUBLIC_URLS, unescapeHtml} from '../../../../common-src/StringUtils';
+import {unescapeHtml} from '../../../../common-src/StringUtils';
 import {showToast} from "../../../common/ToastUtils";
-import ExternalLink from "../../../components/ExternalLink";
+import {AdminSideQuickLinks} from "../../../components/AdminSideQuickLinks";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -205,13 +205,7 @@ export default class EditChannelApp extends React.Component {
                 {submitting ? 'Updating...' : 'Update'}
               </button>
             </div>
-            <div className="text-center lh-page-card mt-4 flex justify-center">
-              <ExternalLink url={PUBLIC_URLS.feedWeb()} text="Web"/>
-              <div className="w-4"/>
-              <ExternalLink url={PUBLIC_URLS.feedRss()} text="RSS"/>
-              <div className="w-4"/>
-              <ExternalLink url={PUBLIC_URLS.feedJson()} text="JSON"/>
-            </div>
+            <AdminSideQuickLinks />
           </div>
         </div>
       </form>

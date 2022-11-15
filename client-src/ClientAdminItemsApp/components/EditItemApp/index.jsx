@@ -12,9 +12,9 @@ import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
-import ExternalLink from "../../../components/ExternalLink";
 import MediaManager from "./components/MediaManager";
 import {NAV_ITEMS, NAV_ITEMS_DICT, ITEM_STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
+import {AdminSideQuickLinks, SideQuickLink} from "../../../components/AdminSideQuickLinks";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -290,9 +290,7 @@ export default class EditItemApp extends React.Component {
               </button>
             </div>
             {action === 'edit' && <div>
-              <div className="lh-page-card mt-4 flex justify-center">
-                <ExternalLink url={PUBLIC_URLS.itemWeb(itemId, item.title)} text="Item Web"/>
-              </div>
+              <AdminSideQuickLinks AdditionalLink={<SideQuickLink url={PUBLIC_URLS.itemWeb(itemId, item.title)} text="Item Web"/>}/>
               <div className="lh-page-card mt-4 flex justify-center">
                 <a
                   href="#"
