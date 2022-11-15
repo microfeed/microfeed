@@ -14,6 +14,7 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import clsx from "clsx";
@@ -45,10 +46,20 @@ const columns = [
 ];
 
 function ItemListTable({data}) {
+  const [
+    sorting,
+    setSorting,
+  ] = React.useState([{id: 'pubDateMs', desc: true}, {id: 'status', desc: false}])
   const table = useReactTable({
     data,
     columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    debugTable: true,
   });
   return (<div>
     <table className="border-collapse border border-slate-400 text-helper-color text-sm">
@@ -58,9 +69,16 @@ function ItemListTable({data}) {
           {headerGroup.headers.map(header => (
             <th
               key={header.id}
-              className={clsx('border border-slate-300 bg-black text-white py-2 px-4')}
+              className={clsx('border border-slate-300 bg-black text-white py-2 px-4',
+                header.column.getCanSort() ? 'cursor-pointer' : 'select-none')}
             >
+              <div onClick={header.column.getToggleSortingHandler()}>
               {flexRender(header.column.columnDef.header, header.getContext())}
+              {{
+                asc: ' 🔼',
+                desc: ' 🔽',
+              }[header.column.getIsSorted()] ?? null}
+              </div>
             </th>
           ))}
         </tr>
@@ -77,13 +95,9 @@ function ItemListTable({data}) {
           ))}
         </tr>)
       )}
-      {/*{itemList.map((item) => {*/}
-      {/*  return (<tr key={`item-${item.id}`}>*/}
-      {/*    <a href={ADMIN_URLS.editItem(item.id)}>{item.title || 'Untitled'}</a>*/}
-      {/*  </tr>);*/}
-      {/*})}*/}
       </tbody>
     </table>
+    <pre>{JSON.stringify(sorting, null, 2)}</pre>
   </div>);
 }
 
