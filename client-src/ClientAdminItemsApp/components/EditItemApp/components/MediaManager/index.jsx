@@ -13,6 +13,7 @@ const SUPPORTED_ENCLOSURE_CATEGORIES = [
   ENCLOSURE_CATEGORIES.AUDIO,
   ENCLOSURE_CATEGORIES.VIDEO,
   ENCLOSURE_CATEGORIES.DOCUMENT,
+  ENCLOSURE_CATEGORIES.IMAGE,
   ENCLOSURE_CATEGORIES.EXTERNAL_URL,
 ];
 
@@ -31,6 +32,9 @@ function PreviewCurrentMediaFile({url, contentType, category, durationSecond, si
             <source src={url} type={contentType} />
             Your browser does not support the video tag.
           </video>
+        </div>}
+        {category === ENCLOSURE_CATEGORIES.IMAGE && <div className="col-span-1">
+          <img src={url} alt={contentType} width="80%" />
         </div>}
         <div className="col-span-1 text-sm">
           <div className="mb-1">
@@ -83,7 +87,7 @@ function MediaUploader(
               <div className="mr-1"><CloudArrowUpIcon className="w-8"/></div>
               <div className="font-semibold">Click or drag here to upload {category}</div>
             </div>
-            <div className="text-sm">{fileTypes.join(',')}</div>
+            <div className="text-sm">{fileTypes.join(', ')}</div>
           </div>}
         </div>
       </FileUploader>

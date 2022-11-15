@@ -112,7 +112,11 @@ export const ENCLOSURE_CATEGORIES_DICT = {
   },
   [ENCLOSURE_CATEGORIES.DOCUMENT]: {
     name: 'Document',
-    fileTypes: ['pdf'],
+    fileTypes: ['pdf', 'docx', 'doc', 'xlsx', 'ppt', 'pptx', 'txt'],
+  },
+  [ENCLOSURE_CATEGORIES.IMAGE]: {
+    name: 'Image',
+    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2'],
   },
   [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
     name: 'External URL',

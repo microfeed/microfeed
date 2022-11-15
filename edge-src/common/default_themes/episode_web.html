@@ -36,6 +36,12 @@
       {{#episode.mediaFile.isExternalUrl}}
       <a href="{{episode.mediaFile.url}}" class="font-bold text-lg">View url &#8594;</a>
       {{/episode.mediaFile.isExternalUrl}}
+
+      {{#episode.mediaFile.isImage}}
+      <a href="{{episode.mediaFile.url}}" target="_blank">
+        <img src="{{episode.mediaFile.url}}" width="80%" />
+      </a>
+      {{/episode.mediaFile.isImage}}
     </div>
     <div>
       <div>

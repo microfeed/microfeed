@@ -15,6 +15,7 @@ function decorateMediaFileForEpisode(episode) {
     episode.mediaFile.isDocument = episode.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
     episode.mediaFile.isExternalUrl = episode.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
     episode.mediaFile.isVideo = episode.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
+    episode.mediaFile.isImage = episode.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
   }
 }
 
