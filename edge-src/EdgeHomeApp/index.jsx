@@ -5,11 +5,12 @@ export default class EdgeHomeApp extends React.Component {
   render() {
     const {jsonData, theme} = this.props;
     const { html } = theme.getFeedWeb();
+    const {channel} = jsonData;
     return (
       <html>
       <HtmlHeader
-        title={jsonData.podcast.title}
-        description={jsonData.podcast.description}
+        title={channel.title}
+        description={channel.description}
         webpackJsList={[]}
         webpackCssList={[]}
         favicon={{

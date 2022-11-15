@@ -12,7 +12,7 @@ import ExternalLink from "../../../components/ExternalLink";
 
 const SUBMIT_STATUS__START = 1;
 
-function initPodcast() {
+function initChannel() {
   return {
     link: getPublicBaseUrl(),
     language: 'en-us',
@@ -26,15 +26,15 @@ export default class EditChannelApp extends React.Component {
     super(props);
 
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
-    this.onUpdatePodcastMeta = this.onUpdatePodcastMeta.bind(this);
-    this.onUpdatePodcastMetaToFeed = this.onUpdatePodcastMetaToFeed.bind(this);
+    this.onUpdateChannelMeta = this.onUpdateChannelMeta.bind(this);
+    this.onUpdateChannelMetaToFeed = this.onUpdateChannelMetaToFeed.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
 
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
-    const podcast = feed.podcast || initPodcast();
+    const channel = feed.channel || initChannel();
     this.state = {
       feed,
-      podcast,
+      channel,
       submitStatus: null,
     }
   }
@@ -43,30 +43,30 @@ export default class EditChannelApp extends React.Component {
     this.setState(prevState => ({
       feed: {
         ...prevState.feed,
-        podcast: {
-          ...prevState.podcast,
+        channel: {
+          ...prevState.channel,
           ...props,
         },
       },
     }), () => onSucceed())
   }
 
-  onUpdatePodcastMeta(keyName, value) {
+  onUpdateChannelMeta(keyName, value) {
     this.setState((prevState) => ({
-      podcast: {
-        ...prevState.podcast,
+      channel: {
+        ...prevState.channel,
         [keyName]: value,
       },
     }));
   }
 
-  onUpdatePodcastMetaToFeed(onSucceed) {
-    this.onUpdateFeed(this.state.podcast, onSucceed);
+  onUpdateChannelMetaToFeed(onSucceed) {
+    this.onUpdateFeed(this.state.channel, onSucceed);
   }
 
   onSubmit(e) {
     e.preventDefault();
-    this.onUpdatePodcastMetaToFeed(() => {
+    this.onUpdateChannelMetaToFeed(() => {
       const {feed} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
       Requests.post('/admin/ajax/feed/', feed)
@@ -84,7 +84,7 @@ export default class EditChannelApp extends React.Component {
   }
 
   render() {
-    const {feed, submitStatus, podcast} = this.state;
+    const {feed, submitStatus, channel} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp>
       <form className="grid grid-cols-12 gap-4">
@@ -92,61 +92,61 @@ export default class EditChannelApp extends React.Component {
           <div className="flex">
             <div className="flex-none">
               <AdminImageUploaderApp
-                mediaType="pod"
-                currentImageUrl={podcast.image}
-                onImageUploaded={(cdnUrl) => this.onUpdatePodcastMeta('image', cdnUrl)}
+                mediaType="channel"
+                currentImageUrl={channel.image}
+                onImageUploaded={(cdnUrl) => this.onUpdateChannelMeta('image', cdnUrl)}
               />
             </div>
             <div className="flex-1 ml-8 grid grid-cols-1 gap-3">
               <AdminInput
-                label="Podcast title"
-                value={podcast.title}
-                onChange={(e) => this.onUpdatePodcastMeta('title', e.target.value)}
+                label="Title"
+                value={channel.title}
+                onChange={(e) => this.onUpdateChannelMeta('title', e.target.value)}
               />
               <div className="grid grid-cols-2 gap-4">
                 <AdminInput
                   label="Publisher"
-                  value={podcast.publisher}
-                  onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                  value={channel.publisher}
+                  onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
                 />
                 <AdminInput
                   label="Website"
-                  value={podcast.link}
-                  onChange={(e) => this.onUpdatePodcastMeta('link', e.target.value)}
+                  value={channel.link}
+                  onChange={(e) => this.onUpdateChannelMeta('link', e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <AdminInput
                   label="Category"
-                  value={podcast.category.join(',')}
-                  onChange={(e) => this.onUpdatePodcastMeta('category', e.target.value.split(','))}
+                  value={channel.category.join(',')}
+                  onChange={(e) => this.onUpdateChannelMeta('category', e.target.value.split(','))}
                 />
                 <AdminInput
                   label="Language"
-                  value={podcast.language}
-                  onChange={(e) => this.onUpdatePodcastMeta('language', e.target.value)}
+                  value={channel.language}
+                  onChange={(e) => this.onUpdateChannelMeta('language', e.target.value)}
                 />
                 <AdminRadio
                   label="Explicit"
                   groupName="lh-explicit"
                   buttons={[{
                    'name': 'Yes',
-                   'checked': podcast.explicit,
+                   'checked': channel.explicit,
                   }, {
                     'name': 'No',
-                   'checked': !podcast.explicit,
+                   'checked': !channel.explicit,
                   }]}
-                  value={podcast.explicit}
-                  onChange={(e) => this.onUpdatePodcastMeta('explicit', e.target.value === 'Yes')}
+                  value={channel.explicit}
+                  onChange={(e) => this.onUpdateChannelMeta('explicit', e.target.value === 'Yes')}
                 />
               </div>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t">
             <AdminTextarea
-              label="Podcast description"
-              value={podcast.description}
-              onChange={(e) => this.onUpdatePodcastMeta('description', e.target.value)}
+              label="Description"
+              value={channel.description}
+              onChange={(e) => this.onUpdateChannelMeta('description', e.target.value)}
             />
           </div>
           <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">
@@ -154,41 +154,41 @@ export default class EditChannelApp extends React.Component {
               <AdminInput
                 label="<itunes:type>"
                 value={feed.publisher}
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
               <AdminInput
                 label="<itunes:owner>"
                 value=""
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
               <AdminInput
                 label="<copyright>"
                 value=""
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <AdminInput
                 label="<itunes:new-feed-url>"
                 value={feed.publisher}
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
               <AdminInput
                 label="<itunes:block>"
                 value=""
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
               <AdminInput
                 label="<itunes:complete>"
                 value=""
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
             </div>
             <div className="grid grid-cols-1 gap-4">
               <AdminInput
                 label="<itunes:title>"
                 value=""
-                onChange={(e) => this.onUpdatePodcastMeta('publisher', e.target.value)}
+                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
               />
             </div>
           </div>

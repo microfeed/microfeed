@@ -58,7 +58,7 @@ export default class AdminImageUploaderApp extends React.Component {
 
     this.initState = {
       currentImageUrl: props.currentImageUrl || null,
-      mediaType: props.mediaType || 'pod',
+      mediaType: props.mediaType || 'channel',
       uploadStatus: null,
       progressText: '0.00%',
 

@@ -43,23 +43,24 @@ export async function onRequestGet({request, env}) {
         items.push(itemJson);
       });
 
+      const {channel} = jsonData;
       const input = {
         "channel": {
-          'title': jsonData.podcast.title,
+          'title': channel.title,
           'atom:link': {
             '@_rel': 'self',
             '@_href': request.url,
             '@_type': 'application/rss+xml',
           },
-          'link': jsonData.podcast.link,
-          'itunes:author': jsonData.podcast.publisher,
+          'link': channel.link,
+          'itunes:author': channel.publisher,
           'image': {
-            'title': jsonData.podcast.title,
-            'url': jsonData.podcast.image,
-            'link': jsonData.podcast.link,
+            'title': channel.title,
+            'url': channel.image,
+            'link': channel.link,
           },
           'description': {
-            '@cdata': jsonData.podcast.description,
+            '@cdata': channel.description,
           },
           'generator': OUR_BRAND.domain,
           'item': items,

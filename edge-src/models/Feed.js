@@ -33,7 +33,7 @@ export default class Feed {
     }
     const publicContent = {
       version: content.version,
-      podcast: {...content.podcast},
+      channel: {...content.channel},
       episodes: [],
       subscribeMethods: content.settings.subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
         if (!m.editable) {
