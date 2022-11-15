@@ -162,7 +162,7 @@ export default class EditItemApp extends React.Component {
             <div className="flex">
               <div>
                 <AdminImageUploaderApp
-                  mediaType="eps"
+                  mediaType="item"
                   currentImageUrl={item.image}
                   onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({'image': cdnUrl})}
                 />
