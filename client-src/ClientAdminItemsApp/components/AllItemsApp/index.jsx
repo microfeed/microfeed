@@ -65,7 +65,7 @@ function ItemListTable({data}) {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    debugTable: true,
+    // debugTable: true,
   });
   return (<div>
     <table className="border-collapse border border-slate-400 text-helper-color text-sm">
@@ -103,7 +103,7 @@ function ItemListTable({data}) {
       )}
       </tbody>
     </table>
-    <pre>{JSON.stringify(sorting, null, 2)}</pre>
+    {/*<pre>{JSON.stringify(sorting, null, 2)}</pre>*/}
   </div>);
 }
 
