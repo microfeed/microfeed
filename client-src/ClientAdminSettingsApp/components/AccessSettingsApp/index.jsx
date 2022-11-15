@@ -28,7 +28,7 @@ function AccessOption({value, header, description}) {
   </RadioGroup.Option>);
 }
 
-export default class PodcastAccessSettingsApp extends React.Component {
+export default class AccessSettingsApp extends React.Component {
   constructor(props) {
     super(props);
 

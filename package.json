@@ -21,7 +21,6 @@
     "html-to-text": "^8.2.1",
     "jest": "25",
     "mustache": "^4.2.0",
-    "podcast-api": "^2.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-drag-drop-files": "^2.3.7",

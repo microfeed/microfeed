@@ -1,7 +1,7 @@
 import React from 'react';
 import AdminNavApp from '../../components/AdminNavApp';
 import TrackingSettingsApp from "./TrackingSettingsApp";
-import PodcastAccessSettingsApp from "./PodcastAccessSettingsApp";
+import AccessSettingsApp from "./AccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
 import StylingSettingsApp from "./StylingSettingsApp";
 import CodeInjectionSettingsApp from "./CodeInjectionSettingsApp";
@@ -57,7 +57,7 @@ export default class SettingsApp extends React.Component {
             />
           </div>
           <div className="col-span-1 h-full">
-            <PodcastAccessSettingsApp
+            <AccessSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}

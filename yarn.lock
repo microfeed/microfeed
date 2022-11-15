@@ -1687,13 +1687,6 @@ aws4fetch@^1.0.16:
   resolved "https://registry.yarnpkg.com/aws4fetch/-/aws4fetch-1.0.16.tgz#7fc65e4716003f1e1a6211a3f1645f7ff1b834cf"
   integrity sha512-S3C81MM1adgOH8XL4Ur2QSwEgBI57rHq0XkuJj5GExXQoM8Ohy26xEad2/cx1kv0hTuvf2JAHyaZZSuR5/24eQ==
 
-axios@^0.21.1:
-  version "0.21.4"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.4.tgz#c67b90dc0568e5c1cf2b0b858c43ba28e2eda575"
-  integrity sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==
-  dependencies:
-    follow-redirects "^1.14.0"
-
 babel-jest@^25.5.1:
   version "25.5.1"
   resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-25.5.1.tgz#bc2e6101f849d6f6aec09720ffc7bc5332e62853"
@@ -3220,7 +3213,7 @@ flatted@^3.1.0:
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.2.7.tgz#609f39207cb614b89d0765b477cb2d437fbf9787"
   integrity sha512-5nqDSxl8nn5BSNxyR3n4I6eDmbolI6WT+QqR547RwxQapgjQBmtktdP+HTBb/a/zLsbzERTONyUB5pefh5TtjQ==
 
-follow-redirects@^1.0.0, follow-redirects@^1.14.0:
+follow-redirects@^1.0.0:
   version "1.15.2"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.2.tgz#b460864144ba63f2681096f274c4e57026da2c13"
   integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
@@ -5578,13 +5571,6 @@ pn@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/pn/-/pn-1.1.0.tgz#e2f4cef0e219f463c179ab37463e4e1ecdccbafb"
   integrity sha512-2qHaIQr2VLRFoxe2nASzsV6ef4yOOH+Fi9FBOVH6cqeSgUnoyySPZkxzLuzd+RYOQTRpROA0ztTMqxROKSb/nA==
-
-podcast-api@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/podcast-api/-/podcast-api-2.0.2.tgz#10d4f88981302622314f0e4eb84bc4026ed6ef2a"
-  integrity sha512-MKG/TxiQWezHBWxjBB/RGGP9IchsbLmTbEyhivI5SRIVKa/TMkDM1jr5FuRGVc5ovYFfTJlY5cYr2Xl92m572A==
-  dependencies:
-    axios "^0.21.1"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
