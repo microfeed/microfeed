@@ -2,7 +2,7 @@ import React from 'react';
 import AdminWholeHtml from "../components/AdminWholeHtml";
 import {NAV_ITEMS, NAV_ITEMS_DICT, OUR_BRAND} from "../../common-src/Constants";
 
-export default class AdminEpisodesApp extends React.Component {
+export default class AdminItemsApp extends React.Component {
   render() {
     const {feedContent} = this.props;
     return (
