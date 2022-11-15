@@ -29,6 +29,16 @@
       </audio>
       {{/item.mediaFile.isAudio}}
 
+      {{#item.mediaFile.isVideo}}
+      <div class="hidden md:block text-gray-500 text-sm mb-4">
+        Watch:
+      </div>
+      <video controls preload="metadata" class="w-full">
+        <source src="{{item.mediaFile.url}}" type="{{item.mediaFile.contentType}}"/>
+        Your browser does not support the video element.
+      </video>
+      {{/item.mediaFile.isVideo}}
+
       {{#item.mediaFile.isDocument}}
       <a href="{{item.mediaFile.url}}" class="font-bold text-lg">Download file &#8594;</a>
       {{/item.mediaFile.isDocument}}
