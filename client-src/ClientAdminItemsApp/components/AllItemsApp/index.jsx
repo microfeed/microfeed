@@ -31,6 +31,7 @@ const columns = [
     header: 'Status',
     cell: info => <div className={clsx('font-semibold', info.getValue() === ITEM_STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
       {ITEM_STATUSES_DICT[info.getValue()].name}</div>,
+    enableSorting: false,
   }),
   columnHelper.accessor('pubDateMs', {
     header: 'Published date',
@@ -39,10 +40,12 @@ const columns = [
   columnHelper.accessor('title', {
     header: 'Title',
     cell: info => info.getValue(),
+    enableSorting: false,
   }),
   columnHelper.accessor('mediaFile', {
     header: 'Media file',
     cell: info => info.getValue(),
+    enableSorting: false,
   }),
 ];
 
@@ -52,9 +55,6 @@ function ItemListTable({data}) {
     setSorting,
   ] = React.useState([
     {id: 'pubDateMs', desc: true},
-    {id: 'status', desc: false},
-    {id: 'mediaFile', desc: true},
-    {id: 'title', desc: true},
   ])
   const table = useReactTable({
     data,
