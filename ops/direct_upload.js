@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 const buffer = fs.readFileSync('.dev.vars');
 const env = dotenv.parse(buffer);
 
-const envName = process.env.ENVIRONMENT || 'production';
+const envName = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
 const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
 const envJson = dotenv.parse(bufferForEnv);
 

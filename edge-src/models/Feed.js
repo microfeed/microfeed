@@ -4,16 +4,16 @@ import {ITEM_STATUSES} from "../../common-src/Constants";
 
 export default class Feed {
   constructor(env) {
-    const {LISTEN_HOST_VERSION, LH_DATABASE} = env;
-    this.KEY = `${projectPrefix(env)}/database/${LISTEN_HOST_VERSION}-feed.json`;
+    const {FEEDKIT_VERSION, LH_DATABASE} = env;
+    this.KEY = `${projectPrefix(env)}/database/${FEEDKIT_VERSION}-feed.json`;
     this.LH_DB = LH_DATABASE;
-    this.LISTEN_HOST_VERSION = LISTEN_HOST_VERSION;
+    this.FEEDKIT_VERSION = FEEDKIT_VERSION;
     this.content = null;
   }
 
   initFeed() {
     return {
-      version: this.LISTEN_HOST_VERSION,
+      version: this.FEEDKIT_VERSION,
     };
   }
 
@@ -87,7 +87,7 @@ export default class Feed {
   }
 
   async putContent(contentDict) {
-    contentDict.version = this.LISTEN_HOST_VERSION;
+    contentDict.version = this.FEEDKIT_VERSION;
     await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {
       'Content-Type': 'application/json; charset=UTF-8',
       });

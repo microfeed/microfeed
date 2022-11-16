@@ -7,7 +7,7 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
-      ENVIRONMENT:
+      DEPLOYMENT_ENVIRONMENT:
         description: 'Deployment environment'
         required: true
         type: choice
@@ -35,7 +35,7 @@ env:
   MEDIA_BASE_URL: ${{ secrets.MEDIA_BASE_URL }}
   ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
   ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+  DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
   PRODUCTION_BRANCH: ${{ github.head_ref || github.ref_name }}
 jobs:
   deploy:
@@ -62,14 +62,14 @@ jobs:
           ADMIN_USERNAME = "$ADMIN_USERNAME"
           ADMIN_PASSWORD = "$ADMIN_PASSWORD"
 
-          ENVIRONMENT = "development"
-          LISTEN_HOST_VERSION = "v1"
+          DEPLOYMENT_ENVIRONMENT = "development"
+          FEEDKIT_VERSION = "v1"
           NODE_VERSION = "17.0"q
           EOF
-      - name: Create and populate .${{ inputs.ENVIRONMENT }}.vars file
+      - name: Create and populate .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars file
         run: |
-          cat <<EOF > .${{ inputs.ENVIRONMENT }}.vars
-          ENVIRONMENT = "$ENVIRONMENT"
+          cat <<EOF > .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars
+          DEPLOYMENT_ENVIRONMENT = "DEPLOYMENT_ENVIRONMENT"
           PRODUCTION_BRANCH = "$PRODUCTION_BRANCH"
           EOF
       - name: Fix R2 Cors, so we can directly upload media files from client-side js
@@ -77,12 +77,12 @@ jobs:
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: fix_cors
-      - name: Sync environment variables to Cloudflare Page [${{ inputs.ENVIRONMENT }}]
+      - name: Sync environment variables to Cloudflare Page [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: sync_env_vars
-      - name: Deploy to Cloudflare Pages [${{ inputs.ENVIRONMENT }}]
+      - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:

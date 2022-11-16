@@ -28,11 +28,6 @@ export default class Theme {
     if (settings && settings.styles && settings.styles.currentTheme) {
       this.theme = settings.styles.currentTheme;
     }
-    // const {LISTEN_HOST_VERSION, LH_DATABASE} = env;
-    // this.KEY = `${projectPrefix(env)}/database/${LISTEN_HOST_VERSION}-feed.json`;
-    // this.LH_DB = LH_DATABASE;
-    // this.LISTEN_HOST_VERSION = LISTEN_HOST_VERSION;
-    // this.content = null;
   }
 
   name() {

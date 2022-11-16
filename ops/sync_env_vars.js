@@ -8,6 +8,7 @@ const env = dotenv.parse(buffer);
 const ALLOWED_VARS = [
   'CLOUDFLARE_ACCOUNT_ID',
   'CLOUDFLARE_PROJECT_NAME',
+  'DEPLOYMENT_ENVIRONMENT',
 
   'R2_ACCESS_KEY_ID',
   'R2_SECRET_ACCESS_KEY',
@@ -18,8 +19,7 @@ const ALLOWED_VARS = [
   'ADMIN_PASSWORD',
 
   "NODE_VERSION",
-  'LISTEN_HOST_VERSION',
-  'ENVIRONMENT',
+  'FEEDKIT_VERSION',
 ];
 
 const getEnvVarsFromFilesJson = (envName) => {
@@ -83,7 +83,7 @@ const updateEnvVars = (data, onSuccess) => {
   req.end();
 };
 
-const currentEnv = process.env.ENVIRONMENT || 'production';
+const currentEnv = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
 
 console.log(`Sync-ing for [${currentEnv}]...`);
 
