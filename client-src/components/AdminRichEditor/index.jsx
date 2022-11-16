@@ -11,7 +11,7 @@ import 'react-quill/dist/quill.snow.css';
 //   }
 // }
 
-export default function AdminQuill({label, value, onChange}) {
+export default function AdminRichEditor({label, value, onChange}) {
   const toolbarOptions = [
     [{'header': [2, 3, false]}],
     ['bold', 'italic', 'underline', 'blockquote', 'code-block'],
@@ -39,13 +39,14 @@ export default function AdminQuill({label, value, onChange}) {
     'image',
   ];
 
+  console.log(value);
   return <div>
     <div className="lh-page-subtitle">
       {label}
     </div>
     <ReactQuill
       theme="snow"
-      value={value}
+      value={value || ''}
       onChange={onChange}
       modules={modules}
       formats={formats}

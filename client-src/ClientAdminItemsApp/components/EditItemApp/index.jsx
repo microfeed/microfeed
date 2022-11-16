@@ -5,7 +5,6 @@ import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
 import {randomShortUUID, ADMIN_URLS, PUBLIC_URLS} from '../../../../common-src/StringUtils';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
-import AdminTextarea from "../../../components/AdminTextarea";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src/TimeUtils";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
@@ -15,6 +14,7 @@ import {unescapeHtml} from "../../../../common-src/StringUtils";
 import MediaManager from "./components/MediaManager";
 import {NAV_ITEMS, NAV_ITEMS_DICT, ITEM_STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "../../../components/AdminSideQuickLinks";
+import AdminRichEditor from "../../../components/AdminRichEditor";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -211,10 +211,10 @@ export default class EditItemApp extends React.Component {
               </div>
             </div>
             <div className="mt-8 pt-8 border-t">
-              <AdminTextarea
+              <AdminRichEditor
                 label="Description"
                 value={item.description}
-                onChange={(e) => this.onUpdateItemMeta({'description': e.target.value})}
+                onChange={(value) => this.onUpdateItemMeta({'description': value})}
               />
             </div>
             <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">

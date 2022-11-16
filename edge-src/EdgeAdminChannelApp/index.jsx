@@ -2,7 +2,7 @@ import React from 'react';
 import AdminWholeHtml from "../components/AdminWholeHtml";
 import {NAV_ITEMS, NAV_ITEMS_DICT, OUR_BRAND} from "../../common-src/Constants";
 
-export default class EdgeAdminChannelAppq extends React.Component {
+export default class EdgeAdminChannelApp extends React.Component {
   constructor(props) {
     super(props);
   }
