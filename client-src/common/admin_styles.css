@@ -78,3 +78,16 @@ a {
 .lh-icon-x-mark:before {
   content: "×";
 }
+
+/*
+  Make Quill styling happy
+ */
+.quill .ql-container {
+  height: auto;
+}
+
+.ql-container .ql-editor {
+  height: auto;
+  min-height:200px;
+  /* @apply min-h-screen; */
+}

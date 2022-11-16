@@ -4,11 +4,11 @@ import AdminNavApp from '../../../components/AdminNavApp';
 import AdminImageUploaderApp from '../../../components/AdminImageUploaderApp';
 import AdminInput from "../../../components/AdminInput";
 import AdminRadio from "../../../components/AdminRadio";
-import AdminTextarea from "../../../components/AdminTextarea";
 import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import {unescapeHtml} from '../../../../common-src/StringUtils';
 import {showToast} from "../../../common/ToastUtils";
 import {AdminSideQuickLinks} from "../../../components/AdminSideQuickLinks";
+import AdminRichEditor from "../../../components/AdminRichEditor";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -143,10 +143,12 @@ export default class EditChannelApp extends React.Component {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t">
-            <AdminTextarea
+            <AdminRichEditor
               label="Description"
               value={channel.description}
-              onChange={(e) => this.onUpdateChannelMeta('description', e.target.value)}
+              onChange={(value) =>{
+                this.onUpdateChannelMeta('description', value);
+              }}
             />
           </div>
           <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">
