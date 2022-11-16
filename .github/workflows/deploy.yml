@@ -78,7 +78,7 @@ jobs:
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:
-          cmd: fix_cors
+          cmd: sync_env_vars
       - name: Deploy to Cloudflare Pages [$ENVIRONMENT]
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
