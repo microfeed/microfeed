@@ -54,6 +54,7 @@
     "webpack-bundle-tracker": "^1.6.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.11.1",
-    "webpack-shell-plugin-next": "^2.2.2"
+    "webpack-shell-plugin-next": "^2.2.2",
+    "wrangler": "^2.3.2"
   }
 }
