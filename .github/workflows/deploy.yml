@@ -6,17 +6,24 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+        - preview
+        - production
+        default: 'preview'
 
-inputs:
-  ENVIRONMENT:
-    description: 'Deployment environment. Allowed values: production, preview (default)'
-    required: true
-    default: 'preview'
-
-  ACTION:
-    description: 'What do you want to do? Allowed values: deploy (default), init'
-    required: false
-    default: 'deploy'
+      ACTION:
+        description: 'What do you want to do?'
+        required: true
+        type: choice
+        options:
+        - deploy
+        - init
+        default: 'deploy'
 
 env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
