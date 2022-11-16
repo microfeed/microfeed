@@ -7,6 +7,17 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+inputs:
+  ENVIRONMENT:
+    description: 'Deployment environment. Allowed values: production, preview (default)'
+    required: true
+    default: 'preview'
+
+  ACTION:
+    description: 'What do you want to do? Allowed values: deploy (default), init'
+    required: false
+    default: 'deploy'
+
 env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -17,7 +28,7 @@ env:
   MEDIA_BASE_URL: ${{ secrets.MEDIA_BASE_URL }}
   ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
   ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+  ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
   PRODUCTION_BRANCH: ${{ github.head_ref || github.ref_name }}
 jobs:
   deploy:
@@ -25,7 +36,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - uses: borales/actions-yarn@v3.0.0
+      - name: Install dependencies
+        uses: borales/actions-yarn@v3.0.0
         with:
           cmd: install
       - name: Create and populate .dev.vars file
@@ -50,6 +62,13 @@ jobs:
           ENVIRONMENT = "$ENVIRONMENT"
           PRODUCTION_BRANCH = "$PRODUCTION_BRANCH"
           EOF
-      - uses: borales/actions-yarn@v3.0.0
+      - name: Initialize this project on Cloudflare Pages
+        if: inputs.ACTION == 'init'
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: fix_cors
+      - name: Deploy to Cloudflare Pages [$ENVIRONMENT]
+        if: inputs.ACTION == 'deploy'
+        uses: borales/actions-yarn@v3.0.0
         with:
           cmd: deploy:direct
