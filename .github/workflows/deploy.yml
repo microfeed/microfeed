@@ -36,7 +36,7 @@ env:
   ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
   ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
   DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
-  PRODUCTION_BRANCH: ${{ github.head_ref || github.ref_name }}
+  DEPLOYMENT_BRANCH: ${{ github.head_ref || github.ref_name }}
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -69,8 +69,8 @@ jobs:
       - name: Create and populate .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars file
         run: |
           cat <<EOF > .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars
-          DEPLOYMENT_ENVIRONMENT = "DEPLOYMENT_ENVIRONMENT"
-          PRODUCTION_BRANCH = "$PRODUCTION_BRANCH"
+          DEPLOYMENT_ENVIRONMENT = "$DEPLOYMENT_ENVIRONMENT"
+          DEPLOYMENT_BRANCH = "$DEPLOYMENT_BRANCH"
           EOF
       - name: Fix R2 Cors, so we can directly upload media files from client-side js
         if: inputs.ACTION == 'init'
