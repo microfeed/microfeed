@@ -38,7 +38,7 @@ env:
   ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
   PRODUCTION_BRANCH: ${{ github.head_ref || github.ref_name }}
 jobs:
-  do_ops:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
