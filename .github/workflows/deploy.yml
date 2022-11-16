@@ -1,0 +1,25 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  # push:
+  #  branches: ["dev-v1"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cloudflare Pages GitHub Action
+        uses: cloudflare/pages-action@v1.1.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+          directory: public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # The name of the branch you want to deploy to
+          branch: dev-v1
