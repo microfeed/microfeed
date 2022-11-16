@@ -1,7 +1,7 @@
 import {msToUtcString} from "../../common-src/TimeUtils";
 import {secondsToHHMMSS} from "../../common-src/StringUtils";
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
-import {RssResponseBuilder} from "../../edge-src/common/PublicPageUtils";
+import {RssResponseBuilder} from "../../edge-src/common/PageUtils";
 import {OUR_BRAND} from '../../common-src/Constants';
 
 const {XMLBuilder} = require('fast-xml-parser');

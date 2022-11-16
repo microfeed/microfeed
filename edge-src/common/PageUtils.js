@@ -2,6 +2,10 @@ import ReactDOMServer from "react-dom/server";
 import Feed from "../../edge-src/models/Feed";
 import Theme from "../models/Theme";
 
+export function renderReactToHtml(Component) {
+  return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
+}
+
 class ResponseBuilder {
   constructor(env) {
     this.feed = new Feed(env);
@@ -143,7 +147,7 @@ export class WebResponseBuilder extends ResponseBuilder {
   _getResponse(props) {
     const res = super._getResponse(props);
     const theme = new Theme(this.jsonData, this.settings);
-    const fromReact = ReactDOMServer.renderToString(
+    const fromReact = renderReactToHtml(
       props.getComponent(this.content, this.jsonData, theme));
     const newRes = new Response(fromReact, res);
     return new HTMLRewriter()

@@ -1,6 +1,6 @@
 import React from "react";
 import EdgeHomeApp from '../edge-src/EdgeHomeApp';
-import {WebResponseBuilder} from '../edge-src/common/PublicPageUtils';
+import {WebResponseBuilder} from '../edge-src/common/PageUtils';
 
 export async function onRequestGet({env}) {
   const webResponseBuilder = new WebResponseBuilder(env);

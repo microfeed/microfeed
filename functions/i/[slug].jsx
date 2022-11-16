@@ -1,6 +1,6 @@
 import React from "react";
 import EdgeItemApp from "../../edge-src/EdgeItemApp";
-import {WebResponseBuilder} from '../../edge-src/common/PublicPageUtils';
+import {WebResponseBuilder} from '../../edge-src/common/PageUtils';
 
 export async function onRequestGet({params, env}) {
   const {slug} = params;
