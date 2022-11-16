@@ -6,14 +6,14 @@ import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from 
 import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
-import Constants from '../../../../common-src/Constants';
+import {PREDEFINED_SUBSCRIBE_METHODS} from '../../../../common-src/Constants';
 import NewSubscribeDialog from "./components/NewSubscribeDialog";
 
 function initMethodsDict() {
   return {
     methods: [
-      {...Constants.PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false},
-      {...Constants.PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false},
+      {...PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false},
+      {...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false},
     ],
   };
 }
