@@ -8,7 +8,7 @@ const dotenv = require('dotenv')
 const buffer = fs.readFileSync('.dev.vars');
 const env = dotenv.parse(buffer);
 
-const endpoint = `https://${env.ACCOUNT_ID}.r2.cloudflarestorage.com`;
+const endpoint = `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
 const s3 = new AWS.S3({
   region: 'auto',

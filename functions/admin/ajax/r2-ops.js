@@ -25,7 +25,7 @@ async function getPresignedUrlFromR2(env, bucket, inputParams) {
   } = inputParams;
   const accessKeyId = `${env.R2_ACCESS_KEY_ID}`
   const secretAccessKey = `${env.R2_SECRET_ACCESS_KEY}`;
-  const endpoint = `https://${bucket}.${env.ACCOUNT_ID}.r2.cloudflarestorage.com/${projectPrefix(env)}/${key}`;
+  const endpoint = `https://${bucket}.${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${projectPrefix(env)}/${key}`;
   return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto');
 }
 

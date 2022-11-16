@@ -6,17 +6,20 @@ const buffer = fs.readFileSync('.dev.vars');
 const env = dotenv.parse(buffer);
 
 const ALLOWED_VARS = [
-  'ACCOUNT_ID',
+  'CLOUDFLARE_ACCOUNT_ID',
+  'CLOUDFLARE_PROJECT_NAME',
+
   'R2_ACCESS_KEY_ID',
   'R2_SECRET_ACCESS_KEY',
   'R2_BUCKET',
   'MEDIA_BASE_URL',
+
   'ADMIN_USERNAME',
   'ADMIN_PASSWORD',
+
   "NODE_VERSION",
   'LISTEN_HOST_VERSION',
   'ENVIRONMENT',
-  'PROJECT_NAME',
 ];
 
 const getEnvVarsFromFilesJson = (envName) => {
@@ -42,10 +45,10 @@ const updateEnvVars = (data, onSuccess) => {
   const options = {
     hostname: 'api.cloudflare.com',
     port: 443,
-    path: `/client/v4/accounts/${env.ACCOUNT_ID}/pages/projects/${env.PROJECT_NAME}`,
+    path: `/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${env.CLOUDFLARE_PROJECT_NAME}`,
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${env.PAGES_SECRET_ACCESS_KEY}`,
+      'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
       'Content-Type': 'application/json',
       'Content-Length': data.length,
     },
@@ -82,6 +85,8 @@ const updateEnvVars = (data, onSuccess) => {
 
 const currentEnv = process.env.ENVIRONMENT || 'production';
 
+console.log(`Sync-ing for [${currentEnv}]...`);
+
 const varsToAddOrUpdate = JSON.stringify({
   'deployment_configs': {
     ...getEnvVarsFromFilesJson(currentEnv),
@@ -89,5 +94,5 @@ const varsToAddOrUpdate = JSON.stringify({
 });
 
 updateEnvVars(varsToAddOrUpdate, () => {
-  console.log('Updated successfully!');
+  console.log(`Successfully synced for [${currentEnv}]!`);
 });
