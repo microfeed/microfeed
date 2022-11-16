@@ -10,7 +10,7 @@ const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
 const envJson = dotenv.parse(bufferForEnv);
 
 const projectName = envJson.CLOUDFLARE_PROJECT_NAME || env.CLOUDFLARE_PROJECT_NAME;
-let branch = envJson.PRODUCTION_BRANCH || 'main';
+let branch = envJson.DEPLOYMENT_BRANCH || 'main';
 if (envName !== 'production') {
   branch = 'preview';
 }
