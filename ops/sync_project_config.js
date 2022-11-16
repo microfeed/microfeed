@@ -1,9 +1,6 @@
-const fs = require('fs');
-const dotenv = require('dotenv')
 const https = require('https');
 
-const buffer = fs.readFileSync('.dev.vars');
-const env = dotenv.parse(buffer);
+const {VarsReader} = require('./lib/utils');
 
 const ALLOWED_VARS = [
   'CLOUDFLARE_ACCOUNT_ID',
@@ -22,78 +19,85 @@ const ALLOWED_VARS = [
   'FEEDKIT_VERSION',
 ];
 
-const getEnvVarsFromFilesJson = (envName) => {
-  const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
-  const envJson = dotenv.parse(bufferForEnv);
+class SyncProjectConfig {
+  constructor() {
+    this.currentEnv = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
+    this.v = new VarsReader(this.currentEnv);
+  }
 
-  const envVarsJson = {
-    [envName]: {
-      'env_vars': {},
-    }
-  };
-  ALLOWED_VARS.forEach((varName) => {
-    const varValue = envJson[varName] || env[varName];
-    envVarsJson[envName]['env_vars'][varName] = {
-      value: varValue,
-    };
-  });
-  return envVarsJson;
-};
-
-const updateEnvVars = (data, onSuccess) => {
-
-  const options = {
-    hostname: 'api.cloudflare.com',
-    port: 443,
-    path: `/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${env.CLOUDFLARE_PROJECT_NAME}`,
-    method: 'PATCH',
-    headers: {
-      'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-      'Content-Type': 'application/json',
-      'Content-Length': data.length,
-    },
-  };
-
-  const req = https.request(options, (res) => {
-    // console.log('statusCode:', res.statusCode);
-    // console.log('headers:', res.headers);
-    let body = '';
-    res.on('data', (d) => {
-      // d.result.deployment_configs.preview
-      // d.result.deployment_configs.production
-      // process.stdout.write(d);
-      // onSuccess(d);
-      body += d;
-    });
-    res.on("end", () => {
-      try {
-        let json = JSON.parse(body);
-        onSuccess(json);
-      } catch (error) {
-        console.error(error.message);
-        process.exit(1);
+  _getEnvVarsFromFilesJson(envName) {
+    const envVarsJson = {
+      [envName]: {
+        'env_vars': {},
       }
+    };
+    ALLOWED_VARS.forEach((varName) => {
+      const varValue = this.v.get(varName) || '';
+      envVarsJson[envName]['env_vars'][varName] = {
+        value: varValue,
+      };
     });
-  });
+    return envVarsJson;
+  }
 
-  req.on('error', (e) => {
-    console.error(e);
-  });
-  req.write(data)
-  req.end();
-};
+  _updateEnvVars(data, onSuccess) {
+    const options = {
+      hostname: 'api.cloudflare.com',
+      port: 443,
+      path: `/client/v4/accounts/${this.v.get('CLOUDFLARE_ACCOUNT_ID')}/pages/projects/${this.v.get('CLOUDFLARE_PROJECT_NAME')}`,
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${this.v.get('CLOUDFLARE_API_TOKEN')}`,
+        'Content-Type': 'application/json',
+        'Content-Length': data.length,
+      },
+    };
 
-const currentEnv = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
+    const req = https.request(options, (res) => {
+      // console.log('statusCode:', res.statusCode);
+      // console.log('headers:', res.headers);
+      let body = '';
+      res.on('data', (d) => {
+        // d.result.deployment_configs.preview
+        // d.result.deployment_configs.production
+        // process.stdout.write(d);
+        // onSuccess(d);
+        body += d;
+      });
+      res.on("end", () => {
+        try {
+          let json = JSON.parse(body);
+          onSuccess(json);
+        } catch (error) {
+          console.error(error.message);
+          process.exit(1);
+        }
+      });
+    });
 
-console.log(`Sync-ing for [${currentEnv}]...`);
+    req.on('error', (e) => {
+      console.error(e);
+      process.exit(1);
+    });
+    req.write(data)
+    req.end();
+  }
 
-const varsToAddOrUpdate = JSON.stringify({
-  'deployment_configs': {
-    ...getEnvVarsFromFilesJson(currentEnv),
-  },
-});
+  syncEnvVars() {
+    console.log(`Sync-ing for [${this.currentEnv}]...`);
 
-updateEnvVars(varsToAddOrUpdate, (json) => {
-  console.log(`Successfully synced for [${currentEnv}]!`);
-  // console.log(json);
-});
+    const varsToAddOrUpdate = JSON.stringify({
+      'deployment_configs': {
+        ...this._getEnvVarsFromFilesJson(this.currentEnv),
+      },
+    });
+
+    this._updateEnvVars(varsToAddOrUpdate, (json) => {
+      console.log(`Successfully synced for [${this.currentEnv}]!`);
+      console.log(Object.keys(json.result.deployment_configs[this.currentEnv].env_vars));
+    });
+  }
+}
+
+const syncProjectConfig = new SyncProjectConfig();
+syncProjectConfig.syncEnvVars();
