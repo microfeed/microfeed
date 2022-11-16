@@ -36,7 +36,7 @@ env:
   ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
   ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
   DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
-  DEPLOYMENT_BRANCH: ${{ github.head_ref || github.ref_name }}
+  PRODUCTION_BRANCH: main
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -62,26 +62,28 @@ jobs:
           ADMIN_USERNAME = "$ADMIN_USERNAME"
           ADMIN_PASSWORD = "$ADMIN_PASSWORD"
 
-          DEPLOYMENT_ENVIRONMENT = "development"
+          PRODUCTION_BRANCH = "$PRODUCTION_BRANCH"
+
           FEEDKIT_VERSION = "v1"
           NODE_VERSION = "17.0"
+
+          DEPLOYMENT_ENVIRONMENT = "development"
           EOF
       - name: Create and populate .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars file
         run: |
           cat <<EOF > .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars
           DEPLOYMENT_ENVIRONMENT = "$DEPLOYMENT_ENVIRONMENT"
-          DEPLOYMENT_BRANCH = "$DEPLOYMENT_BRANCH"
           EOF
       - name: Fix R2 Cors, so we can directly upload media files from client-side js
         if: inputs.ACTION == 'init'
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: fix_cors
-      - name: Sync environment variables to Cloudflare Page [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
+      - name: Sync various configs to Cloudflare Page [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:
-          cmd: sync_env_vars
+          cmd: sync_project_config
       - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0

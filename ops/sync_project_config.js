@@ -90,9 +90,10 @@ console.log(`Sync-ing for [${currentEnv}]...`);
 const varsToAddOrUpdate = JSON.stringify({
   'deployment_configs': {
     ...getEnvVarsFromFilesJson(currentEnv),
-  }
+  },
 });
 
-updateEnvVars(varsToAddOrUpdate, () => {
+updateEnvVars(varsToAddOrUpdate, (json) => {
   console.log(`Successfully synced for [${currentEnv}]!`);
+  // console.log(json);
 });

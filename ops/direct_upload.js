@@ -10,10 +10,11 @@ const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
 const envJson = dotenv.parse(bufferForEnv);
 
 const projectName = envJson.CLOUDFLARE_PROJECT_NAME || env.CLOUDFLARE_PROJECT_NAME;
-let branch = envJson.DEPLOYMENT_BRANCH || 'main';
-if (envName !== 'production') {
-  branch = 'preview';
-}
+const productionBranch = envJson.PRODUCTION_BRANCH || env.PRODUCTION_BRANCH || 'main';
+
+// Cloudflare Pages direct upload uses branch to decide deployment environment.
+// If we want production, then use production_branch. Otherwise, just something else
+const branch = envName === 'production' ? productionBranch : `${productionBranch}-preview`;
 
 const cmd = `wrangler pages publish public --project-name ${projectName} --branch ${branch}`;
 
