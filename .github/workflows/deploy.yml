@@ -16,16 +16,32 @@ jobs:
       - uses: borales/actions-yarn@v3.0.0
         with:
           cmd: install
+      - name: Create and populate .dev.vars file
+        env:
+          PAGES_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT_NAME: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          MEDIA_BASE_URL: ${{ secrets.MEDIA_BASE_URL }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          cat <<EOF > .dev.vars
+          PROJECT_NAME = "$PROJECT_NAME"
+          ACCOUNT_ID = "$ACCOUNT_ID"
+          R2_ACCESS_KEY_ID = "$R2_ACCESS_KEY_ID"
+          R2_SECRET_ACCESS_KEY = "$R2_SECRET_ACCESS_KEY"
+          R2_BUCKET = "$R2_BUCKET"
+          MEDIA_BASE_URL = "$MEDIA_BASE_URL"
+          PAGES_SECRET_ACCESS_KEY = "$PAGES_SECRET_ACCESS_KEY"
+          ADMIN_USERNAME = "$ADMIN_USERNAME"
+          ADMIN_PASSWORD = "$ADMIN_PASSWORD"
+          ENVIRONMENT = "development"
+          LISTEN_HOST_VERSION = "v1"
+          NODE_VERSION = "17.0"
+          EOF
       - uses: borales/actions-yarn@v3.0.0
         with:
-          cmd: build:production
-      - name: Cloudflare Pages GitHub Action
-        uses: cloudflare/pages-action@v1.1.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
-          directory: public
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # The name of the branch you want to deploy to
-          branch: dev-v1
+          cmd: deploy:direct
