@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 const buffer = fs.readFileSync('.dev.vars');
 const env = dotenv.parse(buffer);
 
-const envName = 'production';
+const envName = process.env.ENVIRONMENT || 'production';
 const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
 const envJson = dotenv.parse(bufferForEnv);
 
@@ -22,7 +22,7 @@ console.log(cmd);
 exec(`yarn build:production && ${cmd}`, (error, stdout, stderr) => {
   if (error) {
     console.log(`error: ${error.message}`);
-    return;
+    process.exit(1);
   }
   if (stderr) {
     console.log(`stderr: ${stderr}`);
