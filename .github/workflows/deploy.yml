@@ -64,7 +64,7 @@ jobs:
 
           DEPLOYMENT_ENVIRONMENT = "development"
           FEEDKIT_VERSION = "v1"
-          NODE_VERSION = "17.0"q
+          NODE_VERSION = "17.0"
           EOF
       - name: Create and populate .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars file
         run: |
