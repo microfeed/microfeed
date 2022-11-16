@@ -44,7 +44,7 @@ jobs:
           EOF
       - name: Create and populate .production.vars file
         run: |
-          cat <<EOF > .dev.vars
+          cat <<EOF > .production.vars
           ENVIRONMENT = "production"
           EOF
       - uses: borales/actions-yarn@v3.0.0
