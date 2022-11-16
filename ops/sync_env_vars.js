@@ -79,10 +79,11 @@ const updateEnvVars = (data, onSuccess) => {
   req.end();
 };
 
+const currentEnv = process.env.ENVIRONMENT || 'production';
+
 const varsToAddOrUpdate = JSON.stringify({
   'deployment_configs': {
-    ...getEnvVarsFromFilesJson('preview'),
-    ...getEnvVarsFromFilesJson('production'),
+    ...getEnvVarsFromFilesJson(currentEnv),
   }
 });
 

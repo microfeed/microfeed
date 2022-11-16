@@ -38,7 +38,7 @@ env:
   ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
   PRODUCTION_BRANCH: ${{ github.head_ref || github.ref_name }}
 jobs:
-  deploy:
+  do_ops:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -69,8 +69,13 @@ jobs:
           ENVIRONMENT = "$ENVIRONMENT"
           PRODUCTION_BRANCH = "$PRODUCTION_BRANCH"
           EOF
-      - name: Initialize this project on Cloudflare Pages
+      - name: Fix R2 Cors, so we can directly upload media files from client-side js
         if: inputs.ACTION == 'init'
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: fix_cors
+      - name: Sync environment variables to Cloudflare Page [$ENVIRONMENT]
+        if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: fix_cors

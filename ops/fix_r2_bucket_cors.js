@@ -31,6 +31,7 @@ const params = {
 s3.putBucketCors(params, (err, data) => {
   if (err) {
     console.log(err);
+    process.exit(1);
   } else {
     console.log('Success!');
     console.log(data);
