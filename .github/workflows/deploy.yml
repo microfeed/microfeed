@@ -47,9 +47,9 @@ jobs:
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: install
-      - name: Create and populate .dev.vars file
+      - name: Create and populate .vars.toml file
         run: |
-          cat <<EOF > .dev.vars
+          cat <<EOF > .vars.toml
           CLOUDFLARE_PROJECT_NAME = "$CLOUDFLARE_PROJECT_NAME"
           CLOUDFLARE_ACCOUNT_ID = "$CLOUDFLARE_ACCOUNT_ID"
           CLOUDFLARE_API_TOKEN = "$CLOUDFLARE_API_TOKEN"
@@ -67,11 +67,6 @@ jobs:
           FEEDKIT_VERSION = "v1"
           NODE_VERSION = "17.0"
 
-          DEPLOYMENT_ENVIRONMENT = "development"
-          EOF
-      - name: Create and populate .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars file
-        run: |
-          cat <<EOF > .${{ inputs.DEPLOYMENT_ENVIRONMENT }}.vars
           DEPLOYMENT_ENVIRONMENT = "$DEPLOYMENT_ENVIRONMENT"
           EOF
       - name: Fix R2 Cors, so we can directly upload media files from client-side js
@@ -80,7 +75,6 @@ jobs:
         with:
           cmd: setup:production
       - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
-        if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: deploy
