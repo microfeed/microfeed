@@ -45,6 +45,12 @@ class WranglerCmd {
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
+
+  createFeedDb() {
+    const wranglerCmd = `wrangler d1 create feed_db-${this.currentEnv}`;
+    console.log(wranglerCmd);
+    return this._getCmd(wranglerCmd);
+  }
 }
 
 module.exports = {
