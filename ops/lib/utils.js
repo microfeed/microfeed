@@ -47,7 +47,15 @@ class WranglerCmd {
   }
 
   createFeedDb() {
-    const wranglerCmd = `wrangler d1 create feed_db-${this.currentEnv}`;
+    const wranglerCmd = this.currentEnv !== 'development' ?
+      `wrangler d1 create feed_db-${this.currentEnv}` : 'echo "FEED_DB"';
+    console.log(wranglerCmd);
+    return this._getCmd(wranglerCmd);
+  }
+
+  createFeedDbTables() {
+    const dbName = this.currentEnv !== 'development' ? `feed_db-${this.currentEnv}` : 'FEED_DB --local';
+    const wranglerCmd = `wrangler d1 execute ${dbName} --file ops/db/init.sql`;
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
