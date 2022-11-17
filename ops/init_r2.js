@@ -22,6 +22,8 @@ class SetupR2 {
     const bucket = this.v.get('R2_BUCKET');
     const bucketParams = {
       Bucket: bucket,
+      // XXX: Not implemented yet on Cloudflare side - https://developers.cloudflare.com/r2/data-access/s3-api/api/
+      // ACL: 'public-read',
     };
 
     this.s3.createBucket(bucketParams, function (err, data) {
@@ -30,6 +32,7 @@ class SetupR2 {
           console.log(`Bucket exists: ${bucket}`);
         } else {
           console.log("Error", err);
+          process.exit(1);
         }
       } else {
         console.log("Success", data.Location);
