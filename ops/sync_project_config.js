@@ -3,20 +3,20 @@ const https = require('https');
 const {VarsReader} = require('./lib/utils');
 
 const ALLOWED_VARS = [
-  'CLOUDFLARE_ACCOUNT_ID',
-  'CLOUDFLARE_PROJECT_NAME',
-  'DEPLOYMENT_ENVIRONMENT',
+  {name: 'CLOUDFLARE_ACCOUNT_ID', encrypted: true},
+  {name: 'CLOUDFLARE_PROJECT_NAME', encrypted: true},
+  {name: 'DEPLOYMENT_ENVIRONMENT', encrypted: false},
 
-  'R2_ACCESS_KEY_ID',
-  'R2_SECRET_ACCESS_KEY',
-  'R2_BUCKET',
-  'MEDIA_BASE_URL',
+  {name: 'R2_ACCESS_KEY_ID', encrypted: true},
+  {name: 'R2_SECRET_ACCESS_KEY', encrypted: true},
+  {name: 'R2_BUCKET', encrypted: true},
+  {name: 'MEDIA_BASE_URL', encrypted: false},
 
-  'ADMIN_USERNAME',
-  'ADMIN_PASSWORD',
+  {name: 'ADMIN_USERNAME', encrypted: true},
+  {name: 'ADMIN_PASSWORD', encrypted: true},
 
-  "NODE_VERSION",
-  'FEEDKIT_VERSION',
+  {name: 'NODE_VERSION', encrypted: false},  // Cloudflare Pages CI needs this to use the right Node version.
+  {name: 'FEEDKIT_VERSION', encrypted: false},
 ];
 
 class SyncProjectConfig {
@@ -36,10 +36,11 @@ class SyncProjectConfig {
         },
       }
     };
-    ALLOWED_VARS.forEach((varName) => {
-      const varValue = this.v.get(varName) || '';
-      envVarsJson[envName]['env_vars'][varName] = {
-        value: varValue,
+    ALLOWED_VARS.forEach((varDict) => {
+      const varValue = this.v.get(varDict.name) || '';
+      envVarsJson[envName]['env_vars'][varDict.name] = {
+        'value': varValue,
+        'type': varDict.encrypted ? 'secret_text' : 'plain_text',
       };
     });
     return envVarsJson;
@@ -99,7 +100,7 @@ class SyncProjectConfig {
 
     this._updateEnvVars(varsToAddOrUpdate, (json) => {
       console.log(`Successfully synced for [${this.currentEnv}]!`);
-      console.log(Object.keys(json.result.deployment_configs[this.currentEnv].env_vars));
+      console.log(json.result.deployment_configs[this.currentEnv].env_vars);
     });
   }
 }
