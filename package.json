@@ -4,10 +4,10 @@
   "license": "MIT",
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
-    "fix_cors": "node ops/fix_r2_bucket_cors.js",
-    "sync_project_config": "node ops/sync_project_config.js",
     "dev": "wrangler pages dev --r2 LH_DATABASE --persist -- webpack serve --host localhost --mode development",
-    "deploy:direct": "yarn install && node ops/direct_upload.js",
+    "setup:development": "yarn install && node ops/generate_local_vars.js",
+    "setup:production": "yarn install && node ops/fix_r2_bucket_cors.js",
+    "deploy": "yarn install && node ops/sync_project_config && node ops/direct_upload.js",
     "test": "jest"
   },
   "dependencies": {

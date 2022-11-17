@@ -22,7 +22,7 @@ on:
         type: choice
         options:
         - deploy
-        - init
+        - setup
         default: 'deploy'
 
 env:
@@ -75,17 +75,12 @@ jobs:
           DEPLOYMENT_ENVIRONMENT = "$DEPLOYMENT_ENVIRONMENT"
           EOF
       - name: Fix R2 Cors, so we can directly upload media files from client-side js
-        if: inputs.ACTION == 'init'
+        if: inputs.ACTION == 'setup'
         uses: borales/actions-yarn@v3.0.0
         with:
-          cmd: fix_cors
-      - name: Sync various configs to Cloudflare Page [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
-        if: inputs.ACTION == 'deploy'
-        uses: borales/actions-yarn@v3.0.0
-        with:
-          cmd: sync_project_config
+          cmd: setup:production
       - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         if: inputs.ACTION == 'deploy'
         uses: borales/actions-yarn@v3.0.0
         with:
-          cmd: deploy:direct
+          cmd: deploy

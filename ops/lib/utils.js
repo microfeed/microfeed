@@ -9,7 +9,17 @@ class VarsReader {
   }
 
   get(key, defaultValue = null) {
-    return this.data[this.currentEnv][key] || this.data[key] || defaultValue;
+    const envDict = this.data[this.currentEnv] || {};
+    return envDict[key] || this.data[key] || defaultValue;
+  }
+
+  flattenVars() {
+    const varDict = {};
+    const keys = Object.keys(this.data).filter((k) => !['production', 'preview', 'development'].includes(k))
+    keys.forEach((k) => {
+      varDict[k] = this.get(k, '');
+    });
+    return varDict;
   }
 }
 
