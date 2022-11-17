@@ -31,11 +31,13 @@ export default class Feed {
     if (!content) {
       content = await this.getContent();
     }
+    const settings = content.settings || {};
+    const subscribeMethods = settings.subscribeMethods || {'methods': []};
     const publicContent = {
       version: content.version,
       channel: {...content.channel},
       items: [],
-      subscribeMethods: content.settings.subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+      subscribeMethods: subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
         if (!m.editable) {
           switch (m.type) {
             case 'rss':
@@ -51,7 +53,6 @@ export default class Feed {
         return m;
       }),
     };
-    const settings = content.settings || {};
     let trackingUrls = [];
     if (settings.analytics && settings.analytics.urls) {
       trackingUrls = settings.analytics.urls || [];

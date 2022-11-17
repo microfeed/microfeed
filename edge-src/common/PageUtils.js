@@ -13,7 +13,7 @@ class ResponseBuilder {
 
   async fetchFeed() {
     this.content = await this.feed.getContent();
-    this.settings = await this.feed.getSettings(this.content);
+    this.settings = await this.feed.getSettings(this.content) || {};
     this.jsonData = await this.feed.getContentPublic(this.content);
   }
 
