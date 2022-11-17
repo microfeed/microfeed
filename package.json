@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
-    "dev": "wrangler pages dev --r2 LH_DATABASE --persist -- webpack serve --host localhost --mode development",
+    "dev": "yarn setup:development && wrangler pages dev --r2 LH_DATABASE --persist -- webpack serve --host localhost --mode development",
     "setup:development": "yarn install && node ops/generate_local_vars.js",
     "setup:production": "yarn install && node ops/fix_r2_bucket_cors.js && node ops/init_project.js",
     "deploy": "yarn install && node ops/sync_project_config && node ops/direct_upload.js",
