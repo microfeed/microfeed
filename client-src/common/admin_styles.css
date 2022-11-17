@@ -89,5 +89,7 @@ a {
 .ql-container .ql-editor {
   height: auto;
   min-height:200px;
+  max-height: 500px;
+  overflow: auto;
   /* @apply min-h-screen; */
 }

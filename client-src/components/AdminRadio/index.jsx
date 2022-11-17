@@ -11,7 +11,9 @@ export default function AdminRadio(
           <input
             type="radio"
             name={groupName} value={b.value || b.name} checked={b.checked}
-            onChange={onChange}
+            onChange={(e) => {
+              onChange(e);
+            }}
             className="text-brand-light"
             disabled={disabled}
           />
