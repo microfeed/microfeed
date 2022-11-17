@@ -6,20 +6,75 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      DEPLOYMENT_ENVIRONMENT:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+        - preview
+        - production
+        default: 'preview'
 
+      ACTION:
+        description: 'What do you want to do?'
+        required: true
+        type: choice
+        options:
+        - deploy
+        - setup
+        default: 'deploy'
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+  R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  R2_BUCKET: ${{ secrets.R2_BUCKET }}
+  MEDIA_BASE_URL: ${{ secrets.MEDIA_BASE_URL }}
+  ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+  DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
+  PRODUCTION_BRANCH: main
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Cloudflare Pages GitHub Action
-        uses: cloudflare/pages-action@v1.1.0
+      - name: Install dependencies
+        uses: borales/actions-yarn@v3.0.0
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
-          directory: public
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # The name of the branch you want to deploy to
-          branch: dev-v1
+          cmd: install
+      - name: Create and populate .vars.toml file
+        run: |
+          cat <<EOF > .vars.toml
+          CLOUDFLARE_PROJECT_NAME = "$CLOUDFLARE_PROJECT_NAME"
+          CLOUDFLARE_ACCOUNT_ID = "$CLOUDFLARE_ACCOUNT_ID"
+          CLOUDFLARE_API_TOKEN = "$CLOUDFLARE_API_TOKEN"
+
+          R2_ACCESS_KEY_ID = "$R2_ACCESS_KEY_ID"
+          R2_SECRET_ACCESS_KEY = "$R2_SECRET_ACCESS_KEY"
+          R2_BUCKET = "$R2_BUCKET"
+          MEDIA_BASE_URL = "$MEDIA_BASE_URL"
+
+          ADMIN_USERNAME = "$ADMIN_USERNAME"
+          ADMIN_PASSWORD = "$ADMIN_PASSWORD"
+
+          PRODUCTION_BRANCH = "$PRODUCTION_BRANCH"
+
+          FEEDKIT_VERSION = "v1"
+          NODE_VERSION = "17.0"
+
+          DEPLOYMENT_ENVIRONMENT = "$DEPLOYMENT_ENVIRONMENT"
+          EOF
+      - name: Fix R2 Cors, so we can directly upload media files from client-side js
+        if: inputs.ACTION == 'setup'
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: setup:production
+      - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: deploy

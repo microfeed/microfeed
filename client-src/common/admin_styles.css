@@ -41,9 +41,53 @@ a {
   @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light;;
 }
 
+.lh-page-title {
+  @apply text-lg font-bold text-gray-500 mb-4;
+}
+
+.lh-page-subtitle {
+  @apply font-semibold text-gray-500 mb-2;
+}
+
 /*
-  Images
+  Images / Audio
  */
 .lh-upload-image-size {
   @apply w-64 h-64;
+}
+
+.lh-upload-box {
+  @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50;
+}
+
+.lh-upload-wrapper .lh-upload-fileinput.is-disabled {
+  @apply border-0;
+}
+
+/*
+  Simple icons
+ */
+.lh-icon-arrow-right:before {
+  content: "→";
+}
+
+.lh-icon-arrow-left:before {
+  content: "←";
+}
+
+.lh-icon-x-mark:before {
+  content: "×";
+}
+
+/*
+  Make Quill styling happy
+ */
+.quill .ql-container {
+  height: auto;
+}
+
+.ql-container .ql-editor {
+  height: auto;
+  min-height:200px;
+  /* @apply min-h-screen; */
 }

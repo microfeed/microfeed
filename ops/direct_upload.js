@@ -1,28 +1,26 @@
 const {exec} = require('child_process');
-const fs = require("fs");
-const dotenv = require("dotenv");
+const {VarsReader} = require("./lib/utils");
 
-const buffer = fs.readFileSync('.dev.vars');
-const env = dotenv.parse(buffer);
+const currentEnv = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
+const v = new VarsReader(currentEnv);
 
-const envName = 'production';
-const bufferForEnv = fs.readFileSync(`.${envName}.vars`);
-const envJson = dotenv.parse(bufferForEnv);
+const projectName = v.get('CLOUDFLARE_PROJECT_NAME');
+const productionBranch = v.get('PRODUCTION_BRANCH', 'main');
 
-const projectName = envJson.PROJECT_NAME || env.PROJECT_NAME;
-let branch = 'main';
-if (envName !== 'production') {
-  branch = 'preview';
-}
+// Cloudflare Pages direct upload uses branch to decide deployment environment.
+// If we want production, then use production_branch. Otherwise, just something else
+const branch = currentEnv === 'production' ? productionBranch : `${productionBranch}-preview`;
 
-const cmd = `wrangler pages publish public --project-name ${projectName} --branch ${branch}`;
+const wranglerCmd = `wrangler pages publish public --project-name ${projectName} --branch ${branch}`;
+const cmd = `CLOUDFLARE_ACCOUNT_ID=${v.get('CLOUDFLARE_ACCOUNT_ID')} ` +
+  `CLOUDFLARE_API_TOKEN=${v.get('CLOUDFLARE_API_TOKEN')} ` + wranglerCmd;
 
-console.log(cmd);
+console.log(wranglerCmd);
 
 exec(`yarn build:production && ${cmd}`, (error, stdout, stderr) => {
   if (error) {
     console.log(`error: ${error.message}`);
-    return;
+    process.exit(1);
   }
   if (stderr) {
     console.log(`stderr: ${stderr}`);

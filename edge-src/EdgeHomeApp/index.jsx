@@ -1,19 +1,18 @@
 import React from 'react';
-import HeaderSection from './components/HeaderSection';
-import AboutSection from './components/AboutSection';
-import EpisodeListSection from "./components/EpisodeListSection";
 import HtmlHeader from "../components/HtmlHeader";
 
 export default class EdgeHomeApp extends React.Component {
   render() {
-    const {jsonData} = this.props;
+    const {jsonData, theme} = this.props;
+    const { html } = theme.getFeedWeb();
+    const {channel} = jsonData;
     return (
       <html>
       <HtmlHeader
-        title={jsonData.name}
-        description={jsonData.description}
-        webpackJsList={['index_js']}
-        webpackCssList={['public_default_css']}
+        title={channel.title}
+        description={channel.description}
+        webpackJsList={[]}
+        webpackCssList={[]}
         favicon={{
           'apple-touch-icon': '/assets/apple-touch-icon.png',
           '32x32': '/assets/favicon-32x32.png',
@@ -28,15 +27,7 @@ export default class EdgeHomeApp extends React.Component {
         }}
       />
       <body>
-      <div className="grid grid-cols-12 py-12">
-        <div className="hidden lg:block lg:col-span-2 xl:col-span-3"/>
-        <div className="col-span-12 lg:col-span-8 xl:col-span-6 px-4 grid grid-cols-1 gap-8">
-          <HeaderSection jsonData={jsonData}/>
-          <AboutSection jsonData={jsonData}/>
-          <EpisodeListSection jsonData={jsonData}/>
-        </div>
-        <div className="hidden lg:block lg:col-span-2 xl:col-span-3"/>
-      </div>
+      <div dangerouslySetInnerHTML={{__html: html}} />
       <div id="client-side-root"/>
       </body>
       </html>

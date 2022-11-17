@@ -107,3 +107,5 @@ build/
 webpack-stats.json
 .idea
 *.vars
+.wrangler/
+.vars.toml

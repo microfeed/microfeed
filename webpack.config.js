@@ -30,18 +30,17 @@ const entry = {
   // CSS
   //
   admin_styles_css: './common/admin_styles.css',
-  public_default_css: './common/public_default_styles.css',
 
   //
   // JS
   //
 
-  // Public
-  index_js: './ClientHomeApp/index.js',
-
   // Admin
-  new_episode_js: './ClientAdminEpisodesApp/New/index.js',
-  edit_podcast_js: './ClientAdminPodcastApp/index.js',
+  edit_item_js: './ClientAdminItemsApp/EditItem/index.js',
+  all_items_js: './ClientAdminItemsApp/index.js',
+  edit_channel_js: './ClientAdminChannelApp/index.js',
+  settings_js: './ClientAdminSettingsApp/index.js',
+  styling_settings_js: './ClientAdminStylingSettingsApp/index.js',
 };
 
 
@@ -114,21 +113,26 @@ module.exports = {
         }],
       },
       {
-        test: /\.css$/,
+        test: /.*styles\.css$/,
         use: [
           MiniCssExtractPlugin.loader,
           { loader: 'css-loader', options: { url: false } },
           'postcss-loader',
         ],
       },
-      // {
-      //   test: /\.png$/,
-      //   use: 'url-loader?name=[name]-[hash].[ext]&limit=8192&mimetype=image/png',
-      // },
-      // {
-      //   test: /\.svg$/,
-      //   use: ['@svgr/webpack'],
-      // },
+      {
+        test: /\.css$/,
+        exclude: /.*styles\.css$/,
+        use: [
+          { loader: 'style-loader' },
+          { loader: 'css-loader', options: { url: false } },
+          'postcss-loader',
+        ],
+      },
+      {
+        test: /\.svg$/,
+        loader: 'svg-inline-loader'
+      },
     ],
   },
 
