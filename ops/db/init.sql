@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS items (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS items_pub_date on items (pub_date);
+
 CREATE TABLE IF NOT EXISTS settings (
   category VARCHAR(20) PRIMARY KEY,
   data TEXT,

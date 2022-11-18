@@ -5,7 +5,6 @@ const cmd = new WranglerCmd(process.env.DEPLOYMENT_ENVIRONMENT || 'development')
 exec(`${cmd.createFeedDb()} && ${cmd.createFeedDbTables()}`, (error, stdout, stderr) => {
   if (error) {
     console.log(`error: ${error.message}`);
-    process.exit(1);
   }
   if (stderr) {
     console.log(`stderr: ${stderr}`);
