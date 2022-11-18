@@ -2,15 +2,17 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml)
 
-FeedKit allows you to create a self-hosted feed for audios, videos, photos, documents, and external urls, which provides a website, an RSS, and a JSON under your own cusdom domain and custom UI design.
+FeedKit allows you to easily create a self-hosted feed on [Cloudflare Pages](https://pages.cloudflare.com/) and [R2](https://www.cloudflare.com/products/r2/).
 
-Basically, you can create a self-hosted version of:
-* Podcast
-* Blog
-* Instagram
-* YouTube
-* Personal website, e.g., [wenbin.org](https://www.wenbin.org/)
-* Curated articles
+The self-hosted feed can publish audios, videos, photos, documents, blog posts, and any external urls. FeedKit provides a website, an RSS, and a JSON under your own cusdom domain and custom UI design.
+
+There are many use cases of FeedKit. Basically, you can create a self-hosted version of:
+* Podcast: a feed of audios
+* Blog: a feed of texts
+* Instagram: a feed of photos
+* YouTube: a feed of videos
+* Personal website: a simple web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
+* Curation site: a feed of article links
 
 ## Install FeedKit to Cloudflare Pages
 
