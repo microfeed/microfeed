@@ -123,18 +123,22 @@ class CodeInjector {
     this.theme = theme;
   }
   element(element) {
-    if (!this.settings || !this.settings.codeInjection) {
+    if (!this.settings) {
       return;
     }
 
     if (element.tagName === 'head') {
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
-      element.append(this.settings.codeInjection.headerCode || '', {html: true});
+      if (this.settings.codeInjection) {
+        element.append(this.settings.codeInjection.headerCode || '', {html: true});
+      }
     } else if (element.tagName === 'body') {
       const {html} = this.theme.getWebFooter();
       element.append(html, {html: true});
-      element.append(this.settings.codeInjection.footerCode || '', {html: true});
+      if (this.settings.codeInjection) {
+        element.append(this.settings.codeInjection.footerCode || '', {html: true});
+      }
     }
   }
 }
