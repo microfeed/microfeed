@@ -200,13 +200,13 @@ export default class AdminImageUploaderApp extends React.Component {
           <button
             className="lh-btn lh-btn-brand-dark"
             onClick={this.onFileUploadToR2}
-            disabled={uploading || sizeTooSmall}
+            disabled={uploading}
           >
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>
         </div>
         {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", sizeTooSmall ? 'text-red-500' : 'text-green-500')}>
-          {sizeTooSmall ? <div>Image too small: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels. Please make sure the image has 1400 x 1400 to 3000 x 3000 pixels.</div> :
+          {sizeTooSmall ? <div>Image too small: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels. If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.</div> :
             <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
         </div>}
       </AdminDialog>

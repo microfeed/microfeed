@@ -18,6 +18,7 @@ function initChannel() {
     language: 'en-us',
     explicit: false,
     category: [],
+    image: '/assets/default/channel_image.png',
   };
 }
 
