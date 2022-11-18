@@ -5,6 +5,7 @@ const {VarsReader} = require('./lib/utils');
 const ALLOWED_VARS = [
   {name: 'CLOUDFLARE_ACCOUNT_ID', encrypted: true},
   {name: 'CLOUDFLARE_PROJECT_NAME', encrypted: true},
+  {name: 'CLOUDFLARE_API_TOKEN', encrypted: true},
   {name: 'DEPLOYMENT_ENVIRONMENT', encrypted: false},
 
   {name: 'R2_ACCESS_KEY_ID', encrypted: true},
