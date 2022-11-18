@@ -1,4 +1,9 @@
 # Use in CI
+if test -f ".vars.toml"; then
+    echo ".vars.toml exists."
+    exit
+fi
+
 cat << EOF > .vars.toml
           CLOUDFLARE_PROJECT_NAME = "$CLOUDFLARE_PROJECT_NAME"
           CLOUDFLARE_ACCOUNT_ID = "$CLOUDFLARE_ACCOUNT_ID"
