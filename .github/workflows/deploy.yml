@@ -14,16 +14,7 @@ on:
         options:
         - preview
         - production
-        default: 'preview'
-
-      ACTION:
-        description: 'What do you want to do?'
-        required: true
-        type: choice
-        options:
-        - deploy
-        - setup
-        default: 'deploy'
+        default: 'production'
 
 env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -43,10 +34,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install dependencies
-        uses: borales/actions-yarn@v3.0.0
-        with:
-          cmd: install
       - name: Various setup
         uses: borales/actions-yarn@v3.0.0
         with:
