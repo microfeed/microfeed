@@ -6,13 +6,19 @@ FeedKit allows you to easily create a self-hosted feed on [Cloudflare Pages](htt
 
 The self-hosted feed can publish audios, videos, photos, documents, blog posts, and any external urls. FeedKit provides a website, an RSS, and a JSON under your own cusdom domain and custom UI design.
 
-There are many use cases of FeedKit. Basically, you can create a self-hosted version of:
+There are many use cases of FeedKit. Basically, you can use FeedKit create a self-hosted version of:
 * Podcast: a feed of audios
 * Blog: a feed of texts
 * Instagram: a feed of photos
 * YouTube: a feed of videos
 * Personal website: a simple web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
 * Curation site: a feed of article links
+
+Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
+
+Cloudflare R2 is a storage for media files like images, audios, and videos. We use R2 to host and serve media files.
+
+Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use FeedKit + Cloudflare for free hosting!
 
 ## Install FeedKit to Cloudflare Pages
 
