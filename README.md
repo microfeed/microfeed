@@ -2,6 +2,16 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml)
 
+FeedKit allows you to create a self-hosted feed for audios, videos, photos, documents, and external urls, which provides a website, an RSS, and a JSON under your own cusdom domain and custom UI design.
+
+Basically, you can create a self-hosted version of:
+* Podcast
+* Blog
+* Instagram
+* YouTube
+* Personal website, e.g., [wenbin.org](https://www.wenbin.org/)
+* Curated articles
+
 ## Install FeedKit to Cloudflare Pages
 
 Roughly you'll do these steps:
@@ -48,3 +58,15 @@ Go to Actions -> Deploy to Cloudflare Pages and run Workflow
 <img width="1655" alt="Screenshot 2022-11-17 at 9 44 41 PM" src="https://user-images.githubusercontent.com/1719237/202629665-a55c3b99-4b33-4908-9b0a-cbdd6abebf25.png">
 
 You should choose "production" + "setup" when it's the first time you run the GitHub Actions Workflow. Later on, when you need to deploy new code, you can choose "deploy" + "preview"/"production" to deploy to different environments. 
+
+### Step 4: Make a few clicks on Cloudflare dashboard
+
+#### Make the public R2 bucket public
+
+todo
+
+#### Setup authentication for the admin dashboard
+
+todo
+
+#### Setup custom domains
