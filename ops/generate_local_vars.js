@@ -9,6 +9,7 @@ const flattened = v.flattenVars();
 Object.keys(flattened).forEach((k) => {
   textData += `${k} = "${flattened[k]}"\n`;
 });
+textData += `DEPLOYMENT_ENVIRONMENT = ${process.env.DEPLOYMENT_ENVIRONMENT || 'development'}`;
 fs.writeFile(filename, textData, function (err) {
   if (err) {
     console.log(err);

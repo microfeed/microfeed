@@ -54,20 +54,22 @@ function verifyCredentials(env, user, pass) {
 
 const basicAuth = async ({request, next, env}) => {
   try {
-    // The "Authorization" header is sent when authenticated.
-    if (request.headers.has('Authorization')) {
-      // Throws exception when authorization fails.
-      const {user, pass} = basicAuthentication(request);
-      verifyCredentials(env, user, pass);
-    } else {
-      // Not authenticated.
-      return new Response('You need to login.', {
-        status: 401,
-        headers: {
-          // Prompts the user for credentials.
-          'WWW-Authenticate': 'Basic realm="my scope", charset="UTF-8"',
-        },
-      });
+    if (env.ADMIN_USERNAME && env.ADMIN_PASSWORD) {
+      // The "Authorization" header is sent when authenticated.
+      if (request.headers.has('Authorization')) {
+        // Throws exception when authorization fails.
+        const {user, pass} = basicAuthentication(request);
+        verifyCredentials(env, user, pass);
+      } else {
+        // Not authenticated.
+        return new Response('You need to login.', {
+          status: 401,
+          headers: {
+            // Prompts the user for credentials.
+            'WWW-Authenticate': 'Basic realm="my scope", charset="UTF-8"',
+          },
+        });
+      }
     }
 
     const response = await next();
