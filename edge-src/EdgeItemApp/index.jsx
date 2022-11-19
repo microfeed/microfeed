@@ -3,15 +3,17 @@ import HtmlHeader from "../components/HtmlHeader";
 
 export default class EdgeItemApp extends React.Component {
   render() {
-    const {item, theme} = this.props;
+    const {item, theme, jsonData, canonicalUrl} = this.props;
     const {html} = theme.getItemWeb(item);
+    const {channel} = jsonData;
     return (
-      <html>
+      <html lang={channel.language || 'en'}>
       <HtmlHeader
         title={item.title}
         description={item.description}
         webpackJsList={[]}
         webpackCssList={[]}
+        canonicalUrl={canonicalUrl}
         favicon={{
           'apple-touch-icon': '/assets/apple-touch-icon.png',
           '32x32': '/assets/favicon-32x32.png',

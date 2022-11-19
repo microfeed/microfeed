@@ -115,7 +115,7 @@ export default class EditItemApp extends React.Component {
                   location.href = ADMIN_URLS.editItem(itemId);
                 }
               });
-            }, 3000);
+            }, 1000);
           }
         });
     });

@@ -174,7 +174,11 @@ export const PUBLIC_URLS = {
   feedJson: (baseUrl='') => {
     return `${baseUrl}/json/`;
   },
-  itemWeb: (itemId, itemTitle, baseUrl='') => {
-    return `${baseUrl}/i/${slugify(itemTitle || '')}-${itemId}/`;
+  itemWeb: (itemId, itemTitle, baseUrl='', locale = 'en') => {
+    return `${baseUrl}/i/${slugify(itemTitle || '', {
+      lower: true,
+      strict: true, // strip special characters except replacement
+      locale,
+    })}-${itemId}/`;
   }
 };

@@ -1,8 +1,9 @@
 import React from "react";
 import EdgeItemApp from "../../edge-src/EdgeItemApp";
 import {WebResponseBuilder} from '../../edge-src/common/PageUtils';
+import {PUBLIC_URLS} from "../../common-src/StringUtils";
 
-export async function onRequestGet({params, env}) {
+export async function onRequestGet({params, env, request}) {
   const {slug} = params;
   const re = /^.+-([\d\w\-_]{11})$/;
   const ok = re.exec(slug);
@@ -13,7 +14,9 @@ export async function onRequestGet({params, env}) {
       return webResponseBuilder.getResponse({
         getComponent: (content, jsonData, theme) => {
           const item = content.items[itemId];
-          return <EdgeItemApp item={item} theme={theme}/>;
+          const urlObject = new URL(request.url);
+          const canonicalUrl = PUBLIC_URLS.itemWeb(itemId, item.title, urlObject.origin);
+          return <EdgeItemApp item={item} theme={theme} jsonData={jsonData} canonicalUrl={canonicalUrl}/>;
         },
       });
     }

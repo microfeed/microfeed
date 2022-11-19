@@ -3,7 +3,7 @@ import {toast} from 'react-toastify';
 export function showToast(message, type) {
   toast[type](message, {
     position: "top-center",
-    autoClose: 5000,
+    autoClose: 800,
     hideProgressBar: false,
     closeOnClick: true,
     pauseOnHover: true,

@@ -7,7 +7,7 @@ export default class EdgeHomeApp extends React.Component {
     const { html } = theme.getFeedWeb();
     const {channel} = jsonData;
     return (
-      <html>
+      <html lang={channel.language || 'en'}>
       <HtmlHeader
         title={channel.title}
         description={channel.description}
