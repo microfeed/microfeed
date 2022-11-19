@@ -77,12 +77,15 @@ todo
 
 #### Setup authentication for the admin dashboard and preview sites
 
+We don't want people to see preview sites:
+<img width="1124" alt="Screenshot 2022-11-18 at 9 05 02 PM" src="https://user-images.githubusercontent.com/1719237/202835250-197c4711-2bf4-47fd-9c44-5559e15699f6.png">
+
 We don't want anyone on the Internet to access our Admin dashboard. So let's require emails to login:
 <img width="1140" alt="Screenshot 2022-11-18 at 9 04 24 PM" src="https://user-images.githubusercontent.com/1719237/202835245-ded62810-493e-42ea-8f13-2cb6508f0c19.png">
 
-We also don't want people to see preview sites:
-<img width="1124" alt="Screenshot 2022-11-18 at 9 05 02 PM" src="https://user-images.githubusercontent.com/1719237/202835250-197c4711-2bf4-47fd-9c44-5559e15699f6.png">
+If you use custom domain, you'd better do protect admin for the custom domain as well:
 
+<img width="1111" alt="Screenshot 2022-11-18 at 9 21 35 PM" src="https://user-images.githubusercontent.com/1719237/202835735-abb24f0f-ea69-4d21-82a5-48a25bc99944.png">
 
 
 #### Setup custom domains
