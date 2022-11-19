@@ -32,7 +32,7 @@ class SyncProjectConfig {
         'env_vars': {},
         'r2_buckets': {
           'LH_DATABASE': {
-            name: this.v.get('R2_PUBLIC_BUCKET')
+            name: this.v.get('R2_PRIVATE_BUCKET')
           },
         },
       }

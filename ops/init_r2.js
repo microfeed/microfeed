@@ -18,8 +18,7 @@ class SetupR2 {
     });
   }
 
-  setupBucket(onDone) {
-    const bucket = this.v.get('R2_PUBLIC_BUCKET');
+  _setupBucket(bucket, onDone) {
     const bucketParams = {
       Bucket: bucket,
       // XXX: Not implemented yet on Cloudflare side - https://developers.cloudflare.com/r2/data-access/s3-api/api/
@@ -35,13 +34,13 @@ class SetupR2 {
           process.exit(1);
         }
       } else {
-        console.log("Success", data.Location);
+        console.log(`Success: ${bucket} created`, data.Location);
       }
       onDone();
     });
   }
 
-  setupCorsRules() {
+  _setupCorsRules() {
     const params = {
       Bucket: this.v.get('R2_PUBLIC_BUCKET'),
       CORSConfiguration: {
@@ -64,9 +63,21 @@ class SetupR2 {
       }
     });
   }
+
+  setupPublicBucket() {
+    const bucket = this.v.get('R2_PUBLIC_BUCKET');
+    this._setupBucket(bucket, () => {
+      this._setupCorsRules();
+    });
+  }
+
+  setupPrivateBucket() {
+    const bucket = this.v.get('R2_PRIVATE_BUCKET');
+    this._setupBucket(bucket, () => {
+    });
+  }
 }
 
 const setupR2 = new SetupR2();
-setupR2.setupBucket(() => {
-  setupR2.setupCorsRules();
-});
+setupR2.setupPublicBucket();
+setupR2.setupPrivateBucket();
