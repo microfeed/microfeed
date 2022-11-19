@@ -19,7 +19,7 @@ class SetupR2 {
   }
 
   setupBucket(onDone) {
-    const bucket = this.v.get('R2_BUCKET');
+    const bucket = this.v.get('R2_PUBLIC_BUCKET');
     const bucketParams = {
       Bucket: bucket,
       // XXX: Not implemented yet on Cloudflare side - https://developers.cloudflare.com/r2/data-access/s3-api/api/
@@ -43,7 +43,7 @@ class SetupR2 {
 
   setupCorsRules() {
     const params = {
-      Bucket: this.v.get('R2_BUCKET'),
+      Bucket: this.v.get('R2_PUBLIC_BUCKET'),
       CORSConfiguration: {
         CORSRules: [{
           AllowedMethods: ['DELETE', 'POST', 'PUT'],
@@ -53,7 +53,7 @@ class SetupR2 {
       }
     };
 
-    console.log(`Setting up CORS rules for ${this.v.get('R2_BUCKET')}...`)
+    console.log(`Setting up CORS rules for ${this.v.get('R2_PUBLIC_BUCKET')}...`)
     this.s3.putBucketCors(params, (err, data) => {
       if (err) {
         console.log(err);

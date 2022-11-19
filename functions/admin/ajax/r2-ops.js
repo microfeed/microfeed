@@ -31,7 +31,7 @@ async function getPresignedUrlFromR2(env, bucket, inputParams) {
 
 export async function onRequestPost({request, env}) {
   const inputParams = await request.json();
-  const presignedUrl = await getPresignedUrlFromR2(env, env.R2_BUCKET, inputParams);
+  const presignedUrl = await getPresignedUrlFromR2(env, env.R2_PUBLIC_BUCKET, inputParams);
   const jsonData = {
     presignedUrl,
     mediaBaseUrl: `${env.MEDIA_BASE_URL}/${projectPrefix(env)}`,

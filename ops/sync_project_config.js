@@ -10,7 +10,7 @@ const ALLOWED_VARS = [
 
   {name: 'R2_ACCESS_KEY_ID', encrypted: true},
   {name: 'R2_SECRET_ACCESS_KEY', encrypted: true},
-  {name: 'R2_BUCKET', encrypted: true},
+  {name: 'R2_PUBLIC_BUCKET', encrypted: true},
   {name: 'MEDIA_BASE_URL', encrypted: false},
 
   {name: 'ADMIN_USERNAME', encrypted: true},
@@ -32,7 +32,7 @@ class SyncProjectConfig {
         'env_vars': {},
         'r2_buckets': {
           'LH_DATABASE': {
-            name: this.v.get('R2_BUCKET')
+            name: this.v.get('R2_PUBLIC_BUCKET')
           },
         },
       }
