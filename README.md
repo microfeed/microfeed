@@ -75,8 +75,14 @@ You should choose "production" + "setup" when it's the first time you run the Gi
 
 todo
 
-#### Setup authentication for the admin dashboard
+#### Setup authentication for the admin dashboard and preview sites
 
-todo
+We don't want anyone on the Internet to access our Admin dashboard. So let's require emails to login:
+<img width="1140" alt="Screenshot 2022-11-18 at 9 04 24 PM" src="https://user-images.githubusercontent.com/1719237/202835245-ded62810-493e-42ea-8f13-2cb6508f0c19.png">
+
+We also don't want people to see preview sites:
+<img width="1124" alt="Screenshot 2022-11-18 at 9 05 02 PM" src="https://user-images.githubusercontent.com/1719237/202835250-197c4711-2bf4-47fd-9c44-5559e15699f6.png">
+
+
 
 #### Setup custom domains
