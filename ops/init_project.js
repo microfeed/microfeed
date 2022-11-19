@@ -86,13 +86,15 @@ class InitProject {
   run() {
     console.log(`Init project ${this.v.get('CLOUDFLARE_PROJECT_NAME')} [${this.currentEnv}]...`);
     this._getCurrentProject({}, (json) => {
+      console.log('got it!');
       console.log(`${this.v.get('CLOUDFLARE_PROJECT_NAME')} exists.`);
       console.log(json);
     }, () => {
+      console.log('creating!')
       console.log(`Creating project: ${this.v.get('CLOUDFLARE_PROJECT_NAME')}...`)
       const data = JSON.stringify({
         'subdomain': this.v.get('CLOUDFLARE_PROJECT_NAME'),
-        'production_branch': this.v.get('PRODUCTION_BRANCH'),
+        'production_branch': this.v.get('PRODUCTION_BRANCH', 'main'),
         'name': this.v.get('CLOUDFLARE_PROJECT_NAME'),
       });
       this._createProject(data, () => {
