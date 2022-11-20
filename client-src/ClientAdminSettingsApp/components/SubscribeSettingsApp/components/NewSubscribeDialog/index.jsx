@@ -1,9 +1,9 @@
 import React from 'react';
-import Select from 'react-select';
 import AdminDialog from "../../../../../components/AdminDialog";
 import {PREDEFINED_SUBSCRIBE_METHODS} from '../../../../../../common-src/Constants';
 import AdminInput from "../../../../../components/AdminInput";
 import {randomShortUUID} from "../../../../../../common-src/StringUtils";
+import AdminSelect from "../../../../../components/AdminSelect";
 
 const METHODS_OPTIONS = Object.keys(PREDEFINED_SUBSCRIBE_METHODS).map((key) => {
   const m = PREDEFINED_SUBSCRIBE_METHODS[key];
@@ -47,10 +47,8 @@ export default class NewSubscribeDialog extends React.Component {
     >
       <form>
         <div>
-          <div className="lh-page-subtitle">
-            Please choose a subscribe method:
-          </div>
-          <Select
+          <AdminSelect
+            label="Please choose a subscribe method:"
             options={METHODS_OPTIONS}
             onChange={({value}) => {
               const m = PREDEFINED_SUBSCRIBE_METHODS[value];

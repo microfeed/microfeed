@@ -21,6 +21,12 @@ function buildItemsRss(jsonData) {
     };
     const {mediaFile} = item;
 
+    if (item.image) {
+      itemJson['itunes:image'] = {
+        '@_href': item.image,
+      };
+    }
+
     if (item['itunes:title'] && item['itunes:title'].trim().length > 0) {
       itemJson['itunes:title'] = item['itunes:title'].trim();
     }
@@ -72,11 +78,6 @@ function buildChannelRss(jsonData, request) {
     'link': channel.link,
     'itunes:author': channel.publisher,
     'language': channel.language,
-    'image': {
-      'title': channel.title,
-      'url': channel.image,
-      'link': channel.link,
-    },
     'description': {
       '@cdata': channel.description,
     },
@@ -85,6 +86,16 @@ function buildChannelRss(jsonData, request) {
     'itunes:explicit': channel['itunes:explicit'] ? 'true' : 'false',
   };
 
+  if (channel.image) {
+    channelRss['itunes:image'] = {
+      '@_href': channel.image,
+    };
+    channelRss.image = {
+      'title': channel.title,
+      'url': channel.image,
+      'link': channel.link,
+    };
+  }
   if (channel.copyright && channel.copyright.trim().length > 0) {
     channelRss.copyright = channel.copyright.trim();
   }
