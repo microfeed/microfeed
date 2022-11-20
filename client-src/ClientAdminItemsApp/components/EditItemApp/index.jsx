@@ -21,8 +21,8 @@ const SUBMIT_STATUS__START = 1;
 function initItem(itemId) {
   return ({
     pubDateMs: datetimeLocalToMs(new Date()),
-    explicit: false,
     guid: itemId,
+    'itunes:explicit': false,
     'itunes:block': false,
     'itunes:episodeType': 'full',
   });
@@ -197,21 +197,6 @@ export default class EditItemApp extends React.Component {
                     onChange={(e) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <AdminRadio
-                    label="Explicit"
-                    groupName="lh-explicit"
-                    buttons={[{
-                      'name': 'Yes',
-                      'checked': item.explicit,
-                    }, {
-                      'name': 'No',
-                      'checked': !item.explicit,
-                    }]}
-                    value={item.explicit}
-                    onChange={(e) => this.onUpdateItemMeta({'explicit': e.target.value === 'Yes'})}
-                  />
-                </div>
               </div>
             </div>
             <div className="mt-8 pt-8 border-t">
@@ -273,6 +258,19 @@ export default class EditItemApp extends React.Component {
                 />
               </div>
               <div className="grid grid-cols-5 gap-4">
+                <AdminRadio
+                  label="<itunes:explicit>"
+                  groupName="lh-explicit"
+                  buttons={[{
+                    'name': 'Yes',
+                    'checked': item['itunes:explicit'],
+                  }, {
+                    'name': 'No',
+                    'checked': !item['itunes:explicit'],
+                  }]}
+                  value={item['itunes:explicit']}
+                  onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'Yes'})}
+                />
                 <AdminRadio
                   label="<itunes:block>"
                   groupName="feed-itunes-block"

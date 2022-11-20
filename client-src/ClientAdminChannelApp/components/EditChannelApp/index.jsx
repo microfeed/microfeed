@@ -32,9 +32,9 @@ function initChannel() {
   return {
     link: getPublicBaseUrl(),
     language: 'en-us',
-    explicit: false,
     category: [],
     image: '/assets/default/channel_image.png',
+    'itunes:explicit': false,
     'itunes:type': 'episodic',
     'itunes:complete': false,
     'itunes:block': false,
@@ -149,19 +149,6 @@ export default class EditChannelApp extends React.Component {
                     this.onUpdateChannelMeta('language', selected.code);
                   }}
                 />
-                <AdminRadio
-                  label="Explicit"
-                  groupName="lh-explicit"
-                  buttons={[{
-                   'name': 'Yes',
-                   'checked': channel.explicit,
-                  }, {
-                    'name': 'No',
-                   'checked': !channel.explicit,
-                  }]}
-                  value={channel.explicit}
-                  onChange={(e) => this.onUpdateChannelMeta('explicit', e.target.value === 'Yes')}
-                />
               </div>
             </div>
           </div>
@@ -207,6 +194,19 @@ export default class EditChannelApp extends React.Component {
               />
             </div>
             <div className="grid grid-cols-4 gap-4">
+              <AdminRadio
+                label="itunes:explicit"
+                groupName="lh-explicit"
+                buttons={[{
+                  'name': 'Yes',
+                  'checked': channel['itunes:explicit'],
+                }, {
+                  'name': 'No',
+                  'checked': !channel['itunes:explicit'],
+                }]}
+                value={channel['itunes:explicit']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'Yes')}
+              />
               <AdminRadio
                 label="<itunes:block>"
                 groupName="feed-itunes-block"

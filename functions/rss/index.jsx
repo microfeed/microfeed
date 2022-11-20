@@ -17,7 +17,7 @@ function buildItemsRss(jsonData) {
       'link': item.link,
       'guid': item.guid,
       'pubDate': msToUtcString(item.pubDateMs),
-      'itunes:explicit': item.explicit ? 'true' : 'false',
+      'itunes:explicit': item['itunes:explicit'] ? 'true' : 'false',
     };
     const {mediaFile} = item;
 
@@ -82,7 +82,7 @@ function buildChannelRss(jsonData, request) {
     },
     'generator': OUR_BRAND.domain,
     'itunes:type': channel['itunes:type'],
-    'itunes:explicit': channel.explicit ? 'true' : 'false',
+    'itunes:explicit': channel['itunes:explicit'] ? 'true' : 'false',
   };
 
   if (channel.copyright && channel.copyright.trim().length > 0) {
