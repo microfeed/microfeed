@@ -29,16 +29,22 @@ LANGUAGE_CODES_LIST.forEach((lc) => {
 });
 
 const CATEGORIES_SELECT_OPTIONS = [];
+const CATEGORIES_DICT = {};
 Object.keys(ITUNES_CATEGORIES_DICT).forEach((topLevel) => {
-  CATEGORIES_SELECT_OPTIONS.push({
+  const topLevelOption = {
     value: topLevel,
     label: topLevel,
-  });
+  };
+  CATEGORIES_SELECT_OPTIONS.push(topLevelOption);
+  CATEGORIES_DICT[topLevel] = topLevelOption;
   ITUNES_CATEGORIES_DICT[topLevel].forEach((subLevel) => {
-    CATEGORIES_SELECT_OPTIONS.push({
-      value: `${topLevel} / ${subLevel}`,
-      label: `${topLevel} / ${subLevel}`,
-    })
+    const subLevelValue = `${topLevel} / ${subLevel}`;
+    const subLevelOption = {
+      value: subLevelValue,
+      label: subLevelValue,
+    };
+    CATEGORIES_SELECT_OPTIONS.push(subLevelOption)
+    CATEGORIES_DICT[subLevelValue] = subLevelOption;
   });
 });
 
@@ -46,7 +52,7 @@ function initChannel() {
   return {
     link: getPublicBaseUrl(),
     language: 'en-us',
-    category: [],
+    categories: [],
     image: '/assets/default/channel_image.png',
     'itunes:explicit': false,
     'itunes:type': 'episodic',
@@ -119,6 +125,7 @@ export default class EditChannelApp extends React.Component {
 
   render() {
     const {submitStatus, channel} = this.state;
+    const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp>
       <form className="grid grid-cols-12 gap-4">
@@ -150,18 +157,18 @@ export default class EditChannelApp extends React.Component {
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                {/*<AdminInput*/}
-                {/*  label="Category"*/}
-                {/*  value={channel.category.join(',')}*/}
-                {/*  onChange={(e) => this.onUpdateChannelMeta('category', e.target.value.split(','))}*/}
-                {/*/>*/}
                 <AdminSelect
-                  // value={LANGUAGE_CODES_DICT[channel.language]}
+                  value={categories.map((c) => (CATEGORIES_DICT[c]))}
                   label="Categories"
                   options={CATEGORIES_SELECT_OPTIONS}
-                  onChange={(selected) => {
-                    console.log(selected);
-                    // this.onUpdateChannelMeta('language', selected.code);
+                  onChange={(selectedOptions) => {
+                    this.onUpdateChannelMeta('categories', [...selectedOptions.map((o) => o.value)]);
+                  }}
+                  extraParams={{
+                    isMulti: true,
+                    isOptionDisabled: () => {
+                      return categories.length >= 3;
+                    },
                   }}
                 />
                 <AdminSelect

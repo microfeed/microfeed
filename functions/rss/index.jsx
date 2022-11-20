@@ -1,5 +1,5 @@
 import {msToUtcString} from "../../common-src/TimeUtils";
-import {secondsToHHMMSS} from "../../common-src/StringUtils";
+import {escapeHtml, secondsToHHMMSS} from "../../common-src/StringUtils";
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
 import {RssResponseBuilder} from "../../edge-src/common/PageUtils";
 import {OUR_BRAND} from '../../common-src/Constants';
@@ -117,6 +117,27 @@ function buildChannelRss(jsonData, request) {
   if (channel['itunes:title'] && channel['itunes:title'].trim().length > 0) {
     channelRss['itunes:title'] = channel['itunes:title'].trim();
   }
+  if (channel['categories'] && channel['categories'].length > 0) {
+    const categories = [];
+    channel['categories'].forEach((c) => {
+      const topAndSubCats = c.split('/');
+      if (topAndSubCats) {
+        if (topAndSubCats.length === 1) {
+          categories.push({
+            '@_text': topAndSubCats[0].trim(),
+          });
+        } else if (topAndSubCats.length === 2) {
+          categories.push({
+            '@_text': topAndSubCats[0].trim(),
+            'itunes:category': {
+              '@_text': topAndSubCats[1].trim(),
+            }
+          });
+        }
+      }
+    });
+    channelRss['itunes:category'] = categories;
+  }
   return channelRss;
 }
 
@@ -139,6 +160,7 @@ export async function onRequestGet({request, env}) {
         suppressEmptyNode: true,
         format: true,
         cdataPropName: '@cdata',
+        arrayNodeName: 'itunes:category',
         // arrayNodeName: "item",
       });
       const xmlOutput = builder.build(input);
