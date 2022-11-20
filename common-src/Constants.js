@@ -183,6 +183,393 @@ export const ITEM_STATUSES_DICT = {
   },
 };
 
+export const LANGUAGE_CODES_LIST = [
+  {
+    "name": "Afrikaans",
+    "code": "af"
+  },
+  {
+    "name": "Albanian",
+    "code": "sq"
+  },
+  {
+    "name": "Basque",
+    "code": "eu"
+  },
+  {
+    "name": "Belarusian",
+    "code": "be"
+  },
+  {
+    "name": "Bulgarian",
+    "code": "bg"
+  },
+  {
+    "name": "Catalan",
+    "code": "ca"
+  },
+  {
+    "name": "Chinese (Simplified)",
+    "code": "zh-cn"
+  },
+  {
+    "name": "Chinese (Traditional)",
+    "code": "zh-tw"
+  },
+  {
+    "name": "Croatian",
+    "code": "hr"
+  },
+  {
+    "name": "Czech",
+    "code": "cs"
+  },
+  {
+    "name": "Danish",
+    "code": "da"
+  },
+  {
+    "name": "Dutch",
+    "code": "nl"
+  },
+  {
+    "name": "Dutch (Belgium)",
+    "code": "nl-be"
+  },
+  {
+    "name": "Dutch (Netherlands)",
+    "code": "nl-nl"
+  },
+  {
+    "name": "English",
+    "code": "en"
+  },
+  {
+    "name": "English (Australia)",
+    "code": "en-au"
+  },
+  {
+    "name": "English (Belize)",
+    "code": "en-bz"
+  },
+  {
+    "name": "English (Canada)",
+    "code": "en-ca"
+  },
+  {
+    "name": "English (Ireland)",
+    "code": "en-ie"
+  },
+  {
+    "name": "English (Jamaica)",
+    "code": "en-jm"
+  },
+  {
+    "name": "English (New Zealand)",
+    "code": "en-nz"
+  },
+  {
+    "name": "English (Phillipines)",
+    "code": "en-ph"
+  },
+  {
+    "name": "English (South Africa)",
+    "code": "en-za"
+  },
+  {
+    "name": "English (Trinidad)",
+    "code": "en-tt"
+  },
+  {
+    "name": "English (United Kingdom)",
+    "code": "en-gb"
+  },
+  {
+    "name": "English (United States)",
+    "code": "en-us"
+  },
+  {
+    "name": "English (Zimbabwe)",
+    "code": "en-zw"
+  },
+  {
+    "name": "Estonian",
+    "code": "et"
+  },
+  {
+    "name": "Faeroese",
+    "code": "fo"
+  },
+  {
+    "name": "Finnish",
+    "code": "fi"
+  },
+  {
+    "name": "French",
+    "code": "fr"
+  },
+  {
+    "name": "French (Belgium)",
+    "code": "fr-be"
+  },
+  {
+    "name": "French (Canada)",
+    "code": "fr-ca"
+  },
+  {
+    "name": "French (France)",
+    "code": "fr-fr"
+  },
+  {
+    "name": "French (Luxembourg)",
+    "code": "fr-lu"
+  },
+  {
+    "name": "French (Monaco)",
+    "code": "fr-mc"
+  },
+  {
+    "name": "French (Switzerland)",
+    "code": "fr-ch"
+  },
+  {
+    "name": "Galician",
+    "code": "gl"
+  },
+  {
+    "name": "Gaelic",
+    "code": "gd"
+  },
+  {
+    "name": "German",
+    "code": "de"
+  },
+  {
+    "name": "German (Austria)",
+    "code": "de-at"
+  },
+  {
+    "name": "German (Germany)",
+    "code": "de-de"
+  },
+  {
+    "name": "German (Liechtenstein)",
+    "code": "de-li"
+  },
+  {
+    "name": "German (Luxembourg)",
+    "code": "de-lu"
+  },
+  {
+    "name": "German (Switzerland)",
+    "code": "de-ch"
+  },
+  {
+    "name": "Greek",
+    "code": "el"
+  },
+  {
+    "name": "Hawaiian",
+    "code": "haw"
+  },
+  {
+    "name": "Hungarian",
+    "code": "hu"
+  },
+  {
+    "name": "Icelandic",
+    "code": "is"
+  },
+  {
+    "name": "Indonesian",
+    "code": "in"
+  },
+  {
+    "name": "Irish",
+    "code": "ga"
+  },
+  {
+    "name": "Italian",
+    "code": "it"
+  },
+  {
+    "name": "Italian (Italy)",
+    "code": "it-it"
+  },
+  {
+    "name": "Italian (Switzerland)",
+    "code": "it-ch"
+  },
+  {
+    "name": "Japanese",
+    "code": "ja"
+  },
+  {
+    "name": "Korean",
+    "code": "ko"
+  },
+  {
+    "name": "Macedonian",
+    "code": "mk"
+  },
+  {
+    "name": "Norwegian",
+    "code": "no"
+  },
+  {
+    "name": "Polish",
+    "code": "pl"
+  },
+  {
+    "name": "Portuguese",
+    "code": "pt"
+  },
+  {
+    "name": "Portuguese (Brazil)",
+    "code": "pt-br"
+  },
+  {
+    "name": "Portuguese (Portugal)",
+    "code": "pt-pt"
+  },
+  {
+    "name": "Romanian",
+    "code": "ro"
+  },
+  {
+    "name": "Romanian (Moldova)",
+    "code": "ro-mo"
+  },
+  {
+    "name": "Romanian (Romania)",
+    "code": "ro-ro"
+  },
+  {
+    "name": "Russian",
+    "code": "ru"
+  },
+  {
+    "name": "Russian (Moldova)",
+    "code": "ru-mo"
+  },
+  {
+    "name": "Russian (Russia)",
+    "code": "ru-ru"
+  },
+  {
+    "name": "Serbian",
+    "code": "sr"
+  },
+  {
+    "name": "Slovak",
+    "code": "sk"
+  },
+  {
+    "name": "Slovenian",
+    "code": "sl"
+  },
+  {
+    "name": "Spanish",
+    "code": "es"
+  },
+  {
+    "name": "Spanish (Argentina)",
+    "code": "es-ar"
+  },
+  {
+    "name": "Spanish (Bolivia)",
+    "code": "es-bo"
+  },
+  {
+    "name": "Spanish (Chile)",
+    "code": "es-cl"
+  },
+  {
+    "name": "Spanish (Colombia)",
+    "code": "es-co"
+  },
+  {
+    "name": "Spanish (Costa Rica)",
+    "code": "es-cr"
+  },
+  {
+    "name": "Spanish (Dominican Republic)",
+    "code": "es-do"
+  },
+  {
+    "name": "Spanish (Ecuador)",
+    "code": "es-ec"
+  },
+  {
+    "name": "Spanish (El Salvador)",
+    "code": "es-sv"
+  },
+  {
+    "name": "Spanish (Guatemala)",
+    "code": "es-gt"
+  },
+  {
+    "name": "Spanish (Honduras)",
+    "code": "es-hn"
+  },
+  {
+    "name": "Spanish (Mexico)",
+    "code": "es-mx"
+  },
+  {
+    "name": "Spanish (Nicaragua)",
+    "code": "es-ni"
+  },
+  {
+    "name": "Spanish (Panama)",
+    "code": "es-pa"
+  },
+  {
+    "name": "Spanish (Paraguay)",
+    "code": "es-py"
+  },
+  {
+    "name": "Spanish (Peru)",
+    "code": "es-pe"
+  },
+  {
+    "name": "Spanish (Puerto Rico)",
+    "code": "es-pr"
+  },
+  {
+    "name": "Spanish (Spain)",
+    "code": "es-es"
+  },
+  {
+    "name": "Spanish (Uruguay)",
+    "code": "es-uy"
+  },
+  {
+    "name": "Spanish (Venezuela)",
+    "code": "es-ve"
+  },
+  {
+    "name": "Swedish",
+    "code": "sv"
+  },
+  {
+    "name": "Swedish (Finland)",
+    "code": "sv-fi"
+  },
+  {
+    "name": "Swedish (Sweden)",
+    "code": "sv-se"
+  },
+  {
+    "name": "Turkish",
+    "code": "tr"
+  },
+  {
+    "name": "Ukranian",
+    "code": "uk"
+  }
+];
+
 const Constants = {
 };
 

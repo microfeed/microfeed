@@ -71,6 +71,7 @@ function buildChannelRss(jsonData, request) {
     },
     'link': channel.link,
     'itunes:author': channel.publisher,
+    'language': channel.language,
     'image': {
       'title': channel.title,
       'url': channel.image,
