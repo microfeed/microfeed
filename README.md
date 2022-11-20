@@ -63,7 +63,7 @@ You'll need to create these secrets:
 
 ### Step 3: Run GitHub Action to deploy code
 
-Go to [Actions -> Deploy to Cloudflare Pages](../../actions) and run Workflow
+Go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml) and run Workflow
 
 <img width="1655" alt="Screenshot 2022-11-17 at 9 44 41 PM" src="https://user-images.githubusercontent.com/1719237/202629665-a55c3b99-4b33-4908-9b0a-cbdd6abebf25.png">
 
