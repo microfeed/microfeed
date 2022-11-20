@@ -10,7 +10,7 @@ import {showToast} from "../../../common/ToastUtils";
 import {AdminSideQuickLinks} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
 import AdminSelect from "../../../components/AdminSelect";
-import {LANGUAGE_CODES_LIST} from "../../../../common-src/Constants";
+import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT} from "../../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -26,6 +26,20 @@ LANGUAGE_CODES_LIST.forEach((lc) => {
     </div>,
   };
   LANGUAGE_CODES_SELECT_OPTIONS.push(LANGUAGE_CODES_DICT[lc.code]);
+});
+
+const CATEGORIES_SELECT_OPTIONS = [];
+Object.keys(ITUNES_CATEGORIES_DICT).forEach((topLevel) => {
+  CATEGORIES_SELECT_OPTIONS.push({
+    value: topLevel,
+    label: topLevel,
+  });
+  ITUNES_CATEGORIES_DICT[topLevel].forEach((subLevel) => {
+    CATEGORIES_SELECT_OPTIONS.push({
+      value: `${topLevel} / ${subLevel}`,
+      label: `${topLevel} / ${subLevel}`,
+    })
+  });
 });
 
 function initChannel() {
@@ -136,10 +150,19 @@ export default class EditChannelApp extends React.Component {
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <AdminInput
-                  label="Category"
-                  value={channel.category.join(',')}
-                  onChange={(e) => this.onUpdateChannelMeta('category', e.target.value.split(','))}
+                {/*<AdminInput*/}
+                {/*  label="Category"*/}
+                {/*  value={channel.category.join(',')}*/}
+                {/*  onChange={(e) => this.onUpdateChannelMeta('category', e.target.value.split(','))}*/}
+                {/*/>*/}
+                <AdminSelect
+                  // value={LANGUAGE_CODES_DICT[channel.language]}
+                  label="Categories"
+                  options={CATEGORIES_SELECT_OPTIONS}
+                  onChange={(selected) => {
+                    console.log(selected);
+                    // this.onUpdateChannelMeta('language', selected.code);
+                  }}
                 />
                 <AdminSelect
                   value={LANGUAGE_CODES_DICT[channel.language]}
