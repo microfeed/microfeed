@@ -18,10 +18,11 @@ import AdminRichEditor from "../../../components/AdminRichEditor";
 
 const SUBMIT_STATUS__START = 1;
 
-function initItem() {
+function initItem(itemId) {
   return ({
     pubDateMs: datetimeLocalToMs(new Date()),
     explicit: false,
+    guid: itemId,
   });
 }
 
@@ -50,6 +51,7 @@ export default class EditItemApp extends React.Component {
       submitStatus: null,
       itemId: itemId || randomShortUUID(),
       action,
+
       userChangedLink: false,
     };
   }
@@ -243,8 +245,13 @@ export default class EditItemApp extends React.Component {
                 />
                 <AdminInput
                   label="<guid>"
-                  value=""
-                  onChange={(e) => this.onUpdateItemMeta({'explicit': e.target.value})}
+                  value={item.guid || itemId}
+                  setRef={(ref) => {
+                    if (!item.guid && ref) {
+                      this.onUpdateItemMeta({'guid': ref.value});
+                    }
+                  }}
+                  onChange={(e) => this.onUpdateItemMeta({'guid': e.target.value})}
                 />
                 <AdminInput
                   label="<itunes:title>"
