@@ -5,7 +5,7 @@ import {ITEM_STATUSES} from "../../common-src/Constants";
 export default class Feed {
   constructor(env) {
     const {FEEDKIT_VERSION, LH_DATABASE} = env;
-    this.KEY = `${projectPrefix(env)}/database/${FEEDKIT_VERSION}-feed.json`;
+    this.KEY = `${projectPrefix(env)}/database/${FEEDKIT_VERSION || 'v1'}-feed.json`;
     this.LH_DB = LH_DATABASE;
     this.FEEDKIT_VERSION = FEEDKIT_VERSION;
     this.content = null;
@@ -75,7 +75,11 @@ export default class Feed {
         },
       });
     })
-    publicContent.items.sort((a, b) => b.pubDateMs - a.pubDateMs);
+    if (content.channel['itunes:type'] === 'episodic') {
+      publicContent.items.sort((a, b) => b.pubDateMs - a.pubDateMs);
+    } else {
+      publicContent.items.sort((a, b) => a.pubDateMs - b.pubDateMs);
+    }
 
     return publicContent;
   }
