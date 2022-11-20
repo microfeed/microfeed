@@ -19,6 +19,9 @@ function initChannel() {
     explicit: false,
     category: [],
     image: '/assets/default/channel_image.png',
+    'itunes:type': 'episodic',
+    'itunes:complete': false,
+    'itunes:block': false,
   };
 }
 
@@ -85,7 +88,7 @@ export default class EditChannelApp extends React.Component {
   }
 
   render() {
-    const {feed, submitStatus, channel} = this.state;
+    const {submitStatus, channel} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp>
       <form className="grid grid-cols-12 gap-4">
@@ -153,45 +156,69 @@ export default class EditChannelApp extends React.Component {
             />
           </div>
           <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">
-            <div className="grid grid-cols-3 gap-4">
-              <AdminInput
+            <div className="grid grid-cols-4 gap-4">
+              <AdminRadio
                 label="<itunes:type>"
-                value={feed.publisher}
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
+                groupName="feed-itunes-type"
+                buttons={[{
+                  'name': 'episodic',
+                  'checked': channel['itunes:type'] === 'episodic',
+                }, {
+                  'name': 'serial',
+                  'checked': channel['itunes:type'] === 'serial',
+                }]}
+                value={channel['itunes:type']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:type', e.target.value)}
               />
               <AdminInput
-                label="<itunes:owner>"
-                value=""
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
+                label="<itunes:email>"
+                type="email"
+                value={channel['itunes:email']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:email', e.target.value)}
               />
               <AdminInput
                 label="<copyright>"
-                value=""
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
+                value={channel.copyright}
+                onChange={(e) => this.onUpdateChannelMeta('copyright', e.target.value)}
               />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <AdminInput
-                label="<itunes:new-feed-url>"
-                value={feed.publisher}
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
-              />
-              <AdminInput
-                label="<itunes:block>"
-                value=""
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
-              />
-              <AdminInput
-                label="<itunes:complete>"
-                value=""
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
               <AdminInput
                 label="<itunes:title>"
-                value=""
-                onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
+                value={channel['itunes:title']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <AdminRadio
+                label="<itunes:block>"
+                groupName="feed-itunes-block"
+                buttons={[{
+                  'name': 'Yes',
+                  'checked': channel['itunes:block'],
+                }, {
+                  'name': 'No',
+                  'checked': !channel['itunes:block'],
+                }]}
+                value={channel['itunes:block']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'Yes')}
+              />
+              <AdminRadio
+                label="<itunes:complete>"
+                groupName="feed-itunes-complete"
+                buttons={[{
+                  'name': 'Yes',
+                  'checked': channel['itunes:complete'],
+                }, {
+                  'name': 'No',
+                  'checked': !channel['itunes:complete'],
+                }]}
+                value={channel['itunes:complete']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'Yes')}
+              />
+              <AdminInput
+                label="<itunes:new-feed-url>"
+                type="url"
+                value={channel['itunes:new-feed-url']}
+                onChange={(e) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
               />
             </div>
           </div>

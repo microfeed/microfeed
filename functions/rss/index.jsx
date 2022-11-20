@@ -6,62 +6,97 @@ import {OUR_BRAND} from '../../common-src/Constants';
 
 const {XMLBuilder} = require('fast-xml-parser');
 
+function buildItemsRss(jsonData) {
+  const items = [];
+  jsonData.items.forEach((item) => {
+    const itemJson = {
+      'title': item.title || 'Untitled',
+      'description': {
+        '@cdata': item.description,
+      },
+      'link': item.link,
+      'guid': item.guid,
+      'pubDate': msToUtcString(item.pubDateMs),
+    };
+    const {mediaFile} = item;
+
+    if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
+      itemJson.enclosure = {
+        '@_url': mediaFile.url,
+      };
+      if (mediaFile.contentType) {
+        itemJson.enclosure['@_type'] = mediaFile.contentType;
+      }
+      if (mediaFile.sizeByte && mediaFile.sizeByte > 0) {
+        itemJson.enclosure['@_length'] = mediaFile.sizeByte;
+      }
+      if (mediaFile.durationSecond && mediaFile.durationSecond > 0) {
+        itemJson['itunes:duration'] = secondsToHHMMSS(item.mediaFile.durationSecond);
+      }
+    }
+    items.push(itemJson);
+  });
+  return items;
+}
+
+function buildChannelRss(jsonData, request) {
+  const {channel} = jsonData;
+  const channelRss = {
+    'title': channel.title,
+    'atom:link': {
+      '@_rel': 'self',
+      '@_href': request.url,
+      '@_type': 'application/rss+xml',
+    },
+    'link': channel.link,
+    'itunes:author': channel.publisher,
+    'image': {
+      'title': channel.title,
+      'url': channel.image,
+      'link': channel.link,
+    },
+    'description': {
+      '@cdata': channel.description,
+    },
+    'generator': OUR_BRAND.domain,
+    'itunes:type': channel['itunes:type'],
+
+  };
+  if (channel.copyright && channel.copyright.trim().length > 0) {
+    channelRss.copyright = channel.copyright.trim();
+  }
+  if (channel['itunes:email'] && channel['itunes:email'].trim().length > 0) {
+    channelRss['itunes:owner'] = {
+      'itunes:email': channel['itunes:email'].trim(),
+      'itunes:name': channel.publisher,
+    };
+  }
+  if (channel['itunes:new-feed-url'] && channel['itunes:new-feed-url'].trim().length > 0) {
+    channelRss['itunes:new-feed-url'] = channel['itunes:new-feed-url'].trim();
+  }
+  if (channel['itunes:block']) {
+    channelRss['itunes:block'] = 'Yes';
+  }
+  if (channel['itunes:complete']) {
+    channelRss['itunes:complete'] = 'Yes';
+  }
+  if (channel['itunes:title'] && channel['itunes:title'].trim().length > 0) {
+    channelRss['itunes:title'] = channel['itunes:title'].trim();
+  }
+  return channelRss;
+}
+
 export async function onRequestGet({request, env}) {
   const rssResponseBuilder = new RssResponseBuilder(env);
   return await rssResponseBuilder.getResponse({
     buildXmlFunc: (jsonData) => {
-      const items = [];
-      jsonData.items.forEach((item) => {
-        const itemJson = {
-          'title': item.title || 'Untitled',
-          'description': {
-            '@cdata': item.description,
-          },
-          'link': item.link,
-          'guid': item.guid,
-          'pubDate': msToUtcString(item.pubDateMs),
-        };
-        const {mediaFile} = item;
-
-        if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
-          itemJson.enclosure = {
-            '@_url': mediaFile.url,
-          };
-          if (mediaFile.contentType) {
-            itemJson.enclosure['@_type'] = mediaFile.contentType;
-          }
-          if (mediaFile.sizeByte && mediaFile.sizeByte > 0) {
-            itemJson.enclosure['@_length'] = mediaFile.sizeByte;
-          }
-          if (mediaFile.durationSecond && mediaFile.durationSecond > 0) {
-            itemJson['itunes:duration'] = secondsToHHMMSS(item.mediaFile.durationSecond);
-          }
-        }
-        items.push(itemJson);
-      });
-
-      const {channel} = jsonData;
+      const items = buildItemsRss(jsonData);
+      const channelRss = buildChannelRss(jsonData, request);
       const input = {
         "channel": {
-          'title': channel.title,
-          'atom:link': {
-            '@_rel': 'self',
-            '@_href': request.url,
-            '@_type': 'application/rss+xml',
-          },
-          'link': channel.link,
-          'itunes:author': channel.publisher,
-          'image': {
-            'title': channel.title,
-            'url': channel.image,
-            'link': channel.link,
-          },
-          'description': {
-            '@cdata': channel.description,
-          },
-          'generator': OUR_BRAND.domain,
+          ...channelRss,
           'item': items,
-        }
+        },
       };
 
       const builder = new XMLBuilder({
