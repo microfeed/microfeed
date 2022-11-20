@@ -21,6 +21,26 @@ function buildItemsRss(jsonData) {
     };
     const {mediaFile} = item;
 
+    if (item['itunes:title'] && item['itunes:title'].trim().length > 0) {
+      itemJson['itunes:title'] = item['itunes:title'].trim();
+    }
+
+    if (item['itunes:block']) {
+      itemJson['itunes:block'] = 'Yes';
+    }
+
+    if (item['itunes:season']) {
+      itemJson['itunes:season'] = item['itunes:season'];
+    }
+
+    if (item['itunes:episode']) {
+      itemJson['itunes:episode'] = item['itunes:episode'];
+    }
+
+    if (['full', 'trailer', 'bonus'].includes(item['itunes:episodeType'])) {
+      itemJson['itunes:episodeType'] = item['itunes:episodeType'];
+    }
+
     if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
       itemJson.enclosure = {
         '@_url': mediaFile.url,

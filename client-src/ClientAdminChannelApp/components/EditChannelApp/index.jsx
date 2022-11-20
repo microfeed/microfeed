@@ -155,7 +155,7 @@ export default class EditChannelApp extends React.Component {
               }}
             />
           </div>
-          <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-4">
+          <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-8">
             <div className="grid grid-cols-4 gap-4">
               <AdminRadio
                 label="<itunes:type>"
