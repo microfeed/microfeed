@@ -43,7 +43,7 @@ You may modify the code in your forked repo in the future. But most likely, you 
 
 ### Step 2: Put some secrets on your forked repo
 
-Go to your forked repo's Settings -> Secrets -> Actions:
+Go to your forked repo's [Settings -> Secrets -> Actions](../../settings/secrets/actions):
 
 <img width="1143" alt="Screenshot 2022-11-17 at 9 33 28 PM" src="https://user-images.githubusercontent.com/1719237/202628319-4f615748-1404-4649-8d97-8ad93c517f14.png">
 
