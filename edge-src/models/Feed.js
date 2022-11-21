@@ -181,7 +181,7 @@ class FeedPublicJsonBuilder {
       is_document: mediaFile.isDocument,
       is_external_url: mediaFile.isExternalUrl,
       is_video: mediaFile.isVideo,
-      is_Image: mediaFile.isImage,
+      is_image: mediaFile.isImage,
       web_url: item.webUrl,
     };
     if (item['itunes:title']) {

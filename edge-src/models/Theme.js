@@ -91,7 +91,6 @@ export default class Theme {
   }
 
   getWebItem(item) {
-    decorateForItem(item);
     const tmpl = this.getWebItemTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,

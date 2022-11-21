@@ -8,50 +8,60 @@
 
     <div class="mb-4">
       <a href="/">
-        <div class="icon-arrow-left">{{channel.title}}</div>
+        <div class="icon-arrow-left">{{title}}</div>
       </a>
     </div>
     <div>
       <h1 class="font-bold text-2xl md:text-4xl">{{item.title}}</h1>
       <div class="mt-4">
-        <time>{{item.pubDate}}</time>
+        <time>{{item._microfeed.date_published_simple}}</time>
       </div>
     </div>
 
     <div>
-      {{#item.mediaFile.isAudio}}
+      {{#item._microfeed.is_audio}}
       <div class="hidden md:block text-gray-500 text-sm mb-4">
         Listen:
       </div>
+      {{#item.attachments}}
       <audio controls preload="metadata" class="w-full">
-        <source src="{{item.mediaFile.url}}" type="{{item.mediaFile.contentType}}"/>
+        <source src="{{url}}" type="{{mime_type}}"/>
         Your browser does not support the audio element.
       </audio>
-      {{/item.mediaFile.isAudio}}
+      {{/item.attachments}}
+      {{/item._microfeed.is_audio}}
 
-      {{#item.mediaFile.isVideo}}
+      {{#item._microfeed.is_video}}
       <div class="hidden md:block text-gray-500 text-sm mb-4">
         Watch:
       </div>
+      {{#item.attachments}}
       <video controls preload="metadata" class="w-full">
-        <source src="{{item.mediaFile.url}}" type="{{item.mediaFile.contentType}}"/>
+        <source src="{{url}}" type="{{mime_type}}"/>
         Your browser does not support the video element.
       </video>
-      {{/item.mediaFile.isVideo}}
+      {{/item.attachments}}
+      {{/item._microfeed.is_video}}
 
-      {{#item.mediaFile.isDocument}}
-      <a href="{{item.mediaFile.url}}" class="font-bold text-lg">Download file &#8594;</a>
-      {{/item.mediaFile.isDocument}}
+      {{#item._microfeed.is_document}}
+      {{#item.attachments}}
+      <a href="{{url}}" class="font-bold text-lg">Download file &#8594;</a>
+      {{/item.attachments}}
+      {{/item._microfeed.is_document}}
 
-      {{#item.mediaFile.isExternalUrl}}
-      <a href="{{item.mediaFile.url}}" class="font-bold text-lg">View url &#8594;</a>
-      {{/item.mediaFile.isExternalUrl}}
+      {{#item._microfeed.is_external_url}}
+      {{#item.attachments}}
+      <a href="{{url}}" class="font-bold text-lg">View url &#8594;</a>
+      {{/item.attachments}}
+      {{/item._microfeed.is_external_url}}
 
-      {{#item.mediaFile.isImage}}
-      <a href="{{item.mediaFile.url}}" target="_blank">
-        <img src="{{item.mediaFile.url}}" width="80%" />
+      {{#item._microfeed.is_image}}
+      {{#item.attachments}}
+      <a href="{{url}}" target="_blank">
+        <img src="{{url}}" width="80%" />
       </a>
-      {{/item.mediaFile.isImage}}
+      {{/item.attachments}}
+      {{/item._microfeed.is_image}}
     </div>
     <div>
       <div>
@@ -59,16 +69,16 @@
           Subscribe:
         </div>
         <div class="flex flex-wrap">
-            {{#subscribeMethods}}
+            {{#_microfeed.subscribe_methods}}
               <a href="{{url}}" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
               <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
                 <div class="flex items-center">
-                  <img src="{{image}}" class="w-3.5"/>
+                  <img src="{{image}}" class="w-3.5" alt="{{name}}"/>
                 </div>
                 <div class="ml-2 text-sm md:text-lg">{{name}}</div>
               </div>
             </a>
-            {{/subscribeMethods}}
+            {{/_microfeed.subscribe_methods}}
         </div>
       </div>
     </div>
@@ -79,9 +89,9 @@
         <img src={{item.image}} width="250" height="250"/>
       </div>
       {{/item.image}}
-      {{#item.description}}
-      <div>{{{item.description}}}</div>
-      {{/item.description}}
+      {{#item.content_html}}
+      <div>{{{item.content_html}}}</div>
+      {{/item.content_html}}
     </div>
   </div>
   <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>

@@ -5,12 +5,11 @@ export default class EdgeItemApp extends React.Component {
   render() {
     const {item, theme, jsonData, canonicalUrl} = this.props;
     const {html} = theme.getWebItem(item);
-    const {channel} = jsonData;
     return (
-      <html lang={channel.language || 'en'}>
+      <html lang={jsonData.language || 'en'}>
       <HtmlHeader
         title={item.title}
-        description={item.description}
+        description={item.content_text}
         webpackJsList={[]}
         webpackCssList={[]}
         canonicalUrl={canonicalUrl}
