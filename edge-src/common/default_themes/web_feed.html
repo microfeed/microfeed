@@ -3,9 +3,11 @@
   <div class="col-span-12 lg:col-span-8 xl:col-span-6 px-4 grid grid-cols-1 gap-8">
     <h1 class="font-bold text-2xl md:text-4xl">{{title}}</h1>
     <div class="flex">
+      {{#icon}}
       <div class="flex-none mr-4">
         <img alt="{{title}}" src="{{icon}}" class="channel-image"/>
       </div>
+      {{/icon}}
       <div class="flex-1">
         {{#authors}}
         <div class="mt-2 md:mt-4 mb-4 md:mb-8">
@@ -13,9 +15,11 @@
         </div>
         {{/authors}}
         <div>
+          {{#_microfeed.subscribe_methods.length}}
           <div class="hidden md:block text-gray-500 text-sm mb-4">
             Subscribe:
           </div>
+          {{/_microfeed.subscribe_methods.length}}
           <div class="flex flex-wrap">
             {{#_microfeed.subscribe_methods}}
               <a href="{{url}}" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
@@ -40,9 +44,11 @@
     {{/description}}
 
     <div>
+      {{#items.length}}
       <h2 class="section-header">
         Latest
       </h2>
+      {{/items.length}}
 
       <div class="grid grid-cols-1 gap-6">
         {{#items}}

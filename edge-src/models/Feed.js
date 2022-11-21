@@ -1,6 +1,6 @@
 import {projectPrefix} from "../../common-src/R2Utils";
-import {buildAudioUrlWithTracking, PUBLIC_URLS} from "../../common-src/StringUtils";
-import {ENCLOSURE_CATEGORIES, ITEM_STATUSES} from "../../common-src/Constants";
+import {buildAudioUrlWithTracking, PUBLIC_URLS, randomShortUUID} from "../../common-src/StringUtils";
+import {ENCLOSURE_CATEGORIES, ITEM_STATUSES, PREDEFINED_SUBSCRIBE_METHODS} from "../../common-src/Constants";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
 
@@ -32,7 +32,7 @@ class FeedPublicJsonBuilder {
   }
 
   _buildPublicContentChannel() {
-    const {channel} = this.content;
+    const channel = this.content.channel || {};
     const publicContent = {};
     publicContent['title'] = channel.title || 'untitled';
 
@@ -71,11 +71,16 @@ class FeedPublicJsonBuilder {
   }
 
   _buildPublicContentMicrofeedExtra() {
-    const {channel} = this.content;
+    const channel = this.content.channel || {};
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra = {
       microfeed_version: this.content.microfeed_version || DEFAULT_MICROFEED_VERSION,
-      subscribe_methods: subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+      categories: channel.categories || [],
+    };
+    if (!subscribeMethods.methods) {
+      microfeedExtra['subscribe_methods'] = '';
+    } else {
+      microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
         if (!m.editable) {
           switch (m.type) {
             case 'rss':
@@ -89,9 +94,8 @@ class FeedPublicJsonBuilder {
           }
         }
         return m;
-      }),
-      categories: channel.categories || [],
-    };
+      });
+    }
     if (channel['itunes:explicit']) {
       microfeedExtra['itunes:explicit'] = true;
     }
@@ -219,7 +223,8 @@ class FeedPublicJsonBuilder {
       ...this._buildPublicContentChannel(this.content),
     };
 
-    const {channel, items} = this.content;
+    const {items} = this.content;
+    const channel = this.content.channel || {};
     const existingitems = items || {};
     publicContent['items'] = [];
     Object.keys(existingitems).forEach((itemId) => {
@@ -256,6 +261,14 @@ export default class Feed {
   initFeed() {
     return {
       version: this.MICROFEED_VERSION,
+      settings: {
+        subscribeMethods: {
+          methods: [
+            {...PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false, enabled: true},
+            {...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false, enabled: true},
+          ],
+        },
+      },
     };
   }
 

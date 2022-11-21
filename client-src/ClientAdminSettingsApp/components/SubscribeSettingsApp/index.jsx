@@ -12,8 +12,8 @@ import NewSubscribeDialog from "./components/NewSubscribeDialog";
 function initMethodsDict() {
   return {
     methods: [
-      {...PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false},
-      {...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false},
+      {...PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false, enabled: true},
+      {...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false, enabled: true},
     ],
   };
 }
