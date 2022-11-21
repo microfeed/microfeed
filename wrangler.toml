@@ -1,4 +1,0 @@
-[[ d1_databases ]]
-binding = "FEED_DB"
-database_name = "FEED_DB"
-database_id = "<UUID>"

@@ -90,8 +90,8 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
 };
 
 export const OUR_BRAND = {
-  domain: 'feedkit.org',
-  brandName: 'feedkit',
+  domain: 'microfeed.org',
+  brandName: 'microfeed',
 };
 
 export const ENCLOSURE_CATEGORIES = {

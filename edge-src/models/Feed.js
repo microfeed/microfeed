@@ -4,7 +4,7 @@ import {ENCLOSURE_CATEGORIES, ITEM_STATUSES} from "../../common-src/Constants";
 import {humanizeMs} from "../common/TimeUtils";
 import {convert} from "html-to-text";
 
-const DEFAULT_FEEDKIT_VERSION = 'v1';
+const DEFAULT_MICROFEED_VERSION = 'v1';
 
 export function decorateForItem(item) {
    item.webUrl = PUBLIC_URLS.itemWeb(item.id, item.title);
@@ -22,16 +22,16 @@ export function decorateForItem(item) {
 
 export default class Feed {
   constructor(env) {
-    const {FEEDKIT_VERSION, LH_DATABASE} = env;
-    this.FEEDKIT_VERSION = FEEDKIT_VERSION || DEFAULT_FEEDKIT_VERSION;
-    this.KEY = `${projectPrefix(env)}/database/${this.FEEDKIT_VERSION}-feed.json`;
+    const {MICROFEED_VERSION, LH_DATABASE} = env;
+    this.MICROFEED_VERSION = MICROFEED_VERSION || DEFAULT_MICROFEED_VERSION;
+    this.KEY = `${projectPrefix(env)}/database/${this.MICROFEED_VERSION}-feed.json`;
     this.LH_DB = LH_DATABASE;
     this.content = null;
   }
 
   initFeed() {
     return {
-      version: this.FEEDKIT_VERSION,
+      version: this.MICROFEED_VERSION,
     };
   }
 
@@ -52,7 +52,7 @@ export default class Feed {
     const settings = content.settings || {};
     const subscribeMethods = settings.subscribeMethods || {'methods': []};
     const publicContent = {
-      version: content.version || DEFAULT_FEEDKIT_VERSION,
+      version: content.microfeed_version || DEFAULT_MICROFEED_VERSION,
       channel: {...content.channel},
       items: [],
       subscribeMethods: subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
@@ -111,7 +111,7 @@ export default class Feed {
   }
 
   async putContent(contentDict) {
-    contentDict.version = this.FEEDKIT_VERSION;
+    contentDict.microfeed_version = this.MICROFEED_VERSION;
     await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {
       'Content-Type': 'application/json; charset=UTF-8',
       });

@@ -17,7 +17,7 @@ const ALLOWED_VARS = [
   {name: 'ADMIN_PASSWORD', encrypted: true},
 
   {name: 'NODE_VERSION', encrypted: false},  // Cloudflare Pages CI needs this to use the right Node version.
-  {name: 'FEEDKIT_VERSION', encrypted: false},
+  {name: 'MICROFEED_VERSION', encrypted: false},
 ];
 
 class SyncProjectConfig {
