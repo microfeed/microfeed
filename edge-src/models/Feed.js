@@ -6,8 +6,8 @@ import {convert} from "html-to-text";
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
-export function decorateForItem(item) {
-   item.webUrl = PUBLIC_URLS.itemWeb(item.id, item.title);
+export function decorateForItem(itemId, item, baseUrl) {
+   item.webUrl = PUBLIC_URLS.itemWeb(itemId, item.title, baseUrl);
    item.pubDate = humanizeMs(item.pubDateMs);
    item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
    item.descriptionText = convert(item.description, {});
@@ -26,6 +26,9 @@ class FeedPublicJsonBuilder {
     this.content = content;
     this.request = request;
     this.settings = content.settings || {};
+
+    const urlObj = new URL(this.request.url);
+    this.baseUrl = urlObj.origin;
   }
 
   _buildPublicContentChannel() {
@@ -37,8 +40,7 @@ class FeedPublicJsonBuilder {
       publicContent['home_page_url'] = channel.link;
     }
 
-    const urlObj = new URL(this.request.url);
-    publicContent['feed_url'] = PUBLIC_URLS.feedJson(urlObj.origin);
+    publicContent['feed_url'] = PUBLIC_URLS.feedJson(this.baseUrl);
 
     if (channel.description) {
       publicContent['description'] = channel.description;
@@ -174,7 +176,14 @@ class FeedPublicJsonBuilder {
       newItem['language'] = item.language;
     }
 
-    const _microfeed = {};
+    const _microfeed = {
+      is_audio: mediaFile.isAudio,
+      is_document: mediaFile.isDocument,
+      is_external_url: mediaFile.isExternalUrl,
+      is_video: mediaFile.isVideo,
+      is_Image: mediaFile.isImage,
+      web_url: item.webUrl,
+    };
     if (item['itunes:title']) {
       _microfeed['itunes:title'] = item['itunes:title'];
     }
@@ -196,6 +205,7 @@ class FeedPublicJsonBuilder {
     if (item.pubDateMs) {
       _microfeed['date_published_ms'] = item.pubDateMs;
     }
+
     newItem['_microfeed'] = _microfeed;
     return newItem;
   }
@@ -203,7 +213,7 @@ class FeedPublicJsonBuilder {
   getJsonData() {
     const publicContent = {
       version: 'https://jsonfeed.org/version/1.1',
-      ...this._buildPublicContentChannel(this.content, this.request),
+      ...this._buildPublicContentChannel(this.content),
     };
 
     const {channel, items} = this.content;
@@ -214,7 +224,7 @@ class FeedPublicJsonBuilder {
       if (item.status === ITEM_STATUSES.UNPUBLISHED) {
         return;
       }
-      decorateForItem(item);
+      decorateForItem(itemId, item, this.baseUrl);
       const mediaFile = item.mediaFile || {};
       const newItem = this._buildPublicContentItem(itemId, item, mediaFile);
       publicContent.items.push(newItem);
