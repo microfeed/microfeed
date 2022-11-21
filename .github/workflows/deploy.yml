@@ -34,7 +34,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.DEPLOYMENT_ENVIRONMENT }}
-      url: https://${{ env.CLOUDFLARE_PROJECT_NAME }}.pages.dev
     steps:
       - name: Checkout
         uses: actions/checkout@v3
