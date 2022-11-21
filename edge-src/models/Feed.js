@@ -159,13 +159,10 @@ class FeedPublicJsonBuilder {
       newItem['content_text'] = item.descriptionText;
     }
     if (item.image) {
-      newItem['item'] = item.image;
+      newItem['image'] = item.image;
     }
     if (mediaFile.isImage && mediaFile.url) {
       newItem['banner_image'] = mediaFile.url;
-    }
-    if (item.pubDateMs) {
-      newItem['date_published_ms'] = item.pubDateMs;
     }
     if (item.pubDateRfc3339) {
       newItem['date_published'] = item.pubDateRfc3339;
@@ -176,6 +173,30 @@ class FeedPublicJsonBuilder {
     if (item.language) {
       newItem['language'] = item.language;
     }
+
+    const _microfeed = {};
+    if (item['itunes:title']) {
+      _microfeed['itunes:title'] = item['itunes:title'];
+    }
+    if (item['itunes:block']) {
+      _microfeed['itunes:block'] = item['itunes:block'];
+    }
+    if (item['itunes:episodeType']) {
+      _microfeed['itunes:episodeType'] = item['itunes:episodeType'];
+    }
+    if (item['itunes:season']) {
+      _microfeed['itunes:season'] = item['itunes:season'];
+    }
+    if (item['itunes:episode']) {
+      _microfeed['itunes:episode'] = item['itunes:episode'];
+    }
+    if (item['itunes:explicit']) {
+      _microfeed['itunes:explicit'] = item['itunes:explicit'];
+    }
+    if (item.pubDateMs) {
+      _microfeed['date_published_ms'] = item.pubDateMs;
+    }
+    newItem['_microfeed'] = _microfeed;
     return newItem;
   }
 
@@ -199,9 +220,9 @@ class FeedPublicJsonBuilder {
       publicContent.items.push(newItem);
     })
     if (channel['itunes:type'] === 'episodic') {
-      publicContent.items.sort((a, b) => b['date_published_ms'] - a['date_published_ms']);
+      publicContent.items.sort((a, b) => b['_microfeed']['date_published_ms'] - a['_microfeed']['date_published_ms']);
     } else {
-      publicContent.items.sort((a, b) => a['date_published_ms'] - b['date_published_ms']);
+      publicContent.items.sort((a, b) => a['_microfeed']['date_published_ms'] - b['_microfeed']['date_published_ms']);
     }
 
     publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra();
