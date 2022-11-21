@@ -8,11 +8,12 @@ The self-hosted feed can publish audios, videos, photos, documents, blog posts, 
 
 There are many use cases of FeedKit. Basically, you can use FeedKit create a self-hosted version of:
 * Podcast: a feed of audios
-* Blog: a feed of texts
-* Instagram: a feed of photos
+* Blog: a feed of texts.
+* Instagram: a feed of photos. E.g., [llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
 * YouTube: a feed of videos
-* Personal website: a simple web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
-* Curation site: a feed of article links
+* Personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
+* Curation site: a feed of article links.
+* Marketing site: a custom web page with updates / press coverage / changelogs. E.g., [feedkit.org](https://www.feedkit.org/)
 
 Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
 
