@@ -176,7 +176,7 @@ export async function onRequestGet({request, env}) {
         suppressEmptyNode: true,
         format: true,
         cdataPropName: '@cdata',
-        arrayNodeName: 'itunes:category',q
+        arrayNodeName: 'itunes:category',
         // arrayNodeName: "item",
       });
       const xmlOutput = builder.build(input);
