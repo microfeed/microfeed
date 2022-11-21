@@ -36,7 +36,7 @@ export default class Theme {
 
   getWebHeader() {
     const tmpl = this.getWebHeaderTmpl();
-    const html = Mustache.render(tmpl, {});
+    const html = Mustache.render(tmpl, {...this.jsonData,});
     return {html};
   }
 
@@ -52,7 +52,7 @@ export default class Theme {
 
   getWebFooter() {
     const tmpl = this.getWebFooterTmpl();
-    const html = Mustache.render(tmpl, {});
+    const html = Mustache.render(tmpl, {...this.jsonData,});
     return {html};
   }
 

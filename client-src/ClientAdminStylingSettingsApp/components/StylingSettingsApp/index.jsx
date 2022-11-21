@@ -26,11 +26,6 @@ function TabButton({name, onClick, selected}) {
 function CodeTabs({currentType, setState}) {
   return (<div className="lh-page-card mb-4">
     <TabButton
-      name="RSS Stylesheet"
-      selected={currentType === 'rssStylesheet'}
-      onClick={() => setState({currentType: 'rssStylesheet'})}
-    />
-    <TabButton
       name="Feed Web"
       selected={currentType === 'feedWeb'}
       onClick={() => setState({currentType: 'feedWeb'})}
@@ -49,6 +44,11 @@ function CodeTabs({currentType, setState}) {
       name="Web Footer"
       selected={currentType === 'webFooter'}
       onClick={() => setState({currentType: 'webFooter'})}
+    />
+    <TabButton
+      name="RSS Stylesheet"
+      selected={currentType === 'rssStylesheet'}
+      onClick={() => setState({currentType: 'rssStylesheet'})}
     />
   </div>);
 }
@@ -83,7 +83,7 @@ export default class RssStylingApp extends React.Component {
     } = themeTmplJson;
 
     this.state = {
-      currentType: 'rssStylesheet',
+      currentType: 'feedWeb',
       submitStatus: null,
 
       rssStylesheet,

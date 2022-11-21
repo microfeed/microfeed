@@ -1,1 +1,14 @@
-<!-- nothing for now -->
+<div class="mt-16 py-8">
+  <div class="text-sm text-gray-400 text-center">
+    {{#channel.copyright}}
+    {{channel.copyright}}
+    {{/channel.copyright}}
+    {{^channel.copyright}}
+    ©2022 {{channel.publisher}}
+    {{/channel.copyright}}
+  </div>
+  <div class="mt-8 text-sm text-gray-400 text-center">
+    Powered by <a href="https://www.feedkit.org/" class="text-black">feedkit.org</a> (a <a class="text-black" href="https://www.listennotes.com/">Listen
+    Notes</a> project)
+  </div>
+</div>
