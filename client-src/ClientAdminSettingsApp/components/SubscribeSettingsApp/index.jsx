@@ -24,10 +24,10 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
   if (!url && !editable) {
     switch (type) {
       case 'rss':
-        url = PUBLIC_URLS.feedRss();
+        url = PUBLIC_URLS.rssFeed();
         break;
       case 'json':
-        url = PUBLIC_URLS.feedJson();
+        url = PUBLIC_URLS.jsonFeed();
         break;
       default:
         break;

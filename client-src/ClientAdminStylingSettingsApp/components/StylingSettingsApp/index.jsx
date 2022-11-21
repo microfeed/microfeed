@@ -27,13 +27,13 @@ function CodeTabs({currentType, setState}) {
   return (<div className="lh-page-card mb-4">
     <TabButton
       name="Web Feed"
-      selected={currentType === 'feedWeb'}
-      onClick={() => setState({currentType: 'feedWeb'})}
+      selected={currentType === 'webFeed'}
+      onClick={() => setState({currentType: 'webFeed'})}
     />
     <TabButton
       name="Web Item"
-      selected={currentType === 'itemWeb'}
-      onClick={() => setState({currentType: 'itemWeb'})}
+      selected={currentType === 'webItem'}
+      onClick={() => setState({currentType: 'webItem'})}
     />
     <TabButton
       name="Web Header"
@@ -58,7 +58,7 @@ function getFirstItemUrl(feed) {
   if (items && Object.keys(items).length > 0) {
     const itemId = Object.keys(items)[0];
     const item = items[itemId];
-    return PUBLIC_URLS.itemWeb(itemId, item.title || 'Untitled');
+    return PUBLIC_URLS.webItem(itemId, item.title || 'Untitled');
   }
   return '/'
 }
@@ -76,19 +76,19 @@ export default class RssStylingApp extends React.Component {
 
     const {
       rssStylesheet,
-      itemWeb,
-      feedWeb,
+      webItem,
+      webFeed,
       webFooter,
       webHeader,
     } = themeTmplJson;
 
     this.state = {
-      currentType: 'feedWeb',
+      currentType: 'webFeed',
       submitStatus: null,
 
       rssStylesheet,
-      itemWeb,
-      feedWeb,
+      webItem,
+      webFeed,
       webFooter,
       webHeader,
 
@@ -124,15 +124,15 @@ export default class RssStylingApp extends React.Component {
     const themeName = 'custom';
     const {
       rssStylesheet,
-      itemWeb,
-      feedWeb,
+      webItem,
+      webFeed,
       webFooter,
       webHeader,
     } = this.state;
     this.onUpdateFeed(themeName, {
       rssStylesheet,
-      itemWeb,
-      feedWeb,
+      webItem,
+      webFeed,
       webFooter,
       webHeader,
     }, () => {
@@ -157,27 +157,27 @@ export default class RssStylingApp extends React.Component {
     let description;
     switch(currentType) {
       case 'rssStylesheet':
-        viewUrl = PUBLIC_URLS.feedRss();
+        viewUrl = PUBLIC_URLS.rssFeed();
         language = 'css';
-        description = <div>The code is used for <a href={PUBLIC_URLS.feedRssStylesheet()} target="_blank">
-          {PUBLIC_URLS.feedRssStylesheet()}</a>, which is included in <a
-          href={PUBLIC_URLS.feedRss()} target="_blank">the RSS feed</a>.</div>;
+        description = <div>The code is used for <a href={PUBLIC_URLS.rssFeedStylesheet()} target="_blank">
+          {PUBLIC_URLS.rssFeedStylesheet()}</a>, which is included in <a
+          href={PUBLIC_URLS.rssFeed()} target="_blank">the RSS feed</a>.</div>;
         break;
-      case 'itemWeb':
+      case 'webItem':
         viewUrl = getFirstItemUrl(feed);
         description = <div>The code is used for an item web page, which is good for SEO.</div>;
         break;
-      case 'feedWeb':
-        viewUrl = PUBLIC_URLS.feedWeb();
-        description = <div>The code is used for <a href={PUBLIC_URLS.feedWeb()} target="_blank">the public homepage of this site</a></div>;
+      case 'webFeed':
+        viewUrl = PUBLIC_URLS.webFeed();
+        description = <div>The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a></div>;
         break;
       case 'webHeader':
-        viewUrl = PUBLIC_URLS.feedWeb();
+        viewUrl = PUBLIC_URLS.webFeed();
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.</div>
         break;
       case 'webFooter':
-        viewUrl = PUBLIC_URLS.feedWeb();
+        viewUrl = PUBLIC_URLS.webFeed();
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.</div>
         break;

@@ -4,7 +4,7 @@ import HtmlHeader from "../components/HtmlHeader";
 export default class EdgeItemApp extends React.Component {
   render() {
     const {item, theme, jsonData, canonicalUrl} = this.props;
-    const {html} = theme.getItemWeb(item);
+    const {html} = theme.getWebItem(item);
     const {channel} = jsonData;
     return (
       <html lang={channel.language || 'en'}>

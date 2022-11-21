@@ -7,7 +7,7 @@ import {convert} from "html-to-text";
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
 export function decorateForItem(itemId, item, baseUrl) {
-   item.webUrl = PUBLIC_URLS.itemWeb(itemId, item.title, baseUrl);
+   item.webUrl = PUBLIC_URLS.webItem(itemId, item.title, baseUrl);
    item.pubDate = humanizeMs(item.pubDateMs);
    item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
    item.descriptionText = convert(item.description, {});
@@ -40,7 +40,7 @@ class FeedPublicJsonBuilder {
       publicContent['home_page_url'] = channel.link;
     }
 
-    publicContent['feed_url'] = PUBLIC_URLS.feedJson(this.baseUrl);
+    publicContent['feed_url'] = PUBLIC_URLS.jsonFeed(this.baseUrl);
 
     if (channel.description) {
       publicContent['description'] = channel.description;
@@ -79,10 +79,10 @@ class FeedPublicJsonBuilder {
         if (!m.editable) {
           switch (m.type) {
             case 'rss':
-              m.url = PUBLIC_URLS.feedRss();
+              m.url = PUBLIC_URLS.rssFeed();
               return m;
             case 'json':
-              m.url = PUBLIC_URLS.feedJson();
+              m.url = PUBLIC_URLS.jsonFeed();
               return m;
             default:
               return m;

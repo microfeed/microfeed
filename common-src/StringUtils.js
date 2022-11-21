@@ -162,19 +162,19 @@ export const ADMIN_URLS = {
  * Public urls
  */
 export const PUBLIC_URLS = {
-  feedWeb: (baseUrl = '') => {
+  webFeed: (baseUrl = '') => {
     return `${baseUrl}/`;
   },
-  feedRss: (baseUrl='') => {
+  rssFeed: (baseUrl='') => {
     return `${baseUrl}/rss/`;
   },
-  feedRssStylesheet: (baseUrl='') => {
+  rssFeedStylesheet: (baseUrl='') => {
     return `${baseUrl}/rss/stylesheet/`;
   },
-  feedJson: (baseUrl='') => {
+  jsonFeed: (baseUrl='') => {
     return `${baseUrl}/json/`;
   },
-  itemWeb: (itemId, itemTitle, baseUrl='', locale = 'en') => {
+  webItem: (itemId, itemTitle, baseUrl='', locale = 'en') => {
     return `${baseUrl}/i/${slugify(itemTitle || '', {
       lower: true,
       strict: true, // strip special characters except replacement

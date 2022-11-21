@@ -15,7 +15,7 @@ export async function onRequestGet({params, env, request}) {
         getComponent: (content, jsonData, theme) => {
           const item = content.items[itemId];
           const urlObject = new URL(request.url);
-          const canonicalUrl = PUBLIC_URLS.itemWeb(itemId, item.title, urlObject.origin);
+          const canonicalUrl = PUBLIC_URLS.webItem(itemId, item.title, urlObject.origin);
           return <EdgeItemApp item={item} theme={theme} jsonData={jsonData} canonicalUrl={canonicalUrl}/>;
         },
       });

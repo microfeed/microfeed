@@ -70,9 +70,8 @@ export default class Theme {
     };
   }
 
-  getFeedWeb() {
-    const tmpl = this.getFeedWebTmpl();
-    this.jsonData.items.forEach(item => decorateForItem(item));
+  getWebFeed() {
+    const tmpl = this.getWebFeedTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
     });
@@ -81,19 +80,19 @@ export default class Theme {
     };
   }
 
-  getFeedWebTmpl() {
-    let tmpl = null;
-    if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/feed_web.html');
+  getWebFeedTmpl() {
+    let tmpl;
+    if (this.theme === 'default' || !this.settings.styles.themes[this.theme].webFeed) {
+      tmpl = require('../common/default_themes/web_feed.html');
     } else {
-      tmpl = this.settings.styles.themes[this.theme].feedWeb;
+      tmpl = this.settings.styles.themes[this.theme].webFeed;
     }
     return tmpl;
   }
 
-  getItemWeb(item) {
+  getWebItem(item) {
     decorateForItem(item);
-    const tmpl = this.getItemWebTmpl();
+    const tmpl = this.getWebItemTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
       item,
@@ -103,12 +102,12 @@ export default class Theme {
     };
   }
 
-  getItemWebTmpl() {
+  getWebItemTmpl() {
     let tmpl = null;
-    if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/item_web.html');
+    if (this.theme === 'default' || !this.settings.styles.themes[this.theme].webItem) {
+      tmpl = require('../common/default_themes/web_item.html');
     } else {
-      tmpl = this.settings.styles.themes[this.theme].itemWeb;
+      tmpl = this.settings.styles.themes[this.theme].webItem;
     }
     return tmpl;
   }

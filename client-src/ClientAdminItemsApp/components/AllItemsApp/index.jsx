@@ -145,7 +145,7 @@ export default class AllItemsApp extends React.Component {
       title: <div>
         <div className="line-clamp-2">{item.title}</div>
         <div className="mt-2">
-          <ExternalLink url={PUBLIC_URLS.itemWeb(item.id, item.title)} text="Public page" />
+          <ExternalLink url={PUBLIC_URLS.webItem(item.id, item.title)} text="Public page" />
         </div>
       </div>,
       mediaFile: <div>

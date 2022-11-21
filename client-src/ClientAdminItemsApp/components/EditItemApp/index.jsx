@@ -178,7 +178,7 @@ export default class EditItemApp extends React.Component {
                   onChange={(e) => {
                     const attrDict = {'title': e.target.value};
                     if (action !== 'edit' && !this.state.userChangedLink) {
-                      attrDict.link = PUBLIC_URLS.itemWeb(itemId, item.title, getPublicBaseUrl());
+                      attrDict.link = PUBLIC_URLS.webItem(itemId, item.title, getPublicBaseUrl());
                     }
                     this.onUpdateItemMeta(attrDict);
                   }}
@@ -323,7 +323,7 @@ export default class EditItemApp extends React.Component {
               </button>
             </div>
             {action === 'edit' && <div>
-              <AdminSideQuickLinks AdditionalLink={<SideQuickLink url={PUBLIC_URLS.itemWeb(itemId, item.title)} text="Item Web"/>}/>
+              <AdminSideQuickLinks AdditionalLink={<SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="Item Web"/>}/>
               <div className="lh-page-card mt-4 flex justify-center">
                 <a
                   href="#"

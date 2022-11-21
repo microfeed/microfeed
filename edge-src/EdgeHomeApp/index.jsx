@@ -4,13 +4,13 @@ import HtmlHeader from "../components/HtmlHeader";
 export default class EdgeHomeApp extends React.Component {
   render() {
     const {jsonData, theme} = this.props;
-    const { html } = theme.getFeedWeb();
-    const {channel} = jsonData;
+    console.log(jsonData);
+    const { html } = theme.getWebFeed();
     return (
-      <html lang={channel.language || 'en'}>
+      <html lang={jsonData.language || 'en'}>
       <HtmlHeader
-        title={channel.title}
-        description={channel.description}
+        title={jsonData.title}
+        description={jsonData.description}
         webpackJsList={[]}
         webpackCssList={[]}
         favicon={{
