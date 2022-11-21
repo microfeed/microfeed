@@ -1,6 +1,6 @@
 {
-    "name": "",
-    "short_name": "",
+    "name": "feedkit.org",
+    "short_name": "feedkit.org",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -13,7 +13,7 @@
             "type": "image/png"
         }
     ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
+    "theme_color": "#2c2b3d",
+    "background_color": "#2c2b3d",
     "display": "standalone"
 }

@@ -1,23 +1,7 @@
-import {PUBLIC_URLS} from "../../common-src/StringUtils";
-import {humanizeMs} from "../common/TimeUtils";
-import {convert} from "html-to-text";
-import {ENCLOSURE_CATEGORIES} from "../../common-src/Constants";
+import {decorateForItem} from "./Feed";
 
 const Mustache = require('mustache');
 
-function decorateMediaFileForItem(item) {
-   item.webUrl = PUBLIC_URLS.itemWeb(item.id, item.title);
-   item.pubDate = humanizeMs(item.pubDateMs);
-   item.descriptionText = convert(item.description, {});
-
-  if (item.mediaFile && item.mediaFile.category) {
-    item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
-    item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
-    item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
-    item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
-    item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
-  }
-}
 
 export default class Theme {
   constructor(jsonData, settings=null) {
@@ -88,7 +72,7 @@ export default class Theme {
 
   getFeedWeb() {
     const tmpl = this.getFeedWebTmpl();
-    this.jsonData.items.forEach(item => decorateMediaFileForItem(item));
+    this.jsonData.items.forEach(item => decorateForItem(item));
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
     });
@@ -108,7 +92,7 @@ export default class Theme {
   }
 
   getItemWeb(item) {
-    decorateMediaFileForItem(item);
+    decorateForItem(item);
     const tmpl = this.getItemWebTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,

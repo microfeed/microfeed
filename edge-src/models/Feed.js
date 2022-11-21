@@ -1,6 +1,22 @@
 import {projectPrefix} from "../../common-src/R2Utils";
 import {buildAudioUrlWithTracking, PUBLIC_URLS} from "../../common-src/StringUtils";
-import {ITEM_STATUSES} from "../../common-src/Constants";
+import {ENCLOSURE_CATEGORIES, ITEM_STATUSES} from "../../common-src/Constants";
+import {humanizeMs} from "../common/TimeUtils";
+import {convert} from "html-to-text";
+
+export function decorateForItem(item) {
+   item.webUrl = PUBLIC_URLS.itemWeb(item.id, item.title);
+   item.pubDate = humanizeMs(item.pubDateMs);
+   item.descriptionText = convert(item.description, {});
+
+  if (item.mediaFile && item.mediaFile.category) {
+    item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
+    item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
+    item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
+    item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
+    item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
+  }
+}
 
 export default class Feed {
   constructor(env) {
@@ -63,6 +79,7 @@ export default class Feed {
       if (item.status === ITEM_STATUSES.UNPUBLISHED) {
         return;
       }
+      decorateForItem(item);
       const mediaFile = item.mediaFile || {};
       const {url} = mediaFile;
       publicContent.items.push({
