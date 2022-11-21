@@ -11,9 +11,9 @@ export function AdminSideQuickLinks({AdditionalLink}) {
     <div className="lh-page-subtitle">Public pages</div>
     <div className="flex justify-between flex-wrap gap-2">
       {AdditionalLink}
-      <SideQuickLink url={PUBLIC_URLS.feedWeb()} text="Feed Web" />
-      <SideQuickLink url={PUBLIC_URLS.feedRss()} text="Feed RSS" />
-      <SideQuickLink url={PUBLIC_URLS.feedJson()} text="Feed JSON" />
+      <SideQuickLink url={PUBLIC_URLS.feedWeb()} text="Web Feed" />
+      <SideQuickLink url={PUBLIC_URLS.feedRss()} text="RSS Feed" />
+      <SideQuickLink url={PUBLIC_URLS.feedJson()} text="JSON Feed" />
     </div>
   </div>);
 }

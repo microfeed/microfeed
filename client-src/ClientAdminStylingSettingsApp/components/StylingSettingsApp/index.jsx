@@ -26,12 +26,12 @@ function TabButton({name, onClick, selected}) {
 function CodeTabs({currentType, setState}) {
   return (<div className="lh-page-card mb-4">
     <TabButton
-      name="Feed Web"
+      name="Web Feed"
       selected={currentType === 'feedWeb'}
       onClick={() => setState({currentType: 'feedWeb'})}
     />
     <TabButton
-      name="Item Web"
+      name="Web Item"
       selected={currentType === 'itemWeb'}
       onClick={() => setState({currentType: 'itemWeb'})}
     />
