@@ -4,6 +4,8 @@ import {ENCLOSURE_CATEGORIES, ITEM_STATUSES} from "../../common-src/Constants";
 import {humanizeMs} from "../common/TimeUtils";
 import {convert} from "html-to-text";
 
+const DEFAULT_FEEDKIT_VERSION = 'v1';
+
 export function decorateForItem(item) {
    item.webUrl = PUBLIC_URLS.itemWeb(item.id, item.title);
    item.pubDate = humanizeMs(item.pubDateMs);
@@ -21,9 +23,9 @@ export function decorateForItem(item) {
 export default class Feed {
   constructor(env) {
     const {FEEDKIT_VERSION, LH_DATABASE} = env;
-    this.KEY = `${projectPrefix(env)}/database/${FEEDKIT_VERSION || 'v1'}-feed.json`;
+    this.FEEDKIT_VERSION = FEEDKIT_VERSION || DEFAULT_FEEDKIT_VERSION;
+    this.KEY = `${projectPrefix(env)}/database/${this.FEEDKIT_VERSION}-feed.json`;
     this.LH_DB = LH_DATABASE;
-    this.FEEDKIT_VERSION = FEEDKIT_VERSION;
     this.content = null;
   }
 
@@ -50,7 +52,7 @@ export default class Feed {
     const settings = content.settings || {};
     const subscribeMethods = settings.subscribeMethods || {'methods': []};
     const publicContent = {
-      version: content.version,
+      version: content.version || DEFAULT_FEEDKIT_VERSION,
       channel: {...content.channel},
       items: [],
       subscribeMethods: subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
