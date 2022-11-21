@@ -3,9 +3,9 @@ import EdgeAdminItemsApp from '../../../edge-src/EdgeAdminItemsApp/Edit';
 import Feed from "../../../edge-src/models/Feed";
 import {renderReactToHtml} from "../../../edge-src/common/PageUtils";
 
-export async function onRequestGet({env, params}) {
+export async function onRequestGet({env, params, request}) {
   const { itemId } = params;
-  const feed = new Feed(env);
+  const feed = new Feed(env, request);
   const content = await feed.getContent();
   const fromReact = renderReactToHtml(
     <EdgeAdminItemsApp feedContent={content} itemId={itemId}/>);

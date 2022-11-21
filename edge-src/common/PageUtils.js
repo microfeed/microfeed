@@ -7,14 +7,14 @@ export function renderReactToHtml(Component) {
 }
 
 class ResponseBuilder {
-  constructor(env) {
-    this.feed = new Feed(env);
+  constructor(env, request) {
+    this.feed = new Feed(env, request);
   }
 
   async fetchFeed() {
     this.content = await this.feed.getContent();
     this.settings = await this.feed.getSettings(this.content) || {};
-    this.jsonData = await this.feed.getContentPublic(this.content);
+    this.jsonData = await this.feed.getPublicJsonData(this.content);
   }
 
   _verifyPasscode() {

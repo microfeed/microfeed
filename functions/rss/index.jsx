@@ -142,7 +142,7 @@ function buildChannelRss(jsonData, request) {
 }
 
 export async function onRequestGet({request, env}) {
-  const rssResponseBuilder = new RssResponseBuilder(env);
+  const rssResponseBuilder = new RssResponseBuilder(env, request);
   return await rssResponseBuilder.getResponse({
     buildXmlFunc: (jsonData) => {
       const items = buildItemsRss(jsonData);

@@ -10,7 +10,7 @@ export async function onRequestGet({params, env, request}) {
   if (ok) {
     const itemId = ok[1];
     if (itemId) {
-      const webResponseBuilder = new WebResponseBuilder(env);
+      const webResponseBuilder = new WebResponseBuilder(env, request);
       return webResponseBuilder.getResponse({
         getComponent: (content, jsonData, theme) => {
           const item = content.items[itemId];

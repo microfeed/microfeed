@@ -4,8 +4,8 @@ import Feed from "../../../edge-src/models/Feed";
 import {renderReactToHtml} from "../../../edge-src/common/PageUtils";
 
 
-export async function onRequestGet({env}) {
-  const feed = new Feed(env);
+export async function onRequestGet({env, request}) {
+  const feed = new Feed(env, request);
   const content = await feed.getContent();
   const fromReact = renderReactToHtml(<AdminSettingsApp feedContent={content}/>);
   return new Response(fromReact, {
