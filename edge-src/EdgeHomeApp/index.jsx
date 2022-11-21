@@ -4,7 +4,6 @@ import HtmlHeader from "../components/HtmlHeader";
 export default class EdgeHomeApp extends React.Component {
   render() {
     const {jsonData, theme} = this.props;
-    console.log(jsonData);
     const { html } = theme.getWebFeed();
     return (
       <html lang={jsonData.language || 'en'}>

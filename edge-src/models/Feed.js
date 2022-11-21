@@ -202,6 +202,9 @@ class FeedPublicJsonBuilder {
     if (item['itunes:explicit']) {
       _microfeed['itunes:explicit'] = item['itunes:explicit'];
     }
+    if (item.pubDate) {
+      _microfeed['date_published_short'] = item.pubDate;
+    }
     if (item.pubDateMs) {
       _microfeed['date_published_ms'] = item.pubDateMs;
     }
