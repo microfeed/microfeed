@@ -130,14 +130,14 @@ class CodeInjector {
     if (element.tagName === 'head') {
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
-      if (this.settings.codeInjection) {
-        element.append(this.settings.codeInjection.headerCode || '', {html: true});
+      if (this.settings.webGlobalSettings) {
+        element.append(this.settings.webGlobalSettings.headerCode || '', {html: true});
       }
     } else if (element.tagName === 'body') {
       const {html} = this.theme.getWebFooter();
       element.append(html, {html: true});
-      if (this.settings.codeInjection) {
-        element.append(this.settings.codeInjection.footerCode || '', {html: true});
+      if (this.settings.webGlobalSettings) {
+        element.append(this.settings.webGlobalSettings.footerCode || '', {html: true});
       }
     }
   }

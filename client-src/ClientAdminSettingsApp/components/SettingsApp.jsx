@@ -4,7 +4,7 @@ import TrackingSettingsApp from "./TrackingSettingsApp";
 import AccessSettingsApp from "./AccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
 import StylingSettingsApp from "./StylingSettingsApp";
-import CodeInjectionSettingsApp from "./CodeInjectionSettingsApp";
+import WebGlobalSettingsApp from "./WebGlobalSettingsApp";
 import Requests from "../../common/requests";
 import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
 import {showToast} from "../../common/ToastUtils";
@@ -84,7 +84,7 @@ export default class SettingsApp extends React.Component {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1 h-full">
-            <CodeInjectionSettingsApp
+            <WebGlobalSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}

@@ -1,12 +1,12 @@
 import React from 'react';
-import AdminTextarea from "../../../components/AdminTextarea";
 import SettingsBase from '../SettingsBase';
+import AdminCodeEditor from "../../../components/AdminCodeEditor";
 
-export default class CodeInjectionSettingsApp extends React.Component {
+export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
     super(props);
 
-    const currentType = 'codeInjection';
+    const currentType = 'webGlobalSettings';
     const {feed} = props;
 
     let headerCode = '';
@@ -26,7 +26,7 @@ export default class CodeInjectionSettingsApp extends React.Component {
     const {currentType, headerCode, footerCode} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
-      title="Web code injection"
+      title="Web global settings"
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
@@ -37,18 +37,28 @@ export default class CodeInjectionSettingsApp extends React.Component {
         });
       }}
     >
-      <div>
-        <div className="lh-page-subtitle">Site Header</div>
-        <div className="text-xs text-muted-color">Code here will be placed right before the <b>{'</head>'}</b> tag on every public web page of the site.</div>
-        <AdminTextarea value={headerCode} onChange={(e) => this.setState({headerCode: e.target.value})}/>
-      </div>
-      <div className="mt-4">
-        <div className="lh-page-subtitle">Site Footer</div>
-        <div className="text-xs text-muted-color">
+      <details>
+        <summary className="lh-page-subtitle cursor-pointer">Site Header</summary>
+        <div className="text-xs text-muted-color mb-4">Code here will be placed right before the <b>{'</head>'}</b> tag on every public web page of the site.</div>
+        <AdminCodeEditor
+          code={headerCode}
+          language="html"
+          minHeight="30vh"
+          onChange={(e) => this.setState({headerCode: e.target.value})}
+        />
+      </details>
+      <details className="mt-4">
+        <summary className="lh-page-subtitle cursor-pointer">Site Footer</summary>
+        <div className="text-xs text-muted-color mb-4">
           Code here will be placed right before the <b>{'</body>'}</b> tag on every public web page of the site. You can put a Google Analytics tag or any 3rd-party js code here.
         </div>
-        <AdminTextarea value={footerCode} onChange={(e) => this.setState({footerCode: e.target.value})}/>
-      </div>
+        <AdminCodeEditor
+          code={footerCode}
+          minHeight="30vh"
+          language="html"
+          onChange={(e) => this.setState({footerCode: e.target.value})}
+        />
+      </details>
     </SettingsBase>);
   }
 }

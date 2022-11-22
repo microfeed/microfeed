@@ -1,11 +1,11 @@
 import React from 'react';
-import CodeEditor from '@uiw/react-textarea-code-editor';
 import AdminNavApp from '../../../components/AdminNavApp';
 import {ADMIN_URLS, PUBLIC_URLS, escapeHtml, unescapeHtml} from "../../../../common-src/StringUtils";
 import {showToast} from "../../../common/ToastUtils";
 import Requests from "../../../common/requests";
 import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
+import AdminCodeEditor from "../../../components/AdminCodeEditor";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -193,19 +193,10 @@ export default class RssStylingApp extends React.Component {
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="text-xs text-muted-color mb-4">{description}</div>
-          <CodeEditor
-            value={code}
+          <AdminCodeEditor
+            code={code}
             language={language}
-            placeholder="Please enter code here"
             onChange={(e) => this.setState({[currentType]: e.target.value})}
-            // prefixCls="h-1/2"
-            style={{
-              minHeight: '50vh',
-              overflow: 'auto',
-              fontSize: 12,
-              backgroundColor: "#f5f5f5",
-              fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
-            }}
           />
         </div>
         <div className="col-span-3">

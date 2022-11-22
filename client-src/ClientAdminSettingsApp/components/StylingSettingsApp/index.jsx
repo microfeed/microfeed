@@ -22,7 +22,7 @@ export default class BrandingSettingsApp extends React.Component {
     const {submitting, submitForType} = this.props;
     const {currentType} = this.state;
     return (<SettingsBase
-      title="Styling"
+      title="Styles"
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
