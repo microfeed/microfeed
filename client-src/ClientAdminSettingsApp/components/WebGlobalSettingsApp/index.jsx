@@ -51,7 +51,25 @@ export default class WebGlobalSettingsApp extends React.Component {
           <AdminImageUploaderApp
             mediaType="favicon"
             currentImageUrl={favicon.url}
-            onImageUploaded={(cdnUrl) => console.log(cdnUrl)}
+            imageSizeNotOkayFunc={(width, height) => {
+              return (width > 256 && height > 256) || (width < 48 && height < 48);
+            }}
+            imageSizeNotOkayMsgFunc={(width, height) => {
+              if (width > 256 && height > 256) {
+                return `Image too big: ${parseInt(width)} x ${parseInt(height)} pixels. ` +
+                  "You'd better upload a smaller image for favicon.";
+              } else if (width < 48 && height < 48) {
+                return `Image too small: ${parseInt(width)} x ${parseInt(height)} pixels. ` +
+                  "You'd better upload a bigger image for favicon.";
+              }
+              return '';
+            }}
+            onImageUploaded={(cdnUrl, contentType) => this.setState({
+              favicon: {
+                url: cdnUrl,
+                contentType,
+              },
+            })}
           />
         </div>
       </details>

@@ -66,6 +66,7 @@ export default class AdminImageUploaderApp extends React.Component {
       previewImageUrl: null,
       cropper: null,
       cdnFilename: null,
+      contentType: '',
       imageWidth: 0,
       imageHeight: 0,
     };
@@ -103,7 +104,7 @@ export default class AdminImageUploaderApp extends React.Component {
       return;
     }
 
-    const {name} = file;
+    const {name, type} = file;
     const extension = name.slice((name.lastIndexOf(".") - 1 >>> 0) + 2);
     let newFilename = `${mediaType}-${randomHex(32)}`;
     if (extension && extension.length > 0) {
@@ -114,11 +115,12 @@ export default class AdminImageUploaderApp extends React.Component {
       previewImageUrl: previewUrl,
       showModal: true,
       cdnFilename: `images/${newFilename}`,
+      contentType: type,
     })
   }
 
   onFileUploadToR2() {
-    const {cropper, cdnFilename} = this.state;
+    const {cropper, cdnFilename, contentType} = this.state;
     if (!cropper) {
       return;
     }
@@ -131,7 +133,7 @@ export default class AdminImageUploaderApp extends React.Component {
           progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`,
         });
       }, (cdnUrl) => {
-        this.props.onImageUploaded(cdnUrl);
+        this.props.onImageUploaded(cdnUrl, contentType);
         cropper.destroy();
         this.setState({
           ...this.initState,
@@ -145,7 +147,12 @@ export default class AdminImageUploaderApp extends React.Component {
     const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth, imageHeight} = this.state;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
-    const sizeTooSmall = imageWidth < 1400 || imageHeight < 1400;
+    const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
+    const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
+      imageWidth < 1400 || imageHeight < 1400;
+    const imageSizeNotOkayMsg = imageSizeNotOkayMsgFunc ? imageSizeNotOkayMsgFunc(imageWidth, imageHeight) :
+      `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
+      "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
     return (<div className="lh-upload-wrapper">
       <FileUploader
         handleChange={this.onFileUpload}
@@ -205,8 +212,8 @@ export default class AdminImageUploaderApp extends React.Component {
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>
         </div>
-        {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", sizeTooSmall ? 'text-red-500' : 'text-green-500')}>
-          {sizeTooSmall ? <div>Image too small: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels. If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.</div> :
+        {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", imageSizeNotOkay ? 'text-red-500' : 'text-green-500')}>
+          {imageSizeNotOkay ? <div>{imageSizeNotOkayMsg}</div> :
             <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
         </div>}
       </AdminDialog>
