@@ -2,18 +2,18 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml)
 
-FeedKit allows you to easily create a self-hosted feed on [Cloudflare Pages](https://pages.cloudflare.com/) and [R2](https://www.cloudflare.com/products/r2/).
+microfeed allows you to easily create a self-hosted feed on [Cloudflare Pages](https://pages.cloudflare.com/) and [R2](https://www.cloudflare.com/products/r2/).
 
-The self-hosted feed can publish audios, videos, photos, documents, blog posts, and any external urls. FeedKit provides a website, an RSS, and a JSON under your own cusdom domain and custom UI design.
+You can publish audios, videos, photos, documents, blog posts, and any external urls to the feed. It's like a very lightweight CMS (Content management system).
 
-There are many use cases of FeedKit. Basically, you can use FeedKit create a self-hosted version of:
-* Podcast: a feed of audios
-* Blog: a feed of texts.
-* Instagram: a feed of photos. E.g., [llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
-* YouTube: a feed of videos
-* Personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
-* Curation site: a feed of article links.
-* Marketing site: a custom web page with updates / press coverage / changelogs. E.g., [feedkit.org](https://www.feedkit.org/)
+There are many use cases of microfeed:
+* Self-hosted Podcast: a feed of audios
+* Self-hosted Blog: a feed of texts.
+* Self-hosted Instagram: a feed of photos. E.g., [llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
+* Self-hosted YouTube: a feed of videos
+* Self-hosted personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
+* Self-hosted content curation site: a feed of article links.
+* Self-hosted mMarketing site: a custom web page with updates / press coverage / changelogs. E.g., [feedkit.org](https://www.feedkit.org/)
 
 Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
 
