@@ -80,6 +80,11 @@ export default class EditItemApp extends React.Component {
       ...feed.items,
       [itemId]: {...item},
     };
+    // XXX: delete later
+    for (let i = 0; i < 1000; i++) {
+      itemsBundle[randomShortUUID()] = {...item};
+    }
+    // XXX: delete later
     this.onUpdateFeed({'items': itemsBundle}, onSuccess);
   }
 
