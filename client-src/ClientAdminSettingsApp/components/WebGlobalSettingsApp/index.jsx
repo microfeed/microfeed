@@ -16,10 +16,7 @@ export default class WebGlobalSettingsApp extends React.Component {
     if (feed.settings && feed.settings[currentType]) {
       headerCode = feed.settings[currentType].headerCode || '';
       footerCode = feed.settings[currentType].footerCode || '';
-      favicon = feed.settings[currentType].favicon || {
-        'url': '/assets/favicon/android-chrome-512x512.png',
-        'contentType': 'image/png',
-      };
+      favicon = feed.settings[currentType].favicon || {};
     }
     this.state = {
       headerCode,

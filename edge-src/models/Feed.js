@@ -268,6 +268,12 @@ export default class Feed {
             {...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false, enabled: true},
           ],
         },
+        webGlobalSettings: {
+          favicon: {
+            'url': '/assets/default/favicon.png',
+            'contentType': 'image/png',
+          },
+        },
       },
     };
   }

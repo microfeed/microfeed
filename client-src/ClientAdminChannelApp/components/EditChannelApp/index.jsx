@@ -53,7 +53,7 @@ function initChannel() {
     link: getPublicBaseUrl(),
     language: 'en-us',
     categories: [],
-    image: '/assets/default/channel_image.png',
+    image: '/assets/default/channel-image.png',
     'itunes:explicit': false,
     'itunes:type': 'episodic',
     'itunes:complete': false,

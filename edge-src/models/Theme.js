@@ -1,7 +1,4 @@
-import {decorateForItem} from "./Feed";
-
 const Mustache = require('mustache');
-
 
 export default class Theme {
   constructor(jsonData, settings=null) {
