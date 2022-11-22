@@ -81,7 +81,7 @@ export default class EditItemApp extends React.Component {
       [itemId]: {...item},
     };
     // XXX: delete later
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 250; i++) {
       itemsBundle[randomShortUUID()] = {...item};
     }
     // XXX: delete later
