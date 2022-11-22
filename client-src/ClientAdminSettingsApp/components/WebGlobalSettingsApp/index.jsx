@@ -1,6 +1,7 @@
 import React from 'react';
 import SettingsBase from '../SettingsBase';
 import AdminCodeEditor from "../../../components/AdminCodeEditor";
+import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 
 export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
@@ -11,19 +12,25 @@ export default class WebGlobalSettingsApp extends React.Component {
 
     let headerCode = '';
     let footerCode = '';
+    let favicon = '';
     if (feed.settings && feed.settings[currentType]) {
       headerCode = feed.settings[currentType].headerCode || '';
       footerCode = feed.settings[currentType].footerCode || '';
+      favicon = feed.settings[currentType].favicon || {
+        'url': '/assets/favicon/android-chrome-512x512.png',
+        'contentType': 'image/png',
+      };
     }
     this.state = {
       headerCode,
       footerCode,
       currentType,
+      favicon,
     };
   }
 
   render() {
-    const {currentType, headerCode, footerCode} = this.state;
+    const {currentType, headerCode, footerCode, favicon} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -34,10 +41,21 @@ export default class WebGlobalSettingsApp extends React.Component {
         this.props.onSubmit(e, currentType, {
           headerCode,
           footerCode,
+          favicon,
         });
       }}
     >
       <details>
+        <summary className="lh-page-subtitle cursor-pointer">Favicon</summary>
+        <div className="flex">
+          <AdminImageUploaderApp
+            mediaType="favicon"
+            currentImageUrl={favicon.url}
+            onImageUploaded={(cdnUrl) => console.log(cdnUrl)}
+          />
+        </div>
+      </details>
+      <details className="mt-4">
         <summary className="lh-page-subtitle cursor-pointer">Site Header</summary>
         <div className="text-xs text-muted-color mb-4">Code here will be placed right before the <b>{'</head>'}</b> tag on every public web page of the site.</div>
         <AdminCodeEditor

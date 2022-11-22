@@ -131,7 +131,9 @@ class CodeInjector {
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
       if (this.settings.webGlobalSettings) {
-        element.append(this.settings.webGlobalSettings.headerCode || '', {html: true});
+        const {headerCode, favicon} = this.settings.webGlobalSettings;
+        element.append(headerCode || '', {html: true});
+        element.append(`<link rel="icon" type="${favicon.contentType}" href="${favicon.url}">`, {html: true});
       }
     } else if (element.tagName === 'body') {
       const {html} = this.theme.getWebFooter();
