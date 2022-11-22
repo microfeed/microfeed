@@ -75,20 +75,20 @@ export default class SettingsApp extends React.Component {
             />
           </div>
           <div className="col-span-1 h-full">
-            <CodeInjectionSettingsApp
+            <StylingSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
-              onSubmit={this.onSubmit}
             />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1 h-full">
-            <StylingSettingsApp
+            <CodeInjectionSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
+              onSubmit={this.onSubmit}
             />
           </div>
         </div>

@@ -29,7 +29,7 @@ export default class BrandingSettingsApp extends React.Component {
     >
         <NavBlock
           url={ADMIN_URLS.sylingSettings()}
-          text="Edit RSS and Web Styling"
+          text="Edit Web and RSS Styling"
         />
     </SettingsBase>);
   }

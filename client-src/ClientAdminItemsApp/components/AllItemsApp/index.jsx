@@ -165,7 +165,12 @@ export default class AllItemsApp extends React.Component {
           {NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
         </div>
         <div>
-          <ItemListTable data={data} />
+          {data.length > 0 ? <ItemListTable data={data} /> : <div>
+            <div className="mb-8">
+              No items yet.
+            </div>
+            <a href={ADMIN_URLS.newItem()}>Add a new item now <span className="lh-icon-arrow-right" /></a>
+          </div>}
         </div>
       </form>
     </AdminNavApp>);
