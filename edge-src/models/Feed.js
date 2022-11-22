@@ -3,6 +3,7 @@ import {buildAudioUrlWithTracking, PUBLIC_URLS, randomShortUUID} from "../../com
 import {ENCLOSURE_CATEGORIES, ITEM_STATUSES, PREDEFINED_SUBSCRIBE_METHODS} from "../../common-src/Constants";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
+import LZString from 'lz-string';
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
@@ -252,17 +253,17 @@ export default class Feed {
   constructor(env, request) {
     const {
       MICROFEED_VERSION,
-      KV_DATABASE,
+      // KV_DATABASE,
 
       // For R2
-      // LH_DATABASE,
+      LH_DATABASE,
     } = env;
     this.MICROFEED_VERSION = MICROFEED_VERSION || DEFAULT_MICROFEED_VERSION;
     this.KEY = `${projectPrefix(env)}/database/${this.MICROFEED_VERSION}-feed.json`;
-    this.LH_DB = KV_DATABASE;
+    // this.LH_DB = KV_DATABASE;
 
     // For R2
-    // this.LH_DB = LH_DATABASE;
+    this.LH_DB = LH_DATABASE;
     this.content = null;
     this.request = request;
   }
@@ -289,18 +290,24 @@ export default class Feed {
 
   async getContent() {
     // For KV
-    const res = await this.LH_DB.get(this.KEY, { type: "json" });
+    // const res = await this.LH_DB.get(this.KEY, { type: "json" });
 
     // For R2
     // const res = await this.LH_DB.get(this.KEY, { type: "json" });
+    const res = await this.LH_DB.get(this.KEY, {type: 'arrayBuffer'});
     if (!res) {
       this.content = await this.putContent(this.initFeed());
     } else {
       // For KV
-      this.content = res;
+      // this.content = res;
 
       // For R2
       // this.content = await res.json();
+      const compressed = await res.arrayBuffer();
+      console.log('DB Compressed', compressed.byteLength);
+      const uncompressed = LZString.decompressFromUint8Array(new Uint8Array(compressed));
+      console.log('DB Uncompressed', uncompressed.length);
+      this.content = JSON.parse(uncompressed);
     }
     return this.content;
   }
@@ -324,10 +331,15 @@ export default class Feed {
     contentDict.microfeed_version = this.MICROFEED_VERSION;
 
     // For KV
-    await this.LH_DB.put(this.KEY, JSON.stringify(contentDict));
+    // await this.LH_DB.put(this.KEY, JSON.stringify(contentDict));
 
     // For R2
-    // await this.LH_DB.put(this.KEY, JSON.stringify(contentDict), {
+    const jsonStr = JSON.stringify(contentDict);
+    const compressed = LZString.compressToUint8Array(jsonStr);
+    await this.LH_DB.put(this.KEY, compressed, {
+      // 'Content-Type': 'text/plain',
+      });
+    // await this.LH_DB.put(this.KEY, compressed, {
     //   'Content-Type': 'application/json; charset=UTF-8',
     //   });
     this.content = contentDict;

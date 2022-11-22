@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
-    "dev": "yarn setup:development && wrangler pages dev --kv KV_DATABASE --compatibility-date=2022-11-17 --persist -- webpack serve --host localhost --mode development",
+    "dev": "yarn setup:development && wrangler pages dev --r2 LH_DATABASE --compatibility-date=2022-11-17 --persist -- webpack serve --host localhost --mode development",
     "setup:development": "yarn install && node ops/generate_local_vars.js",
     "setup:production": "sh ops/generate_vars_toml.sh && yarn install && node ops/init_r2.js && node ops/init_project.js",
     "deploy:cloudflare": "node ops/sync_project_config.js && yarn build:production",
@@ -22,6 +22,7 @@
     "fast-xml-parser": "^4.0.11",
     "html-to-text": "^8.2.1",
     "jest": "25",
+    "lz-string": "^1.4.4",
     "mustache": "^4.2.0",
     "quill-blot-formatter": "^1.0.5",
     "react": "^18.2.0",
