@@ -410,7 +410,19 @@ export default class FeedDb {
       const bindList = [];
       if (thing.queryKwargs) {
         Object.keys(thing.queryKwargs).forEach((kwargKey) => {
-          whereList.push(`${kwargKey} = ?`);
+          const kwargKeyComponents = kwargKey.split('__');
+          let key = kwargKeyComponents[0];
+          let op = '==';
+          if (kwargKeyComponents.length > 0) {
+            switch(kwargKeyComponents[1]) {
+              case 'ne':
+                op = '!=';
+                break;
+              default:
+                break;
+            }
+          }
+          whereList.push(`${key} ${op} ?`);
           bindList.push(thing.queryKwargs[kwargKey]);
         })
       }

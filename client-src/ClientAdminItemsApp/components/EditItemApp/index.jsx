@@ -85,20 +85,17 @@ export default class EditItemApp extends React.Component {
   }
 
   onDelete() {
-    const {feed, itemId} = this.state;
-    delete feed.items[itemId];
-    this.onUpdateFeed({'items': {...feed.items}}, () => {
-      this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.post(ADMIN_URLS.ajaxFeed(), feed)
-        .then(() => {
-          showToast('Deleted!', 'success');
-          setTimeout(() => {
-            this.setState({submitStatus: null}, () => {
-              location.href = ADMIN_URLS.allItems();
-            });
-          }, 1000);
-        });
-    });
+    const {item} = this.state;
+    this.setState({submitStatus: SUBMIT_STATUS__START});
+    Requests.post(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.DELETED}})
+      .then(() => {
+        showToast('Deleted!', 'success');
+        setTimeout(() => {
+          this.setState({submitStatus: null}, () => {
+            location.href = ADMIN_URLS.allItems();
+          });
+        }, 1000);
+      });
   }
 
   onSubmit(e) {
