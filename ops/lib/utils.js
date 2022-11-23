@@ -63,6 +63,13 @@ class WranglerCmd {
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
+
+  getDatabaseId() {
+    const dbName = this.currentEnv !== 'development' ? this._non_dev_db() : 'FEED_DB --local';
+    const wranglerCmd = `wrangler d1 list | grep '${dbName}' | awk '{print $2}'`;
+    console.log(wranglerCmd);
+    return this._getCmd(wranglerCmd);
+  }
 }
 
 module.exports = {

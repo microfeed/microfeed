@@ -1,6 +1,6 @@
 const https = require('https');
-
-const {VarsReader} = require('./lib/utils');
+const {VarsReader, WranglerCmd} = require('./lib/utils');
+const {exec} = require("child_process");
 
 const ALLOWED_VARS = [
   {name: 'CLOUDFLARE_ACCOUNT_ID', encrypted: true},
@@ -23,18 +23,19 @@ class SyncProjectConfig {
   constructor() {
     this.currentEnv = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
     this.v = new VarsReader(this.currentEnv);
+    this.cmd = new WranglerCmd(process.env.DEPLOYMENT_ENVIRONMENT || 'development');
   }
 
-  _getEnvVarsFromFilesJson(envName) {
+  _getEnvVarsFromFilesJson(envName, databaseId) {
     // https://api.cloudflare.com/#pages-project-get-projects
     const envVarsJson = {
       [envName]: {
         'env_vars': {},
-        // "d1_databases": {
-        //   "D1_BINDING": {
-        //     "id": "******138f63"
-        //   }
-        // },
+        "d1_databases": {
+          "D1_BINDING": {
+            "id": databaseId,
+          }
+        },
       }
     };
     ALLOWED_VARS.forEach((varDict) => {
@@ -93,15 +94,19 @@ class SyncProjectConfig {
   syncEnvVars() {
     console.log(`Sync-ing for [${this.currentEnv}]...`);
 
-    const varsToAddOrUpdate = JSON.stringify({
-      'deployment_configs': {
-        ...this._getEnvVarsFromFilesJson(this.currentEnv),
-      },
-    });
+    exec(this.cmd.getDatabaseId(), (error, stdout, stderr) => {
+      const databaseId = stdout.trim();
+      console.log('Database id (num of chars): ', databaseId.length)
+      const varsToAddOrUpdate = JSON.stringify({
+        'deployment_configs': {
+          ...this._getEnvVarsFromFilesJson(this.currentEnv, databaseId),
+        },
+      });
 
-    this._updateEnvVars(varsToAddOrUpdate, (json) => {
-      console.log(`Successfully synced for [${this.currentEnv}]!`);
-      console.log(json.result.deployment_configs[this.currentEnv].env_vars);
+      this._updateEnvVars(varsToAddOrUpdate, (json) => {
+        console.log(`Successfully synced for [${this.currentEnv}]!`);
+        console.log(json.result.deployment_configs[this.currentEnv].env_vars);
+      });
     });
   }
 }
