@@ -4,6 +4,11 @@ export const STATUSES = {
   DELETED: 3,
 };
 
+export const SETTINGS_CATEGORIES = {
+  SUBSCRIBE_METHODS: 'subscribeMethods',
+  WEB_GLOBAL_SETTINGS: 'webGlobalSettings',
+};
+
 export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',

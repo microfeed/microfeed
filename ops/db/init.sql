@@ -2,14 +2,14 @@ CREATE TABLE IF NOT EXISTS channels (
   id VARCHAR(11) PRIMARY KEY,
 
   status TINYINT,   /* 1: PUBLISHED, 2: UNPUBLISHED, 3: DELETED */
-  channel_type TINYINT, /* 1: PRIMARY, 2: SECONDARY */
+  is_primary BOOLEAN UNIQUE,  /* True or NULL*/
   data TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS channels_status on channels (status);
-CREATE INDEX IF NOT EXISTS channels_channel_type on channels (channel_type);
+CREATE INDEX IF NOT EXISTS channels_is_primary on channels (is_primary);
 CREATE INDEX IF NOT EXISTS channels_created_at on channels (created_at);
 CREATE INDEX IF NOT EXISTS channels_updated_at on channels (updated_at);
 
