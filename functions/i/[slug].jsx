@@ -20,7 +20,7 @@ export async function onRequestGet({params, env, request}) {
       });
       return webResponseBuilder.getResponse({
         getComponent: (content, jsonData, theme) => {
-          const item = content.items && content.items.length > 0 ? content.items[0] : null;
+          const item = jsonData.items && jsonData.items.length > 0 ? jsonData.items[0] : null;
           const urlObject = new URL(request.url);
           const canonicalUrl = PUBLIC_URLS.webItem(itemId, item.title, urlObject.origin);
           return <EdgeItemApp item={item} theme={theme} jsonData={jsonData} canonicalUrl={canonicalUrl}/>;
