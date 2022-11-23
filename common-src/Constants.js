@@ -9,6 +9,7 @@ export const SETTINGS_CATEGORIES = {
   WEB_GLOBAL_SETTINGS: 'webGlobalSettings',
   STYLES: 'styles',
   ANALYTICS: 'analytics',
+  ACCESS: 'access',
 };
 
 export const PREDEFINED_SUBSCRIBE_METHODS = {

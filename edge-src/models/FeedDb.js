@@ -198,7 +198,7 @@ export default class FeedDb {
   }
 
   _updateSetting(batchStatements, settings, category) {
-    if (settings[category]) {
+    if (settings[category] && Object.keys(settings[category]).length > 0) {
       const {...data} = settings[category];
       batchStatements.push(this.getUpdateSql(
         'settings',
@@ -209,14 +209,29 @@ export default class FeedDb {
           data: JSON.stringify(data),
         },
       ));
+      return category;
+    }
+  }
+
+  _addSetting(batchStatements, settings, category) {
+    if (settings[category] && Object.keys(settings[category]).length > 0) {
+      const {...data} = settings[category];
+      batchStatements.push(this.getInsertSql(
+        'settings',
+        {
+          category,
+          data: JSON.stringify(data),
+        },
+      ));
+      return category;
     }
   }
 
   async putContent(feed) {
     const {channel, settings} = feed;
-    const batchStatements = [];
     if (channel) {
       const {id, status, is_primary, ...data} = channel;
+      const batchStatements = [];
       batchStatements.push(this.getUpdateSql(
         'channels',
         {
@@ -228,11 +243,34 @@ export default class FeedDb {
           data: JSON.stringify(data),
         },
       ));
+      await this.FEED_DB.batch(batchStatements);
     }
     if (settings) {
-      this._updateSetting(batchStatements, settings, SETTINGS_CATEGORIES.SUBSCRIBE_METHODS);
-      this._updateSetting(batchStatements, settings, SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS);
+      const categories = [
+        SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
+        SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
+        SETTINGS_CATEGORIES.ANALYTICS,
+        SETTINGS_CATEGORIES.STYLES,
+        SETTINGS_CATEGORIES.ACCESS,
+      ];
+      let batchStatements = [];
+      const updatedCategories = [];
+      categories.forEach((category) => {
+        this._updateSetting(batchStatements, settings, category);
+        updatedCategories.push(category);
+      });
+      let responses = await this.FEED_DB.batch(batchStatements);
+
+      batchStatements = [];
+      for (let i = 0; i < responses.length; i++) {
+        const {results} = responses[i];
+        if (results.changes === 0) {
+          this._addSetting(batchStatements, settings, updatedCategories[i]);
+        }
+      }
+      if (batchStatements.length > 0) {
+        await this.FEED_DB.batch(batchStatements);
+      }
     }
-    await this.FEED_DB.batch(batchStatements);
   }
 }
