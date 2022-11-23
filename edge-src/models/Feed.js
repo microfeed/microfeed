@@ -7,29 +7,39 @@ import LZString from 'lz-string';
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
-export function decorateForItem(itemId, item, baseUrl) {
-   item.webUrl = PUBLIC_URLS.webItem(itemId, item.title, baseUrl);
-   item.pubDate = humanizeMs(item.pubDateMs);
-   item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
-   item.descriptionText = convert(item.description, {});
-
-  if (item.mediaFile && item.mediaFile.category) {
-    item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
-    item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
-    item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
-    item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
-    item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
-  }
-}
 
 class FeedPublicJsonBuilder {
   constructor(content, request) {
     this.content = content;
     this.request = request;
     this.settings = content.settings || {};
+    this.webGlobalSettings = this.settings.webGlobalSettings || {};
+    this.publicBucketUrl = this.webGlobalSettings.publicBucketUrl || '';
 
     const urlObj = new URL(this.request.url);
     this.baseUrl = urlObj.origin;
+  }
+
+  _decorateForItem(itemId, item, baseUrl) {
+    item.webUrl = PUBLIC_URLS.webItem(itemId, item.title, baseUrl);
+    item.pubDate = humanizeMs(item.pubDateMs);
+    item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
+    item.descriptionText = convert(item.description, {});
+
+    if (item.image) {
+      item.image = `${this.publicBucketUrl}/${item.image}`;
+    }
+    if (item.mediaFile && item.mediaFile.category) {
+      item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
+      item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
+      item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
+      item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
+      item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
+
+      if (!item.mediaFile.isExternalUrl) {
+        item.mediaFile.url = `${this.publicBucketUrl}/${item.mediaFile.url}`;
+      }
+    }
   }
 
   _buildPublicContentChannel() {
@@ -48,11 +58,11 @@ class FeedPublicJsonBuilder {
     }
 
     if (channel.image) {
-      publicContent['icon'] = channel.image;
+      publicContent['icon'] = `${this.publicBucketUrl}/${channel.image}`;
     }
 
-    if (channel.favicon) {
-      publicContent['favicon'] = channel.favicon;
+    if (this.webGlobalSettings.favicon) {
+      publicContent['favicon'] = `${this.publicBucketUrl}/${this.webGlobalSettings.favicon.url}`;
     }
 
     if (channel.publisher) {
@@ -224,7 +234,7 @@ class FeedPublicJsonBuilder {
       ...this._buildPublicContentChannel(this.content),
     };
 
-    const {items} = this.content;
+    const {items, settings} = this.content;
     const channel = this.content.channel || {};
     const existingitems = items || {};
     publicContent['items'] = [];
@@ -233,7 +243,7 @@ class FeedPublicJsonBuilder {
       if (item.status === ITEM_STATUSES.UNPUBLISHED) {
         return;
       }
-      decorateForItem(itemId, item, this.baseUrl);
+      this._decorateForItem(itemId, item, this.baseUrl);
       const mediaFile = item.mediaFile || {};
       const newItem = this._buildPublicContentItem(itemId, item, mediaFile);
       publicContent.items.push(newItem);
