@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
-    "dev": "yarn setup:development && wrangler pages dev --d1 FEED_DB --r2 LH_DATABASE --compatibility-date=2022-11-17 --persist -- webpack serve --host localhost --mode development",
+    "dev": "yarn setup:development && wrangler pages dev --d1 FEED_DB --compatibility-date=2022-11-17 --persist -- webpack serve --host localhost --mode development",
     "setup:development": "yarn install && node ops/generate_local_vars.js && node ops/init_feed_db.js",
     "setup:production": "sh ops/generate_vars_toml.sh && yarn install && node ops/init_r2.js && node ops/init_feed_db.js && node ops/init_project.js",
     "deploy:cloudflare": "node ops/sync_project_config.js && yarn build:production",

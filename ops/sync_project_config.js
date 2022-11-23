@@ -26,14 +26,15 @@ class SyncProjectConfig {
   }
 
   _getEnvVarsFromFilesJson(envName) {
+    // https://api.cloudflare.com/#pages-project-get-projects
     const envVarsJson = {
       [envName]: {
         'env_vars': {},
-        'r2_buckets': {
-          'LH_DATABASE': {
-            name: this.v.get('R2_PRIVATE_BUCKET')
-          },
-        },
+        // "d1_databases": {
+        //   "D1_BINDING": {
+        //     "id": "******138f63"
+        //   }
+        // },
       }
     };
     ALLOWED_VARS.forEach((varDict) => {
