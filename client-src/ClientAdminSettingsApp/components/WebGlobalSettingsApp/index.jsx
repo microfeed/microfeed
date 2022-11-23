@@ -22,6 +22,8 @@ export default class WebGlobalSettingsApp extends React.Component {
       publicBucketUrl = feed.settings[currentType].publicBucketUrl || '';
     }
     this.state = {
+      feed,
+
       headerCode,
       footerCode,
       currentType,
@@ -31,7 +33,7 @@ export default class WebGlobalSettingsApp extends React.Component {
   }
 
   render() {
-    const {currentType, headerCode, footerCode, favicon, publicBucketUrl} = this.state;
+    const {feed, currentType, headerCode, footerCode, favicon, publicBucketUrl} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -59,6 +61,7 @@ export default class WebGlobalSettingsApp extends React.Component {
         <summary className="lh-page-subtitle cursor-pointer">Favicon</summary>
         <div className="flex">
           <AdminImageUploaderApp
+            feed={feed}
             mediaType="favicon"
             currentImageUrl={favicon.url}
             imageSizeNotOkayFunc={(width, height) => {

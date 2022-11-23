@@ -53,7 +53,6 @@ function initChannel() {
     link: getPublicBaseUrl(),
     language: 'en-us',
     categories: [],
-    image: '/assets/default/channel-image.png',
     'itunes:explicit': false,
     'itunes:type': 'episodic',
     'itunes:complete': false,
@@ -124,7 +123,7 @@ export default class EditChannelApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, channel} = this.state;
+    const {submitStatus, channel, feed} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp>
@@ -134,6 +133,7 @@ export default class EditChannelApp extends React.Component {
             <div className="flex-none">
               <AdminImageUploaderApp
                 mediaType="channel"
+                feed={feed}
                 currentImageUrl={channel.image}
                 onImageUploaded={(cdnUrl) => this.onUpdateChannelMeta('image', cdnUrl)}
               />

@@ -56,11 +56,12 @@ function PreviewCurrentMediaFile({url, contentType, category, durationSecond, si
 }
 
 function MediaUploader(
-  {url, category, contentType, sizeByte, durationSecond, setRef, uploading, progressText, onFileUpload, updateDuration}) {
+  {url, category, contentType, sizeByte, durationSecond, setRef, uploading, progressText,
+    onFileUpload, updateDuration, publicBucketUrl}) {
   const {fileTypes} = ENCLOSURE_CATEGORIES_DICT[category];
   return (<div>
     {url && <PreviewCurrentMediaFile
-      url={url}
+      url={`${publicBucketUrl}/${url}`}
       category={category}
       contentType={contentType}
       sizeByte={sizeByte}
@@ -129,6 +130,9 @@ export default class MediaManager extends React.Component {
       url = urlParams.get('media_url') || '';
     }
 
+    const webGlobalSettings = props.feed.settings.webGlobalSettings || {};
+    const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
+
     this.initState = {
       url: '',
       contentType: null,
@@ -137,6 +141,8 @@ export default class MediaManager extends React.Component {
     };
 
     this.state = {
+      publicBucketUrl,
+
       url,
       category: category || ENCLOSURE_CATEGORIES.AUDIO,
       contentType,
@@ -194,7 +200,7 @@ export default class MediaManager extends React.Component {
   render() {
     const {
       category, url, contentType, sizeByte, durationSecond,
-      uploadStatus, progressText,
+      uploadStatus, progressText, publicBucketUrl,
     } = this.state;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (<div>
@@ -243,6 +249,7 @@ export default class MediaManager extends React.Component {
             })
           }}
         /> : <MediaUploader
+          publicBucketUrl={publicBucketUrl}
           url={url}
           category={category}
           contentType={contentType}

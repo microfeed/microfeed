@@ -131,7 +131,7 @@ export default class EditItemApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, itemId, item, action} = this.state;
+    const {submitStatus, itemId, item, action, feed} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
     const status = item.status || ITEM_STATUSES.PUBLISHED;
@@ -155,6 +155,7 @@ export default class EditItemApp extends React.Component {
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
             <MediaManager
+              feed={feed}
               mediaFile={mediaFile}
               onMediaFileUpdated={(newMediaFile) => {
                 this.onUpdateItemMeta({
@@ -172,6 +173,7 @@ export default class EditItemApp extends React.Component {
               <div>
                 <AdminImageUploaderApp
                   mediaType="item"
+                  feed={feed}
                   currentImageUrl={item.image}
                   onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({'image': cdnUrl})}
                 />

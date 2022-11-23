@@ -25,10 +25,10 @@ function EmptyImage({fileTypes}) {
   </div>);
 }
 
-function PreviewImage({url}) {
+function PreviewImage({url, publicBucketUrl}) {
   return (<div className="relative flex justify-center">
     <img
-      src={url}
+      src={`${publicBucketUrl}/${url}`}
       className={clsx('lh-upload-image-size object-cover', 'gradient-mask-b-20')}
     />
     <div className="absolute bottom-4 text-sm font-normal text-brand-light">
@@ -56,11 +56,15 @@ export default class AdminImageUploaderApp extends React.Component {
     this.onFileUpload = this.onFileUpload.bind(this);
     this.onFileUploadToR2 = this.onFileUploadToR2.bind(this);
 
+    const webGlobalSettings = props.feed.settings.webGlobalSettings || {};
+    const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
+
     this.initState = {
       currentImageUrl: props.currentImageUrl || null,
       mediaType: props.mediaType || 'channel',
       uploadStatus: null,
       progressText: '0.00%',
+      publicBucketUrl,
 
       showModal: false,
       previewImageUrl: null,
@@ -144,7 +148,8 @@ export default class AdminImageUploaderApp extends React.Component {
   }
 
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth, imageHeight} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth,
+      imageHeight, publicBucketUrl} = this.state;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
@@ -162,7 +167,7 @@ export default class AdminImageUploaderApp extends React.Component {
         classes="lh-upload-fileinput"
       >
         <div className="lh-upload-image-size lh-upload-box">
-          {currentImageUrl ? <PreviewImage url={currentImageUrl}/> :
+          {currentImageUrl ? <PreviewImage url={currentImageUrl} publicBucketUrl={publicBucketUrl}/> :
             <EmptyImage fileTypes={fileTypes} />}
         </div>
       </FileUploader>
