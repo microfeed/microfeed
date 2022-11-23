@@ -2,6 +2,7 @@ import React from 'react';
 import SettingsBase from '../SettingsBase';
 import AdminCodeEditor from "../../../components/AdminCodeEditor";
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
+import AdminInput from "../../../components/AdminInput";
 
 export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
@@ -13,21 +14,24 @@ export default class WebGlobalSettingsApp extends React.Component {
     let headerCode = '';
     let footerCode = '';
     let favicon = '';
+    let publicBucketUrl = '';
     if (feed.settings && feed.settings[currentType]) {
       headerCode = feed.settings[currentType].headerCode || '';
       footerCode = feed.settings[currentType].footerCode || '';
       favicon = feed.settings[currentType].favicon || {};
+      publicBucketUrl = feed.settings[currentType].publicBucketUrl || '';
     }
     this.state = {
       headerCode,
       footerCode,
       currentType,
       favicon,
+      publicBucketUrl,
     };
   }
 
   render() {
-    const {currentType, headerCode, footerCode, favicon} = this.state;
+    const {currentType, headerCode, footerCode, favicon, publicBucketUrl} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -39,10 +43,19 @@ export default class WebGlobalSettingsApp extends React.Component {
           headerCode,
           footerCode,
           favicon,
+          publicBucketUrl,
         });
       }}
     >
       <details>
+        <summary className="lh-page-subtitle cursor-pointer">R2 Public Bucket URL</summary>
+        <AdminInput
+          type="url"
+          value={publicBucketUrl}
+          onChange={(e) => this.setState({publicBucketUrl: e.target.value})}
+        />
+      </details>
+      <details className="mt-4">
         <summary className="lh-page-subtitle cursor-pointer">Favicon</summary>
         <div className="flex">
           <AdminImageUploaderApp

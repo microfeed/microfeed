@@ -11,7 +11,6 @@ const ALLOWED_VARS = [
   {name: 'R2_ACCESS_KEY_ID', encrypted: true},
   {name: 'R2_SECRET_ACCESS_KEY', encrypted: true},
   {name: 'R2_PUBLIC_BUCKET', encrypted: true},
-  {name: 'MEDIA_BASE_URL', encrypted: false},
 
   {name: 'ADMIN_USERNAME', encrypted: true},
   {name: 'ADMIN_PASSWORD', encrypted: true},

@@ -59,7 +59,6 @@ You'll need to create these secrets:
 * ADMIN_USERNAME (optional)
 * R2_PUBLIC_BUCKET (optional)
 * R2_PRIVATE_BUCKET (optional)
-* MEDIA_BASE_URL (optional)
 * PRODUCTION_BRANCH (optional)
 
 ### Step 3: Run GitHub Action to deploy code
