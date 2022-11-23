@@ -197,6 +197,20 @@ export default class FeedDb {
     return contentJson;
   }
 
+  _updateSetting(batchStatements, settings, category) {
+    if (settings[category]) {
+      const {...data} = settings[category];
+      batchStatements.push(this.getUpdateSql(
+        'settings',
+        {
+          category,
+        },
+        {
+          data: JSON.stringify(data),
+        },
+      ));
+    }
+  }
 
   async putContent(feed) {
     const {channel, settings} = feed;
@@ -216,31 +230,8 @@ export default class FeedDb {
       ));
     }
     if (settings) {
-      if (settings[SETTINGS_CATEGORIES.SUBSCRIBE_METHODS]) {
-        const {...data} = settings[SETTINGS_CATEGORIES.SUBSCRIBE_METHODS];
-        batchStatements.push(this.getUpdateSql(
-          'settings',
-          {
-            category: SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
-          },
-          {
-            data: JSON.stringify(data),
-          },
-        ));
-      }
-
-      if (settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS]) {
-        const {...data} = settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS];
-        batchStatements.push(this.getUpdateSql(
-          'settings',
-          {
-            category: SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
-          },
-          {
-            data: JSON.stringify(data),
-          },
-        ));
-      }
+      this._updateSetting(batchStatements, settings, SETTINGS_CATEGORIES.SUBSCRIBE_METHODS);
+      this._updateSetting(batchStatements, settings, SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS);
     }
     await this.FEED_DB.batch(batchStatements);
   }
