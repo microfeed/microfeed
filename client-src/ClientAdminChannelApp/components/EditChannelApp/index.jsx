@@ -108,7 +108,7 @@ export default class EditChannelApp extends React.Component {
     this.onUpdateChannelMetaToFeed(() => {
       const {feed} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.post('/admin/ajax/feed/', feed)
+      Requests.post('/admin/ajax/feed/', {channel: feed.channel})
         .then(() => {
           this.setState({submitStatus: null}, () => {
             showToast('Updated!', 'success');

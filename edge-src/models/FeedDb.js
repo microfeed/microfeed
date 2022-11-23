@@ -41,6 +41,25 @@ export default class FeedDb {
     return this.FEED_DB.prepare(sql).bind(...bindList)
   }
 
+  getUpdateSql(table, queryKwargs, keyValuePairs) {
+    let sql = `UPDATE ${table} SET`;
+    const setList = [];
+    Object.keys(keyValuePairs).forEach((key) => {
+      setList.push(`${key} = ?`);
+    });
+    const bindList = Object.values(keyValuePairs);
+    sql = `${sql} ${setList.join(', ')}`;
+    if (queryKwargs && Object.keys(queryKwargs).length > 0) {
+      const queryKeys = [];
+      Object.keys(queryKwargs).forEach((queryKey) => {
+        queryKeys.push(`${queryKey}=?`);
+        bindList.push(queryKwargs[queryKey]);
+      })
+      sql = `${sql} WHERE ${queryKeys.join(' AND ')}`;
+    }
+    return this.FEED_DB.prepare(sql).bind(...bindList)
+  }
+
   async initDb() {
     const settings = {
       [SETTINGS_CATEGORIES.SUBSCRIBE_METHODS]: {
@@ -174,5 +193,26 @@ export default class FeedDb {
       contentJson = await this.initDb();
     }
     return contentJson;
+  }
+
+
+  async putContent(feed) {
+    const {channel} = feed;
+    const batchStatements = [];
+    if (channel) {
+      const {id, status, is_primary, ...data} = channel;
+      batchStatements.push(this.getUpdateSql(
+        'channels',
+        {
+          id,
+        },
+        {
+          status,
+          'is_primary': is_primary,
+          data: JSON.stringify(data),
+        },
+      ));
+    }
+    await this.FEED_DB.batch(batchStatements);
   }
 }
