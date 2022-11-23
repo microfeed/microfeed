@@ -1,6 +1,7 @@
 import ReactDOMServer from "react-dom/server";
-import Feed from "../../edge-src/models/Feed";
+// import Feed from "../../edge-src/models/Feed";
 import Theme from "../models/Theme";
+import FeedDb from "../models/FeedDb";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
@@ -8,12 +9,12 @@ export function renderReactToHtml(Component) {
 
 class ResponseBuilder {
   constructor(env, request) {
-    this.feed = new Feed(env, request);
+    this.feed = new FeedDb(env, request);
   }
 
   async fetchFeed() {
     this.content = await this.feed.getContent();
-    this.settings = await this.feed.getSettings(this.content) || {};
+    this.settings = this.feed.settings || {};
     this.jsonData = await this.feed.getPublicJsonData(this.content);
   }
 
