@@ -34,7 +34,7 @@ export default class SettingsApp extends React.Component {
     }
     feed.settings[bundleKey] = bundle;
     this.setState({submitForType: bundleKey, submitStatus: SUBMIT_STATUS__START});
-    Requests.post(ADMIN_URLS.ajaxFeed(), feed)
+    Requests.post(ADMIN_URLS.ajaxFeed(), {settings: feed.settings})
       .then(() => {
         this.setState({submitStatus: null, submitForType: null}, () => {
           showToast('Updated!', 'success');

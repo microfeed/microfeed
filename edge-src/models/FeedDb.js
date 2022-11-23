@@ -74,6 +74,8 @@ export default class FeedDb {
           'contentType': 'image/png',
         },
       },
+      [SETTINGS_CATEGORIES.ANALYTICS]: {},
+      [SETTINGS_CATEGORIES.STYLES]: {},
     };
     const channel = {
       image: '/assets/default/channel-image.png',
@@ -197,7 +199,7 @@ export default class FeedDb {
 
 
   async putContent(feed) {
-    const {channel} = feed;
+    const {channel, settings} = feed;
     const batchStatements = [];
     if (channel) {
       const {id, status, is_primary, ...data} = channel;
@@ -212,6 +214,33 @@ export default class FeedDb {
           data: JSON.stringify(data),
         },
       ));
+    }
+    if (settings) {
+      if (settings[SETTINGS_CATEGORIES.SUBSCRIBE_METHODS]) {
+        const {...data} = settings[SETTINGS_CATEGORIES.SUBSCRIBE_METHODS];
+        batchStatements.push(this.getUpdateSql(
+          'settings',
+          {
+            category: SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
+          },
+          {
+            data: JSON.stringify(data),
+          },
+        ));
+      }
+
+      if (settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS]) {
+        const {...data} = settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS];
+        batchStatements.push(this.getUpdateSql(
+          'settings',
+          {
+            category: SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
+          },
+          {
+            data: JSON.stringify(data),
+          },
+        ));
+      }
     }
     await this.FEED_DB.batch(batchStatements);
   }

@@ -131,9 +131,10 @@ class CodeInjector {
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
       if (this.settings.webGlobalSettings) {
-        const {headerCode, favicon} = this.settings.webGlobalSettings;
+        const {headerCode, favicon, publicBucketUrl} = this.settings.webGlobalSettings;
         element.append(headerCode || '', {html: true});
-        element.append(`<link rel="icon" type="${favicon.contentType}" href="${favicon.url}">`, {html: true});
+        const faviconUrl = favicon.url.startsWith('/') ? favicon.url : `${publicBucketUrl}/${favicon.url}`;
+        element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
       }
     } else if (element.tagName === 'body') {
       const {html} = this.theme.getWebFooter();
