@@ -45,9 +45,9 @@ export default class EditItemApp extends React.Component {
     const action = itemId ? 'edit' : 'create';
     const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
     if (!feed.items) {
-      feed.items = {};
+      feed.items = [];
     }
-    const item = feed.items[itemId] || initItem();
+    const item = feed.item || initItem();
     this.state = {
       feed,
       item,
@@ -106,7 +106,6 @@ export default class EditItemApp extends React.Component {
 
     const {item, itemId, action} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
-    console.log(item);
     Requests.post(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
       .then(() => {
         if (action === 'edit') {

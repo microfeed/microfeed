@@ -34,6 +34,11 @@ export function msToRFC3339(ms) {
   return dt.toISOString();
 }
 
+export function rfc3399ToMs(str) {
+  const dt = new Date(str);
+  return dt.getTime();
+}
+
 export function datetimeLocalToMs(dt) {
   return dt.getTime();
 }

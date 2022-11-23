@@ -6,7 +6,7 @@ import {
   SETTINGS_CATEGORIES,
   ENCLOSURE_CATEGORIES,
 } from '../../common-src/Constants';
-import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
+import {humanizeMs, msToRFC3339, rfc3399ToMs} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
@@ -26,6 +26,15 @@ function getChannelJson(channelObj) {
   };
 }
 
+function getItemJson(itemObj) {
+  return {
+    id: itemObj.id,
+    status: itemObj.status,
+    pubDateMs: rfc3399ToMs(itemObj.pub_date),
+    ...JSON.parse(itemObj.data)
+  };
+}
+
 class FeedPublicJsonBuilder {
   constructor(content, request) {
     this.content = content;
@@ -38,8 +47,8 @@ class FeedPublicJsonBuilder {
     this.baseUrl = urlObj.origin;
   }
 
-  _decorateForItem(itemId, item, baseUrl) {
-    item.webUrl = PUBLIC_URLS.webItem(itemId, item.title, baseUrl);
+  _decorateForItem(item, baseUrl) {
+    item.webUrl = PUBLIC_URLS.webItem(item.id, item.title, baseUrl);
     item.pubDate = humanizeMs(item.pubDateMs);
     item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
     item.descriptionText = convert(item.description, {});
@@ -155,14 +164,14 @@ class FeedPublicJsonBuilder {
     return microfeedExtra;
   }
 
-  _buildPublicContentItem(itemId, item, mediaFile) {
+  _buildPublicContentItem(item, mediaFile) {
     let trackingUrls = [];
     if (this.settings.analytics && this.settings.analytics.urls) {
       trackingUrls = this.settings.analytics.urls || [];
     }
 
     const newItem = {
-      id: itemId,
+      id: item.id,
       title: item.title || 'untitled',
     };
     const attachment = {};
@@ -254,16 +263,15 @@ class FeedPublicJsonBuilder {
 
     const {items, settings} = this.content;
     const channel = this.content.channel || {};
-    const existingitems = items || {};
+    const existingitems = items || [];
     publicContent['items'] = [];
-    Object.keys(existingitems).forEach((itemId) => {
-      const item = existingitems[itemId];
+    existingitems.forEach((item) => {
       if (item.status === STATUSES.UNPUBLISHED) {
         return;
       }
-      this._decorateForItem(itemId, item, this.baseUrl);
+      this._decorateForItem(item, this.baseUrl);
       const mediaFile = item.mediaFile || {};
-      const newItem = this._buildPublicContentItem(itemId, item, mediaFile);
+      const newItem = this._buildPublicContentItem(item, mediaFile);
       publicContent.items.push(newItem);
     })
     if (channel['itunes:type'] === 'episodic') {
@@ -409,6 +417,9 @@ export default class FeedDb {
       if (whereList.length > 0) {
         sql = `${sql} WHERE ${whereList.join(' AND ')}`;
       }
+      if (thing.limit) {
+        sql = `${sql} LIMIT ${thing.limit}`;
+      }
       batchStatements.push(
         this.FEED_DB.prepare(sql).bind(...bindList)
       );
@@ -431,13 +442,17 @@ export default class FeedDb {
           if (result.is_primary) {
             contentJson['channel'] = getChannelJson(result);
           }
-        })
+        });
+      } else if (thing.table === 'items') {
+        response.results.forEach((result) => {
+          contentJson['items'].push(getItemJson(result));
+        });
       }
     }
     return contentJson;
   }
 
-  async getContent(extraThings = []) {
+  async getContent(fetchItems = null) {
     const things = [
       {
         table: 'channels',
@@ -449,8 +464,14 @@ export default class FeedDb {
       {
         table: 'settings',
       },
-      ...extraThings,
     ];
+
+    if (fetchItems) {
+      things.push({
+        table: 'items',
+        ...fetchItems,
+      });
+    }
 
     let contentJson = await this._getContent(things);
     if (Object.keys(contentJson).length === 0) {

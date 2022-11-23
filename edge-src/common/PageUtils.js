@@ -8,12 +8,13 @@ export function renderReactToHtml(Component) {
 }
 
 class ResponseBuilder {
-  constructor(env, request) {
+  constructor(env, request, fetchItems = null) {
     this.feed = new FeedDb(env, request);
+    this.fetchItems = fetchItems;
   }
 
   async fetchFeed() {
-    this.content = await this.feed.getContent();
+    this.content = await this.feed.getContent(this.fetchItems);
     this.settings = this.feed.settings || {};
     this.jsonData = await this.feed.getPublicJsonData(this.content);
   }
