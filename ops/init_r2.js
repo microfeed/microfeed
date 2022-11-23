@@ -70,14 +70,7 @@ class SetupR2 {
       this._setupCorsRules();
     });
   }
-
-  setupPrivateBucket() {
-    const bucket = this.v.get('R2_PRIVATE_BUCKET');
-    this._setupBucket(bucket, () => {
-    });
-  }
 }
 
 const setupR2 = new SetupR2();
 setupR2.setupPublicBucket();
-setupR2.setupPrivateBucket();

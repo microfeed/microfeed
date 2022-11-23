@@ -26,9 +26,12 @@ function EmptyImage({fileTypes}) {
 }
 
 function PreviewImage({url, publicBucketUrl}) {
+  // Relative url to website for default images, e.g., /assets/default/something.png
+  // Relative url to cdn (r2), e.g., production/something.png
+  const previewUrl = url.startsWith('/') ? url : `${publicBucketUrl}/${url}`;
   return (<div className="relative flex justify-center">
     <img
-      src={`${publicBucketUrl}/${url}`}
+      src={previewUrl}
       className={clsx('lh-upload-image-size object-cover', 'gradient-mask-b-20')}
     />
     <div className="absolute bottom-4 text-sm font-normal text-brand-light">

@@ -1,19 +1,20 @@
 import ReactDOMServer from "react-dom/server";
-import Feed from "../../edge-src/models/Feed";
 import Theme from "../models/Theme";
+import FeedDb from "../models/FeedDb";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
 }
 
 class ResponseBuilder {
-  constructor(env, request) {
-    this.feed = new Feed(env, request);
+  constructor(env, request, fetchItems = null) {
+    this.feed = new FeedDb(env, request);
+    this.fetchItems = fetchItems;
   }
 
   async fetchFeed() {
-    this.content = await this.feed.getContent();
-    this.settings = await this.feed.getSettings(this.content) || {};
+    this.content = await this.feed.getContent(this.fetchItems);
+    this.settings = this.content.settings || {};
     this.jsonData = await this.feed.getPublicJsonData(this.content);
   }
 
@@ -131,9 +132,10 @@ class CodeInjector {
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
       if (this.settings.webGlobalSettings) {
-        const {headerCode, favicon} = this.settings.webGlobalSettings;
+        const {headerCode, favicon, publicBucketUrl} = this.settings.webGlobalSettings;
         element.append(headerCode || '', {html: true});
-        element.append(`<link rel="icon" type="${favicon.contentType}" href="${favicon.url}">`, {html: true});
+        const faviconUrl = favicon.url.startsWith('/') ? favicon.url : `${publicBucketUrl}/${favicon.url}`;
+        element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
       }
     } else if (element.tagName === 'body') {
       const {html} = this.theme.getWebFooter();

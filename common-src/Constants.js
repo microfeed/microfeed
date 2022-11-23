@@ -4,6 +4,14 @@ export const STATUSES = {
   DELETED: 3,
 };
 
+export const SETTINGS_CATEGORIES = {
+  SUBSCRIBE_METHODS: 'subscribeMethods',
+  WEB_GLOBAL_SETTINGS: 'webGlobalSettings',
+  STYLES: 'styles',
+  ANALYTICS: 'analytics',
+  ACCESS: 'access',
+};
+
 export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',
@@ -173,17 +181,12 @@ export const CHANNEL_STATUSES_DICT = {
   },
 };
 
-export const ITEM_STATUSES = {
-  PUBLISHED: 'published',
-  UNPUBLISHED: 'unpublished',
-};
-
 export const ITEM_STATUSES_DICT = {
-  [ITEM_STATUSES.PUBLISHED]: {
+  [STATUSES.PUBLISHED]: {
     name: 'Published',
     description: 'Visible to public',
   },
-  [ITEM_STATUSES.UNPUBLISHED]: {
+  [STATUSES.UNPUBLISHED]: {
     name: 'Unpublished',
     description: 'Not visible to public. You can continue to edit and save it as a draft.'
   },

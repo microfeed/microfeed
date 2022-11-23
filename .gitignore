@@ -111,3 +111,4 @@ webpack-stats.json
 .vars.toml
 *.cjs
 *.mjs
+.yarn/

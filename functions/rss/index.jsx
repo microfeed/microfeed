@@ -2,7 +2,7 @@ import {msToUtcString} from "../../common-src/TimeUtils";
 import {secondsToHHMMSS} from "../../common-src/StringUtils";
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
 import {RssResponseBuilder} from "../../edge-src/common/PageUtils";
-import {OUR_BRAND} from '../../common-src/Constants';
+import {OUR_BRAND, STATUSES} from '../../common-src/Constants';
 
 const {XMLBuilder} = require('fast-xml-parser');
 
@@ -13,7 +13,7 @@ function buildItemsRss(jsonData) {
     const itemJson = {
       'title': item.title || 'untitled',
       'guid': item.id,
-      'pubDate': msToUtcString(item.date_published_ms),
+      'pubDate': msToUtcString(item._microfeed.date_published_ms),
       'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
     };
     if (item['content_html']) {
@@ -158,7 +158,12 @@ function buildChannelRss(jsonData) {
 }
 
 export async function onRequestGet({request, env}) {
-  const rssResponseBuilder = new RssResponseBuilder(env, request);
+  const rssResponseBuilder = new RssResponseBuilder(env, request, {
+    queryKwargs: {
+      status: STATUSES.PUBLISHED,
+    },
+    limit: 20,
+  });
   return await rssResponseBuilder.getResponse({
     buildXmlFunc: (jsonData) => {
       const items = buildItemsRss(jsonData);

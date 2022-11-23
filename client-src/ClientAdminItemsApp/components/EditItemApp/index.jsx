@@ -12,7 +12,7 @@ import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 import MediaManager from "./components/MediaManager";
-import {NAV_ITEMS, NAV_ITEMS_DICT, ITEM_STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
+import {NAV_ITEMS, NAV_ITEMS_DICT, STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
 
@@ -20,6 +20,7 @@ const SUBMIT_STATUS__START = 1;
 
 function initItem(itemId) {
   return ({
+    status: STATUSES.PUBLISHED,
     pubDateMs: datetimeLocalToMs(new Date()),
     guid: itemId,
     'itunes:explicit': false,
@@ -44,9 +45,9 @@ export default class EditItemApp extends React.Component {
     const action = itemId ? 'edit' : 'create';
     const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
     if (!feed.items) {
-      feed.items = {};
+      feed.items = [];
     }
-    const item = feed.items[itemId] || initItem();
+    const item = feed.item || initItem();
     this.state = {
       feed,
       item,
@@ -80,61 +81,52 @@ export default class EditItemApp extends React.Component {
       ...feed.items,
       [itemId]: {...item},
     };
-    // XXX: delete later
-    for (let i = 0; i < 100; i++) {
-      itemsBundle[randomShortUUID()] = {...item};
-    }
-    // XXX: delete later
     this.onUpdateFeed({'items': itemsBundle}, onSuccess);
   }
 
   onDelete() {
-    const {feed, itemId} = this.state;
-    delete feed.items[itemId];
-    this.onUpdateFeed({'items': {...feed.items}}, () => {
-      this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.post(ADMIN_URLS.ajaxFeed(), feed)
-        .then(() => {
-          showToast('Deleted!', 'success');
-          setTimeout(() => {
-            this.setState({submitStatus: null}, () => {
-              location.href = ADMIN_URLS.allItems();
-            });
-          }, 1000);
-        });
-    });
+    const {item} = this.state;
+    this.setState({submitStatus: SUBMIT_STATUS__START});
+    Requests.post(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.DELETED}})
+      .then(() => {
+        showToast('Deleted!', 'success');
+        setTimeout(() => {
+          this.setState({submitStatus: null}, () => {
+            location.href = ADMIN_URLS.allItems();
+          });
+        }, 1000);
+      });
   }
 
   onSubmit(e) {
     e.preventDefault();
-    this.onUpdateItemToFeed(() => {
-      const {feed, itemId, action} = this.state;
-      this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.post(ADMIN_URLS.ajaxFeed(), feed)
-        .then(() => {
-          if (action === 'edit') {
+
+    const {item, itemId, action} = this.state;
+    this.setState({submitStatus: SUBMIT_STATUS__START});
+    Requests.post(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
+      .then(() => {
+        if (action === 'edit') {
+          this.setState({submitStatus: null}, () => {
+            showToast('Updated!', 'success');
+          });
+        } else {
+          showToast('Created!', 'success');
+          setTimeout(() => {
             this.setState({submitStatus: null}, () => {
-              showToast('Updated!', 'success');
+              if (itemId) {
+                location.href = ADMIN_URLS.editItem(itemId);
+              }
             });
-          } else {
-            showToast('Created!', 'success');
-            setTimeout(() => {
-              this.setState({submitStatus: null}, () => {
-                if (itemId) {
-                  location.href = ADMIN_URLS.editItem(itemId);
-                }
-              });
-            }, 1000);
-          }
-        });
-    });
+          }, 1000);
+        }
+      });
   }
 
   render() {
     const {submitStatus, itemId, item, action, feed} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
-    const status = item.status || ITEM_STATUSES.PUBLISHED;
+    const status = item.status || STATUSES.PUBLISHED;
 
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
@@ -304,17 +296,17 @@ export default class EditItemApp extends React.Component {
                   groupName="item-status"
                   buttons={[
                     {
-                      name: ITEM_STATUSES_DICT[ITEM_STATUSES.PUBLISHED].name,
-                      value: ITEM_STATUSES.PUBLISHED,
-                      checked: status === ITEM_STATUSES.PUBLISHED,
+                      name: ITEM_STATUSES_DICT[STATUSES.PUBLISHED].name,
+                      value: STATUSES.PUBLISHED,
+                      checked: status === STATUSES.PUBLISHED,
                     },
                     {
-                      name: ITEM_STATUSES_DICT[ITEM_STATUSES.UNPUBLISHED].name,
-                      value: ITEM_STATUSES.UNPUBLISHED,
-                      checked: status === ITEM_STATUSES.UNPUBLISHED,
+                      name: ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].name,
+                      value: STATUSES.UNPUBLISHED,
+                      checked: status === STATUSES.UNPUBLISHED,
                     }]}
                   onChange={(e) => {
-                    this.onUpdateItemMeta({'status': e.target.value})
+                    this.onUpdateItemMeta({'status': parseInt(e.target.value, 10)})
                   }}
                 />
                 </div>
