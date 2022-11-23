@@ -5,8 +5,8 @@
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
     "dev": "yarn setup:development && wrangler pages dev --d1 FEED_DB --r2 LH_DATABASE --compatibility-date=2022-11-17 --persist -- webpack serve --host localhost --mode development",
-    "setup:development": "yarn install && node ops/generate_local_vars.js",
-    "setup:production": "sh ops/generate_vars_toml.sh && yarn install && node ops/init_r2.js && node ops/init_project.js",
+    "setup:development": "yarn install && node ops/generate_local_vars.js && node ops/init_feed_db.js",
+    "setup:production": "sh ops/generate_vars_toml.sh && yarn install && node ops/init_r2.js && node ops/init_feed_db.js && node ops/init_project.js",
     "deploy:cloudflare": "node ops/sync_project_config.js && yarn build:production",
     "deploy:github": "node ops/sync_project_config.js && node ops/direct_upload.js",
     "test": "jest"
@@ -35,12 +35,15 @@
     "slugify": "^1.6.5"
   },
   "devDependencies": {
+    "@databases/split-sql-query": "1.0.3",
+    "@databases/sql": "3.2.0",
     "@swc/core": "^1.3.8",
     "@swc/jest": "^0.2.23",
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/line-clamp": "^0.4.2",
     "autoprefixer": "^10.4.12",
     "aws-sdk": "^2.1238.0",
+    "better-sqlite3": "7.6.2",
     "clean-webpack-plugin": "^4.0.0",
     "css-loader": "^6.7.1",
     "dotenv": "^16.0.3",

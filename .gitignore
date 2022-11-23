@@ -109,3 +109,5 @@ webpack-stats.json
 *.vars
 .wrangler/
 .vars.toml
+*.cjs
+*.mjs

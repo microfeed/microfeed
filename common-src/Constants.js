@@ -1,3 +1,9 @@
+export const STATUSES = {
+  PUBLISHED: 1,
+  UNPUBLISHED: 2,
+  DELETED: 3,
+};
+
 export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',

@@ -1,5 +1,6 @@
 // import {projectPrefix} from "../../common-src/R2Utils";
 import {randomShortUUID} from "../../common-src/StringUtils";
+import {STATUSES} from '../../common-src/Constants';
 
 export default class FeedDb {
   constructor(env, request) {
@@ -22,11 +23,11 @@ export default class FeedDb {
       },
     };
     const batchStatements = []
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 101; i++) {
       batchStatements.push(
         this.FEED_DB.prepare(
-          'INSERT INTO items (id, data, pub_date) VALUES (?1, ?2, ?3)')
-          .bind(randomShortUUID(), JSON.stringify(data), (new Date()).toISOString())
+          'INSERT INTO items (id, status, data, pub_date) VALUES (?1, ?2, ?3, ?4)')
+          .bind(randomShortUUID(), STATUSES.PUBLISHED, JSON.stringify(data), (new Date()).toISOString())
       );
     }
     const res = await this.FEED_DB.batch(batchStatements);
