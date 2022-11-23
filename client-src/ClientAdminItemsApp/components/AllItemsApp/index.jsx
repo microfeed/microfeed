@@ -113,15 +113,9 @@ export default class AllItemsApp extends React.Component {
 
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
     const items = feed.items || [];
-    const itemList = [];
-    Object.keys(items).forEach((itemId) => {
-      const item = items[itemId];
-      item.id = itemId;
-      itemList.push(item);
-    });
     this.state = {
       feed,
-      itemList,
+      items,
     };
   }
 
@@ -129,8 +123,8 @@ export default class AllItemsApp extends React.Component {
   }
 
   render() {
-    const {itemList} = this.state;
-    const data = itemList.map((item) => ({
+    const {items} = this.state;
+    const data = items.map((item) => ({
       id: (<div>
         <div>{item.id}</div>
         <div className="mt-2">
