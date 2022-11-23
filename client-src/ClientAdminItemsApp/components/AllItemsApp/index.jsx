@@ -4,7 +4,7 @@ import {unescapeHtml, ADMIN_URLS, secondsToHHMMSS, PUBLIC_URLS} from "../../../.
 import {
   ENCLOSURE_CATEGORIES,
   ENCLOSURE_CATEGORIES_DICT,
-  ITEM_STATUSES,
+  STATUSES,
   ITEM_STATUSES_DICT,
   NAV_ITEMS,
   NAV_ITEMS_DICT
@@ -29,7 +29,7 @@ const columns = [
   }),
   columnHelper.accessor('status', {
     header: 'Status',
-    cell: info => <div className={clsx('font-semibold', info.getValue() === ITEM_STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
+    cell: info => <div className={clsx('font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
       {ITEM_STATUSES_DICT[info.getValue()].name}</div>,
     enableSorting: false,
   }),
@@ -140,7 +140,7 @@ export default class AllItemsApp extends React.Component {
           >Edit this item <span className="lh-icon-arrow-right"/></a>
         </div>
       </div>),
-      status: item.status || ITEM_STATUSES.PUBLISHED,
+      status: item.status || STATUSES.PUBLISHED,
       pubDateMs: item.pubDateMs,
       title: <div>
         <div className="line-clamp-2">{item.title}</div>

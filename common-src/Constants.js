@@ -181,17 +181,12 @@ export const CHANNEL_STATUSES_DICT = {
   },
 };
 
-export const ITEM_STATUSES = {
-  PUBLISHED: 'published',
-  UNPUBLISHED: 'unpublished',
-};
-
 export const ITEM_STATUSES_DICT = {
-  [ITEM_STATUSES.PUBLISHED]: {
+  [STATUSES.PUBLISHED]: {
     name: 'Published',
     description: 'Visible to public',
   },
-  [ITEM_STATUSES.UNPUBLISHED]: {
+  [STATUSES.UNPUBLISHED]: {
     name: 'Unpublished',
     description: 'Not visible to public. You can continue to edit and save it as a draft.'
   },

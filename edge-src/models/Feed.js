@@ -1,6 +1,6 @@
 import {projectPrefix} from "../../common-src/R2Utils";
 import {buildAudioUrlWithTracking, PUBLIC_URLS, randomShortUUID} from "../../common-src/StringUtils";
-import {ENCLOSURE_CATEGORIES, ITEM_STATUSES, PREDEFINED_SUBSCRIBE_METHODS} from "../../common-src/Constants";
+import {ENCLOSURE_CATEGORIES, STATUSES, PREDEFINED_SUBSCRIBE_METHODS} from "../../common-src/Constants";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
 import LZString from 'lz-string';
@@ -240,7 +240,7 @@ class FeedPublicJsonBuilder {
     publicContent['items'] = [];
     Object.keys(existingitems).forEach((itemId) => {
       const item = existingitems[itemId];
-      if (item.status === ITEM_STATUSES.UNPUBLISHED) {
+      if (item.status === STATUSES.UNPUBLISHED) {
         return;
       }
       this._decorateForItem(itemId, item, this.baseUrl);

@@ -4,7 +4,7 @@ import {
   STATUSES,
   PREDEFINED_SUBSCRIBE_METHODS,
   SETTINGS_CATEGORIES,
-  ENCLOSURE_CATEGORIES, ITEM_STATUSES
+  ENCLOSURE_CATEGORIES,
 } from '../../common-src/Constants';
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
@@ -258,7 +258,7 @@ class FeedPublicJsonBuilder {
     publicContent['items'] = [];
     Object.keys(existingitems).forEach((itemId) => {
       const item = existingitems[itemId];
-      if (item.status === ITEM_STATUSES.UNPUBLISHED) {
+      if (item.status === STATUSES.UNPUBLISHED) {
         return;
       }
       this._decorateForItem(itemId, item, this.baseUrl);
@@ -489,50 +489,87 @@ export default class FeedDb {
     }
   }
 
-  async putContent(feed) {
-    const {channel, settings} = feed;
-    if (channel) {
-      const {id, status, is_primary, ...data} = channel;
-      const batchStatements = [];
-      batchStatements.push(this.getUpdateSql(
-        'channels',
-        {
-          id,
-        },
-        {
-          status,
-          'is_primary': is_primary,
-          data: JSON.stringify(data),
-        },
-      ));
+  async _putChannelToContent(channel) {
+    const {id, status, is_primary, ...data} = channel;
+    const batchStatements = [];
+    batchStatements.push(this.getUpdateSql(
+      'channels',
+      {
+        id,
+      },
+      {
+        status,
+        'is_primary': is_primary,
+        data: JSON.stringify(data),
+      },
+    ));
+    await this.FEED_DB.batch(batchStatements);
+  }
+
+  async _putSettingsToContent(settings) {
+    const categories = [
+      SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
+      SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
+      SETTINGS_CATEGORIES.ANALYTICS,
+      SETTINGS_CATEGORIES.STYLES,
+      SETTINGS_CATEGORIES.ACCESS,
+    ];
+    let batchStatements = [];
+    const updatedCategories = [];
+    categories.forEach((category) => {
+      this._updateSetting(batchStatements, settings, category);
+      updatedCategories.push(category);
+    });
+    let responses = await this.FEED_DB.batch(batchStatements);
+
+    batchStatements = [];
+    for (let i = 0; i < responses.length; i++) {
+      const {results} = responses[i];
+      if (results.changes === 0) {
+        this._addSetting(batchStatements, settings, updatedCategories[i]);
+      }
+    }
+    if (batchStatements.length > 0) {
       await this.FEED_DB.batch(batchStatements);
     }
-    if (settings) {
-      const categories = [
-        SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
-        SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
-        SETTINGS_CATEGORIES.ANALYTICS,
-        SETTINGS_CATEGORIES.STYLES,
-        SETTINGS_CATEGORIES.ACCESS,
-      ];
-      let batchStatements = [];
-      const updatedCategories = [];
-      categories.forEach((category) => {
-        this._updateSetting(batchStatements, settings, category);
-        updatedCategories.push(category);
-      });
-      let responses = await this.FEED_DB.batch(batchStatements);
+  }
 
-      batchStatements = [];
-      for (let i = 0; i < responses.length; i++) {
-        const {results} = responses[i];
-        if (results.changes === 0) {
-          this._addSetting(batchStatements, settings, updatedCategories[i]);
-        }
-      }
-      if (batchStatements.length > 0) {
-        await this.FEED_DB.batch(batchStatements);
-      }
+  async _putItemToContent(item) {
+    const {id, pubDateMs, status, ...data} = item;
+    const keyValuePairs = {
+      status,
+      'pub_date': msToRFC3339(pubDateMs),
+      data: JSON.stringify(data),
+    };
+    const res = await this.getUpdateSql(
+      'items',
+      {
+        id,
+      },
+      {
+        ...keyValuePairs,
+      },
+    ).run();
+    if (res.changes === 0) {
+      await this.getInsertSql('items', {
+        id,
+        ...keyValuePairs,
+      }).run();
+    }
+  }
+
+  async putContent(feed) {
+    const {channel, settings, item} = feed;
+    if (channel) {
+      await this._putChannelToContent(channel);
+    }
+
+    if (settings) {
+      await this._putSettingsToContent(settings);
+    }
+
+    if (item) {
+      await this._putItemToContent(item);
     }
   }
 
