@@ -32,7 +32,7 @@ class SyncProjectConfig {
       [envName]: {
         'env_vars': {},
         "d1_databases": {
-          "D1_BINDING": {
+          "FEED_DB": {
             "id": databaseId,
           }
         },
