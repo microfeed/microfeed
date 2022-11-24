@@ -562,9 +562,9 @@ export default class FeedDb {
 
     batchStatements = [];
     for (let i = 0; i < responses.length; i++) {
-      const {results} = responses[i];
-      console.log(results);
-      if (results.changes === 0) {
+      const res = responses[i];
+      console.log(res);
+      if ((res.meta && !res.meta.changes) || res.results.changes === 0) {
         this._addSetting(batchStatements, settings, updatedCategories[i]);
       }
     }
@@ -590,7 +590,7 @@ export default class FeedDb {
       },
     ).run();
     console.log(res);
-    if (res.changes === 0) {
+    if ((res.meta && !res.meta.changes) || (res.changes === 0)) {
       await this.getInsertSql('items', {
         id,
         ...keyValuePairs,
