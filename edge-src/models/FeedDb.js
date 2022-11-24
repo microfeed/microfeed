@@ -564,6 +564,7 @@ export default class FeedDb {
     for (let i = 0; i < responses.length; i++) {
       const res = responses[i];
       console.log(res);
+      // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
       if ((res.meta && !res.meta.changes) || res.results.changes === 0) {
         this._addSetting(batchStatements, settings, updatedCategories[i]);
       }
@@ -590,6 +591,7 @@ export default class FeedDb {
       },
     ).run();
     console.log(res);
+    // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
     if ((res.meta && !res.meta.changes) || (res.changes === 0)) {
       await this.getInsertSql('items', {
         id,
