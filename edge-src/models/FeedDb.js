@@ -592,11 +592,16 @@ export default class FeedDb {
     ).run();
     console.log(res);
     // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
-    if ((res.meta && !res.meta.changes) || (res.changes === 0)) {
-      await this.getInsertSql('items', {
-        id,
-        ...keyValuePairs,
-      }).run();
+    try {
+      if ((res.meta && !res.meta.changes) || (res.changes === 0)) {
+        await this.getInsertSql('items', {
+          id,
+          ...keyValuePairs,
+        }).run();
+      }
+    } catch (error) {
+      console.log(error);
+      console.log(keyValuePairs);
     }
   }
 
