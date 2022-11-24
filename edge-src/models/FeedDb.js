@@ -561,6 +561,7 @@ export default class FeedDb {
     } catch (error) {
       console.log('Failed to insert for ', category, error);
     }
+    console.log('Done insert.');
     try {
       console.log('Trying to update...');
       res = await this.getUpdateSql(
