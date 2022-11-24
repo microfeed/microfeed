@@ -239,7 +239,6 @@ export default class FeedPublicJsonBuilder {
     };
 
     const {items} = this.content;
-    const channel = this.content.channel || {};
     const existingitems = items || [];
     publicContent['items'] = [];
     existingitems.forEach((item) => {
@@ -251,11 +250,14 @@ export default class FeedPublicJsonBuilder {
       const newItem = this._buildPublicContentItem(item, mediaFile);
       publicContent.items.push(newItem);
     })
-    if (channel['itunes:type'] === 'episodic') {
-      publicContent.items.sort((a, b) => b['_microfeed']['date_published_ms'] - a['_microfeed']['date_published_ms']);
-    } else {
-      publicContent.items.sort((a, b) => a['_microfeed']['date_published_ms'] - b['_microfeed']['date_published_ms']);
-    }
+
+    // Note: We don't proactively sort items based on itunes:type.
+    //       Instead, we rely on ?sort= query param and settings
+    // if (channel['itunes:type'] === 'episodic') {
+    //   publicContent.items.sort((a, b) => b['_microfeed']['date_published_ms'] - a['_microfeed']['date_published_ms']);
+    // } else {
+    //   publicContent.items.sort((a, b) => a['_microfeed']['date_published_ms'] - b['_microfeed']['date_published_ms']);
+    // }
 
     publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra();
     return publicContent;
