@@ -41,9 +41,9 @@ function CodeTabs({currentType, setState}) {
       onClick={() => setState({currentType: 'webHeader'})}
     />
     <TabButton
-      name="Web Footer"
-      selected={currentType === 'webFooter'}
-      onClick={() => setState({currentType: 'webFooter'})}
+      name="Web Body End"
+      selected={currentType === 'webBodyEnd'}
+      onClick={() => setState({currentType: 'webBodyEnd'})}
     />
     <TabButton
       name="RSS Stylesheet"
@@ -78,7 +78,7 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
-      webFooter,
+      webBodyEnd,
       webHeader,
     } = themeTmplJson;
 
@@ -89,7 +89,7 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
-      webFooter,
+      webBodyEnd,
       webHeader,
 
       feed,
@@ -126,14 +126,14 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
-      webFooter,
+      webBodyEnd,
       webHeader,
     } = this.state;
     this.onUpdateFeed(themeName, {
       rssStylesheet,
       webItem,
       webFeed,
-      webFooter,
+      webBodyEnd,
       webHeader,
     }, () => {
       Requests.post('/admin/ajax/feed/', {settings: {styles: this.state.feed.settings.styles}})
@@ -176,7 +176,7 @@ export default class RssStylingApp extends React.Component {
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.</div>
         break;
-      case 'webFooter':
+      case 'webBodyEnd':
         viewUrl = PUBLIC_URLS.webFeed();
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.</div>

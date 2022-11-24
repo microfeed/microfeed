@@ -139,8 +139,8 @@ class CodeInjector {
 
     if (element.tagName === 'head') {
       if (this.settings.webGlobalSettings) {
-        const {headerCode, favicon, publicBucketUrl} = this.settings.webGlobalSettings;
-        element.append(headerCode || '', {html: true});
+        const {webHeader, favicon, publicBucketUrl} = this.settings.webGlobalSettings;
+        element.append(webHeader || '', {html: true});
         if (favicon && favicon.url) {
           const faviconUrl = favicon.url.startsWith('/') ? favicon.url : `${publicBucketUrl}/${favicon.url}`;
           element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
@@ -150,9 +150,9 @@ class CodeInjector {
       element.append(html, {html: true});
     } else if (element.tagName === 'body') {
       if (this.settings.webGlobalSettings) {
-        element.append(this.settings.webGlobalSettings.footerCode || '', {html: true});
+        element.append(this.settings.webGlobalSettings.webBodyEnd || '', {html: true});
       }
-      const {html} = this.theme.getWebFooter();
+      const {html} = this.theme.getWebBodyEnd();
       element.append(html, {html: true});
     }
   }

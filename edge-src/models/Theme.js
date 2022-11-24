@@ -31,18 +31,34 @@ export default class Theme {
     return tmpl;
   }
 
-  getWebFooter() {
-    const tmpl = this.getWebFooterTmpl();
+  getWebBodyEnd() {
+    const tmpl = this.getWebBodyEndTmpl();
     const html = Mustache.render(tmpl, {...this.jsonData,});
     return {html};
   }
 
-  getWebFooterTmpl() {
+  getWebBodyEndTmpl() {
     let tmpl = null;
     if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/web_footer.html');
+      tmpl = require('../common/default_themes/web_body_end.html');
     } else {
-      tmpl = this.settings.styles.themes[this.theme].webFooter;
+      tmpl = this.settings.styles.themes[this.theme].webBodyEnd;
+    }
+    return tmpl;
+  }
+
+  getWebBodyStart() {
+    const tmpl = this.getWebBodyStartTmpl();
+    const html = Mustache.render(tmpl, {...this.jsonData,});
+    return {html};
+  }
+
+  getWebBodyStartTmpl() {
+    let tmpl = null;
+    if (this.theme === 'default') {
+      tmpl = require('../common/default_themes/web_body_start.html');
+    } else {
+      tmpl = this.settings.styles.themes[this.theme].webBodyStart;
     }
     return tmpl;
   }

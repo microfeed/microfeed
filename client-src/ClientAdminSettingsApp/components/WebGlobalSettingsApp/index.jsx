@@ -14,15 +14,15 @@ export default class WebGlobalSettingsApp extends React.Component {
     const currentType = 'webGlobalSettings';
     const {feed} = props;
 
-    let headerCode = '';
-    let footerCode = '';
+    let webHeader = '';
+    let webBodyEnd = '';
     let favicon = '';
     let publicBucketUrl = '';
     let itemsPerPage = DEFAULT_ITEMS_PER_PAGE;
     let itemsSortOrder = ITEMS_SORT_ORDERS.NEWEST_FIRST;
     if (feed.settings && feed.settings[currentType]) {
-      headerCode = feed.settings[currentType].headerCode || '';
-      footerCode = feed.settings[currentType].footerCode || '';
+      webHeader = feed.settings[currentType].webHeader || '';
+      webBodyEnd = feed.settings[currentType].webBodyEnd || '';
       favicon = feed.settings[currentType].favicon || {};
       publicBucketUrl = feed.settings[currentType].publicBucketUrl || '';
       itemsSortOrder = feed.settings[currentType].itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
@@ -31,8 +31,8 @@ export default class WebGlobalSettingsApp extends React.Component {
     this.state = {
       feed,
 
-      headerCode,
-      footerCode,
+      webHeader,
+      webBodyEnd,
       currentType,
       favicon,
       publicBucketUrl,
@@ -42,7 +42,7 @@ export default class WebGlobalSettingsApp extends React.Component {
   }
 
   render() {
-    const {feed, currentType, headerCode, footerCode, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
+    const {feed, currentType, webHeader, webBodyEnd, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -51,8 +51,8 @@ export default class WebGlobalSettingsApp extends React.Component {
       currentType={currentType}
       onSubmit={(e) => {
         this.props.onSubmit(e, currentType, {
-          headerCode,
-          footerCode,
+          webHeader,
+          webBodyEnd,
           favicon,
           publicBucketUrl,
           itemsSortOrder,
@@ -140,25 +140,25 @@ export default class WebGlobalSettingsApp extends React.Component {
         </div>
       </details>
       <details className="mt-4">
-        <summary className="lh-page-subtitle cursor-pointer">Site Header</summary>
+        <summary className="lh-page-subtitle cursor-pointer">Web Header</summary>
         <div className="text-xs text-muted-color mb-4">Code here will be placed right before the <b>{'</head>'}</b> tag on every public web page of the site.</div>
         <AdminCodeEditor
-          code={headerCode}
+          code={webHeader}
           language="html"
           minHeight="30vh"
-          onChange={(e) => this.setState({headerCode: e.target.value})}
+          onChange={(e) => this.setState({webHeader: e.target.value})}
         />
       </details>
       <details className="mt-4">
-        <summary className="lh-page-subtitle cursor-pointer">Site Footer</summary>
+        <summary className="lh-page-subtitle cursor-pointer">Web Body End</summary>
         <div className="text-xs text-muted-color mb-4">
           Code here will be placed right before the <b>{'</body>'}</b> tag on every public web page of the site. You can put a Google Analytics tag or any 3rd-party js code here.
         </div>
         <AdminCodeEditor
-          code={footerCode}
+          code={webBodyEnd}
           minHeight="30vh"
           language="html"
-          onChange={(e) => this.setState({footerCode: e.target.value})}
+          onChange={(e) => this.setState({webBodyEnd: e.target.value})}
         />
       </details>
     </SettingsBase>);
