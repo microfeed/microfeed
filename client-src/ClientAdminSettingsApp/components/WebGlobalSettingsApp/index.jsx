@@ -3,6 +3,9 @@ import SettingsBase from '../SettingsBase';
 import AdminCodeEditor from "../../../components/AdminCodeEditor";
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminInput from "../../../components/AdminInput";
+import {DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE} from "../../../../common-src/Constants";
+import AdminRadio from "../../../components/AdminRadio";
+import {showToast} from "../../../common/ToastUtils";
 
 export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
@@ -15,11 +18,15 @@ export default class WebGlobalSettingsApp extends React.Component {
     let footerCode = '';
     let favicon = '';
     let publicBucketUrl = '';
+    let itemsPerPage = DEFAULT_ITEMS_PER_PAGE;
+    let itemsSortOrder = ITEMS_SORT_ORDERS.NEWEST_FIRST;
     if (feed.settings && feed.settings[currentType]) {
       headerCode = feed.settings[currentType].headerCode || '';
       footerCode = feed.settings[currentType].footerCode || '';
       favicon = feed.settings[currentType].favicon || {};
       publicBucketUrl = feed.settings[currentType].publicBucketUrl || '';
+      itemsSortOrder = feed.settings[currentType].itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
+      itemsPerPage = feed.settings[currentType].itemsPerPage || DEFAULT_ITEMS_PER_PAGE;
     }
     this.state = {
       feed,
@@ -29,11 +36,13 @@ export default class WebGlobalSettingsApp extends React.Component {
       currentType,
       favicon,
       publicBucketUrl,
+      itemsPerPage,
+      itemsSortOrder,
     };
   }
 
   render() {
-    const {feed, currentType, headerCode, footerCode, favicon, publicBucketUrl} = this.state;
+    const {feed, currentType, headerCode, footerCode, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -46,6 +55,8 @@ export default class WebGlobalSettingsApp extends React.Component {
           footerCode,
           favicon,
           publicBucketUrl,
+          itemsSortOrder,
+          itemsPerPage,
         });
       }}
     >
@@ -84,6 +95,48 @@ export default class WebGlobalSettingsApp extends React.Component {
               },
             })}
           />
+        </div>
+      </details>
+      <details className="mt-4">
+        <summary className="lh-page-subtitle cursor-pointer">Items Settings</summary>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-1">
+            <AdminInput
+              label="Items per page"
+              type="number"
+              extraParams={{
+                'min': 0,
+                'max': MAX_ITEMS_PER_PAGE,
+              }}
+              value={itemsPerPage}
+              onChange={(e) => {
+                let newItemsPerPage = parseInt(e.target.value, 10);
+                if (newItemsPerPage > MAX_ITEMS_PER_PAGE) {
+                  newItemsPerPage = MAX_ITEMS_PER_PAGE;
+                  showToast(`Items per page should be less than ${MAX_ITEMS_PER_PAGE}`, 'error', 5000)
+                } else if (newItemsPerPage < 0) {
+                  showToast('Items per page should not be a negative number', 'error', 5000)
+                }
+                this.setState({itemsPerPage: newItemsPerPage})
+              }}
+            />
+          </div>
+          <div className="col-span-1">
+            <AdminRadio
+              label="Items sort order"
+              groupName="items-sort-order"
+              buttons={[{
+                name: 'Newest first',
+                value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
+                checked: itemsSortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST,
+              }, {
+                name: 'Oldest first',
+                value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
+                checked: itemsSortOrder === ITEMS_SORT_ORDERS.OLDEST_FIRST,
+              }]}
+              onChange={(e) => this.setState({itemsSortOrder: e.target.value})}
+            />
+          </div>
         </div>
       </details>
       <details className="mt-4">

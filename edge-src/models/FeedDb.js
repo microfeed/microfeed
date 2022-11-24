@@ -114,10 +114,8 @@ export default class FeedDb {
           'url': '/assets/default/favicon.png',
           'contentType': 'image/png',
         },
-        itemsSettings: {
-          'sortOrder': ITEMS_SORT_ORDERS.NEWEST_FIRST,
-          'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
-        },
+        'itemsSortOrder': ITEMS_SORT_ORDERS.NEWEST_FIRST,
+        'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
       },
       [SETTINGS_CATEGORIES.ANALYTICS]: {},
       [SETTINGS_CATEGORIES.STYLES]: {},
@@ -265,13 +263,13 @@ export default class FeedDb {
     let itemJson = {};
     if (fetchItems) {
       const webGlobalSettings = contentJson.settings.webGlobalSettings || {};
-      const itemsSettings = webGlobalSettings.itemsSettings || {};
 
       const fromUrl = fetchItems.fromUrl || {};
       const queryKwargs = fetchItems.queryKwargs || {};
-      const sortOrder = fromUrl.sortOrder || itemsSettings.sortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
+      const sortOrder = fromUrl.sortOrder || webGlobalSettings.itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
       const nextCursor = fromUrl.nextCursor;
 
+      console.log(sortOrder);
       let orderBy = ['pub_date desc', 'id'];
       let queryParam = 'pub_date__<';
       if (sortOrder === ITEMS_SORT_ORDERS.OLDEST_FIRST) {
@@ -286,7 +284,7 @@ export default class FeedDb {
         }
       }
       const fetchItemsParams = {
-        limit: itemsSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
+        limit: webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
         orderBy,
         queryKwargs,
       };
