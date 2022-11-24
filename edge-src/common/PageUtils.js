@@ -1,19 +1,20 @@
 import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
-import FeedDb from "../models/FeedDb";
+import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
+import {STATUSES} from "../../common-src/Constants";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
 }
 
 class ResponseBuilder {
-  constructor(env, request, fetchItems = null) {
+  constructor(env, request) {
     this.feed = new FeedDb(env, request);
-    this.fetchItems = fetchItems;
+    this.request = request;
   }
 
   async fetchFeed() {
-    this.content = await this.feed.getContent(this.fetchItems);
+    this.content = await this.feed.getContent(this._fetchItems);
     this.settings = this.content.settings || {};
     this.jsonData = await this.feed.getPublicJsonData(this.content);
   }
@@ -64,8 +65,15 @@ class ResponseBuilder {
   //
   // Override these two methods
   //
+
   get _contentType() {
     return 'text/html; charset=utf-8';
+  }
+
+  get _fetchItems() {
+    return getFetchItemsParams(this.request, {
+      status: STATUSES.PUBLISHED,
+    });
   }
 
   /**
@@ -91,6 +99,7 @@ export class RssResponseBuilder extends ResponseBuilder {
   get _contentType() {
     return 'application/xml';
   }
+
   _getResponse(props) {
     const res = super._getResponse(props);
     const {subscribeMethods} = this.settings;

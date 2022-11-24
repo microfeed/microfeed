@@ -12,6 +12,9 @@ export const SETTINGS_CATEGORIES = {
   ACCESS: 'access',
 };
 
+export const DEFAULT_ITEMS_PER_PAGE = 20;
+export const MAX_ITEMS_PER_PAGE = 50;
+
 export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',

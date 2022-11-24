@@ -4,9 +4,39 @@ import {
   STATUSES,
   PREDEFINED_SUBSCRIBE_METHODS,
   SETTINGS_CATEGORIES,
+  DEFAULT_ITEMS_PER_PAGE,
 } from '../../common-src/Constants';
 import {msToRFC3339, rfc3399ToMs} from "../../common-src/TimeUtils";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
+
+/**
+ * support url query parameters:
+ * - next_cursor: pub_date in milliseconds
+ * - sort: "oldest_first", or "newest_first" (default).
+ *
+ * Example: /json/?next_cursor=1669249854169&sort=oldest_first
+ */
+export function getFetchItemsParams(request, queryKwargs = {}) {
+  const fetchItems = {
+    queryKwargs,
+    fromUrl: {},
+  };
+
+  const { searchParams } = new URL(request.url)
+  const cursor = searchParams.get('next_cursor');
+  const sortOrder = searchParams.get('sort');
+  if (sortOrder) {
+    fetchItems.fromUrl.sortOrder = sortOrder;
+  }
+  if (cursor) {
+    try {
+      fetchItems.fromUrl.nextCursor = parseInt(cursor, 10);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  return fetchItems;
+}
 
 function getSettingJson(settingObj) {
   return {
@@ -87,6 +117,10 @@ export default class FeedDb {
           'url': '/assets/default/favicon.png',
           'contentType': 'image/png',
         },
+        itemsSettings: {
+          'sortOrder': 'newest_first',
+          'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
+        },
       },
       [SETTINGS_CATEGORIES.ANALYTICS]: {},
       [SETTINGS_CATEGORIES.STYLES]: {},
@@ -158,14 +192,9 @@ export default class FeedDb {
           const kwargKeyComponents = kwargKey.split('__');
           let key = kwargKeyComponents[0];
           let op = '==';
-          if (kwargKeyComponents.length > 0) {
-            switch(kwargKeyComponents[1]) {
-              case 'ne':
-                op = '!=';
-                break;
-              default:
-                break;
-            }
+          if (kwargKeyComponents.length > 0 &&
+            ['!=', '>', '<', '>=', '<=', '=='].includes(kwargKeyComponents[1])) {
+            op = kwargKeyComponents[1];
           }
           whereList.push(`${key} ${op} ?`);
           bindList.push(thing.queryKwargs[kwargKey]);
@@ -173,6 +202,9 @@ export default class FeedDb {
       }
       if (whereList.length > 0) {
         sql = `${sql} WHERE ${whereList.join(' AND ')}`;
+      }
+      if (thing.orderBy && thing.orderBy.length > 0) {
+        sql = `${sql} ORDER BY ${thing.orderBy.join(',')}`
       }
       if (thing.limit) {
         sql = `${sql} LIMIT ${thing.limit}`;
@@ -182,35 +214,38 @@ export default class FeedDb {
       );
     });
     const responses = await this.FEED_DB.batch(batchStatements);
-    const contentJson = {
-      'channel': {},
-      'items': [],
-      'settings': {},
-    };
+    const contentJson = {};
     for (let i = 0; i < things.length; i++) {
       const response = responses[i];
       const thing = things[i];
       if (thing.table === 'settings') {
+        contentJson.settings = {};
         response.results.forEach((result) => {
           contentJson['settings'][result.category] = getSettingJson(result);
         });
       } else if (thing.table === 'channels') {
+        contentJson.channel = {};
         response.results.forEach((result) => {
           if (result.is_primary) {
             contentJson['channel'] = getChannelJson(result);
           }
         });
       } else if (thing.table === 'items') {
+        contentJson.items = [];
+        let nextCursor;
         response.results.forEach((result) => {
-          contentJson['items'].push(getItemJson(result));
+          const itemJson = getItemJson(result);
+          contentJson['items'].push(itemJson);
+          nextCursor = itemJson.pubDateMs;
         });
+        contentJson['items_next_cursor'] = nextCursor;
       }
     }
     return contentJson;
   }
 
   async getContent(fetchItems = null) {
-    const things = [
+    let things = [
       {
         table: 'channels',
         queryKwargs: {
@@ -223,20 +258,49 @@ export default class FeedDb {
       },
     ];
 
-    if (fetchItems) {
-      things.push({
-        table: 'items',
-        ...fetchItems,
-      });
-    }
-
     let contentJson = await this._getContent(things);
     if (Object.keys(contentJson).length === 0 || !contentJson.channel ||
       Object.keys(contentJson.channel).length === 0 || !contentJson.settings ||
       Object.keys(contentJson.settings).length === 0) {
       contentJson = await this.initDb();
     }
-    return contentJson;
+
+    let itemJson = {};
+    if (fetchItems) {
+      const webGlobalSettings = contentJson.settings.webGlobalSettings || {};
+      const itemsSettings = webGlobalSettings.itemsSettings || {};
+
+      const fromUrl = fetchItems.fromUrl || {};
+      const queryKwargs = fetchItems.queryKwargs || {};
+      const sortOrder = fromUrl.sortOrder || itemsSettings.sortOrder;
+      const nextCursor = fromUrl.nextCursor;
+
+      let orderBy = ['pub_date desc', 'id'];
+      let queryParam = 'pub_date__<';
+      if (sortOrder === 'oldest_first') {
+        orderBy = ['pub_date', 'id'];
+        queryParam = 'pub_date__>';
+      }
+      if (nextCursor) {
+        try {
+          queryKwargs[queryParam] = msToRFC3339(nextCursor);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+      const fetchItemsParams = {
+        limit: itemsSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
+        orderBy,
+        queryKwargs,
+      };
+      things = [{
+        table: 'items',
+        ...fetchItemsParams,
+      }];
+      itemJson = await this._getContent(things);
+    }
+
+    return {...contentJson, ...itemJson};
   }
 
   _updateSetting(batchStatements, updatedCategories, settings, category) {
