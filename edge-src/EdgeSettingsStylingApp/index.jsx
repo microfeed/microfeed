@@ -15,6 +15,7 @@ export default class AdminSettingsApp extends React.Component {
       rssStylesheet: theme.getRssStylesheetTmpl(),
       webItem: theme.getWebItemTmpl(),
       webFeed: theme.getWebFeedTmpl(),
+      webBodyStart: theme.getWebBodyStartTmpl(),
       webBodyEnd: theme.getWebBodyEndTmpl(),
       webHeader: theme.getWebHeaderTmpl(),
     };

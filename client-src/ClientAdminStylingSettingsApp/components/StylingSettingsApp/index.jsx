@@ -41,6 +41,11 @@ function CodeTabs({currentType, setState}) {
       onClick={() => setState({currentType: 'webHeader'})}
     />
     <TabButton
+      name="Web Body Start"
+      selected={currentType === 'webBodyStart'}
+      onClick={() => setState({currentType: 'webBodyStart'})}
+    />
+    <TabButton
       name="Web Body End"
       selected={currentType === 'webBodyEnd'}
       onClick={() => setState({currentType: 'webBodyEnd'})}
@@ -78,6 +83,7 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
+      webBodyStart,
       webBodyEnd,
       webHeader,
     } = themeTmplJson;
@@ -89,6 +95,7 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
+      webBodyStart,
       webBodyEnd,
       webHeader,
 
@@ -126,6 +133,7 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
+      webBodyStart,
       webBodyEnd,
       webHeader,
     } = this.state;
@@ -133,6 +141,7 @@ export default class RssStylingApp extends React.Component {
       rssStylesheet,
       webItem,
       webFeed,
+      webBodyStart,
       webBodyEnd,
       webHeader,
     }, () => {
@@ -180,6 +189,11 @@ export default class RssStylingApp extends React.Component {
         viewUrl = PUBLIC_URLS.webFeed();
         description = <div>The code is inserted right before the <span
           dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.</div>
+        break;
+      case 'webBodyStart':
+        viewUrl = PUBLIC_URLS.webFeed();
+        description = <div>The code is inserted right after the <span
+          dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}} /> tag. You can put navigation menus / branding things here.</div>
         break;
       default:
         break;
