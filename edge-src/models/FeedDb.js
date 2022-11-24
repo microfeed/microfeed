@@ -589,6 +589,7 @@ export default class FeedDb {
         ...keyValuePairs,
       },
     ).run();
+    console.log(res);
     if (res.changes === 0) {
       await this.getInsertSql('items', {
         id,
