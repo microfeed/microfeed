@@ -546,6 +546,8 @@ export default class FeedDb {
   }
 
   async _updateOrAddSetting(settings, category) {
+    // XXX: d1 is obviously not for prime time :(
+    // This ugly "insert" then "update" pattern is for d1 alpha.
     let res;
     try {
       console.log('Trying to insert...', category)
@@ -558,6 +560,8 @@ export default class FeedDb {
       ).run();
     } catch (error) {
       console.log('Failed to insert for ', category, error);
+    }
+    try {
       console.log('Trying to update...');
       res = await this.getUpdateSql(
         'settings',
@@ -568,9 +572,10 @@ export default class FeedDb {
           data: JSON.stringify(settings[category]),
         },
       ).run();
-    } finally {
-      console.log(res);
+    } catch (error) {
+      console.log('Failed to update for ', category, error);
     }
+    console.log(res);
   }
 
   async _putSettingsToContent(settings) {
@@ -595,7 +600,9 @@ export default class FeedDb {
       }).run();
     } catch (error) {
       console.log('Failed to insert.', error);
-      console.log('Updating...', error);
+    }
+    try {
+      console.log('Trying to update...', id);
       res = await this.getUpdateSql(
         'items',
         {
@@ -605,9 +612,10 @@ export default class FeedDb {
           ...keyValuePairs,
         },
       ).run();
-    } finally {
-      console.log('Done!', res);
+    } catch (error) {
+      console.log('Failed to update.', error);
     }
+    console.log('Done!', res);
   }
 
   async putContent(feed) {
