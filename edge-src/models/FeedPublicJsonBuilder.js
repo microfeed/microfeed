@@ -47,6 +47,11 @@ export default class FeedPublicJsonBuilder {
 
     publicContent['feed_url'] = PUBLIC_URLS.jsonFeed(this.baseUrl);
 
+    if (this.content.items_next_cursor) {
+      publicContent['next_url'] = `${publicContent['feed_url']}?next_cursor=${this.content.items_next_cursor}&` +
+        `sort=${this.content.items_sort_order}`;
+    }
+
     if (channel.description) {
       publicContent['description'] = channel.description;
     }
@@ -128,6 +133,10 @@ export default class FeedPublicJsonBuilder {
     }
     if (channel['itunes:email']) {
       microfeedExtra['itunes:email'] = channel['itunes:email'];
+    }
+    microfeedExtra['items_sort_order'] = this.content.items_sort_order;
+    if (this.content.items_next_cursor) {
+      microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
     }
     return microfeedExtra;
   }
@@ -229,7 +238,7 @@ export default class FeedPublicJsonBuilder {
       ...this._buildPublicContentChannel(this.content),
     };
 
-    const {items, settings} = this.content;
+    const {items} = this.content;
     const channel = this.content.channel || {};
     const existingitems = items || [];
     publicContent['items'] = [];

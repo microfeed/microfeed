@@ -75,8 +75,9 @@ function buildItemsRss(jsonData) {
   return items;
 }
 
-function buildChannelRss(jsonData) {
+function buildChannelRss(jsonData, request) {
   const _microfeed = jsonData._microfeed || {};
+  const baseUrl = (new URL(request.url)).origin;
   const channelRss = {
     'title': jsonData.title,
     'language': jsonData.language,
@@ -87,10 +88,18 @@ function buildChannelRss(jsonData) {
   if (jsonData.home_page_url) {
     channelRss['atom:link'] = {
       '@_rel': 'self',
-      '@_href': jsonData.home_page_url,
+      '@_href': PUBLIC_URLS.rssFeed(baseUrl),
       '@_type': 'application/rss+xml',
     };
     channelRss['link'] = jsonData.home_page_url;
+  }
+  if (jsonData._microfeed.items_next_cursor) {
+    const {items_next_cursor, items_sort_order} = jsonData._microfeed;
+    channelRss['link'] = {
+      '@_rel': 'next',
+      '@_href': `${PUBLIC_URLS.rssFeed(baseUrl)}?next_cursor=${items_next_cursor}&sort=${items_sort_order}`,
+      '@_type': 'application/rss+xml',
+    }
   }
   if (jsonData.description) {
     channelRss['description'] = {

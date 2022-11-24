@@ -1,10 +1,7 @@
-// import {projectPrefix} from "../../common-src/R2Utils";
 import {randomShortUUID} from "../../common-src/StringUtils";
 import {
-  STATUSES,
-  PREDEFINED_SUBSCRIBE_METHODS,
-  SETTINGS_CATEGORIES,
-  DEFAULT_ITEMS_PER_PAGE,
+  STATUSES, PREDEFINED_SUBSCRIBE_METHODS,
+  SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS,
 } from '../../common-src/Constants';
 import {msToRFC3339, rfc3399ToMs} from "../../common-src/TimeUtils";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
@@ -118,7 +115,7 @@ export default class FeedDb {
           'contentType': 'image/png',
         },
         itemsSettings: {
-          'sortOrder': 'newest_first',
+          'sortOrder': ITEMS_SORT_ORDERS.NEWEST_FIRST,
           'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
         },
       },
@@ -272,12 +269,12 @@ export default class FeedDb {
 
       const fromUrl = fetchItems.fromUrl || {};
       const queryKwargs = fetchItems.queryKwargs || {};
-      const sortOrder = fromUrl.sortOrder || itemsSettings.sortOrder;
+      const sortOrder = fromUrl.sortOrder || itemsSettings.sortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
       const nextCursor = fromUrl.nextCursor;
 
       let orderBy = ['pub_date desc', 'id'];
       let queryParam = 'pub_date__<';
-      if (sortOrder === 'oldest_first') {
+      if (sortOrder === ITEMS_SORT_ORDERS.OLDEST_FIRST) {
         orderBy = ['pub_date', 'id'];
         queryParam = 'pub_date__>';
       }
@@ -298,6 +295,7 @@ export default class FeedDb {
         ...fetchItemsParams,
       }];
       itemJson = await this._getContent(things);
+      itemJson['items_sort_order'] = sortOrder;
     }
 
     return {...contentJson, ...itemJson};
