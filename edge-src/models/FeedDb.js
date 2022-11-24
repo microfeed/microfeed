@@ -85,14 +85,12 @@ class FeedPublicJsonBuilder {
     }
 
     if (channel.image) {
-      const channelImage = channel.image.startsWith('/') ? channel.image : `${this.publicBucketUrl}/${channel.image}`;
-      publicContent['icon'] = channelImage;
+      publicContent['icon'] = channel.image.startsWith('/') ? channel.image : `${this.publicBucketUrl}/${channel.image}`;
     }
 
-    if (this.webGlobalSettings.favicon) {
-      const faviconUrl = this.webGlobalSettings.favicon.url.startsWith('/') ?
-        this.webGlobalSettings.favicon.url : `${this.publicBucketUrl}/${this.webGlobalSettings.favicon.url}`;
-      publicContent['favicon'] = faviconUrl;
+    if (this.webGlobalSettings.favicon && this.webGlobalSettings.favicon.url) {
+        publicContent['favicon'] = this.webGlobalSettings.favicon.url.startsWith('/') ?
+          this.webGlobalSettings.favicon.url : `${this.publicBucketUrl}/${this.webGlobalSettings.favicon.url}`;
     }
 
     if (channel.publisher) {
