@@ -497,9 +497,10 @@ export default class FeedDb {
     return contentJson;
   }
 
-  _updateSetting(batchStatements, settings, category) {
+  _updateSetting(batchStatements, updatedCategories, settings, category) {
     if (settings[category] && Object.keys(settings[category]).length > 0) {
       const {...data} = settings[category];
+      updatedCategories.push(category);
       batchStatements.push(this.getUpdateSql(
         'settings',
         {
@@ -555,14 +556,14 @@ export default class FeedDb {
     let batchStatements = [];
     const updatedCategories = [];
     categories.forEach((category) => {
-      this._updateSetting(batchStatements, settings, category);
-      updatedCategories.push(category);
+      this._updateSetting(batchStatements, updatedCategories, settings, category);
     });
     let responses = await this.FEED_DB.batch(batchStatements);
 
     batchStatements = [];
     for (let i = 0; i < responses.length; i++) {
       const {results} = responses[i];
+      console.log(results);
       if (results.changes === 0) {
         this._addSetting(batchStatements, settings, updatedCategories[i]);
       }
