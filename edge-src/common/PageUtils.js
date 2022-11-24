@@ -138,8 +138,6 @@ class CodeInjector {
     }
 
     if (element.tagName === 'head') {
-      const {html} = this.theme.getWebHeader();
-      element.append(html, {html: true});
       if (this.settings.webGlobalSettings) {
         const {headerCode, favicon, publicBucketUrl} = this.settings.webGlobalSettings;
         element.append(headerCode || '', {html: true});
@@ -148,12 +146,14 @@ class CodeInjector {
           element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
         }
       }
-    } else if (element.tagName === 'body') {
-      const {html} = this.theme.getWebFooter();
+      const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
+    } else if (element.tagName === 'body') {
       if (this.settings.webGlobalSettings) {
         element.append(this.settings.webGlobalSettings.footerCode || '', {html: true});
       }
+      const {html} = this.theme.getWebFooter();
+      element.append(html, {html: true});
     }
   }
 }
