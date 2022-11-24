@@ -564,9 +564,17 @@ export default class FeedDb {
     for (let i = 0; i < responses.length; i++) {
       const res = responses[i];
       console.log(res);
-      // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
-      if ((res.meta && !res.meta.changes) || res.results.changes === 0) {
-        this._addSetting(batchStatements, settings, updatedCategories[i]);
+      try {
+        console.log(res);
+        console.log('finish update')
+        console.log(settings);
+        console.log('start inserting')
+        // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
+        if ((res.meta && !res.meta.changes) || (res.results && res.results.changes === 0)) {
+          this._addSetting(batchStatements, settings, updatedCategories[i]);
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
     if (batchStatements.length > 0) {
