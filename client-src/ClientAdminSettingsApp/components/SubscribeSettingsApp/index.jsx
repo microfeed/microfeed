@@ -173,7 +173,7 @@ export default class SubscribeSettingsApp extends React.Component {
   }
 
   addNewMethod(newMethod) {
-    const {methods} = this.state.methodsDict;
+    const methods = this.state.methodsDict.methods || [];
     methods.push(newMethod);
     this.updateMethodsDict(methods);
   }
@@ -204,7 +204,7 @@ export default class SubscribeSettingsApp extends React.Component {
   render() {
     const {currentType, methodsDict, isOpenNewMethod} = this.state;
     const {submitting, submitForType} = this.props;
-    const {methods} = methodsDict;
+    const methods = methodsDict.methods || [];
     return (<SettingsBase
       title="Subscribe methods"
       submitting={submitting}

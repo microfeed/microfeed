@@ -545,47 +545,38 @@ export default class FeedDb {
     await this.FEED_DB.batch(batchStatements);
   }
 
-  async _putSettingsToContent(settings) {
-    const categories = [
-      SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
-      SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
-      SETTINGS_CATEGORIES.ANALYTICS,
-      SETTINGS_CATEGORIES.STYLES,
-      SETTINGS_CATEGORIES.ACCESS,
-    ];
-    let batchStatements = [];
-    const updatedCategories = [];
-    categories.forEach((category) => {
-      this._updateSetting(batchStatements, updatedCategories, settings, category);
-    });
-    let responses = await this.FEED_DB.batch(batchStatements);
-
-    batchStatements = [];
-    for (let i = 0; i < responses.length; i++) {
-      const res = responses[i];
+  async _updateOrAddSetting(settings, category) {
+    let res;
+    try {
+      console.log('Trying to insert...', category)
+      res = await this.getInsertSql(
+        'settings',
+        {
+          category,
+          data: JSON.stringify(settings[category]),
+        },
+      ).run();
+    } catch (error) {
+      console.log('Failed to insert for ', category, error);
+      console.log('Trying to update...');
+      res = await this.getUpdateSql(
+        'settings',
+        {
+          category,
+        },
+        {
+          data: JSON.stringify(settings[category]),
+        },
+      ).run();
+    } finally {
       console.log(res);
-      try {
-        console.log(updatedCategories[i], res);
-        console.log('finish update')
-        console.log(settings);
-        console.log('start inserting')
-        // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
-        if ((res.meta && !res.meta.changes) || (res.results && res.results.changes === 0)) {
-          this._addSetting(batchStatements, settings, updatedCategories[i]);
-        }
-      } catch (error) {
-        console.log(error);
-      }
     }
-    if (batchStatements.length > 0) {
-      console.log('insert it!');
-      try {
-        const r = await this.FEED_DB.batch(batchStatements);
-        console.log(r);
-      } catch (error) {
-        console.log(error);
-      }
-    }
+  }
+
+  async _putSettingsToContent(settings) {
+    Object.keys(settings).forEach((category) => {
+      this._updateOrAddSetting(settings, category);
+    });
   }
 
   async _putItemToContent(item) {
@@ -595,30 +586,27 @@ export default class FeedDb {
       'pub_date': msToRFC3339(pubDateMs),
       data: JSON.stringify(data),
     };
-    const res = await this.getUpdateSql(
-      'items',
-      {
-        id,
-      },
-      {
-        ...keyValuePairs,
-      },
-    ).run();
-    // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
+    let res;
     try {
-      console.log(res);
-      console.log('finish update')
-      console.log(keyValuePairs);
-      console.log('start inserting')
-      if ((res.meta && !res.meta.changes) || (res.changes === 0)) {
-        await this.getInsertSql('items', {
-          id,
-          ...keyValuePairs,
-        }).run();
-      }
+      console.log('Inserting...')
+      res = await this.getInsertSql('items', {
+        id,
+        ...keyValuePairs,
+      }).run();
     } catch (error) {
-      console.log(error);
-      console.log(keyValuePairs);
+      console.log('Failed to insert.', error);
+      console.log('Updating...', error);
+      res = await this.getUpdateSql(
+        'items',
+        {
+          id,
+        },
+        {
+          ...keyValuePairs,
+        },
+      ).run();
+    } finally {
+      console.log('Done!', res);
     }
   }
 

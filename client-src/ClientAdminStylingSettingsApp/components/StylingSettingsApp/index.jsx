@@ -136,7 +136,7 @@ export default class RssStylingApp extends React.Component {
       webFooter,
       webHeader,
     }, () => {
-      Requests.post('/admin/ajax/feed/', this.state.feed)
+      Requests.post('/admin/ajax/feed/', {settings: {styles: this.state.feed.settings.styles}})
         .then(() => {
           this.setState({submitStatus: null}, () => {
             showToast('Updated!', 'success');
