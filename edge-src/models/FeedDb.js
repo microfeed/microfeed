@@ -565,7 +565,7 @@ export default class FeedDb {
       const res = responses[i];
       console.log(res);
       try {
-        console.log(res);
+        console.log(updatedCategories[i], res);
         console.log('finish update')
         console.log(settings);
         console.log('start inserting')
@@ -578,7 +578,13 @@ export default class FeedDb {
       }
     }
     if (batchStatements.length > 0) {
-      await this.FEED_DB.batch(batchStatements);
+      console.log('insert it!');
+      try {
+        const r = await this.FEED_DB.batch(batchStatements);
+        console.log(r);
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
