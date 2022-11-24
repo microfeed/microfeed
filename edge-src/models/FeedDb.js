@@ -591,6 +591,7 @@ export default class FeedDb {
       },
     ).run();
     console.log(res);
+    console.log(keyValuePairs);
     // XXX: d1 API disparity on prod & dev! res.meta not exist on dev?!
     try {
       if ((res.meta && !res.meta.changes) || (res.changes === 0)) {
