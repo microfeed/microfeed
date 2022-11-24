@@ -85,11 +85,14 @@ class FeedPublicJsonBuilder {
     }
 
     if (channel.image) {
-      publicContent['icon'] = `${this.publicBucketUrl}/${channel.image}`;
+      const channelImage = channel.image.startsWith('/') ? channel.image : `${this.publicBucketUrl}/${channel.image}`;
+      publicContent['icon'] = channelImage;
     }
 
     if (this.webGlobalSettings.favicon) {
-      publicContent['favicon'] = `${this.publicBucketUrl}/${this.webGlobalSettings.favicon.url}`;
+      const faviconUrl = this.webGlobalSettings.favicon.url.startsWith('/') ?
+        this.webGlobalSettings.favicon.url : `${this.publicBucketUrl}/${this.webGlobalSettings.favicon.url}`;
+      publicContent['favicon'] = faviconUrl;
     }
 
     if (channel.publisher) {
@@ -486,7 +489,9 @@ export default class FeedDb {
     }
 
     let contentJson = await this._getContent(things);
-    if (Object.keys(contentJson).length === 0) {
+    if (Object.keys(contentJson).length === 0 || !contentJson.channel ||
+      Object.keys(contentJson.channel).length === 0 || !contentJson.settings ||
+      Object.keys(contentJson.settings).length === 0) {
       contentJson = await this.initDb();
     }
     return contentJson;
