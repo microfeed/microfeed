@@ -94,11 +94,12 @@ export default class FeedDb {
 
   getUpdateSql(table, queryKwargs, keyValuePairs) {
     let sql = `UPDATE ${table} SET`;
-    const setList = [];
+    const setList = ['updated_at = ?'];
+    const bindList = [(new Date()).toISOString()];
     Object.keys(keyValuePairs).forEach((key) => {
       setList.push(`${key} = ?`);
+      bindList.push(keyValuePairs[key]);
     });
-    const bindList = Object.values(keyValuePairs);
     sql = `${sql} ${setList.join(', ')}`;
     if (queryKwargs && Object.keys(queryKwargs).length > 0) {
       const queryKeys = [];
@@ -324,37 +325,6 @@ export default class FeedDb {
     }
 
     return {...contentJson, ...itemJson};
-  }
-
-  _updateSetting(batchStatements, updatedCategories, settings, category) {
-    if (settings[category] && Object.keys(settings[category]).length > 0) {
-      const {...data} = settings[category];
-      updatedCategories.push(category);
-      batchStatements.push(this.getUpdateSql(
-        'settings',
-        {
-          category,
-        },
-        {
-          data: JSON.stringify(data),
-        },
-      ));
-      return category;
-    }
-  }
-
-  _addSetting(batchStatements, settings, category) {
-    if (settings[category] && Object.keys(settings[category]).length > 0) {
-      const {...data} = settings[category];
-      batchStatements.push(this.getInsertSql(
-        'settings',
-        {
-          category,
-          data: JSON.stringify(data),
-        },
-      ));
-      return category;
-    }
   }
 
   async _putChannelToContent(channel) {
