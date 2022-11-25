@@ -46,13 +46,15 @@
     {{/description}}
 
     <div>
-      {{#items.length}}
       <h2 class="section-header">
         Latest
       </h2>
-      {{/items.length}}
 
       <div class="grid grid-cols-1 gap-6">
+        {{^items.length}}
+        No items.
+        {{/items.length}}
+
         {{#items}}
         <div>
           <h3 class="font-semibold mb-3">
@@ -75,11 +77,19 @@
         {{/items}}
       </div>
 
+      <div class="flex justify-center mt-8">
+      {{#_microfeed.items_prev_cursor}}
+      <div class="text-center mx-2">
+        <a href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"><span class="icon-arrow-left"> Prev</span></a>
+      </div>
+      {{/_microfeed.items_prev_cursor}}
+
       {{#_microfeed.items_next_cursor}}
-      <div class="text-center">
-        <a href="?next_cursor={{_microfeed.items_next_cursor}}">Next <span class="icon-arrow-right"></span></a>
+      <div class="text-center mx-2">
+        <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">Next <span class="icon-arrow-right"></span></a>
       </div>
       {{/_microfeed.items_next_cursor}}
+      </div>
     </div>
 
   </div>
