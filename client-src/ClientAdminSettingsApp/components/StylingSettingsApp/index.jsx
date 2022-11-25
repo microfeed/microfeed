@@ -31,6 +31,9 @@ export default class BrandingSettingsApp extends React.Component {
         url={ADMIN_URLS.sylingSettings()}
         text="Edit web code shared across pages"
       />
+      <div className="text-xs text-muted-color mt-2">
+        {'code in <head></head> and top & bottom of <body></body>'}
+      </div>
 
       <div className="mt-8">
         <div className="lh-page-subtitle">Themes</div>
