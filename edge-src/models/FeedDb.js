@@ -9,7 +9,10 @@ import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
 /**
  * support url query parameters:
  * - next_cursor: pub_date in milliseconds
+ * - prev_cursor: pub_date in milliseconds
  * - sort: "oldest_first", or "newest_first" (default).
+ *
+ * if next_cursor and prev_cursor co-exist, we choose next_cursor and ignore prev_cursor
  *
  * Example: /json/?next_cursor=1669249854169&sort=oldest_first
  */
@@ -20,14 +23,21 @@ export function getFetchItemsParams(request, queryKwargs = {}) {
   };
 
   const { searchParams } = new URL(request.url)
-  const cursor = searchParams.get('next_cursor');
+  const nextCursor = searchParams.get('next_cursor');
+  const prevCursor = searchParams.get('prev_cursor');
   const sortOrder = searchParams.get('sort');
   if (sortOrder) {
     fetchItems.fromUrl.sortOrder = sortOrder;
   }
-  if (cursor) {
+  if (nextCursor) {
     try {
-      fetchItems.fromUrl.nextCursor = parseInt(cursor, 10);
+      fetchItems.fromUrl.nextCursor = parseInt(nextCursor, 10);
+    } catch (error) {
+      console.log(error);
+    }
+  } else if (prevCursor) {
+    try {
+      fetchItems.fromUrl.prevCursor = parseInt(prevCursor, 10);
     } catch (error) {
       console.log(error);
     }
@@ -176,7 +186,7 @@ export default class FeedDb {
    *      }
    *   ]
    */
-  async _getContent(things) {
+  async _getContent(things, sortOrder) {
     const batchStatements = [];
     things.forEach((thing) => {
       let sql = `SELECT * FROM ${thing.table}`;
@@ -226,14 +236,23 @@ export default class FeedDb {
           }
         });
       } else if (thing.table === 'items') {
-        contentJson.items = [];
         let nextCursor;
-        response.results.forEach((result) => {
-          const itemJson = getItemJson(result);
-          contentJson['items'].push(itemJson);
+        let prevCursor;
+        contentJson['items'] = response.results.map((result) => getItemJson(result));
+        if (sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST) {
+          contentJson['items'].sort((a, b) => (b.pubDateMs - a.pubDateMs));
+        } else {
+          contentJson['items'].sort((a, b) => (a.pubDateMs - b.pubDateMs));
+        }
+        contentJson['items'].forEach((itemJson) => {
           nextCursor = itemJson.pubDateMs;
+          if (!prevCursor) {
+            prevCursor = itemJson.pubDateMs;
+          }
         });
+
         contentJson['items_next_cursor'] = nextCursor;
+        contentJson['items_prev_cursor'] = prevCursor;
       }
     }
     return contentJson;
@@ -267,18 +286,22 @@ export default class FeedDb {
       const fromUrl = fetchItems.fromUrl || {};
       const queryKwargs = fetchItems.queryKwargs || {};
       const sortOrder = fromUrl.sortOrder || webGlobalSettings.itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
-      const nextCursor = fromUrl.nextCursor;
+      const {nextCursor, prevCursor} = fromUrl;
 
-      console.log(sortOrder);
-      let orderBy = ['pub_date desc', 'id'];
-      let queryParam = 'pub_date__<';
-      if (sortOrder === ITEMS_SORT_ORDERS.OLDEST_FIRST) {
-        orderBy = ['pub_date', 'id'];
-        queryParam = 'pub_date__>';
-      }
+      let orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ?
+        ['pub_date desc', 'id'] : ['pub_date', 'id'];
       if (nextCursor) {
+        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__<' : 'pub_date__>';
         try {
           queryKwargs[queryParam] = msToRFC3339(nextCursor);
+        } catch (error) {
+          console.log(error);
+        }
+      } else if (prevCursor) {
+        orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? ['pub_date', 'id'] : ['pub_date desc', 'id'];
+        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__>' : 'pub_date__<';
+        try {
+          queryKwargs[queryParam] = msToRFC3339(prevCursor);
         } catch (error) {
           console.log(error);
         }
@@ -292,7 +315,7 @@ export default class FeedDb {
         table: 'items',
         ...fetchItemsParams,
       }];
-      itemJson = await this._getContent(things);
+      itemJson = await this._getContent(things, sortOrder);
       itemJson['items_sort_order'] = sortOrder;
     }
 

@@ -47,8 +47,12 @@ const columns = [
 
 function ItemListTable({data, feed}) {
   let nextUrl;
+  let prevUrl;
   if (feed.items_next_cursor) {
-    nextUrl = `?next_cursor=${feed.items_next_cursor}&sort_order=${feed.items_sort_order}`;
+    nextUrl = `?next_cursor=${feed.items_next_cursor}&sort=${feed.items_sort_order}`;
+  }
+  if (feed.items_prev_cursor) {
+    prevUrl = `?prev_cursor=${feed.items_prev_cursor}&sort=${feed.items_sort_order}`;
   }
   const newestFirst = feed.items_sort_order === ITEMS_SORT_ORDERS.NEWEST_FIRST;
   const table = useReactTable({
@@ -106,7 +110,10 @@ function ItemListTable({data, feed}) {
       </tbody>
     </table>
     <div className="mt-8 flex justify-center">
-      {nextUrl && <div>
+      {prevUrl && <div className="mx-2">
+        <a href={prevUrl}><span className="lh-icon-arrow-left" /> Prev</a>
+      </div>}
+      {nextUrl && <div className="mx-2">
         <a href={nextUrl}>Next <span className="lh-icon-arrow-right" /></a>
       </div>}
     </div>
