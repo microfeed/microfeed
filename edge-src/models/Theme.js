@@ -15,7 +15,8 @@ export default class Theme {
     } else {
       this.theme = themeName;
     }
-    this.themeBundle = this.settings.styles.themes ? this.settings.styles.themes[this.theme] : {};
+    this.themeBundle = (this.settings.styles && this.settings.styles.themes) ?
+      this.settings.styles.themes[this.theme] : null;
   }
 
   name() {
