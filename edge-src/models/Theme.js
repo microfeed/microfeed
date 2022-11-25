@@ -1,14 +1,21 @@
 const Mustache = require('mustache');
 
 export default class Theme {
-  constructor(jsonData, settings=null) {
+  constructor(jsonData, settings=null, themeName = null) {
     this.jsonData = jsonData;
     this.settings = settings;
 
-    this.theme = 'default';
-    if (settings && settings.styles && settings.styles.currentTheme) {
-      this.theme = settings.styles.currentTheme;
+    this.theme = 'custom';
+    if (!themeName) {
+      // Select current theme
+      if (settings && settings.styles && settings.styles.currentTheme &&
+        settings.styles.themes[settings.styles.currentTheme]) {
+        this.theme = settings.styles.currentTheme;
+      }
+    } else {
+      this.theme = themeName;
     }
+    this.themeBundle = this.settings.styles.themes ? this.settings.styles.themes[this.theme] : {};
   }
 
   name() {
@@ -22,11 +29,11 @@ export default class Theme {
   }
 
   getWebHeaderTmpl() {
-    let tmpl = null;
-    if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/web_header.html');
+    let tmpl;
+    if (this.theme === 'global') {
+      tmpl = (this.settings && this.settings.styles) ? this.settings.styles.webHeader : '';
     } else {
-      tmpl = this.settings.styles.themes[this.theme].webHeader;
+      tmpl = this.themeBundle ? this.themeBundle.webHeader : require('../common/default_themes/web_header.html');
     }
     return tmpl;
   }
@@ -39,10 +46,10 @@ export default class Theme {
 
   getWebBodyEndTmpl() {
     let tmpl = null;
-    if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/web_body_end.html');
+    if (this.theme === 'global') {
+      tmpl = (this.settings && this.settings.styles) ? this.settings.styles.webBodyEnd : '';
     } else {
-      tmpl = this.settings.styles.themes[this.theme].webBodyEnd;
+      tmpl = this.themeBundle ? this.themeBundle.webBodyEnd : require('../common/default_themes/web_body_end.html');
     }
     return tmpl;
   }
@@ -54,25 +61,19 @@ export default class Theme {
   }
 
   getWebBodyStartTmpl() {
-    let tmpl = null;
-    if (this.theme === 'default') {
-      tmpl = require('../common/default_themes/web_body_start.html');
+    let tmpl;
+    if (this.theme === 'global') {
+      tmpl = (this.settings && this.settings.styles) ? this.settings.styles.webBodyStart : '';
     } else {
-      tmpl = this.settings.styles.themes[this.theme].webBodyStart;
+      tmpl = this.themeBundle ? this.themeBundle.webBodyStart : require('../common/default_themes/web_body_start.html');
     }
     return tmpl;
   }
 
   getRssStylesheetTmpl() {
-    let tmpl = null;
-    if (this.theme === 'default') {
-      // XXX: this should've been .xsl, instead of .html. But esbuild can't load xsl.
-      // TODO: configure esbuild to load xsl?
-      tmpl = require('../common/default_themes/rss_stylesheet.html');
-    } else {
-      tmpl = this.settings.styles.themes[this.theme].rssStylesheet;
-    }
-    return tmpl;
+    // XXX: this should've been .xsl, instead of .html. But esbuild can't load xsl.
+    // TODO: configure esbuild to load xsl?
+    return this.themeBundle ? this.themeBundle.rssStylesheet : require('../common/default_themes/rss_stylesheet.html');
   }
 
   getRssStylesheet() {
@@ -94,13 +95,7 @@ export default class Theme {
   }
 
   getWebFeedTmpl() {
-    let tmpl;
-    if (this.theme === 'default' || !this.settings.styles.themes[this.theme].webFeed) {
-      tmpl = require('../common/default_themes/web_feed.html');
-    } else {
-      tmpl = this.settings.styles.themes[this.theme].webFeed;
-    }
-    return tmpl;
+    return this.themeBundle ? this.themeBundle.webFeed : require('../common/default_themes/web_feed.html');
   }
 
   getWebItem(item) {
@@ -115,12 +110,6 @@ export default class Theme {
   }
 
   getWebItemTmpl() {
-    let tmpl = null;
-    if (this.theme === 'default' || !this.settings.styles.themes[this.theme].webItem) {
-      tmpl = require('../common/default_themes/web_item.html');
-    } else {
-      tmpl = this.settings.styles.themes[this.theme].webItem;
-    }
-    return tmpl;
+    return this.themeBundle ? this.themeBundle.webItem : require('../common/default_themes/web_item.html');
   }
 }

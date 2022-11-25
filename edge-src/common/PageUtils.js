@@ -128,9 +128,10 @@ export class JsonResponseBuilder extends ResponseBuilder {
 }
 
 class CodeInjector {
-  constructor(settings, theme) {
+  constructor(settings, theme, globalTheme) {
     this.settings = settings;
     this.theme = theme;
+    this.globalTheme = globalTheme;
   }
   element(element) {
     if (!this.settings) {
@@ -139,19 +140,20 @@ class CodeInjector {
 
     if (element.tagName === 'head') {
       if (this.settings.webGlobalSettings) {
-        const {webHeader, favicon, publicBucketUrl} = this.settings.webGlobalSettings;
-        element.append(webHeader || '', {html: true});
+        const {favicon, publicBucketUrl} = this.settings.webGlobalSettings;
         if (favicon && favicon.url) {
           const faviconUrl = favicon.url.startsWith('/') ? favicon.url : `${publicBucketUrl}/${favicon.url}`;
           element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
         }
       }
+      element.append(this.globalTheme.getWebHeader().html || '', {html: true});
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
     } else if (element.tagName === 'body') {
-      if (this.settings.webGlobalSettings) {
-        element.append(this.settings.webGlobalSettings.webBodyEnd || '', {html: true});
-      }
+      element.prepend(this.theme.getWebBodyStart().html, {html: true});
+      element.prepend(this.globalTheme.getWebBodyStart().html || '', {html: true});
+
+      element.append(this.globalTheme.getWebBodyEnd().html || '', {html: true});
       const {html} = this.theme.getWebBodyEnd();
       element.append(html, {html: true});
     }
@@ -166,12 +168,13 @@ export class WebResponseBuilder extends ResponseBuilder {
   _getResponse(props) {
     const res = super._getResponse(props);
     const theme = new Theme(this.jsonData, this.settings);
+    const globalTheme = new Theme(this.jsonData, this.settings, 'global');
     const fromReact = renderReactToHtml(
       props.getComponent(this.content, this.jsonData, theme));
     const newRes = new Response(fromReact, res);
     return new HTMLRewriter()
-      .on('head', new CodeInjector(this.settings, theme))
-      .on('body', new CodeInjector(this.settings, theme))
+      .on('head', new CodeInjector(this.settings, theme, globalTheme))
+      .on('body', new CodeInjector(this.settings, theme, globalTheme))
       .transform(newRes);
   }
 }

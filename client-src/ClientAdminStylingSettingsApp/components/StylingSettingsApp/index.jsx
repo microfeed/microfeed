@@ -23,18 +23,18 @@ function TabButton({name, onClick, selected}) {
   </a>);
 }
 
-function CodeTabs({currentType, setState}) {
+function CodeTabs({currentType, setState, themeName}) {
   return (<div className="lh-page-card mb-4">
-    <TabButton
+    {themeName !== 'global' && <TabButton
       name="Web Feed"
       selected={currentType === 'webFeed'}
       onClick={() => setState({currentType: 'webFeed'})}
-    />
-    <TabButton
+    />}
+    {themeName !== 'global' && <TabButton
       name="Web Item"
       selected={currentType === 'webItem'}
       onClick={() => setState({currentType: 'webItem'})}
-    />
+    />}
     <TabButton
       name="Web Header"
       selected={currentType === 'webHeader'}
@@ -50,11 +50,11 @@ function CodeTabs({currentType, setState}) {
       selected={currentType === 'webBodyEnd'}
       onClick={() => setState({currentType: 'webBodyEnd'})}
     />
-    <TabButton
+    {themeName !== 'global' && <TabButton
       name="RSS Stylesheet"
       selected={currentType === 'rssStylesheet'}
       onClick={() => setState({currentType: 'rssStylesheet'})}
-    />
+    />}
   </div>);
 }
 
@@ -68,7 +68,7 @@ function getFirstItemUrl(feed) {
   return '/'
 }
 
-export default class RssStylingApp extends React.Component {
+export default class StylingSettingsApp extends React.Component {
   constructor(props) {
     super(props);
 
@@ -80,6 +80,7 @@ export default class RssStylingApp extends React.Component {
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
 
     const {
+      themeName,
       rssStylesheet,
       webItem,
       webFeed,
@@ -89,9 +90,10 @@ export default class RssStylingApp extends React.Component {
     } = themeTmplJson;
 
     this.state = {
-      currentType: 'webFeed',
+      currentType: themeName !== 'global' ? 'webFeed' : 'webHeader',
       submitStatus: null,
 
+      themeName,
       rssStylesheet,
       webItem,
       webFeed,
@@ -104,20 +106,29 @@ export default class RssStylingApp extends React.Component {
   }
 
   onUpdateFeed(themeName, themeTmpls, onSucceed) {
+    let styles = {
+      // TODO: if we support multiple themes, then don't set currentTheme here.
+      currentTheme: themeName,
+      themes: {
+        [themeName]: {
+          ...themeTmpls,
+        }
+      },
+    };
+    if (themeName === 'global') {
+      styles = {
+        ...themeTmpls,
+      };
+    }
     this.setState(prevState => ({
       feed: {
         ...prevState.feed,
         settings: {
           ...prevState.feed.settings,
           styles: {
-            // TODO: if we support multiple themes, then don't set currentTheme here.
-            currentTheme: themeName,
-            themes: {
-              [themeName]: {
-                ...themeTmpls,
-              }
-            },
-          }
+            ...prevState.feed.settings.styles,
+            ...styles,
+          },
         }
       },
     }), () => onSucceed())
@@ -127,8 +138,7 @@ export default class RssStylingApp extends React.Component {
     e.preventDefault();
     this.setState({submitStatus: SUBMIT_STATUS__START});
 
-    // TODO: allow users to set theme name later
-    const themeName = 'custom';
+    const {themeName} = this.state;
     const {
       rssStylesheet,
       webItem,
@@ -137,14 +147,19 @@ export default class RssStylingApp extends React.Component {
       webBodyEnd,
       webHeader,
     } = this.state;
-    this.onUpdateFeed(themeName, {
-      rssStylesheet,
-      webItem,
-      webFeed,
+
+    const themeTmpls = {
       webBodyStart,
       webBodyEnd,
       webHeader,
-    }, () => {
+    };
+
+    if (themeName !== 'global') {
+      themeTmpls['rssStylesheet'] = rssStylesheet;
+      themeTmpls['webItem'] = webItem;
+      themeTmpls['webFeed'] = webFeed;
+    }
+    this.onUpdateFeed(themeName, themeTmpls, () => {
       Requests.post('/admin/ajax/feed/', {settings: {styles: this.state.feed.settings.styles}})
         .then(() => {
           this.setState({submitStatus: null}, () => {
@@ -159,7 +174,7 @@ export default class RssStylingApp extends React.Component {
   }
 
   render() {
-    const {currentType, submitStatus, feed} = this.state;
+    const {currentType, submitStatus, feed, themeName} = this.state;
     const code = this.state[currentType];
     let language = 'html';
     let viewUrl = '/';
@@ -203,7 +218,7 @@ export default class RssStylingApp extends React.Component {
       currentPage="settings"
       upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Styling'}}
     >
-      <CodeTabs currentType={currentType} setState={this.setState} />
+      <CodeTabs currentType={currentType} setState={this.setState} themeName={themeName} />
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="text-xs text-muted-color mb-4">{description}</div>

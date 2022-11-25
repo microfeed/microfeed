@@ -8,7 +8,10 @@ export async function onRequestGet({env, request}) {
   const feed = new FeedDb(env, request);
   const content = await feed.getContent();
   const {settings} = content;
-  const theme = new Theme(await feed.getPublicJsonData(content), settings);
+  const {searchParams} = new URL(request.url);
+  const themeName = searchParams.get('theme') || 'global';
+
+  const theme = new Theme(await feed.getPublicJsonData(content), settings, themeName);
   const fromReact = renderReactToHtml(
     <EdgeSettingsStylingApp feedContent={content} theme={theme}/>);
   return new Response(fromReact, {
