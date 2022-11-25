@@ -31,6 +31,7 @@ export default class BrandingSettingsApp extends React.Component {
         url={ADMIN_URLS.sylingSettings()}
         text="Edit web code shared across pages"
       />
+
       <div className="mt-8">
         <div className="lh-page-subtitle">Themes</div>
         <NavBlock

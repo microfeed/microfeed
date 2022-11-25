@@ -113,6 +113,7 @@ export default class AllItemsApp extends React.Component {
 
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
     const items = feed.items || [];
+    console.log(items);
     this.state = {
       feed,
       items,
