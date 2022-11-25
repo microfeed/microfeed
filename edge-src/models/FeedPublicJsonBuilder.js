@@ -86,8 +86,28 @@ export default class FeedPublicJsonBuilder {
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra = {
       microfeed_version: this.content.microfeed_version || DEFAULT_MICROFEED_VERSION,
-      categories: channel.categories || [],
+      categories: [],
     };
+    const channelCategories = channel.categories || [];
+    channelCategories.forEach((c) => {
+      const topAndSubCats = c.split('/');
+      let cat;
+      if (topAndSubCats) {
+        if (topAndSubCats.length > 0) {
+          cat = {
+            'name': topAndSubCats[0].trim(),
+          };
+        }
+        if (topAndSubCats.length > 1) {
+          cat['categories'] = [{
+            'name': topAndSubCats[1].trim(),
+          }]
+        }
+      }
+      if (cat) {
+        microfeedExtra['categories'].push(cat);
+      }
+    });
     if (!subscribeMethods.methods) {
       microfeedExtra['subscribe_methods'] = '';
     } else {

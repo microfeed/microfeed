@@ -155,21 +155,17 @@ function buildChannelRss(jsonData, request) {
   if (_microfeed['categories'] && _microfeed['categories'].length > 0) {
     const categories = [];
     _microfeed['categories'].forEach((c) => {
-      const topAndSubCats = c.split('/');
-      if (topAndSubCats) {
-        if (topAndSubCats.length === 1) {
-          categories.push({
-            '@_text': topAndSubCats[0].trim(),
-          });
-        } else if (topAndSubCats.length === 2) {
-          categories.push({
-            '@_text': topAndSubCats[0].trim(),
-            'itunes:category': {
-              '@_text': topAndSubCats[1].trim(),
-            }
-          });
+      let cat = {
+        '@_text': c.name,
+      };
+
+      if (c.categories && c.categories.length > 0 && c.categories[0].name) {
+        cat['itunes:category'] = {
+          '@_text': c.categories[0].name,
         }
       }
+      console.log(cat);
+      categories.push(cat);
     });
     channelRss['itunes:category'] = categories;
   }
