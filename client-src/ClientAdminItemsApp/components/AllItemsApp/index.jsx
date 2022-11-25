@@ -7,7 +7,7 @@ import {
   STATUSES,
   ITEM_STATUSES_DICT,
   NAV_ITEMS,
-  NAV_ITEMS_DICT
+  NAV_ITEMS_DICT, ITEMS_SORT_ORDERS
 } from "../../../../common-src/Constants";
 import {msToDatetimeLocalString} from '../../../../common-src/TimeUtils';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@tanstack/react-table';
 import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
+import AdminRadio from "../../../components/AdminRadio";
 
 const columnHelper = createColumnHelper();
 const columns = [
@@ -44,13 +45,38 @@ const columns = [
   }),
 ];
 
-function ItemListTable({data}) {
+function ItemListTable({data, feed}) {
+  let nextUrl;
+  if (feed.items_next_cursor) {
+    nextUrl = `?next_cursor=${feed.items_next_cursor}&sort_order=${feed.items_sort_order}`;
+  }
+  const newestFirst = feed.items_sort_order === ITEMS_SORT_ORDERS.NEWEST_FIRST;
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
   return (<div>
+    <div className="mb-4">
+      <AdminRadio
+        groupName="sort-order"
+        buttons={[
+          {
+            name: 'Newest first',
+            value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
+            checked: newestFirst,
+          },
+          {
+            name: 'Oldest first',
+            value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
+            checked: !newestFirst,
+          },
+        ]}
+        onChange={(e) => {
+          location.href = `?sort=${e.target.value}`;
+        }}
+      />
+    </div>
     <table className="border-collapse border border-slate-400 text-helper-color text-sm w-full">
       <thead>
       {table.getHeaderGroups().map(headerGroup => (
@@ -79,6 +105,11 @@ function ItemListTable({data}) {
       )}
       </tbody>
     </table>
+    <div className="mt-8 flex justify-center">
+      {nextUrl && <div>
+        <a href={nextUrl}>Next <span className="lh-icon-arrow-right" /></a>
+      </div>}
+    </div>
   </div>);
 }
 
@@ -98,7 +129,7 @@ export default class AllItemsApp extends React.Component {
   }
 
   render() {
-    const {items} = this.state;
+    const {items, feed} = this.state;
     const data = items.map((item) => ({
       id: (<div>
         <div>{item.id}</div>
@@ -134,7 +165,7 @@ export default class AllItemsApp extends React.Component {
           {NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
         </div>
         <div>
-          {data.length > 0 ? <ItemListTable data={data} /> : <div>
+          {data.length > 0 ? <ItemListTable data={data} feed={feed} /> : <div>
             <div className="mb-8">
               No items yet.
             </div>
