@@ -106,10 +106,13 @@ export default class StylingSettingsApp extends React.Component {
   }
 
   onUpdateFeed(themeName, themeTmpls, onSucceed) {
+    const existingThemes = this.state.feed.settings.styles.themes || {};
+
     let styles = {
       // TODO: if we support multiple themes, then don't set currentTheme here.
       currentTheme: themeName,
       themes: {
+        ...existingThemes,
         [themeName]: {
           ...themeTmpls,
         }
