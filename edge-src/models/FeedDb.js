@@ -186,7 +186,7 @@ export default class FeedDb {
    *      }
    *   ]
    */
-  async _getContent(things, sortOrder) {
+  async _getContent(things, sortOrder, fromUrl) {
     const batchStatements = [];
     things.forEach((thing) => {
       let sql = `SELECT * FROM ${thing.table}`;
@@ -251,8 +251,12 @@ export default class FeedDb {
           }
         });
 
-        contentJson['items_next_cursor'] = nextCursor;
-        contentJson['items_prev_cursor'] = prevCursor;
+        if (thing.limit <= contentJson['items'].length) {
+          contentJson['items_next_cursor'] = nextCursor;
+        }
+        if (fromUrl.nextCursor || fromUrl.prevCursor) {
+          contentJson['items_prev_cursor'] = prevCursor;
+        }
       }
     }
     return contentJson;
@@ -315,7 +319,7 @@ export default class FeedDb {
         table: 'items',
         ...fetchItemsParams,
       }];
-      itemJson = await this._getContent(things, sortOrder);
+      itemJson = await this._getContent(things, sortOrder, fromUrl);
       itemJson['items_sort_order'] = sortOrder;
     }
 

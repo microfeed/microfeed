@@ -2,7 +2,7 @@ import {msToUtcString} from "../../common-src/TimeUtils";
 import {secondsToHHMMSS} from "../../common-src/StringUtils";
 import {PUBLIC_URLS} from "../../common-src/StringUtils";
 import {RssResponseBuilder} from "../../edge-src/common/PageUtils";
-import {OUR_BRAND, STATUSES} from '../../common-src/Constants';
+import {OUR_BRAND} from '../../common-src/Constants';
 
 const {XMLBuilder} = require('fast-xml-parser');
 
@@ -85,22 +85,32 @@ function buildChannelRss(jsonData, request) {
     'itunes:type': _microfeed['itunes:type'],
     'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
   };
+  const linksTags = [];
   if (jsonData.home_page_url) {
     channelRss['atom:link'] = {
       '@_rel': 'self',
       '@_href': PUBLIC_URLS.rssFeed(baseUrl),
       '@_type': 'application/rss+xml',
     };
-    channelRss['link'] = jsonData.home_page_url;
+    linksTags.push(jsonData.home_page_url);
   }
   if (jsonData._microfeed.items_next_cursor) {
     const {items_next_cursor, items_sort_order} = jsonData._microfeed;
-    channelRss['link'] = {
+    linksTags.push({
       '@_rel': 'next',
       '@_href': `${PUBLIC_URLS.rssFeed(baseUrl)}?next_cursor=${items_next_cursor}&sort=${items_sort_order}`,
       '@_type': 'application/rss+xml',
-    }
+    });
   }
+  if (jsonData._microfeed.items_prev_cursor) {
+    const {items_prev_cursor, items_sort_order} = jsonData._microfeed;
+    linksTags.push({
+      '@_rel': 'prev',
+      '@_href': `${PUBLIC_URLS.rssFeed(baseUrl)}?prev_cursor=${items_prev_cursor}&sort=${items_sort_order}`,
+      '@_type': 'application/rss+xml',
+    });
+  }
+  channelRss['link'] = linksTags;
   if (jsonData.description) {
     channelRss['description'] = {
       '@cdata': jsonData.description,

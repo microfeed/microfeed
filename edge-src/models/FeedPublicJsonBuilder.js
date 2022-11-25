@@ -81,7 +81,7 @@ export default class FeedPublicJsonBuilder {
     return publicContent;
   }
 
-  _buildPublicContentMicrofeedExtra() {
+  _buildPublicContentMicrofeedExtra(publicContent) {
     const channel = this.content.channel || {};
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra = {
@@ -137,6 +137,12 @@ export default class FeedPublicJsonBuilder {
     microfeedExtra['items_sort_order'] = this.content.items_sort_order;
     if (this.content.items_next_cursor) {
       microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
+      microfeedExtra['next_url'] = publicContent['next_url'];
+    }
+    if (this.content.items_prev_cursor) {
+      microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
+      microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
+        `sort=${this.content.items_sort_order}`;
     }
     return microfeedExtra;
   }
@@ -259,7 +265,7 @@ export default class FeedPublicJsonBuilder {
     //   publicContent.items.sort((a, b) => a['_microfeed']['date_published_ms'] - b['_microfeed']['date_published_ms']);
     // }
 
-    publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra();
+    publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra(publicContent);
     return publicContent;
   }
 }
