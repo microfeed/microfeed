@@ -74,6 +74,12 @@
         </div>
         {{/items}}
       </div>
+
+      {{#_microfeed.items_next_cursor}}
+      <div class="text-center">
+        <a href="?next_cursor={{_microfeed.items_next_cursor}}">Next <span class="icon-arrow-right"></span></a>
+      </div>
+      {{/_microfeed.items_next_cursor}}
     </div>
 
   </div>

@@ -14,7 +14,6 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import clsx from "clsx";
@@ -25,13 +24,11 @@ const columns = [
   columnHelper.accessor('id', {
     header: 'Item id',
     cell: info => info.getValue(),
-    enableSorting: false,
   }),
   columnHelper.accessor('status', {
     header: 'Status',
     cell: info => <div className={clsx('font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
       {ITEM_STATUSES_DICT[info.getValue()].name}</div>,
-    enableSorting: false,
   }),
   columnHelper.accessor('pubDateMs', {
     header: 'Published date',
@@ -40,51 +37,30 @@ const columns = [
   columnHelper.accessor('title', {
     header: 'Title',
     cell: info => info.getValue(),
-    enableSorting: false,
   }),
   columnHelper.accessor('mediaFile', {
     header: 'Media file',
     cell: info => info.getValue(),
-    enableSorting: false,
   }),
 ];
 
 function ItemListTable({data}) {
-  const [
-    sorting,
-    setSorting,
-  ] = React.useState([
-    {id: 'pubDateMs', desc: true},
-  ])
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-    },
-    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    // debugTable: true,
   });
   return (<div>
-    <table className="border-collapse border border-slate-400 text-helper-color text-sm">
+    <table className="border-collapse border border-slate-400 text-helper-color text-sm w-full">
       <thead>
       {table.getHeaderGroups().map(headerGroup => (
         <tr key={headerGroup.id}>
           {headerGroup.headers.map(header => (
             <th
               key={header.id}
-              className={clsx('border border-slate-300 bg-black text-white py-2 px-4',
-                header.column.getCanSort() ? 'cursor-pointer' : 'select-none')}
+              className={clsx('border border-slate-300 bg-black text-white py-2 px-4')}
             >
-              <div onClick={header.column.getToggleSortingHandler()}>
               {flexRender(header.column.columnDef.header, header.getContext())}
-              {{
-                asc: ' 🔼',
-                desc: ' 🔽',
-              }[header.column.getIsSorted()] ?? null}
-              </div>
             </th>
           ))}
         </tr>
@@ -103,7 +79,6 @@ function ItemListTable({data}) {
       )}
       </tbody>
     </table>
-    {/*<pre>{JSON.stringify(sorting, null, 2)}</pre>*/}
   </div>);
 }
 
