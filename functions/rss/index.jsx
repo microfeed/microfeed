@@ -85,13 +85,13 @@ function buildChannelRss(jsonData, request) {
     'itunes:type': _microfeed['itunes:type'],
     'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
   };
+  channelRss['atom:link'] = {
+    '@_rel': 'self',
+    '@_href': PUBLIC_URLS.rssFeed(baseUrl),
+    '@_type': 'application/rss+xml',
+  };
   const linksTags = [];
   if (jsonData.home_page_url) {
-    channelRss['atom:link'] = {
-      '@_rel': 'self',
-      '@_href': PUBLIC_URLS.rssFeed(baseUrl),
-      '@_type': 'application/rss+xml',
-    };
     linksTags.push(jsonData.home_page_url);
   }
   if (jsonData._microfeed.items_next_cursor) {
@@ -164,7 +164,6 @@ function buildChannelRss(jsonData, request) {
           '@_text': c.categories[0].name,
         }
       }
-      console.log(cat);
       categories.push(cat);
     });
     channelRss['itunes:category'] = categories;
