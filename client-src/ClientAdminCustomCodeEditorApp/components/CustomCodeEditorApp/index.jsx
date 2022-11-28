@@ -61,10 +61,9 @@ function CodeTabs({codeType, setState, themeName}) {
 
 function getFirstItemUrl(feed) {
   const {items} = feed;
-  if (items && Object.keys(items).length > 0) {
-    const itemId = Object.keys(items)[0];
-    const item = items[itemId];
-    return PUBLIC_URLS.webItem(itemId, item.title || 'Untitled');
+  if (items && items.length > 0) {
+    const item = items[0];
+    return PUBLIC_URLS.webItem(item.id, item.title || 'Untitled');
   }
   return '/'
 }

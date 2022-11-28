@@ -1,7 +1,7 @@
 import {randomShortUUID} from "../../common-src/StringUtils";
 import {
   STATUSES, PREDEFINED_SUBSCRIBE_METHODS,
-  SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS,
+  SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE,
 } from '../../common-src/Constants';
 import {msToRFC3339, rfc3399ToMs} from "../../common-src/TimeUtils";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
@@ -16,10 +16,11 @@ import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
  *
  * Example: /json/?next_cursor=1669249854169&sort=oldest_first
  */
-export function getFetchItemsParams(request, queryKwargs = {}) {
+export function getFetchItemsParams(request, queryKwargs = {}, limit = null) {
   const fetchItems = {
     queryKwargs,
     fromUrl: {},
+    limit,
   };
 
   const { searchParams } = new URL(request.url)
@@ -312,10 +313,13 @@ export default class FeedDb {
         }
       }
       const fetchItemsParams = {
-        limit: webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
+        limit: fetchItems.limit || webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
         orderBy,
         queryKwargs,
       };
+      if (fetchItemsParams.limit > MAX_ITEMS_PER_PAGE) {
+        fetchItemsParams.limit = MAX_ITEMS_PER_PAGE;
+      }
       things = [{
         table: 'items',
         ...fetchItemsParams,

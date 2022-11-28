@@ -65,6 +65,13 @@ a {
 }
 
 /*
+  Form / Input
+ */
+.m-input-label-small {
+  @apply text-helper-color font-normal text-sm mb-2;
+}
+
+/*
   Simple icons
  */
 .lh-icon-arrow-right:before {

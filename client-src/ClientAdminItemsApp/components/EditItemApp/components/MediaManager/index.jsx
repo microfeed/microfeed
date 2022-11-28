@@ -210,7 +210,7 @@ export default class MediaManager extends React.Component {
       <div className="flex">
         <AdminRadio
           groupName="category"
-          customLabelClass="font-semibold"
+          customClass="font-semibold"
           buttons={SUPPORTED_ENCLOSURE_CATEGORIES.map((cat) => ({
             name: ENCLOSURE_CATEGORIES_DICT[cat].name,
             value: cat,

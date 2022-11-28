@@ -64,7 +64,7 @@ export default class NewSubscribeDialog extends React.Component {
             <AdminInput
               label="Name"
               value={name}
-              customLabelClass="text-sm text-helper-color mb-1 font-semibold"
+              customLabelClass="m-input-label-small"
               customClass="text-xs"
               onChange={(e) => this.setState({name: e.target.value})}
             />
@@ -72,7 +72,7 @@ export default class NewSubscribeDialog extends React.Component {
               label="URL"
               value={url}
               type="url"
-              customLabelClass="text-sm text-helper-color mb-1 font-semibold"
+              customLabelClass="m-input-label-small"
               customClass="text-xs"
               onChange={(e) => this.setState({url: e.target.value})}
             />

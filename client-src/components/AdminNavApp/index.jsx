@@ -46,7 +46,7 @@ export default class AdminNavApp extends React.Component {
 
   render() {
     const {currentPage} = this.state;
-    const {upperLevel} = this.props;
+    const {upperLevel, AccessoryComponent} = this.props;
     return (<div className="flex min-h-screen min-w-screen">
       <div className="bg-black flex-none">
         <h1 className="p-4 text-white font-bold text-lg mb-8">
@@ -85,11 +85,12 @@ export default class AdminNavApp extends React.Component {
       </div>
       <div className="flex-1">
         <div className="bg-white p-4 flex">
-          {upperLevel && <div className="flex-1">
+          {upperLevel && <div className="">
             <a href={upperLevel.url}><span className="lh-icon-arrow-left" /> {upperLevel.name}</a>
             <span className="mx-2">/</span>
             <span className="text-muted-color">{upperLevel.childName}</span>
           </div>}
+          {AccessoryComponent && <div>{AccessoryComponent}</div>}
           <div className="flex-1 text-right">
             <a href={ADMIN_URLS.logout()} className="hover:opacity-50 text-brand-dark font-semibold text-sm">
               <div className="flex items-center justify-end">

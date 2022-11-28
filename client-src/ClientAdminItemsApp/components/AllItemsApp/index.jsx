@@ -167,7 +167,7 @@ export default class AllItemsApp extends React.Component {
     }));
 
     return (<AdminNavApp currentPage={NAV_ITEMS.ALL_ITEMS}>
-      <form className="lh-page-card mx-4 grid grid-cols-1 gap-4">
+      <form className="lh-page-card grid grid-cols-1 gap-4">
         <div className="lh-page-title">
           {NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
         </div>

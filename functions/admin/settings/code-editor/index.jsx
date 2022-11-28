@@ -1,12 +1,15 @@
 import React from "react";
 import EdgeSettingsStylingApp from "../../../../edge-src/EdgeCustomCodeEditorApp";
-import FeedDb from "../../../../edge-src/models/FeedDb";
+import FeedDb, {getFetchItemsParams} from "../../../../edge-src/models/FeedDb";
 import Theme from '../../../../edge-src/models/Theme';
 import {renderReactToHtml, WebResponseBuilder} from "../../../../edge-src/common/PageUtils";
+import {STATUSES} from "../../../../common-src/Constants";
 
 export async function onRequestGet({env, request}) {
   const feed = new FeedDb(env, request);
-  const content = await feed.getContent();
+  const content = await feed.getContent(getFetchItemsParams(request, {
+    'status__!=': STATUSES.DELETED,
+  }, 1));
   const {settings} = content;
   const {searchParams} = new URL(request.url);
   const themeName = searchParams.get('theme') || 'global';
