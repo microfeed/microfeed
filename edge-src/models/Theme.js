@@ -1,3 +1,5 @@
+import {SETTINGS_CATEGORIES} from "../../common-src/Constants";
+
 const Mustache = require('mustache');
 
 export default class Theme {
@@ -8,15 +10,17 @@ export default class Theme {
     this.theme = 'custom';
     if (!themeName) {
       // Select current theme
-      if (settings && settings.styles && settings.styles.currentTheme &&
-        settings.styles.themes[settings.styles.currentTheme]) {
-        this.theme = settings.styles.currentTheme;
+      if (settings && settings[SETTINGS_CATEGORIES.CUSTOM_CODE] &&
+        settings[SETTINGS_CATEGORIES.CUSTOM_CODE].currentTheme &&
+        settings[SETTINGS_CATEGORIES.CUSTOM_CODE].themes[settings[SETTINGS_CATEGORIES.CUSTOM_CODE].currentTheme]) {
+        this.theme = settings[SETTINGS_CATEGORIES.CUSTOM_CODE].currentTheme;
       }
     } else {
       this.theme = themeName;
     }
-    this.themeBundle = (this.settings.styles && this.settings.styles.themes) ?
-      this.settings.styles.themes[this.theme] : null;
+    this.themeBundle = (this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] &&
+      this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE].themes) ?
+      this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE].themes[this.theme] : null;
   }
 
   name() {
@@ -32,7 +36,8 @@ export default class Theme {
   getWebHeaderTmpl() {
     let tmpl;
     if (this.theme === 'global') {
-      tmpl = (this.settings && this.settings.styles) ? this.settings.styles.webHeader : '';
+      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]) ?
+        this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE].webHeader : '';
     } else {
       tmpl = this.themeBundle ? this.themeBundle.webHeader : require('../common/default_themes/web_header.html');
     }
@@ -48,7 +53,8 @@ export default class Theme {
   getWebBodyEndTmpl() {
     let tmpl = null;
     if (this.theme === 'global') {
-      tmpl = (this.settings && this.settings.styles) ? this.settings.styles.webBodyEnd : '';
+      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]) ?
+        this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE].webBodyEnd : '';
     } else {
       tmpl = this.themeBundle ? this.themeBundle.webBodyEnd : require('../common/default_themes/web_body_end.html');
     }
@@ -64,7 +70,8 @@ export default class Theme {
   getWebBodyStartTmpl() {
     let tmpl;
     if (this.theme === 'global') {
-      tmpl = (this.settings && this.settings.styles) ? this.settings.styles.webBodyStart : '';
+      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]) ?
+        this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE].webBodyStart : '';
     } else {
       tmpl = this.themeBundle ? this.themeBundle.webBodyStart : require('../common/default_themes/web_body_start.html');
     }

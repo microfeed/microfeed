@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import StylingSettingsApp from "./components/StylingSettingsApp";
+import CustomCodeEditorApp from "./components/CustomCodeEditorApp";
 
 document.addEventListener('DOMContentLoaded', () => {
   const $rootDom = document.getElementById('client-side-root');
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const root = ReactDOM.createRoot($rootDom);
     root.render(
       <React.StrictMode>
-        <StylingSettingsApp/>
+        <CustomCodeEditorApp/>
       </React.StrictMode>
     );
   }

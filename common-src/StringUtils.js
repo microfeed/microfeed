@@ -152,7 +152,7 @@ export const ADMIN_URLS = {
   newItem: () => `${ADMIN_HOME}/items/new/`,
   allItems: () => `${ADMIN_HOME}/items/`,
   settings: () => `${ADMIN_HOME}/settings/`,
-  sylingSettings: () => `${ADMIN_HOME}/settings/styling/`,
+  codeEditorSettings: () => `${ADMIN_HOME}/settings/code-editor/`,
   logout: () => `${ADMIN_HOME}/logout/`,
 
   ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,

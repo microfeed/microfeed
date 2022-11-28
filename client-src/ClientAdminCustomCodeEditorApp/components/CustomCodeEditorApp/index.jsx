@@ -6,6 +6,7 @@ import Requests from "../../../common/requests";
 import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
 import AdminCodeEditor from "../../../components/AdminCodeEditor";
+import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -23,37 +24,37 @@ function TabButton({name, onClick, selected}) {
   </a>);
 }
 
-function CodeTabs({currentType, setState, themeName}) {
+function CodeTabs({codeType, setState, themeName}) {
   return (<div className="lh-page-card mb-4">
     {themeName !== 'global' && <TabButton
       name="Web Feed"
-      selected={currentType === 'webFeed'}
-      onClick={() => setState({currentType: 'webFeed'})}
+      selected={codeType === 'webFeed'}
+      onClick={() => setState({codeType: 'webFeed'})}
     />}
     {themeName !== 'global' && <TabButton
       name="Web Item"
-      selected={currentType === 'webItem'}
-      onClick={() => setState({currentType: 'webItem'})}
+      selected={codeType === 'webItem'}
+      onClick={() => setState({codeType: 'webItem'})}
     />}
     <TabButton
       name="Web Header"
-      selected={currentType === 'webHeader'}
-      onClick={() => setState({currentType: 'webHeader'})}
+      selected={codeType === 'webHeader'}
+      onClick={() => setState({codeType: 'webHeader'})}
     />
     <TabButton
       name="Web Body Start"
-      selected={currentType === 'webBodyStart'}
-      onClick={() => setState({currentType: 'webBodyStart'})}
+      selected={codeType === 'webBodyStart'}
+      onClick={() => setState({codeType: 'webBodyStart'})}
     />
     <TabButton
       name="Web Body End"
-      selected={currentType === 'webBodyEnd'}
-      onClick={() => setState({currentType: 'webBodyEnd'})}
+      selected={codeType === 'webBodyEnd'}
+      onClick={() => setState({codeType: 'webBodyEnd'})}
     />
     {themeName !== 'global' && <TabButton
       name="RSS Stylesheet"
-      selected={currentType === 'rssStylesheet'}
-      onClick={() => setState({currentType: 'rssStylesheet'})}
+      selected={codeType === 'rssStylesheet'}
+      onClick={() => setState({codeType: 'rssStylesheet'})}
     />}
   </div>);
 }
@@ -68,7 +69,7 @@ function getFirstItemUrl(feed) {
   return '/'
 }
 
-export default class StylingSettingsApp extends React.Component {
+export default class CustomCodeEditorApp extends React.Component {
   constructor(props) {
     super(props);
 
@@ -90,7 +91,7 @@ export default class StylingSettingsApp extends React.Component {
     } = themeTmplJson;
 
     this.state = {
-      currentType: themeName !== 'global' ? 'webFeed' : 'webHeader',
+      codeType: themeName !== 'global' ? 'webFeed' : 'webHeader',
       submitStatus: null,
 
       themeName,
@@ -106,10 +107,10 @@ export default class StylingSettingsApp extends React.Component {
   }
 
   onUpdateFeed(themeName, themeTmpls, onSucceed) {
-    const existingStyles = this.state.feed.settings.styles || {};
+    const existingStyles = this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] || {};
     const existingThemes = existingStyles.themes || {};
 
-    let styles = {
+    let customCode = {
       // TODO: if we support multiple themes, then don't set currentTheme here.
       currentTheme: themeName,
       themes: {
@@ -120,7 +121,7 @@ export default class StylingSettingsApp extends React.Component {
       },
     };
     if (themeName === 'global') {
-      styles = {
+      customCode = {
         ...themeTmpls,
       };
     }
@@ -129,9 +130,9 @@ export default class StylingSettingsApp extends React.Component {
         ...prevState.feed,
         settings: {
           ...prevState.feed.settings,
-          styles: {
-            ...prevState.feed.settings.styles,
-            ...styles,
+          [SETTINGS_CATEGORIES.CUSTOM_CODE]: {
+            ...prevState.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE],
+            ...customCode,
           },
         }
       },
@@ -164,7 +165,8 @@ export default class StylingSettingsApp extends React.Component {
       themeTmpls['webFeed'] = webFeed;
     }
     this.onUpdateFeed(themeName, themeTmpls, () => {
-      Requests.post('/admin/ajax/feed/', {settings: {styles: this.state.feed.settings.styles}})
+      Requests.post('/admin/ajax/feed/', {settings: {
+        [SETTINGS_CATEGORIES.CUSTOM_CODE]: this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]}})
         .then(() => {
           this.setState({submitStatus: null}, () => {
             showToast('Updated!', 'success');
@@ -178,12 +180,12 @@ export default class StylingSettingsApp extends React.Component {
   }
 
   render() {
-    const {currentType, submitStatus, feed, themeName} = this.state;
-    const code = this.state[currentType];
+    const {codeType, submitStatus, feed, themeName} = this.state;
+    const code = this.state[codeType];
     let language = 'html';
     let viewUrl = '/';
     let description;
-    switch(currentType) {
+    switch(codeType) {
       case 'rssStylesheet':
         viewUrl = PUBLIC_URLS.rssFeed();
         language = 'css';
@@ -220,16 +222,16 @@ export default class StylingSettingsApp extends React.Component {
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp
       currentPage="settings"
-      upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Styling'}}
+      upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Code Editor'}}
     >
-      <CodeTabs currentType={currentType} setState={this.setState} themeName={themeName} />
+      <CodeTabs codeType={codeType} setState={this.setState} themeName={themeName} />
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="text-xs text-muted-color mb-4">{description}</div>
           <AdminCodeEditor
             code={code}
             language={language}
-            onChange={(e) => this.setState({[currentType]: e.target.value})}
+            onChange={(e) => this.setState({[codeType]: e.target.value})}
           />
         </div>
         <div className="col-span-3">

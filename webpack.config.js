@@ -40,7 +40,7 @@ const entry = {
   all_items_js: './ClientAdminItemsApp/index.js',
   edit_channel_js: './ClientAdminChannelApp/index.js',
   settings_js: './ClientAdminSettingsApp/index.js',
-  styling_settings_js: './ClientAdminStylingSettingsApp/index.js',
+  custom_code_editor_js: './ClientAdminCustomCodeEditorApp/index.js',
 };
 
 

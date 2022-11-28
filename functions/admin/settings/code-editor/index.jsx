@@ -1,5 +1,5 @@
 import React from "react";
-import EdgeSettingsStylingApp from "../../../../edge-src/EdgeSettingsStylingApp";
+import EdgeSettingsStylingApp from "../../../../edge-src/EdgeCustomCodeEditorApp";
 import FeedDb from "../../../../edge-src/models/FeedDb";
 import Theme from '../../../../edge-src/models/Theme';
 import {renderReactToHtml, WebResponseBuilder} from "../../../../edge-src/common/PageUtils";

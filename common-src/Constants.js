@@ -7,7 +7,7 @@ export const STATUSES = {
 export const SETTINGS_CATEGORIES = {
   SUBSCRIBE_METHODS: 'subscribeMethods',
   WEB_GLOBAL_SETTINGS: 'webGlobalSettings',
-  STYLES: 'styles',
+  CUSTOM_CODE: 'customCode',
   ANALYTICS: 'analytics',
   ACCESS: 'access',
 };

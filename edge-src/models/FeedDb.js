@@ -129,7 +129,7 @@ export default class FeedDb {
         'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
       },
       [SETTINGS_CATEGORIES.ANALYTICS]: {},
-      [SETTINGS_CATEGORIES.STYLES]: {},
+      [SETTINGS_CATEGORIES.CUSTOM_CODE]: {},
     };
     const channel = {
       image: '/assets/default/channel-image.png',

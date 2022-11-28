@@ -3,7 +3,7 @@ import AdminNavApp from '../../components/AdminNavApp';
 import TrackingSettingsApp from "./TrackingSettingsApp";
 import AccessSettingsApp from "./AccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
-import StylingSettingsApp from "./StylingSettingsApp";
+import CustomCodeSettingsApp from "./CustomCodeSettingsApp";
 import WebGlobalSettingsApp from "./WebGlobalSettingsApp";
 import Requests from "../../common/requests";
 import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
@@ -70,7 +70,7 @@ export default class SettingsApp extends React.Component {
             />
           </div>
           <div className="col-span-1 h-full">
-            <StylingSettingsApp
+            <CustomCodeSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}

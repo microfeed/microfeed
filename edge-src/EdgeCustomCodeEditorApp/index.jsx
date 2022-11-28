@@ -3,7 +3,7 @@ import AdminWholeHtml from "../components/AdminWholeHtml";
 import {escapeHtml} from "../../common-src/StringUtils";
 import {OUR_BRAND} from "../../common-src/Constants";
 
-export default class AdminSettingsApp extends React.Component {
+export default class EdgeCustomCodeEditorApp extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -21,9 +21,9 @@ export default class AdminSettingsApp extends React.Component {
     };
     return (
       <AdminWholeHtml
-        title={`Styling Settings | ${OUR_BRAND.domain}`}
+        title={`Code Editor | ${OUR_BRAND.domain}`}
         description=""
-        webpackJsList={['styling_settings_js']}
+        webpackJsList={['custom_code_editor_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
       >

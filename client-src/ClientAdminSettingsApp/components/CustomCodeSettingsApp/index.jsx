@@ -1,6 +1,7 @@
 import React from 'react';
 import {ADMIN_URLS} from "../../../../common-src/StringUtils";
 import SettingsBase from '../SettingsBase';
+import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
 
 function NavBlock({url, text}) {
   return (<div>
@@ -10,11 +11,11 @@ function NavBlock({url, text}) {
   </div>);
 }
 
-export default class BrandingSettingsApp extends React.Component {
+export default class CustomCodeSettingsApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentType: 'styles',
+      currentType: SETTINGS_CATEGORIES.CUSTOM_CODE,
     }
   }
 
@@ -22,27 +23,27 @@ export default class BrandingSettingsApp extends React.Component {
     const {submitting, submitForType} = this.props;
     const {currentType} = this.state;
     return (<SettingsBase
-      title="Code and Styles"
+      title="Custom Code"
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
     >
       <NavBlock
-        url={ADMIN_URLS.sylingSettings()}
-        text="Edit web code shared across pages"
+        url={ADMIN_URLS.codeEditorSettings()}
+        text="Edit shared code across web pages"
       />
       <div className="text-xs text-muted-color mt-2">
-        {'code in <head></head> and top & bottom of <body></body>'}
+        {'Code inside <head></head> and at top & bottom of <body></body>'}
       </div>
 
       <div className="mt-8">
         <div className="lh-page-subtitle">Themes</div>
         <NavBlock
-          url={`${ADMIN_URLS.sylingSettings()}?theme=custom`}
+          url={`${ADMIN_URLS.codeEditorSettings()}?theme=custom`}
           text="Edit web and rss styling"
         />
         <div className="text-xs text-muted-color mt-2">
-          microfeed will support multiple themes / templates in the future.
+          <em>microfeed will support multiple themes / templates in the future</em>
         </div>
       </div>
     </SettingsBase>);
