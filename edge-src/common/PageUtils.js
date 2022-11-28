@@ -43,10 +43,10 @@ class ResponseBuilder {
     return this._getResponse(props);
   }
 
-  static Response404() {
-    return new Response('Not Found', {
+  static Response404(text = 'Not Found') {
+    return new Response(text, {
       status: 404,
-      statusText: 'Not Found',
+      statusText: text,
     });
   }
 
