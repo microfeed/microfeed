@@ -1,7 +1,7 @@
 import React from 'react';
 import {ADMIN_URLS} from "../../../../common-src/StringUtils";
 import SettingsBase from '../SettingsBase';
-import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
+import {SETTINGS_CATEGORIES, CODE_TYPES} from "../../../../common-src/Constants";
 
 function NavBlock({url, text}) {
   return (<div>
@@ -39,7 +39,7 @@ export default class CustomCodeSettingsApp extends React.Component {
       <div className="mt-8">
         <div className="lh-page-subtitle">Themes</div>
         <NavBlock
-          url={`${ADMIN_URLS.codeEditorSettings()}?theme=custom`}
+          url={`${ADMIN_URLS.codeEditorSettings()}?type=${CODE_TYPES.THEMES}&theme=custom`}
           text="Edit web and rss styling"
         />
         <div className="text-xs text-muted-color mt-2">

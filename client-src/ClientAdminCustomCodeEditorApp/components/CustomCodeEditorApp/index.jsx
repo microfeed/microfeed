@@ -6,7 +6,10 @@ import Requests from "../../../common/requests";
 import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
 import AdminCodeEditor from "../../../components/AdminCodeEditor";
-import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
+import {
+  CODE_TYPES, CODE_FILES,
+  SETTINGS_CATEGORIES,
+} from "../../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -24,38 +27,55 @@ function TabButton({name, onClick, selected}) {
   </a>);
 }
 
-function CodeTabs({codeType, setState, themeName}) {
+const CODE_FILES_DICT = {
+  [CODE_FILES.WEB_FEED]: {
+    'name': 'Web Feed',
+  },
+  [CODE_FILES.WEB_ITEM]: {
+    'name': 'Web Item',
+  },
+  [CODE_FILES.WEB_HEADER]: {
+    'name': 'Web Header',
+  },
+  [CODE_FILES.WEB_BODY_START]: {
+    'name': 'Web Body Start',
+  },
+  [CODE_FILES.WEB_BODY_END]: {
+    'name': 'Web Boby End',
+  },
+  [CODE_FILES.RSS_STYLESHEET]: {
+    'name': 'Rss Stylesheet',
+  },
+};
+
+const CODE_BUNDLE = {
+  [CODE_TYPES.SHARED]: [
+    CODE_FILES.WEB_HEADER,
+    CODE_FILES.WEB_BODY_START,
+    CODE_FILES.WEB_BODY_END,
+  ],
+  [CODE_TYPES.THEMES]: [
+    CODE_FILES.WEB_FEED,
+    CODE_FILES.WEB_ITEM,
+    CODE_FILES.WEB_HEADER,
+    CODE_FILES.WEB_BODY_START,
+    CODE_FILES.WEB_BODY_END,
+    CODE_FILES.RSS_STYLESHEET,
+  ],
+};
+
+function CodeTabs({codeFile, codeType, themeName, setState}) {
+  const codeFiles = CODE_BUNDLE[codeType];
   return (<div className="lh-page-card mb-4">
-    {themeName !== 'global' && <TabButton
-      name="Web Feed"
-      selected={codeType === 'webFeed'}
-      onClick={() => setState({codeType: 'webFeed'})}
-    />}
-    {themeName !== 'global' && <TabButton
-      name="Web Item"
-      selected={codeType === 'webItem'}
-      onClick={() => setState({codeType: 'webItem'})}
-    />}
-    <TabButton
-      name="Web Header"
-      selected={codeType === 'webHeader'}
-      onClick={() => setState({codeType: 'webHeader'})}
-    />
-    <TabButton
-      name="Web Body Start"
-      selected={codeType === 'webBodyStart'}
-      onClick={() => setState({codeType: 'webBodyStart'})}
-    />
-    <TabButton
-      name="Web Body End"
-      selected={codeType === 'webBodyEnd'}
-      onClick={() => setState({codeType: 'webBodyEnd'})}
-    />
-    {themeName !== 'global' && <TabButton
-      name="RSS Stylesheet"
-      selected={codeType === 'rssStylesheet'}
-      onClick={() => setState({codeType: 'rssStylesheet'})}
-    />}
+    {codeFiles.map((cf) => (<TabButton
+      key={`tab-${cf}`}
+      name={CODE_FILES_DICT[cf].name}
+      selected={codeFile === cf}
+      onClick={() => {
+        setState({codeFile: cf});
+        updateUrlParams(codeType, cf, themeName, true)
+      }}
+    />))}
   </div>);
 }
 
@@ -66,6 +86,34 @@ function getFirstItemUrl(feed) {
     return PUBLIC_URLS.webItem(item.id, item.title || 'Untitled');
   }
   return '/'
+}
+
+function updateUrlParams(codeType, codeFile, theme = '', push = true) {
+  if ('URLSearchParams' in window) {
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('type', codeType);
+    if (codeType === CODE_TYPES.THEMES) {
+      searchParams.set('theme', theme);
+    }
+    const newRelativePathQuery = `${window.location.pathname}?${searchParams.toString()}${codeFile ? `#${codeFile}` : ''}`;
+    if (push) {
+      history.pushState(null, '', newRelativePathQuery);
+    } else {
+      history.replaceState(null, '', newRelativePathQuery);
+    }
+  }
+}
+
+function chooseFileType(codeType, url = null) {
+  const {hash} = url ? new URL(url) : window.location;
+  let codeFile = codeType === CODE_TYPES.THEMES ? CODE_FILES.WEB_FEED : CODE_FILES.WEB_HEADER;
+  if (hash) {
+    const hashValue = hash.substring(1);
+    if (CODE_BUNDLE[codeType] && CODE_BUNDLE[codeType].includes(hashValue)) {
+      codeFile = hashValue;
+    }
+  }
+  return codeFile;
 }
 
 export default class CustomCodeEditorApp extends React.Component {
@@ -89,8 +137,16 @@ export default class CustomCodeEditorApp extends React.Component {
       webHeader,
     } = themeTmplJson;
 
+    const urlObj = new URL(location.href);
+    const {searchParams} = urlObj;
+    const codeType = searchParams.get('type') || CODE_TYPES.SHARED;
+    const codeFile = chooseFileType(codeType);
+
+    updateUrlParams(codeType, codeFile, themeName, false);
+
     this.state = {
-      codeType: themeName !== 'global' ? 'webFeed' : 'webHeader',
+      codeType,
+      codeFile,
       submitStatus: null,
 
       themeName,
@@ -103,6 +159,14 @@ export default class CustomCodeEditorApp extends React.Component {
 
       feed,
     };
+  }
+
+  componentDidMount() {
+    window.addEventListener('hashchange', (event) => {
+      const {codeType} = this.state;
+      const newCodeFile = chooseFileType(codeType, event.newURL);
+      this.setState({codeFile: newCodeFile});
+    });
   }
 
   onUpdateFeed(themeName, themeTmpls, onSucceed) {
@@ -179,12 +243,12 @@ export default class CustomCodeEditorApp extends React.Component {
   }
 
   render() {
-    const {codeType, submitStatus, feed, themeName} = this.state;
-    const code = this.state[codeType];
+    const {codeFile, submitStatus, feed, codeType, themeName} = this.state;
+    const code = this.state[codeFile];
     let language = 'html';
     let viewUrl = '/';
     let description;
-    switch(codeType) {
+    switch(codeFile) {
       case 'rssStylesheet':
         viewUrl = PUBLIC_URLS.rssFeed();
         language = 'css';
@@ -223,14 +287,14 @@ export default class CustomCodeEditorApp extends React.Component {
       currentPage="settings"
       upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Code Editor'}}
     >
-      <CodeTabs codeType={codeType} setState={this.setState} themeName={themeName} />
+      <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} />
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="text-xs text-muted-color mb-4">{description}</div>
           <AdminCodeEditor
             code={code}
             language={language}
-            onChange={(e) => this.setState({[codeType]: e.target.value})}
+            onChange={(e) => this.setState({[codeFile]: e.target.value})}
           />
         </div>
         <div className="col-span-3">

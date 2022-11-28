@@ -19,6 +19,20 @@ export const ITEMS_SORT_ORDERS = {
   NEWEST_FIRST: 'newest_first',
 };
 
+export const CODE_TYPES = {
+  SHARED: 'shared',
+  THEMES: 'themes',
+};
+
+export const CODE_FILES = {
+  WEB_HEADER: 'webHeader',
+  WEB_BODY_START: 'webBodyStart',
+  WEB_BODY_END: 'webBodyEnd',
+  WEB_FEED: 'webFeed',
+  WEB_ITEM: 'webItem',
+  RSS_STYLESHEET: 'rssStylesheet',
+};
+
 export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',
