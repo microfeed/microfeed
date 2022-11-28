@@ -169,23 +169,26 @@ export default class CustomCodeEditorApp extends React.Component {
     });
   }
 
-  onUpdateFeed(themeName, themeTmpls, onSucceed) {
-    const existingStyles = this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] || {};
-    const existingThemes = existingStyles.themes || {};
+  onUpdateFeed(themeTmpls, onSucceed) {
+    const existingCode = this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] || {};
+    const existingThemes = existingCode[CODE_TYPES.THEMES] || {};
 
-    let customCode = {
-      // TODO: if we support multiple themes, then don't set currentTheme here.
-      currentTheme: themeName,
-      themes: {
-        ...existingThemes,
-        [themeName]: {
-          ...themeTmpls,
-        }
-      },
-    };
-    if (themeName === 'global') {
+    const {themeName, codeType} = this.state;
+    let customCode = {};
+    if (codeType === CODE_TYPES.SHARED) {
       customCode = {
         ...themeTmpls,
+      };
+    } else if (codeType === CODE_TYPES.THEMES) {
+      customCode = {
+        // TODO: if we support multiple themes, then don't set currentTheme here.
+        currentTheme: themeName,
+        [CODE_TYPES.THEMES]: {
+          ...existingThemes,
+          [themeName]: {
+            ...themeTmpls,
+          }
+        },
       };
     }
     this.setState(prevState => ({
@@ -206,28 +209,17 @@ export default class CustomCodeEditorApp extends React.Component {
     e.preventDefault();
     this.setState({submitStatus: SUBMIT_STATUS__START});
 
-    const {themeName} = this.state;
-    const {
-      rssStylesheet,
-      webItem,
-      webFeed,
-      webBodyStart,
-      webBodyEnd,
-      webHeader,
-    } = this.state;
+    const {codeType} = this.state;
 
-    const themeTmpls = {
-      webBodyStart,
-      webBodyEnd,
-      webHeader,
-    };
+    const themeTmpls = {};
+    CODE_BUNDLE[codeType].forEach((codeFile) => {
+      const code = this.state[codeFile];
+      if (code) {
+        themeTmpls[codeFile] = code;
+      }
+    });
 
-    if (themeName !== 'global') {
-      themeTmpls['rssStylesheet'] = rssStylesheet;
-      themeTmpls['webItem'] = webItem;
-      themeTmpls['webFeed'] = webFeed;
-    }
-    this.onUpdateFeed(themeName, themeTmpls, () => {
+    this.onUpdateFeed(themeTmpls, () => {
       Requests.post('/admin/ajax/feed/', {settings: {
         [SETTINGS_CATEGORIES.CUSTOM_CODE]: this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]}})
         .then(() => {

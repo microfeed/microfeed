@@ -1,7 +1,7 @@
 import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
-import {STATUSES} from "../../common-src/Constants";
+import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
@@ -128,10 +128,10 @@ export class JsonResponseBuilder extends ResponseBuilder {
 }
 
 class CodeInjector {
-  constructor(settings, theme, globalTheme) {
+  constructor(settings, theme, sharedTheme) {
     this.settings = settings;
     this.theme = theme;
-    this.globalTheme = globalTheme;
+    this.sharedTheme = sharedTheme;
   }
   element(element) {
     if (!this.settings) {
@@ -146,14 +146,14 @@ class CodeInjector {
           element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
         }
       }
-      element.append(this.globalTheme.getWebHeader().html || '', {html: true});
+      element.append(this.sharedTheme.getWebHeader().html || '', {html: true});
       const {html} = this.theme.getWebHeader();
       element.append(html, {html: true});
     } else if (element.tagName === 'body') {
       element.prepend(this.theme.getWebBodyStart().html, {html: true});
-      element.prepend(this.globalTheme.getWebBodyStart().html || '', {html: true});
+      element.prepend(this.sharedTheme.getWebBodyStart().html || '', {html: true});
 
-      element.append(this.globalTheme.getWebBodyEnd().html || '', {html: true});
+      element.append(this.sharedTheme.getWebBodyEnd().html || '', {html: true});
       const {html} = this.theme.getWebBodyEnd();
       element.append(html, {html: true});
     }
@@ -168,13 +168,13 @@ export class WebResponseBuilder extends ResponseBuilder {
   _getResponse(props) {
     const res = super._getResponse(props);
     const theme = new Theme(this.jsonData, this.settings);
-    const globalTheme = new Theme(this.jsonData, this.settings, 'global');
+    const sharedTheme = new Theme(this.jsonData, this.settings, CODE_TYPES.SHARED);
     const fromReact = renderReactToHtml(
       props.getComponent(this.content, this.jsonData, theme));
     const newRes = new Response(fromReact, res);
     return new HTMLRewriter()
-      .on('head', new CodeInjector(this.settings, theme, globalTheme))
-      .on('body', new CodeInjector(this.settings, theme, globalTheme))
+      .on('head', new CodeInjector(this.settings, theme, sharedTheme))
+      .on('body', new CodeInjector(this.settings, theme, sharedTheme))
       .transform(newRes);
   }
 }
