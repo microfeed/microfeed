@@ -84,7 +84,7 @@ export default class AdminNavApp extends React.Component {
         </nav>
       </div>
       <div className="flex-1">
-        <div className="bg-white p-4 flex">
+        <div className="bg-white p-4 flex items-center">
           {upperLevel && <div className="">
             <a href={upperLevel.url}><span className="lh-icon-arrow-left" /> {upperLevel.name}</a>
             <span className="mx-2">/</span>

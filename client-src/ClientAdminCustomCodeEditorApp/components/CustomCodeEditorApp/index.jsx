@@ -10,8 +10,22 @@ import {
   CODE_TYPES, CODE_FILES,
   SETTINGS_CATEGORIES,
 } from "../../../../common-src/Constants";
+import AdminSelect from "../../../components/AdminSelect";
 
 const SUBMIT_STATUS__START = 1;
+
+const CODE_TYPE_SELECTOR_OPTIONS = [
+  {
+    label: 'Shared code',
+    value: CODE_TYPES.SHARED,
+  },
+  {
+    label: 'Theme: custom',
+    value: CODE_TYPES.THEMES,
+  },
+];
+const CODE_TYPE_SELECTOR_OPTIONS_DICT = Object.assign({}, ...CODE_TYPE_SELECTOR_OPTIONS.map(
+  (x) => ({[x.value]: x})));
 
 function TabButton({name, onClick, selected}) {
   return (<a
@@ -285,6 +299,15 @@ export default class CustomCodeEditorApp extends React.Component {
     return (<AdminNavApp
       currentPage="settings"
       upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Code Editor'}}
+      AccessoryComponent={<div className="ml-4">
+        <AdminSelect
+          value={CODE_TYPE_SELECTOR_OPTIONS_DICT[codeType]}
+          options={CODE_TYPE_SELECTOR_OPTIONS}
+          onChange={(selected) => {
+            location.href = `${ADMIN_URLS.codeEditorSettings()}?type=${selected.value}`;
+          }}
+        />
+      </div>}
     >
       <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} />
       <form className="grid grid-cols-12 gap-4">
