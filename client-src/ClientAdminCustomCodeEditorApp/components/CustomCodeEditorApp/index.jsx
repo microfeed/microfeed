@@ -29,22 +29,53 @@ function TabButton({name, onClick, selected}) {
 
 const CODE_FILES_DICT = {
   [CODE_FILES.WEB_FEED]: {
-    'name': 'Web Feed',
+    name: 'Web Feed',
+    language: 'html',
+    viewUrl: () => PUBLIC_URLS.webFeed(),
+    description: (<div>
+      The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a>
+    </div>),
   },
   [CODE_FILES.WEB_ITEM]: {
     'name': 'Web Item',
+    language: 'html',
+    viewUrl: (feed) => getFirstItemUrl(feed),
+    description: <div>The code is used for an item web page, which is good for SEO.</div>,
   },
   [CODE_FILES.WEB_HEADER]: {
-    'name': 'Web Header',
+    name: 'Web Header',
+    language: 'html',
+    viewUrl: () => PUBLIC_URLS.webFeed(),
+    description: (<div>
+      The code is inserted right before the <span
+        dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.
+    </div>),
   },
   [CODE_FILES.WEB_BODY_START]: {
     'name': 'Web Body Start',
+    language: 'html',
+    viewUrl: () => PUBLIC_URLS.webFeed(),
+    description: (<div>
+      The code is inserted right after the <span
+      dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}}/> tag. You can put navigation menus / branding things here.
+    </div>),
   },
   [CODE_FILES.WEB_BODY_END]: {
     'name': 'Web Boby End',
+    language: 'html',
+    viewUrl: () => PUBLIC_URLS.webFeed(),
+    description: (<div>
+      The code is inserted right before the <span
+      dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.
+    </div>),
   },
   [CODE_FILES.RSS_STYLESHEET]: {
-    'name': 'Rss Stylesheet',
+    name: 'Rss Stylesheet',
+    language: 'css',
+    viewUrl: () => PUBLIC_URLS.rssFeed(),
+    description: (<div>The code is used for <a href={PUBLIC_URLS.rssFeedStylesheet()} target="_blank">
+      {PUBLIC_URLS.rssFeedStylesheet()}</a>, which is included in <a
+      href={PUBLIC_URLS.rssFeed()} target="_blank">the RSS feed</a>.</div>),
   },
 };
 
@@ -104,6 +135,16 @@ function updateUrlParams(codeType, codeFile, theme = '', push = true) {
   }
 }
 
+function chooseCodeType() {
+  const urlObj = new URL(location.href);
+  const {searchParams} = urlObj;
+  const codeType = searchParams.get('type') || CODE_TYPES.SHARED;
+  if (Object.values(CODE_TYPES).includes(codeType)) {
+    return codeType;
+  }
+  return CODE_TYPES.SHARED;
+}
+
 function chooseFileType(codeType, url = null) {
   const {hash} = url ? new URL(url) : window.location;
   let codeFile = codeType === CODE_TYPES.THEMES ? CODE_FILES.WEB_FEED : CODE_FILES.WEB_HEADER;
@@ -137,9 +178,7 @@ export default class CustomCodeEditorApp extends React.Component {
       webHeader,
     } = themeTmplJson;
 
-    const urlObj = new URL(location.href);
-    const {searchParams} = urlObj;
-    const codeType = searchParams.get('type') || CODE_TYPES.SHARED;
+    const codeType = chooseCodeType();
     const codeFile = chooseFileType(codeType);
 
     updateUrlParams(codeType, codeFile, themeName, false);
@@ -237,43 +276,11 @@ export default class CustomCodeEditorApp extends React.Component {
   render() {
     const {codeFile, submitStatus, feed, codeType, themeName} = this.state;
     const code = this.state[codeFile];
-    let language = 'html';
-    let viewUrl = '/';
-    let description;
-    switch(codeFile) {
-      case 'rssStylesheet':
-        viewUrl = PUBLIC_URLS.rssFeed();
-        language = 'css';
-        description = <div>The code is used for <a href={PUBLIC_URLS.rssFeedStylesheet()} target="_blank">
-          {PUBLIC_URLS.rssFeedStylesheet()}</a>, which is included in <a
-          href={PUBLIC_URLS.rssFeed()} target="_blank">the RSS feed</a>.</div>;
-        break;
-      case 'webItem':
-        viewUrl = getFirstItemUrl(feed);
-        description = <div>The code is used for an item web page, which is good for SEO.</div>;
-        break;
-      case 'webFeed':
-        viewUrl = PUBLIC_URLS.webFeed();
-        description = <div>The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a></div>;
-        break;
-      case 'webHeader':
-        viewUrl = PUBLIC_URLS.webFeed();
-        description = <div>The code is inserted right before the <span
-          dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.</div>
-        break;
-      case 'webBodyEnd':
-        viewUrl = PUBLIC_URLS.webFeed();
-        description = <div>The code is inserted right before the <span
-          dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.</div>
-        break;
-      case 'webBodyStart':
-        viewUrl = PUBLIC_URLS.webFeed();
-        description = <div>The code is inserted right after the <span
-          dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}} /> tag. You can put navigation menus / branding things here.</div>
-        break;
-      default:
-        break;
-    }
+    const codeBundle = CODE_FILES_DICT[codeFile];
+    const language = codeBundle.language;
+    const viewUrl = codeBundle.viewUrl(feed);
+    const description = codeBundle.description;
+
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp
       currentPage="settings"
