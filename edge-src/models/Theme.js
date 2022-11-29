@@ -37,7 +37,7 @@ export default class Theme {
   getWebHeaderTmpl() {
     let tmpl;
     if (this.theme === CODE_TYPES.SHARED) {
-      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]) ?
+      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_HEADER]) ?
         this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_HEADER] : '';
     } else {
       tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_HEADER] : require('../common/default_themes/web_header.html');
@@ -54,7 +54,7 @@ export default class Theme {
   getWebBodyEndTmpl() {
     let tmpl = null;
     if (this.theme === CODE_TYPES.SHARED) {
-      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]) ?
+      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_END]) ?
         this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_END] : '';
     } else {
       tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_BODY_END] : require('../common/default_themes/web_body_end.html');
@@ -71,7 +71,7 @@ export default class Theme {
   getWebBodyStartTmpl() {
     let tmpl;
     if (this.theme === CODE_TYPES.SHARED) {
-      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]) ?
+      tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_START]) ?
         this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_START] : '';
     } else {
       tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_BODY_START] : require('../common/default_themes/web_body_start.html');
