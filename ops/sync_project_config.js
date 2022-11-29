@@ -105,7 +105,9 @@ class SyncProjectConfig {
 
       this._updateEnvVars(varsToAddOrUpdate, (json) => {
         console.log(`Successfully synced for [${this.currentEnv}]!`);
-        console.log(json.result.deployment_configs[this.currentEnv].env_vars);
+        if (json.result && json.result.deployment_configs) {
+          console.log(json.result.deployment_configs[this.currentEnv].env_vars);
+        }
       });
     });
   }
