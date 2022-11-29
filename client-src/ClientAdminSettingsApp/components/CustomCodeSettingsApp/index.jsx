@@ -30,7 +30,7 @@ export default class CustomCodeSettingsApp extends React.Component {
     >
       <NavBlock
         url={ADMIN_URLS.codeEditorSettings()}
-        text="Edit shared code across web pages"
+        text="Edit shared html code across web pages"
       />
       <div className="text-xs text-muted-color mt-2">
         {'Code inside <head></head> and at top & bottom of <body></body>'}

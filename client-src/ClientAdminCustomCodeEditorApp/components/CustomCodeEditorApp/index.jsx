@@ -16,7 +16,7 @@ const SUBMIT_STATUS__START = 1;
 
 const CODE_TYPE_SELECTOR_OPTIONS = [
   {
-    label: 'Shared code',
+    label: 'Shared html code',
     value: CODE_TYPES.SHARED,
   },
   {
