@@ -55,8 +55,6 @@ You'll need to create these secrets:
 * CLOUDFLARE_PROJECT_NAME
 * R2_ACCESS_KEY_ID
 * R2_SECRET_ACCESS_KEY
-* ADMIN_PASSWORD (optional)
-* ADMIN_USERNAME (optional)
 * R2_PUBLIC_BUCKET (optional)
 
 ### Step 3: Run GitHub Action to deploy code
