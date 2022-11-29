@@ -123,7 +123,9 @@ export class JsonResponseBuilder extends ResponseBuilder {
     if (notFoundRes) {
       return notFoundRes;
     }
-    return new Response(JSON.stringify(this.jsonData), res);
+    const newResponse = new Response(JSON.stringify(this.jsonData), res);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return newResponse;
   }
 }
 
