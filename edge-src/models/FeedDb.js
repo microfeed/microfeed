@@ -129,6 +129,7 @@ export default class FeedDb {
         'itemsSortOrder': ITEMS_SORT_ORDERS.NEWEST_FIRST,
         'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
       },
+      [SETTINGS_CATEGORIES.ACCESS]: {},
       [SETTINGS_CATEGORIES.ANALYTICS]: {},
       [SETTINGS_CATEGORIES.CUSTOM_CODE]: {},
     };
@@ -144,14 +145,6 @@ export default class FeedDb {
     };
 
     const batchStatements = [
-      this.getInsertSql('settings', {
-        'category': SETTINGS_CATEGORIES.SUBSCRIBE_METHODS,
-        'data': JSON.stringify(settings[SETTINGS_CATEGORIES.SUBSCRIBE_METHODS]),
-      }),
-      this.getInsertSql('settings', {
-        'category': SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
-        'data': JSON.stringify(settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS]),
-      }),
       this.getInsertSql('channels', {
         'id': randomShortUUID(),
         'status': STATUSES.PUBLISHED,
@@ -159,6 +152,13 @@ export default class FeedDb {
         'data': JSON.stringify(channel),
       }),
     ];
+
+    Object.keys(settings).forEach((s) => {
+      batchStatements.push(this.getInsertSql('settings', {
+        'category': s,
+        'data': JSON.stringify(settings[s]),
+      }));
+    })
 
     await this.FEED_DB.batch(batchStatements);
 
@@ -350,8 +350,22 @@ export default class FeedDb {
 
   async _updateOrAddSetting(settings, category) {
     // XXX: d1 is obviously not for prime time :(
-    // This ugly "insert" then "update" pattern is for d1 alpha.
+    // This ugly "insert" then "update" pattern is for d1 alpha. And it might not work on production...
     let res;
+    try {
+      console.log('Trying to update...');
+      res = await this.getUpdateSql(
+        'settings',
+        {
+          category,
+        },
+        {
+          data: JSON.stringify(settings[category]),
+        },
+      ).run();
+    } catch (error) {
+      console.log('Failed to update for ', category, error);
+    }
     try {
       console.log('Trying to insert...', category);
       console.log(settings);
@@ -364,23 +378,8 @@ export default class FeedDb {
       ).run();
     } catch (error) {
       console.log('Failed to insert for ', category, error);
-    } finally {
-      try {
-        console.log('Trying to update...');
-        res = await this.getUpdateSql(
-          'settings',
-          {
-            category,
-          },
-          {
-            data: JSON.stringify(settings[category]),
-          },
-        ).run();
-      } catch (error) {
-        console.log('Failed to update for ', category, error);
-      }
-      console.log('Done', res);
     }
+    console.log('Done', res);
   }
 
   async _putSettingsToContent(settings) {
