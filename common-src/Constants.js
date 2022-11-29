@@ -160,6 +160,7 @@ export const ENCLOSURE_CATEGORIES_DICT = {
 };
 
 export const NAV_ITEMS = {
+  ADMIN_HOME: 'admin_home',
   EDIT_CHANNEL: 'edit_channel',
   NEW_ITEM: 'new_item',
   ALL_ITEMS: 'all_items',
@@ -167,6 +168,9 @@ export const NAV_ITEMS = {
 };
 
 export const NAV_ITEMS_DICT = {
+  [NAV_ITEMS.ADMIN_HOME]: {
+    name: 'Home',
+  },
   [NAV_ITEMS.EDIT_CHANNEL]: {
     name: 'Edit channel',
   },

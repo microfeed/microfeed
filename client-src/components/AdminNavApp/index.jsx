@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
+  HomeIcon,
   Cog6ToothIcon,
   PlusIcon,
   ListBulletIcon,
@@ -37,7 +38,7 @@ export default class AdminNavApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      'currentPage': props.currentPage || NAV_ITEMS.EDIT_CHANNEL,
+      'currentPage': props.currentPage || NAV_ITEMS.ADMIN_HOME,
     }
   }
 
@@ -55,6 +56,13 @@ export default class AdminNavApp extends React.Component {
         <nav>
           <NavItem
             url={ADMIN_URLS.home()}
+            title={NAV_ITEMS_DICT[NAV_ITEMS.ADMIN_HOME].name}
+            navId={NAV_ITEMS.ADMIN_HOME}
+            currentId={currentPage}
+            Icon={HomeIcon}
+          />
+          <NavItem
+            url={ADMIN_URLS.editPrimaryChannel()}
             title={NAV_ITEMS_DICT[NAV_ITEMS.EDIT_CHANNEL].name}
             navId={NAV_ITEMS.EDIT_CHANNEL}
             currentId={currentPage}

@@ -10,7 +10,7 @@ import {showToast} from "../../../common/ToastUtils";
 import {AdminSideQuickLinks} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
 import AdminSelect from "../../../components/AdminSelect";
-import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT} from "../../../../common-src/Constants";
+import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT, NAV_ITEMS} from "../../../../common-src/Constants";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -126,7 +126,7 @@ export default class EditChannelApp extends React.Component {
     const {submitStatus, channel, feed} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    return (<AdminNavApp>
+    return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="flex">

@@ -148,6 +148,7 @@ const ADMIN_HOME = '/admin';
 
 export const ADMIN_URLS = {
   home: () => `${ADMIN_HOME}/`,
+  editPrimaryChannel: () => `${ADMIN_HOME}/channels/primary/`,
   editItem: (itemId) => `${ADMIN_HOME}/items/${itemId}/`,
   newItem: () => `${ADMIN_HOME}/items/new/`,
   allItems: () => `${ADMIN_HOME}/items/`,
