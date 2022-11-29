@@ -364,22 +364,23 @@ export default class FeedDb {
       ).run();
     } catch (error) {
       console.log('Failed to insert for ', category, error);
+    } finally {
+      try {
+        console.log('Trying to update...');
+        res = await this.getUpdateSql(
+          'settings',
+          {
+            category,
+          },
+          {
+            data: JSON.stringify(settings[category]),
+          },
+        ).run();
+      } catch (error) {
+        console.log('Failed to update for ', category, error);
+      }
+      console.log('Done', res);
     }
-    try {
-      console.log('Trying to update...');
-      res = await this.getUpdateSql(
-        'settings',
-        {
-          category,
-        },
-        {
-          data: JSON.stringify(settings[category]),
-        },
-      ).run();
-    } catch (error) {
-      console.log('Failed to update for ', category, error);
-    }
-    console.log('Done', res);
   }
 
   async _putSettingsToContent(settings) {
