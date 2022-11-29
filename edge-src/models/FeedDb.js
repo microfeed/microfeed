@@ -129,7 +129,9 @@ export default class FeedDb {
         'itemsSortOrder': ITEMS_SORT_ORDERS.NEWEST_FIRST,
         'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
       },
-      [SETTINGS_CATEGORIES.ACCESS]: {},
+      [SETTINGS_CATEGORIES.ACCESS]: {
+        currentPolicy: 'public',
+      },
       [SETTINGS_CATEGORIES.ANALYTICS]: {},
       [SETTINGS_CATEGORIES.CUSTOM_CODE]: {},
     };
