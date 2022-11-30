@@ -1,4 +1,4 @@
-import {buildAudioUrlWithTracking, PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
+import urlJoin, {buildAudioUrlWithTracking, PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
@@ -113,13 +113,16 @@ export default class FeedPublicJsonBuilder {
       microfeedExtra['subscribe_methods'] = '';
     } else {
       microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+        if (m.image.startsWith('/')) {
+          m.image = urlJoin(this.baseUrl, m.image);
+        }
         if (!m.editable) {
           switch (m.type) {
             case 'rss':
-              m.url = PUBLIC_URLS.rssFeed();
+              m.url = PUBLIC_URLS.rssFeed(this.baseUrl);
               return m;
             case 'json':
-              m.url = PUBLIC_URLS.jsonFeed();
+              m.url = PUBLIC_URLS.jsonFeed(this.baseUrl);
               return m;
             default:
               return m;

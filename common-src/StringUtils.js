@@ -178,33 +178,34 @@ export const ADMIN_URLS = {
 /**
  * Public urls
  */
-function webItem(itemId, itemTitle = null, baseUrl = '', locale = 'en') {
+function webItem(itemId, itemTitle = null, baseUrl = '/', locale = 'en') {
   if (itemTitle) {
-    return `${baseUrl}/i/${slugify(itemTitle || '', {
+    const slug = slugify(itemTitle || '', {
       lower: true,
       strict: true, // strip special characters except replacement
       locale,
-    })}-${itemId}/`;
+    });
+    return urlJoin(baseUrl, `/i/${slug}-${itemId}/`);
   } else {
-    return `${baseUrl}/i/${itemId}/`;
+    return urlJoin(baseUrl, `/i/${itemId}/`);
   }
 }
 
 export const PUBLIC_URLS = {
-  webFeed: (baseUrl = '') => {
-    return `${baseUrl}/`;
+  webFeed: (baseUrl = '/') => {
+    return urlJoin(baseUrl, '/');
   },
-  rssFeed: (baseUrl='') => {
-    return `${baseUrl}/rss/`;
+  rssFeed: (baseUrl='/') => {
+    return urlJoin(baseUrl, '/rss/');
   },
-  rssFeedStylesheet: (baseUrl='') => {
-    return `${baseUrl}/rss/stylesheet/`;
+  rssFeedStylesheet: (baseUrl='/') => {
+    return urlJoin(baseUrl, '/rss/stylesheet/');
   },
-  jsonFeed: (baseUrl='') => {
-    return `${baseUrl}/json/`;
+  jsonFeed: (baseUrl='/') => {
+    return urlJoin(baseUrl, 'json/');
   },
   webItem,
-  jsonItem: (itemId, itemTitle = null, baseUrl = '', locale = 'en') => {
-    return `${webItem(itemId, itemTitle, baseUrl, locale)}json/`;
+  jsonItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en') => {
+    return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');
   }
 };

@@ -129,9 +129,8 @@ export class JsonResponseBuilder extends ResponseBuilder {
       return notFoundRes;
     }
 
-    const {isValid} = props;
-    if (isValid) {
-      if (!isValid(this.jsonData)) {
+    if (props && props.isValid) {
+      if (!props.isValid(this.jsonData)) {
         return ResponseBuilder.Response404();
       }
     }
