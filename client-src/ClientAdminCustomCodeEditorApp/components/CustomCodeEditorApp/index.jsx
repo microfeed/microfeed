@@ -22,6 +22,7 @@ const CODE_TYPE_SELECTOR_OPTIONS = [
   {
     label: 'Theme: custom',
     value: CODE_TYPES.THEMES,
+    theme: 'custom',
   },
 ];
 const CODE_TYPE_SELECTOR_OPTIONS_DICT = Object.assign({}, ...CODE_TYPE_SELECTOR_OPTIONS.map(
@@ -304,7 +305,7 @@ export default class CustomCodeEditorApp extends React.Component {
           value={CODE_TYPE_SELECTOR_OPTIONS_DICT[codeType]}
           options={CODE_TYPE_SELECTOR_OPTIONS}
           onChange={(selected) => {
-            location.href = `${ADMIN_URLS.codeEditorSettings()}?type=${selected.value}`;
+            location.href = `${ADMIN_URLS.codeEditorSettings()}?type=${selected.value}${selected.theme ? `&theme=${selected.theme}` : ''}`;
           }}
         />
       </div>}
