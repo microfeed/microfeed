@@ -1,4 +1,4 @@
-import {buildAudioUrlWithTracking, PUBLIC_URLS} from "../../common-src/StringUtils";
+import {buildAudioUrlWithTracking, PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
@@ -178,6 +178,15 @@ export default class FeedPublicJsonBuilder {
       title: item.title || 'untitled',
     };
     const attachment = {};
+    const _microfeed = {
+      is_audio: mediaFile.isAudio,
+      is_document: mediaFile.isDocument,
+      is_external_url: mediaFile.isExternalUrl,
+      is_video: mediaFile.isVideo,
+      is_image: mediaFile.isImage,
+      web_url: item.webUrl,
+    };
+
     if (mediaFile.url) {
       attachment['url'] = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
     }
@@ -189,6 +198,7 @@ export default class FeedPublicJsonBuilder {
     }
     if (mediaFile.durationSecond) {
       attachment['duration_in_seconds'] = mediaFile.durationSecond;
+      _microfeed['duration_hhmmss'] = secondsToHHMMSS(mediaFile.durationSecond);
     }
     if (Object.keys(attachment).length > 0) {
       newItem['attachments'] = [attachment];
@@ -221,14 +231,6 @@ export default class FeedPublicJsonBuilder {
       newItem['language'] = item.language;
     }
 
-    const _microfeed = {
-      is_audio: mediaFile.isAudio,
-      is_document: mediaFile.isDocument,
-      is_external_url: mediaFile.isExternalUrl,
-      is_video: mediaFile.isVideo,
-      is_image: mediaFile.isImage,
-      web_url: item.webUrl,
-    };
     if (item['itunes:title']) {
       _microfeed['itunes:title'] = item['itunes:title'];
     }

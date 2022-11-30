@@ -1,35 +1,32 @@
-<!-- inside <body></body> on a feed web page -->
-
-<div class="grid grid-cols-12 py-12">
-  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
-  <div class="col-span-12 lg:col-span-8 xl:col-span-6 px-4 grid grid-cols-1 gap-8">
-    <h1 class="font-bold text-2xl md:text-4xl">{{title}}</h1>
+<main>
+  <section>
+    <h1>{{title}}</h1>
     <div class="flex">
       {{#icon}}
-      <div class="flex-none mr-4">
-        <img alt="{{title}}" src="{{icon}}" class="channel-image"/>
+      <div class="mr-4">
+        <a href="{{icon}}" target="_blank">
+          <img alt="{{title}}" src="{{icon}}" class="img-lg" loading="lazy"/>
+        </a>
       </div>
       {{/icon}}
-      <div class="flex-1">
+      <div>
         {{#authors}}
-        <div class="mt-2 md:mt-4 mb-4 md:mb-8">
-          By <span class="font-semibold text-xl">{{name}}</span>
+        <div class="one-line">
+          <span title="{{name}}">{{name}}</span>
         </div>
         {{/authors}}
         <div>
           {{#_microfeed.subscribe_methods.length}}
-          <div class="hidden md:block text-gray-500 text-sm mb-4">
+          <div class="text-sm mt-4 mb-2">
             Subscribe:
           </div>
           {{/_microfeed.subscribe_methods.length}}
           <div class="flex flex-wrap">
             {{#_microfeed.subscribe_methods}}
-              <a href="{{url}}" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
-              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
-                <div class="flex items-center">
-                  <img src="{{image}}" class="w-3.5" alt="{{name}}"/>
-                </div>
-                <div class="ml-2 text-sm md:text-lg">{{name}}</div>
+            <a href="{{url}}" class="mr-4 mb-2">
+              <div class="flex items-center">
+                <img src="{{image}}" class="img-sm flex-none" alt="{{name}}"/>
+                <div class="flex-1 ml-1 text-sm hide-mobile">{{name}}</div>
               </div>
             </a>
             {{/_microfeed.subscribe_methods}}
@@ -37,61 +34,57 @@
         </div>
       </div>
     </div>
+  </section>
 
-    {{#description}}
+  {{#description}}
+  <section>
+    <h2 class="border-b">About</h2>
+    <div>{{{description}}}</div>
+  </section>
+  {{/description}}
+
+  <section>
+    <h2 class="border-b">
+      Latest
+    </h2>
+
     <div>
-      <h2 class="section-header">About</h2>
-      <div>{{{description}}}</div>
-    </div>
-    {{/description}}
+      {{^items.length}}
+      No items.
+      {{/items.length}}
 
-    <div>
-      <h2 class="section-header">
-        Latest
-      </h2>
+      {{#items}}
+      <div class="mb-4">
+        <a href="{{_microfeed.web_url}}" class="mb-1">
+          {{title}}
+          <span class="icon-arrow-right"></span>
+        </a>
+        <div class="text-sm">
+          {{_microfeed.date_published_short}}
 
-      <div class="grid grid-cols-1 gap-6">
-        {{^items.length}}
-        No items.
-        {{/items.length}}
-
-        {{#items}}
-        <div>
-          <h3 class="font-semibold mb-3">
-            <a href="{{_microfeed.web_url}}">{{title}} <span class="icon-arrow-right"></span></a>
-          </h3>
-          <div class="flex">
-            {{#image}}
-            <div class="mr-4 flex-none">
-              <img src={{image}} class="channel-image item-image"/>
-            </div>
-            {{/image}}
-            <div class="flex-1">
-              <div class="mb-4 text-sm line-clamp-3">
-                <span class="text-gray-500 mr-4">{{_microfeed.date_published_short}}</span>
-                <span class="break-all">{{content_text}}</span>
-              </div>
-            </div>
-          </div>
+          {{#_microfeed.duration_hhmmss}}
+          &middot;
+          <i>{{_microfeed.duration_hhmmss}}</i>
+          {{/_microfeed.duration_hhmmss}}
         </div>
-        {{/items}}
       </div>
+      {{/items}}
+    </div>
 
-      <div class="flex justify-center mt-8">
+    <div class="flex justify-center mt-4">
       {{#_microfeed.items_prev_cursor}}
-      <div class="text-center mx-2">
-        <a href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"><span class="icon-arrow-left"> Prev</span></a>
+      <div class="px-2">
+        <a href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"><span
+          class="icon-arrow-left"> Prev</span></a>
       </div>
       {{/_microfeed.items_prev_cursor}}
 
       {{#_microfeed.items_next_cursor}}
-      <div class="text-center mx-2">
-        <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">Next <span class="icon-arrow-right"></span></a>
+      <div class="px-2">
+        <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">Next <span
+          class="icon-arrow-right"></span></a>
       </div>
       {{/_microfeed.items_next_cursor}}
-      </div>
     </div>
-
-  </div>
-  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
-</div>
+  </section>
+</main>
