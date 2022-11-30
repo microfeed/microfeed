@@ -38,7 +38,7 @@
 
       {{#item._microfeed.is_document}}
       {{#item.attachments}}
-      <a href="{{url}}" class="font-bold text-lg">Download file &#8594;</a>
+      <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">Download file &#8594;</a>
       {{/item.attachments}}
       {{/item._microfeed.is_document}}
 
@@ -81,7 +81,7 @@
       {{#item.image}}
       <div class="mb-4">
         <a href="{{item.image}}" target="_blank">
-          <img src={{item.image}} width="250" height="250"/>
+          <img src={{item.image}} width="250" height="250" loading="lazy"/>
         </a>
       </div>
       {{/item.image}}
