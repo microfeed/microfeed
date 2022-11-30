@@ -176,8 +176,11 @@ export class WebResponseBuilder extends ResponseBuilder {
     const res = super._getResponse(props);
     const theme = new Theme(this.jsonData, this.settings);
     const sharedTheme = new Theme(this.jsonData, this.settings, CODE_TYPES.SHARED);
-    const fromReact = renderReactToHtml(
-      props.getComponent(this.content, this.jsonData, theme));
+    const component = props.getComponent(this.content, this.jsonData, theme);
+    if (!component) {
+      return ResponseBuilder.Response404();
+    }
+    const fromReact = renderReactToHtml(component);
     const newRes = new Response(fromReact, res);
     return new HTMLRewriter()
       .on('head', new CodeInjector(this.settings, theme, sharedTheme))

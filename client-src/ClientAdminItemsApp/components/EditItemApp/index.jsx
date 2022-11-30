@@ -322,7 +322,12 @@ export default class EditItemApp extends React.Component {
               </button>
             </div>
             {action === 'edit' && <div>
-              <AdminSideQuickLinks AdditionalLink={<SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="Item Web"/>}/>
+              <AdminSideQuickLinks
+                AdditionalLinksDiv={<div className="flex flex-wrap">
+                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="web item"/>
+                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="json item"/>
+                </div>}
+              />
               <div className="lh-page-card mt-4 flex justify-center">
                 <a
                   href="#"

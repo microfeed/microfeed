@@ -124,6 +124,22 @@ export function buildAudioUrlWithTracking(audioUrl, trackingUrls, protocal='http
   }
 }
 
+export function getIdFromSlug(slug) {
+  let itemId
+  let re = /^.+-([\d\w\-_]{11})$/;
+  let ok = re.exec(slug);
+  if (ok) {
+    itemId = ok[1];
+  } else {
+    re = /^([\d\w\-_]{11})$/;
+    ok = re.exec(slug);
+    if (ok) {
+      itemId = ok[1];
+    }
+  }
+  return itemId;
+}
+
 export function escapeHtml(htmlStr) {
   return htmlStr.replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -175,11 +191,15 @@ export const PUBLIC_URLS = {
   jsonFeed: (baseUrl='') => {
     return `${baseUrl}/json/`;
   },
-  webItem: (itemId, itemTitle, baseUrl='', locale = 'en') => {
-    return `${baseUrl}/i/${slugify(itemTitle || '', {
-      lower: true,
-      strict: true, // strip special characters except replacement
-      locale,
-    })}-${itemId}/`;
+  webItem: (itemId, itemTitle = null, baseUrl='', locale = 'en') => {
+    if (itemTitle) {
+      return `${baseUrl}/i/${slugify(itemTitle || '', {
+        lower: true,
+        strict: true, // strip special characters except replacement
+        locale,
+      })}-${itemId}/`;
+    } else {
+      return `${baseUrl}/i/${itemId}/`;
+    }
   }
 };
