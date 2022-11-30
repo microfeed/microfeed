@@ -1,6 +1,12 @@
 import React from 'react';
 import AdminNavApp from '../../../components/AdminNavApp';
-import {unescapeHtml, ADMIN_URLS, secondsToHHMMSS, PUBLIC_URLS} from "../../../../common-src/StringUtils";
+import {
+  unescapeHtml,
+  ADMIN_URLS,
+  secondsToHHMMSS,
+  PUBLIC_URLS,
+  urlJoinWithRelative
+} from "../../../../common-src/StringUtils";
 import {
   ENCLOSURE_CATEGORIES,
   ENCLOSURE_CATEGORIES_DICT,
@@ -137,6 +143,9 @@ export default class AllItemsApp extends React.Component {
 
   render() {
     const {items, feed} = this.state;
+    const {settings} = feed;
+    const {webGlobalSettings} = settings;
+    const publicBucketUrl = webGlobalSettings.publicBucketUrl || '/';
     const data = items.map((item) => ({
       id: (<div>
         <div>{item.id}</div>
@@ -157,7 +166,10 @@ export default class AllItemsApp extends React.Component {
       </div>,
       mediaFile: <div>
         {item.mediaFile ? <div>
-          <ExternalLink url={item.mediaFile.url} text={ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category].name}/>
+          <ExternalLink
+            url={urlJoinWithRelative(publicBucketUrl, item.mediaFile.url)}
+            text={ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category].name}
+          />
           {[ENCLOSURE_CATEGORIES.AUDIO, ENCLOSURE_CATEGORIES.VIDEO].includes(item.mediaFile.category) &&
             <div className="text-xs mt-1">
               {secondsToHHMMSS(item.mediaFile.durationSecond)}
