@@ -13,15 +13,11 @@ export default class WebGlobalSettingsApp extends React.Component {
     const currentType = 'webGlobalSettings';
     const {feed} = props;
 
-    let webHeader = '';
-    let webBodyEnd = '';
     let favicon = '';
     let publicBucketUrl = '';
     let itemsPerPage = DEFAULT_ITEMS_PER_PAGE;
     let itemsSortOrder = ITEMS_SORT_ORDERS.NEWEST_FIRST;
     if (feed.settings && feed.settings[currentType]) {
-      webHeader = feed.settings[currentType].webHeader || '';
-      webBodyEnd = feed.settings[currentType].webBodyEnd || '';
       favicon = feed.settings[currentType].favicon || {};
       publicBucketUrl = feed.settings[currentType].publicBucketUrl || '';
       itemsSortOrder = feed.settings[currentType].itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
@@ -30,8 +26,6 @@ export default class WebGlobalSettingsApp extends React.Component {
     this.state = {
       feed,
 
-      webHeader,
-      webBodyEnd,
       currentType,
       favicon,
       publicBucketUrl,
@@ -41,7 +35,7 @@ export default class WebGlobalSettingsApp extends React.Component {
   }
 
   render() {
-    const {feed, currentType, webHeader, webBodyEnd, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
+    const {feed, currentType, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
     const {submitting, submitForType} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -50,8 +44,6 @@ export default class WebGlobalSettingsApp extends React.Component {
       currentType={currentType}
       onSubmit={(e) => {
         this.props.onSubmit(e, currentType, {
-          webHeader,
-          webBodyEnd,
           favicon,
           publicBucketUrl,
           itemsSortOrder,
