@@ -4,7 +4,7 @@ import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.min.css';
 import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../common/requests';
-import {randomHex} from '../../../common-src/StringUtils';
+import {randomHex, urlJoinWithRelative} from '../../../common-src/StringUtils';
 import AdminDialog from "../AdminDialog";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
@@ -26,9 +26,7 @@ function EmptyImage({fileTypes}) {
 }
 
 function PreviewImage({url, publicBucketUrl}) {
-  // Relative url to website for default images, e.g., /assets/default/something.png
-  // Relative url to cdn (r2), e.g., production/something.png
-  const previewUrl = url.startsWith('/') ? url : `${publicBucketUrl}/${url}`;
+  const previewUrl = urlJoinWithRelative(publicBucketUrl, url);
   return (<div className="relative flex justify-center">
     <img
       src={previewUrl}

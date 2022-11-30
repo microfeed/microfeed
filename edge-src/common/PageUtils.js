@@ -2,6 +2,7 @@ import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
 import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
+import {urlJoinWithRelative} from "../../common-src/StringUtils";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
@@ -155,7 +156,7 @@ class CodeInjector {
       if (this.settings.webGlobalSettings) {
         const {favicon, publicBucketUrl} = this.settings.webGlobalSettings;
         if (favicon && favicon.url) {
-          const faviconUrl = favicon.url.startsWith('/') ? favicon.url : `${publicBucketUrl}/${favicon.url}`;
+          const faviconUrl = urlJoinWithRelative(publicBucketUrl, favicon.url);
           element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
         }
       }

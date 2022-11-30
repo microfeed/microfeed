@@ -93,9 +93,28 @@ function normalize (strArray) {
   return str;
 }
 
-export default function urlJoin(...args) {
+export function urlJoin(...args) {
   const parts = Array.from(Array.isArray(args[0]) ? args[0] : args);
   return normalize(parts);
+}
+
+/**
+ * Path could be:
+ * 1) Relative url to website, e.g., /assets/default/something.png, or
+ * 2) Relative url to cdn (r2), e.g., production/something.png
+ */
+export function urlJoinWithRelative(baseUrl, path) {
+  if (!path) {
+    return null;
+  }
+
+  if (path.startsWith('/')) {
+    return path;
+  }
+  if (baseUrl) {
+    return urlJoin(baseUrl, path);
+  }
+  return urlJoin('/', path);
 }
 
 export function buildAudioUrlWithTracking(audioUrl, trackingUrls, protocal='https') {

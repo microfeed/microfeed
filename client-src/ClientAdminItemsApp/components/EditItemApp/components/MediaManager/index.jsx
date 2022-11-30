@@ -1,6 +1,6 @@
 import React from 'react';
 import Requests from '../../../../../common/requests';
-import {humanFileSize, randomHex, secondsToHHMMSS} from '../../../../../../common-src/StringUtils';
+import {humanFileSize, randomHex, secondsToHHMMSS, urlJoinWithRelative} from '../../../../../../common-src/StringUtils';
 import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT} from "../../../../../../common-src/Constants";
 import AdminRadio from "../../../../../components/AdminRadio";
 import AdminInput from "../../../../../components/AdminInput";
@@ -61,7 +61,7 @@ function MediaUploader(
   const {fileTypes} = ENCLOSURE_CATEGORIES_DICT[category];
   return (<div>
     {url && <PreviewCurrentMediaFile
-      url={`${publicBucketUrl}/${url}`}
+      url={urlJoinWithRelative(publicBucketUrl, url)}
       category={category}
       contentType={contentType}
       sizeByte={sizeByte}

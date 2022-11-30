@@ -1,4 +1,4 @@
-import urlJoin, {buildAudioUrlWithTracking, PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
+import {urlJoinWithRelative, buildAudioUrlWithTracking, PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {convert} from "html-to-text";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
@@ -22,7 +22,7 @@ export default class FeedPublicJsonBuilder {
     item.descriptionText = convert(item.description, {});
 
     if (item.image) {
-      item.image = `${this.publicBucketUrl}/${item.image}`;
+      item.image = urlJoinWithRelative(this.publicBucketUrl, item.image);
     }
     if (item.mediaFile && item.mediaFile.category) {
       item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
@@ -32,7 +32,7 @@ export default class FeedPublicJsonBuilder {
       item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
 
       if (!item.mediaFile.isExternalUrl) {
-        item.mediaFile.url = `${this.publicBucketUrl}/${item.mediaFile.url}`;
+        item.mediaFile.url = urlJoinWithRelative(this.publicBucketUrl, item.mediaFile.url);
       }
     }
   }
@@ -58,12 +58,11 @@ export default class FeedPublicJsonBuilder {
     }
 
     if (channel.image) {
-      publicContent['icon'] = channel.image.startsWith('/') ? channel.image : `${this.publicBucketUrl}/${channel.image}`;
+      publicContent['icon'] = urlJoinWithRelative(this.publicBucketUrl, channel.image);
     }
 
     if (this.webGlobalSettings.favicon && this.webGlobalSettings.favicon.url) {
-        publicContent['favicon'] = this.webGlobalSettings.favicon.url.startsWith('/') ?
-          this.webGlobalSettings.favicon.url : `${this.publicBucketUrl}/${this.webGlobalSettings.favicon.url}`;
+        publicContent['favicon'] = urlJoinWithRelative(this.publicBucketUrl, this.webGlobalSettings.favicon.url);
     }
 
     if (channel.publisher) {
@@ -113,9 +112,7 @@ export default class FeedPublicJsonBuilder {
       microfeedExtra['subscribe_methods'] = '';
     } else {
       microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
-        if (m.image.startsWith('/')) {
-          m.image = urlJoin(this.baseUrl, m.image);
-        }
+        m.image = urlJoinWithRelative(this.baseUrl, m.image);
         if (!m.editable) {
           switch (m.type) {
             case 'rss':
