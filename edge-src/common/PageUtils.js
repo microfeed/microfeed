@@ -8,9 +8,10 @@ export function renderReactToHtml(Component) {
 }
 
 class ResponseBuilder {
-  constructor(env, request) {
+  constructor(env, request, fetchItemsObj = null) {
     this.feed = new FeedDb(env, request);
     this.request = request;
+    this.fetchItemsObj = fetchItemsObj || {};
   }
 
   async fetchFeed() {
@@ -71,9 +72,13 @@ class ResponseBuilder {
   }
 
   get _fetchItems() {
-    return getFetchItemsParams(this.request, {
-      status: STATUSES.PUBLISHED,
-    });
+    const queryKwargs  = this.fetchItemsObj.queryKwargs || {};
+    return getFetchItemsParams(
+      this.request,
+      {
+        status: STATUSES.PUBLISHED,
+        ...queryKwargs,
+      }, this.fetchItemsObj.limit);
   }
 
   /**

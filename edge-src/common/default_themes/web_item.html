@@ -1,28 +1,19 @@
-<!-- inside <body></body> on an item web page -->
+<main>
+  <section class="mb-4">
+    <a href="/">
+      <div class="icon-arrow-left">{{title}}</div>
+    </a>
+  </section>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<style type="text/tailwindcss">
-
-</style>
-<div class="grid grid-cols-12 py-12">
-  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
-  <div class="col-span-12 lg:col-span-8 xl:col-span-6 px-4 grid grid-cols-1 gap-8">
-
+  <section>
+    <h1>{{item.title}}</h1>
     <div class="mb-4">
-      <a href="/">
-        <div class="icon-arrow-left">{{title}}</div>
-      </a>
-    </div>
-    <div>
-      <h1 class="font-bold text-2xl md:text-4xl">{{item.title}}</h1>
-      <div class="mt-4">
-        <time>{{item._microfeed.date_published_simple}}</time>
-      </div>
+      <time>{{item._microfeed.date_published_short}}</time>
     </div>
 
     <div>
       {{#item._microfeed.is_audio}}
-      <div class="hidden md:block text-gray-500 text-sm mb-4">
+      <div class="text-sm mb-4">
         Listen:
       </div>
       {{#item.attachments}}
@@ -34,7 +25,7 @@
       {{/item._microfeed.is_audio}}
 
       {{#item._microfeed.is_video}}
-      <div class="hidden md:block text-gray-500 text-sm mb-4">
+      <div class="text-sm mb-4">
         Watch:
       </div>
       {{#item.attachments}}
@@ -53,7 +44,7 @@
 
       {{#item._microfeed.is_external_url}}
       {{#item.attachments}}
-      <a href="{{url}}" class="font-bold text-lg">View url &#8594;</a>
+      <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">View url &#8594;</a>
       {{/item.attachments}}
       {{/item._microfeed.is_external_url}}
 
@@ -66,35 +57,37 @@
       {{/item._microfeed.is_image}}
     </div>
     <div>
-      <div>
-        <div class="hidden md:block text-gray-500 text-sm mb-4">
-          Subscribe:
-        </div>
-        <div class="flex flex-wrap">
-            {{#_microfeed.subscribe_methods}}
-              <a href="{{url}}" class="hover:opacity-50 mr-2 md:mr-4 mb-2">
-              <div class="flex px-2 md:px-4 py-1 md:py-2 border rounded">
-                <div class="flex items-center">
-                  <img src="{{image}}" class="w-3.5" alt="{{name}}"/>
-                </div>
-                <div class="ml-2 text-sm md:text-lg">{{name}}</div>
-              </div>
-            </a>
-            {{/_microfeed.subscribe_methods}}
-        </div>
+      {{#_microfeed.subscribe_methods.length}}
+      <div class="text-sm mt-4 mb-2">
+        Subscribe:
+      </div>
+      {{/_microfeed.subscribe_methods.length}}
+      <div class="flex flex-wrap">
+        {{#_microfeed.subscribe_methods}}
+        <a href="{{url}}" class="mr-4 mb-2">
+          <div class="flex items-center">
+            <img src="{{image}}" class="img-sm flex-none" alt="{{name}}"/>
+            <div class="flex-1 ml-1 text-sm hide-mobile">{{name}}</div>
+          </div>
+        </a>
+        {{/_microfeed.subscribe_methods}}
       </div>
     </div>
-    <h2 class="section-header">About</h2>
-    <div class="grid grid-cols-1 gap-4">
+  </section>
+
+  <section>
+    <h2 class="border-b">About</h2>
+    <div>
       {{#item.image}}
-      <div>
-        <img src={{item.image}} width="250" height="250"/>
+      <div class="mb-4">
+        <a href="{{item.image}}" target="_blank">
+          <img src={{item.image}} width="250" height="250"/>
+        </a>
       </div>
       {{/item.image}}
       {{#item.content_html}}
       <div>{{{item.content_html}}}</div>
       {{/item.content_html}}
     </div>
-  </div>
-  <div class="hidden lg:block lg:col-span-2 xl:col-span-3"></div>
-</div>
+  </section>
+</main>
