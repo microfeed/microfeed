@@ -178,6 +178,18 @@ export const ADMIN_URLS = {
 /**
  * Public urls
  */
+function webItem(itemId, itemTitle = null, baseUrl = '', locale = 'en') {
+  if (itemTitle) {
+    return `${baseUrl}/i/${slugify(itemTitle || '', {
+      lower: true,
+      strict: true, // strip special characters except replacement
+      locale,
+    })}-${itemId}/`;
+  } else {
+    return `${baseUrl}/i/${itemId}/`;
+  }
+}
+
 export const PUBLIC_URLS = {
   webFeed: (baseUrl = '') => {
     return `${baseUrl}/`;
@@ -191,15 +203,8 @@ export const PUBLIC_URLS = {
   jsonFeed: (baseUrl='') => {
     return `${baseUrl}/json/`;
   },
-  webItem: (itemId, itemTitle = null, baseUrl='', locale = 'en') => {
-    if (itemTitle) {
-      return `${baseUrl}/i/${slugify(itemTitle || '', {
-        lower: true,
-        strict: true, // strip special characters except replacement
-        locale,
-      })}-${itemId}/`;
-    } else {
-      return `${baseUrl}/i/${itemId}/`;
-    }
+  webItem,
+  jsonItem: (itemId, itemTitle = null, baseUrl = '', locale = 'en') => {
+    return `${webItem(itemId, itemTitle, baseUrl, locale)}json/`;
   }
 };

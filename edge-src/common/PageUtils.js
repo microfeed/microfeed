@@ -128,6 +128,13 @@ export class JsonResponseBuilder extends ResponseBuilder {
     if (notFoundRes) {
       return notFoundRes;
     }
+
+    const {isValid} = props;
+    if (isValid) {
+      if (!isValid(this.jsonData)) {
+        return ResponseBuilder.Response404();
+      }
+    }
     const newResponse = new Response(JSON.stringify(this.jsonData), res);
     newResponse.headers.set('Access-Control-Allow-Origin', '*');
     return newResponse;

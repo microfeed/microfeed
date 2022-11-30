@@ -16,6 +16,7 @@ export default class FeedPublicJsonBuilder {
 
   _decorateForItem(item, baseUrl) {
     item.webUrl = PUBLIC_URLS.webItem(item.id, item.title, baseUrl);
+    item.jsonUrl = PUBLIC_URLS.jsonItem(item.id, null, baseUrl);
     item.pubDate = humanizeMs(item.pubDateMs);
     item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
     item.descriptionText = convert(item.description, {});
@@ -185,6 +186,7 @@ export default class FeedPublicJsonBuilder {
       is_video: mediaFile.isVideo,
       is_image: mediaFile.isImage,
       web_url: item.webUrl,
+      json_url: item.jsonUrl,
     };
 
     if (mediaFile.url) {
