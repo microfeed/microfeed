@@ -115,7 +115,11 @@ export class RssResponseBuilder extends ResponseBuilder {
     if (notFoundRes) {
       return notFoundRes;
     }
-    return new Response(props.buildXmlFunc(this.jsonData), res);
+    const rssRes = props.buildXmlFunc(this.jsonData);
+    if (!rssRes) {
+      return ResponseBuilder.Response404();
+    }
+    return new Response(rssRes, res);
   }
 }
 

@@ -7,8 +7,12 @@
 
   <section>
     <h1>{{item.title}}</h1>
-    <div class="mb-4">
+    <div class="mb-4 text-sm">
       <time>{{item._microfeed.date_published_short}}</time>
+      &middot;
+      <a href="{{item._microfeed.json_url}}" target="_blank">json</a>
+      &middot;
+      <a href="{{item._microfeed.rss_url}}" target="_blank">rss</a>
     </div>
 
     <div>

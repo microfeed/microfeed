@@ -226,5 +226,8 @@ export const PUBLIC_URLS = {
   webItem,
   jsonItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en') => {
     return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');
-  }
+  },
+  rssItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en') => {
+    return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'rss/');
+  },
 };
