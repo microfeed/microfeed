@@ -439,11 +439,11 @@ export default class FeedDb {
     }
   }
 
-  async getPublicJsonData(content=null) {
+  async getPublicJsonData(content=null, forOneItem=false) {
     if (!content) {
       content = await this.getContent();
     }
-    const builder = new FeedPublicJsonBuilder(content, this.baseUrl);
+    const builder = new FeedPublicJsonBuilder(content, this.baseUrl, forOneItem);
     return builder.getJsonData();
   }
 }

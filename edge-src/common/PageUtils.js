@@ -18,7 +18,9 @@ class ResponseBuilder {
   async fetchFeed() {
     this.content = await this.feed.getContent(this._fetchItems);
     this.settings = this.content.settings || {};
-    this.jsonData = await this.feed.getPublicJsonData(this.content);
+    const queryKwargs = this.fetchItemsObj.queryKwargs || {};
+    const forOneItem = !!queryKwargs.id;
+    this.jsonData = await this.feed.getPublicJsonData(this.content, forOneItem);
   }
 
   _verifyPasscode() {

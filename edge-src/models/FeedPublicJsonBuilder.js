@@ -6,12 +6,13 @@ import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
 export default class FeedPublicJsonBuilder {
-  constructor(content, baseUrl) {
+  constructor(content, baseUrl, forOneItem = false) {
     this.content = content;
     this.settings = content.settings || {};
     this.webGlobalSettings = this.settings.webGlobalSettings || {};
     this.publicBucketUrl = this.webGlobalSettings.publicBucketUrl || '';
     this.baseUrl = baseUrl;
+    this.forOneItem = forOneItem;
   }
 
   _decorateForItem(item, baseUrl) {
@@ -48,7 +49,7 @@ export default class FeedPublicJsonBuilder {
 
     publicContent['feed_url'] = PUBLIC_URLS.jsonFeed(this.baseUrl);
 
-    if (this.content.items_next_cursor) {
+    if (this.content.items_next_cursor && !this.forOneItem) {
       publicContent['next_url'] = `${publicContent['feed_url']}?next_cursor=${this.content.items_next_cursor}&` +
         `sort=${this.content.items_sort_order}`;
     }
@@ -156,11 +157,11 @@ export default class FeedPublicJsonBuilder {
       microfeedExtra['itunes:email'] = channel['itunes:email'];
     }
     microfeedExtra['items_sort_order'] = this.content.items_sort_order;
-    if (this.content.items_next_cursor) {
+    if (this.content.items_next_cursor && !this.forOneItem) {
       microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
       microfeedExtra['next_url'] = publicContent['next_url'];
     }
-    if (this.content.items_prev_cursor) {
+    if (this.content.items_prev_cursor && !this.forOneItem) {
       microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
       microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
         `sort=${this.content.items_sort_order}`;

@@ -13,7 +13,7 @@ export const SETTINGS_CATEGORIES = {
 };
 
 export const DEFAULT_ITEMS_PER_PAGE = 20;
-export const MAX_ITEMS_PER_PAGE = 50;
+export const MAX_ITEMS_PER_PAGE = 300;
 export const ITEMS_SORT_ORDERS = {
   OLDEST_FIRST: 'oldest_first',
   NEWEST_FIRST: 'newest_first',
