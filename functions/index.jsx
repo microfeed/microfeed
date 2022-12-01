@@ -8,7 +8,6 @@ export async function onRequestGet({env, request}) {
     queryKwargs: {
       status: STATUSES.PUBLISHED,
     },
-    limit: 20,
   });
   return webResponseBuilder.getResponse({
     getComponent: (content, jsonData, theme) => {

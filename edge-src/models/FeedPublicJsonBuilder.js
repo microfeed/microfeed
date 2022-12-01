@@ -276,7 +276,7 @@ export default class FeedPublicJsonBuilder {
     const existingitems = items || [];
     publicContent['items'] = [];
     existingitems.forEach((item) => {
-      if (item.status === STATUSES.UNPUBLISHED) {
+      if (item.status !== STATUSES.PUBLISHED) {
         return;
       }
       this._decorateForItem(item, this.baseUrl);
