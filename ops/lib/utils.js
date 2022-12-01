@@ -52,7 +52,7 @@ class WranglerCmd {
 
   createFeedDb() {
     const wranglerCmd = this.currentEnv !== 'development' ?
-      `wrangler d1 create ${this._non_dev_db()} > database_created.txt` : 'echo "FEED_DB"';
+      `wrangler d1 create ${this._non_dev_db()}` : 'echo "FEED_DB"';
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
@@ -65,7 +65,8 @@ class WranglerCmd {
   }
 
   getDatabaseId() {
-    const wranglerCmd = "cat database_created.txt | grep database_id | awk '{print $3}";
+    const dbName = this.currentEnv !== 'development' ? this._non_dev_db() : 'FEED_DB --local';
+    const wranglerCmd = `wrangler d1 list | grep '${dbName}' | awk '{print $2}'`;
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
