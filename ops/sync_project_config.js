@@ -28,13 +28,15 @@ class SyncProjectConfig {
     const envVarsJson = {
       [envName]: {
         'env_vars': {},
-        "d1_databases": {
-          "FEED_DB": {
-            "id": databaseId,
-          }
-        },
       }
     };
+    if (databaseId) {
+      envVarsJson['d1_databases'] = {
+        "FEED_DB": {
+          "id": databaseId,
+        }
+      };
+    }
     ALLOWED_VARS.forEach((varDict) => {
       const varValue = this.v.get(varDict.name) || '';
       envVarsJson[envName]['env_vars'][varDict.name] = {
@@ -92,7 +94,7 @@ class SyncProjectConfig {
     console.log(`Sync-ing for [${this.currentEnv}]...`);
 
     exec(this.cmd.getDatabaseId(), (error, stdout, stderr) => {
-      const databaseId = stdout.trim();
+      const databaseId = stdout.trim().replace(/^"(.*)"$/, '$1');
       console.log('Database id (num of chars): ', databaseId.length)
       const varsToAddOrUpdate = JSON.stringify({
         'deployment_configs': {
