@@ -25,11 +25,10 @@ function EmptyImage({fileTypes}) {
   </div>);
 }
 
-function PreviewImage({url, publicBucketUrl}) {
-  const previewUrl = urlJoinWithRelative(publicBucketUrl, url);
+function PreviewImage({url}) {
   return (<div className="relative flex justify-center">
     <img
-      src={previewUrl}
+      src={url}
       className={clsx('lh-upload-image-size object-cover', 'gradient-mask-b-20')}
     />
     <div className="absolute bottom-4 text-sm font-normal text-brand-light">
@@ -61,7 +60,7 @@ export default class AdminImageUploaderApp extends React.Component {
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
 
     this.initState = {
-      currentImageUrl: props.currentImageUrl || null,
+      currentImageUrl: props.currentImageUrl ? urlJoinWithRelative(publicBucketUrl, props.currentImageUrl) : null,
       mediaType: props.mediaType || 'channel',
       uploadStatus: null,
       progressText: '0.00%',
@@ -149,8 +148,7 @@ export default class AdminImageUploaderApp extends React.Component {
   }
 
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth,
-      imageHeight, publicBucketUrl} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth, imageHeight} = this.state;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
@@ -168,7 +166,7 @@ export default class AdminImageUploaderApp extends React.Component {
         classes="lh-upload-fileinput"
       >
         <div className="lh-upload-image-size lh-upload-box">
-          {currentImageUrl ? <PreviewImage url={currentImageUrl} publicBucketUrl={publicBucketUrl}/> :
+          {currentImageUrl ? <PreviewImage url={currentImageUrl}/> :
             <EmptyImage fileTypes={fileTypes} />}
         </div>
       </FileUploader>
