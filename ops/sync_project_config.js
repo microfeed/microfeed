@@ -28,13 +28,15 @@ class SyncProjectConfig {
     const envVarsJson = {
       [envName]: {
         'env_vars': {},
-        "d1_databases": {
-          "FEED_DB": {
-            "id": databaseId,
-          }
-        },
       }
     };
+    if (databaseId) {
+      envVarsJson['d1_databases'] = {
+        "FEED_DB": {
+          "id": databaseId,
+        }
+      };
+    }
     ALLOWED_VARS.forEach((varDict) => {
       const varValue = this.v.get(varDict.name) || '';
       envVarsJson[envName]['env_vars'][varDict.name] = {
