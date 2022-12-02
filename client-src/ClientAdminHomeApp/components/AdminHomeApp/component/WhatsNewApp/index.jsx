@@ -14,8 +14,7 @@ export default class WhatsNewApp extends React.Component {
   }
 
   componentDidMount() {
-    // const endpoint = OUR_BRAND.whatsnewEndpoint;
-    const endpoint = 'http://127.0.0.1:8788/json/';
+    const endpoint = OUR_BRAND.whatsnewEndpoint;
 
     this.setState({fetchStatus: FETCH_STATUS__START});
     fetch(endpoint).then((d) => d.json()).then((d) => {
@@ -47,7 +46,7 @@ export default class WhatsNewApp extends React.Component {
           </div>))}
           {items.length > 0 ? <div className="text-right">
             <a href={OUR_BRAND.whatsnewWebsite} target="_blank">Read more <span className="lh-icon-arrow-right" /></a>
-          </div> : <div>
+          </div> : <div className="-text-xs text-muted-color mt-1">
             No news.
           </div>}
         </div>}
