@@ -1,5 +1,6 @@
 const fs = require('fs');
 const toml = require('toml');
+const https = require('https');
 
 class VarsReader {
   constructor(currentEnv, varsFilePath = '.vars.toml') {
@@ -64,11 +65,47 @@ class WranglerCmd {
     return this._getCmd(wranglerCmd);
   }
 
-  getDatabaseId() {
-    const dbName = this.currentEnv !== 'development' ? this._non_dev_db() : 'FEED_DB --local';
-    const wranglerCmd = `wrangler d1 list | grep '${dbName}' | awk '{print $2}'`;
-    console.log(wranglerCmd);
-    return this._getCmd(wranglerCmd);
+  /**
+   * XXX: We use private api here, which may be changed on the cloudflare end...
+   * https://github.com/cloudflare/wrangler2/blob/main/packages/wrangler/src/d1/list.tsx#L34
+   */
+  getDatabaseId(onSuccess) {
+    const dbName = this.currentEnv !== 'development' ? this._non_dev_db() : 'FEED_DB';
+    const accountId = this.v.get('CLOUDFLARE_ACCOUNT_ID');
+    const apiKey = this.v.get('CLOUDFLARE_API_TOKEN');
+    const options = {
+      host: 'api.cloudflare.com',
+      port: '443',
+      path: `/client/v4/accounts/${accountId}/d1/database?name=${dbName}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    };
+    const request = https.request(options, (response) => {
+      let data = '';
+      response.on('data', (chunk) => {
+        data = data + chunk.toString();
+      });
+
+      response.on('end', () => {
+        const body = JSON.parse(data);
+        let databaseId = '';
+        body.result.forEach((result) => {
+          if (result.name === dbName) {
+            databaseId = result.uuid;
+          }
+        });
+        onSuccess(databaseId);
+      });
+    })
+
+    request.on('error', (error) => {
+      console.log('An error', error);
+      onSuccess('');
+    });
+
+    request.end();
   }
 }
 

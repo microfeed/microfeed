@@ -1,6 +1,5 @@
 const https = require('https');
 const {VarsReader, WranglerCmd} = require('./lib/utils');
-const {exec} = require("child_process");
 
 const ALLOWED_VARS = [
   {name: 'CLOUDFLARE_ACCOUNT_ID', encrypted: true},
@@ -93,23 +92,22 @@ class SyncProjectConfig {
   syncEnvVars() {
     console.log(`Sync-ing for [${this.currentEnv}]...`);
 
-    exec(this.cmd.getDatabaseId(), (error, stdout, stderr) => {
-      const databaseId = stdout.trim();
+    this.cmd.getDatabaseId((databaseId) => {
       console.log('Database id (num of chars): ', databaseId.length)
-      const varsToAddOrUpdate = JSON.stringify({
-        'deployment_configs': {
-          ...this._getEnvVarsFromFilesJson(this.currentEnv, databaseId),
-        },
-      });
-
-      this._updateEnvVars(varsToAddOrUpdate, (json) => {
-        console.log(`Successfully synced for [${this.currentEnv}]!`);
-        if (json.result && json.result.deployment_configs) {
-          console.log(json.result.deployment_configs[this.currentEnv].env_vars);
-        } else if (json) {
-          console.log(json);
-        }
-      });
+      // const varsToAddOrUpdate = JSON.stringify({
+      //   'deployment_configs': {
+      //     ...this._getEnvVarsFromFilesJson(this.currentEnv, databaseId),
+      //   },
+      // });
+      //
+      // this._updateEnvVars(varsToAddOrUpdate, (json) => {
+      //   console.log(`Successfully synced for [${this.currentEnv}]!`);
+      //   if (json.result && json.result.deployment_configs) {
+      //     console.log(json.result.deployment_configs[this.currentEnv].env_vars);
+      //   } else if (json) {
+      //     console.log(json);
+      //   }
+      // });
     });
   }
 }
