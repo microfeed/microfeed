@@ -127,6 +127,8 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
 export const OUR_BRAND = {
   domain: 'microfeed.org',
   brandName: 'microfeed',
+  whatsnewEndpoint: 'https://www.microfeed.org/json/',
+  whatsnewWebsite: 'https://www.microfeed.org',
 };
 
 export const ENCLOSURE_CATEGORIES = {
