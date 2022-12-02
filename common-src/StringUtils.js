@@ -1,3 +1,5 @@
+import {convert} from "html-to-text";
+
 const slugify = require('slugify')
 
 export function randomHex(size = 32) {
@@ -174,6 +176,33 @@ export function unescapeHtml(htmlStr) {
   htmlStr = htmlStr.replace(/&#39;/g, "'");
   htmlStr = htmlStr.replace(/&amp;/g, "&");
   return htmlStr;
+}
+
+export function htmlToPlainText(htmlStr, options = null) {
+  let convertOptions = {
+    ignoreHref: true,
+  };
+  if (options) {
+    convertOptions = {
+      ...convertOptions,
+      ...options,
+    }
+  }
+  return convert(htmlStr || '', convertOptions);
+}
+
+export function truncateString(str, num) {
+  if (str.length > num) {
+    return str.slice(0, num) + "...";
+  } else {
+    return str;
+  }
+}
+
+export function htmlMetaDescription(str, isHtml = true) {
+  const text = isHtml ? htmlToPlainText(str) : str;
+  // https://moz.com/learn/seo/meta-description
+  return truncateString(text, 155);
 }
 
 /**

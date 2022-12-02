@@ -1,5 +1,6 @@
 import React from 'react';
 import HtmlHeader from "../components/HtmlHeader";
+import {htmlMetaDescription} from "../../common-src/StringUtils";
 
 export default class EdgeItemApp extends React.Component {
   render() {
@@ -9,7 +10,7 @@ export default class EdgeItemApp extends React.Component {
       <html lang={jsonData.language || 'en'}>
       <HtmlHeader
         title={item.title}
-        description={item.content_text}
+        description={htmlMetaDescription(item.content_text, false)}
         webpackJsList={[]}
         webpackCssList={[]}
         canonicalUrl={canonicalUrl}

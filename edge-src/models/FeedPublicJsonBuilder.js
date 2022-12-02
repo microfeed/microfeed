@@ -1,6 +1,11 @@
-import {urlJoinWithRelative, buildAudioUrlWithTracking, PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
+import {
+  urlJoinWithRelative,
+  buildAudioUrlWithTracking,
+  PUBLIC_URLS,
+  secondsToHHMMSS,
+  htmlToPlainText
+} from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
-import {convert} from "html-to-text";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
@@ -22,7 +27,7 @@ export default class FeedPublicJsonBuilder {
 
     item.pubDate = humanizeMs(item.pubDateMs);
     item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
-    item.descriptionText = convert(item.description, {});
+    item.descriptionText = htmlToPlainText(item.description);
 
     if (item.image) {
       item.image = urlJoinWithRelative(this.publicBucketUrl, item.image);
@@ -56,9 +61,7 @@ export default class FeedPublicJsonBuilder {
         `sort=${this.content.items_sort_order}`;
     }
 
-    if (channel.description) {
-      publicContent['description'] = channel.description;
-    }
+    publicContent['description'] = channel.description || '';
 
     if (channel.image) {
       publicContent['icon'] = urlJoinWithRelative(this.publicBucketUrl, channel.image);
@@ -131,6 +134,8 @@ export default class FeedPublicJsonBuilder {
         return m;
       });
     }
+    microfeedExtra['description_text'] = htmlToPlainText(channel.description);
+
     if (channel['itunes:explicit']) {
       microfeedExtra['itunes:explicit'] = true;
     }
@@ -215,12 +220,10 @@ export default class FeedPublicJsonBuilder {
     if (mediaFile.isExternalUrl && mediaFile.url) {
       newItem['external_url'] = mediaFile.url;
     }
-    if (item.description) {
-      newItem['content_html'] = item.description;
-    }
-    if (item.descriptionText) {
-      newItem['content_text'] = item.descriptionText;
-    }
+
+    newItem['content_html'] = item.description || '';
+    newItem['content_text'] = item.descriptionText || '';
+
     if (item.image) {
       newItem['image'] = item.image;
     }
