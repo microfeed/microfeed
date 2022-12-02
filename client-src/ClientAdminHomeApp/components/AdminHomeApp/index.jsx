@@ -3,7 +3,7 @@ import {NAV_ITEMS} from "../../../../common-src/Constants";
 import AdminNavApp from "../../../components/AdminNavApp";
 import WhatsNewApp from "./component/WhatsNewApp";
 import DistributionApp from "./component/DistributionApp";
-import FinishSetupApp from "./component/FinishSetupApp";
+import SetupChecklistApp from "./component/SetupChecklistApp";
 
 export default class AdminHomeApp extends React.Component {
   constructor(props) {
@@ -18,7 +18,7 @@ export default class AdminHomeApp extends React.Component {
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-8 grid grid-cols-1 gap-4">
           <div>
-            <FinishSetupApp />
+            <SetupChecklistApp />
           </div>
           <div>
             <DistributionApp />

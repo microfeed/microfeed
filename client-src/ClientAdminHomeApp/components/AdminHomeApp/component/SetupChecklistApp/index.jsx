@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default class FinishSetupApp extends React.Component {
+export default class SetupChecklistApp extends React.Component {
   constructor(props) {
     super(props);
 
@@ -11,7 +11,7 @@ export default class FinishSetupApp extends React.Component {
   render() {
     return (<div className="lh-page-card">
       <div className="lh-page-subtitle">
-        Finish Setup
+        Setup checklist
       </div>
     </div>);
   }
