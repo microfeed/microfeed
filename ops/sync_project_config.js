@@ -36,7 +36,6 @@ class SyncProjectConfig {
         }
       };
     }
-    console.log(databaseId)
     ALLOWED_VARS.forEach((varDict) => {
       const varValue = this.v.get(varDict.name) || '';
       envVarsJson[envName]['env_vars'][varDict.name] = {
