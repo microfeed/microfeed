@@ -145,7 +145,7 @@ export const ENCLOSURE_CATEGORIES_DICT = {
   },
   [ENCLOSURE_CATEGORIES.VIDEO]: {
     name: 'Video',
-    fileTypes: ['mp4', 'mov'],
+    fileTypes: ['mp4'],
   },
   [ENCLOSURE_CATEGORIES.DOCUMENT]: {
     name: 'Document',

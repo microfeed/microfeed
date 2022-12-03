@@ -13,6 +13,14 @@ function imageHandler() {
   }
 }
 
+function videoHandler() {
+  const range = this.quill.getSelection();
+  const value = prompt('What is the video URL');
+  if (value) {
+    this.quill.insertEmbed(range.index, 'video', value, Quill.sources.USER);
+  }
+}
+
 Quill.register({
   'modules/blotFormatter': BlotFormatter,
 });
@@ -25,6 +33,7 @@ function AdminRichEditorRichMode({value, onChange}) {
     [
       'link',
       'image',
+      'video',
     ],
     ['clean']
   ];
@@ -33,6 +42,7 @@ function AdminRichEditorRichMode({value, onChange}) {
       container: toolbarOptions,
       handlers: {
         image: imageHandler,
+        video: videoHandler,
       },
     },
     blotFormatter: {
@@ -45,7 +55,7 @@ function AdminRichEditorRichMode({value, onChange}) {
     'bold', 'italic', 'underline', 'blockquote', 'code-block',
     'list', 'bullet', 'indent',
     'link',
-    'image',
+    'image', 'video',
   ];
   return <div>
     <ReactQuill
@@ -63,6 +73,8 @@ export default class AdminRichEditor extends React.Component {
     super(props);
     this.state = {
       mode: 'rich',
+
+      isOpenImage: false,
     };
   }
   render() {
