@@ -59,6 +59,9 @@ function MediaUploader(
   {url, category, contentType, sizeByte, durationSecond, setRef, uploading, progressText,
     onFileUpload, updateDuration, publicBucketUrl}) {
   const {fileTypes} = ENCLOSURE_CATEGORIES_DICT[category];
+  const fileNotExist = !!url;
+  const headerTitle = fileNotExist ? `Upload a new ${category} file to replace this one` :
+    `Upload a new ${category} file`;
   return (<div>
     {url && <PreviewCurrentMediaFile
       url={urlJoinWithRelative(publicBucketUrl, url)}
@@ -70,8 +73,10 @@ function MediaUploader(
       updateDuration={updateDuration}
     />}
     {url && <div className="border-t pt-2 mb-2"/>}
-    <div className="lh-upload-wrapper">
-      <div className="lh-page-subtitle">Upload a new {category} file</div>
+    <details className="lh-upload-wrapper" open={!fileNotExist}>
+      <summary className="lh-page-subtitle cursor-pointer hover:opacity-50">
+        {headerTitle}
+      </summary>
       <FileUploader
         handleChange={onFileUpload}
         name="audioUploader"
@@ -92,7 +97,7 @@ function MediaUploader(
           </div>}
         </div>
       </FileUploader>
-    </div>
+    </details>
   </div>);
 }
 
