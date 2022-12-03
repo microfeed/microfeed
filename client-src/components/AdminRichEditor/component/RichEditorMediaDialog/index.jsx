@@ -1,4 +1,5 @@
 import React from "react";
+import AdminDialog from "../../../AdminDialog";
 
 export default class RichEditorMediaDialog extends React.Component {
   constructor(props) {
@@ -11,14 +12,17 @@ export default class RichEditorMediaDialog extends React.Component {
       isOpen,
       setIsOpen,
       mediaType,
+      quill,
     } = this.props;
+    const disabledClose = false;
+    console.log(quill);
     return (
       <AdminDialog
-        title={`Insert ${mediaType}`}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
+        disabledClose={disabledClose}
       >
-        hello
+        Insert {mediaType}
       </AdminDialog>
     );
   }
