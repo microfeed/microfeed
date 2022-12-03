@@ -1,10 +1,28 @@
 import React from "react";
 import AdminDialog from "../../../AdminDialog";
 
+// function imageHandler() {
+//   const range = this.quill.getSelection();
+//   const value = prompt('What is the image URL');
+//   if (value) {
+//     this.quill.insertEmbed(range.index, 'image', value, Quill.sources.USER);
+//   }
+// }
+//
+// function videoHandler() {
+//   const range = this.quill.getSelection();
+//   const value = prompt('What is the video URL');
+//   if (value) {
+//     this.quill.insertEmbed(range.index, 'video', value, Quill.sources.USER);
+//   }
+// }
+
 export default class RichEditorMediaDialog extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      url: null,
+    };
   }
 
   render() {
