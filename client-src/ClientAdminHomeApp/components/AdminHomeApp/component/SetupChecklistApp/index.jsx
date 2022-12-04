@@ -11,8 +11,8 @@ const SUBMIT_STATUS__START = 1;
 function CheckListItem({title, onboardState, children}) {
   return (<div className="flex">
     <div className="mr-4">
-      {onboardState.ready ? <CheckCircleIcon className="w-8 text-green-500" /> :
-        <ArrowRightCircleIcon className="w-8 text-muted-color" />}
+      {onboardState.ready ? <CheckCircleIcon className="w-6 text-green-500" /> :
+        <ArrowRightCircleIcon className="w-6 text-muted-color" />}
     </div>
     <details className="w-full" open={!onboardState.ready}>
       <summary className="cursor-pointer mb-4 font-semibold hover:opacity-50">
@@ -67,7 +67,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
     </div>
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
       <details open>
-        <summary className="cursor-pointer font-semibold">
+        <summary className="cursor-pointer font-semibold hover:opacity-50">
           Where to find your R2 public bucket url?
         </summary>
         <div className="my-8 text-helper-color">
@@ -94,7 +94,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
         </div>
       </details>
       <details>
-        <summary className="cursor-pointer font-semibold">
+        <summary className="cursor-pointer font-semibold hover:opacity-50">
           What is R2 public bucket url used for?
         </summary>
         <div className="my-8 text-helper-color">
@@ -107,7 +107,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
         </div>
       </details>
       <details>
-        <summary className="cursor-pointer font-semibold">
+        <summary className="cursor-pointer font-semibold hover:opacity-50">
           How to make sure this url is valid?
         </summary>
         <div className="my-8 text-helper-color">
@@ -125,8 +125,8 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
 
 function ProtectedAdminDashboard({onboardState}) {
   return (<CheckListItem onboardState={onboardState} title="Add Login to Admin Dashboard">
-    <div>
-      Protect
+    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
+      Use {onboardState.appAccessSettingsUrl}
     </div>
   </CheckListItem>);
 }

@@ -44,6 +44,7 @@ export default class OnboardingChecker {
     if (this._getCookie('CF_Authorization')) {
       protectedAdminDash.ready = true;
     }
+    protectedAdminDash['appAccessSettingsUrl'] = `https://one.dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/access/apps`;
     result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD] = protectedAdminDash;
 
     const customDomain = this._initResult(false, false);
