@@ -8,7 +8,7 @@ You can publish audios, videos, photos, documents, blog posts, and any external 
 
 There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
-* Self-hosted Blog: a feed of texts.
+* Self-hosted Blog: a feed of articles.
 * Self-hosted Instagram: a feed of photos. E.g., [llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
 * Self-hosted YouTube: a feed of videos
 * Self-hosted personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
