@@ -3,7 +3,7 @@ import FeedDb, {getFetchItemsParams} from "../../edge-src/models/FeedDb";
 import OnboardingChecker from "../../common-src/OnboardingUtils";
 import {STATUSES} from "../../common-src/Constants";
 
-async function fetchFeed({request, next, env, data, params}) {
+async function fetchFeed({request, next, env, data}) {
   const urlObj = new URL(request.url);
 
   if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/ajax/'))) {
@@ -29,7 +29,7 @@ async function fetchFeed({request, next, env, data, params}) {
   const contentFromDb = await feedDb.getContent(fetchItems)
 
   const onboardingChecker = new OnboardingChecker(contentFromDb, request, env);
-  const onboardingResult = onboardingChecker.getResult()
+  const onboardingResult = onboardingChecker.getResult();
 
   data.feedDb = feedDb;
   data.feedContent = contentFromDb;
