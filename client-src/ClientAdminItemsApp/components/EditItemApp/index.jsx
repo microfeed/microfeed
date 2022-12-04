@@ -41,6 +41,8 @@ export default class EditItemApp extends React.Component {
 
     const $feedContent = document.getElementById('feed-content');
     const $dataParams = document.getElementById('lh-data-params');
+    const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
+
     const itemId = $dataParams ? $dataParams.getAttribute('data-item-id') : null;
     const action = itemId ? 'edit' : 'create';
     const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
@@ -50,6 +52,7 @@ export default class EditItemApp extends React.Component {
     const item = feed.item || initItem();
     this.state = {
       feed,
+      onboardingResult,
       item,
       submitStatus: null,
       itemId: itemId || randomShortUUID(),
@@ -123,7 +126,7 @@ export default class EditItemApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, itemId, item, action, feed} = this.state;
+    const {submitStatus, itemId, item, action, feed, onboardingResult} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
     const status = item.status || STATUSES.PUBLISHED;
@@ -145,7 +148,11 @@ export default class EditItemApp extends React.Component {
         childName: `Item (id = ${itemId})`,
       };
     }
-    return (<AdminNavApp currentPage={currentPage} upperLevel={upperLevel}>
+    return (<AdminNavApp
+      currentPage={currentPage}
+      upperLevel={upperLevel}
+      onboardingResult={onboardingResult}
+    >
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">

@@ -8,7 +8,7 @@ export default class EdgeAdminChannelApp extends React.Component {
   }
 
   render() {
-    const {feedContent} = this.props;
+    const {feedContent, onboardingResult} = this.props;
     return (
       <AdminWholeHtml
         title={`${NAV_ITEMS_DICT[NAV_ITEMS.EDIT_CHANNEL].name} | ${OUR_BRAND.domain}`}
@@ -16,6 +16,7 @@ export default class EdgeAdminChannelApp extends React.Component {
         webpackJsList={['edit_channel_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
+        onboardingResult={onboardingResult}
       />
     );
   }

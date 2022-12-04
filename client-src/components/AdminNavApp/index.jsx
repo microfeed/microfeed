@@ -13,14 +13,16 @@ import {
 import {ADMIN_URLS} from "../../../common-src/StringUtils";
 import {NAV_ITEMS, NAV_ITEMS_DICT} from "../../../common-src/Constants";
 
-function NavItem({url, title, navId, currentId, Icon}) {
+function NavItem({url, title, navId, currentId, Icon, disabled}) {
   return (
     <a
-      href={url}
-      className={clsx('text-white')}
+      href={disabled ? '#' : url}
+      className={clsx(disabled ?
+        'text-muted-color cursor-not-allowed hover:text-muted-color' :
+        'text-white hover:text-brand-light')}
     >
       <div
-        className={clsx('p-4 hover:text-brand-light flex items-center',
+        className={clsx('p-4 flex items-center',
         navId === currentId ? 'font-semibold bg-brand-light hover:text-white hover:opacity-80' : '')}
       >
         {Icon && <div className="mr-2">
@@ -48,6 +50,7 @@ export default class AdminNavApp extends React.Component {
   render() {
     const {currentPage} = this.state;
     const {upperLevel, AccessoryComponent} = this.props;
+    const onboardingResult = this.props.onboardingResult || {requiredOk: true};
     return (<div className="flex min-h-screen min-w-screen">
       <div className="bg-black flex-none">
         <h1 className="p-4 text-white font-bold text-lg mb-8">
@@ -67,6 +70,7 @@ export default class AdminNavApp extends React.Component {
             navId={NAV_ITEMS.EDIT_CHANNEL}
             currentId={currentPage}
             Icon={PencilSquareIcon}
+            disabled={!onboardingResult.requiredOk}
           />
           <NavItem
             url={ADMIN_URLS.newItem()}
@@ -74,6 +78,7 @@ export default class AdminNavApp extends React.Component {
             navId={NAV_ITEMS.NEW_ITEM}
             currentId={currentPage}
             Icon={PlusIcon}
+            disabled={!onboardingResult.requiredOk}
           />
           <NavItem
             url={ADMIN_URLS.allItems()}
@@ -81,6 +86,7 @@ export default class AdminNavApp extends React.Component {
             navId={NAV_ITEMS.ALL_ITEMS}
             currentId={currentPage}
             Icon={ListBulletIcon}
+            disabled={!onboardingResult.requiredOk}
           />
           <NavItem
             url={ADMIN_URLS.settings()}
@@ -88,6 +94,7 @@ export default class AdminNavApp extends React.Component {
             navId={NAV_ITEMS.SETTINGS}
             currentId={currentPage}
             Icon={Cog6ToothIcon}
+            disabled={!onboardingResult.requiredOk}
           />
         </nav>
       </div>

@@ -4,7 +4,14 @@ import {escapeHtml} from "../../../common-src/StringUtils";
 
 export default class AdminWholeHtml extends React.Component {
   render() {
-    const {title, description, webpackJsList, webpackCssList, feedContent} = this.props;
+    const {
+      title,
+      description,
+      webpackJsList,
+      webpackCssList,
+      feedContent,
+      onboardingResult,
+    } = this.props;
     return (
       <html>
       <HtmlHeader
@@ -32,6 +39,11 @@ export default class AdminWholeHtml extends React.Component {
         id="feed-content"
         type="application/json"
         dangerouslySetInnerHTML={{__html: escapeHtml(JSON.stringify(feedContent))}}
+      />}
+      {onboardingResult && <script
+        id="onboarding-result"
+        type="application/json"
+        dangerouslySetInnerHTML={{__html: escapeHtml(JSON.stringify(onboardingResult))}}
       />}
       </body>
       </html>

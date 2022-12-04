@@ -17,13 +17,8 @@ export default class EdgeAdminHomeApp extends React.Component {
         webpackJsList={['admin_home_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
-      >
-        {onboardingResult && <script
-          id="onboarding-result"
-          type="application/json"
-          dangerouslySetInnerHTML={{__html: escapeHtml(JSON.stringify(onboardingResult))}}
-        />}
-      </AdminWholeHtml>
+        onboardingResult={onboardingResult}
+      />
     );
   }
 }

@@ -4,7 +4,7 @@ import {NAV_ITEMS, NAV_ITEMS_DICT, OUR_BRAND} from "../../../common-src/Constant
 
 export default class AdminItemsNewApp extends React.Component {
   render() {
-    const {feedContent} = this.props;
+    const {feedContent, onboardingResult} = this.props;
     return (
       <AdminWholeHtml
         title={`${NAV_ITEMS_DICT[NAV_ITEMS.NEW_ITEM].name} | ${OUR_BRAND.domain}`}
@@ -12,6 +12,7 @@ export default class AdminItemsNewApp extends React.Component {
         webpackJsList={['edit_item_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
+        onboardingResult={onboardingResult}
       />
     );
   }

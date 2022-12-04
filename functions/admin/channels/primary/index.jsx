@@ -1,13 +1,13 @@
 import React from "react";
 import EdgeAdminChannelApp from '../../../../edge-src/EdgeAdminChannelApp';
-import FeedDb from "../../../../edge-src/models/FeedDb";
 import {renderReactToHtml} from "../../../../edge-src/common/PageUtils";
 
-export async function onRequestGet({ env, request }) {
-  const feedDb = new FeedDb(env, request);
-  const contentFromDb = await feedDb.getContent()
-
-  const fromReact = renderReactToHtml(<EdgeAdminChannelApp feedContent={contentFromDb} />);
+export async function onRequestGet({ data }) {
+  const {feedContent, onboardingResult} = data;
+  const fromReact = renderReactToHtml(<EdgeAdminChannelApp
+    feedContent={feedContent}
+    onboardingResult={onboardingResult}
+  />);
 
   return new Response(fromReact, {
     headers: {

@@ -23,7 +23,10 @@ export default class AdminHomeApp extends React.Component {
   render() {
     const {feed, onboardingResult} = this.state;
 
-    return (<AdminNavApp currentPage={NAV_ITEMS.ADMIN_HOME}>
+    return (<AdminNavApp
+      currentPage={NAV_ITEMS.ADMIN_HOME}
+      onboardingResult={onboardingResult}
+    >
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-8 grid grid-cols-1 gap-4">
           <div>

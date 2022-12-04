@@ -70,9 +70,12 @@ export default class EditChannelApp extends React.Component {
     this.onSubmit = this.onSubmit.bind(this);
 
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
+    const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
+
     const channel = feed.channel || initChannel();
     this.state = {
       feed,
+      onboardingResult,
       channel,
       submitStatus: null,
     }
@@ -123,12 +126,12 @@ export default class EditChannelApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, channel, feed} = this.state;
+    const {submitStatus, channel, feed, onboardingResult} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
-    return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL}>
+    return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL} onboardingResult={onboardingResult}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="flex">
