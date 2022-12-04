@@ -229,7 +229,7 @@ export const ADMIN_URLS = {
   allItems: () => `${ADMIN_HOME}/items/`,
   settings: () => `${ADMIN_HOME}/settings/`,
   codeEditorSettings: () => `${ADMIN_HOME}/settings/code-editor/`,
-  logout: () => `${ADMIN_HOME}/logout/`,
+  logout: () => '/cdn-cgi/access/logout',
 
   ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,
 };
