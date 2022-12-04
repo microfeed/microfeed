@@ -2,9 +2,9 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml)
 
-microfeed allows you to easily create a self-hosted feed on [Cloudflare Pages](https://pages.cloudflare.com/) and [R2](https://www.cloudflare.com/products/r2/).
+microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/).
 
-You can publish audios, videos, photos, documents, blog posts, and any external urls to the feed. It's like a very lightweight CMS (Content management system).
+You can publish audios, videos, photos, documents, blog posts, and any external urls to the feed. It's a very lightweight CMS (Content management system).
 
 There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
@@ -13,19 +13,23 @@ There are many use cases of microfeed:
 * Self-hosted YouTube: a feed of videos
 * Self-hosted personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
 * Self-hosted content curation site: a feed of article links.
-* Self-hosted mMarketing site: a custom web page with updates / press coverage / changelogs. E.g., [feedkit.org](https://www.feedkit.org/)
+* Self-hosted marketing site: a custom web page with updates / press coverage / changelogs. E.g., [feedkit.org](https://www.feedkit.org/)
 
 Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
 
 Cloudflare R2 is a storage for media files like images, audios, and videos. We use R2 to host and serve media files.
 
-Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use FeedKit + Cloudflare for free hosting!
+Cloudflare D1 is a SQLite database. We use D1 to store metadata.
+
+Cloudflare Zero Trust is a set of tools to do access control. We use Zero Trust to provide login to the admin dashboard.
+
+Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use microfeed + Cloudflare for free hosting!
 
 ## Install FeedKit to Cloudflare Pages
 
 Roughly you'll do these steps:
 
-1. Fork FeedKit repo to your own GitHub.
+1. Fork microfeed repo to your personal (or organizational) GitHub account.
 2. Get Cloudflare API tokens and save them as secrets on your forked GitHub repo.
 3. Run the predefined GitHub Action in your forked GitHub repo to deploy code to Cloudflare Pages, which needs to use those secrets on Step 2.
 4. Make a few clicks on Cloudflare's dashboard to setup custom domains and some security stuffs.
@@ -36,9 +40,9 @@ Roughly you'll do these steps:
 * You need to have a Cloudflare account. If you don't, please [sign up on Cloudflare.com](https://dash.cloudflare.com/sign-up) for free.
 * You'd better have a GitHub account. If you don't, please [sign up on GitHub.com](https://github.com/signup) for free.
 
-### Step 1: Fork FeedKit repo to your GitHub
+### Step 1: Fork microfeed repo to your GitHub
 
-Click on [https://github.com/ListenNotes/FeedKit/fork](https://github.com/ListenNotes/FeedKit/fork) to fork the FeedKit repo.
+Click on [https://github.com/microfeed/microfeed/fork](https://github.com/microfeed/microfeed/fork) to fork the microfeed repo.
 
 You may modify the code in your forked repo in the future. But most likely, you won't need to touch the code at all.
 
@@ -55,15 +59,13 @@ You'll need to create these secrets:
 * CLOUDFLARE_PROJECT_NAME
 * R2_ACCESS_KEY_ID
 * R2_SECRET_ACCESS_KEY
-* R2_PUBLIC_BUCKET (optional)
+* R2_PUBLIC_BUCKET (optional, if you are not sure, then just ignore this one)
 
 ### Step 3: Run GitHub Action to deploy code
 
 Go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml) and run Workflow
 
 <img width="1655" alt="Screenshot 2022-11-17 at 9 44 41 PM" src="https://user-images.githubusercontent.com/1719237/202629665-a55c3b99-4b33-4908-9b0a-cbdd6abebf25.png">
-
-You should choose "production" + "setup" when it's the first time you run the GitHub Actions Workflow. Later on, when you need to deploy new code, you can choose "deploy" + "preview"/"production" to deploy to different environments.
 
 ### Step 4: Make a few clicks on Cloudflare dashboard
 
