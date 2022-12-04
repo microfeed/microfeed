@@ -38,7 +38,7 @@ export default class OnboardingChecker {
     }
     result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL] = validPublicBucketUrl;
 
-    const protectedAdminDash = this._initResult(false, true);
+    const protectedAdminDash = this._initResult(false, false);
     if (this._getCookie('CF_Authorization')) {
       protectedAdminDash.ready = true;
     }
