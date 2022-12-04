@@ -208,6 +208,12 @@ export const CHANNEL_STATUSES_DICT = {
   },
 };
 
+export const ONBOARDING_TYPES = {
+  VALID_PUBLIC_BUCKET_URL: 1,
+  PROTECTED_ADMIN_DASHBOARD: 2,
+  CUSTOM_DOMAIN: 3,
+};
+
 export const ITEM_STATUSES_DICT = {
   [STATUSES.PUBLISHED]: {
     name: 'Published',

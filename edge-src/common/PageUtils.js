@@ -2,7 +2,8 @@ import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
 import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
-import {urlJoinWithRelative} from "../../common-src/StringUtils";
+import {ADMIN_URLS, urlJoinWithRelative} from "../../common-src/StringUtils";
+import OnboardingChecker from "../../common-src/OnboardingUtils";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
@@ -13,6 +14,7 @@ class ResponseBuilder {
     this.feed = new FeedDb(env, request);
     this.request = request;
     this.fetchItemsObj = fetchItemsObj || {};
+    this.env = env;
   }
 
   async fetchFeed() {
@@ -44,6 +46,17 @@ class ResponseBuilder {
           break;
       }
     }
+
+    if (this.env['DEPLOYMENT_ENVIRONMENT'] === 'development') {
+      this.request.cookie = `CF_Authorization=something; ${this.request.cookie || ''}`;
+    }
+    const onboardingChecker = new OnboardingChecker(this.content, this.request);
+    const onboardingResult = onboardingChecker.getResult()
+    if (!onboardingResult.requiredOk) {
+      const urlObj = new URL(this.request.url);
+      return Response.redirect(ADMIN_URLS.home(urlObj.origin), 302);
+    }
+
     return this._getResponse(props);
   }
 

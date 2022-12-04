@@ -6,6 +6,17 @@ export function randomHex(size = 32) {
   return [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
+export function isValidUrl(url) {
+  let theUrl;
+  try {
+    theUrl = new URL(url);
+  } catch (_) {
+    return false;
+  }
+
+  return theUrl.protocol === 'http:' || theUrl.protocol === 'https:';
+}
+
 export function randomShortUUID(length = 11) {
   const asciiLowercase = 'abcdefghijklmnopqrstuvwxyz';
   const asciiUppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -211,7 +222,7 @@ export function htmlMetaDescription(str, isHtml = true) {
 const ADMIN_HOME = '/admin';
 
 export const ADMIN_URLS = {
-  home: () => `${ADMIN_HOME}/`,
+  home: (baseUrl = '/') => urlJoin(baseUrl, `${ADMIN_HOME}/`),
   editPrimaryChannel: () => `${ADMIN_HOME}/channels/primary/`,
   editItem: (itemId) => `${ADMIN_HOME}/items/${itemId}/`,
   newItem: () => `${ADMIN_HOME}/items/new/`,

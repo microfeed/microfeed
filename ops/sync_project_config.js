@@ -26,7 +26,9 @@ class SyncProjectConfig {
     // https://api.cloudflare.com/#pages-project-get-projects
     const envVarsJson = {
       [envName]: {
-        'env_vars': {},
+        'env_vars': {
+          'DEPLOYMENT_ENVIRONMENT': this.currentEnv,
+        },
       },
     };
     if (databaseId) {
