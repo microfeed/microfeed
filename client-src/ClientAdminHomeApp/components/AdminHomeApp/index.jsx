@@ -11,18 +11,23 @@ export default class AdminHomeApp extends React.Component {
   constructor(props) {
     super(props);
 
-    this.onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
+    const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
+    const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
 
     this.state = {
+      feed,
+      onboardingResult,
     };
   }
 
   render() {
+    const {feed, onboardingResult} = this.state;
+
     return (<AdminNavApp currentPage={NAV_ITEMS.ADMIN_HOME}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-8 grid grid-cols-1 gap-4">
           <div>
-            <SetupChecklistApp onboardingResult={this.onboardingResult} />
+            <SetupChecklistApp feed={feed} onboardingResult={onboardingResult} />
           </div>
           <div>
             <DistributionApp />

@@ -10,7 +10,8 @@ export default class SetupChecklistApp extends React.Component {
   }
 
   render() {
-    // const {onboardingResult} = this.props;
+    // const {feed, onboardingResult} = this.props;
+    // console.log(feed, onboardingResult);
     // onboardingResult[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL]
     // onboardingResult[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD]
     // onboardingResult[ONBOARDING_TYPES.CUSTOM_DOMAIN]
