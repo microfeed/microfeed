@@ -219,7 +219,7 @@ function CustomDomain({onboardState, cloudflareUrls}) {
       <div className="mb-2">
         Using custom domain, you can benefit from Cloudflare features such as bot management, Access, and Cache.
       </div>
-      <details open={!onboardState.ready}>
+      <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
           Step 1: Setup custom domain for this site
         </summary>
@@ -231,7 +231,7 @@ function CustomDomain({onboardState, cloudflareUrls}) {
           <img src="/assets/howto/pages-custom-domain.png" className="w-full border"/>
         </div>
       </details>
-      <details open={!onboardState.ready}>
+      <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
           Step 2: Create a self-hosted app to protect admin dashboard
         </summary>
