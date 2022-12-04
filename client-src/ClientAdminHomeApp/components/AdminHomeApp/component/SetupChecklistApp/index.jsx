@@ -1,7 +1,12 @@
-import React from 'react';
-import {ONBOARDING_TYPES, OUR_BRAND} from "../../../../../../common-src/Constants";
+import React, {useState} from 'react';
+import {ONBOARDING_TYPES, OUR_BRAND, SETTINGS_CATEGORIES} from "../../../../../../common-src/Constants";
 import {CheckCircleIcon, ArrowRightCircleIcon} from "@heroicons/react/20/solid";
 import AdminInput from "../../../../../components/AdminInput";
+import Requests from "../../../../../common/requests";
+import {ADMIN_URLS} from "../../../../../../common-src/StringUtils";
+import {showToast} from "../../../../../common/ToastUtils";
+
+const SUBMIT_STATUS__START = 1;
 
 function CheckListItem({title, onboardState, children}) {
   return (<div className="flex">
@@ -9,8 +14,8 @@ function CheckListItem({title, onboardState, children}) {
       {onboardState.ready ? <CheckCircleIcon className="w-8 text-green-500" /> :
         <ArrowRightCircleIcon className="w-8 text-muted-color" />}
     </div>
-    <details className="w-full" open>
-      <summary className="cursor-pointer mb-4">
+    <details className="w-full" open={!onboardState.ready}>
+      <summary className="cursor-pointer mb-4 font-semibold hover:opacity-50">
         {title}
       </summary>
       {children}
@@ -18,16 +23,46 @@ function CheckListItem({title, onboardState, children}) {
   </div>);
 }
 
-function SetupPublicBucketUrl({onboardState}) {
+function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
+  const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
+  const [url, setUrl] = useState(publicBucketUrl);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const submitting = submitStatus === SUBMIT_STATUS__START;
   return (<CheckListItem onboardState={onboardState} title="Setup R2 public bucket url">
     <div className="flex">
       <div className="mr-4 flex-1">
         <AdminInput
           placeholder="e.g., https://cdn.example.com"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
         />
       </div>
       <div className="flex-none">
-        <button className="lh-btn lh-btn-brand-dark">Update</button>
+        <button
+          type="button"
+          disabled={submitting}
+          className="lh-btn lh-btn-brand-dark"
+          onClick={(e) => {
+            e.preventDefault();
+            setSubmitStatus(SUBMIT_STATUS__START);
+            Requests.post(ADMIN_URLS.ajaxFeed(), {
+              settings: {
+                [SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS]: {
+                  ...webGlobalSettings,
+                  publicBucketUrl: url,
+                },
+              }
+            })
+              .then(() => {
+                showToast('Updated!', 'success');
+                setTimeout(() => {
+                  location.href = '';
+                }, 1500);
+              });
+          }}
+        >
+          {submitting ? 'Updating...' : 'Update'}
+        </button>
       </div>
     </div>
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
@@ -113,13 +148,18 @@ export default class SetupChecklistApp extends React.Component {
   }
 
   render() {
-    const {onboardingResult} = this.props;
+    const {feed, onboardingResult} = this.props;
+    const {settings} = feed;
+    const webGlobalSettings = settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS] || {};
     return (<div className="lh-page-card">
       <div className="lh-page-subtitle">
         Setup checklist
       </div>
       <div className="mt-8 grid grid-cols-1 gap-8">
-        <SetupPublicBucketUrl onboardState={onboardingResult.result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL]}/>
+        <SetupPublicBucketUrl
+          onboardState={onboardingResult.result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL]}
+          webGlobalSettings={webGlobalSettings}
+        />
         <ProtectedAdminDashboard onboardState={onboardingResult.result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD]}/>
         <CustomDomain onboardState={onboardingResult.result[ONBOARDING_TYPES.CUSTOM_DOMAIN]}/>
       </div>
