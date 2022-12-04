@@ -131,9 +131,12 @@ export default class AllItemsApp extends React.Component {
     super(props);
 
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
+    const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
+
     const items = feed.items || [];
     this.state = {
       feed,
+      onboardingResult,
       items,
     };
   }
@@ -142,7 +145,7 @@ export default class AllItemsApp extends React.Component {
   }
 
   render() {
-    const {items, feed} = this.state;
+    const {items, feed, onboardingResult} = this.state;
     const {settings} = feed;
     const {webGlobalSettings} = settings;
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '/';
@@ -178,7 +181,10 @@ export default class AllItemsApp extends React.Component {
       </div>
     }));
 
-    return (<AdminNavApp currentPage={NAV_ITEMS.ALL_ITEMS}>
+    return (<AdminNavApp
+      currentPage={NAV_ITEMS.ALL_ITEMS}
+      onboardingResult={onboardingResult}
+    >
       <form className="lh-page-card grid grid-cols-1 gap-4">
         <div className="lh-page-title">
           {NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}

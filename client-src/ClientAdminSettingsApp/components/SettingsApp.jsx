@@ -20,8 +20,11 @@ export default class SettingsApp extends React.Component {
 
     const $feedContent = document.getElementById('feed-content');
     const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
+    const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
+
     this.state = {
       feed,
+      onboardingResult,
       submitStatus: null,
     }
   }
@@ -38,9 +41,12 @@ export default class SettingsApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, feed, submitForType} = this.state;
+    const {submitStatus, feed, submitForType, onboardingResult} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    return (<AdminNavApp currentPage={NAV_ITEMS.SETTINGS}>
+    return (<AdminNavApp
+      currentPage={NAV_ITEMS.SETTINGS}
+      onboardingResult={onboardingResult}
+    >
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1 h-full">

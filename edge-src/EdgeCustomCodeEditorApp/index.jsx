@@ -9,7 +9,7 @@ export default class EdgeCustomCodeEditorApp extends React.Component {
   }
 
   render() {
-    const {feedContent, theme} = this.props;
+    const {feedContent, theme, onboardingResult} = this.props;
     const currentThemeTmplJson = {
       themeName: theme.name(),
       rssStylesheet: theme.getRssStylesheetTmpl(),
@@ -26,6 +26,7 @@ export default class EdgeCustomCodeEditorApp extends React.Component {
         webpackJsList={['custom_code_editor_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
+        onboardingResult={onboardingResult}
       >
       <script
         id="theme-tmpl-json"

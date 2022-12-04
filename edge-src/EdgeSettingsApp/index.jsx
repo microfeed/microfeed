@@ -8,7 +8,7 @@ export default class AdminSettingsApp extends React.Component {
   }
 
   render() {
-    const {feedContent} = this.props;
+    const {feedContent, onboardingResult} = this.props;
     return (
       <AdminWholeHtml
         title={`${NAV_ITEMS_DICT[NAV_ITEMS.SETTINGS].name} | ${OUR_BRAND.domain}`}
@@ -16,6 +16,7 @@ export default class AdminSettingsApp extends React.Component {
         webpackJsList={['settings_js']}
         webpackCssList={['admin_styles_css']}
         feedContent={feedContent}
+        onboardingResult={onboardingResult}
       />
     );
   }

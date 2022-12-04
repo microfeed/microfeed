@@ -1,11 +1,10 @@
 import React from "react";
-import AdminSettingsApp from "../../../edge-src/EdgeSettingsApp";
-import {renderReactToHtml} from "../../../edge-src/common/PageUtils";
-
+import EdgeAdminItemsApp from '../../../../edge-src/EdgeAdminItemsApp';
+import {renderReactToHtml} from "../../../../edge-src/common/PageUtils";
 
 export async function onRequestGet({data}) {
   const {feedContent, onboardingResult} = data;
-  const fromReact = renderReactToHtml(<AdminSettingsApp
+  const fromReact = renderReactToHtml(<EdgeAdminItemsApp
     feedContent={feedContent}
     onboardingResult={onboardingResult}
   />);

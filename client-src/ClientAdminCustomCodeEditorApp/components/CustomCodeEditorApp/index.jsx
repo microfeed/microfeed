@@ -182,6 +182,7 @@ export default class CustomCodeEditorApp extends React.Component {
 
     const themeTmplJson = JSON.parse(unescapeHtml(document.getElementById('theme-tmpl-json').innerHTML));
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
+    const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
 
     const {
       themeName,
@@ -212,6 +213,7 @@ export default class CustomCodeEditorApp extends React.Component {
       webHeader,
 
       feed,
+      onboardingResult,
     };
   }
 
@@ -289,7 +291,7 @@ export default class CustomCodeEditorApp extends React.Component {
   }
 
   render() {
-    const {codeFile, submitStatus, feed, codeType, themeName} = this.state;
+    const {codeFile, submitStatus, feed, codeType, themeName, onboardingResult} = this.state;
     const code = this.state[codeFile];
     const codeBundle = CODE_FILES_DICT[codeFile];
     const language = codeBundle.language;
@@ -299,6 +301,7 @@ export default class CustomCodeEditorApp extends React.Component {
     const submitting = submitStatus === SUBMIT_STATUS__START;
     return (<AdminNavApp
       currentPage="settings"
+      onboardingResult={onboardingResult}
       upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Code Editor'}}
       AccessoryComponent={<div className="ml-4">
         <AdminSelect
