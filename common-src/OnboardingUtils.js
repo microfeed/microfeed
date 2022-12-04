@@ -1,5 +1,5 @@
 import {ONBOARDING_TYPES} from "./Constants";
-import {isValidUrl} from "./StringUtils";
+import {isValidUrl, urlJoin} from "./StringUtils";
 
 export default class OnboardingChecker {
   constructor(feed, request, env) {
@@ -52,14 +52,17 @@ export default class OnboardingChecker {
     }
     result[ONBOARDING_TYPES.CUSTOM_DOMAIN] = customDomain;
 
+    const accessSettingsUrl = `https://one.dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/access`;
     const finalResult = {
       requiredOk: true,
       allOk: true,
       result,
       cloudflareUrls: {
         r2BucketSettingsUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/r2/overview/buckets/${this.env['R2_PUBLIC_BUCKET']}/settings`,
-        accessSettingsUrl: `https://one.dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/access`,
+        addAccessGroupUrl: urlJoin(accessSettingsUrl, '/groups/add'),
+        addAppUrl: urlJoin(accessSettingsUrl, '/apps/add'),
         pagesCustomDomainUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/pages/view/${this.env['CLOUDFLARE_PROJECT_NAME']}/domains`,
+        pagesDevUrl: `${this.env['CLOUDFLARE_PROJECT_NAME']}.pages.dev`,
       },
     };
     Object.keys(result).forEach((k) => {

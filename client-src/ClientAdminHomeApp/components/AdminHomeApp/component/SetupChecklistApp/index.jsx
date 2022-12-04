@@ -16,7 +16,7 @@ function CheckListItem({title, onboardState, children}) {
     </div>
     <details className="w-full" open={!onboardState.ready}>
       <summary className="cursor-pointer mb-4 font-semibold hover:opacity-50">
-        {title}
+        {onboardState.required ? '[Required]' : ''} {title}
       </summary>
       {children}
     </details>
@@ -77,7 +77,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
           </div>
           <div className="mt-4">
             <div>
-              <span className="text-red-700">[Recommended]</span> Add a custom domain (e.g., media-cdn.microfeed.org). Then copy this custom domain here (e.g., https://media-cdn.microfeed.org).
+              <span className="text-brand-light font-bold">[Recommended]</span> Add a custom domain (e.g., media-cdn.microfeed.org). Then copy this custom domain here (e.g., https://media-cdn.microfeed.org).
             </div>
             <div className="mt-2">
               <img src="/assets/howto/get-r2-public-bucket-url-howto2.png" className="w-full" />
@@ -85,7 +85,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
           </div>
           <div className="mt-4">
             <div>
-              <span className="text-red-400">[Ok, but not recommended]</span> If you don't have a custom domain, you can also use Cloudflare's r2.dev domain - Click "Allow Access". Then copy "Public Bucket URL" here (e.g., https://pub-xxxx.r2.dev).
+              <span className="text-brand-light">[Ok, but not recommended]</span> If you don't have a custom domain, you can also use Cloudflare's r2.dev domain - Click "Allow Access". Then copy "Public Bucket URL" here (e.g., https://pub-xxxx.r2.dev).
             </div>
             <div className="mt-2">
               <img src="/assets/howto/get-r2-public-bucket-url-howto1.png" className="w-full" />
@@ -125,16 +125,78 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
 
 function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="Add Login to Admin Dashboard">
-    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
-      Use {cloudflareUrls.accessSettingsUrl}
+    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
+      <div>
+        Step 1: <a href={cloudflareUrls.addAccessGroupUrl} target="_blank">
+        Add an access group <span className="lh-icon-arrow-right"/>
+      </a>
+      </div>
+      <div>
+        You need to specify what emails are allowed to access this admin dashboard:
+      </div>
+      <div>
+        <img src="/assets/howto/add-access-group.png" className="w-full border" />
+      </div>
+
+      <div className="mt-8">
+        Step 2: <a href={cloudflareUrls.addAppUrl} target="_blank">
+        Create a self-hosted app to protect admin dashboard <span className="lh-icon-arrow-right"/>
+      </a>
+      </div>
+      <div className="mt-4">
+        Select "Self-hosted" here:
+      </div>
+      <div className="mt-2">
+        <img src="/assets/howto/select-self-hosted-app.png" className="w-full border" />
+      </div>
+      <div className="mt-4">
+        Fill info for <b>{cloudflareUrls.pagesDevUrl}/admin</b>:
+      </div>
+      <div className="mt-2">
+        <img src="/assets/howto/add-app1.png" className="w-full border" />
+      </div>
+      <div className="mt-4">
+        Add policy name, then click "Next" all the way until you add the app:
+      </div>
+      <div className="mt-2">
+        <img src="/assets/howto/add-app2.png" className="w-full border" />
+      </div>
+      <div className="mt-4">
+      Step 3: Refresh current page and you should be able to login with your email:
+      </div>
+      <div className="mt-2">
+        <img src="/assets/howto/app-access-login.png" className="w-full border" />
+      </div>
+      <div className="mt-4">
+        Bonus: You may want to create a 2nd self-hosted app for <b>*.{cloudflareUrls.pagesDevUrl}</b>, which will protect all <a href="https://developers.cloudflare.com/pages/platform/preview-deployments/" target="_blank">preview deployments</a>.
+      </div>
     </div>
   </CheckListItem>);
 }
 
 function CustomDomain({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="Use Custom Domain">
-    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
-      Use {cloudflareUrls.accessSettingsUrl} and {cloudflareUrls.pagesCustomDomainUrl}
+    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
+      <div>
+        Using custom domain, you can benefit from Cloudflare features such as bot management, Access, and Cache.
+      </div>
+      <div className="mt-4">
+        Step 1: <a href={cloudflareUrls.pagesCustomDomainUrl} target="_blank">Setup custom domain here <span className="lh-icon-arrow-right" /></a>
+      </div>
+      <div className="mt-2">
+        <img src="/assets/howto/pages-custom-domain.png" className="w-full border" />
+      </div>
+      <div className="mt-4">
+        If you want to access this admin dashboard from your newly added custom domain, you have to create a self-hosted app for the admin url. Instead of using {cloudflareUrls.pagesDevUrl}, use your new custom domain this time.
+      </div>
+      <div className="mt-4">
+        Step 2: <a href={cloudflareUrls.addAppUrl} target="_blank">
+        Create a self-hosted app to protect admin dashboard <span className="lh-icon-arrow-right"/>
+      </a>
+      </div>
+      <div className="mt-2">
+        <img src="/assets/howto/add-app1.png" className="w-full border" />
+      </div>
     </div>
   </CheckListItem>);
 }
@@ -151,6 +213,9 @@ export default class SetupChecklistApp extends React.Component {
     const {feed, onboardingResult} = this.props;
     const {settings} = feed;
     const webGlobalSettings = settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS] || {};
+
+    onboardingResult.result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD].ready = false;
+    // onboardingResult.result[ONBOARDING_TYPES.CUSTOM_DOMAIN].ready = false;
     return (<div className="lh-page-card">
       <div className="lh-page-subtitle">
         Setup checklist
