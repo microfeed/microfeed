@@ -47,10 +47,7 @@ class ResponseBuilder {
       }
     }
 
-    if (this.env['DEPLOYMENT_ENVIRONMENT'] === 'development') {
-      this.request.cookie = `CF_Authorization=something; ${this.request.cookie || ''}`;
-    }
-    const onboardingChecker = new OnboardingChecker(this.content, this.request);
+    const onboardingChecker = new OnboardingChecker(this.content, this.request, this.env);
     const onboardingResult = onboardingChecker.getResult()
     if (!onboardingResult.requiredOk) {
       const urlObj = new URL(this.request.url);

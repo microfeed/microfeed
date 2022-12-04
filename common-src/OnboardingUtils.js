@@ -2,10 +2,14 @@ import {ONBOARDING_TYPES} from "./Constants";
 import {isValidUrl} from "./StringUtils";
 
 export default class OnboardingChecker {
-  constructor(feed, request) {
+  constructor(feed, request, env) {
     this.feed = feed || {};
-    this.cookie = request.cookie || '';
     this.request = request;
+
+    this.cookie = request.cookie || '';
+    if (env['DEPLOYMENT_ENVIRONMENT'] === 'development') {
+      this.cookie = `CF_Authorization=something; ${this.cookie || ''}`;
+    }
   }
 
   _getCookie(name) {
