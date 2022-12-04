@@ -42,12 +42,27 @@ export default class RichEditorQuill extends React.Component {
     this.state = {
       isOpen: false,
       mediaType: 'image',
+      quillSelection: null,
     };
+  }
+
+  componentDidMount() {
+    this.attachQuillRefs();
+  }
+
+  componentDidUpdate() {
+    console.log('did update');
+    this.attachQuillRefs();
+  }
+
+  attachQuillRefs() {
+    if (typeof this.reactQuillRef.getEditor !== 'function') return;
+    this.quillRef = this.reactQuillRef.getEditor();
   }
 
   render() {
     const {value, onChange} = this.props;
-    const {isOpen, mediaType} = this.state;
+    const {isOpen, mediaType, quillSelection} = this.state;
     return <div>
     <ReactQuill
       theme="snow"
@@ -57,13 +72,14 @@ export default class RichEditorQuill extends React.Component {
       formats={formats}
       ref={(ref) => {
         if (ref) {
-          this.quill = ref.getEditor();
-          const toolbar = this.quill.getModule('toolbar');
+          this.reactQuillRef = ref;
+          this.quillRef = ref.getEditor();
+          const toolbar = this.quillRef.getModule('toolbar');
           toolbar.addHandler('image', () => {
-            this.setState({isOpen: true, mediaType: 'image'});
+            this.setState({isOpen: true, mediaType: 'image', quillSelection: this.quillRef.getSelection()});
           });
           toolbar.addHandler('video', () => {
-            this.setState({isOpen: true, mediaType: 'video'});
+            this.setState({isOpen: true, mediaType: 'video', quillSelection: this.quillRef.getSelection()});
           });
         }
       }}
@@ -72,7 +88,8 @@ export default class RichEditorQuill extends React.Component {
       isOpen={isOpen}
       setIsOpen={(isOpen) => this.setState({isOpen})}
       mediaType={mediaType}
-      quill={this.quill}
+      quill={this.quillRef}
+      quillSelection={quillSelection}
     />
   </div>
   }
