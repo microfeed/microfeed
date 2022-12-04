@@ -1,6 +1,6 @@
 # microfeed
 
-[![Deploy to Cloudflare Pages](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/ListenNotes/FeedKit/actions/workflows/deploy.yml)
+[![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
 microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/).
 
@@ -13,7 +13,7 @@ There are many use cases of microfeed:
 * Self-hosted YouTube: a feed of videos
 * Self-hosted personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
 * Self-hosted content curation site: a feed of article links.
-* Self-hosted marketing site: a custom web page with updates / press coverage / changelogs. E.g., [feedkit.org](https://www.feedkit.org/)
+* Self-hosted marketing site: a custom web page with updates / press coverage / changelogs. E.g., [microfeed.org](https://www.microfeed.org/)
 
 Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
 
@@ -25,7 +25,7 @@ Cloudflare Zero Trust is a set of tools to do access control. We use Zero Trust 
 
 Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use microfeed + Cloudflare for free hosting!
 
-## Install FeedKit to Cloudflare Pages
+## Install microfeed to Cloudflare Pages
 
 Roughly you'll do these steps:
 
