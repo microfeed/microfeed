@@ -11,7 +11,6 @@ async function fetchFeed({request, next, env, data}) {
   }
 
   let fetchItems = null;
-  console.log(urlObj.pathname);
   if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/feed/json')) ||
       urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/items/list'))) {
     fetchItems = getFetchItemsParams(request, {
