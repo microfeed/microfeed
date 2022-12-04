@@ -10,6 +10,6 @@ export async function onRequestGet() {
       },
     });
   const newResponse = new Response(response.body, response)
-  newResponse.headers.set('CF_Authorization', '');
+  newResponse.headers.set("Set-Cookie", '');
   return newResponse;
 }
