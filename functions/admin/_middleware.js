@@ -11,6 +11,7 @@ async function fetchFeed({request, next, env, data}) {
   }
 
   let fetchItems = null;
+  console.log(urlObj.pathname);
   if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/feed/json')) ||
       urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/items/list'))) {
     fetchItems = getFetchItemsParams(request, {
@@ -18,7 +19,9 @@ async function fetchFeed({request, next, env, data}) {
     });
   } else if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/items/'))) {
     // Either /items/ or /items/{id}
-    return next();
+    if (!urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/items/new'))) {
+      return next();
+    }
   } else if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/settings/code-editor'))) {
     fetchItems = getFetchItemsParams(request, {
       'status__!=': STATUSES.DELETED,
