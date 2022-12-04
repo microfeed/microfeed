@@ -126,6 +126,8 @@ export default class EditChannelApp extends React.Component {
     const {submitStatus, channel, feed} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
+    const webGlobalSettings = feed.settings.webGlobalSettings || {};
+    const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
     return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
@@ -188,6 +190,10 @@ export default class EditChannelApp extends React.Component {
               value={channel.description}
               onChange={(value) =>{
                 this.onUpdateChannelMeta('description', value);
+              }}
+              extra={{
+                publicBucketUrl,
+                folderName: `channels/${channel.id}`,
               }}
             />
           </div>

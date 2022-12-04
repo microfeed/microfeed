@@ -128,6 +128,9 @@ export default class EditItemApp extends React.Component {
     const {mediaFile} = item;
     const status = item.status || STATUSES.PUBLISHED;
 
+    const webGlobalSettings = feed.settings.webGlobalSettings || {};
+    const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
+
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
     let currentPage = NAV_ITEMS.NEW_ITEM;
@@ -203,6 +206,10 @@ export default class EditItemApp extends React.Component {
                 label="Description"
                 value={item.description}
                 onChange={(value) => this.onUpdateItemMeta({'description': value})}
+                extra={{
+                  publicBucketUrl,
+                  folderName: `items/${itemId}`,
+                }}
               />
             </div>
             <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-8">

@@ -15,7 +15,7 @@ export default class AdminRichEditor extends React.Component {
   }
   render() {
     const {mode} = this.state;
-    const {label, value, onChange} = this.props;
+    const {label, value, onChange, extra} = this.props;
     return (
       <div>
         <div className="lh-page-subtitle">
@@ -35,6 +35,7 @@ export default class AdminRichEditor extends React.Component {
         {mode === 'rich' ? <RichEditorQuill
           value={value}
           onChange={onChange}
+          extra={extra}
         /> : <AdminTextarea value={value} maxRows={20} onChange={(e) => onChange(e.target.value)} />}
       </div>
     );

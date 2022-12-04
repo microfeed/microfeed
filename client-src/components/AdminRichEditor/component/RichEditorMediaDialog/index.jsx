@@ -1,24 +1,15 @@
 import React from "react";
 import {Quill} from "react-quill";
+import {FileUploader} from "react-drag-drop-files";
 import AdminDialog from "../../../AdminDialog";
 import AdminRadio from "../../../AdminRadio";
 import AdminInput from "../../../AdminInput";
+import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
+import {ENCLOSURE_CATEGORIES_DICT, ENCLOSURE_CATEGORIES} from "../../../../../common-src/Constants";
+import {randomHex, urlJoinWithRelative} from "../../../../../common-src/StringUtils";
+import Requests from "../../../../common/requests";
 
-// function imageHandler() {
-//   const range = this.quill.getSelection();
-//   const value = prompt('What is the image URL');
-//   if (value) {
-//     this.quill.insertEmbed(range.index, 'image', value, Quill.sources.USER);
-//   }
-// }
-//
-// function videoHandler() {
-//   const range = this.quill.getSelection();
-//   const value = prompt('What is the video URL');
-//   if (value) {
-//     this.quill.insertEmbed(range.index, 'video', value, Quill.sources.USER);
-//   }
-// }
+const UPLOAD_STATUS__START = 1;
 
 function FromUrl({url, onChange, onInsert}) {
   let disabled = false;
@@ -42,9 +33,30 @@ function FromUrl({url, onChange, onInsert}) {
   </form>);
 }
 
-function UploadNewFile() {
-  return (<div>
-    upload new file
+function UploadNewFile({uploading, onFileUpload, mediaType, progressText}) {
+  const {fileTypes} = mediaType === 'image' ? ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.IMAGE] :
+    ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.VIDEO];
+  return (<div className="lh-upload-wrapper">
+    <FileUploader
+      handleChange={onFileUpload}
+      name="audioUploader"
+      types={fileTypes}
+      disabled={uploading}
+      classes="lh-upload-fileinput"
+    >
+      <div className="w-full h-24 lh-upload-box p-4 flex items-center justify-center">
+        {uploading ? <div className="text-helper-color">
+          <div className="font-semibold">Uploading...</div>
+          <div className="text-sm">{progressText}</div>
+        </div> : <div className="text-brand-light">
+          <div className="flex items-center">
+            <div className="mr-1"><CloudArrowUpIcon className="w-8"/></div>
+            <div className="font-semibold">Click or drag here to upload {mediaType}</div>
+          </div>
+          <div className="text-sm">{fileTypes.join(', ')}</div>
+        </div>}
+      </div>
+    </FileUploader>
   </div>);
 }
 
@@ -52,11 +64,46 @@ export default class RichEditorMediaDialog extends React.Component {
   constructor(props) {
     super(props);
     this.insertMedia = this.insertMedia.bind(this);
+    this.onFileUpload = this.onFileUpload.bind(this);
 
     this.state = {
       url: null,
-      mode: 'url',
+      mode: 'upload',
+
+      uploadStatus: null,
+      progressText: null,
     };
+  }
+
+  onFileUpload(file) {
+    const {mediaType, setIsOpen} = this.props;
+    this.setState({uploadStatus: UPLOAD_STATUS__START});
+    const {name} = file;
+    const extension = name.slice((name.lastIndexOf('.') - 1 >>> 0) + 2);
+    let newFilename = `${mediaType}-${randomHex(32)}`;
+    if (extension && extension.length > 0) {
+      newFilename += `.${extension}`;
+    }
+    const extra = this.props.extra || {};
+    const publicBucketUrl = extra.publicBucketUrl || '';
+    const folderName = extra.folderName || 'unknown';
+    const cdnFilename = `media/rich-editor/${folderName}/${newFilename}`;
+
+    Requests.upload(file, cdnFilename, (percentage) => {
+      this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
+    }, (cdnUrl) => {
+        // updateState(cdnUrl, 0);
+      const url = urlJoinWithRelative(publicBucketUrl, cdnUrl);
+      console.log(url);
+      this.setState({
+        url,
+        progressText: 'Done!',
+        uploadStatus: null,
+      }, () => {
+        this.insertMedia();
+        setIsOpen(false);
+      })
+    });
   }
 
   insertMedia() {
@@ -77,11 +124,10 @@ export default class RichEditorMediaDialog extends React.Component {
       isOpen,
       setIsOpen,
       mediaType,
-      // quill,
     } = this.props;
-    const {mode, url} = this.state;
+    const {mode, url, uploadStatus, progressText} = this.state;
     const disabledClose = false;
-    // console.log(quill);
+    const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (
       <AdminDialog
         title={`Insert ${mediaType}`}
@@ -114,6 +160,10 @@ export default class RichEditorMediaDialog extends React.Component {
         <div>
           {mode === 'upload' ?
             <UploadNewFile
+              mediaType={mediaType}
+              uploading={uploading}
+              progressText={progressText}
+              onFileUpload={this.onFileUpload}
             /> : <FromUrl
               url={url}
               onChange={(e) => this.setState({url: e.target.value})}

@@ -51,7 +51,6 @@ export default class RichEditorQuill extends React.Component {
   }
 
   componentDidUpdate() {
-    console.log('did update');
     this.attachQuillRefs();
   }
 
@@ -61,7 +60,7 @@ export default class RichEditorQuill extends React.Component {
   }
 
   render() {
-    const {value, onChange} = this.props;
+    const {value, onChange, extra} = this.props;
     const {isOpen, mediaType, quillSelection} = this.state;
     return <div>
     <ReactQuill
@@ -90,6 +89,7 @@ export default class RichEditorQuill extends React.Component {
       mediaType={mediaType}
       quill={this.quillRef}
       quillSelection={quillSelection}
+      extra={extra}
     />
   </div>
   }
