@@ -37,14 +37,12 @@ export default class OnboardingChecker {
     if (isValidUrl(webGlobalSettings.publicBucketUrl)) {
       validPublicBucketUrl.ready = true;
     }
-    validPublicBucketUrl['r2BucketWebSettingsUrl'] = `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/r2/overview/buckets/${this.env['R2_PUBLIC_BUCKET']}/settings`;
     result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL] = validPublicBucketUrl;
 
     const protectedAdminDash = this._initResult(false, false);
     if (this._getCookie('CF_Authorization')) {
       protectedAdminDash.ready = true;
     }
-    protectedAdminDash['appAccessSettingsUrl'] = `https://one.dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/access/apps`;
     result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD] = protectedAdminDash;
 
     const customDomain = this._initResult(false, false);
@@ -58,6 +56,11 @@ export default class OnboardingChecker {
       requiredOk: true,
       allOk: true,
       result,
+      cloudflareUrls: {
+        r2BucketSettingsUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/r2/overview/buckets/${this.env['R2_PUBLIC_BUCKET']}/settings`,
+        accessSettingsUrl: `https://one.dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/access`,
+        pagesCustomDomainUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/pages/view/${this.env['CLOUDFLARE_PROJECT_NAME']}/domains`,
+      },
     };
     Object.keys(result).forEach((k) => {
       if (!result[k].ready) {

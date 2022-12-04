@@ -23,7 +23,7 @@ function CheckListItem({title, onboardState, children}) {
   </div>);
 }
 
-function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
+function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls}) {
   const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
   const [url, setUrl] = useState(publicBucketUrl);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -72,7 +72,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
         </summary>
         <div className="my-8 text-helper-color">
           <div>
-            Go to <a href={onboardState.r2BucketWebSettingsUrl} target="_blank" rel="noopener noreferrer">
+            Go to <a href={cloudflareUrls.r2BucketSettingsUrl} target="_blank" rel="noopener noreferrer">
               Cloudflare Dashboard / R2 Bucket Settings <span className="lh-icon-arrow-right" /></a>
           </div>
           <div className="mt-4">
@@ -123,18 +123,18 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings}) {
   </CheckListItem>);
 }
 
-function ProtectedAdminDashboard({onboardState}) {
+function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="Add Login to Admin Dashboard">
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
-      Use {onboardState.appAccessSettingsUrl}
+      Use {cloudflareUrls.accessSettingsUrl}
     </div>
   </CheckListItem>);
 }
 
-function CustomDomain({onboardState}) {
+function CustomDomain({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="Use Custom Domain">
-    <div>
-      custom
+    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
+      Use {cloudflareUrls.accessSettingsUrl} and {cloudflareUrls.pagesCustomDomainUrl}
     </div>
   </CheckListItem>);
 }
@@ -159,9 +159,16 @@ export default class SetupChecklistApp extends React.Component {
         <SetupPublicBucketUrl
           onboardState={onboardingResult.result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL]}
           webGlobalSettings={webGlobalSettings}
+          cloudflareUrls={onboardingResult.cloudflareUrls}
         />
-        <ProtectedAdminDashboard onboardState={onboardingResult.result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD]}/>
-        <CustomDomain onboardState={onboardingResult.result[ONBOARDING_TYPES.CUSTOM_DOMAIN]}/>
+        <ProtectedAdminDashboard
+          onboardState={onboardingResult.result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD]}
+          cloudflareUrls={onboardingResult.cloudflareUrls}
+        />
+        <CustomDomain
+          onboardState={onboardingResult.result[ONBOARDING_TYPES.CUSTOM_DOMAIN]}
+          cloudflareUrls={onboardingResult.cloudflareUrls}
+        />
       </div>
     </div>);
   }
