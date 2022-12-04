@@ -129,6 +129,7 @@ export const OUR_BRAND = {
   brandName: 'microfeed',
   whatsnewEndpoint: 'https://www.microfeed.org/json/',
   whatsnewWebsite: 'https://www.microfeed.org',
+  exampleCdnUrl: 'https://media-cdn.microfeed.org',
 };
 
 export const ENCLOSURE_CATEGORIES = {

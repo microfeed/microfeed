@@ -10,6 +10,7 @@ export default class OnboardingChecker {
     if (env['DEPLOYMENT_ENVIRONMENT'] === 'development') {
       this.cookie = `CF_Authorization=something; ${this.cookie || ''}`;
     }
+    this.env = env;
   }
 
   _getCookie(name) {
@@ -36,6 +37,7 @@ export default class OnboardingChecker {
     if (isValidUrl(webGlobalSettings.publicBucketUrl)) {
       validPublicBucketUrl.ready = true;
     }
+    validPublicBucketUrl['r2BucketWebSettingsUrl'] = `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/r2/overview/buckets/${this.env['R2_PUBLIC_BUCKET']}/settings`;
     result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL] = validPublicBucketUrl;
 
     const protectedAdminDash = this._initResult(false, false);
