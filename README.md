@@ -37,6 +37,9 @@ Roughly you'll do these steps:
 4. Make a few clicks on Cloudflare's dashboard to setup custom domains and some security stuffs.
 5. Profit!
 
+
+Feature request to Cloudflare: Please build a "Login with Cloudflare" OAuth! This will allow microfeed to do (almost) one-click deployment :) Otherwise, people need to read documentation and follow instructions to get an instance of microfeed up and running. Most people don't read documentation. 
+
 ### Prerequisites
 
 * You need to have a Cloudflare account. If you don't, please [sign up on Cloudflare.com](https://dash.cloudflare.com/sign-up) for free.
