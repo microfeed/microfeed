@@ -113,9 +113,11 @@ Copy Access Key ID for R2_ACCESS_KEY_ID, and Secret Access Key for R2_SECRET_ACC
   
 A legit project name should have these characters: [a-z], [A-Z], [0-9], and -
 
-We recommend using the custom domain name that you'll use for this project and replace . with -
+We recommend using the custom domain name that you'll use for this project and replace dot (.) with dash (-)
   
 For example, if you use photos.mycustomdomain.com, then the project name should be photos-mycustomdomain-com
+  
+Note: Don't use underscore (_), space ( ), and other characters outside [a-z], [A-Z], [0-9] and -. Or Cloudflare Pages won't let you create a project.
 </details>
 
 In total, you'll add 5 secrets for GitHub Actions:
