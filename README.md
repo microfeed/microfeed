@@ -10,9 +10,9 @@ There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
 * Self-hosted Blog: a feed of articles.
 * Self-hosted Instagram: a feed of photos. E.g., [llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
-* Self-hosted YouTube: a feed of videos
+* Self-hosted YouTube: a feed of videos.
 * Self-hosted personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
-* Self-hosted content curation site: a feed of article links.
+* Self-hosted content curation site: a feed of article links + custom titles + comments, just like [Daring Fireball](https://daringfireball.net/) and [Drudge Report](https://www.drudgereport.com/).
 * Self-hosted marketing site: a custom web page with updates / press coverage / changelogs. E.g., [microfeed.org](https://www.microfeed.org/)
 
 Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
