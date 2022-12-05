@@ -20,7 +20,7 @@ There are many use cases of microfeed:
 * Self-hosted content curation site: a feed of article links + custom titles + comments, just like [Daring Fireball](https://daringfireball.net/) and [Drudge Report](https://www.drudgereport.com/).
 * Self-hosted marketing site: a custom web page with updates / press coverage / changelogs. E.g., [microfeed.org](https://www.microfeed.org/)
 
-We use Cloudflare Pages to host and run the code, use R2 to host and serve media files, use D1 to store metadata, and use Zero Trust to provide login to the admin dashboard. Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use microfeed + Cloudflare for free hosting!
+We use Cloudflare Pages to host and run the code, use R2 to host and serve media files, use D1 to store metadata, and use Zero Trust to provide login to the admin dashboard. Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you can use microfeed + Cloudflare for free hosting!
 
 ## Install microfeed to Cloudflare Pages
 
