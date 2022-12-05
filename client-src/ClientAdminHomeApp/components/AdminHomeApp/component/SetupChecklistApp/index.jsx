@@ -16,7 +16,7 @@ function CheckListItem({title, onboardState, children}) {
     </div>
     <details className="w-full" open={!onboardState.ready}>
       <summary className="cursor-pointer mb-4 font-semibold hover:opacity-50">
-        {onboardState.required ? '[Required]' : ''} {title}
+        {title} {onboardState.required && <span className="text-red-500">*</span>}
       </summary>
       <div className="mb-8">
         {children}
@@ -284,6 +284,9 @@ export default class SetupChecklistApp extends React.Component {
           onboardState={onboardingResult.result[ONBOARDING_TYPES.CUSTOM_DOMAIN]}
           cloudflareUrls={onboardingResult.cloudflareUrls}
         />
+      </div>
+      <div className="text-right mt-4 text-sm text-helper-color">
+        <span className="text-red-500">*</span> Required
       </div>
     </div>);
   }
