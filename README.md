@@ -1,4 +1,4 @@
-# microfeed: a simple and practical self-hosted feed on Cloudflare 
+# microfeed: a simple self-hosted feed on Cloudflare 
 
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
