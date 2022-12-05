@@ -7,12 +7,14 @@
 
 microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). 
 
+You can consider microfeed as a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to the feed. 
+
 The feed can be accessed via a customizable website, a rss feed (compatible w/ podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
 * Web feed: [https://llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
 
-There's a simple but powerful admin dashboard that allows you to easily add items to the feed, upload media files (e.g., audio, video, image, document...) to Cloudflare R2, and customize web page styles. If you've used Wordpress before, it's similar. You can consider microfeed as a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to the feed. 
+There's a simple but powerful admin dashboard that allows you to easily add items to the feed, upload media files (e.g., audio, video, image, document...) to Cloudflare R2, and customize web page styles. If you've used WordPress before, it's similar. 
 
 There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
@@ -23,15 +25,7 @@ There are many use cases of microfeed:
 * Self-hosted content curation site: a feed of article links + custom titles + comments, just like [Daring Fireball](https://daringfireball.net/) and [Drudge Report](https://www.drudgereport.com/).
 * Self-hosted marketing site: a custom web page with updates / press coverage / changelogs. E.g., [microfeed.org](https://www.microfeed.org/)
 
-Cloudflare Pages is a serverless platform to build websites. We use Cloudflare Pages to host and run the code.
-
-Cloudflare R2 is a storage for media files like images, audios, and videos. We use R2 to host and serve media files.
-
-Cloudflare D1 is a SQLite database. We use D1 to store metadata.
-
-Cloudflare Zero Trust is a set of tools to do access control. We use Zero Trust to provide login to the admin dashboard.
-
-Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use microfeed + Cloudflare for free hosting!
+We use Cloudflare Pages to host and run the code, use R2 to host and serve media files, use D1 to store metadata, and use Zero Trust to provide login to the admin dashboard. Cloudflare provides very generous free usage quota. For personal or small-business-level usage, it's unlikely that you need to pay Cloudflare. In other words, you use microfeed + Cloudflare for free hosting!
 
 ## Install microfeed to Cloudflare Pages
 
