@@ -49,22 +49,20 @@ Feature request to Cloudflare: Please build a "Login with Cloudflare" OAuth! Thi
 
 Click on [https://github.com/microfeed/microfeed/fork](https://github.com/microfeed/microfeed/fork) to fork the microfeed repo.
 
-You may modify the code in your forked repo in the future. But most likely, you won't need to touch the code at all.
+You may modify the code in your forked repo in the future. But most likely, you won't need to touch the code at all. Just fork the repo and [sync fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork) in the future.
 
 ### Step 2: Put some secrets on your forked repo
 
-Go to your forked repo's [Settings -> Secrets -> Actions](../../settings/secrets/actions):
-
-<img width="1143" alt="Screenshot 2022-11-17 at 9 33 28 PM" src="https://user-images.githubusercontent.com/1719237/202628319-4f615748-1404-4649-8d97-8ad93c517f14.png">
-
-You'll need to create these secrets:
+Go to your forked repo's [Settings -> Secrets -> Actions](../../settings/secrets/actions), and create these secrets:
 
 * CLOUDFLARE_ACCOUNT_ID
 * CLOUDFLARE_API_TOKEN
 * CLOUDFLARE_PROJECT_NAME
 * R2_ACCESS_KEY_ID
 * R2_SECRET_ACCESS_KEY
-* R2_PUBLIC_BUCKET (optional, if you are not sure, then just ignore this one)
+
+<img width="826" alt="Screenshot 2022-12-04 at 4 10 46 PM" src="https://user-images.githubusercontent.com/1719237/205524410-268abf92-af61-467a-8883-78b8d4de3c56.png">
+
 
 ### Step 3: Run GitHub Action to deploy code
 
