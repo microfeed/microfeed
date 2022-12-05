@@ -29,15 +29,21 @@ export default function ExplainText({bundle}) {
         title={bundle.modalTitle || bundle.linkName}
       >
         <div className="py-4">
-          {bundle && <div className="grid grid-cols-1 gap-4 text-sm">
+          {bundle && <div className="text-helper-color grid grid-cols-1 gap-4 text-sm">
             <div>{bundle.text}</div>
             <div>
               <div><ExternalLink text='in rss' url={PUBLIC_URLS.rssFeed()} /></div>
               <code>{bundle.rss}</code>
+              <div className="text-xs mt-2 text-muted-color">
+                Learn more about Podcasts RSS at <a className="text-helper-color" href="https://help.apple.com/itc/podcasts_connect/#/itcb54353390" target="_blank" rel="noopener noreferrer">apple.com</a>.
+              </div>
             </div>
             <div>
               <div><ExternalLink text='in json' url={PUBLIC_URLS.jsonFeed()} /></div>
               <code>{bundle.json}</code>
+              <div className="text-xs mt-2 text-muted-color">
+                Learn more about JSON Feed at <a className="text-helper-color" href="https://www.jsonfeed.org/" target="_blank" rel="noopener noreferrer">jsonfeed.org</a>.
+              </div>
             </div>
           </div>}
         </div>

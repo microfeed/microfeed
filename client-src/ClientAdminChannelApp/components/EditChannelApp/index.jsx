@@ -153,7 +153,7 @@ export default class EditChannelApp extends React.Component {
               />
               <div className="grid grid-cols-2 gap-4">
                 <AdminInput
-                  label="Publisher"
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_PUBLISHER]}/>}
                   value={channel.publisher}
                   onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
                 />
