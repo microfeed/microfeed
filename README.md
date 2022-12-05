@@ -55,11 +55,70 @@ You may modify the code in your forked repo in the future. But most likely, you 
 
 Go to your forked repo's [Settings -> Secrets -> Actions](../../settings/secrets/actions), and create these secrets:
 
-* CLOUDFLARE_ACCOUNT_ID
-* CLOUDFLARE_API_TOKEN
-* CLOUDFLARE_PROJECT_NAME
-* R2_ACCESS_KEY_ID
-* R2_SECRET_ACCESS_KEY
+
+<details>
+  <summary>CLOUDFLARE_ACCOUNT_ID</summary>
+
+You can get your cloudflare account id from your dashboard's url:
+  
+After you [login your Cloudflare account](https://dash.cloudflare.com/login?lang=en-US), you'll be redirected to a url like this
+```
+https://dash.cloudflare.com/[your-cloudflare-account-id-here]
+```
+The last part of the url is your cloudflare account id.  
+</details>
+
+<details>
+  <summary>CLOUDFLARE_API_TOKEN</summary>
+
+You'll need to create an API token here: [https://dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+  
+Create a custom token:
+  
+<img width="925" alt="Screenshot 2022-12-04 at 4 30 57 PM" src="https://user-images.githubusercontent.com/1719237/205525627-14da54ae-1733-4db5-b65d-94f5ec48f360.png">
+
+We need edit permission for both Cloudflare Pages and D1:
+  
+<img width="990" alt="Screenshot 2022-12-04 at 4 31 41 PM" src="https://user-images.githubusercontent.com/1719237/205525675-4c8a6bce-21a8-45e3-bf0c-28981f123da3.png">
+  
+Finally, copy the API token here:
+  
+<img width="682" alt="Screenshot 2022-12-04 at 4 34 01 PM" src="https://user-images.githubusercontent.com/1719237/205525785-6fed8e49-7342-4b36-9d07-348e1c28cbcc.png">
+
+  
+  </details>
+  
+<details>
+  <summary>R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY</summary>
+  
+Go to your [R2 dashboard page](https://dash.cloudflare.com/sign-up/r2). You may need to put your credit card there first. You won't need to pay, unless your usage exceeds the very generous free quota limit (i.e., 10GB storage + 10 million reads/month + 1 million writes/month).
+  
+Create an R2 API token here:
+  
+  <img width="1328" alt="Screenshot 2022-12-04 at 4 43 58 PM" src="https://user-images.githubusercontent.com/1719237/205526381-cc11d4fe-b053-49d0-9072-de54db31b3b7.png">
+  
+Select "Edit" permission and create an API token:
+  
+  <img width="849" alt="Screenshot 2022-12-04 at 4 45 18 PM" src="https://user-images.githubusercontent.com/1719237/205526491-79a87e1e-02e0-4268-9f88-7d9cdc6b3b68.png">
+
+Copy Access Key ID for R2_ACCESS_KEY_ID, and Secret Access Key for R2_SECRET_ACCESS_KEY
+  <img width="728" alt="Screenshot 2022-12-04 at 4 45 35 PM" src="https://user-images.githubusercontent.com/1719237/205526582-92f440ac-21c4-46d9-a065-cfc1937391c8.png">
+
+
+</details>
+
+
+<details>
+  <summary>CLOUDFLARE_PROJECT_NAME</summary>
+  
+A legit project name should have these characters: [a-z], [A-Z], [0-9], and -
+
+We recommend using the custom domain name that you'll use for this project and replace . with -
+  
+For example, if you use photos.mycustomdomain.com, then the project name should be photos-mycustomdomain-com
+</details>
+
+In total, you'll add 5 secrets for GitHub Actions:
 
 <img width="826" alt="Screenshot 2022-12-04 at 4 10 46 PM" src="https://user-images.githubusercontent.com/1719237/205524410-268abf92-af61-467a-8883-78b8d4de3c56.png">
 
