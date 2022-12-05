@@ -5,12 +5,14 @@
 
 > Note: microfeed is in Open Alpha, running on Cloudflare's Open Alpha products (e.g., D1). Therefore, we don't recommend for production data and traffic at this moment.
 
-microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). The feed can be accessed via a customizable website, a rss feed (compatible w/ podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
+microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). 
+
+The feed can be accessed via a customizable website, a rss feed (compatible w/ podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
 * Web feed: [https://llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
 
-You can publish audios, videos, photos, documents, blog posts, and any external urls to the feed. It's a very lightweight CMS (Content management system).
+There's a simple but powerful admin dashboard that allows you to easily add items to the feed, upload media files (e.g., audio, video, image, document...) to Cloudflare R2, and customize web page styles. If you've used Wordpress before, it's similar. You can consider microfeed as a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to the feed. 
 
 There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
