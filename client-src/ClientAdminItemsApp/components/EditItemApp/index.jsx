@@ -50,6 +50,14 @@ export default class EditItemApp extends React.Component {
       feed.items = [];
     }
     const item = feed.item || initItem();
+
+    if (action === 'create') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const title = urlParams.get('title');
+      if (title) {
+        item.title = title;
+      }
+    }
     this.state = {
       feed,
       onboardingResult,
