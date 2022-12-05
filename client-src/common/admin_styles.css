@@ -7,7 +7,7 @@ body {
 }
 
 a {
-  @apply text-brand-dark hover:text-brand-light font-semibold;
+  @apply text-black hover:text-brand-light font-semibold;
 }
 
 /*

@@ -76,7 +76,7 @@ export default class AdminNavApp extends React.Component {
         </div>
       </div>
       <div className="grid grid-cols-12 gap-4 flex-1">
-        <div className="col-span-2 bg-black flex-none">
+        <div className="col-span-2 bg-brand-dark flex-none">
           <nav className="py-8">
             <NavItem
               url={ADMIN_URLS.home()}

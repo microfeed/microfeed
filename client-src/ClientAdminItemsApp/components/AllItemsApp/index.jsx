@@ -28,22 +28,18 @@ import AdminRadio from "../../../components/AdminRadio";
 
 const columnHelper = createColumnHelper();
 const columns = [
-  columnHelper.accessor('id', {
-    header: 'Item id',
+  columnHelper.accessor('title', {
+    header: 'Title',
     cell: info => info.getValue(),
   }),
   columnHelper.accessor('status', {
     header: 'Status',
-    cell: info => <div className={clsx('font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
+    cell: info => <div className={clsx('text-center font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
       {ITEM_STATUSES_DICT[info.getValue()].name}</div>,
   }),
   columnHelper.accessor('pubDateMs', {
     header: 'Published date',
-    cell: info => msToDatetimeLocalString(info.getValue()),
-  }),
-  columnHelper.accessor('title', {
-    header: 'Title',
-    cell: info => info.getValue(),
+    cell: info => <div className="text-center">{msToDatetimeLocalString(info.getValue())}</div>,
   }),
   columnHelper.accessor('mediaFile', {
     header: 'Media file',
@@ -87,14 +83,14 @@ function ItemListTable({data, feed}) {
         }}
       />
     </div>
-    <table className="border-collapse border border-slate-400 text-helper-color text-sm w-full">
+    <table className="border-collapse text-helper-color text-sm w-full">
       <thead>
       {table.getHeaderGroups().map(headerGroup => (
         <tr key={headerGroup.id}>
           {headerGroup.headers.map(header => (
             <th
               key={header.id}
-              className={clsx('border border-slate-300 bg-black text-white py-2 px-4')}
+              className={clsx('uppercase border border-slate-300 bg-brand-dark text-white py-2 px-4')}
             >
               {flexRender(header.column.columnDef.header, header.getContext())}
             </th>
@@ -150,24 +146,26 @@ export default class AllItemsApp extends React.Component {
     const {webGlobalSettings} = settings;
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '/';
     const data = items.map((item) => ({
-      id: (<div>
-        <div>{item.id}</div>
-        <div className="mt-2">
-          <a
-            className="block"
-            href={ADMIN_URLS.editItem(item.id)}
-          >Edit this item <span className="lh-icon-arrow-right"/></a>
-        </div>
-      </div>),
       status: item.status || STATUSES.PUBLISHED,
       pubDateMs: item.pubDateMs,
       title: <div>
-        <div className="line-clamp-2">{item.title}</div>
-        <div className="mt-2">
-          <ExternalLink url={PUBLIC_URLS.webItem(item.id, item.title)} text="Public page" />
+        <div className="line-clamp-2 text-lg">
+          <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title}</a>
+        </div>
+        <div className="mt-2 flex items-center">
+          <div className="text-muted-color text-sm flex-1">
+            id: {item.id}
+          </div>
+          <ExternalLink linkClass="text-xs" url={PUBLIC_URLS.webItem(item.id, item.title)} text="Public page" />
+          <div className="ml-4 flex-none">
+            <a
+              className="block text-xs"
+              href={ADMIN_URLS.editItem(item.id)}
+            >Edit this item <span className="lh-icon-arrow-right"/></a>
+          </div>
         </div>
       </div>,
-      mediaFile: <div>
+      mediaFile: <div className="flex flex-col items-center">
         {item.mediaFile ? <div>
           <ExternalLink
             url={urlJoinWithRelative(publicBucketUrl, item.mediaFile.url)}
