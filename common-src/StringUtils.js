@@ -225,7 +225,7 @@ export const ADMIN_URLS = {
   home: (baseUrl = '/') => urlJoin(baseUrl, `${ADMIN_HOME}/`),
   editPrimaryChannel: () => `${ADMIN_HOME}/channels/primary/`,
   editItem: (itemId) => `${ADMIN_HOME}/items/${itemId}/`,
-  newItem: () => `${ADMIN_HOME}/items/new/`,
+  newItem: (baseUrl = '/') => urlJoin(baseUrl, `${ADMIN_HOME}/items/new/`),
   allItems: () => `${ADMIN_HOME}/items/list/`,
   settings: () => `${ADMIN_HOME}/settings/`,
   codeEditorSettings: () => `${ADMIN_HOME}/settings/code-editor/`,

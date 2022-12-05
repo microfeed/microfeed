@@ -1,11 +1,18 @@
 import React from 'react';
 import Requests from '../../../../../common/requests';
-import {humanFileSize, randomHex, secondsToHHMMSS, urlJoinWithRelative} from '../../../../../../common-src/StringUtils';
+import {
+  ADMIN_URLS,
+  humanFileSize,
+  randomHex,
+  secondsToHHMMSS,
+  urlJoinWithRelative
+} from '../../../../../../common-src/StringUtils';
 import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT} from "../../../../../../common-src/Constants";
 import AdminRadio from "../../../../../components/AdminRadio";
 import AdminInput from "../../../../../components/AdminInput";
 import {FileUploader} from "react-drag-drop-files";
 import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
+import {getPublicBaseUrl} from "../../../../../common/ClientUrlUtils";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -102,6 +109,8 @@ function MediaUploader(
 }
 
 function UrlEditor({url, onUpdateUrl}) {
+
+  const bookmarkletCode = `javascript:window.location="${ADMIN_URLS.newItem(getPublicBaseUrl())}?media_category=external_url&media_url="+encodeURIComponent(document.location)`;
   return (<div>
     <AdminInput
       placeholder="e.g., https://www.nytimes.com/2022/11/13/us/politics/senate-democrats-republicans.html"
@@ -110,6 +119,25 @@ function UrlEditor({url, onUpdateUrl}) {
       value={url}
       onChange={(e) => onUpdateUrl(e.target.value)}
     />
+    <details className="mt-4 text-helper-color">
+      <summary className="hover:opacity-50 text-sm cursor-pointer">
+        Bookmarklet: add a "to microfeed" button to browser
+      </summary>
+      <div className="mt-4 text-sm">
+        Drag this link to your browser, so you can easily curate web pages here -
+        <div className="mt-4 underline">
+          <a
+            onClick={(e) => {
+              e.preventDefault();
+              return false;
+            }}
+            rel="nofollow"
+            href={bookmarkletCode}>
+            to microfeed
+          </a>
+        </div>
+      </div>
+    </details>
   </div>);
 }
 
