@@ -10,7 +10,7 @@ export default function AdminSelect({ label, value, options, onChange, extraPara
           control: (baseStyles, state) => ({
             ...baseStyles,
             borderColor: state.isFocused ? 'grey' : 'black',
-            borderRadius: 0,
+            borderRadius: 4,
           }),
         }}
         className="text-sm"

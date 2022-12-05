@@ -13,7 +13,7 @@ export function AdminSideQuickLinks({AdditionalLinksDiv}) {
     <div className="lh-page-subtitle">Public access</div>
     <div className="grid grid-cols-1 gap-2">
       {AdditionalLinksDiv}
-      <div className="flex flex-wrap">
+      <div className="flex flex-wrap gap-y-2">
         <SideQuickLink url={PUBLIC_URLS.webFeed()} text="web feed"/>
         <SideQuickLink url={PUBLIC_URLS.jsonFeed()} text="json feed"/>
         <SideQuickLink url={PUBLIC_URLS.rssFeed()} text="rss feed"/>

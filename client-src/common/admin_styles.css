@@ -14,7 +14,7 @@ a {
    Buttons
  */
 .lh-btn {
-  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded-lg;
+  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded;
   @apply disabled:opacity-50;
 }
 
@@ -27,18 +27,18 @@ a {
 }
 
 .lh-btn-sm {
-  @apply text-sm py-1 px-2 rounded;
+  @apply text-sm py-1 px-2 rounded-sm;
 }
 
 .lh-btn-lg {
-  @apply text-lg py-3 px-5 rounded-xl;
+  @apply text-lg py-3 px-5 rounded-md;
 }
 
 /*
   Cards
  */
 .lh-page-card {
-  @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light;;
+  @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light rounded-md;
 }
 
 .lh-page-title {
@@ -57,7 +57,7 @@ a {
 }
 
 .lh-upload-box {
-  @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50;
+  @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50 rounded-md;
 }
 
 .lh-upload-wrapper .lh-upload-fileinput.is-disabled {
@@ -99,4 +99,12 @@ a {
   max-height: 500px;
   overflow: auto;
   /* @apply min-h-screen; */
+}
+
+.ql-toolbar {
+  @apply rounded-tl rounded-tr;
+}
+
+.ql-container {
+  @apply rounded-bl rounded-br;
 }
