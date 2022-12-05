@@ -1,4 +1,4 @@
-# microfeed: a simple self-hosted CMS on Cloudflare 
+# microfeed: a lightweight self-hosted CMS on Cloudflare 
 
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
