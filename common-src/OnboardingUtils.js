@@ -14,7 +14,6 @@ export default class OnboardingChecker {
   }
 
   _getCookie(name) {
-    console.log(this.cookie);
     const value = `; ${this.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) {
