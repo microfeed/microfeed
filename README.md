@@ -2,6 +2,8 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
+Note: microfeed is in Open Alpha, running on Cloudflare's Open Alpha products (e.g., D1). Therefore, we don't recommend for production data and traffic at this moment.
+
 microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/).
 
 You can publish audios, videos, photos, documents, blog posts, and any external urls to the feed. It's a very lightweight CMS (Content management system).
