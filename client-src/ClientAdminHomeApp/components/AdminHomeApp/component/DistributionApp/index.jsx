@@ -63,11 +63,11 @@ export default class DistributionApp extends React.Component {
           key={`b-${bundle.label}`}
           className="grid grid-cols-12 gap-4"
         >
-          <div className="col-span-1">
+          <div className="col-span-2">
             <ExternalLink url={bundle.url} text={bundle.label} />
           </div>
           <div className="col-span-10">
-            <div className="select-all bg-gray-200 py-1 px-2 rounded">
+            <div className="select-all bg-gray-200 py-2 px-4 rounded">
               {bundle.url}
             </div>
             <div className="mt-2 text-helper-color text-sm">
