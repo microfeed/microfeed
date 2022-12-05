@@ -11,6 +11,8 @@ import {AdminSideQuickLinks} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
 import AdminSelect from "../../../components/AdminSelect";
 import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT, NAV_ITEMS} from "../../../../common-src/Constants";
+import ExplainText from "../../../components/ExplainText";
+import {CONTROLS, CONTROLS_TEXTS_DICT} from "../../../../common-src/FormExplainTexts";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -145,7 +147,7 @@ export default class EditChannelApp extends React.Component {
             </div>
             <div className="flex-1 ml-8 grid grid-cols-1 gap-3">
               <AdminInput
-                label="Title"
+                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_TITLE]}/>}
                 value={channel.title}
                 onChange={(e) => this.onUpdateChannelMeta('title', e.target.value)}
               />
@@ -260,7 +262,7 @@ export default class EditChannelApp extends React.Component {
                 onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'Yes')}
               />
               <AdminRadio
-                label="<itunes:complete>"
+                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_COMPLETE]}/>}
                 groupName="feed-itunes-complete"
                 buttons={[{
                   'name': 'Yes',

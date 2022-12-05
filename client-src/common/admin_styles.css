@@ -10,6 +10,10 @@ a {
   @apply text-black hover:text-brand-light font-semibold;
 }
 
+code {
+  @apply p-4 block bg-gray-200 rounded-md mt-2 text-xs text-red-500 select-all break-all;
+}
+
 /*
    Buttons
  */

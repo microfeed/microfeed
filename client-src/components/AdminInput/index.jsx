@@ -2,10 +2,12 @@ import React from "react";
 import clsx from "clsx";
 
 export default function AdminInput(
-  { label, value, onChange, placeholder = '', disabled = false, setRef = () => {},
-    customLabelClass = '', customClass = '', type = 'text', extraParams = {} }) {
+  { label, value, onChange, labelComponent = null, placeholder = '', disabled = false,
+    setRef = () => {}, customLabelClass = '', customClass = '', type = 'text',
+    extraParams = {} }) {
   return (<label className="w-full">
     {label && <div className={clsx(customLabelClass || "lh-page-subtitle")}>{label}</div>}
+    {labelComponent}
     <div className="w-full">
       <input
         type={type}

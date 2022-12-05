@@ -2,9 +2,11 @@ import React from "react";
 import clsx from "clsx";
 
 export default function AdminRadio(
-  { label, groupName, buttons, onChange, disabled = false, customLabelClass = '', customClass = ''}) {
+  { label, groupName, buttons, onChange, labelComponent = null,
+    disabled = false, customLabelClass = '', customClass = ''}) {
   return (<fieldset className="flex flex-col justify-center">
     {label && <legend className={clsx( customLabelClass || 'lh-page-subtitle')}>{label}</legend>}
+    {labelComponent}
     <div className="w-full flex">
       {buttons.map((b) => (
         <label key={`${groupName}-${b.name}`} className="mr-4 flex items-center">
