@@ -129,25 +129,20 @@ In total, you'll add 5 secrets for GitHub Actions:
 
 Go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml) and run Workflow
 
-<img width="1655" alt="Screenshot 2022-11-17 at 9 44 41 PM" src="https://user-images.githubusercontent.com/1719237/202629665-a55c3b99-4b33-4908-9b0a-cbdd6abebf25.png">
+<img width="1606" alt="Screenshot 2022-12-04 at 4 11 19 PM" src="https://user-images.githubusercontent.com/1719237/205526856-05ea0ff4-703a-4d08-bc7f-4ae2dfc07cfe.png">
+
+If you see the green checkmark, then the deployment is successful. And you can see a Pages project in your [Cloudflare dashboard](https://dash.cloudflare.com/sign-up/pages):
+
+
+<img width="880" alt="Screenshot 2022-12-04 at 4 55 10 PM" src="https://user-images.githubusercontent.com/1719237/205527141-277620dd-586b-42dd-be97-edb7875d0705.png">
+
+You can access the site via ${CLOUDFLARE_PROJECT_NAME}.pages.dev, for example, [https://microfeed-org.pages.dev/](https://microfeed-org.pages.dev/)
 
 ### Step 4: Make a few clicks on Cloudflare dashboard
 
-#### Make the public R2 bucket public
+To manage your site, you'll use the admin dashboard at ${CLOUDFLARE_PROJECT_NAME}.pages.dev/admin
 
-todo
-
-#### Setup authentication for the admin dashboard and preview sites
-
-We don't want people to see preview sites (please ignore the warning "the zone does not exist"):
-<img width="1124" alt="Screenshot 2022-11-18 at 9 05 02 PM" src="https://user-images.githubusercontent.com/1719237/202835250-197c4711-2bf4-47fd-9c44-5559e15699f6.png">
-
-We don't want anyone on the Internet to access our Admin dashboard. So let's require email login (please ignore the warning "the zone does not exist"):
-<img width="1140" alt="Screenshot 2022-11-18 at 9 04 24 PM" src="https://user-images.githubusercontent.com/1719237/202835245-ded62810-493e-42ea-8f13-2cb6508f0c19.png">
-
-If you use custom domain, you'd better do protect admin for the custom domain as well:
-
-<img width="1111" alt="Screenshot 2022-11-18 at 9 21 35 PM" src="https://user-images.githubusercontent.com/1719237/202835735-abb24f0f-ea69-4d21-82a5-48a25bc99944.png">
-
-
-#### Setup custom domains
+The first time you access the admin dashboard, you'll follow the checklist to finish up setup:
+* R2 Public Bucket URL
+* Add a login to the admin dashboard
+* Custom Domain
