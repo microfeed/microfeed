@@ -1,15 +1,13 @@
-# microfeed: a simple self-hosted feed on Cloudflare 
+# microfeed: a simple self-hosted CMS on Cloudflare 
 
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
 
 > Note: microfeed is in Open Alpha, running on Cloudflare's Open Alpha products (e.g., D1). Therefore, we don't recommend for production data and traffic at this moment.
 
-microfeed allows you to easily create a self-hosted feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). 
+microfeed is a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to the feed. With microfeed, you can easily self-host a feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). It's like using WordPress, but no need to manage your own servers. 
 
-You can consider microfeed as a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to the feed. 
-
-The feed can be accessed via a customizable website, a rss feed (compatible w/ podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
+The self-hosted feed can be accessed via a customizable website, a rss feed (compatible w/ podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
 * Web feed: [https://llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
@@ -38,7 +36,7 @@ Roughly you'll do these steps:
 5. Profit!
 
 
-Feature request to Cloudflare: Please build a "Login with Cloudflare" OAuth! This will allow microfeed to do (almost) one-click deployment :) Otherwise, people need to read documentation and follow instructions to get an instance of microfeed up and running. Most people don't read documentation. 
+Feature request to Cloudflare: Please build a "Login with Cloudflare" OAuth! This will allow microfeed to do (almost) one-click deployment :) Otherwise, people need to read documentation and follow instructions to get an instance of microfeed up and running. Most people don't read documentation!
 
 ### Prerequisites
 
