@@ -9,7 +9,7 @@ The self-hosted feed can be accessed via a customizable website, a rss feed (com
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
 
-There's a simple but powerful admin dashboard that allows you to easily add items to the feed, upload media files (e.g., audio, video, image, document...) to Cloudflare R2, and customize web page styles. If you've used WordPress before, it's similar. 
+microfeed provides a simple but powerful admin dashboard that allows you to easily add items to the feed, upload media files (e.g., audio, video, image, document...) to Cloudflare R2, and customize web page styles. If you've used WordPress before, it's similar. 
 
 There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
