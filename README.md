@@ -2,9 +2,11 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
-microfeed is a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to the feed. With microfeed, you can easily self-host a feed on Cloudflare [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). It's like using WordPress, but no need to manage your own servers. 
+microfeed is a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to a feed in the form of web, rss, and json.
 
-The self-hosted feed can be accessed via a customizable website, a rss feed (compatible w/ podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
+microfeed is self-hosted on Cloudflare, using [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). It's like using WordPress, but no need to manage your own servers. 
+
+The self-hosted microfeed instance can be accessed via a customizable website, a rss feed (compatible with podcast rss), and a [json feed](https://www.jsonfeed.org/). See it in action:
 * Web feed: [https://llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
@@ -14,7 +16,7 @@ microfeed provides a simple but powerful admin dashboard that allows you to easi
 There are many use cases of microfeed:
 * Self-hosted Podcast: a feed of audios
 * Self-hosted Blog: a feed of articles.
-* Self-hosted Instagram: a feed of photos. E.g., [llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
+* Self-hosted Instagram: a feed of photos. E.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/)
 * Self-hosted YouTube: a feed of videos.
 * Self-hosted personal website: a custom web page with a feed of any links. E.g., [wenbin.org](https://www.wenbin.org/)
 * Self-hosted content curation site: a feed of article links + custom titles + comments, just like [Daring Fireball](https://daringfireball.net/) and [Drudge Report](https://www.drudgereport.com/).
