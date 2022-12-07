@@ -6,6 +6,12 @@ export const ITEM_CONTROLS = {
   LINK: 'item_link',
   DESCRIPTION: 'item_description',
   GUID: 'item_guid',
+  ITUNES_EXPLICIT: 'item_itunes_explicit',
+  ITUNES_TITLE: 'item_itunes_title',
+  ITUNES_EPISODE_TYPE: 'item_itunes_episode_type',
+  ITUNES_SEASON: 'item_itunes_season',
+  ITUNES_EPISODE: 'item_itunes_episode',
+  ITUNES_BLOCK: 'item_itunes_block',
 };
 
 export const CONTROLS_TEXTS_DICT = {
@@ -55,6 +61,48 @@ export const CONTROLS_TEXTS_DICT = {
   [ITEM_CONTROLS.GUID]: {
     linkName: '<guid>',
     modalTitle: 'Item / Description',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.ITUNES_EXPLICIT]: {
+    linkName: '<itunes:explicit>',
+    modalTitle: 'Item / <itunes:explicit>',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.ITUNES_TITLE]: {
+    linkName: '<itunes:title>',
+    modalTitle: 'Item / <itunes:title>',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.ITUNES_EPISODE_TYPE]: {
+    linkName: '<itunes:episodeType>',
+    modalTitle: 'Item / <itunes:episodeType>',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.ITUNES_SEASON]: {
+    linkName: '<itunes:season>',
+    modalTitle: 'Item / <itunes:season>',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.ITUNES_EPISODE]: {
+    linkName: '<itunes:episode>',
+    modalTitle: 'Item / <itunes:episode>',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.ITUNES_BLOCK]: {
+    linkName: '<itunes:block>',
+    modalTitle: 'Item / <itunes:block>',
     text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
     rss: '<channel><item><title>Title Here</title></item></channel>',
     json: '{ "items": [{"title": "Title Here"}] }',

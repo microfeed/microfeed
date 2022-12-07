@@ -240,7 +240,7 @@ export default class EditItemApp extends React.Component {
               <div className="grid grid-cols-1 gap-8">
                 <div className="grid grid-cols-3 gap-4 mt-4">
                   <AdminRadio
-                    label="<itunes:explicit>"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
                     groupName="lh-explicit"
                     buttons={[{
                       'name': 'Yes',
@@ -263,14 +263,14 @@ export default class EditItemApp extends React.Component {
                     onChange={(e) => this.onUpdateItemMeta({'guid': e.target.value})}
                   />
                   <AdminInput
-                    label="<itunes:title>"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_TITLE]}/>}
                     value={item['itunes:title']}
                     onChange={(e) => this.onUpdateItemMeta({'itunes:title': e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <AdminRadio
-                    label="<itunes:episodeType>"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
                     groupName="feed-itunes-episodetype"
                     buttons={[{
                       'name': 'full',
@@ -288,14 +288,14 @@ export default class EditItemApp extends React.Component {
                   />
                   <AdminInput
                     type="number"
-                    label="<itunes:season>"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_SEASON]}/>}
                     value={item['itunes:season']}
                     extraParams={{min: "1"}}
                     onChange={(e) => this.onUpdateItemMeta({'itunes:season': e.target.value})}
                   />
                   <AdminInput
                     type="number"
-                    label="<itunes:episode>"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE]}/>}
                     value={item['itunes:episode']}
                     extraParams={{min: "1"}}
                     onChange={(e) => this.onUpdateItemMeta({'itunes:episode': e.target.value})}
@@ -303,7 +303,7 @@ export default class EditItemApp extends React.Component {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <AdminRadio
-                    label="<itunes:block>"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_BLOCK]}/>}
                     groupName="feed-itunes-block"
                     buttons={[{
                       'name': 'Yes',
