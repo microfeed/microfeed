@@ -72,6 +72,7 @@ export default class EditItemApp extends React.Component {
       action,
 
       userChangedLink: false,
+      changed: false,
     };
   }
 
@@ -88,7 +89,11 @@ export default class EditItemApp extends React.Component {
   }
 
   onUpdateItemMeta(attrDict, extraDict) {
-    this.setState(prevState => ({item: {...prevState.item, ...attrDict,}, ...extraDict}));
+    this.setState(prevState => ({
+      changed: true,
+      item: {...prevState.item, ...attrDict,},
+      ...extraDict,
+    }));
   }
 
   onUpdateItemToFeed(onSuccess) {
@@ -139,7 +144,7 @@ export default class EditItemApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, itemId, item, action, feed, onboardingResult} = this.state;
+    const {submitStatus, itemId, item, action, feed, onboardingResult, changed} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
     const status = item.status || STATUSES.PUBLISHED;
@@ -347,7 +352,7 @@ export default class EditItemApp extends React.Component {
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
                 onClick={this.onSubmit}
-                disabled={submitting}
+                disabled={submitting || !changed}
               >
                 {submitting ? submittingButtonText : buttonText}
               </button>

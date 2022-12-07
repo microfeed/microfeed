@@ -81,6 +81,7 @@ export default class EditChannelApp extends React.Component {
       onboardingResult,
       channel,
       submitStatus: null,
+      changed: false,
     }
   }
 
@@ -98,6 +99,7 @@ export default class EditChannelApp extends React.Component {
 
   onUpdateChannelMeta(keyName, value) {
     this.setState((prevState) => ({
+      changed: true,
       channel: {
         ...prevState.channel,
         [keyName]: value,
@@ -129,7 +131,7 @@ export default class EditChannelApp extends React.Component {
   }
 
   render() {
-    const {submitStatus, channel, feed, onboardingResult} = this.state;
+    const {submitStatus, channel, feed, onboardingResult, changed} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
@@ -301,7 +303,7 @@ export default class EditChannelApp extends React.Component {
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
                 onClick={this.onSubmit}
-                disabled={submitting}
+                disabled={submitting || !changed}
               >
                 {submitting ? 'Updating...' : 'Update'}
               </button>
