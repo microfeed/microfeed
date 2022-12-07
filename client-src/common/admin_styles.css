@@ -61,7 +61,7 @@ a {
   Images / Audio
  */
 .lh-upload-image-size {
-  @apply w-64 h-64;
+  @apply w-32 h-32 xl:w-64 xl:h-64;
 }
 
 .lh-upload-box {

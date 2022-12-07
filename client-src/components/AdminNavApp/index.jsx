@@ -22,13 +22,13 @@ function NavItem({url, title, navId, currentId, Icon, disabled}) {
         'text-white hover:text-brand-light')}
     >
       <div
-        className={clsx('py-4 px-8 flex items-center',
+        className={clsx('py-4 px-4 xl:px-8 flex items-center',
         navId === currentId ? 'font-semibold bg-brand-light hover:text-white hover:opacity-80' : '')}
       >
         {Icon && <div className="mr-2">
-          <Icon className="w-5" />
+          <Icon className="w-3 xl:w-5" />
         </div>}
-        <div className="text-xl">
+        <div className="text-sm xl:text-xl">
           {title}
         </div>
       </div>
@@ -53,7 +53,7 @@ export default class AdminNavApp extends React.Component {
     const onboardingResult = this.props.onboardingResult || {requiredOk: true};
     return (<div className="flex flex-col min-h-screen min-w-screen">
       <div className="grid grid-cols-12 gap-4 bg-white flex items-center border-b drop-shadow">
-        <div className="col-span-2 py-6 px-8">
+        <div className="col-span-2 py-4 xl:py-6 px-4 xl:px-8">
           <a href={OUR_BRAND.whatsnewWebsite} target="_blank" className="hover:opacity-50">
             <img src="/assets/brands/microfeed/horizontal-logo.png" className="w-full"/>
           </a>
