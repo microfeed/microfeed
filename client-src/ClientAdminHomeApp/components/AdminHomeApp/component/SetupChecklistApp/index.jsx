@@ -270,6 +270,9 @@ export default class SetupChecklistApp extends React.Component {
       <div className="lh-page-subtitle">
         Setup checklist
       </div>
+      {onboardingResult.allOk && <div className="text-helper-color">
+        <i>You are all set! Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a></i>
+      </div>}
       <div className="mt-8">
         <SetupPublicBucketUrl
           onboardState={onboardingResult.result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL]}

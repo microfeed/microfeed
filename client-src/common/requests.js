@@ -8,7 +8,7 @@ const requestPost = (url, bodyDict) => {
   }).then((response) => response.json());
 };
 
-async function uploadFile(file, cdnFilename, onProgress, onUploaded) {
+async function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) {
   const { size, type } = file;
   const rawResponse = await fetch('/admin/ajax/r2-ops', {
     method: 'POST',
@@ -43,6 +43,11 @@ async function uploadFile(file, cdnFilename, onProgress, onUploaded) {
           onUploaded(mediaUrl, arrayBuffer);
         }
         // this.setState({progressText: null, uploadStatus: null});
+      });
+      xhr.addEventListener("error", (event) => {
+        if (onFailure) {
+          onFailure(event);
+        }
       });
       xhr.send(arrayBuffer);
     }

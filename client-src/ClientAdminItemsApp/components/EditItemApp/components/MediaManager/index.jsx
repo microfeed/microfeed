@@ -13,6 +13,7 @@ import AdminInput from "../../../../../components/AdminInput";
 import {FileUploader} from "react-drag-drop-files";
 import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
 import {getPublicBaseUrl} from "../../../../../common/ClientUrlUtils";
+import {showToast} from "../../../../../common/ToastUtils";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -162,6 +163,8 @@ export default class MediaManager extends React.Component {
       contentType: null,
       sizeByte: 0,
       durationSecond: 0,
+      uploadStatus: null,
+      progressText: '0.00%',
     };
 
     this.state = {
@@ -218,6 +221,9 @@ export default class MediaManager extends React.Component {
       this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
     }, (cdnUrl) => {
         updateState(cdnUrl, 0);
+    }, () => {
+      showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
+      this.setState({...this.initState});
     });
   }
 

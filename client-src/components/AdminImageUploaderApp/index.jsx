@@ -8,6 +8,7 @@ import {randomHex, urlJoinWithRelative} from '../../../common-src/StringUtils';
 import AdminDialog from "../AdminDialog";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
+import {showToast} from "../../common/ToastUtils";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -143,6 +144,9 @@ export default class AdminImageUploaderApp extends React.Component {
           ...this.initState,
           currentImageUrl: cdnUrl,
         });
+      }, () => {
+        showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
+        this.setState({...this.initState});
       });
     }, 'image/png');
   }
