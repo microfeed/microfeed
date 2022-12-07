@@ -4,7 +4,7 @@ import clsx from "clsx";
 export default function AdminRadio(
   { label, groupName, buttons, onChange, labelComponent = null,
     disabled = false, customLabelClass = '', customClass = ''}) {
-  return (<fieldset className="flex flex-col justify-center">
+  return (<fieldset className="flex flex-col justify-start">
     {label && <legend className={clsx( customLabelClass || 'lh-page-subtitle')}>{label}</legend>}
     {labelComponent}
     <div className="w-full flex">

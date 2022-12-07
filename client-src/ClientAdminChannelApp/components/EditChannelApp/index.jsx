@@ -191,7 +191,7 @@ export default class EditChannelApp extends React.Component {
           </div>
           <div className="mt-8 pt-8 border-t">
             <AdminRichEditor
-              label="Description"
+              labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_DESCRIPTION]}/>}
               value={channel.description}
               onChange={(value) =>{
                 this.onUpdateChannelMeta('description', value);
@@ -205,7 +205,7 @@ export default class EditChannelApp extends React.Component {
           <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-8">
             <div className="grid grid-cols-4 gap-4">
               <AdminRadio
-                label="<itunes:type>"
+                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_TYPE]}/>}
                 groupName="feed-itunes-type"
                 buttons={[{
                   'name': 'episodic',
@@ -218,7 +218,7 @@ export default class EditChannelApp extends React.Component {
                 onChange={(e) => this.onUpdateChannelMeta('itunes:type', e.target.value)}
               />
               <AdminInput
-                label="<itunes:email>"
+                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_EMAIL]}/>}
                 type="email"
                 value={channel['itunes:email']}
                 onChange={(e) => this.onUpdateChannelMeta('itunes:email', e.target.value)}

@@ -4,6 +4,9 @@ export const CONTROLS = {
   CHANNEL_WEBSITE: 'channel_website',
   CHANNEL_CATEGORIES: 'channel_categories',
   CHANNEL_LANGUAGE: 'channel_language',
+  CHANNEL_DESCRIPTION: 'channel_description',
+  CHANNEL_ITUNES_TYPE: 'channel_itunes_type',
+  CHANNEL_ITUNES_EMAIL: 'channel_itunes_email',
   CHANNEL_ITUNES_COMPLETE: 'channel_itunes_complete',
 };
 
@@ -43,7 +46,27 @@ export const CONTROLS_TEXTS_DICT = {
     rss: '<channel><language>en-us</language></channel>',
     json: '{ "language": "en-us" }',
   },
-
+  [CONTROLS.CHANNEL_DESCRIPTION]: {
+    linkName: 'Description',
+    modalTitle: 'Channel / Description',
+    text: "A channel's description.",
+    rss: '<channel><description><![CDATA[ <p>some html here</p> ]]></description></channel>',
+    json: '{ "description": "<p>some html here</p>" }',
+  },
+  [CONTROLS.CHANNEL_ITUNES_TYPE]: {
+    linkName: '<itunes:type>',
+    modalTitle: 'Channel / <itunes:type>',
+    text: "episodic or series",
+    rss: '<channel><itunes:type>episodic</itunes:type></channel>',
+    json: '{ "_microfeed": {"itunes:type": "episodic"} }',
+  },
+  [CONTROLS.CHANNEL_ITUNES_EMAIL]: {
+    linkName: '<itunes:email>',
+    modalTitle: 'Channel / <itunes:email>',
+    text: "",
+    rss: '<channel><itunes:owner><itunes:email>myname@mycompany.com</itunes:email></itunes:owner></channel>',
+    json: '{ "_microfeed": {"itunes:email": "myname@mycompany.com"} }',
+  },
   [CONTROLS.CHANNEL_ITUNES_COMPLETE]: {
     linkName: '<itunes:complete>',
     modalTitle: 'Channel / <itunes:complete>',

@@ -15,15 +15,16 @@ export default class AdminRichEditor extends React.Component {
   }
   render() {
     const {mode} = this.state;
-    const {label, value, onChange, extra} = this.props;
+    const {label, value, onChange, extra, labelComponent} = this.props;
     return (
       <div>
-        <div className="lh-page-subtitle">
+        {label && <div className="lh-page-subtitle">
           {label}
-        </div>
-        <div className="mb-2 max-h-20">
+        </div>}
+        {labelComponent}
+        <div className="mb-4 max-h-20">
           <AdminRadio
-            customLabelClass="text-sm text-helper-color"
+            customClass="text-sm text-helper-color"
             groupName="richOrHtml"
             buttons={[
               {value: 'rich', name: 'WYSIWYG', checked: mode === 'rich'},
