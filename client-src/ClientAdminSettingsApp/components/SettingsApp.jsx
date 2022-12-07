@@ -17,6 +17,7 @@ export default class SettingsApp extends React.Component {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
+    this.setChanged = this.setChanged.bind(this);
 
     const $feedContent = document.getElementById('feed-content');
     const feed = JSON.parse(unescapeHtml($feedContent.innerHTML));
@@ -26,7 +27,12 @@ export default class SettingsApp extends React.Component {
       feed,
       onboardingResult,
       submitStatus: null,
+      changed: false,
     }
+  }
+
+  setChanged() {
+    this.setState({changed: true});
   }
 
   onSubmit(e, bundleKey, bundle) {
@@ -55,6 +61,7 @@ export default class SettingsApp extends React.Component {
               submitForType={submitForType}
               feed={feed}
               onSubmit={this.onSubmit}
+              setChanged={this.setChanged}
             />
           </div>
           <div className="col-span-1 h-full">
@@ -63,6 +70,7 @@ export default class SettingsApp extends React.Component {
               submitForType={submitForType}
               feed={feed}
               onSubmit={this.onSubmit}
+              setChanged={this.setChanged}
             />
           </div>
         </div>
@@ -73,6 +81,7 @@ export default class SettingsApp extends React.Component {
               submitForType={submitForType}
               feed={feed}
               onSubmit={this.onSubmit}
+              setChanged={this.setChanged}
             />
           </div>
           <div className="col-span-1 h-full">
@@ -81,6 +90,7 @@ export default class SettingsApp extends React.Component {
               submitForType={submitForType}
               feed={feed}
               onSubmit={this.onSubmit}
+              setChanged={this.setChanged}
             />
           </div>
         </div>

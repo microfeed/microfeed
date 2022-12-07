@@ -22,7 +22,7 @@ export default class TrackingSettingsApp extends React.Component {
 
   render() {
     const {trackingUrls, currentType} = this.state;
-    const {submitting, submitForType} = this.props;
+    const {submitting, submitForType, setChanged} = this.props;
     const urls = trackingUrls.trim() !== '' ? trackingUrls.trim().split(/\n/) : [];
     const exampleAudio = 'https://example.com/audio.mp3';
     return (<SettingsBase
@@ -40,7 +40,7 @@ export default class TrackingSettingsApp extends React.Component {
         <AdminTextarea
           placeholder="Put a tracking url on each line, e.g., https://pdst.fm/e/"
           value={trackingUrls}
-          onChange={(e) => this.setState({trackingUrls: e.target.value})}
+          onChange={(e) => this.setState({trackingUrls: e.target.value}, () => setChanged())}
         />
       </div>
       {urls.length > 0 && <div className="mt-4 text-xs break-all text-helper-color">

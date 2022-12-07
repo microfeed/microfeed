@@ -52,7 +52,9 @@ export default class AccessSettingsApp extends React.Component {
         ...prevState.access,
         ...props,
       },
-    }));
+    }), () => {
+      this.props.setChanged();
+    });
   }
 
   render() {

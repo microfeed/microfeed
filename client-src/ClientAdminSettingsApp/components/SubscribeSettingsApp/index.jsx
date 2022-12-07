@@ -190,6 +190,7 @@ export default class SubscribeSettingsApp extends React.Component {
       if (callback) {
         callback();
       }
+      this.props.setChanged();
     });
   }
 
