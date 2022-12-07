@@ -170,6 +170,7 @@ export default class EditItemApp extends React.Component {
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
             <MediaManager
+              labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.MEDIA_FILE]}/>}
               feed={feed}
               mediaFile={mediaFile}
               onMediaFileUpdated={(newMediaFile) => {

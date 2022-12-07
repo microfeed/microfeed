@@ -81,7 +81,7 @@ function MediaUploader(
     />}
     {url && <div className="border-t pt-2 mb-2"/>}
     <details className="lh-upload-wrapper" open={!fileNotExist}>
-      <summary className="lh-page-subtitle cursor-pointer hover:opacity-50">
+      <summary className="m-page-summary mt-4 text-sm">
         {headerTitle}
       </summary>
       <FileUploader
@@ -91,7 +91,7 @@ function MediaUploader(
         disabled={uploading}
         classes="lh-upload-fileinput"
       >
-        <div className="w-full h-24 lh-upload-box p-4 flex items-center justify-center">
+        <div className="w-full h-24 lh-upload-box mt-2 p-4 flex items-center justify-center">
           {uploading ? <div className="text-helper-color">
             <div className="font-semibold">Uploading...</div>
             <div className="text-sm">{progressText}</div>
@@ -226,11 +226,13 @@ export default class MediaManager extends React.Component {
       category, url, contentType, sizeByte, durationSecond,
       uploadStatus, progressText, publicBucketUrl,
     } = this.state;
+    const {label, labelComponent} = this.props;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (<div>
-      <h2 className="lh-page-title">
-        Media file
-      </h2>
+      {label && <h2 className="lh-page-title">
+        {label}
+      </h2>}
+      {labelComponent}
       <div className="flex">
         <AdminRadio
           groupName="category"

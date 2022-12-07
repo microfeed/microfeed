@@ -54,7 +54,7 @@ a {
 }
 
 .m-page-summary {
-  @apply cursor-pointer font-semibold text-gray-500;
+  @apply cursor-pointer font-semibold text-gray-500 hover:opacity-50;
 }
 
 /*

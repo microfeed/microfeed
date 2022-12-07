@@ -25,7 +25,7 @@ export const CONTROLS_TEXTS_DICT = {
     json: '{ "title": "Title Here" }',
   },
   [CHANNEL_CONTROLS.IMAGE]: {
-    linkName: 'Channel Image',
+    linkName: 'Channel image',
     modalTitle: 'Channel / Image',
     text: "A channel's image.",
     rss: '<channel><itunes:image href="https://cdn-site.com/img.jpg" /><image><url>https://cdn-site.com/img.jpg</url></image></channel>',
