@@ -150,7 +150,7 @@ export default class AllItemsApp extends React.Component {
       pubDateMs: item.pubDateMs,
       title: <div>
         <div className="line-clamp-2 text-lg">
-          <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title}</a>
+          <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title || 'untitled'}</a>
         </div>
         <div className="mt-2 flex items-center">
           <div className="text-muted-color text-sm flex-1">

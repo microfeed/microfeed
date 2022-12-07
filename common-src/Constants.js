@@ -141,23 +141,23 @@ export const ENCLOSURE_CATEGORIES = {
 };
 export const ENCLOSURE_CATEGORIES_DICT = {
   [ENCLOSURE_CATEGORIES.AUDIO]: {
-    name: 'Audio',
+    name: 'audio',
     fileTypes: ['mp3'],
   },
   [ENCLOSURE_CATEGORIES.VIDEO]: {
-    name: 'Video',
+    name: 'video',
     fileTypes: ['mp4'],
   },
   [ENCLOSURE_CATEGORIES.DOCUMENT]: {
-    name: 'Document',
+    name: 'document',
     fileTypes: ['pdf', 'docx', 'doc', 'xlsx', 'ppt', 'pptx', 'txt'],
   },
   [ENCLOSURE_CATEGORIES.IMAGE]: {
-    name: 'Image',
+    name: 'image',
     fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2'],
   },
   [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
-    name: 'External URL',
+    name: 'external url',
     fileTypes: [],
   },
 };
@@ -217,11 +217,11 @@ export const ONBOARDING_TYPES = {
 
 export const ITEM_STATUSES_DICT = {
   [STATUSES.PUBLISHED]: {
-    name: 'Published',
+    name: 'published',
     description: 'Visible to public',
   },
   [STATUSES.UNPUBLISHED]: {
-    name: 'Unpublished',
+    name: 'unpublished',
     description: 'Not visible to public. You can continue to edit and save it as a draft.'
   },
 };

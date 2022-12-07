@@ -220,6 +220,26 @@ export default class EditItemApp extends React.Component {
                     onChange={(e) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <AdminRadio
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.STATUS]}/>}
+                    groupName="item-status"
+                    buttons={[
+                      {
+                        name: ITEM_STATUSES_DICT[STATUSES.PUBLISHED].name,
+                        value: STATUSES.PUBLISHED,
+                        checked: status === STATUSES.PUBLISHED,
+                      },
+                      {
+                        name: ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].name,
+                        value: STATUSES.UNPUBLISHED,
+                        checked: status === STATUSES.UNPUBLISHED,
+                      }]}
+                    onChange={(e) => {
+                      this.onUpdateItemMeta({'status': parseInt(e.target.value, 10)})
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <div className="mt-8 pt-8 border-t">
@@ -243,14 +263,14 @@ export default class EditItemApp extends React.Component {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
                     groupName="lh-explicit"
                     buttons={[{
-                      'name': 'Yes',
+                      'name': 'yes',
                       'checked': item['itunes:explicit'],
                     }, {
-                      'name': 'No',
+                      'name': 'no',
                       'checked': !item['itunes:explicit'],
                     }]}
                     value={item['itunes:explicit']}
-                    onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'Yes'})}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'yes'})}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
@@ -323,28 +343,6 @@ export default class EditItemApp extends React.Component {
         <div className="col-span-3">
           <div className="sticky top-8">
             <div className="lh-page-card text-center">
-              <div className="mb-8">
-                <div className="flex justify-center">
-                <AdminRadio
-                  groupName="item-status"
-                  buttons={[
-                    {
-                      name: ITEM_STATUSES_DICT[STATUSES.PUBLISHED].name,
-                      value: STATUSES.PUBLISHED,
-                      checked: status === STATUSES.PUBLISHED,
-                    },
-                    {
-                      name: ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].name,
-                      value: STATUSES.UNPUBLISHED,
-                      checked: status === STATUSES.UNPUBLISHED,
-                    }]}
-                  onChange={(e) => {
-                    this.onUpdateItemMeta({'status': parseInt(e.target.value, 10)})
-                  }}
-                />
-                </div>
-                <div className="text-muted-color text-xs mt-1">{ITEM_STATUSES_DICT[status].description}</div>
-              </div>
               <button
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"

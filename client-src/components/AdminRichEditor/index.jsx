@@ -27,8 +27,8 @@ export default class AdminRichEditor extends React.Component {
             customClass="text-sm text-helper-color"
             groupName="richOrHtml"
             buttons={[
-              {value: 'rich', name: 'WYSIWYG', checked: mode === 'rich'},
-              {value: 'html', name: 'HTML Source', checked: mode !== 'rich'},
+              {value: 'rich', name: 'visual editor', checked: mode === 'rich'},
+              {value: 'html', name: 'html source', checked: mode !== 'rich'},
             ]}
             onChange={(e) => this.setState({mode: e.target.value})}
           />
@@ -37,7 +37,7 @@ export default class AdminRichEditor extends React.Component {
           value={value}
           onChange={onChange}
           extra={extra}
-        /> : <AdminTextarea value={value} maxRows={20} onChange={(e) => onChange(e.target.value)} />}
+        /> : <AdminTextarea value={value} minRows={8} maxRows={20} onChange={(e) => onChange(e.target.value)} />}
       </div>
     );
   }

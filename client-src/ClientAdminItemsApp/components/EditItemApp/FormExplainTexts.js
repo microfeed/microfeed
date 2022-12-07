@@ -12,6 +12,7 @@ export const ITEM_CONTROLS = {
   ITUNES_SEASON: 'item_itunes_season',
   ITUNES_EPISODE: 'item_itunes_episode',
   ITUNES_BLOCK: 'item_itunes_block',
+  STATUS: 'item_status',
 };
 
 export const CONTROLS_TEXTS_DICT = {
@@ -103,6 +104,13 @@ export const CONTROLS_TEXTS_DICT = {
   [ITEM_CONTROLS.ITUNES_BLOCK]: {
     linkName: '<itunes:block>',
     modalTitle: 'Item / <itunes:block>',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.STATUS]: {
+    linkName: 'Item status',
+    modalTitle: 'Item / status',
     text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
     rss: '<channel><item><title>Title Here</title></item></channel>',
     json: '{ "items": [{"title": "Title Here"}] }',

@@ -3,7 +3,7 @@ import clsx from "clsx";
 
 export default function AdminRadio(
   { label, groupName, buttons, onChange, labelComponent = null,
-    disabled = false, customLabelClass = '', customClass = ''}) {
+    disabled = false, customLabelClass = '', }) {
   return (<fieldset className="flex flex-col justify-start">
     {label && <legend className={clsx( customLabelClass || 'lh-page-subtitle')}>{label}</legend>}
     {labelComponent}
@@ -19,7 +19,7 @@ export default function AdminRadio(
             className="text-brand-light"
             disabled={disabled}
           />
-          <div className={clsx('ml-1', customClass)}>{b.name}</div>
+          <div className={clsx('ml-1', b.checked ? '' : 'text-helper-color')}>{b.name}</div>
         </label>
       ))}
     </div>

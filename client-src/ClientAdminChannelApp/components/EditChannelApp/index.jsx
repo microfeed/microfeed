@@ -216,14 +216,14 @@ export default class EditChannelApp extends React.Component {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
                   groupName="lh-explicit"
                   buttons={[{
-                    'name': 'Yes',
+                    'name': 'yes',
                     'checked': channel['itunes:explicit'],
                   }, {
-                    'name': 'No',
+                    'name': 'no',
                     'checked': !channel['itunes:explicit'],
                   }]}
                   value={channel['itunes:explicit']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'Yes')}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'yes')}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
@@ -268,27 +268,27 @@ export default class EditChannelApp extends React.Component {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
                   groupName="feed-itunes-block"
                   buttons={[{
-                    'name': 'Yes',
+                    'name': 'yes',
                     'checked': channel['itunes:block'],
                   }, {
-                    'name': 'No',
+                    'name': 'no',
                     'checked': !channel['itunes:block'],
                   }]}
                   value={channel['itunes:block']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'Yes')}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'yes')}
                 />
                 <AdminRadio
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_COMPLETE]}/>}
                   groupName="feed-itunes-complete"
                   buttons={[{
-                    'name': 'Yes',
+                    'name': 'yes',
                     'checked': channel['itunes:complete'],
                   }, {
-                    'name': 'No',
+                    'name': 'no',
                     'checked': !channel['itunes:complete'],
                   }]}
                   value={channel['itunes:complete']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'Yes')}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'yes')}
                 />
               </div>
             </div>
