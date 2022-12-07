@@ -41,7 +41,7 @@ export default class NewSubscribeDialog extends React.Component {
     const {selectedMethod, name, url} = this.state;
     const method = PREDEFINED_SUBSCRIBE_METHODS[selectedMethod];
     return (<AdminDialog
-      title="Add New Subscribe Method"
+      title="Add new subscribe method"
       isOpen={isOpen}
       setIsOpen={setIsOpen}
     >

@@ -126,7 +126,7 @@ function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
     >
       <div className="flex items-center justify-center">
         <div className="w-4 mr-1"><PlusCircleIcon/></div>
-        <div>Add new Subscribe Method</div>
+        <div>Add new subscribe method</div>
       </div>
     </a>
     <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify...</div>

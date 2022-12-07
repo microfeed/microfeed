@@ -53,7 +53,7 @@ export default class WebGlobalSettingsApp extends React.Component {
     >
       <div className="grid grid-cols-1 gap-4">
         <details open>
-          <summary className="lh-page-subtitle cursor-pointer">R2 Public Bucket URL</summary>
+          <summary className="lh-page-subtitle cursor-pointer">R2 public bucket url</summary>
           <AdminInput
             type="url"
             customClass="text-xs"
@@ -62,7 +62,7 @@ export default class WebGlobalSettingsApp extends React.Component {
           />
         </details>
         <details open>
-          <summary className="lh-page-subtitle cursor-pointer">Items Settings</summary>
+          <summary className="lh-page-subtitle cursor-pointer">Items settings</summary>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-1">
               <AdminInput
