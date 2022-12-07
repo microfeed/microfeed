@@ -15,6 +15,11 @@ import MediaManager from "./components/MediaManager";
 import {NAV_ITEMS, NAV_ITEMS_DICT, STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
+import ExplainText from "../../../components/ExplainText";
+import {
+  ITEM_CONTROLS,
+  CONTROLS_TEXTS_DICT
+} from "./FormExplainTexts";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -178,9 +183,9 @@ export default class EditItemApp extends React.Component {
             />
           </div>
           <div className="lh-page-card">
-            <h2 className="lh-page-title">Metadata</h2>
             <div className="flex">
               <div>
+                <ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IMAGE]}/>
                 <AdminImageUploaderApp
                   mediaType="item"
                   feed={feed}
