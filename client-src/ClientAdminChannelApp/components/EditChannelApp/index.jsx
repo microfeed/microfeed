@@ -59,6 +59,7 @@ function initChannel() {
     'itunes:type': 'episodic',
     'itunes:complete': false,
     'itunes:block': false,
+    'copyright': `©${(new Date()).getFullYear()}`,
   };
 }
 
@@ -135,153 +136,160 @@ export default class EditChannelApp extends React.Component {
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
     return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL} onboardingResult={onboardingResult}>
       <form className="grid grid-cols-12 gap-4">
-        <div className="col-span-9 lh-page-card">
-          <div className="flex">
-            <div className="flex-none">
-              <AdminImageUploaderApp
-                mediaType="channel"
-                feed={feed}
-                currentImageUrl={channel.image}
-                onImageUploaded={(cdnUrl) => this.onUpdateChannelMeta('image', cdnUrl)}
-              />
-            </div>
-            <div className="flex-1 ml-8 grid grid-cols-1 gap-3">
-              <AdminInput
-                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_TITLE]}/>}
-                value={channel.title}
-                onChange={(e) => this.onUpdateChannelMeta('title', e.target.value)}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_PUBLISHER]}/>}
-                  value={channel.publisher}
-                  onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
-                />
-                <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_WEBSITE]}/>}
-                  value={channel.link}
-                  onChange={(e) => this.onUpdateChannelMeta('link', e.target.value)}
+        <div className="col-span-9 grid grid-cols-1 gap-4">
+          <div className="lh-page-card">
+            <div className="flex">
+              <div className="flex-none">
+                <AdminImageUploaderApp
+                  mediaType="channel"
+                  feed={feed}
+                  currentImageUrl={channel.image}
+                  onImageUploaded={(cdnUrl) => this.onUpdateChannelMeta('image', cdnUrl)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <AdminSelect
-                  value={categories.map((c) => (CATEGORIES_DICT[c]))}
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_CATEGORIES]}/>}
-                  options={CATEGORIES_SELECT_OPTIONS}
-                  onChange={(selectedOptions) => {
-                    this.onUpdateChannelMeta('categories', [...selectedOptions.map((o) => o.value)]);
-                  }}
-                  extraParams={{
-                    isMulti: true,
-                    isOptionDisabled: () => {
-                      return categories.length >= 3;
-                    },
-                  }}
+              <div className="flex-1 ml-8 grid grid-cols-1 gap-3">
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_TITLE]}/>}
+                  value={channel.title}
+                  onChange={(e) => this.onUpdateChannelMeta('title', e.target.value)}
                 />
-                <AdminSelect
-                  value={LANGUAGE_CODES_DICT[channel.language]}
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_LANGUAGE]}/>}
-                  options={LANGUAGE_CODES_SELECT_OPTIONS}
-                  onChange={(selected) => {
-                    this.onUpdateChannelMeta('language', selected.code);
-                  }}
+                <div className="grid grid-cols-2 gap-4">
+                  <AdminInput
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_PUBLISHER]}/>}
+                    value={channel.publisher}
+                    onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
+                  />
+                  <AdminInput
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_WEBSITE]}/>}
+                    value={channel.link}
+                    onChange={(e) => this.onUpdateChannelMeta('link', e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <AdminSelect
+                    value={categories.map((c) => (CATEGORIES_DICT[c]))}
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_CATEGORIES]}/>}
+                    options={CATEGORIES_SELECT_OPTIONS}
+                    onChange={(selectedOptions) => {
+                      this.onUpdateChannelMeta('categories', [...selectedOptions.map((o) => o.value)]);
+                    }}
+                    extraParams={{
+                      isMulti: true,
+                      isOptionDisabled: () => {
+                        return categories.length >= 3;
+                      },
+                    }}
+                  />
+                  <AdminSelect
+                    value={LANGUAGE_CODES_DICT[channel.language]}
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_LANGUAGE]}/>}
+                    options={LANGUAGE_CODES_SELECT_OPTIONS}
+                    onChange={(selected) => {
+                      this.onUpdateChannelMeta('language', selected.code);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 pt-8 border-t">
+              <AdminRichEditor
+                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_DESCRIPTION]}/>}
+                value={channel.description}
+                onChange={(value) => {
+                  this.onUpdateChannelMeta('description', value);
+                }}
+                extra={{
+                  publicBucketUrl,
+                  folderName: `channels/${channel.id}`,
+                }}
+              />
+            </div>
+          </div>
+          <details className="lh-page-card">
+            <summary className="m-page-summary">
+              Podcast-specific fields
+            </summary>
+            <div className="mt-8 grid grid-cols-1 gap-8">
+              <div className="grid grid-cols-4 gap-4">
+                <AdminRadio
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_TYPE]}/>}
+                  groupName="feed-itunes-type"
+                  buttons={[{
+                    'name': 'episodic',
+                    'checked': channel['itunes:type'] === 'episodic',
+                  }, {
+                    'name': 'serial',
+                    'checked': channel['itunes:type'] === 'serial',
+                  }]}
+                  value={channel['itunes:type']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:type', e.target.value)}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_EMAIL]}/>}
+                  type="email"
+                  value={channel['itunes:email']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:email', e.target.value)}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_COPYRIGHT]}/>}
+                  value={channel.copyright}
+                  onChange={(e) => this.onUpdateChannelMeta('copyright', e.target.value)}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_TITLE]}/>}
+                  value={channel['itunes:title']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <AdminRadio
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_EXPLICIT]}/>}
+                  groupName="lh-explicit"
+                  buttons={[{
+                    'name': 'Yes',
+                    'checked': channel['itunes:explicit'],
+                  }, {
+                    'name': 'No',
+                    'checked': !channel['itunes:explicit'],
+                  }]}
+                  value={channel['itunes:explicit']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'Yes')}
+                />
+                <AdminRadio
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_BLOCK]}/>}
+                  groupName="feed-itunes-block"
+                  buttons={[{
+                    'name': 'Yes',
+                    'checked': channel['itunes:block'],
+                  }, {
+                    'name': 'No',
+                    'checked': !channel['itunes:block'],
+                  }]}
+                  value={channel['itunes:block']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'Yes')}
+                />
+                <AdminRadio
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_COMPLETE]}/>}
+                  groupName="feed-itunes-complete"
+                  buttons={[{
+                    'name': 'Yes',
+                    'checked': channel['itunes:complete'],
+                  }, {
+                    'name': 'No',
+                    'checked': !channel['itunes:complete'],
+                  }]}
+                  value={channel['itunes:complete']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'Yes')}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_NEW_RSS_URL]}/>}
+                  type="url"
+                  value={channel['itunes:new-feed-url']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
                 />
               </div>
             </div>
-          </div>
-          <div className="mt-8 pt-8 border-t">
-            <AdminRichEditor
-              labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_DESCRIPTION]}/>}
-              value={channel.description}
-              onChange={(value) =>{
-                this.onUpdateChannelMeta('description', value);
-              }}
-              extra={{
-                publicBucketUrl,
-                folderName: `channels/${channel.id}`,
-              }}
-            />
-          </div>
-          <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-8">
-            <div className="grid grid-cols-4 gap-4">
-              <AdminRadio
-                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_TYPE]}/>}
-                groupName="feed-itunes-type"
-                buttons={[{
-                  'name': 'episodic',
-                  'checked': channel['itunes:type'] === 'episodic',
-                }, {
-                  'name': 'serial',
-                  'checked': channel['itunes:type'] === 'serial',
-                }]}
-                value={channel['itunes:type']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:type', e.target.value)}
-              />
-              <AdminInput
-                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_EMAIL]}/>}
-                type="email"
-                value={channel['itunes:email']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:email', e.target.value)}
-              />
-              <AdminInput
-                label="<copyright>"
-                value={channel.copyright}
-                onChange={(e) => this.onUpdateChannelMeta('copyright', e.target.value)}
-              />
-              <AdminInput
-                label="<itunes:title>"
-                value={channel['itunes:title']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <AdminRadio
-                label="itunes:explicit"
-                groupName="lh-explicit"
-                buttons={[{
-                  'name': 'Yes',
-                  'checked': channel['itunes:explicit'],
-                }, {
-                  'name': 'No',
-                  'checked': !channel['itunes:explicit'],
-                }]}
-                value={channel['itunes:explicit']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'Yes')}
-              />
-              <AdminRadio
-                label="<itunes:block>"
-                groupName="feed-itunes-block"
-                buttons={[{
-                  'name': 'Yes',
-                  'checked': channel['itunes:block'],
-                }, {
-                  'name': 'No',
-                  'checked': !channel['itunes:block'],
-                }]}
-                value={channel['itunes:block']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'Yes')}
-              />
-              <AdminRadio
-                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_ITUNES_COMPLETE]}/>}
-                groupName="feed-itunes-complete"
-                buttons={[{
-                  'name': 'Yes',
-                  'checked': channel['itunes:complete'],
-                }, {
-                  'name': 'No',
-                  'checked': !channel['itunes:complete'],
-                }]}
-                value={channel['itunes:complete']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'Yes')}
-              />
-              <AdminInput
-                label="<itunes:new-feed-url>"
-                type="url"
-                value={channel['itunes:new-feed-url']}
-                onChange={(e) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
-              />
-            </div>
-          </div>
+          </details>
         </div>
         <div className="col-span-3">
           <div className="sticky top-8">
