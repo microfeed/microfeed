@@ -158,7 +158,7 @@ export default class EditChannelApp extends React.Component {
                   onChange={(e) => this.onUpdateChannelMeta('publisher', e.target.value)}
                 />
                 <AdminInput
-                  label="Website"
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_WEBSITE]}/>}
                   value={channel.link}
                   onChange={(e) => this.onUpdateChannelMeta('link', e.target.value)}
                 />
@@ -166,7 +166,7 @@ export default class EditChannelApp extends React.Component {
               <div className="grid grid-cols-2 gap-4">
                 <AdminSelect
                   value={categories.map((c) => (CATEGORIES_DICT[c]))}
-                  label="Categories"
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_CATEGORIES]}/>}
                   options={CATEGORIES_SELECT_OPTIONS}
                   onChange={(selectedOptions) => {
                     this.onUpdateChannelMeta('categories', [...selectedOptions.map((o) => o.value)]);
@@ -180,7 +180,7 @@ export default class EditChannelApp extends React.Component {
                 />
                 <AdminSelect
                   value={LANGUAGE_CODES_DICT[channel.language]}
-                  label="Language"
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_LANGUAGE]}/>}
                   options={LANGUAGE_CODES_SELECT_OPTIONS}
                   onChange={(selected) => {
                     this.onUpdateChannelMeta('language', selected.code);

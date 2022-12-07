@@ -1,9 +1,11 @@
 import React from "react";
 import Select from 'react-select';
 
-export default function AdminSelect({ label, value, options, onChange, extraParams }) {
+export default function AdminSelect(
+  { label, value, options, onChange, extraParams, labelComponent = null }) {
   return (<label className="">
-    <div className="lh-page-subtitle">{label}</div>
+    {label&& <div className="lh-page-subtitle">{label}</div>}
+    {labelComponent}
     <div className="w-full">
       <Select
         styles={{
