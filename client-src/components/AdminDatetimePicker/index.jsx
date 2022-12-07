@@ -1,9 +1,10 @@
 import React from "react";
 import {msToDatetimeLocalString, datetimeLocalToString} from '../../../common-src/TimeUtils';
 
-export default function AdminDatetimePicker({ label, value, onChange }) {
+export default function AdminDatetimePicker({ label, value, onChange, labelComponent = null }) {
   return (<label className="">
-    <div className="lh-page-subtitle">{label}</div>
+    {label && <div className="lh-page-subtitle">{label}</div>}
+    {labelComponent}
     <div className="w-full">
       <input
         type="datetime-local"

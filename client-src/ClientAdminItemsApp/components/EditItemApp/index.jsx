@@ -196,7 +196,7 @@ export default class EditItemApp extends React.Component {
               </div>
               <div className="ml-8 flex-1 grid grid-cols-1 gap-4">
                 <AdminInput
-                  label="Title"
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.TITLE]}/>}
                   value={item.title}
                   onChange={(e) => {
                     const attrDict = {'title': e.target.value};
@@ -208,14 +208,14 @@ export default class EditItemApp extends React.Component {
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <AdminDatetimePicker
-                    label="Published date"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
                     value={item.pubDateMs}
                     onChange={(e) => {
                       this.onUpdateItemMeta({'pubDateMs': datetimeLocalStringToMs(e.target.value)});
                     }}
                   />
                   <AdminInput
-                    label="Link"
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.LINK]}/>}
                     value={item.link}
                     onChange={(e) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
@@ -224,7 +224,7 @@ export default class EditItemApp extends React.Component {
             </div>
             <div className="mt-8 pt-8 border-t">
               <AdminRichEditor
-                label="Description"
+                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.DESCRIPTION]}/>}
                 value={item.description}
                 onChange={(value) => this.onUpdateItemMeta({'description': value})}
                 extra={{
