@@ -5,6 +5,7 @@ export const ITEM_CONTROLS = {
   PUB_DATE: 'item_pub_date',
   LINK: 'item_link',
   DESCRIPTION: 'item_description',
+  GUID: 'item_guid',
 };
 
 export const CONTROLS_TEXTS_DICT = {
@@ -46,6 +47,13 @@ export const CONTROLS_TEXTS_DICT = {
   },
   [ITEM_CONTROLS.DESCRIPTION]: {
     linkName: 'Description',
+    modalTitle: 'Item / Description',
+    text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
+    rss: '<channel><item><title>Title Here</title></item></channel>',
+    json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.GUID]: {
+    linkName: '<guid>',
     modalTitle: 'Item / Description',
     text: "An item's title. It could be a podcast episode's title, a blog post's title, a custom title of a curated article...",
     rss: '<channel><item><title>Title Here</title></item></channel>',

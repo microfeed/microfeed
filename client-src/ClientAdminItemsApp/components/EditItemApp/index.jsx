@@ -233,86 +233,91 @@ export default class EditItemApp extends React.Component {
                 }}
               />
             </div>
-            <div className="mt-8 pt-8 border-t grid grid-cols-1 gap-8">
-              <div className="grid grid-cols-2 gap-4">
-                <AdminInput
-                  label="<guid>"
-                  value={item.guid || itemId}
-                  setRef={(ref) => {
-                    if (!item.guid && ref) {
-                      this.onUpdateItemMeta({'guid': ref.value});
-                    }
-                  }}
-                  onChange={(e) => this.onUpdateItemMeta({'guid': e.target.value})}
-                />
-                <AdminInput
-                  label="<itunes:title>"
-                  value={item['itunes:title']}
-                  onChange={(e) => this.onUpdateItemMeta({'itunes:title': e.target.value})}
-                />
+          </div>
+          <div className="lh-page-card">
+            <details>
+              <summary className="m-page-summary">Podcast-specific fields</summary>
+              <div className="grid grid-cols-1 gap-8">
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <AdminRadio
+                    label="<itunes:explicit>"
+                    groupName="lh-explicit"
+                    buttons={[{
+                      'name': 'Yes',
+                      'checked': item['itunes:explicit'],
+                    }, {
+                      'name': 'No',
+                      'checked': !item['itunes:explicit'],
+                    }]}
+                    value={item['itunes:explicit']}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'Yes'})}
+                  />
+                  <AdminInput
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
+                    value={item.guid || itemId}
+                    setRef={(ref) => {
+                      if (!item.guid && ref) {
+                        this.onUpdateItemMeta({'guid': ref.value});
+                      }
+                    }}
+                    onChange={(e) => this.onUpdateItemMeta({'guid': e.target.value})}
+                  />
+                  <AdminInput
+                    label="<itunes:title>"
+                    value={item['itunes:title']}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:title': e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <AdminRadio
+                    label="<itunes:episodeType>"
+                    groupName="feed-itunes-episodetype"
+                    buttons={[{
+                      'name': 'full',
+                      'checked': item['itunes:episodeType'] === 'full',
+                    }, {
+                      'name': 'trailer',
+                      'checked': item['itunes:episodeType'] === 'trailer',
+                    }, {
+                      'name': 'bonus',
+                      'checked': item['itunes:episodeType'] === 'bonus',
+                    },
+                    ]}
+                    value={item['itunes:episodeType']}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:episodeType': e.target.value})}
+                  />
+                  <AdminInput
+                    type="number"
+                    label="<itunes:season>"
+                    value={item['itunes:season']}
+                    extraParams={{min: "1"}}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:season': e.target.value})}
+                  />
+                  <AdminInput
+                    type="number"
+                    label="<itunes:episode>"
+                    value={item['itunes:episode']}
+                    extraParams={{min: "1"}}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:episode': e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <AdminRadio
+                    label="<itunes:block>"
+                    groupName="feed-itunes-block"
+                    buttons={[{
+                      'name': 'Yes',
+                      'checked': item['itunes:block'],
+                    }, {
+                      'name': 'No',
+                      'checked': !item['itunes:block'],
+                    }]}
+                    value={item['itunes:block']}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:block': e.target.value === 'Yes'})}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <AdminRadio
-                  label="<itunes:episodeType>"
-                  groupName="feed-itunes-episodetype"
-                  buttons={[{
-                    'name': 'full',
-                    'checked': item['itunes:episodeType'] === 'full',
-                  }, {
-                    'name': 'trailer',
-                    'checked': item['itunes:episodeType'] === 'trailer',
-                  }, {
-                    'name': 'bonus',
-                    'checked': item['itunes:episodeType'] === 'bonus',
-                  },
-                  ]}
-                  value={item['itunes:episodeType']}
-                  onChange={(e) => this.onUpdateItemMeta({'itunes:episodeType': e.target.value})}
-                />
-                <AdminInput
-                  type="number"
-                  label="<itunes:season>"
-                  value={item['itunes:season']}
-                  extraParams={{min: "1"}}
-                  onChange={(e) => this.onUpdateItemMeta({'itunes:season': e.target.value})}
-                />
-                <AdminInput
-                  type="number"
-                  label="<itunes:episode>"
-                  value={item['itunes:episode']}
-                  extraParams={{min: "1"}}
-                  onChange={(e) => this.onUpdateItemMeta({'itunes:episode': e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-5 gap-4">
-                <AdminRadio
-                  label="<itunes:explicit>"
-                  groupName="lh-explicit"
-                  buttons={[{
-                    'name': 'Yes',
-                    'checked': item['itunes:explicit'],
-                  }, {
-                    'name': 'No',
-                    'checked': !item['itunes:explicit'],
-                  }]}
-                  value={item['itunes:explicit']}
-                  onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'Yes'})}
-                />
-                <AdminRadio
-                  label="<itunes:block>"
-                  groupName="feed-itunes-block"
-                  buttons={[{
-                    'name': 'Yes',
-                    'checked': item['itunes:block'],
-                  }, {
-                    'name': 'No',
-                    'checked': !item['itunes:block'],
-                  }]}
-                  value={item['itunes:block']}
-                  onChange={(e) => this.onUpdateItemMeta({'itunes:block': e.target.value === 'Yes'})}
-                />
-              </div>
-            </div>
+            </details>
           </div>
         </div>
         <div className="col-span-3">

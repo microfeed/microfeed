@@ -211,7 +211,32 @@ export default class EditChannelApp extends React.Component {
               Podcast-specific fields
             </summary>
             <div className="mt-8 grid grid-cols-1 gap-8">
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <AdminRadio
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
+                  groupName="lh-explicit"
+                  buttons={[{
+                    'name': 'Yes',
+                    'checked': channel['itunes:explicit'],
+                  }, {
+                    'name': 'No',
+                    'checked': !channel['itunes:explicit'],
+                  }]}
+                  value={channel['itunes:explicit']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'Yes')}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
+                  value={channel.copyright}
+                  onChange={(e) => this.onUpdateChannelMeta('copyright', e.target.value)}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TITLE]}/>}
+                  value={channel['itunes:title']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
                 <AdminRadio
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TYPE]}/>}
                   groupName="feed-itunes-type"
@@ -232,30 +257,13 @@ export default class EditChannelApp extends React.Component {
                   onChange={(e) => this.onUpdateChannelMeta('itunes:email', e.target.value)}
                 />
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
-                  value={channel.copyright}
-                  onChange={(e) => this.onUpdateChannelMeta('copyright', e.target.value)}
-                />
-                <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TITLE]}/>}
-                  value={channel['itunes:title']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_NEW_RSS_URL]}/>}
+                  type="url"
+                  value={channel['itunes:new-feed-url']}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-4 gap-4">
-                <AdminRadio
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
-                  groupName="lh-explicit"
-                  buttons={[{
-                    'name': 'Yes',
-                    'checked': channel['itunes:explicit'],
-                  }, {
-                    'name': 'No',
-                    'checked': !channel['itunes:explicit'],
-                  }]}
-                  value={channel['itunes:explicit']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'Yes')}
-                />
+              <div className="grid grid-cols-3 gap-4">
                 <AdminRadio
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
                   groupName="feed-itunes-block"
@@ -281,12 +289,6 @@ export default class EditChannelApp extends React.Component {
                   }]}
                   value={channel['itunes:complete']}
                   onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'Yes')}
-                />
-                <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_NEW_RSS_URL]}/>}
-                  type="url"
-                  value={channel['itunes:new-feed-url']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
                 />
               </div>
             </div>
