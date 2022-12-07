@@ -22,6 +22,8 @@ export default class WhatsNewApp extends React.Component {
         items: d.items.slice(0, 5),
         fetchStatus: null,
       })
+    }).catch(() => {
+      this.setState({fetchStatus: null});
     });
   }
 
@@ -29,7 +31,7 @@ export default class WhatsNewApp extends React.Component {
     const {items, fetchStatus} = this.state;
     const fetching = fetchStatus === FETCH_STATUS__START;
     return (<div className="lh-page-card">
-      <div className="lh-page-subtitle">
+      <div className="lh-page-title">
         What's new from <a href={`https://${OUR_BRAND.domain}`}>{OUR_BRAND.domain}</a>?
       </div>
       <div>

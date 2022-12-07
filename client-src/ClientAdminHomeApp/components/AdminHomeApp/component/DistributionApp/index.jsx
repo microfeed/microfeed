@@ -55,7 +55,7 @@ export default class DistributionApp extends React.Component {
 
   render() {
     return (<div className="lh-page-card">
-      <div className="lh-page-subtitle">
+      <div className="lh-page-title">
         Distribution
       </div>
       <div className="grid grid-cols-1 gap-8 mt-8">

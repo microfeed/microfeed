@@ -267,7 +267,7 @@ export default class SetupChecklistApp extends React.Component {
     const webGlobalSettings = settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS] || {};
 
     return (<div className="lh-page-card">
-      <div className="lh-page-subtitle">
+      <div className="lh-page-title">
         Setup checklist
       </div>
       {onboardingResult.allOk && <div className="text-helper-color">
@@ -289,7 +289,7 @@ export default class SetupChecklistApp extends React.Component {
         />
       </div>
       <div className="text-right mt-4 text-sm text-helper-color">
-        <span className="text-red-500">*</span> Required
+        <span className="text-red-500">*</span> required
       </div>
     </div>);
   }
