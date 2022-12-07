@@ -196,6 +196,7 @@ export default class FeedPublicJsonBuilder {
       web_url: item.webUrl,
       json_url: item.jsonUrl,
       rss_url: item.rssUrl,
+      guid: item.guid,
     };
 
     if (mediaFile.url) {

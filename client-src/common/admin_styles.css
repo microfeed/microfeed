@@ -11,7 +11,7 @@ a {
 }
 
 .m-code {
-  @apply p-4 block bg-gray-200 rounded-md mt-2 text-xs text-red-500 select-all break-all;
+  @apply p-4 block bg-gray-100 rounded-md mt-2 text-xs text-red-500 select-all break-all;
 }
 
 /*
