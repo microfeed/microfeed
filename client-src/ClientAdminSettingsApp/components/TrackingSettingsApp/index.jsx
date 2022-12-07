@@ -43,6 +43,9 @@ export default class TrackingSettingsApp extends React.Component {
           onChange={(e) => this.setState({trackingUrls: e.target.value}, () => setChanged())}
         />
       </div>
+      <div className="mt-4 text-xs text-helper-color">
+        microfeed will automatically adds 3rd-party tracking urls before the url of a media file, so you can easily track download stats. This is a common practice in the podcast industry.
+      </div>
       {urls.length > 0 && <div className="mt-4 text-xs break-all text-helper-color">
         <div className="mb-2">
           Example: if an audio url is {exampleAudio}, then the final url in the rss feed will be:
