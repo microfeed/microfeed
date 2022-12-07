@@ -23,7 +23,7 @@ export default class CustomCodeSettingsApp extends React.Component {
     const {submitting, submitForType} = this.props;
     const {currentType} = this.state;
     return (<SettingsBase
-      title="Custom Code"
+      title="Custom code"
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
