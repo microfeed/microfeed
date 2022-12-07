@@ -248,6 +248,7 @@ export default class CustomCodeEditorApp extends React.Component {
       };
     }
     this.setState(prevState => ({
+      changed: true,
       feed: {
         ...prevState.feed,
         settings: {
@@ -291,7 +292,7 @@ export default class CustomCodeEditorApp extends React.Component {
   }
 
   render() {
-    const {codeFile, submitStatus, feed, codeType, themeName, onboardingResult} = this.state;
+    const {codeFile, submitStatus, feed, codeType, themeName, onboardingResult, changed} = this.state;
     const code = this.state[codeFile];
     const codeBundle = CODE_FILES_DICT[codeFile];
     const language = codeBundle.language;
@@ -320,7 +321,7 @@ export default class CustomCodeEditorApp extends React.Component {
           <AdminCodeEditor
             code={code}
             language={language}
-            onChange={(e) => this.setState({[codeFile]: e.target.value})}
+            onChange={(e) => this.setState({[codeFile]: e.target.value, changed: true})}
           />
         </div>
         <div className="col-span-3">
@@ -330,7 +331,7 @@ export default class CustomCodeEditorApp extends React.Component {
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
                 onClick={this.onSubmit}
-                disabled={submitting}
+                disabled={submitting || !changed}
               >
                 {submitting ? 'Updating...' : 'Update'}
               </button>
