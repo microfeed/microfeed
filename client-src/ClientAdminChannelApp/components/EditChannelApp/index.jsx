@@ -140,6 +140,7 @@ export default class EditChannelApp extends React.Component {
           <div className="lh-page-card">
             <div className="flex">
               <div className="flex-none">
+                <ExplainText bundle={CONTROLS_TEXTS_DICT[CONTROLS.CHANNEL_IMAGE]}/>
                 <AdminImageUploaderApp
                   mediaType="channel"
                   feed={feed}

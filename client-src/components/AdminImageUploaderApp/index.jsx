@@ -171,7 +171,7 @@ export default class AdminImageUploaderApp extends React.Component {
         </div>
       </FileUploader>
       {currentImageUrl && <div className="text-sm flex justify-center mt-1">
-        <ExternalLink text="preview image" url={currentImageUrl} />
+        <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={currentImageUrl} />
       </div>}
       <AdminDialog
         isOpen={showModal}

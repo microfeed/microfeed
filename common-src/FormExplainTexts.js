@@ -1,5 +1,6 @@
 export const CONTROLS = {
   CHANNEL_TITLE: 'channel_title',
+  CHANNEL_IMAGE: 'channel_image',
   CHANNEL_PUBLISHER: 'channel_publisher',
   CHANNEL_WEBSITE: 'channel_website',
   CHANNEL_CATEGORIES: 'channel_categories',
@@ -22,6 +23,13 @@ export const CONTROLS_TEXTS_DICT = {
     text: "A channel's name. If this channel is a podcast, then it would be a podcast name.",
     rss: '<channel><title>Title Here</title></channel>',
     json: '{ "title": "Title Here" }',
+  },
+  [CONTROLS.CHANNEL_IMAGE]: {
+    linkName: 'Channel Image',
+    modalTitle: 'Channel / Image',
+    text: "A channel's image.",
+    rss: '<channel><itunes:image href="https://cdn-site.com/img.jpg" /><image><url>https://cdn-site.com/img.jpg</url></image></channel>',
+    json: '{ "icon": "https://cdn-site.com/img.jpg" }',
   },
   [CONTROLS.CHANNEL_PUBLISHER]: {
     linkName: 'Publisher',
