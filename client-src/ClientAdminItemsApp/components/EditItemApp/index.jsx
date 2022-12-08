@@ -3,7 +3,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
 import Requests from "../../../common/requests";
-import {randomShortUUID, ADMIN_URLS, PUBLIC_URLS} from '../../../../common-src/StringUtils';
+import {randomShortUUID, ADMIN_URLS, PUBLIC_URLS, urlJoinWithRelative} from '../../../../common-src/StringUtils';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src/TimeUtils";
@@ -196,7 +196,7 @@ export default class EditItemApp extends React.Component {
                   mediaType="item"
                   feed={feed}
                   currentImageUrl={item.image}
-                  onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({'image': cdnUrl})}
+                  onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({'image': urlJoinWithRelative(publicBucketUrl, cdnUrl)})}
                 />
               </div>
               <div className="ml-8 flex-1 grid grid-cols-1 gap-4">
