@@ -123,7 +123,7 @@ export default class EditChannelApp extends React.Component {
       this.setState({submitStatus: SUBMIT_STATUS__START});
       Requests.post('/admin/ajax/feed/', {channel: feed.channel})
         .then(() => {
-          this.setState({submitStatus: null}, () => {
+          this.setState({submitStatus: null, changed: false}, () => {
             showToast('Updated!', 'success');
           });
         })

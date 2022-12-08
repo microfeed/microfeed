@@ -113,11 +113,11 @@ export default class EditItemApp extends React.Component {
     Requests.post(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.DELETED}})
       .then(() => {
         showToast('Deleted!', 'success');
-        setTimeout(() => {
-          this.setState({submitStatus: null}, () => {
+        this.setState({submitStatus: null, changed: false}, () => {
+          setTimeout(() => {
             location.href = ADMIN_URLS.allItems();
-          });
-        }, 1000);
+          }, 1000);
+        });
       });
   }
 
