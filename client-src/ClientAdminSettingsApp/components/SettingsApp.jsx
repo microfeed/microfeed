@@ -9,6 +9,7 @@ import Requests from "../../common/requests";
 import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
 import {showToast} from "../../common/ToastUtils";
 import {NAV_ITEMS} from "../../../common-src/Constants";
+import {preventCloseWhenChanged} from "../../common/BrowserUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -29,6 +30,10 @@ export default class SettingsApp extends React.Component {
       submitStatus: null,
       changed: false,
     }
+  }
+
+  componentDidMount() {
+    preventCloseWhenChanged(() => this.state.changed);
   }
 
   setChanged() {

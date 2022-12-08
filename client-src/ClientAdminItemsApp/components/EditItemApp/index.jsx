@@ -20,6 +20,7 @@ import {
   ITEM_CONTROLS,
   CONTROLS_TEXTS_DICT
 } from "./FormExplainTexts";
+import {preventCloseWhenChanged} from "../../../common/BrowserUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -77,6 +78,7 @@ export default class EditItemApp extends React.Component {
   }
 
   componentDidMount() {
+    preventCloseWhenChanged(() => this.state.changed);
   }
 
   onUpdateFeed(props, onSuccess) {

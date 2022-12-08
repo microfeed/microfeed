@@ -13,6 +13,7 @@ import AdminSelect from "../../../components/AdminSelect";
 import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT, NAV_ITEMS} from "../../../../common-src/Constants";
 import ExplainText from "../../../components/ExplainText";
 import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./FormExplainTexts";
+import {preventCloseWhenChanged} from "../../../common/BrowserUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -83,6 +84,10 @@ export default class EditChannelApp extends React.Component {
       submitStatus: null,
       changed: false,
     }
+  }
+
+  componentDidMount() {
+    preventCloseWhenChanged(() => this.state.changed);
   }
 
   onUpdateFeed(props, onSucceed) {
