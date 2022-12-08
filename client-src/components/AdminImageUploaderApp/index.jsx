@@ -61,7 +61,7 @@ export default class AdminImageUploaderApp extends React.Component {
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
 
     this.initState = {
-      currentImageUrl: props.currentImageUrl ? urlJoinWithRelative(publicBucketUrl, props.currentImageUrl) : null,
+      currentImageUrl: props.currentImageUrl,
       mediaType: props.mediaType || 'channel',
       uploadStatus: null,
       progressText: '0.00%',
@@ -152,7 +152,8 @@ export default class AdminImageUploaderApp extends React.Component {
   }
 
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal, previewImageUrl, imageWidth, imageHeight} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal, publicBucketUrl, previewImageUrl, imageWidth, imageHeight} = this.state;
+    const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
@@ -170,12 +171,12 @@ export default class AdminImageUploaderApp extends React.Component {
         classes="lh-upload-fileinput"
       >
         <div className="lh-upload-image-size lh-upload-box">
-          {currentImageUrl ? <PreviewImage url={currentImageUrl}/> :
+          {absoluteImageUrl ? <PreviewImage url={absoluteImageUrl}/> :
             <EmptyImage fileTypes={fileTypes} />}
         </div>
       </FileUploader>
-      {currentImageUrl && <div className="text-sm flex justify-center mt-1">
-        <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={currentImageUrl} />
+      {absoluteImageUrl && <div className="text-sm flex justify-center mt-1">
+        <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={absoluteImageUrl} />
       </div>}
       <AdminDialog
         isOpen={showModal}
