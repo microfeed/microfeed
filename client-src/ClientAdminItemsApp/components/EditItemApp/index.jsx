@@ -282,7 +282,7 @@ export default class EditItemApp extends React.Component {
                     value={item.guid || itemId}
                     setRef={(ref) => {
                       if (!item.guid && ref) {
-                        this.onUpdateItemMeta({'guid': ref.value});
+                        this.onUpdateItemMeta({'guid': ref.value}, {changed: false});
                       }
                     }}
                     onChange={(e) => this.onUpdateItemMeta({'guid': e.target.value})}
