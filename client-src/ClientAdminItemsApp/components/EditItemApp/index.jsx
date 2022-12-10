@@ -128,20 +128,18 @@ export default class EditItemApp extends React.Component {
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.post(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
       .then(() => {
-        if (action === 'edit') {
-          this.setState({submitStatus: null}, () => {
+        this.setState({submitStatus: null, changed: false}, () => {
+          if (action === 'edit') {
             showToast('Updated!', 'success');
-          });
-        } else {
-          showToast('Created!', 'success');
-          setTimeout(() => {
-            this.setState({submitStatus: null}, () => {
-              if (itemId) {
+          } else {
+            showToast('Created!', 'success');
+            if (itemId) {
+              setTimeout(() => {
                 location.href = ADMIN_URLS.editItem(itemId);
-              }
-            });
-          }, 1000);
-        }
+              }, 1000);
+            }
+          }
+        });
       });
   }
 
