@@ -169,3 +169,47 @@
     content: "→";
   }
 </style>
+
+<!-- Lazy load images -->
+ <style>
+  .loader {
+  width: 5em;
+  height: 5em;
+  background: url("data:image/svg+xml,%3csvg viewBox='-5 -5 10 10' xmlns='http://www.w3.org/2000/svg'%3e%3cstyle%3esvg%7banimation:r 1.4s linear infinite%7d%40keyframes r%7bto%7btransform:rotate(270deg)%7d%7dcircle%7banimation:d 1.4s ease-in-out infinite%7d%40keyframes d%7b50%25%7btransform:rotate(135deg)%3bstroke-dashoffset:8%7dto%7btransform:rotate(450deg)%7dfrom%2cto%7bstroke-dashoffset:28%7d%7d%3c/style%3e%3ccircle fill='none' stroke-dasharray='30' stroke-dashoffset='8' stroke='%234285f4' r='4'/%3e%3c/svg%3e");
+}
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    let lazyImageObserver = new IntersectionObserver(function (entries, observer) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target;
+          lazyImage.src = lazyImage.dataset.src;
+          lazyImage.onload = function () {
+            lazyImage.classList.remove("loader");
+          };
+          lazyImageObserver.unobserve(lazyImage);
+        }
+      });
+    });
+
+    const images = document.getElementsByTagName('img');
+    for (let i = 0; i < images.length; i++) {
+      images[i].setAttribute('loading', 'lazy');
+      const wrapper = document.createElement('a');
+      wrapper.setAttribute('href', images[i].src);
+      wrapper.setAttribute('target', "_blank");
+      images[i].dataset.src = images[i].src;
+      images[i].classList.add('loader');
+      images[i].src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP88eNnPQAJQwNqJHSUZQAAAABJRU5ErkJggg==";
+      wrapper.appendChild(images[i].cloneNode(true));
+      if (images[i].parentElement) {
+        images[i].parentElement.replaceChild(wrapper, images[i]);
+      }
+      lazyImageObserver.observe(images[i]);
+    }
+
+  }, false);
+
+</script>
