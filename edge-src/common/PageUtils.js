@@ -186,6 +186,8 @@ class CodeInjector {
       element.append(this.sharedTheme.getWebBodyEnd().html || '', {html: true});
       const {html} = this.theme.getWebBodyEnd();
       element.append(html, {html: true});
+    } else if (element.tagName === 'img') {
+      element.setAttribute('loading', 'lazy');
     }
   }
 }
@@ -208,6 +210,7 @@ export class WebResponseBuilder extends ResponseBuilder {
     return new HTMLRewriter()
       .on('head', new CodeInjector(this.settings, theme, sharedTheme))
       .on('body', new CodeInjector(this.settings, theme, sharedTheme))
+      .on('img', new CodeInjector(this.settings, theme, sharedTheme))
       .transform(newRes);
   }
 }
