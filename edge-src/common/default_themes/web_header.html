@@ -7,7 +7,7 @@
     line-height: 1.75;
     font-size: 1em;
     color: #24292f;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue",sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   }
 
   section {
@@ -185,31 +185,33 @@
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           let lazyImage = entry.target;
-          lazyImage.src = lazyImage.dataset.src;
-          lazyImage.onload = function () {
+          const newImage = document.createElement('img');
+          newImage.src = lazyImage.dataset.src;
+          newImage.onload = function () {
             lazyImage.classList.remove("loader");
+            const wrapper = document.createElement('a');
+            wrapper.setAttribute('href', newImage.src);
+            wrapper.setAttribute('target', "_blank");
+            wrapper.appendChild(newImage.cloneNode(true));
+            if (lazyImage.parentElement) {
+              lazyImage.parentElement.replaceChild(wrapper, lazyImage);
+              lazyImage.remove();
+            }
           };
           lazyImageObserver.unobserve(lazyImage);
         }
       });
     });
 
-    const images = document.getElementsByTagName('img');
+    const images = document.querySelectorAll('img:not([loading=lazy])');
     for (let i = 0; i < images.length; i++) {
-      images[i].setAttribute('loading', 'lazy');
-      const wrapper = document.createElement('a');
-      wrapper.setAttribute('href', images[i].src);
-      wrapper.setAttribute('target', "_blank");
       images[i].dataset.src = images[i].src;
       images[i].classList.add('loader');
       images[i].src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP88eNnPQAJQwNqJHSUZQAAAABJRU5ErkJggg==";
-      wrapper.appendChild(images[i].cloneNode(true));
-      if (images[i].parentElement) {
-        images[i].parentElement.replaceChild(wrapper, images[i]);
-      }
       lazyImageObserver.observe(images[i]);
     }
 
   }, false);
 
 </script>
+

@@ -55,7 +55,7 @@
       {{#item._microfeed.is_image}}
       {{#item.attachments}}
       <a href="{{url}}" target="_blank">
-        <img src="{{url}}" width="80%" />
+        <img src="{{url}}" width="80%" loading="lazy" />
       </a>
       {{/item.attachments}}
       {{/item._microfeed.is_image}}
@@ -70,7 +70,7 @@
         {{#_microfeed.subscribe_methods}}
         <a href="{{url}}" class="mr-4 mb-2">
           <div class="flex items-center">
-            <img src="{{image}}" class="img-sm flex-none" alt="{{name}}"/>
+            <img src="{{image}}" class="img-sm flex-none" alt="{{name}}" loading="lazy"/>
             <div class="flex-1 ml-1 text-sm hide-mobile">{{name}}</div>
           </div>
         </a>
