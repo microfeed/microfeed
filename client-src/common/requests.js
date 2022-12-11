@@ -5,7 +5,12 @@ const requestPost = (url, bodyDict) => {
       'Content-Type': 'application/json',
     },
     'body': JSON.stringify(bodyDict),
-  }).then((response) => response.json());
+  }).then((response) => {
+    if (response.ok) {
+      return response.json();
+    }
+    return Promise.reject(response);
+  });
 };
 
 async function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) {

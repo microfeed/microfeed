@@ -118,6 +118,11 @@ export default class EditItemApp extends React.Component {
             location.href = ADMIN_URLS.allItems();
           }, 1000);
         });
+      })
+      .catch(() => {
+        this.setState({submitStatus: null}, () => {
+          showToast('Failed. Please try again.', 'error');
+        });
       });
   }
 

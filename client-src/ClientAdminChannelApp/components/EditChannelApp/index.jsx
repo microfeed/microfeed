@@ -127,9 +127,15 @@ export default class EditChannelApp extends React.Component {
             showToast('Updated!', 'success');
           });
         })
-        .catch(() => {
+        .catch((response) => {
+          // Error handling:
+          //  1) if response.url contains ".cloudflareaccess.com/cdn-cgi/access/login/",
+          //     GET fetch .cloudflareaccess.com/..., then retry onSubmit
+          //  2) else show failed, please try again.
+          console.log(response);
+          // response && response.url
           this.setState({submitStatus: null}, () => {
-            showToast('Failed to update. Please try again.', 'error');
+            showToast('Failed. Please try again.', 'error');
           });
         });
     });
