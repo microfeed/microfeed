@@ -270,10 +270,7 @@ export default class CustomCodeEditorApp extends React.Component {
 
     const themeTmpls = {};
     CODE_BUNDLE[codeType].forEach((codeFile) => {
-      const code = this.state[codeFile];
-      if (code) {
-        themeTmpls[codeFile] = code;
-      }
+      themeTmpls[codeFile] = this.state[codeFile] || '';
     });
 
     this.onUpdateFeed(themeTmpls, () => {
