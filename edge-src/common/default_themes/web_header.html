@@ -171,12 +171,34 @@
 </style>
 
 <!-- Lazy load images -->
- <style>
+<style>
+  @keyframes backgroundColorPalette {
+    0% {
+      background: #DCDCDC;
+    }
+    25% {
+      background: #D3D3D3;
+    }
+    50% {
+      background: #778899;
+    }
+    75% {
+      background: #D3D3D3;
+    }
+    100% {
+      background: #DCDCDC;
+    }
+  }
+
   .loader {
-  width: 100%;
-  height: 20em;
-  background-color: #DCDCDC;
-}
+    width: 100%;
+    height: 20em;
+    background-color: #DCDCDC;
+    animation-name: backgroundColorPalette;
+    animation-duration: 10s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
