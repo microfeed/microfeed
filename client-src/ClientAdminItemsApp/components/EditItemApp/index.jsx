@@ -119,7 +119,10 @@ export default class EditItemApp extends React.Component {
           }, 1000);
         });
       })
-      .catch(() => {
+      .catch((response) => {
+        console.log(response);
+        console.log(response.errorReason, response.url);
+
         this.setState({submitStatus: null}, () => {
           showToast('Failed. Please try again.', 'error');
         });

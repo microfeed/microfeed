@@ -1,3 +1,5 @@
+import {FETCH_ERRORS} from "../../common-src/Constants";
+
 const requestPost = (url, bodyDict) => {
   return fetch(url, {
     method: 'POST',
@@ -6,10 +8,21 @@ const requestPost = (url, bodyDict) => {
     },
     'body': JSON.stringify(bodyDict),
   }).then((response) => {
-    if (response.ok) {
-      return response.json();
+    response.errorReason = null;
+    if (response.url.indexOf('.cloudflareaccess.com/cdn-cgi/access/login/') !== -1) {
+      response.errorReason = FETCH_ERRORS.REFRESH_JWT_TOKEN;
+    } else if (!response.ok) {
+      response.errorReason = FETCH_ERRORS.SERVER_RESPONSE;
     }
-    return Promise.reject(response);
+    if (response.errorReason) {
+      return Promise.reject(response);
+    }
+    try {
+      return response.json();
+    } catch (error) {
+      response.errorReason = FETCH_ERRORS.PARSE_JSON;
+      return Promise.reject(response);
+    }
   });
 };
 
@@ -52,6 +65,7 @@ async function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) 
     fileReader.readAsArrayBuffer(file);
   }).catch((response) => {
     console.log(response);
+    console.log(response.errorReason, response.url);
   });
 }
 

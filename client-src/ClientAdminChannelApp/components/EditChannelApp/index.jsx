@@ -133,6 +133,7 @@ export default class EditChannelApp extends React.Component {
           //     GET fetch .cloudflareaccess.com/..., then retry onSubmit
           //  2) else show failed, please try again.
           console.log(response);
+          console.log(response.errorReason, response.url);
           // response && response.url
           this.setState({submitStatus: null}, () => {
             showToast('Failed. Please try again.', 'error');
