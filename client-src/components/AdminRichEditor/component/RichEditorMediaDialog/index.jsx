@@ -94,7 +94,6 @@ export default class RichEditorMediaDialog extends React.Component {
     }, (cdnUrl) => {
         // updateState(cdnUrl, 0);
       const url = urlJoinWithRelative(publicBucketUrl, cdnUrl);
-      console.log(url);
       this.setState({
         url,
         progressText: 'Done!',
