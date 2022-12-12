@@ -121,24 +121,39 @@ export default class EditChannelApp extends React.Component {
     this.onUpdateChannelMetaToFeed(() => {
       const {feed} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.post('/admin/ajax/feed/', {channel: feed.channel})
-        .then(() => {
+      Requests.axiosPost('/admin/ajax/feed/', {channel: feed.channel})
+        .then((response) => {
+          console.log(response);
           this.setState({submitStatus: null, changed: false}, () => {
             showToast('Updated!', 'success');
           });
         })
-        .catch((response) => {
-          // Error handling:
-          //  1) if response.url contains ".cloudflareaccess.com/cdn-cgi/access/login/",
-          //     GET fetch .cloudflareaccess.com/..., then retry onSubmit
-          //  2) else show failed, please try again.
-          console.log(response);
-          console.log(response.errorReason, response.url);
-          // response && response.url
+        .catch((error) => {
+          console.log(error);
           this.setState({submitStatus: null}, () => {
             showToast('Failed. Please try again.', 'error');
           });
         });
+
+      // Requests.post('/admin/ajax/feed/', {channel: feed.channel})
+      //   .then((r) => {
+      //     console.log('what??', r);
+      //     this.setState({submitStatus: null, changed: false}, () => {
+      //       showToast('Updated!', 'success');
+      //     });
+      //   })
+      //   .catch((response) => {
+      //     // Error handling:
+      //     //  1) if response.url contains ".cloudflareaccess.com/cdn-cgi/access/login/",
+      //     //     GET fetch .cloudflareaccess.com/..., then retry onSubmit
+      //     //  2) else show failed, please try again.
+      //     console.log(response);
+      //     console.log(response.errorReason, response.url);
+      //     // response && response.url
+      //     this.setState({submitStatus: null}, () => {
+      //       showToast('Failed. Please try again.', 'error');
+      //     });
+      //   });
     });
   }
 

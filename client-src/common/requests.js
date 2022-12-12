@@ -1,4 +1,9 @@
+import axios from 'axios';
 import {FETCH_ERRORS} from "../../common-src/Constants";
+
+const axiosPost = (url, bodyDict) => {
+  return axios.post(url, bodyDict);
+};
 
 const requestPost = (url, bodyDict) => {
   return fetch(url, {
@@ -9,6 +14,7 @@ const requestPost = (url, bodyDict) => {
     'body': JSON.stringify(bodyDict),
   }).then((response) => {
     response.errorReason = null;
+    console.log('first then', response);
     if (response.url.indexOf('.cloudflareaccess.com/cdn-cgi/access/login/') !== -1) {
       response.errorReason = FETCH_ERRORS.REFRESH_JWT_TOKEN;
     } else if (!response.ok) {
@@ -85,6 +91,7 @@ function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, onR2Op
 }
 
 const Requests = {
+  axiosPost,
   post: requestPost,
   upload: uploadFile,
 };
