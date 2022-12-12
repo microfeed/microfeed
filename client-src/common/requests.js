@@ -26,7 +26,8 @@ const requestPost = (url, bodyDict) => {
   });
 };
 
-async function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) {
+
+function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) {
   const { size, type } = file;
   requestPost('/admin/ajax/r2-ops', {
     size,
@@ -34,7 +35,7 @@ async function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) 
     type,
   }).then((res) => {
     const fileReader = new FileReader();
-    fileReader.onloadend = async (e) => {
+    fileReader.onloadend = (e) => {
       const arrayBuffer = e.target.result;
       if (arrayBuffer) {
         const {mediaBaseUrl, presignedUrl} = res;
