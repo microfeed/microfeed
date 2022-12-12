@@ -73,8 +73,14 @@ function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, onR2Op
     console.log(response);
     console.log(response.errorReason, response.url);
     console.log(onR2OpsFailure);
-    // if it's to renew jwt token, then get token, and retry again.
-    // _uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, () => {});
+    if (response.errorReason === FETCH_ERRORS.REFRESH_JWT_TOKEN) {
+      fetch(response.url)
+        .then((response) => {
+          console.log('renew jwt token!');
+          console.log(response);
+          // _uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, () => {});
+        })
+    }
   });
 }
 
