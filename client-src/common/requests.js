@@ -26,8 +26,7 @@ const requestPost = (url, bodyDict) => {
   });
 };
 
-
-function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) {
+function _uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, onR2OpsFailure) {
   const { size, type } = file;
   requestPost('/admin/ajax/r2-ops', {
     size,
@@ -65,8 +64,17 @@ function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure) {
     };
     fileReader.readAsArrayBuffer(file);
   }).catch((response) => {
+    onR2OpsFailure(response);
+  });
+}
+
+function uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, onR2OpsFailure) {
+  _uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, (response) => {
     console.log(response);
     console.log(response.errorReason, response.url);
+    console.log(onR2OpsFailure);
+    // if it's to renew jwt token, then get token, and retry again.
+    // _uploadFile(file, cdnFilename, onProgress, onUploaded, onFailure, () => {});
   });
 }
 
