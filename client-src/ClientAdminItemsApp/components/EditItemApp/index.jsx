@@ -12,7 +12,7 @@ import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 import MediaManager from "./components/MediaManager";
-import {NAV_ITEMS, NAV_ITEMS_DICT, STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
+import {NAV_ITEMS, NAV_ITEMS_DICT, STATUSES, ITEM_STATUSES_DICT, FETCH_ERRORS} from "../../../../common-src/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
 import ExplainText from "../../../components/ExplainText";
@@ -129,9 +129,7 @@ export default class EditItemApp extends React.Component {
       });
   }
 
-  onSubmit(e) {
-    e.preventDefault();
-
+  _onSubmit(onFailure) {
     const {item, itemId, action} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.post(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
@@ -148,7 +146,26 @@ export default class EditItemApp extends React.Component {
             }
           }
         });
-      });
+      }).catch((response) => {
+        onFailure(response);
+    });
+  }
+
+  onSubmit(e) {
+    e.preventDefault();
+
+    this._onSubmit((response) => {
+      console.log(response);
+      console.log(response.errorReason, response.url);
+      if (response.errorReason === FETCH_ERRORS.REFRESH_JWT_TOKEN) {
+        fetch(response.url)
+          .then((response) => {
+            console.log('renew jwt token!');
+            console.log(response);
+            this._onSubmit(() => {});
+          })
+      }
+    });
   }
 
   render() {
