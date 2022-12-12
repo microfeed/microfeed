@@ -274,16 +274,20 @@ export default class CustomCodeEditorApp extends React.Component {
     });
 
     this.onUpdateFeed(themeTmpls, () => {
-      Requests.post('/admin/ajax/feed/', {settings: {
+      Requests.axiosPost('/admin/ajax/feed/', {settings: {
         [SETTINGS_CATEGORIES.CUSTOM_CODE]: this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]}})
         .then(() => {
           this.setState({submitStatus: null}, () => {
             showToast('Updated!', 'success');
           });
-        })
-        .catch(() => {
-          this.setState({submitStatus: null}, () => {
-            showToast('Failed to update. Please try again.', 'error')});
+        }).catch((error) => {
+        this.setState({submitStatus: null}, () => {
+          if (!error.response) {
+            showToast('Network error. Please refresh the page and try again.', 'error');
+          } else {
+            showToast('Failed. Please try again.', 'error');
+          }
+        });
         });
     });
   }

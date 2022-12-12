@@ -47,20 +47,26 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
           onClick={(e) => {
             e.preventDefault();
             setSubmitStatus(SUBMIT_STATUS__START);
-            Requests.post(ADMIN_URLS.ajaxFeed(), {
+            Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
               settings: {
                 [SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS]: {
                   ...webGlobalSettings,
                   publicBucketUrl: url,
                 },
               }
-            })
-              .then(() => {
-                showToast('Updated!', 'success');
-                setTimeout(() => {
-                  location.href = '';
-                }, 1500);
-              });
+            }).then(() => {
+              showToast('Updated!', 'success');
+              setTimeout(() => {
+                location.href = '';
+              }, 1500);
+            }).catch((error) => {
+              setSubmitStatus(null);
+              if (!error.response) {
+                showToast('Network error. Please refresh the page and try again.', 'error');
+              } else {
+                showToast('Failed. Please try again.', 'error');
+              }
+            });
           }}
         >
           {submitting ? 'Updating...' : 'Update'}

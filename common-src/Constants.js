@@ -12,12 +12,6 @@ export const SETTINGS_CATEGORIES = {
   ACCESS: 'access',
 };
 
-export const FETCH_ERRORS = {
-  REFRESH_JWT_TOKEN: 'refreshJwtTokenError',
-  SERVER_RESPONSE: 'serverResponseError',
-  PARSE_JSON: 'parseJsonError',
-};
-
 export const DEFAULT_ITEMS_PER_PAGE = 20;
 export const MAX_ITEMS_PER_PAGE = 300;
 export const ITEMS_SORT_ORDERS = {

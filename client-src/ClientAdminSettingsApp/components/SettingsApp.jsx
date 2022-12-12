@@ -43,12 +43,20 @@ export default class SettingsApp extends React.Component {
   onSubmit(e, bundleKey, bundle) {
     e.preventDefault();
     this.setState({submitForType: bundleKey, submitStatus: SUBMIT_STATUS__START});
-    Requests.post(ADMIN_URLS.ajaxFeed(), {settings: {[bundleKey]: bundle}})
+    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {[bundleKey]: bundle}})
       .then(() => {
         this.setState({submitStatus: null, submitForType: null, changed: false}, () => {
           showToast('Updated!', 'success');
         });
+      }).catch((error) => {
+      this.setState({submitStatus: null, submitForType: null}, () => {
+        if (!error.response) {
+          showToast('Network error. Please refresh the page and try again.', 'error');
+        } else {
+          showToast('Failed. Please try again.', 'error');
+        }
       });
+    });
   }
 
   render() {
