@@ -8,6 +8,7 @@ import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
 import {ENCLOSURE_CATEGORIES_DICT, ENCLOSURE_CATEGORIES} from "../../../../../common-src/Constants";
 import {randomHex, urlJoinWithRelative} from "../../../../../common-src/StringUtils";
 import Requests from "../../../../common/requests";
+import {showToast} from "../../../../common/ToastUtils";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -102,6 +103,20 @@ export default class RichEditorMediaDialog extends React.Component {
         this.insertMedia();
         setIsOpen(false);
       })
+    }, () => {
+      this.setState({uploadStatus: null, progressText: null}, () => {
+        setIsOpen(false);
+        showToast('Failed. Please try again.', 'error');
+      });
+    }, (error) => {
+      this.setState({uploadStatus: null, progressText: null}, () => {
+        setIsOpen(false);
+        if (!error.response) {
+          showToast('Network error. Please refresh the page and try again.', 'error');
+        } else {
+          showToast('Failed. Please try again.', 'error');
+        }
+      });
     });
   }
 

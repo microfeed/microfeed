@@ -224,6 +224,14 @@ export default class MediaManager extends React.Component {
     }, () => {
       showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
       this.setState({...this.initState});
+    }, (error) => {
+      this.setState({...this.initState}, () => {
+        if (!error.response) {
+          showToast('Network error. Please refresh the page and try again.', 'error');
+        } else {
+          showToast('Failed. Please try again.', 'error');
+        }
+      });
     });
   }
 
