@@ -1,3 +1,5 @@
+import {ADMIN_URLS} from "../../../../common-src/StringUtils";
+
 export const ITEM_CONTROLS = {
   TITLE: 'item_title',
   IMAGE: 'item_image',
@@ -111,6 +113,11 @@ export const CONTROLS_TEXTS_DICT = {
   [ITEM_CONTROLS.STATUS]: {
     linkName: 'Item status',
     modalTitle: 'Item / status',
-    text: "An item's status: published, or unpublished. If the status is published, then this item is visible via the website, rss feed, and json feed. An unpublished item can still be found on the 'See all items' page of the admin dashboard.",
+    text: "An item's status is either published, unlisted, or unpublished. <ul class='list-decimal list-inside'>" +
+      "<li>published: <b>listed</b> on the web/rss/json feed, and <b>visible</b> via the direct web link.</li>" +
+      "<li>unlisted: <b>not listed</b> on the web/rss/json feed, but <b>visible</b> via the direct web link.</li>" +
+      "<li>unpublished: <b>not listed</b> on the web/rss/json feed, and <b>not visible</b> via the direct web link. " +
+      `An admin can still find it and edit on the <a href="${ADMIN_URLS.allItems()}">See all items</a> page.</li>` +
+      "</ul>",
   },
 };
