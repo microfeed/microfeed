@@ -2,6 +2,11 @@
 
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 
+<img src="https://user-images.githubusercontent.com/1719237/207216534-9023093c-7436-4998-933a-25f297f3b44b.png" width=200 alt="microfeed: a lightweight self-hosted CMS on Cloudflare" />
+
+<i>a [Listen Notes](https://www.listennotes.com/) project</i>
+
+
 microfeed is a very lightweight CMS (Content management system), where you can easily publish audios, videos, photos, documents, blog posts, and any external urls to a feed in the form of web, rss, and json.
 
 microfeed is self-hosted on Cloudflare, using [Pages](https://pages.cloudflare.com/), [R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/). It's like using WordPress, but no need to manage your own servers. 
