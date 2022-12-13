@@ -28,7 +28,7 @@ export default function ExplainText({bundle}) {
         setIsOpen={setIsOpen}
         title={bundle.modalTitle || bundle.linkName}
       >
-        <div className="py-4">
+        <div className="py-2">
           {bundle && <div className="text-helper-color grid grid-cols-1 gap-4 text-sm">
             <div className="leading-relaxed" dangerouslySetInnerHTML={{__html: bundle.text}} />
             {bundle.rss ? <div>
