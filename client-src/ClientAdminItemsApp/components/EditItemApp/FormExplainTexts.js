@@ -1,4 +1,4 @@
-import {ADMIN_URLS} from "../../../../common-src/StringUtils";
+import {ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 
 export const ITEM_CONTROLS = {
   TITLE: 'item_title',
@@ -114,10 +114,8 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: 'Item status',
     modalTitle: 'Item / status',
     text: "An item's status is either published, unlisted, or unpublished. <ul class='list-decimal list-inside'>" +
-      "<li>published: <b>listed</b> on the web/rss/json feed, and <b>visible</b> via the direct web link.</li>" +
-      "<li>unlisted: <b>not listed</b> on the web/rss/json feed, but <b>visible</b> via the direct web link.</li>" +
-      "<li>unpublished: <b>not listed</b> on the web/rss/json feed, and <b>not visible</b> via the direct web link. " +
-      `An admin can still find it and edit on the <a href="${ADMIN_URLS.allItems()}">See all items</a> page.</li>` +
+      `${Object.keys(ITEM_STATUSES_DICT).map((k) => (
+        `<li>${ITEM_STATUSES_DICT[k].name}: ${ITEM_STATUSES_DICT[k].description}</li>`)).join('')}` +
       "</ul>",
   },
 };

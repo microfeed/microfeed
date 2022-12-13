@@ -30,7 +30,7 @@ export default function ExplainText({bundle}) {
       >
         <div className="py-4">
           {bundle && <div className="text-helper-color grid grid-cols-1 gap-4 text-sm">
-            <div dangerouslySetInnerHTML={{__html: bundle.text}} />
+            <div className="leading-relaxed" dangerouslySetInnerHTML={{__html: bundle.text}} />
             {bundle.rss ? <div>
               <div><ExternalLink text='in rss' url={PUBLIC_URLS.rssFeed()} /></div>
               <code className="m-code">{bundle.rss}</code>

@@ -2,6 +2,7 @@ export const STATUSES = {
   PUBLISHED: 1,
   UNPUBLISHED: 2,
   DELETED: 3,
+  UNLISTED: 4,
 };
 
 export const SETTINGS_CATEGORIES = {
@@ -218,11 +219,16 @@ export const ONBOARDING_TYPES = {
 export const ITEM_STATUSES_DICT = {
   [STATUSES.PUBLISHED]: {
     name: 'published',
-    description: 'Visible to public',
+    description: '<b>listed</b> on the web/rss/json feed, and <b>visible</b> via the direct web link.',
   },
   [STATUSES.UNPUBLISHED]: {
     name: 'unpublished',
-    description: 'Not visible to public. You can continue to edit and save it as a draft.'
+    description: '<b>not listed</b> on the web/rss/json feed, and <b>not visible</b> via the direct web link. ' +
+      'An admin can still find it and edit on the <a href="/admin/items/list/">See all items</a> page.</li>'
+  },
+  [STATUSES.UNLISTED]: {
+    name: 'unlisted',
+    description: '<b>not listed</b> on the web/rss/json feed, but <b>visible</b> via the direct web link.'
   },
 };
 
