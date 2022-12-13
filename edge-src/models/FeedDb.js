@@ -202,11 +202,15 @@ export default class FeedDb {
           let key = kwargKeyComponents[0];
           let op = '==';
           if (kwargKeyComponents.length > 0 &&
-            ['!=', '>', '<', '>=', '<=', '=='].includes(kwargKeyComponents[1])) {
+            ['!=', '>', '<', '>=', '<=', '==', 'in'].includes(kwargKeyComponents[1])) {
             op = kwargKeyComponents[1];
           }
-          whereList.push(`${key} ${op} ?`);
-          bindList.push(thing.queryKwargs[kwargKey]);
+          if (op === 'in') {
+            whereList.push(`${key} ${op} (${thing.queryKwargs[kwargKey].join(',')})`);
+          } else {
+            bindList.push(thing.queryKwargs[kwargKey]);
+            whereList.push(`${key} ${op} ?`);
+          }
         })
       }
       if (whereList.length > 0) {

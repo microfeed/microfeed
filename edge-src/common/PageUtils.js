@@ -89,7 +89,7 @@ class ResponseBuilder {
     return getFetchItemsParams(
       this.request,
       {
-        status: STATUSES.PUBLISHED,
+        // status: STATUSES.PUBLISHED,
         ...queryKwargs,
       }, this.fetchItemsObj.limit);
   }

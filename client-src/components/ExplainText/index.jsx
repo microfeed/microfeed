@@ -9,7 +9,7 @@ export default function ExplainText({bundle}) {
   const [isOpen, setIsOpen] = useState(false);
   const Icon = isOpen ? ArrowUpCircleIcon : ArrowRightCircleIcon;
   return (
-    <div className="mb-2 flex">
+    <div className="flex">
       <a
         href="#"
         className={clsx('lh-page-subtitle')}

@@ -280,7 +280,7 @@ export default class FeedPublicJsonBuilder {
     const existingitems = items || [];
     publicContent['items'] = [];
     existingitems.forEach((item) => {
-      if (item.status !== STATUSES.PUBLISHED) {
+      if (![STATUSES.PUBLISHED, STATUSES.UNLISTED].includes(item.status)) {
         return;
       }
       this._decorateForItem(item, this.baseUrl);

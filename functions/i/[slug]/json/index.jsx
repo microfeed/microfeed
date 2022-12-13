@@ -10,7 +10,7 @@ export async function onRequestGet({params, env, request}) {
     const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
       queryKwargs: {
         id: itemId,
-        status: STATUSES.PUBLISHED,
+        'status__in': [STATUSES.PUBLISHED, STATUSES.UNLISTED],
       },
       limit: 1,
     });

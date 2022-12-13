@@ -214,7 +214,7 @@ export default class EditItemApp extends React.Component {
                   onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({'image': cdnUrl})}
                 />
               </div>
-              <div className="ml-8 flex-1 grid grid-cols-1 gap-4">
+              <div className="ml-8 flex-1">
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.TITLE]}/>}
                   value={item.title}
@@ -226,7 +226,7 @@ export default class EditItemApp extends React.Component {
                     this.onUpdateItemMeta(attrDict);
                   }}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 mt-4">
                   <AdminDatetimePicker
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
                     value={item.pubDateMs}
@@ -240,7 +240,7 @@ export default class EditItemApp extends React.Component {
                     onChange={(e) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-2 mt-4">
                   <AdminRadio
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.STATUS]}/>}
                     groupName="item-status"
@@ -251,6 +251,11 @@ export default class EditItemApp extends React.Component {
                         checked: status === STATUSES.PUBLISHED,
                       },
                       {
+                        name: ITEM_STATUSES_DICT[STATUSES.UNLISTED].name,
+                        value: STATUSES.UNLISTED,
+                        checked: status === STATUSES.UNLISTED,
+                      },
+                      {
                         name: ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].name,
                         value: STATUSES.UNPUBLISHED,
                         checked: status === STATUSES.UNPUBLISHED,
@@ -259,6 +264,7 @@ export default class EditItemApp extends React.Component {
                       this.onUpdateItemMeta({'status': parseInt(e.target.value, 10)})
                     }}
                   />
+                  <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: ITEM_STATUSES_DICT[status].description}} />
                 </div>
               </div>
             </div>

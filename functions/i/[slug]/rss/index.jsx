@@ -10,7 +10,7 @@ export async function onRequestGet({request, env, params}) {
     const rssResponseBuilder = new RssResponseBuilder(env, request, {
       queryKwargs: {
         id: itemId,
-        status: STATUSES.PUBLISHED,
+        'status__in': [STATUSES.PUBLISHED, STATUSES.UNLISTED],
       },
       limit: 1,
     });
