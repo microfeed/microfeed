@@ -84,9 +84,8 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: '<itunes:explicit>',
     modalTitle: 'Item / <itunes:explicit>',
     text: "The episode parental advisory information.<br>" +
-      "Where the explicit value can be one of the following:<br>" +
-      "<b>true</b>. If you specify true, indicating the presence of explicit content, Apple Podcasts displays an Explicit parental advisory graphic for your episode. Episodes containing explicit material aren’t available in some Apple Podcasts territories.<br>" +
-      "<b>false</b>. If you specify false, indicating that the episode does not contain explicit language or adult content, Apple Podcasts displays a Clean parental advisory graphic for your episode.",
+      "If you specify yes, indicating the presence of explicit content, Apple Podcasts displays an Explicit parental advisory graphic for your episode. Episodes containing explicit material aren’t available in some Apple Podcasts territories.<br>" +
+      "If you specify no, indicating that the episode does not contain explicit language or adult content, Apple Podcasts displays a Clean parental advisory graphic for your episode.",
     rss: '<channel><item><itunes:explicit>false</itunes:explicit></item></channel>',
     json: '{ "items": [{"_microfeed": {"itunes:explicit": true}}] }',
   },
@@ -94,7 +93,7 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: '<itunes:title>',
     modalTitle: 'Item / <itunes:title>',
     text: "An episode title specific for Apple Podcasts." +
-      "<itunes:title> is a string containing a clear concise name of your episode on Apple Podcasts.<br>" +
+      "itunes:title is a string containing a clear concise name of your episode on Apple Podcasts.<br>" +
       "Don’t specify the episode number or season number in this tag. Instead, specify those details in the appropriate tags ( itunes:episode, itunes:season). Also, don’t repeat the title of your show within your episode title.<br>" +
       "Separating episode and season number from the title makes it possible for Apple to easily index and order content from all shows.",
     rss: '<channel><item><itunes:title>Title Here</itunes:title></item></channel>',
@@ -106,9 +105,9 @@ export const CONTROLS_TEXTS_DICT = {
     text: "The episode type in Apple Podcasts.<br>" +
       "If an episode is a trailer or bonus content, use this tag.<br>" +
       "Where the episodeType value can be one of the following:<br>" +
-      "<b>Full</b> (default). Specify full when you are submitting the complete content of your show.<br>" +
-      "<b>Trailer</b>. Specify trailer when you are submitting a short, promotional piece of content that represents a preview of your current show.<br>" +
-      "<b>Bonus</b>. Specify bonus when you are submitting extra content for your show (for example, behind the scenes information or interviews with the cast) or cross-promotional content for another show.",
+      "<b>full</b> (default). Specify full when you are submitting the complete content of your show.<br>" +
+      "<b>trailer</b>. Specify trailer when you are submitting a short, promotional piece of content that represents a preview of your current show.<br>" +
+      "<b>bonus</b>. Specify bonus when you are submitting extra content for your show (for example, behind the scenes information or interviews with the cast) or cross-promotional content for another show.",
     rss: '<channel><item><itunes:episodeType>full</itunes:episodeType></item></channel>',
     json: '{ "items": [{"_microfeed": {"itunes:episodeType": "full"}}] }',
   },
@@ -137,10 +136,10 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: '<itunes:block>',
     modalTitle: 'Item / <itunes:block>',
     text: "The episode show or hide status on Apple Podcasts.<br>" +
-      "If you want an episode removed from the Apple directory, use this tag.<br>" +
-      "Specifying the itunes:block tag with a Yes value prevents that episode from appearing in Apple Podcasts.<br>" +
+      "If you want an episode removed from the Apple directory, select 'yes'.<br>" +
+      "Specifying the itunes:block tag with a 'yes' value prevents that episode from appearing in Apple Podcasts.<br>" +
       "For example, you might want to block a specific episode if you know that its content would otherwise cause the entire podcast to be removed from Apple Podcasts.<br>" +
-      "Specifying any value other than Yes has no effect.",
+      "Specifying any value other than 'yes' has no effect.",
     rss: '<channel><item><itunes:block>Yes</itunes:block></item></channel>',
     json: '{ "items": [{"_microfeed": {"itunes:block": true}}] }',
   },
