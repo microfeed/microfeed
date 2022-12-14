@@ -276,8 +276,11 @@ export default class SetupChecklistApp extends React.Component {
       <div className="lh-page-title">
         Setup checklist
       </div>
-      {onboardingResult.allOk && <div className="text-helper-color">
-        <i>You are all set! Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a></i>
+      {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded p-2">
+        <i>You are all set!</i>
+        <div className="mt-2">
+          Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a>
+        </div>
       </div>}
       <div className="mt-8">
         <SetupPublicBucketUrl
