@@ -8,6 +8,11 @@ import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
 import {PREDEFINED_SUBSCRIBE_METHODS} from '../../../../common-src/Constants';
 import NewSubscribeDialog from "./components/NewSubscribeDialog";
+import ExplainText from "../../../components/ExplainText";
+import {
+  SETTINGS_CONTROLS,
+  CONTROLS_TEXTS_DICT
+} from "../FormExplainTexts";
 
 function initMethodsDict() {
   return {
@@ -207,7 +212,7 @@ export default class SubscribeSettingsApp extends React.Component {
     const {submitting, submitForType} = this.props;
     const methods = methodsDict.methods || [];
     return (<SettingsBase
-      title="Subscribe methods"
+      titleComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.SUBSCRIBE_METHODS]}/>}
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}

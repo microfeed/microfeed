@@ -44,7 +44,7 @@ export default class TrackingSettingsApp extends React.Component {
         />
       </div>
       <div className="mt-4 text-xs text-helper-color">
-        microfeed will automatically adds 3rd-party tracking urls before the url of a media file, so you can easily track download stats. This is a common practice in the podcast industry.
+        microfeed will automatically add 3rd-party tracking urls before the url of a media file, so you can easily track download stats. This is a common practice in the podcast industry.
       </div>
       {urls.length > 0 && <div className="mt-4 text-xs break-all text-helper-color">
         <div className="mb-2">

@@ -5,6 +5,8 @@ import AdminInput from "../../../components/AdminInput";
 import {DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE} from "../../../../common-src/Constants";
 import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
+import ExplainText from "../../../components/ExplainText";
+import {CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS} from "../FormExplainTexts";
 
 export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
@@ -90,7 +92,10 @@ export default class WebGlobalSettingsApp extends React.Component {
             <div className="col-span-1">
               <AdminRadio
                 customLabelClass="m-input-label-small"
-                label="Sort order"
+                labelComponent={<ExplainText
+                  bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.ITEMS_SORT_ORDER]}
+                  customClass="m-input-label-small"
+                />}
                 groupName="items-sort-order"
                 buttons={[{
                   name: 'Newest first',

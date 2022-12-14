@@ -6,12 +6,15 @@ export default class SettingsBase extends React.Component {
   }
 
   render() {
-    const {submitForType, submitting, currentType, onSubmit, children, title} = this.props;
+    const {submitForType, submitting, currentType, onSubmit, children, title, titleComponent} = this.props;
     const submittingForThis = submitForType === currentType;
     return (<form className="lh-page-card h-full">
       <h2 className="lh-page-title">
         <div className="flex">
-          <div className="flex-1">{title}</div>
+          <div className="flex-1">
+            {title}
+            {titleComponent}
+          </div>
           {onSubmit && <div className="flex-none">
             <button
               disabled={submittingForThis || submitting}

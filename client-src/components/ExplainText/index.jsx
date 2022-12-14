@@ -5,14 +5,14 @@ import AdminDialog from "../AdminDialog";
 import ExternalLink from "../ExternalLink";
 import {PUBLIC_URLS} from "../../../common-src/StringUtils";
 
-export default function ExplainText({bundle}) {
+export default function ExplainText({bundle, customClass}) {
   const [isOpen, setIsOpen] = useState(false);
   const Icon = isOpen ? ArrowUpCircleIcon : ArrowRightCircleIcon;
   return (
     <div className="flex">
       <a
         href="#"
-        className={clsx('lh-page-subtitle')}
+        className={clsx(customClass || 'lh-page-subtitle')}
         onClick={(e) => {
           e.preventDefault();
           setIsOpen(true);
