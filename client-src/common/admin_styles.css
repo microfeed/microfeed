@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-bgsecondary-color;
+}
+
+a {
+  @apply text-black hover:text-brand-light font-semibold;
+}
+
+.m-code {
+  @apply p-4 block bg-gray-100 rounded-md mt-2 text-xs text-red-500 select-all break-all;
+}
+
+/*
+   Buttons
+ */
+.lh-btn {
+  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded;
+  @apply disabled:opacity-50;
+}
+
+.lh-btn-secondary {
+  @apply bg-bgsecondary-color text-fgsecondary-color border border-bdgray-color text-sm;
+}
+
+.lh-btn-brand-dark {
+  @apply bg-brand-dark text-white text-sm border border-brand-dark hover:bg-brand-light hover:border-brand-light;
+}
+
+.lh-btn-sm {
+  @apply text-sm py-1 px-2 rounded-sm;
+}
+
+.lh-btn-lg {
+  @apply text-lg py-3 px-5 rounded-md;
+}
+
+/*
+  Cards
+ */
+.lh-page-card {
+  @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light rounded-md;
+}
+
+.lh-page-title {
+  @apply text-lg font-bold text-gray-500 mb-4;
+}
+
+.lh-page-subtitle {
+  @apply font-semibold text-gray-500 mb-2 hover:opacity-50;
+}
+
+.m-page-summary {
+  @apply cursor-pointer font-semibold text-gray-500 hover:opacity-50;
+}
+
+/*
+  Images / Audio
+ */
+.lh-upload-image-size {
+  @apply w-32 h-32 xl:w-64 xl:h-64;
+}
+
+.lh-upload-box {
+  @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50 rounded-md;
+}
+
+.lh-upload-wrapper .lh-upload-fileinput.is-disabled {
+  @apply border-0;
+}
+
+/*
+  Form / Input
+ */
+.m-input-label-small {
+  @apply text-helper-color font-normal text-sm mb-2;
+}
+
+/*
+  Simple icons
+ */
+.lh-icon-arrow-right:before {
+  content: "→";
+}
+
+.lh-icon-arrow-left:before {
+  content: "←";
+}
+
+.lh-icon-x-mark:before {
+  content: "×";
+}
+
+/*
+  Make Quill styling happy
+ */
+.quill .ql-container {
+  height: auto;
+}
+
+.ql-container .ql-editor {
+  height: auto;
+  min-height:200px;
+  max-height: 500px;
+  overflow: auto;
+  /* @apply min-h-screen; */
+}
+
+.ql-toolbar {
+  @apply rounded-tl rounded-tr;
+}
+
+.ql-container {
+  @apply rounded-bl rounded-br;
+}
