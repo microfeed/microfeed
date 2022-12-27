@@ -252,7 +252,7 @@ function CustomDomain({onboardState, cloudflareUrls}) {
           </a>
         </div>
         <div className="my-4">
-          <img src="/assets/howto/add-app1.png" className="w-full border"/>
+          <img src="/assets/howto/add-app3.png" className="w-full border"/>
         </div>
       </details>
     </div>
