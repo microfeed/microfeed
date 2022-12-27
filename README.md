@@ -43,7 +43,8 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a podcast feed of audios
 * a blog feed of posts
 * an Instagram-like feed of images (e.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/))
-* a YouTube-like feed of videos, a personal website with custom links (e.g., [wenbin.org](https://www.wenbin.org/))
+* a YouTube-like feed of videos
+* a personal website with custom links (e.g., [wenbin.org](https://www.wenbin.org/))
 * a content curation feed of external urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
 * ...
