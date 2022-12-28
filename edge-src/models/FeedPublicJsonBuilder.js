@@ -20,6 +20,10 @@ export default class FeedPublicJsonBuilder {
     this.forOneItem = forOneItem;
   }
 
+  _isValidMediaFile(mediaFile) {
+    return mediaFile && mediaFile.category && mediaFile.url && mediaFile.url.trim();
+  }
+
   _decorateForItem(item, baseUrl) {
     item.webUrl = PUBLIC_URLS.webItem(item.id, item.title, baseUrl);
     item.jsonUrl = PUBLIC_URLS.jsonItem(item.id, null, baseUrl);
@@ -32,7 +36,7 @@ export default class FeedPublicJsonBuilder {
     if (item.image) {
       item.image = urlJoinWithRelative(this.publicBucketUrl, item.image);
     }
-    if (item.mediaFile && item.mediaFile.category) {
+    if (this._isValidMediaFile(item.mediaFile)) {
       item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
       item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
       item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
@@ -199,21 +203,23 @@ export default class FeedPublicJsonBuilder {
       guid: item.guid,
     };
 
-    if (mediaFile.url) {
-      attachment['url'] = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
-    }
-    if (mediaFile.contentType) {
-      attachment['mime_type'] = mediaFile.contentType;
-    }
-    if (mediaFile.sizeByte) {
-      attachment['size_in_byte'] = mediaFile.sizeByte;
-    }
-    if (mediaFile.durationSecond) {
-      attachment['duration_in_seconds'] = mediaFile.durationSecond;
-      _microfeed['duration_hhmmss'] = secondsToHHMMSS(mediaFile.durationSecond);
-    }
-    if (Object.keys(attachment).length > 0) {
-      newItem['attachments'] = [attachment];
+    if (this._isValidMediaFile(mediaFile)) {
+      if (mediaFile.url) {
+        attachment['url'] = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
+      }
+      if (mediaFile.contentType) {
+        attachment['mime_type'] = mediaFile.contentType;
+      }
+      if (mediaFile.sizeByte) {
+        attachment['size_in_byte'] = mediaFile.sizeByte;
+      }
+      if (mediaFile.durationSecond) {
+        attachment['duration_in_seconds'] = mediaFile.durationSecond;
+        _microfeed['duration_hhmmss'] = secondsToHHMMSS(mediaFile.durationSecond);
+      }
+      if (Object.keys(attachment).length > 0) {
+        newItem['attachments'] = [attachment];
+      }
     }
     if (item.link) {
       newItem['url'] = item.link;
