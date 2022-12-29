@@ -7,6 +7,7 @@ import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import ExplainText from "../../../components/ExplainText";
 import {CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS} from "../FormExplainTexts";
+import {isValidUrl} from "../../../../common-src/StringUtils";
 
 export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
@@ -45,6 +46,14 @@ export default class WebGlobalSettingsApp extends React.Component {
       submitForType={submitForType}
       currentType={currentType}
       onSubmit={(e) => {
+        if (publicBucketUrl) {
+          if (!isValidUrl(publicBucketUrl)) {
+            showToast('Invalid url. A valid url should start with http:// or https://, ' +
+              'for example, https://media-cdn.microfeed.org',
+              'error', 5000);
+            return;
+          }
+        }
         this.props.onSubmit(e, currentType, {
           favicon,
           publicBucketUrl,
