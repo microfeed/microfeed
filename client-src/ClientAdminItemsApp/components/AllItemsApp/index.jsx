@@ -25,6 +25,7 @@ import {
 import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
 import AdminRadio from "../../../components/AdminRadio";
+import {isValidMediaFile} from "../../../../edge-src/common/MediaFileUtils";
 
 const columnHelper = createColumnHelper();
 const columns = [
@@ -166,9 +167,10 @@ export default class AllItemsApp extends React.Component {
         </div>
       </div>,
       mediaFile: <div className="flex flex-col items-center">
-        {item.mediaFile ? <div>
+        {isValidMediaFile(item.mediaFile) ? <div>
           <ExternalLink
-            url={urlJoinWithRelative(publicBucketUrl, item.mediaFile.url)}
+            url={item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL ? item.mediaFile.url:
+              urlJoinWithRelative(publicBucketUrl, item.mediaFile.url)}
             text={ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category].name}
           />
           {[ENCLOSURE_CATEGORIES.AUDIO, ENCLOSURE_CATEGORIES.VIDEO].includes(item.mediaFile.category) &&

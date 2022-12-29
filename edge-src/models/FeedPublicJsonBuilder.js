@@ -7,6 +7,7 @@ import {
 } from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
+import {isValidMediaFile} from "../common/MediaFileUtils";
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
@@ -18,10 +19,6 @@ export default class FeedPublicJsonBuilder {
     this.publicBucketUrl = this.webGlobalSettings.publicBucketUrl || '';
     this.baseUrl = baseUrl;
     this.forOneItem = forOneItem;
-  }
-
-  _isValidMediaFile(mediaFile) {
-    return mediaFile && mediaFile.category && mediaFile.url && mediaFile.url.trim();
   }
 
   _decorateForItem(item, baseUrl) {
@@ -36,7 +33,7 @@ export default class FeedPublicJsonBuilder {
     if (item.image) {
       item.image = urlJoinWithRelative(this.publicBucketUrl, item.image);
     }
-    if (this._isValidMediaFile(item.mediaFile)) {
+    if (isValidMediaFile(item.mediaFile)) {
       item.mediaFile.isAudio = item.mediaFile.category === ENCLOSURE_CATEGORIES.AUDIO;
       item.mediaFile.isDocument = item.mediaFile.category === ENCLOSURE_CATEGORIES.DOCUMENT;
       item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
@@ -203,7 +200,7 @@ export default class FeedPublicJsonBuilder {
       guid: item.guid,
     };
 
-    if (this._isValidMediaFile(mediaFile)) {
+    if (isValidMediaFile(mediaFile)) {
       if (mediaFile.url) {
         attachment['url'] = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
       }
