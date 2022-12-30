@@ -26,7 +26,7 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
     * [Step 2. Put some secrets on your forked repo](#step-2-put-some-secrets-on-your-forked-repo)
     * [Step 3. Run GitHub Action to deploy code](#step-3-run-github-action-to-deploy-code)
     * [Step 4. Make a few clicks on Cloudflare dashboard](#step-4-make-a-few-clicks-on-cloudflare-dashboard)
-    * [Step 5. Done. Start publishing!](#step-5-done-start-publishing-)
+    * [Step 5. Done. Start publishing](#step-5-done-start-publishing)
     * [Bonus. Update to the latest version of microfeed](#bonus-update-to-the-latest-version-of-microfeed)
   * [FAQs](#faqs)
   * [Contributions](#contributions)
@@ -201,14 +201,18 @@ Upon accessing the admin dashboard for the first time, you'll complete the setup
 
 <img width="1182" alt="Screenshot 2022-12-17 at 10 34 05 AM" src="https://user-images.githubusercontent.com/1719237/208216864-38a65086-77ef-4595-bc05-c87be2676e6d.png">
 
-### Step 5. Done. Start publishing!
+### Step 5. Done. Start publishing
 
 Once you've completed the setup process, your microfeed instance will be ready to use.
 You can add, update, or delete items from the admin dashboard.
 
 You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
 
-<img width="1094" alt="Screenshot 2022-12-26 at 1 15 57 PM" src="https://user-images.githubusercontent.com/1719237/209499220-a2f7b7e4-f0b0-422a-bdf2-2ffed4b37aff.png">
+<img width="1098" alt="Screenshot 2022-12-30 at 7 57 45 PM" src="https://user-images.githubusercontent.com/1719237/210062910-e56135f6-557e-419e-a00d-b25dd391c93d.png">
+
+The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a templating language, where you can access to variables from Feed Json or Item Json. For example, on our marketing website [microfeed.org](https://www.microfeed.org/)'s home page (Feed Web), we use variables in the html code from [microfeed.org/json/](https://www.microfeed.org/json/), and on [an item's page](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/) (Item Web), we use variables from [${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json).
+
+With the easy access to the json data of a microfeed instance (i.e., [Feed Json](https://www.microfeed.org/json/) and [Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json), you can use it as a headless CMS and build your own client apps to display the content.
 
 
 ### Bonus. Update to the latest version of microfeed
