@@ -65,11 +65,12 @@ export default class FeedPublicJsonBuilder {
     publicContent['description'] = channel.description || '';
 
     if (channel.image) {
-      publicContent['icon'] = urlJoinWithRelative(this.publicBucketUrl, channel.image);
+      publicContent['icon'] = urlJoinWithRelative(this.publicBucketUrl, channel.image, this.baseUrl);
     }
 
     if (this.webGlobalSettings.favicon && this.webGlobalSettings.favicon.url) {
-        publicContent['favicon'] = urlJoinWithRelative(this.publicBucketUrl, this.webGlobalSettings.favicon.url);
+        publicContent['favicon'] = urlJoinWithRelative(
+          this.publicBucketUrl, this.webGlobalSettings.favicon.url, this.baseUrl);
     }
 
     if (channel.publisher) {
@@ -119,7 +120,8 @@ export default class FeedPublicJsonBuilder {
       microfeedExtra['subscribe_methods'] = '';
     } else {
       microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
-        m.image = urlJoinWithRelative(this.baseUrl, m.image);
+        // TODO: supports custom icons that are hosted on R2
+        m.image = urlJoinWithRelative(this.publicBucketUrl, m.image, this.baseUrl);
         if (!m.editable) {
           switch (m.type) {
             case 'rss':

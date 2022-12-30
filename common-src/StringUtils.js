@@ -116,13 +116,13 @@ export function urlJoin(...args) {
  * 1) Relative url to website, e.g., /assets/default/something.png, or
  * 2) Relative url to cdn (r2), e.g., production/something.png
  */
-export function urlJoinWithRelative(baseUrl, path) {
+export function urlJoinWithRelative(baseUrl, path, baseUrlForRelativePath = '/') {
   if (!path) {
     return null;
   }
 
   if (path.startsWith('/')) {
-    return path;
+    return urlJoin(baseUrlForRelativePath, path);
   }
   if (baseUrl) {
     return urlJoin(baseUrl, path);
