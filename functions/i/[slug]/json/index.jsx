@@ -26,3 +26,7 @@ export async function onRequestGet({params, env, request}) {
   }
   return JsonResponseBuilder.Response404();
 }
+
+export function onRequestHead() {
+  return new Response('ok');
+}
