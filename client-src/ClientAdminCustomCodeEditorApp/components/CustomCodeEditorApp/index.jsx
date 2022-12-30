@@ -76,7 +76,7 @@ const CODE_FILES_DICT = {
     </div>),
   },
   [CODE_FILES.WEB_BODY_END]: {
-    'name': 'Web Boby End',
+    'name': 'Web Body End',
     language: 'html',
     viewUrl: () => PUBLIC_URLS.webFeed(),
     description: (<div>
