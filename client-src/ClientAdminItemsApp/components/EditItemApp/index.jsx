@@ -130,7 +130,8 @@ export default class EditItemApp extends React.Component {
       });
   }
 
-  onSubmit() {
+  onSubmit(e) {
+    e.preventDefault();
     const {item, itemId, action} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
