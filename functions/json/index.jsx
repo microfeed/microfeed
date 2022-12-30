@@ -9,3 +9,7 @@ export async function onRequestGet({env, request}) {
   });
   return await jsonResponseBuilder.getResponse();
 }
+
+export function onRequestHead() {
+  return new Response('ok');
+}

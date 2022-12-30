@@ -16,3 +16,7 @@ export async function onRequestGet({request, env}) {
     }
   });
 }
+
+export function onRequestHead() {
+  return new Response('ok');
+}
