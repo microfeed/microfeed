@@ -1,11 +1,24 @@
-# microfeed: a lightweight cms self-hosted on cloudflare
+</br>
+</br>
+<div align="center">
+  <a href="https://www.microfeed.org/" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/1719237/210119945-50e1d444-2d12-43d2-a96d-65bdbccecb70.png">
+    <img src="https://user-images.githubusercontent.com/1719237/207514210-99ddbd03-f8f0-410a-96c8-80da1afb804d.png" width="280" alt="Logo"/>
+  </picture>
+  </a>
+</div>
 
-[<img src="https://user-images.githubusercontent.com/1719237/207514210-99ddbd03-f8f0-410a-96c8-80da1afb804d.png" width=400 alt="microfeed: a lightweight self-hosted CMS on Cloudflare" />](https://www.microfeed.org/)
+<h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>
 
-[![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
-[![Email us](https://img.shields.io/badge/Email-support%40microfeed.org-blue)](mailto:support@microfeed.org)
-[![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://www.microfeed.org/i/introducing-microfeed-self-hosted-cms-on-cloudflare-opensource-serverless-free-uhbQEmArlC2/)
-
+  <p align="center">
+    <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>Report Bug</b></a>
+    ·
+    <a href="https://github.com/microfeed/microfeed/discussions/new?category=ideas"><b>Request Feature</b></a>
+    ·
+    <a href="mailto:support@microfeed.org"><b>Email Us Privately</b></a>
+  </p>
+  
 Welcome to microfeed, a lightweight content management system (CMS) self-hosted on Cloudflare.
 With microfeed, you can easily publish a variety of content such as audios, videos, photos, documents, blog posts,
 and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect solution for tech-savvy individuals who
@@ -17,6 +30,10 @@ microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted
 If you have any questions or feedback, please don't hesitate to reach out to us at support@microfeed.org. We'd love to hear from you!
 
 ## Table of contents
+[![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
+[![Email us](https://img.shields.io/badge/Email-support%40microfeed.org-blue)](mailto:support@microfeed.org)
+[![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://www.microfeed.org/i/introducing-microfeed-self-hosted-cms-on-cloudflare-opensource-serverless-free-uhbQEmArlC2/)
+
 * [How it works](#how-it-works)
 * [Installation](#installation)
   * [Prerequisites](#prerequisites)
