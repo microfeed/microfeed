@@ -180,6 +180,11 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
         <div className="mt-4">
           Fill in info for <b>{cloudflareUrls.pagesDevUrl}/admin</b>:
         </div>
+        <div className="mt-2 text-red-500">
+          {'Note: Please follow numbered arrows in order. Otherwise, "Path" may not be edited. ' +
+           'If you see "the zone does not exist" message, please ignore it and go ahead to Next. ' +
+           'We hope Cloudflare can improve their UI to make things less confusing :)'}
+        </div>
         <div className="mt-2">
           <img src="/assets/howto/add-app1.png" className="w-full border"/>
         </div>
