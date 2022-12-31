@@ -29,13 +29,13 @@ microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted
 
 If you have any questions or feedback, please don't hesitate to reach out to us at support@microfeed.org. We'd love to hear from you!
 
-## Table of contents
+## 📚 Table of contents
 [![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 [![Email us](https://img.shields.io/badge/Email-support%40microfeed.org-blue)](mailto:support@microfeed.org)
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://www.microfeed.org/i/introducing-microfeed-self-hosted-cms-on-cloudflare-opensource-serverless-free-uhbQEmArlC2/)
 
-* [How it works](#how-it-works)
-* [Installation](#installation)
+* [⭐️ How it works](#%EF%B8%8F-how-it-works)
+* [🚀 Installation](#-installation)
   * [Prerequisites](#prerequisites)
   * [Step 1. Fork the microfeed repo to your GitHub](#step-1-fork-the-microfeed-repo-to-your-github)
   * [Step 2. Put some secrets on your forked repo](#step-2-put-some-secrets-on-your-forked-repo)
@@ -43,12 +43,12 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
   * [Step 4. Make a few clicks on Cloudflare dashboard](#step-4-make-a-few-clicks-on-cloudflare-dashboard)
   * [Step 5. Done. Start publishing](#step-5-done-start-publishing)
   * [Bonus. Update to the latest version of microfeed](#bonus-update-to-the-latest-version-of-microfeed)
-* [FAQs](#faqs)
-* [Contributions](#contributions)
+* [💻 FAQs](#-faqs)
+* [💪 Contributions](#-contributions)
   * [Run microfeed on local](#run-microfeed-on-local)
-* [License](#license)
+* [🛡️ License](#-license)
 
-## How it works
+## ⭐️ How it works
 
 Since the 1990s, a significant portion of the web has been powered by feeds.
 People (and bots) publish items to a feed, and others can subscribe to that feed to receive new content.
@@ -82,9 +82,9 @@ upload media files, and customize web page styles. If you've used WordPress befo
 
 ![image-6d056193c81c0b8f5de0503f5af18116](https://user-images.githubusercontent.com/1719237/209486588-00acefe0-dd51-4bfc-aed7-1f63850aa720.png)
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
-## Installation
+## 🚀 Installation
 
 Roughly you'll follow these steps to install a microfeed instance to Cloudflare:
 
@@ -104,7 +104,7 @@ Roughly you'll follow these steps to install a microfeed instance to Cloudflare:
 * Have a Cloudflare account. If you don't have one already, you can [sign up for free at Cloudflare.com](https://dash.cloudflare.com/sign-up).
 * Have a GitHub account. If you don't have one, you can [sign up for free at GitHub.com](https://github.com/signup).
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
 ### Step 1. Fork the microfeed repo to your GitHub
 
@@ -113,7 +113,7 @@ Simply click on [https://github.com/microfeed/microfeed/fork](https://github.com
 You may choose to modify the code in your forked repository in the future, but it's likely that you won't need to
 touch the code at all. Simply fork the repository and keep it synced for future use.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
 ### Step 2. Put some secrets on your forked repo
 
@@ -197,7 +197,7 @@ In total, you'll add 5 secrets for GitHub Actions:
 
 <img width="826" alt="Screenshot 2022-12-04 at 4 10 46 PM" src="https://user-images.githubusercontent.com/1719237/205524410-268abf92-af61-467a-8883-78b8d4de3c56.png">
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
 ### Step 3. Run GitHub Action to deploy code
 
@@ -212,7 +212,7 @@ If you see the green checkmark, then the deployment is successful. And you can s
 
 You can access the site via ${CLOUDFLARE_PROJECT_NAME}.pages.dev, for example, [https://microfeed-org.pages.dev/](https://microfeed-org.pages.dev/)
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
 ### Step 4. Make a few clicks on Cloudflare dashboard
 
@@ -222,7 +222,7 @@ Upon accessing the admin dashboard for the first time, you'll complete the setup
 
 <img width="1182" alt="Screenshot 2022-12-17 at 10 34 05 AM" src="https://user-images.githubusercontent.com/1719237/208216864-38a65086-77ef-4595-bc05-c87be2676e6d.png">
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
 ### Step 5. Done. Start publishing
 
@@ -237,7 +237,7 @@ The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a t
 
 With the easy access to the json data of a microfeed instance (i.e., [Feed Json](https://www.microfeed.org/json/) and [Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json), you can use it as a headless CMS and build your own client apps to display the content.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
 ### Bonus. Update to the latest version of microfeed
 
@@ -250,9 +250,9 @@ You'll first sync up the code in your forked repo:
 
 Then go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml) and run Workflow to deploy the new code.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
-## FAQs
+## 💻 FAQs
 
 <details>
 <summary><b>How can I track podcast / video / image downloads?</b></summary>
@@ -309,9 +309,9 @@ If you are looking for something new and are interested in exploring different o
 It is always a good idea to carefully evaluate any service before using it to ensure that it meets your needs and is a good fit for your use case.
 </details>
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
-## Contributions
+## 💪 Contributions
 We welcome contributions to microfeed!
 If you have an idea for a new feature or have found a bug, please [open an issue](https://github.com/microfeed/microfeed/issues/new) in the repository.
 If you'd like to submit a fix or new feature, please create a pull request with a detailed description of your changes.
@@ -336,9 +336,9 @@ npm run dev
 
 You should be able to access to a local microfeed instance via http://127.0.0.1:8788/.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
 
-## License
+## 🛡️ License
 microfeed is licensed under the [AGPL-3.0](https://github.com/microfeed/microfeed/blob/main/LICENSE) license. Please see [the LICENSE file](https://github.com/microfeed/microfeed/blob/main/LICENSE) for more information.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#-table-of-contents)
