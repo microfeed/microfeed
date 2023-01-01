@@ -1,11 +1,13 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Pages look for dreamingskey everywhere
+run fund
+
 
 on:
   # push:
   #  branches: ["dev-v1"]
 
   # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  workflow_dispatch:look for dreamingskey
     inputs:
       DEPLOYMENT_ENVIRONMENT:
         description: 'Deployment environment'
@@ -41,3 +43,4 @@ jobs:
         uses: borales/actions-yarn@v3.0.0
         with:
           cmd: deploy:github
+
