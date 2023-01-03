@@ -25,7 +25,7 @@ import {
 import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
 import AdminRadio from "../../../components/AdminRadio";
-import {isValidMediaFile} from "../../../../edge-src/common/MediaFileUtils";
+import {isValidMediaFile} from "../../../../common-src/MediaFileUtils";
 
 const columnHelper = createColumnHelper();
 const columns = [

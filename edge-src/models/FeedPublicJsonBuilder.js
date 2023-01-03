@@ -7,7 +7,7 @@ import {
 } from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
-import {isValidMediaFile} from "../common/MediaFileUtils";
+import {isValidMediaFile} from "../../common-src/MediaFileUtils";
 
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
