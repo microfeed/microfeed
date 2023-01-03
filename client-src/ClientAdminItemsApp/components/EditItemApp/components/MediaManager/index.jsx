@@ -7,23 +7,20 @@ import {
   secondsToHHMMSS,
   urlJoinWithRelative
 } from '../../../../../../common-src/StringUtils';
-import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT} from "../../../../../../common-src/Constants";
+import {
+  ENCLOSURE_CATEGORIES,
+  ENCLOSURE_CATEGORIES_DICT,
+  SUPPORTED_ENCLOSURE_CATEGORIES
+} from "../../../../../../common-src/Constants";
 import AdminRadio from "../../../../../components/AdminRadio";
 import AdminInput from "../../../../../components/AdminInput";
 import {FileUploader} from "react-drag-drop-files";
 import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
 import {getPublicBaseUrl} from "../../../../../common/ClientUrlUtils";
 import {showToast} from "../../../../../common/ToastUtils";
+import {getMediaFileFromUrl} from "../../../../../../common-src/MediaFileUtils";
 
 const UPLOAD_STATUS__START = 1;
-
-const SUPPORTED_ENCLOSURE_CATEGORIES = [
-  ENCLOSURE_CATEGORIES.AUDIO,
-  ENCLOSURE_CATEGORIES.VIDEO,
-  ENCLOSURE_CATEGORIES.DOCUMENT,
-  ENCLOSURE_CATEGORIES.IMAGE,
-  ENCLOSURE_CATEGORIES.EXTERNAL_URL,
-];
 
 function PreviewCurrentMediaFile({url, contentType, category, durationSecond, sizeByte, setRef, updateDuration}) {
   return (<div className="mb-8">
@@ -140,20 +137,15 @@ export default class MediaManager extends React.Component {
     this.onFileUpload = this.onFileUpload.bind(this);
     this.setState = this.setState.bind(this);
 
-    const {mediaFile} = props;
-    let {url, category, contentType, sizeByte, durationSecond} = mediaFile || {};
-
+    const {initMediaFile} = props;
     const urlParams = new URLSearchParams(window.location.search);
-    if (!category) {
-      category = urlParams.get('media_category');
-      if (!SUPPORTED_ENCLOSURE_CATEGORIES.includes(category)) {
-        category = null;
-      }
-    }
+    const mediaFileFromUrl = getMediaFileFromUrl(urlParams);
 
-    if (!url) {
-      url = urlParams.get('media_url') || '';
-    }
+    const mediaFile = {
+      ...initMediaFile,
+      ...mediaFileFromUrl,
+    };
+    let {url, category, contentType, sizeByte, durationSecond} = mediaFile || {};
 
     const webGlobalSettings = props.feed.settings.webGlobalSettings || {};
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';

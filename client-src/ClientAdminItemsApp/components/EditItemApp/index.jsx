@@ -12,7 +12,12 @@ import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 import MediaManager from "./components/MediaManager";
-import {NAV_ITEMS, NAV_ITEMS_DICT, STATUSES, ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
+import {
+  NAV_ITEMS,
+  NAV_ITEMS_DICT,
+  STATUSES,
+  ITEM_STATUSES_DICT,
+} from "../../../../common-src/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "../../../components/AdminSideQuickLinks";
 import AdminRichEditor from "../../../components/AdminRichEditor";
 import ExplainText from "../../../components/ExplainText";
@@ -21,6 +26,7 @@ import {
   CONTROLS_TEXTS_DICT
 } from "./FormExplainTexts";
 import {preventCloseWhenChanged} from "../../../common/BrowserUtils";
+import {getMediaFileFromUrl} from "../../../../common-src/MediaFileUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -57,13 +63,6 @@ export default class EditItemApp extends React.Component {
     }
     const item = feed.item || initItem();
 
-    if (action === 'create') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const title = urlParams.get('title');
-      if (title) {
-        item.title = title;
-      }
-    }
     this.state = {
       feed,
       onboardingResult,
@@ -79,6 +78,24 @@ export default class EditItemApp extends React.Component {
 
   componentDidMount() {
     preventCloseWhenChanged(() => this.state.changed);
+
+    const {action, item} = this.state;
+    if (action === 'create') {
+      const {mediaFile} = item;
+      const urlParams = new URLSearchParams(window.location.search);
+      const title = urlParams.get('title') || '';
+
+      const mediaFileFromUrl = getMediaFileFromUrl(urlParams);
+
+      const attrDict = {
+        title,
+        mediaFile: {
+          ...mediaFile,
+          ...mediaFileFromUrl,
+        },
+      };
+      this.onUpdateItemMeta(attrDict);
+    }
   }
 
   onUpdateFeed(props, onSuccess) {
@@ -193,7 +210,7 @@ export default class EditItemApp extends React.Component {
             <MediaManager
               labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.MEDIA_FILE]}/>}
               feed={feed}
-              mediaFile={mediaFile}
+              initMediaFile={mediaFile || {}}
               onMediaFileUpdated={(newMediaFile) => {
                 this.onUpdateItemMeta({
                   mediaFile: {
