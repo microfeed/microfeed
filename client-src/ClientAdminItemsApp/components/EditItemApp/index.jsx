@@ -87,14 +87,16 @@ export default class EditItemApp extends React.Component {
 
       const mediaFileFromUrl = getMediaFileFromUrl(urlParams);
 
-      const attrDict = {
-        title,
-        mediaFile: {
-          ...mediaFile,
-          ...mediaFileFromUrl,
-        },
-      };
-      this.onUpdateItemMeta(attrDict);
+      if (mediaFileFromUrl && Object.keys(mediaFileFromUrl).length > 0) {
+        const attrDict = {
+          title,
+          mediaFile: {
+            ...mediaFile,
+            ...mediaFileFromUrl,
+          },
+        };
+        this.onUpdateItemMeta(attrDict);
+      }
     }
   }
 
