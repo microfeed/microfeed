@@ -158,7 +158,7 @@ export function buildAudioUrlWithTracking(audioUrl, trackingUrls, protocal='http
 
 export function getIdFromSlug(slug) {
   let itemId
-  let re = /^.+-([\d\w\-_]{11})$/;
+  let re = /^.*-([\d\w\-_]{11})$/;
   let ok = re.exec(slug);
   if (ok) {
     itemId = ok[1];
@@ -202,9 +202,9 @@ export function htmlToPlainText(htmlStr, options = null) {
   return convert(htmlStr || '', convertOptions);
 }
 
-export function truncateString(str, num) {
+export function truncateString(str, num, ellipsis = true) {
   if (str.length > num) {
-    return str.slice(0, num) + "...";
+    return `${str.slice(0, num)}${ellipsis ? '...' : ''}`;
   } else {
     return str;
   }
@@ -239,11 +239,24 @@ export const ADMIN_URLS = {
  */
 function webItem(itemId, itemTitle = null, baseUrl = '/', locale = 'en') {
   if (itemTitle) {
-    const slug = slugify(itemTitle || '', {
+    const title = truncateString(itemTitle, 50, false);
+    let slug = slugify(title, {
       lower: true,
       strict: true, // strip special characters except replacement
       locale,
     });
+    // Fallback to a custom implementation to deal with all non-English characters.
+    if (!slug) {
+      slug = title
+        .toString()
+        .normalize('NFKD')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/\_/g, '-')
+        .replace(/\-\-+/g, '-')
+        .replace(/\-$/g, '');
+    }
     return urlJoin(baseUrl, `/i/${slug}-${itemId}/`);
   } else {
     return urlJoin(baseUrl, `/i/${itemId}/`);
