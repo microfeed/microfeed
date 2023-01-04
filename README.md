@@ -259,7 +259,7 @@ Then go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deplo
 <summary><b>How can I track podcast / video / image downloads?</b></summary>
 
 To track podcast, video, or image downloads with microfeed, you can use the tracking URLs feature.
-This allows you to set up third-party tracking URLs for your media files, such as those provided by Podtrac or Chartable.
+This allows you to set up third-party tracking URLs for your media files, such as those provided by [OP3](https://op3.dev/), [Podtrac](http://analytics.podtrac.com/), [Chartable](https://chartable.com/)...
 
 To set up tracking URLs, you will need to go to Settings / Tracking URLs:
 <img width="1101" alt="Screenshot 2022-12-17 at 10 19 50 AM" src="https://user-images.githubusercontent.com/1719237/208216098-1c8ab8df-eeae-4e50-96c8-4347911ee281.png">
