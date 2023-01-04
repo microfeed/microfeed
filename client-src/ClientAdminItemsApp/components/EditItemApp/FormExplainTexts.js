@@ -43,7 +43,8 @@ export const CONTROLS_TEXTS_DICT = {
     text: "An item can have a main media file. For example, if it's a podcast episode, then a media file should be an audio; " +
       "if it's a self-hosted photo album, then a media file should be a high-definition image; " +
       "if it's a content curation site, then a media file could be an external url (e.g., an article url from New York Times).<br>" +
-      "To track download stats of a media file, you can add 3rd-party tracking urls (e.g., podtrac, chartable...) at <a href='/admin/settings/'>Settings / Tracking urls</a>.",
+      "To track download stats of a media file, you can add 3rd-party tracking urls " +
+      "(e.g., <a href='https://op3.dev/'>OP3</a>, <a href='http://analytics.podtrac.com/'>Podtrac</a>, <a href='https://chartable.com/'>Chartable</a>...) at <a href='/admin/settings/'>Settings / Tracking urls</a>.",
     rss: '<channel><item><enclosure url="https://cdn-site.com/audio.mp3" type="audio/mpeg" length="277000"/><itunes:duration>00:21:02</itunes:duration></item></channel>',
     json: '{ "items": [{"attachments": [{"url": "https://cdn-site.com/audio.mp3", "mime_type": "audio/mpeg", "size_in_byte": 277000, "duration_in_seconds": 1262 }], "_microfeed": {"duration_hhmmss": "00:21:02"}}] }',
   },
