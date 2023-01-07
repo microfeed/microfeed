@@ -1,0 +1,211 @@
+/*--------------------------------
+
+*** NOTE: This is not the entire original line icons css file. This is a 
+truncated version that only contains the icons used in the ButterCMS starter
+project. If you wish to use other icons, please replace this file.***
+
+LineIcons Web Font
+Author: lineicons.com
+
+-------------------------------- */
+@font-face {
+  font-family: 'LineIcons';
+  src: url('fonts/LineIcons.eot');
+  src: url('fonts/LineIcons.eot') format('embedded-opentype'), url('fonts/LineIcons.woff2') format('woff2'), url('fonts/LineIcons.woff') format('woff'), url('fonts/LineIcons.ttf') format('truetype'), url('fonts/LineIcons.svg') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/*------------------------
+	base class definition
+-------------------------*/
+.lni {
+  display: inline-block;
+  font: normal normal normal 1em/1 'LineIcons';
+  color: inherit;
+  flex-shrink: 0;
+  speak: none;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: -.125em;
+  /* Better Font Rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/*------------------------
+  change icon size
+-------------------------*/
+/* relative units */
+.lni-sm {
+  font-size: 0.8em;
+}
+.lni-lg {
+  font-size: 1.2em;
+}
+/* absolute units */
+.lni-16 {
+  font-size: 16px;
+}
+.lni-32 {
+  font-size: 32px;
+}
+
+/*------------------------
+  spinning icons
+-------------------------*/
+.lni-is-spinning {
+  animation: lni-spin 1s infinite linear;
+}
+@keyframes lni-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/*------------------------
+  rotated/flipped icons
+-------------------------*/
+.lni-rotate-90 {
+  transform: rotate(90deg);
+}
+.lni-rotate-180 {
+  transform: rotate(180deg);
+}
+.lni-rotate-270 {
+  transform: rotate(270deg);
+}
+.lni-flip-y {
+  transform: scaleY(-1);
+}
+.lni-flip-x {
+  transform: scaleX(-1);
+}
+/*------------------------
+	icons
+-------------------------*/
+
+.lni-calendar::before {
+  content: "\ea4e";
+}
+
+
+.lni-chevron-down-circle::before {
+  content: "\ea5d";
+}
+
+.lni-chevron-down::before {
+  content: "\ea5e";
+}
+
+.lni-chevron-left-circle::before {
+  content: "\ea5f";
+}
+
+.lni-chevron-left::before {
+  content: "\ea60";
+}
+
+.lni-chevron-right-circle::before {
+  content: "\ea61";
+}
+
+.lni-chevron-right::before {
+  content: "\ea62";
+}
+
+.lni-chevron-up-circle::before {
+  content: "\ea63";
+}
+
+.lni-chevron-up::before {
+  content: "\ea64";
+}
+
+.lni-compass::before {
+  content: "\ea7d";
+}
+
+.lni-display-alt::before {
+  content: "\ea9d";
+}
+
+.lni-display::before {
+  content: "\ea9e";
+}
+
+.lni-facebook-filled::before {
+  content: "\eab5";
+}
+
+.lni-facebook-original::before {
+  content: "\eab7";
+}
+
+.lni-facebook-oval::before {
+  content: "\eab8";
+}
+
+.lni-facebook::before {
+  content: "\eab9";
+}
+
+.lni-grid-alt::before {
+  content: "\eada";
+}
+
+.lni-grid::before {
+  content: "\eadb";
+}
+
+.lni-instagram-filled::before {
+  content: "\eaf8";
+}
+
+.lni-instagram-original::before {
+  content: "\eaf9";
+}
+
+.lni-instagram::before {
+  content: "\eafa";
+}
+
+.lni-layers::before {
+  content: "\eb0d";
+}
+
+.lni-linkedin-original::before {
+  content: "\eb1b";
+}
+
+.lni-linkedin::before {
+  content: "\eb1c";
+}
+
+.lni-quotation::before {
+  content: "\eb6e";
+}
+
+.lni-search-alt::before {
+  content: "\eb85";
+}
+
+.lni-search::before {
+  content: "\eb86";
+}
+
+.lni-tag::before {
+  content: "\ebc5";
+}
+
+.lni-twitter-filled::before {
+  content: "\ebe8";
+}
+
+.lni-twitter-original::before {
+  content: "\ebe9";
+}
+
+.lni-twitter::before {
+  content: "\ebea";
+}
