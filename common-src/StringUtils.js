@@ -252,6 +252,7 @@ function webItem(itemId, itemTitle = null, baseUrl = '/', locale = 'en') {
         .normalize('NFKD')
         .toLowerCase()
         .trim()
+        .replace(/['!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g, '-')
         .replace(/\s+/g, '-')
         .replace(/\_/g, '-')
         .replace(/\-\-+/g, '-')
