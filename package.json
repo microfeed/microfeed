@@ -9,7 +9,7 @@
     "setup:production": "sh ops/generate_vars_toml.sh && yarn install && node ops/init_r2.js && node ops/init_feed_db.js && node ops/init_project.js",
     "deploy:cloudflare": "node ops/sync_project_config.js && yarn build:production",
     "deploy:github": "node ops/sync_project_config.js && node ops/direct_upload.js",
-    "test": "jest"
+    "test": "TZ=UTC jest"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",
