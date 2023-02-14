@@ -359,6 +359,19 @@ export default class FeedDb {
     // This ugly "insert" then "update" pattern is for d1 alpha. And it might not work on production...
     let res;
     try {
+      console.log('Trying to insert...', category);
+      console.log(settings);
+      res = await this.getInsertSql(
+        'settings',
+        {
+          category,
+          data: JSON.stringify(settings[category]),
+        },
+      ).run();
+    } catch (error) {
+      console.log('Failed to insert for ', category, error);
+    }
+    try {
       console.log('Trying to update...');
       res = await this.getUpdateSql(
         'settings',
@@ -371,19 +384,6 @@ export default class FeedDb {
       ).run();
     } catch (error) {
       console.log('Failed to update for ', category, error);
-    }
-    try {
-      console.log('Trying to insert...', category);
-      console.log(settings);
-      res = await this.getInsertSql(
-        'settings',
-        {
-          category,
-          data: JSON.stringify(settings[category]),
-        },
-      ).run();
-    } catch (error) {
-      console.log('Failed to insert for ', category, error);
     }
     console.log('Done', res);
   }
