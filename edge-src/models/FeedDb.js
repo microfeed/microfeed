@@ -370,15 +370,8 @@ export default class FeedDb {
           data: JSON.stringify(settings[category]),
         },
       ).run();
-      console.log('finished updating successfully')
     } catch (error) {
-      try {
-        console.log('Failed to update for ', category, error);
-      } catch (e) {
-        console.log('exception inside catch for update')
-      }
-    } finally {
-      console.log('finally for update')
+      console.log('Failed to update for ', category, error);
     }
     try {
       console.log('Trying to insert...', category);
@@ -397,9 +390,9 @@ export default class FeedDb {
   }
 
   async _putSettingsToContent(settings) {
-    Object.keys(settings).forEach((category) => {
-      this._updateOrAddSetting(settings, category);
-    });
+    for (const category of Object.keys(settings)) {
+      await this._updateOrAddSetting(settings, category);
+    }
   }
 
   async _putItemToContent(item) {
