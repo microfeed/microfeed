@@ -360,6 +360,7 @@ export default class FeedDb {
     let res;
     try {
       console.log('Trying to update...');
+      console.log(settings);
       res = await this.getUpdateSql(
         'settings',
         {
@@ -369,8 +370,15 @@ export default class FeedDb {
           data: JSON.stringify(settings[category]),
         },
       ).run();
+      console.log('finished updating successfully')
     } catch (error) {
-      console.log('Failed to update for ', category, error);
+      try {
+        console.log('Failed to update for ', category, error);
+      } catch (e) {
+        console.log('exception inside catch for update')
+      }
+    } finally {
+      console.log('finally for update')
     }
     try {
       console.log('Trying to insert...', category);
