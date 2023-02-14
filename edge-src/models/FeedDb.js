@@ -360,6 +360,7 @@ export default class FeedDb {
     let res;
     try {
       console.log('Trying to update...');
+      console.log(settings);
       res = await this.getUpdateSql(
         'settings',
         {
@@ -389,9 +390,9 @@ export default class FeedDb {
   }
 
   async _putSettingsToContent(settings) {
-    Object.keys(settings).forEach((category) => {
-      this._updateOrAddSetting(settings, category);
-    });
+    for (const category of Object.keys(settings)) {
+      await this._updateOrAddSetting(settings, category);
+    }
   }
 
   async _putItemToContent(item) {
