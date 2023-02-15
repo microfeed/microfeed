@@ -12,13 +12,14 @@ import {isValidMediaFile} from "../../common-src/MediaFileUtils";
 const DEFAULT_MICROFEED_VERSION = 'v1';
 
 export default class FeedPublicJsonBuilder {
-  constructor(content, baseUrl, forOneItem = false) {
+  constructor(content, baseUrl, request, forOneItem = false) {
     this.content = content;
     this.settings = content.settings || {};
     this.webGlobalSettings = this.settings.webGlobalSettings || {};
     this.publicBucketUrl = this.webGlobalSettings.publicBucketUrl || '';
     this.baseUrl = baseUrl;
     this.forOneItem = forOneItem;
+    this.request = request;
   }
 
   _decorateForItem(item, baseUrl) {
@@ -26,7 +27,9 @@ export default class FeedPublicJsonBuilder {
     item.jsonUrl = PUBLIC_URLS.jsonItem(item.id, null, baseUrl);
     item.rssUrl = PUBLIC_URLS.rssItem(item.id, null, baseUrl);
 
-    item.pubDate = humanizeMs(item.pubDateMs);
+    // Try our best to use local time of a website visitor
+    const timezone = this.request.cf ? this.request.cf.timezone : null;
+    item.pubDate = humanizeMs(item.pubDateMs, timezone);
     item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
     item.descriptionText = htmlToPlainText(item.description);
 

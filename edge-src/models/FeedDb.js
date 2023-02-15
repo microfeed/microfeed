@@ -448,7 +448,7 @@ export default class FeedDb {
     if (!content) {
       content = await this.getContent();
     }
-    const builder = new FeedPublicJsonBuilder(content, this.baseUrl, forOneItem);
+    const builder = new FeedPublicJsonBuilder(content, this.baseUrl, this.request, forOneItem);
     return builder.getJsonData();
   }
 }
