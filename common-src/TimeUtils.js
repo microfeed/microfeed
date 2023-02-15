@@ -1,6 +1,12 @@
-export function humanizeMs(ms) {
+export function humanizeMs(ms, timezone = null) {
   const date = new Date(ms);
-  return date.toDateString();
+  let newDate;
+  try {
+    newDate = new Date(date.toLocaleDateString('en-US', {timeZone: timezone}));
+  } catch (e) {
+    newDate = date;
+  }
+  return newDate.toDateString();
 }
 
 export function toHHMMSS(seconds) {
