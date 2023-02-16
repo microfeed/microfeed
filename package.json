@@ -1,6 +1,6 @@
 {
   "name": "microfeed",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "license": "MIT",
   "scripts": {
     "build:production": "NODE_ENV=production webpack --config ./webpack.config.js",
@@ -9,7 +9,8 @@
     "setup:production": "sh ops/generate_vars_toml.sh && yarn install && node ops/init_r2.js && node ops/init_feed_db.js && node ops/init_project.js",
     "deploy:cloudflare": "node ops/sync_project_config.js && yarn build:production",
     "deploy:github": "node ops/sync_project_config.js && node ops/direct_upload.js",
-    "test": "TZ=UTC jest"
+    "test": "TZ=UTC jest",
+    "sync-version": "node ops/sync_microfeed_version.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",

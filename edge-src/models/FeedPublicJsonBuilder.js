@@ -9,7 +9,7 @@ import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
 import {isValidMediaFile} from "../../common-src/MediaFileUtils";
 
-const DEFAULT_MICROFEED_VERSION = 'v1';
+const {MICROFEED_VERSION} = require('../../common-src/Version');
 
 export default class FeedPublicJsonBuilder {
   constructor(content, baseUrl, request, forOneItem = false) {
@@ -96,7 +96,7 @@ export default class FeedPublicJsonBuilder {
     const channel = this.content.channel || {};
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra = {
-      microfeed_version: this.content.microfeed_version || DEFAULT_MICROFEED_VERSION,
+      microfeed_version: MICROFEED_VERSION,
       categories: [],
     };
     const channelCategories = channel.categories || [];
