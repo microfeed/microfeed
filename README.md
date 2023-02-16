@@ -312,6 +312,27 @@ If you are looking for something new and are interested in exploring different o
 It is always a good idea to carefully evaluate any service before using it to ensure that it meets your needs and is a good fit for your use case.
 </details>
 
+<details>
+<summary><b>How to download / backup data from microfeed / Cloudflare?</b></summary>
+
+microfeed stores data in Cloudflare D1 and R2. Therefore, you'll download two things to backup your microfeed data:
+* a sqlite database from [Cloudflare D1](https://developers.cloudflare.com/d1/), including all metadata.
+* media files from [Cloudflare R2](https://developers.cloudflare.com/r2/), including audio, image, video...
+
+<b>How to download a sqlite database from D1?</b>
+
+You can use the command line tool `wrangler` to find sqlite database files and download backups:
+
+[https://developers.cloudflare.com/workers/wrangler/commands/#d1](https://developers.cloudflare.com/workers/wrangler/commands/#d1)
+
+<b>How to download media files from R2?</b>
+
+As of Feb 16, 2023, Cloudflare has not provided tools to to batch download all files from a R2 bucket. 
+
+You may need to write a script to use [S3-compatible APIs](https://developers.cloudflare.com/r2/data-access/s3-api/api/) to fetch all objects from a specific R2 bucket.
+
+</details>
+
 [Back to 📚TOC](#-table-of-contents)
 
 ## 💪 Contributions
