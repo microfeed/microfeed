@@ -56,14 +56,16 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: 'Categories',
     modalTitle: 'Channel / Categories',
     text: "A channel's categories. All available categories are from <a href='https://podcasters.apple.com/support/1691-apple-podcasts-categories'>Apple Podcasts</a>.<br>" +
-      "If this is apodcast, although you can specify more than one category, Apple Podcasts only recognizes the first category and subcategory.",
+      "If this is a podcast, although you can specify more than one category, Apple Podcasts only recognizes the first category and subcategory.",
     rss: '<channel><itunes:category text="Arts" /></channel>',
     json: '{ "_microfeed": {"categories": [{"name": "Arts"}]} }',
   },
   [CHANNEL_CONTROLS.LANGUAGE]: {
     linkName: 'Language',
     modalTitle: 'Channel / Language',
-    text: "A channel's language.",
+    text: "A channel's language.<br>The primary language for the feed in the format specified in RFC 5646. " +
+      "The value is usually a 2-letter language tag from ISO 639-1, optionally followed by a region tag. " +
+      "(Examples: en or en-US.)",
     rss: '<channel><language>en-us</language></channel>',
     json: '{ "language": "en-us" }',
   },

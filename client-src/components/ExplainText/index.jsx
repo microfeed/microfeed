@@ -42,7 +42,9 @@ export default function ExplainText({bundle, customClass}) {
               <div><ExternalLink text='in json' url={PUBLIC_URLS.jsonFeed()} /></div>
               <code className="m-code">{bundle.json}</code>
               <div className="text-xs mt-2 text-muted-color">
-                Learn more about JSON Feed at <a className="text-helper-color" href="https://www.jsonfeed.org/" target="_blank" rel="noopener noreferrer">jsonfeed.org</a>.
+                Learn more about JSON Feed at <a className="text-helper-color" href="https://www.jsonfeed.org/" target="_blank" rel="noopener noreferrer">
+                jsonfeed.org</a>. See the OpenAPI spec of microfeed's JSON feed: <a className="text-helper-color" href="/json/openapi.yaml" target="_blank" rel="noopener noreferrer">
+                YAML</a> or <a className="text-helper-color" href="/json/openapi.html" target="_blank" rel="noopener noreferrer">HTML</a>.
               </div>
             </div> : <em>{bundle.linkName} is not in json feed</em>}
           </div>}
