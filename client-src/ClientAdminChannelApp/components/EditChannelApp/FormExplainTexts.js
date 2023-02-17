@@ -63,7 +63,9 @@ export const CONTROLS_TEXTS_DICT = {
   [CHANNEL_CONTROLS.LANGUAGE]: {
     linkName: 'Language',
     modalTitle: 'Channel / Language',
-    text: "A channel's language.",
+    text: "A channel's language.<br>The primary language for the feed in the format specified in RFC 5646. " +
+      "The value is usually a 2-letter language tag from ISO 639-1, optionally followed by a region tag. " +
+      "(Examples: en or en-US.)",
     rss: '<channel><language>en-us</language></channel>',
     json: '{ "language": "en-us" }',
   },
