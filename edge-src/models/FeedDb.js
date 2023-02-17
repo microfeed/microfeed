@@ -355,8 +355,6 @@ export default class FeedDb {
   }
 
   async _updateOrAddSetting(settings, category) {
-    // XXX: d1 is obviously not for prime time :(
-    // This ugly "insert" then "update" pattern is for d1 alpha. And it might not work on production...
     let res;
     try {
       console.log('Trying to update...');
@@ -372,19 +370,19 @@ export default class FeedDb {
       ).run();
     } catch (error) {
       console.log('Failed to update for ', category, error);
-    }
-    try {
-      console.log('Trying to insert...', category);
-      console.log(settings);
-      res = await this.getInsertSql(
-        'settings',
-        {
-          category,
-          data: JSON.stringify(settings[category]),
-        },
-      ).run();
-    } catch (error) {
-      console.log('Failed to insert for ', category, error);
+      try {
+        console.log('Trying to insert...', category);
+        console.log(settings);
+        res = await this.getInsertSql(
+          'settings',
+          {
+            category,
+            data: JSON.stringify(settings[category]),
+          },
+        ).run();
+      } catch (error) {
+        console.log('Failed to insert for ', category, error);
+      }
     }
     console.log('Done', res);
   }
@@ -411,20 +409,20 @@ export default class FeedDb {
       }).run();
     } catch (error) {
       console.log('Failed to insert.', error);
-    }
-    try {
-      console.log('Trying to update...', id);
-      res = await this.getUpdateSql(
-        'items',
-        {
-          id,
-        },
-        {
-          ...keyValuePairs,
-        },
-      ).run();
-    } catch (error) {
-      console.log('Failed to update.', error);
+      try {
+        console.log('Trying to update...', id);
+        res = await this.getUpdateSql(
+          'items',
+          {
+            id,
+          },
+          {
+            ...keyValuePairs,
+          },
+        ).run();
+      } catch (error) {
+        console.log('Failed to update.', error);
+      }
     }
     console.log('Done!', res);
   }

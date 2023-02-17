@@ -277,6 +277,12 @@ export const PUBLIC_URLS = {
   jsonFeed: (baseUrl='/') => {
     return urlJoin(baseUrl, 'json/');
   },
+  jsonFeedOpenApiYaml: (baseUrl = '/') => {
+    return urlJoin(baseUrl, 'json/openapi.yaml');
+  },
+  jsonFeedOpenApiHtml: (baseUrl = '/') => {
+    return urlJoin(baseUrl, 'json/openapi.html');
+  },
   webItem,
   jsonItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en') => {
     return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');

@@ -134,7 +134,7 @@ function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
         <div>Add new subscribe method</div>
       </div>
     </a>
-    <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify...</div>
+    <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify, Listen Notes...</div>
     <NewSubscribeDialog
       isOpen={isOpenNewMethod}
       setIsOpen={setIsOpenNewMethod}
