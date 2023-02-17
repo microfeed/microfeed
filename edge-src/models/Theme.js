@@ -111,6 +111,8 @@ export default class Theme {
     const tmpl = this.getWebItemTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
+
+      // TODO: Remove "item". We don't need this "item" field any more. Use "items.0" instead.
       item,
     });
     return {

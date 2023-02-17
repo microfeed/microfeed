@@ -1,64 +1,64 @@
 <main>
   <section class="mb-4">
     <a href="/">
-      <div class="icon-arrow-left">{{title}}</div>
+      <div class="icon-arrow-left">{{items.0.title}}</div>
     </a>
   </section>
 
   <section>
-    <h1>{{item.title}}</h1>
+    <h1>{{items.0.title}}</h1>
     <div class="mb-4 text-sm">
-      <time>{{item._microfeed.date_published_short}}</time>
+      <time>{{items.0._microfeed.date_published_short}}</time>
       &middot;
-      <a href="{{item._microfeed.json_url}}" target="_blank">json</a>
+      <a href="{{items.0._microfeed.json_url}}" target="_blank">json</a>
       &middot;
-      <a href="{{item._microfeed.rss_url}}" target="_blank">rss</a>
+      <a href="{{items.0._microfeed.rss_url}}" target="_blank">rss</a>
     </div>
 
     <div>
-      {{#item._microfeed.is_audio}}
+      {{#items.0._microfeed.is_audio}}
       <div class="text-sm mb-4">
         Listen:
       </div>
-      {{#item.attachments}}
+      {{#items.0.attachments}}
       <audio controls preload="metadata" class="w-full">
         <source src="{{url}}" type="{{mime_type}}"/>
         Your browser does not support the audio element.
       </audio>
-      {{/item.attachments}}
-      {{/item._microfeed.is_audio}}
+      {{/items.0.attachments}}
+      {{/items.0._microfeed.is_audio}}
 
-      {{#item._microfeed.is_video}}
+      {{#items.0._microfeed.is_video}}
       <div class="text-sm mb-4">
         Watch:
       </div>
-      {{#item.attachments}}
+      {{#items.0.attachments}}
       <video controls preload="metadata" class="w-full">
         <source src="{{url}}" type="{{mime_type}}"/>
         Your browser does not support the video element.
       </video>
-      {{/item.attachments}}
-      {{/item._microfeed.is_video}}
+      {{/items.0.attachments}}
+      {{/items.0._microfeed.is_video}}
 
-      {{#item._microfeed.is_document}}
-      {{#item.attachments}}
+      {{#items.0._microfeed.is_document}}
+      {{#items.0.attachments}}
       <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">Download file &#8594;</a>
-      {{/item.attachments}}
-      {{/item._microfeed.is_document}}
+      {{/items.0.attachments}}
+      {{/items.0._microfeed.is_document}}
 
-      {{#item._microfeed.is_external_url}}
-      {{#item.attachments}}
+      {{#items.0._microfeed.is_external_url}}
+      {{#items.0.attachments}}
       <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">View url &#8594;</a>
-      {{/item.attachments}}
-      {{/item._microfeed.is_external_url}}
+      {{/items.0.attachments}}
+      {{/items.0._microfeed.is_external_url}}
 
-      {{#item._microfeed.is_image}}
-      {{#item.attachments}}
+      {{#items.0._microfeed.is_image}}
+      {{#items.0.attachments}}
       <a href="{{url}}" target="_blank">
         <img src="{{url}}" width="80%" loading="lazy" />
       </a>
-      {{/item.attachments}}
-      {{/item._microfeed.is_image}}
+      {{/items.0.attachments}}
+      {{/items.0._microfeed.is_image}}
     </div>
     <div>
       {{#_microfeed.subscribe_methods.length}}
@@ -82,16 +82,16 @@
   <section>
     <h2 class="border-b">About</h2>
     <div>
-      {{#item.image}}
+      {{#items.0.image}}
       <div class="mb-4">
-        <a href="{{item.image}}" target="_blank">
-          <img src={{item.image}} width="250" height="250" loading="lazy"/>
+        <a href="{{items.0.image}}" target="_blank">
+          <img src={{items.0.image}} width="250" height="250" loading="lazy"/>
         </a>
       </div>
-      {{/item.image}}
-      {{#item.content_html}}
-      <div>{{{item.content_html}}}</div>
-      {{/item.content_html}}
+      {{/items.0.image}}
+      {{#items.0.content_html}}
+      <div>{{{items.0.content_html}}}</div>
+      {{/items.0.content_html}}
     </div>
   </section>
 </main>
