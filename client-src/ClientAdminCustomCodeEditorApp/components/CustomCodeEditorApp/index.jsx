@@ -48,7 +48,7 @@ const CODE_FILES_DICT = {
     language: 'html',
     viewUrl: () => PUBLIC_URLS.webFeed(),
     description: (<div>
-      The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a>
+      The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a>.
     </div>),
   },
   [CODE_FILES.WEB_ITEM]: {
@@ -340,6 +340,16 @@ export default class CustomCodeEditorApp extends React.Component {
             <div className="lh-page-card mt-4 flex flex-col items-center">
               <ExternalLink url={viewUrl} text="View live page"/>
               <div className="text-muted-color text-xs">{viewUrl}</div>
+            </div>
+            <div className="lh-page-card mt-4">
+              <div className="lh-page-subtitle">Pro-tips:</div>
+              <ul className="text-helper-text text-xs">
+                <li className="mb-2">You can use variables from the <a href={PUBLIC_URLS.jsonFeed()}> json feed</a>.</li>
+                <li className="mb-2">The template system is <a href="https://mustache.github.io/">mustache</a>.</li>
+                <li className="mb-2">See the OpenAPI spec for the json feed: <a href={PUBLIC_URLS.jsonFeedOpenApiYaml()}>
+                  YAML</a> or <a href={PUBLIC_URLS.jsonFeedOpenApiHtml()}>HTML</a>.
+                </li>
+              </ul>
             </div>
           </div>
         </div>
