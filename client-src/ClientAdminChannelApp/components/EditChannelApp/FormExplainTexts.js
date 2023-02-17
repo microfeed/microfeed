@@ -56,7 +56,7 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: 'Categories',
     modalTitle: 'Channel / Categories',
     text: "A channel's categories. All available categories are from <a href='https://podcasters.apple.com/support/1691-apple-podcasts-categories'>Apple Podcasts</a>.<br>" +
-      "If this is apodcast, although you can specify more than one category, Apple Podcasts only recognizes the first category and subcategory.",
+      "If this is a podcast, although you can specify more than one category, Apple Podcasts only recognizes the first category and subcategory.",
     rss: '<channel><itunes:category text="Arts" /></channel>',
     json: '{ "_microfeed": {"categories": [{"name": "Arts"}]} }',
   },

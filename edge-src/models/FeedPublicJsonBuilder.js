@@ -259,10 +259,10 @@ export default class FeedPublicJsonBuilder {
       _microfeed['itunes:episodeType'] = item['itunes:episodeType'];
     }
     if (item['itunes:season']) {
-      _microfeed['itunes:season'] = item['itunes:season'];
+      _microfeed['itunes:season'] = parseInt(item['itunes:season'], 10);
     }
     if (item['itunes:episode']) {
-      _microfeed['itunes:episode'] = item['itunes:episode'];
+      _microfeed['itunes:episode'] = parseInt(item['itunes:episode'], 10);
     }
     if (item['itunes:explicit']) {
       _microfeed['itunes:explicit'] = item['itunes:explicit'];

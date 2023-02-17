@@ -36,7 +36,8 @@ const DISTRIBUTION_BUNDLE = [
     summary: 'Write code to fetch structured data and set up automation.',
     details: (<div className="grid grid-cols-1 gap-4 py-2">
       <div>
-        The schema of this json feed is following the <a href="https://www.jsonfeed.org/">jsonfeed.org</a> spec.
+        The schema of this json feed is following the <a href="https://www.jsonfeed.org/">
+        jsonfeed.org</a> spec. See <a href="/json/openapi.yaml"> the OpenAPI spec</a> of microfeed's JSON feed.
       </div>
       <div>
         You can disable the json feed in <a href={ADMIN_URLS.settings()}>Settings / Subscribe methods</a>.
