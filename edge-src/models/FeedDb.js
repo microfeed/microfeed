@@ -113,6 +113,27 @@ export default class FeedDb {
     return this.FEED_DB.prepare(sql).bind(...bindList)
   }
 
+  getUpsertSql(table, primaryKey, queryKwargs, keyValuePairs) {
+    let updateSql = 'UPDATE SET';
+    const setList = ['updated_at = ?'];
+    const updateBindList = [(new Date()).toISOString()];
+    Object.keys(keyValuePairs).forEach((key) => {
+      setList.push(`${key} = ?`);
+      updateBindList.push(keyValuePairs[key]);
+    });
+    updateSql = `${updateSql} ${setList.join(', ')}`;
+
+    let insertSql = `INSERT INTO ${table}`;
+    const insertKeyValuePairs = {...queryKwargs, ...keyValuePairs};
+    const colList = Object.keys(insertKeyValuePairs)
+    const insertBindList = Object.values(insertKeyValuePairs);
+    const placeholderList = insertBindList.map(() => '?');
+    insertSql = `${insertSql} (${colList.join(', ')}) VALUES (${placeholderList.join(', ')})`;
+
+    const sql = `${insertSql} ON CONFLICT(${primaryKey}) DO ${updateSql}`;
+    return this.FEED_DB.prepare(sql).bind(...insertBindList, ...updateBindList);
+  }
+
   async initDb() {
     const settings = {
       [SETTINGS_CATEGORIES.SUBSCRIBE_METHODS]: {
@@ -357,32 +378,15 @@ export default class FeedDb {
   async _updateOrAddSetting(settings, category) {
     let res;
     try {
-      console.log('Trying to update...');
-      console.log(settings);
-      res = await this.getUpdateSql(
+      res = await this.getUpsertSql(
         'settings',
-        {
-          category,
-        },
+        'category',
+        {category},
         {
           data: JSON.stringify(settings[category]),
-        },
-      ).run();
+        }).run();
     } catch (error) {
-      console.log('Failed to update for ', category, error);
-      try {
-        console.log('Trying to insert...', category);
-        console.log(settings);
-        res = await this.getInsertSql(
-          'settings',
-          {
-            category,
-            data: JSON.stringify(settings[category]),
-          },
-        ).run();
-      } catch (error) {
-        console.log('Failed to insert for ', category, error);
-      }
+      console.log('Failed to upsert', error);
     }
     console.log('Done', res);
   }
@@ -402,27 +406,10 @@ export default class FeedDb {
     };
     let res;
     try {
-      console.log('Inserting...')
-      res = await this.getInsertSql('items', {
-        id,
-        ...keyValuePairs,
-      }).run();
+      res = await this.getUpsertSql(
+        'items', 'id', {id}, {...keyValuePairs}).run();
     } catch (error) {
-      console.log('Failed to insert.', error);
-      try {
-        console.log('Trying to update...', id);
-        res = await this.getUpdateSql(
-          'items',
-          {
-            id,
-          },
-          {
-            ...keyValuePairs,
-          },
-        ).run();
-      } catch (error) {
-        console.log('Failed to update.', error);
-      }
+      console.log('Failed to upsert', error);
     }
     console.log('Done!', res);
   }
