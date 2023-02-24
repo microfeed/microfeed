@@ -260,6 +260,12 @@ components:
                         2.1.2 may or may not be backward compatible with 0.2.1, because they have different major versions
                         (i.e., 2 vs 0).
                     example: 0.1.1
+                base_url:
+                    type: string
+                    description: |
+                        The base url of current site. You can use multiple domain names for the same microfeed instance,
+                        and dynamically render pages based on this field.
+                    example: https://www.my-website.com
                 categories:
                     type: array
                     description: |
