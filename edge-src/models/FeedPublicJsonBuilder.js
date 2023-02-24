@@ -97,6 +97,7 @@ export default class FeedPublicJsonBuilder {
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra = {
       microfeed_version: MICROFEED_VERSION,
+      base_url: this.baseUrl,
       categories: [],
     };
     const channelCategories = channel.categories || [];
