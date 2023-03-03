@@ -60,9 +60,10 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * an Instagram-like feed of images (e.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/))
 * a YouTube-like feed of videos
 * a personal website with custom links (e.g., [wenbin.org](https://www.wenbin.org/))
-* a content curation feed of external urls
+* a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless cms with a GUI dashboard and a public json feed (e.g., [microfeed.org/json](https://www.microfeed.org/json/))
+* a headless cms with a GUI dashboard and a public json feed (e.g., [microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html))
+* a list of domain names for sale (e.g., [listen411.com](https://www.listen411.com/), [ListenHost.com](https://www.listenhost.com/)...)
 * ...
 
 microfeed uses Cloudflare [Pages](https://pages.cloudflare.com/) to host and run the code,
