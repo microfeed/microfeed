@@ -4,7 +4,6 @@ import AdminNavApp from '../../../components/AdminNavApp';
 import AdminImageUploaderApp from '../../../components/AdminImageUploaderApp';
 import AdminInput from "../../../components/AdminInput";
 import AdminRadio from "../../../components/AdminRadio";
-import {getPublicBaseUrl} from "../../../common/ClientUrlUtils";
 import {unescapeHtml} from '../../../../common-src/StringUtils';
 import {showToast} from "../../../common/ToastUtils";
 import {AdminSideQuickLinks} from "../../../components/AdminSideQuickLinks";
@@ -51,19 +50,6 @@ Object.keys(ITUNES_CATEGORIES_DICT).forEach((topLevel) => {
   });
 });
 
-function initChannel() {
-  return {
-    link: getPublicBaseUrl(),
-    language: 'en-us',
-    categories: [],
-    'itunes:explicit': false,
-    'itunes:type': 'episodic',
-    'itunes:complete': false,
-    'itunes:block': false,
-    'copyright': `©${(new Date()).getFullYear()}`,
-  };
-}
-
 export default class EditChannelApp extends React.Component {
   constructor(props) {
     super(props);
@@ -76,7 +62,7 @@ export default class EditChannelApp extends React.Component {
     const feed = JSON.parse(unescapeHtml(document.getElementById('feed-content').innerHTML));
     const onboardingResult = JSON.parse(unescapeHtml(document.getElementById('onboarding-result').innerHTML));
 
-    const channel = feed.channel || initChannel();
+    const channel = feed.channel;
     this.state = {
       feed,
       onboardingResult,
