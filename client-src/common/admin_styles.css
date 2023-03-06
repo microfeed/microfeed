@@ -10,6 +10,10 @@ a {
   @apply text-black hover:text-brand-light font-semibold;
 }
 
+img {
+  @apply hover:scale-125 transition-all delay-300 duration-500;
+}
+
 .m-code {
   @apply p-4 block bg-gray-100 rounded-md mt-2 text-xs text-red-500 select-all break-all;
 }
@@ -103,7 +107,7 @@ a {
 
 .ql-container .ql-editor {
   height: auto;
-  min-height:200px;
+  min-height: 200px;
   max-height: 500px;
   overflow: auto;
   /* @apply min-h-screen; */
