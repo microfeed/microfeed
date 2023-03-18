@@ -1,5 +1,11 @@
 import {CODE_TYPES, SETTINGS_CATEGORIES} from "../../common-src/Constants";
 import {CODE_FILES} from "../../common-src/Constants";
+import DEFAULT_WEB_HEADER from '../common/default_themes/web_header.html';
+import DEFAULT_WEB_BODY_END from '../common/default_themes/web_body_end.html';
+import DEFAULT_WEB_BODY_START from '../common/default_themes/web_body_start.html';
+import DEFAULT_RSS_STYLESHEET from '../common/default_themes/rss_stylesheet.html';
+import DEFAULT_WEB_FEED from '../common/default_themes/web_feed.html';
+import DEFAULT_WEB_ITEM from '../common/default_themes/web_item.html';
 
 const Mustache = require('mustache');
 
@@ -40,7 +46,7 @@ export default class Theme {
       tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_HEADER]) ?
         this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_HEADER] : '';
     } else {
-      tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_HEADER] : require('../common/default_themes/web_header.html');
+      tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_HEADER] : DEFAULT_WEB_HEADER;
     }
     return tmpl;
   }
@@ -57,7 +63,7 @@ export default class Theme {
       tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_END]) ?
         this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_END] : '';
     } else {
-      tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_BODY_END] : require('../common/default_themes/web_body_end.html');
+      tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_BODY_END] : DEFAULT_WEB_BODY_END;
     }
     return tmpl;
   }
@@ -74,7 +80,7 @@ export default class Theme {
       tmpl = (this.settings && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] && this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_START]) ?
         this.settings[SETTINGS_CATEGORIES.CUSTOM_CODE][CODE_FILES.WEB_BODY_START] : '';
     } else {
-      tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_BODY_START] : require('../common/default_themes/web_body_start.html');
+      tmpl = this.themeBundle ? this.themeBundle[CODE_FILES.WEB_BODY_START] : DEFAULT_WEB_BODY_START;
     }
     return tmpl;
   }
@@ -82,7 +88,7 @@ export default class Theme {
   getRssStylesheetTmpl() {
     // XXX: this should've been .xsl, instead of .html. But esbuild can't load xsl.
     // TODO: configure esbuild to load xsl?
-    return this.themeBundle ? this.themeBundle[CODE_FILES.RSS_STYLESHEET] : require('../common/default_themes/rss_stylesheet.html');
+    return this.themeBundle ? this.themeBundle[CODE_FILES.RSS_STYLESHEET] : DEFAULT_RSS_STYLESHEET;
   }
 
   getRssStylesheet() {
@@ -104,7 +110,7 @@ export default class Theme {
   }
 
   getWebFeedTmpl() {
-    return this.themeBundle ? this.themeBundle[CODE_FILES.WEB_FEED] : require('../common/default_themes/web_feed.html');
+    return this.themeBundle ? this.themeBundle[CODE_FILES.WEB_FEED] : DEFAULT_WEB_FEED;
   }
 
   getWebItem(item) {
@@ -121,6 +127,6 @@ export default class Theme {
   }
 
   getWebItemTmpl() {
-    return this.themeBundle ? this.themeBundle[CODE_FILES.WEB_ITEM] : require('../common/default_themes/web_item.html');
+    return this.themeBundle ? this.themeBundle[CODE_FILES.WEB_ITEM] : DEFAULT_WEB_ITEM;
   }
 }
