@@ -22,6 +22,7 @@ export default class ApiSettingsApp extends React.Component {
         id: randomShortUUID(),
         name: 'Default',
         token: randomHex(),
+        createdAtMs: new Date().getTime(),
       }],
     };
 
