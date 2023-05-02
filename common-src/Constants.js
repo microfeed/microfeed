@@ -11,6 +11,7 @@ export const SETTINGS_CATEGORIES = {
   CUSTOM_CODE: 'customCode',
   ANALYTICS: 'analytics',
   ACCESS: 'access',
+  API_SETTINGS: 'apiSettings',
 };
 
 export const DEFAULT_ITEMS_PER_PAGE = 20;
