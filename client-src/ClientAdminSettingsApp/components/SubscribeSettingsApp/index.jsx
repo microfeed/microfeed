@@ -6,7 +6,7 @@ import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from 
 import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
-import {PREDEFINED_SUBSCRIBE_METHODS} from '../../../../common-src/Constants';
+import {PREDEFINED_SUBSCRIBE_METHODS, SETTINGS_CATEGORIES} from '../../../../common-src/Constants';
 import NewSubscribeDialog from "./components/NewSubscribeDialog";
 import ExplainText from "../../../components/ExplainText";
 import {
@@ -151,7 +151,7 @@ export default class SubscribeSettingsApp extends React.Component {
     this.addNewMethod = this.addNewMethod.bind(this);
     this.moveCard = this.moveCard.bind(this);
 
-    const currentType = 'subscribeMethods';
+    const currentType = SETTINGS_CATEGORIES.SUBSCRIBE_METHODS;
     const {settings} = props.feed;
     let methodsDict;
     if (settings && settings[currentType]) {

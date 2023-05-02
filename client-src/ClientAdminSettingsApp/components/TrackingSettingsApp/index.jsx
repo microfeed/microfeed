@@ -2,12 +2,13 @@ import React from 'react';
 import AdminTextarea from "../../../components/AdminTextarea";
 import {buildAudioUrlWithTracking} from "../../../../common-src/StringUtils";
 import SettingsBase from '../SettingsBase';
+import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
 
 export default class TrackingSettingsApp extends React.Component {
   constructor(props) {
     super(props);
 
-    const currentType = 'analytics';
+    const currentType = SETTINGS_CATEGORIES.ANALYTICS;
     const {feed} = props;
     let trackingUrls = '';
     if (feed.settings && feed.settings[currentType]) {
