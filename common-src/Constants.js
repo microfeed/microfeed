@@ -225,6 +225,12 @@ export const ONBOARDING_TYPES = {
   CUSTOM_DOMAIN: 3,
 };
 
+export const ITEM_STATUSES_STRINGS_DICT = {
+  'published': STATUSES.PUBLISHED,
+  'unpublished': STATUSES.UNPUBLISHED,
+  'unlisted': STATUSES.UNLISTED,
+};
+
 export const ITEM_STATUSES_DICT = {
   [STATUSES.PUBLISHED]: {
     name: 'published',

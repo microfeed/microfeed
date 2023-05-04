@@ -1,3 +1,8 @@
+// TODO: get r2 presigned url
 export async function onRequestPost() {
-  return new Response('response: POST /api/media_files/presigned_urls/');
+  return new Response(JSON.stringify({}), {
+    headers: {
+      'content-type': 'application/json;charset=UTF-8',
+    },
+  });
 }

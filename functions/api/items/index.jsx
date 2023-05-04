@@ -1,15 +1,23 @@
-export async function onRequestPost() {
-  return new Response('response: POST /api/items/');
-}
+import { ITEM_STATUSES_STRINGS_DICT, STATUSES } from '../../../common-src/constants';
+import {datetimeLocalToMs} from "../../../common-src/TimeUtils";
 
-export async function onRequestGet() {
-  return new Response('response: GET /api/items/');
-}
+// TODO: defensive code to handle some common errors
+export async function onRequestPost({ request, data }) {
+  const {
+    id, // eslint-disable-line no-unused-vars
+    ...itemJson
+  } = await request.json();
+  itemJson.status = ITEM_STATUSES_STRINGS_DICT[itemJson.status] || STATUSES.PUBLISHED;
+  itemJson.date_published_ms = itemJson.date_published_ms ? itemJson.date_published_ms : datetimeLocalToMs(new Date());
 
-export async function onRequestDelete() {
-  return new Response('response: DELETE /api/items/');
-}
+  const { feedCrud } = data;
+  const itemId = feedCrud.upsertItem(itemJson);
 
-export async function onRequestPut() {
-  return new Response('response: PUT /api/items/');
+  return new Response(JSON.stringify({
+    id: itemId,
+  }), {
+    headers: {
+      'content-type': 'application/json;charset=UTF-8',
+    },
+  });
 }
