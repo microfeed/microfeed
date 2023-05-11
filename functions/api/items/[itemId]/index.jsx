@@ -1,5 +1,10 @@
 import {getIdFromSlug} from "../../../../common-src/StringUtils";
 import {STATUSES} from "../../../../common-src/Constants";
+import {onFetchItemRequestGet} from "../../../../edge-src/EdgeCommonRequests";
+
+export async function onRequestGet({params, env, request}) {
+  return await onFetchItemRequestGet({params, env, request});
+}
 
 // TODO: defensive code to handle some common errors
 export async function onRequestDelete({ params, data }) {
