@@ -4,143 +4,146 @@
   <a href="https://www.microfeed.org/" target="_blank">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/1719237/210119945-50e1d444-2d12-43d2-a96d-65bdbccecb70.png">
-    <img src="https://user-images.githubusercontent.com/1719237/207514210-99ddbd03-f8f0-410a-96c8-80da1afb804d.png" width="280" alt="Logo"/>
+    <img src="https://user-images.githubusercontent.com/1719237/207514210-99ddbd03-f8f0-410a-96c8-80da1afb804d.png" width="280" alt="ロゴ"/>
   </picture>
   </a>
 </div>
 
-<h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>
+<h1 align="center">microfeed: Cloudflare 上で自己ホストできる軽量 CMS</h1>
 
   <p align="center">
-    <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>Report Bug</b></a>
+    <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>バグ報告</b></a>
     ·
-    <a href="https://github.com/microfeed/microfeed/discussions/new?category=ideas"><b>Request Feature</b></a>
+    <a href="https://github.com/microfeed/microfeed/discussions/new?category=ideas"><b>機能リクエスト</b></a>
     ·
-    <a href="mailto:support@microfeed.org"><b>Email Us Privately</b></a>
+    <a href="mailto:support@microfeed.org"><b>メールで問い合わせる</b></a>
   </p>
   
-Welcome to microfeed, a lightweight content management system (CMS) self-hosted on Cloudflare.
-With microfeed, you can easily publish a variety of content such as audios, videos, photos, documents, blog posts,
-and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect solution for tech-savvy individuals who
-want to self-host their own CMS without having to run their own servers.
+microfeed へようこそ！microfeed は、Cloudflare 上で自己ホストできる軽量なコンテンツ管理システム (CMS) です。
+microfeed を使えば、オーディオ、ビデオ、写真、ドキュメント、ブログ投稿、外部 URL など、様々なコンテンツを
+Web、RSS、JSON のフィード形式で簡単に公開することができます。自分でサーバーを運営せずに、自分自身の CMS を自己ホストしたいテクノロジーに精通した個人に最適なソリューションです。
 
-microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Pages](https://pages.cloudflare.com/),
-[R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/).
+microfeed は [Listen Notes](https://www.listennotes.com/) によって開発され、Cloudflare の
+[Pages](https://pages.cloudflare.com/),
+[R2](https://www.cloudflare.com/products/r2/),
+[D1](https://developers.cloudflare.com/d1/),
+[Zero Trust](https://www.cloudflare.com/products/zero-trust/)
+でホストされています。
 
-If you have any questions or feedback, please don't hesitate to reach out to us at support@microfeed.org. We'd love to hear from you!
+ご質問やフィードバックがある場合は、support@microfeed.org までお気軽にお問い合わせください。私たちはあなたからのご連絡をお待ちしております！
 
-## 📚 Table of contents
-[![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
+## 📚 目次
+[![Cloudflare Pages にデプロイする](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 [![CI](https://github.com/microfeed/microfeed/actions/workflows/ci.yml/badge.svg)](https://github.com/microfeed/microfeed/actions/workflows/ci.yml)
-[![Email us](https://img.shields.io/badge/Email-support%40microfeed.org-blue)](mailto:support@microfeed.org)
+[![Eメールサポート](https://img.shields.io/badge/Email-support%40microfeed.org-blue)](mailto:support@microfeed.org)
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://www.microfeed.org/i/introducing-microfeed-self-hosted-cms-on-cloudflare-opensource-serverless-free-uhbQEmArlC2/)
 
-* [⭐️ How it works](#%EF%B8%8F-how-it-works)
-* [🚀 Installation](#-installation)
-  * [Prerequisites](#prerequisites)
-  * [Step 1. Fork the microfeed repo to your GitHub](#step-1-fork-the-microfeed-repo-to-your-github)
-  * [Step 2. Put some secrets on your forked repo](#step-2-put-some-secrets-on-your-forked-repo)
-  * [Step 3. Run GitHub Action to deploy code](#step-3-run-github-action-to-deploy-code)
-  * [Step 4. Make a few clicks on Cloudflare dashboard](#step-4-make-a-few-clicks-on-cloudflare-dashboard)
-  * [Step 5. Done. Start publishing](#step-5-done-start-publishing)
-  * [Bonus. Update to the latest version of microfeed](#bonus-update-to-the-latest-version-of-microfeed)
-* [💻 FAQs](#-faqs)
-* [💪 Contributions](#-contributions)
-  * [Run microfeed on local](#run-microfeed-on-local)
-* [🛡️ License](#%EF%B8%8F-license)
+* [⭐️ 使い方](#%EF%B8%8F-how-it-works)
+* [🚀 インストール](#-installation)
+  * [前提条件](#prerequisites)
+  * [ステップ1: microfeed リポジトリを GitHub にフォークする](#step-1-fork-the-microfeed-repo-to-your-github)
+  * [ステップ2: フォークしたリポジトリにいくつかのシークレットを設定する](#step-2-put-some-secrets-on-your-forked-repo)
+  * [ステップ3: GitHub Action を実行してコードをデプロイする](#step-3-run-github-action-to-deploy-code)
+  * [ステップ4: Cloudflare ダッシュボードで数回クリックする](#step-4-make-a-few-clicks-on-cloudflare-dashboard)
+  * [ステップ5: 完了。公開を開始する](#step-5-done-start-publishing)
+  * [ボーナス: microfeed の最新バージョンに更新する](#bonus-update-to-the-latest-version-of-microfeed)
+* [💻 よくある質問](#-faqs)
+* [💪 コントリビューション](#-contributions)
+  * [microfeed をローカルで実行する](#run-microfeed-on-local)
+* [🛡️ ライセンス](#%EF%B8%8F-license)
 
-## ⭐️ How it works
+## ⭐️ 仕組み
 
-Since the 1990s, a significant portion of the web has been powered by feeds.
-People (and bots) publish items to a feed, and others can subscribe to that feed to receive new content.
+1990年代以降、ウェブの大部分はフィードによって支えられています。
+人々（そしてボット）がフィードにアイテムを公開し、他の人々がそのフィードを購読して新しいコンテンツを受け取ります。
 
-microfeed makes it easy for individuals to self-host their own feed on Cloudflare, including but not limited to
-* a podcast feed of audios
-* a blog feed of posts
-* an Instagram-like feed of images (e.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/))
-* a YouTube-like feed of videos
-* a personal website with custom links (e.g., [wenbin.org](https://www.wenbin.org/))
-* a content curation feed of external news article urls
-* a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless cms with a GUI dashboard and a public json feed (e.g., [microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html))
-* a list of domain names for sale (e.g., [listen411.com](https://www.listen411.com/), [ListenHost.com](https://www.listenhost.com/)...)
-* a website for an entire book (e.g., [The Art of War](https://the-art-of-war.dripbook.xyz/))
+microfeedでは、個人が自分自身のフィードをCloudflare上でホストすることが容易になります。以下に示すものだけでなく、
+* オーディオのポッドキャストフィード
+* 投稿のブログフィード
+* 画像のInstagramのようなフィード（例：[llamacorn.listennotes.com](https://llamacorn.listennotes.com/)）
+* 動画のYouTubeのようなフィード
+* カスタムリンクを持つ個人ウェブサイト（例：[wenbin.org](https://www.wenbin.org/)）
+* 外部ニュース記事のURLのコンテンツキュレーションフィード
+* 更新情報と報道カバレッジを持つマーケティングサイト（例：[microfeed.org](https://www.microfeed.org/)）
+* GUIダッシュボードと公開用jsonフィードを持つヘッドレスCMS（例：[microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html)）
+* 販売用のドメイン名リスト（例：[listen411.com](https://www.listen411.com/)、[ListenHost.com](https://www.listenhost.com/)...）
+* 1冊の本のウェブサイト（例：[The Art of War](https://the-art-of-war.dripbook.xyz/)）
 * ...
 
-microfeed uses Cloudflare [Pages](https://pages.cloudflare.com/) to host and run the code,
-[R2](https://www.cloudflare.com/products/r2/) to host and serve media files,
-[D1](https://developers.cloudflare.com/d1/) to store metadata,
-and [Zero Trust](https://www.cloudflare.com/products/zero-trust/) to provide logins to the admin dashboard.
-Cloudflare provides very generous free usage quotas, making it an affordable solution for personal or small business use.
-While you will still need to pay for a domain name, hosting microfeed on Cloudflare is essentially free.
+microfeedは、Cloudflare [Pages](https://pages.cloudflare.com/) を使用してコードをホストおよび実行し、
+[R2](https://www.cloudflare.com/products/r2/) を使用してメディアファイルをホストおよび提供し、
+[D1](https://developers.cloudflare.com/d1/) を使用してメタデータを保存し、
+[Zero Trust](https://www.cloudflare.com/products/zero-trust/) を使用して管理ダッシュボードへのログインを提供します。
+Cloudflareは非常に寛大な無料利用枠を提供しており、個人や小規模企業向けの手頃な価格のソリューションとなっています。
+ドメイン名の料金は支払う必要がありますが、Cloudflare上でのmicrofeedのホスティングは基本的に無料です。
 
-With microfeed, you can publish a variety of content such as audios, videos, photos, documents, blog posts,
-and external URLs to a customizable website, an RSS feed, and a [JSON feed](https://www.jsonfeed.org/).
-Check out some examples of microfeed in action:
-* Web feed: [https://llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
-* Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
-* Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
+microfeedを使用すると、オーディオ、ビデオ、写真、ドキュメント、ブログ記事、
+外部URLなどのさまざまなコンテンツを、カスタマイズ可能なウェブサイト、RSSフィード、および [JSONフィード](https://www.jsonfeed.org/) に公開できます。
+microfeedの実例をいくつかご覧ください：
+* Webフィード: [https://llamacorn.listennotes.com/](https://llamacorn.listennotes.com/)
+* Rssフィード: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
+* Jsonフィード: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
 
-microfeed provides a simple yet powerful admin dashboard that makes it easy to add items to the feed,
-upload media files, and customize web page styles. If you've used WordPress before, you'll find it familiar.
+microfeedはシンプルでありながら強力な管理ダッシュボードを提供し、フィードにアイテムを追加したり、
+メディアファイルをアップロードしたり、ウェブページのスタイルをカスタマイズしたりするのが簡単になります。WordPressを使ったことがあるなら、使い慣れた感じがするでしょう。
 
 ![image-6d056193c81c0b8f5de0503f5af18116](https://user-images.githubusercontent.com/1719237/209486588-00acefe0-dd51-4bfc-aed7-1f63850aa720.png)
 
-[Back to 📚TOC](#-table-of-contents)
+[戻る📚TOC](#-table-of-contents)
 
-## 🚀 Installation
+## 🚀 インストール
 
-Roughly you'll follow these steps to install a microfeed instance to Cloudflare:
+大まかに言って、Cloudflareにmicrofeedインスタンスをインストールするには、以下の手順を実行します：
 
-1. Fork the [microfeed repo](https://github.com/microfeed/microfeed) to your personal (or organizational) GitHub account.
-2. Obtain Cloudflare API tokens and save them as secrets on your forked GitHub repository.
-3. Use the predefined GitHub Action in your forked repository to deploy the code to Cloudflare Pages, using the secrets from step 2.
-4. Make a few clicks on Cloudflare's dashboard to set up custom domains and configure some security settings.
-5. Done. Start publishing!
+1. [microfeedリポジトリ](https://github.com/microfeed/microfeed) を個人（または組織）のGitHubアカウントにフォークします。
+2. Cloudflare APIトークンを取得し、フォークしたGitHubリポジトリのシークレットとして保存します。
+3. ステップ2のシークレットを使用して、フォークしたリポジトリ内の定義済みのGitHubアクションを使って、コードをCloudflareページにデプロイします。
+4. Cloudflareのダッシュボードでいくつかのクリックを行い、カスタムドメインを設定し、セキュリティ設定を構成します。
+5. 完了。公開を開始！
 
-> We understand that not everyone is comfortable with reading documentation, so we've made it as easy as possible
-> to get started with microfeed. However, we'd love to see Cloudflare implement a "Login with Cloudflare" OAuth feature,
-> which would allow for almost one-click deployment of microfeed. In the meantime, we've tried to make the setup process
-> as straightforward as possible for tech-savvy users.
+> すべての人がドキュメントの読み方に慣れているわけではないことを理解しているので、できるだけ簡単に
+> microfeedを始められるようにしました。ただし、Cloudflareが "Login with Cloudflare" OAuth機能を実装してくれると嬉しいです。
+> これにより、microfeedのほぼワンクリックデプロイが可能になります。それまでの間、できるだけ分かりやすい設定プロセスを
+> 試みました。
 
-### Prerequisites
+### 前提条件
 
-* Have a Cloudflare account. If you don't have one already, you can [sign up for free at Cloudflare.com](https://dash.cloudflare.com/sign-up).
-* Have a GitHub account. If you don't have one, you can [sign up for free at GitHub.com](https://github.com/signup).
+* Cloudflareアカウントをお持ちであること。まだお持ちでない場合は、[Cloudflare.comで無料で登録](https://dash.cloudflare.com/sign-up)できます。
+* GitHubアカウントをお持ちであること。まだお持ちでない場合は、[GitHub.comで無料で登録](https://github.com/signup)できます。
 
-[Back to TOC](#-table-of-contents)
+[TOCに戻る](#-table-of-contents)
 
-### Step 1. Fork the microfeed repo to your GitHub
+### ステップ1. microfeedリポジトリをGitHubにフォークする
 
-Simply click on [https://github.com/microfeed/microfeed/fork](https://github.com/microfeed/microfeed/fork) to fork the repository.
+[https://github.com/microfeed/microfeed/fork](https://github.com/microfeed/microfeed/fork) をクリックしてリポジトリをフォークしてください。
 
-You may choose to modify the code in your forked repository in the future, but it's likely that you won't need to
-touch the code at all. Simply fork the repository and keep it synced for future use.
+将来的にフォークしたリポジトリのコードを変更することができますが、おそらく
+コードに触れる必要はありません。リポジトリをフォークし、今後の使用のために同期を保ちます。
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-### Step 2. Put some secrets on your forked repo
+### ステップ2. フォークしたリポジトリにシークレットを追加する
 
-Go to your forked repo's [Settings -> Secrets -> Actions](../../settings/secrets/actions), and create 5 secrets (click for more details).
-With these secrets in place, you'll be able to use GitHub Actions to deploy your microfeed instance to Cloudflare Pages.
+フォークしたリポジトリの [Settings -> Secrets -> Actions](../../settings/secrets/actions) に移動し、5つのシークレットを作成します（詳細はクリックしてください）。
+これらのシークレットがあることで、GitHub Actionsを使ってCloudflare Pagesにmicrofeedインスタンスをデプロイできます。
 
 <details>
   <summary><b>CLOUDFLARE_ACCOUNT_ID</b></summary>
 
-You can get your cloudflare account id from your dashboard's url:
+CloudflareアカウントIDは、ダッシュボードのURLから取得できます：
 
-After you [login your Cloudflare account](https://dash.cloudflare.com/login?lang=en-US), you'll be redirected to a url like this
+[Cloudflareアカウントにログイン](https://dash.cloudflare.com/login?lang=en-US)すると、次のようなURLにリダイレクトされます
 ```
-https://dash.cloudflare.com/[your-cloudflare-account-id-here]
+https://dash.cloudflare.com/[CloudflareアカウントID]
 ```
-The last part of the url is your cloudflare account id.
+URLの最後の部分がCloudflareアカウントIDです。
 
-For example, if you see a url like this:
+例えば、このようなURLが表示された場合：
 ```
 https://dash.cloudflare.com/fff88980eeeeedcc3ffffd4f555f4999
 ```
 
-Then you'll set **CLOUDFLARE_ACCOUNT_ID** to **fff88980eeeeedcc3ffffd4f555f4999**:
+**CLOUDFLARE_ACCOUNT_ID** を **fff88980eeeeedcc3ffffd4f555f4999** に設定します：
 
 <img width="846" alt="Screenshot 2022-12-17 at 10 31 10 AM" src="https://user-images.githubusercontent.com/1719237/208216752-56f00f51-29cb-43ea-b720-75244719898d.png">
 </details>
@@ -148,17 +151,17 @@ Then you'll set **CLOUDFLARE_ACCOUNT_ID** to **fff88980eeeeedcc3ffffd4f555f4999*
 <details>
   <summary><b>CLOUDFLARE_API_TOKEN</b></summary>
 
-You'll need to create an API token here: [https://dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+ここでAPIトークンを作成する必要があります：[https://dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
 
-Create a custom token:
+カスタムトークンを作成します：
 
 <img width="925" alt="Screenshot 2022-12-04 at 4 30 57 PM" src="https://user-images.githubusercontent.com/1719237/205525627-14da54ae-1733-4db5-b65d-94f5ec48f360.png">
 
-We need edit permission for both Cloudflare Pages and D1:
+Cloudflare PagesとD1の両方に編集権限が必要です：
 
 <img width="990" alt="Screenshot 2022-12-04 at 4 31 41 PM" src="https://user-images.githubusercontent.com/1719237/205525675-4c8a6bce-21a8-45e3-bf0c-28981f123da3.png">
 
-Finally, copy the API token here:
+最後に、ここでAPIトークンをコピーします：
 
 <img width="682" alt="Screenshot 2022-12-04 at 4 34 01 PM" src="https://user-images.githubusercontent.com/1719237/205525785-6fed8e49-7342-4b36-9d07-348e1c28cbcc.png">
 
@@ -166,19 +169,19 @@ Finally, copy the API token here:
   </details>
 
 <details>
-  <summary><b>R2_ACCESS_KEY_ID</b> and <b>R2_SECRET_ACCESS_KEY</b></summary>
+  <summary><b>R2_ACCESS_KEY_ID</b> および <b>R2_SECRET_ACCESS_KEY</b></summary>
 
-Go to your [R2 dashboard page](https://dash.cloudflare.com/sign-up/r2). You may need to put your credit card there first. You won't need to pay, unless your usage exceeds the very generous free quota limit (i.e., 10GB storage + 10 million reads/month + 1 million writes/month).
+[R2ダッシュボードページ](https://dash.cloudflare.com/sign-up/r2)に移動します。まずクレジットカード情報を入力する必要があるかもしれません。利用量が非常に寛容な無料枠制限（つまり、10GBのストレージ + 月1000万回の読み取り + 月100万回の書き込み）を超えない限り、支払いは必要ありません。
 
-Create an R2 API token here:
+ここでR2 APIトークンを作成します：
 
   <img width="1328" alt="Screenshot 2022-12-04 at 4 43 58 PM" src="https://user-images.githubusercontent.com/1719237/205526381-cc11d4fe-b053-49d0-9072-de54db31b3b7.png">
 
-Select "Edit" permission and create an API token:
+"編集"権限を選択し、APIトークンを作成します：
 
   <img width="849" alt="Screenshot 2022-12-04 at 4 45 18 PM" src="https://user-images.githubusercontent.com/1719237/205526491-79a87e1e-02e0-4268-9f88-7d9cdc6b3b68.png">
 
-Copy Access Key ID for R2_ACCESS_KEY_ID, and Secret Access Key for R2_SECRET_ACCESS_KEY
+R2_ACCESS_KEY_IDのためにAccess Key IDをコピーし、R2_SECRET_ACCESS_KEYのためにSecret Access Keyをコピーします
   <img width="728" alt="Screenshot 2022-12-04 at 4 45 35 PM" src="https://user-images.githubusercontent.com/1719237/205526582-92f440ac-21c4-46d9-a065-cfc1937391c8.png">
 
 
@@ -188,163 +191,159 @@ Copy Access Key ID for R2_ACCESS_KEY_ID, and Secret Access Key for R2_SECRET_ACC
 <details>
   <summary><b>CLOUDFLARE_PROJECT_NAME</b></summary>
 
-A legit project name should have these characters: [a-z], [A-Z], [0-9], and -
+正当なプロジェクト名は、次の文字を含む必要があります：[a-z]、[A-Z]、[0-9]、および -
 
-We recommend using the custom domain name that you'll use for this project and replace dot (.) with dash (-)
+このプロジェクトで使用するカスタムドメイン名を使用し、ドット（.）をダッシュ（-）に置き換えることをお勧めします
 
-For example, if you use photos.mycustomdomain.com, then the project name should be photos-mycustomdomain-com
+たとえば、photos.mycustomdomain.comを使用する場合、プロジェクト名はphotos-mycustomdomain-comにする必要があります。
 
-Note: Don't use underscore (_), space ( ), and other characters outside [a-z], [A-Z], [0-9] and -. Or Cloudflare Pages won't let you create a project.
+注意：アンダースコア（_）、スペース（ ）および[a-z]、[A-Z]、[0-9]および-以外の文字を使用しないでください。そうしないと、Cloudflare Pagesでプロジェクトを作成できません。
 </details>
 
-In total, you'll add 5 secrets for GitHub Actions:
+合計で、GitHub Actionsに5つのシークレットを追加します：
 
 <img width="826" alt="Screenshot 2022-12-04 at 4 10 46 PM" src="https://user-images.githubusercontent.com/1719237/205524410-268abf92-af61-467a-8883-78b8d4de3c56.png">
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-### Step 3. Run GitHub Action to deploy code
+### ステップ3. GitHub Actionを実行してコードをデプロイする
 
-Go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml) and run Workflow
+[Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml)に移動し、ワークフローを実行します。
 
 <img width="1606" alt="Screenshot 2022-12-04 at 4 11 19 PM" src="https://user-images.githubusercontent.com/1719237/205526856-05ea0ff4-703a-4d08-bc7f-4ae2dfc07cfe.png">
 
-If you see the green checkmark, then the deployment is successful. And you can see a Pages project in your [Cloudflare dashboard](https://dash.cloudflare.com/sign-up/pages):
-
+緑のチェックマークが表示されたら、デプロイが成功しています。[Cloudflareダッシュボード](https://dash.cloudflare.com/sign-up/pages)でPagesプロジェクトが表示されます。
 
 <img width="880" alt="Screenshot 2022-12-04 at 4 55 10 PM" src="https://user-images.githubusercontent.com/1719237/205527141-277620dd-586b-42dd-be97-edb7875d0705.png">
 
-You can access the site via ${CLOUDFLARE_PROJECT_NAME}.pages.dev, for example, [https://microfeed-org.pages.dev/](https://microfeed-org.pages.dev/)
+サイトには${CLOUDFLARE_PROJECT_NAME}.pages.devを介してアクセスできます。例：[https://microfeed-org.pages.dev/](https://microfeed-org.pages.dev/)
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-### Step 4. Make a few clicks on Cloudflare dashboard
+### ステップ4. Cloudflareダッシュボードでいくつかのクリックを行う
 
-To manage your microfeed instance, you'll use the admin dashboard at ${CLOUDFLARE_PROJECT_NAME}.pages.dev/admin, for example, [https://microfeed-org.pages.dev/admin/](https://microfeed-org.pages.dev/admin/) (the admin dashboard needs to be protected by Cloudflare Zero Trust).
+microfeedインスタンスを管理するには、${CLOUDFLARE_PROJECT_NAME}.pages.dev/adminの管理ダッシュボードを使用します。例えば、[https://microfeed-org.pages.dev/admin/](https://microfeed-org.pages.dev/admin/)（管理ダッシュボードはCloudflare Zero Trustで保護する必要があります）。
 
-Upon accessing the admin dashboard for the first time, you'll complete the setup process by following the checklist:
+初めて管理ダッシュボードにアクセスすると、チェックリストに従ってセットアッププロセスを完了します。
 
 <img width="1182" alt="Screenshot 2022-12-17 at 10 34 05 AM" src="https://user-images.githubusercontent.com/1719237/208216864-38a65086-77ef-4595-bc05-c87be2676e6d.png">
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-### Step 5. Done. Start publishing
+### ステップ5. 完了。公開を開始する
 
-Once you've completed the setup process, your microfeed instance will be ready to use.
-You can add, update, or delete items from the admin dashboard.
+セットアッププロセスが完了すると、microfeedインスタンスが使用可能になります。
+管理ダッシュボードからアイテムを追加、更新、または削除できます。
 
-You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
+また、Settings / Custom codeで生のHTMLとCSSを編集することで、ウェブサイトの外観をカスタマイズできます。
 
 <img width="1098" alt="Screenshot 2022-12-30 at 7 57 45 PM" src="https://user-images.githubusercontent.com/1719237/210062910-e56135f6-557e-419e-a00d-b25dd391c93d.png">
 
-The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a templating language, where you can access to variables from Feed Json or Item Json. For example, on our marketing website [microfeed.org](https://www.microfeed.org/)'s home page (Feed Web), we use variables in the html code from [microfeed.org/json/](https://www.microfeed.org/json/), and on [an item's page](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/) (Item Web), we use variables from [${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json).
+HTMLコードでは、[mustache.js](https://github.com/janl/mustache.js)をテンプレート言語として使用し、Feed JsonまたはItem Jsonから変数にアクセスできます。例えば、マーケティングウェブサイト[microfeed.org](https://www.microfeed.org/)のホームページ（Feed Web）では、[microfeed.org/json/](https://www.microfeed.org/json/)からHTMLコード内の変数を使用し、[アイテムのページ](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/)（Item Web）では、[${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json)から変数を使用します。
 
-With the easy access to the json data of a microfeed instance (i.e., [Feed Json](https://www.microfeed.org/json/) and [Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json), you can use it as a headless CMS and build your own client apps to display the content.
+microfeedインスタンスのjsonデータ（つまり、[Feed Json](https://www.microfeed.org/json/)および[Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json)）に簡単にアクセスできるため、それをヘッドレスCMSとして使用し、コンテンツを表示する独自のクライアントアプリを構築できます。
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-### Bonus. Update to the latest version of microfeed
+### ボーナス. microfeedの最新バージョンに更新する
 
-We'll continue to add new features and fix bugs in this microfeed repo.
-You may want to update your forked repo with the new code.
+このmicrofeedリポジトリに新機能を追加し、バグを修正していきます。
+新しいコードを含むフォークしたリポジトリを更新することができます。
 
-You'll first sync up the code in your forked repo:
+まず、フォークしたリポジトリのコードを同期させます：
 
 <img width="488" alt="Screenshot 2022-12-26 at 7 58 32 AM" src="https://user-images.githubusercontent.com/1719237/209483973-c82e7808-0d21-4aad-ac2d-c4e80da691bc.png">
 
-Then go to [Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml) and run Workflow to deploy the new code.
+次に、[Actions -> Deploy to Cloudflare Pages](../../actions/workflows/deploy.yml)に移動し、Workflowを実行して新しいコードをデプロイします。
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-## 💻 FAQs
+## 💻 よくある質問
 
 <details>
-<summary><b>How can I track podcast / video / image downloads?</b></summary>
+<summary><b>ポッドキャスト/ビデオ/画像のダウンロードをどのように追跡できますか？</b></summary>
 
-To track podcast, video, or image downloads with microfeed, you can use the tracking URLs feature.
-This allows you to set up third-party tracking URLs for your media files, such as those provided by [OP3](https://op3.dev/), [Podtrac](http://analytics.podtrac.com/), [Chartable](https://chartable.com/)...
+microfeedでポッドキャスト、ビデオ、または画像のダウンロードを追跡するには、追跡URL機能を使用できます。
+これにより、[OP3](https://op3.dev/)、[Podtrac](http://analytics.podtrac.com/)、[Chartable](https://chartable.com/) など、メディアファイルに対してサードパーティの追跡URLを設定できます。
 
-To set up tracking URLs, you will need to go to Settings / Tracking URLs:
+追跡URLを設定するには、設定/追跡URLに移動する必要があります：
 ![Screenshot 2023-01-05 at 7 57 02 AM](https://user-images.githubusercontent.com/1719237/210665674-39f9b0a9-1f28-4608-b0cd-c67b8a5c87ec.png)
 
+そこから、使用したいサードパーティの追跡URLを追加できます。
+microfeedは自動的にこれらのURLをメディアファイルのURLの先頭に追加し、ダウンロード統計を追跡できるようにします。
 
-From there, you can add the third-party tracking URLs that you want to use.
-microfeed will automatically add these URLs to the front of the URL for your media files, allowing you to track download statistics.
-
-This is a [common practice in the podcast industry](https://lowerstreet.co/blog/podcast-tracking) and can be a useful way to monitor the performance of your content and understand how it is being consumed by your audience.
+これは[ポッドキャスト業界で一般的な方法](https://lowerstreet.co/blog/podcast-tracking)であり、コンテンツのパフォーマンスを監視し、視聴者がどのようにコンテンツを消費しているかを理解するのに役立ちます。
 
 </details>
 
 <details>
-<summary><b>Why Cloudflare? Isn't it dangerous to trust a for-profit company?</b></summary>
+<summary><b>なぜCloudflareなのですか？利益追求企業を信用するのは危険ではありませんか？</b></summary>
 
-Many individuals and organizations trust and use Cloudflare's services because it has a reputation for providing reliable and effective services.
-We ([Listen Notes](https://www.listennotes.com/)) have been using Cloudflare for many years.
+多くの個人や組織が、信頼性があり効果的なサービスを提供しているという評判のあるCloudflareのサービスを信頼して使用しています。
+私たち（[Listen Notes](https://www.listennotes.com/)）も、Cloudflareを長年使用しています。
 
-It's convenient to manage all things on a one-stop platform like Cloudflare (e.g., DNS, Cache, firewall, running code, CDN, trustless logins...).
+Cloudflareのようなワンストッププラットフォームですべてのものを管理することが便利です（例：DNS、キャッシュ、ファイアウォール、コードの実行、CDN、信頼性のないログインなど）。
 
-microfeed is still in open alpha phase. Cloudflare is the first platform we support.
-We may consider supporting other serverless platforms, so you can easily migrate away if needed.
+microfeedはまだオープンアルファ段階です。Cloudflareは、最初にサポートするプラットフォームです。
+他のサーバーレスプラットフォームをサポートすることも検討しており、必要に応じて簡単に移行できるようになります。
 </details>
 
 
 <details>
-<summary><b>What if Cloudflare de-platforms my microfeed instance?</b></summary>
+<summary><b>もしCloudflareが私のmicrofeedインスタンスをデプラットフォームする場合はどうすればいいですか？</b></summary>
 
-It is important to carefully review the terms of service for any service that you use, including Cloudflare.
-It is possible that if you violate the terms of service, the service may take action, such as de-platforming your instance.
+Cloudflareを含む、使用するすべてのサービスの利用規約を慎重に確認することが重要です。
+利用規約に違反した場合、サービスがインスタンスのデプラットフォームなどの対応を取る可能性があります。
 
-To protect against the possibility of being de-platformed, it is a good idea to regularly backup your data from Cloudflare.
-This will allow you to recover your contents and potentially migrate them to a different platform if necessary.
-It is also a good idea to use your own custom domain, as this will give you more control over your content and make it easier to move your data to a different platform if needed.
-</details>
-
-
-<details>
-<summary><b>Why should I use microfeed?</b></summary>
-
-If you are already using Cloudflare and are satisfied with its services, then using microfeed may be a good option for you.
-
-If you don't want to manage your own servers, microfeed can be a convenient alternative that allows you to take advantage of
-Cloudflare's infrastructure and security features.
-
-If you don't want to pay for servers, microfeed can be a cost-effective solution, as Cloudflare provides generous free usage quotas.
-
-If you are looking for something new and are interested in exploring different options, microfeed could be a good choice to consider.
-It is always a good idea to carefully evaluate any service before using it to ensure that it meets your needs and is a good fit for your use case.
+デプラットフォームされる可能性に備えて、Cloudflareから定期的にデータをバックアップすることが良いアイデアです。
+これにより、コンテンツを回復し、必要に応じて別のプラットフォームに移行することができます。
+また、独自のカスタムドメインを使用することも良いアイデアです。これにより、コンテンツに対する制御が向上し、必要に応じてデータを別のプラットフォームに移行するのが容易になります。
 </details>
 
 <details>
-<summary><b>How to download / backup data from microfeed / Cloudflare?</b></summary>
+<summary><b>なぜmicrofeedを使うべきですか？</b></summary>
 
-microfeed stores data in Cloudflare D1 and R2. Therefore, you'll download two things to backup your microfeed data:
-* a sqlite database from [Cloudflare D1](https://developers.cloudflare.com/d1/), including all metadata.
-* media files from [Cloudflare R2](https://developers.cloudflare.com/r2/), including audio, image, video...
+すでにCloudflareを使用しており、そのサービスに満足している場合、microfeedを使うことは良い選択肢になるかもしれません。
 
-<b>How to download a sqlite database from D1?</b>
+自分でサーバーを管理したくない場合、microfeedはCloudflareのインフラストラクチャとセキュリティ機能を利用できる便利な代替手段になります。
 
-You can use the command line tool `wrangler` to find sqlite database files and download backups:
+サーバー費用を支払いたくない場合、microfeedはCloudflareが提供する無料使用枠が豊富であるため、費用対効果の高い解決策になります。
+
+新しいものを探していて、さまざまな選択肢を試してみたい場合、microfeedは検討する価値がある選択肢です。
+あなたのニーズに適合し、使用例に適したサービスであることを確認するために、使用する前にサービスを慎重に評価することが常に良いアイデアです。
+</details>
+
+<details>
+<summary><b>microfeed / Cloudflareからデータをダウンロード/バックアップする方法は？</b></summary>
+
+microfeedは、Cloudflare D1およびR2にデータを保存します。したがって、microfeedデータをバックアップするには、次の2つのデータをダウンロードする必要があります。
+* [Cloudflare D1](https://developers.cloudflare.com/d1/)からのsqliteデータベース。すべてのメタデータを含みます。
+* [Cloudflare R2](https://developers.cloudflare.com/r2/)からのメディアファイル。オーディオ、画像、ビデオなどを含みます。
+
+<b>D1からsqliteデータベースをダウンロードする方法は？</b>
+
+コマンドラインツール `wrangler` を使用して、sqliteデータベースファイルを見つけてバックアップをダウンロードできます。
 
 [https://developers.cloudflare.com/workers/wrangler/commands/#d1](https://developers.cloudflare.com/workers/wrangler/commands/#d1)
 
-<b>How to download media files from R2?</b>
+<b>R2からメディアファイルをダウンロードする方法は？</b>
 
-As of Feb 16, 2023, Cloudflare has not provided tools to to batch download all files from a R2 bucket. 
+2023年2月16日現在、Cloudflareは、R2バケットからすべてのファイルを一括ダウンロードするためのツールを提供していません。
 
-You may need to write a script to use [S3-compatible APIs](https://developers.cloudflare.com/r2/data-access/s3-api/api/) to fetch all objects from a specific R2 bucket.
+特定のR2バケットからすべてのオブジェクトをフェッチするために、[S3互換API](https://developers.cloudflare.com/r2/data-access/s3-api/api/)を使用するスクリプトを記述する必要があります。
 
 </details>
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-## 💪 Contributions
-We welcome contributions to microfeed!
-If you have an idea for a new feature or have found a bug, please [open an issue](https://github.com/microfeed/microfeed/issues/new) in the repository.
-If you'd like to submit a fix or new feature, please create a pull request with a detailed description of your changes.
+## 💪 コントリビューション
+microfeedへのコントリビューションを歓迎します！
+新機能のアイデアがある場合やバグを見つけた場合は、リポジトリ内で[問題を開いて](https://github.com/microfeed/microfeed/issues/new)ください。
+修正や新機能を提出したい場合は、変更の詳細な説明を含むプルリクエストを作成してください。
 
-### Run microfeed on local
+### ローカルでmicrofeedを実行する
 
-First, create a .vars.toml file in microfeed's root directory (same level as this README.md file) and put 5 secrets in the .vars.toml file (Similar to [Step 2. Put some secrets on your forked repo](#step-2-put-some-secrets-on-your-forked-repo)):
+まず、microfeedのルートディレクトリ（このREADME.mdファイルと同じレベル）に.vars.tomlファイルを作成し、.vars.tomlファイルに5つのシークレットを入力します（[ステップ2. フォークしたリポジトリにシークレットを入れる](#step-2-put-some-secrets-on-your-forked-repo)と同様に）：
 ```toml
 # .vars.toml
 CLOUDFLARE_PROJECT_NAME = "your-project-org"
@@ -355,16 +354,16 @@ R2_ACCESS_KEY_ID = "access key"
 R2_SECRET_ACCESS_KEY = "secret key"
 ```
 
-Second, run local dev server:
+次に、ローカルの開発サーバーを実行します：
 ```bash
 npm run dev
 ```
 
-You should be able to access to a local microfeed instance via http://127.0.0.1:8788/.
+http://127.0.0.1:8788/ を介してローカルのmicrofeedインスタンスにアクセスできるはずです。
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
 
-## 🛡️ License
-microfeed is licensed under the [AGPL-3.0](https://github.com/microfeed/microfeed/blob/main/LICENSE) license. Please see [the LICENSE file](https://github.com/microfeed/microfeed/blob/main/LICENSE) for more information.
+## 🛡️ ライセンス
+microfeedは、[AGPL-3.0](https://github.com/microfeed/microfeed/blob/main/LICENSE)ライセンスの下でライセンスされています。詳細については、[LICENSEファイル](https://github.com/microfeed/microfeed/blob/main/LICENSE)を参照してください。
 
-[Back to 📚TOC](#-table-of-contents)
+[📚TOCに戻る](#-table-of-contents)
