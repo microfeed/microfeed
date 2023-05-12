@@ -1,9 +1,7 @@
-// TODO: get r2 presigned url
-export async function onRequestPost({request, env}) {
-  console.log(env);
-  return new Response(JSON.stringify({}), {
-    headers: {
-      'content-type': 'application/json;charset=UTF-8',
-    },
-  });
+import {onGetR2PresignedUrlRequestPost} from "../../../../edge-src/EdgeCommonRequests";
+
+export async function onRequestPost(context) {
+  // TODO: for input, add logic to construct R2 object key
+  // TODO: for response, construct full cdn url
+  return await onGetR2PresignedUrlRequestPost(context);
 }

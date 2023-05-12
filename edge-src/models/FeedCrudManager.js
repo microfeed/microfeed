@@ -1,5 +1,5 @@
 import {randomShortUUID, removeHostFromUrl} from "../../common-src/StringUtils";
-import {LANGUAGE_CODES_LIST} from "../../common-src/Constants";
+import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT, LANGUAGE_CODES_LIST} from "../../common-src/Constants";
 
 const LANGUAGE_CODES = LANGUAGE_CODES_LIST.map((lc) => lc.code);
 
@@ -21,15 +21,18 @@ export default class FeedCrudManager {
       internalSchema.status = item.status;
     }
 
-    if (item.attachment) {
+    if (item.attachment &&
+        ENCLOSURE_CATEGORIES_DICT[item.attachment.category] &&
+        item.attachment.url) {
       const mediaFile = {};
+      if (item.attachment.category) {
+        mediaFile.category = item.attachment.category;
+      }
       if (item.attachment.url) {
         // Media file url for internal schema doesn't have host:
         // [pages-project-name]/[environment]/media/[file-type]-[uuid].[extension]
-        mediaFile.url = removeHostFromUrl(item.attachment.url);
-      }
-      if (item.attachment.category) {
-        mediaFile.category = item.attachment.category;
+        mediaFile.url = item.attachment.category !== ENCLOSURE_CATEGORIES.EXTERNAL_URL ?
+          removeHostFromUrl(item.attachment.url) : item.attachment.url;
       }
       if (item.attachment.mime_type) {
         mediaFile.contentType = item.attachment.mime_type;
