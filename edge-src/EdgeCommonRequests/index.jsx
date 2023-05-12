@@ -2,16 +2,16 @@ import {JsonResponseBuilder} from "../common/PageUtils";
 import {STATUSES} from "../../common-src/Constants";
 import {getIdFromSlug} from "../../common-src/StringUtils";
 
-export async function onFetchFeedJsonRequestGet({env, request}) {
+export async function onFetchFeedJsonRequestGet({env, request}, checkIsAllowed = true) {
   const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
     queryKwargs: {
       status: STATUSES.PUBLISHED,
     },
   });
-  return await jsonResponseBuilder.getResponse();
+  return await jsonResponseBuilder.getResponse({checkIsAllowed});
 }
 
-export async function onFetchItemRequestGet({params, env, request}) {
+export async function onFetchItemRequestGet({params, env, request}, checkIsAllowed = true) {
   const {slug, itemId} = params;
   const theItemId = itemId || getIdFromSlug(slug);
 
@@ -30,7 +30,8 @@ export async function onFetchItemRequestGet({params, env, request}) {
           return false;
         }
         return true;
-      }
+      },
+      checkIsAllowed,
     });
   }
   return JsonResponseBuilder.Response404();

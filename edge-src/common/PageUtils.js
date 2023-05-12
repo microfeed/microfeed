@@ -140,15 +140,19 @@ export class JsonResponseBuilder extends ResponseBuilder {
 
   _getResponse(props) {
     const res = super._getResponse(props);
-    const {subscribeMethods} = this.settings;
-    let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'json');
-    if (notFoundRes) {
-      return notFoundRes;
-    }
 
-    if (props && props.isValid) {
-      if (!props.isValid(this.jsonData)) {
-        return ResponseBuilder.Response404();
+    if (props) {
+      if (props.checkIsAllowed) {
+        const {subscribeMethods} = this.settings;
+        let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'json');
+        if (notFoundRes) {
+          return notFoundRes;
+        }
+      }
+      if (props.isValid) {
+        if (!props.isValid(this.jsonData)) {
+          return ResponseBuilder.Response404();
+        }
       }
     }
     const newResponse = new Response(JSON.stringify(this.jsonData), res);

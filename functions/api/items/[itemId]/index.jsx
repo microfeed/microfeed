@@ -3,7 +3,7 @@ import {STATUSES} from "../../../../common-src/Constants";
 import {onFetchItemRequestGet} from "../../../../edge-src/EdgeCommonRequests";
 
 export async function onRequestGet({params, env, request}) {
-  return await onFetchItemRequestGet({params, env, request});
+  return await onFetchItemRequestGet({params, env, request}, false);
 }
 
 // TODO: defensive code to handle some common errors
