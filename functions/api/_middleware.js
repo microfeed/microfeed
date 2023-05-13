@@ -6,6 +6,11 @@ async function fetchFeedAndAuth({request, next, env, data}) {
   const feedDb = new FeedDb(env, request);
   const contentFromDb = await feedDb.getContent()
 
+  const settings = contentFromDb.settings || {};
+  const webGlobalSettings = settings.webGlobalSettings || {};
+  const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
+
+  data.publicBucketUrl = publicBucketUrl;
   data.feedDb = feedDb;
   data.feedContent = contentFromDb;
   data.feedCrud = new FeedCrudManager(contentFromDb, feedDb, request);

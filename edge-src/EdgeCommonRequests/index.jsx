@@ -94,16 +94,10 @@ async function getPresignedUrlFromR2(env, bucket, inputParams) {
  *   "mediaBaseUrl": "<pages-project-name>>/<environment>"
  * }
  */
-export async function onGetR2PresignedUrlRequestPost({request, env}) {
-  const inputParams = await request.json();
+export async function onGetR2PresignedUrlRequestPost({inputParams, env}) {
   const presignedUrl = await getPresignedUrlFromR2(env, env.R2_PUBLIC_BUCKET, inputParams);
-  const jsonData = {
+  return {
     presignedUrl,
     mediaBaseUrl: projectPrefix(env),
   };
-  return new Response(JSON.stringify(jsonData), {
-    headers: {
-      'content-type': 'application/json;charset=UTF-8',
-    },
-  });
 }
