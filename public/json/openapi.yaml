@@ -1,6 +1,6 @@
 openapi: "3.1.0"
 info:
-    version: "0.1.1"
+    version: "0.1.2"
     title: "microfeed json feed"
     description: |
         Allows to use microfeed as a headless cms or integrate with external services like Zapier.
