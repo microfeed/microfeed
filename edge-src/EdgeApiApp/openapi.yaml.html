@@ -13,11 +13,18 @@ servers:
     description: API Production Server
 tags:
   - name: Feed API
-    description: Read-only endpoints to fetch the jsonfeed and individual items.
+    description: |
+      Read-only endpoints to fetch the jsonfeed and individual items.
+      Anyone can use Feed API endpoints without authentication.
+      In other words, these endpoints are public.
+      You can disable Feed API endpoints at {{baseUrl}}/admin/settings/ -
+      toggle "Visible" of "JSON" in the "Subscribe methods" section.
   - name: Admin API
     description: |
       Endpoints to do CRUD operations on the microfeed instance, e.g.,
       create a new item, update an existing item, delete an item, upload media files...
+      You need to use your microfeed instance's API key to access these endpoints.
+      You can find your microfeed instance's API key at the API section of {{baseUrl}}/admin/settings/.
 paths:
   /json:
     get:
@@ -51,7 +58,7 @@ paths:
             default: newest_first
             enum: [ "newest_first", "oldest_first" ]
       responses:
-        "200":
+        200:
           description: Success response.
           links:
             paginate:
@@ -91,13 +98,100 @@ paths:
             type: string
           example: EOvEbn2lb8r
       responses:
-        "200":
+        200:
           description: Success response.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/FeedJson"
+        404:
+          description: |
+            This item does not exist, or
+            this microfeed instance's Json feed is disabled by the admin at /admin/settings/
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: "Not Found"
+  /api/channels/primary/:
+    put:
+      tags:
+        - Admin API
+      summary: Update the channel
+      description: |
+        Update the channel's metadata.
+      operationId: apiUpdatePrimaryChannel
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+  /api/items/:
+    post:
+      tags:
+        - Admin API
+      summary: Creates a new item.
+      description: |
+        Creates a new item.
+      operationId: apiCreateNewItem
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+  /api/items/{id}/:
+    put:
+      tags:
+        - Admin API
+      summary: Updates an item.
+      description: |
+        Updates an item's metadata.
+      operationId: apiUpdateItemById
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+    delete:
+      tags:
+        - Admin API
+      summary: Deletes an item.
+      description: |
+        Deletes an item.
+      operationId: apiDeleteItemById
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+    get:
+      tags:
+        - Admin API
+      summary: Fetches json for an item.
+      description: |
+        Fetches json feed data for an item.
+      operationId: apiFetchItemById
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+  /api/feed/:
+    get:
+      tags:
+        - Admin API
+      summary: Fetches json for a feed.
+      description: |
+        Fetches json feed data for a feed.
+      operationId: apiFetchFeed
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+  /api/media_files/presigned_urls/:
+    post:
+      tags:
+        - Admin API
+      summary: Creates a r2 presigned url
+      description: |
+        Creates a presigned url for uploading a media file to R2.
+      operationId: apiGetR2PresignedUrl
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
 components:
+  parameters:
+    apiKeyParam:
+      name: X-MicrofeedAPI-Key
+      in: header
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+      description: "Get API Key on {{baseUrl}}/admin/settings/"
   schemas:
     FeedJson:
       type: object

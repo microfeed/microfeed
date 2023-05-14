@@ -19,11 +19,10 @@ async function fetchFeedAndAuth({request, next, env, data}) {
     const apiSettings = contentFromDb.settings[SETTINGS_CATEGORIES.API_SETTINGS];
     if (apiSettings) {
       if (apiSettings.enabled) {
-        const bearerToken = request.headers.get('Authorization');
+        const apiKey = request.headers.get('x-microfeedapi-key');
         try {
-          const token = bearerToken.split(' ')[1];
-          const tokenMatched = apiSettings.apps.some(app => app.token === token);
-          if (token && tokenMatched) {
+          const tokenMatched = apiSettings.apps.some(app => app.token === apiKey);
+          if (apiKey && tokenMatched) {
             return next();
           }
         } catch(e) {} // eslint-disable-line no-empty

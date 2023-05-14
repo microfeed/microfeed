@@ -80,8 +80,11 @@ export default class ApiSettingsApp extends React.Component {
             customLabelClass={clsx('', apiBundle.enabled ? 'text-black' : 'text-muted-color')}
             enabled={apiBundle.enabled} setEnabled={(checked) => this.setApiEnabled(checked)}
           />
+          <div className="text-muted-color text-xs mt-2">
+            You can use the API to manage contents of your feed, e.g., create, update, and delete items.
+          </div>
         </div>
-        <div className="flex items-center mt-4">
+        <div className="flex items-center mt-8">
           <div
             className={clsx('flex-none text-sm', !apiBundle.enabled && 'text-muted-color')}
           >
@@ -92,11 +95,14 @@ export default class ApiSettingsApp extends React.Component {
               disabled
               value={app.token}
               customClass={clsx('text-sm p-1 select-all', !apiBundle.enabled && 'text-muted-color')}
+              description={"Set the X-MicrofeedAPI-Key header to the API key, e.g., " +
+                `curl -H X-MicrofeedAPI-Key: ${app.token} ...`}
             />
           </div>
           <div className="flex-none">
             <button
               type="button"
+              disabled={!apiBundle.enabled}
               className="lh-btn lh-btn-secondary lh-btn-sm"
               onClick={(e) => {
                 e.preventDefault();
@@ -110,9 +116,16 @@ export default class ApiSettingsApp extends React.Component {
             </button>
           </div>
         </div>
+        <div className="text-xs mt-8">
+          How to use API key?
+        </div>
+        <div className="mt-2 text-xs text-helper-color">
+          {"Set the X-MicrofeedAPI-Key header to the API key, e.g., " +
+            'curl -H "X-MicrofeedAPI-Key: <API_KEY>" ...'}
+        </div>
         <div className="mt-8">
           <a href="/json/openapi.html" target="_blank" rel="noopener noreferrer">
-            Documentation of microfeed's API <span className="lh-icon-arrow-right" />
+            Documentation of microfeed's API <span className="lh-icon-arrow-right"/>
           </a>
         </div>
         <div className="mt-4">
