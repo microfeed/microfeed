@@ -3,6 +3,7 @@ import { RadioGroup } from '@headlessui/react'
 import clsx from "clsx";
 import { CheckIcon } from '@heroicons/react/20/solid'
 import SettingsBase from '../SettingsBase';
+import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
 
 function AccessOption({value, header, description}) {
   return (<RadioGroup.Option value={value}>
@@ -34,7 +35,7 @@ export default class AccessSettingsApp extends React.Component {
 
     this.onUpdateAccess = this.onUpdateAccess.bind(this);
 
-    const currentType = 'access';
+    const currentType = SETTINGS_CATEGORIES.ACCESS;
     const {feed} = props;
     let access = {currentPolicy: 'public', passcode: 'secret'};
     if (feed.settings && feed.settings[currentType]) {

@@ -106,6 +106,16 @@ function normalize (strArray) {
   return str;
 }
 
+export function removeHostFromUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    const path = urlObj.pathname + urlObj.search + urlObj.hash;
+    return path.replace(/^\/+/g, '')
+  } catch (e) {
+    return url;
+  }
+}
+
 export function urlJoin(...args) {
   const parts = Array.from(Array.isArray(args[0]) ? args[0] : args);
   return normalize(parts);
