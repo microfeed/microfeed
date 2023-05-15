@@ -1,6 +1,6 @@
 openapi: "3.1.0"
 info:
-  version: "0.1.2"
+  version: "{{microfeedVersion}}"
   title: "microfeed api"
   description: "Allows to use microfeed as a headless cms or integrate with external services like Zapier."
   termsOfService: "https://github.com/microfeed/microfeed/blob/main/LICENSE"
@@ -475,7 +475,7 @@ components:
             For example, 0.2.2 should be backward compatible with 0.1.1, because both have the same major version 0;
             2.1.2 may or may not be backward compatible with 0.2.1, because they have different major versions
             (i.e., 2 vs 0).
-          example: 0.1.1
+          example: {{microfeedVersion}}
         base_url:
           type: string
           description: |
