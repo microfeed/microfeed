@@ -376,7 +376,7 @@ components:
             a maximum size of 3000 x 3000 pixels, in JPEG or PNG format, 72 dpi,
             with appropriate file extensions (.jpg, .png), and in the RGB colorspace -
             this is the requirement of Apple Podcasts.
-          example: https://cdn-my-website.com/images/channel.jpg
+          example: https://media-cdn.my-website.com/projectname/production/images/channel-1f7e6bdb428ee91c298dfe1bc399fd23.png
         favicon:
           type: string
           description: |
@@ -433,7 +433,7 @@ components:
                 description: |
                   The url of a media file associated with this item, which can be
                   an audio, a video, a document, an image or an external url.
-                example: https://cdn.my-website.com/media/file1.mp3
+                example: https://media-cdn.mywebsite.org/projectname/production/media/audio-bd99c7997f0e181e3c4ad411a1160333.mp3
                 required: true
               mime_type:
                 type: string
@@ -477,12 +477,12 @@ components:
             If it's a podcast episode, the image size should be a minimum size of 1400 x 1400 pixels and a maximum size of 3000 x 3000 pixels,
             in JPEG or PNG format, 72 dpi, with appropriate file extensions (.jpg, .png),
             and in the RGB colorspace - this is a requirement of Apple Podcasts.
-          example: https://cdn.my-website.com/images/eps1.jpg
+          example: https://media-cdn.my-website.com/projectname/production/images/item-1f7e6bdb428ee91c298dfe1bc399fd23.png
         banner_image:
           type: string
           description: |
             The url of an image in attachments, only when the associated media file is an image.
-          example: https://cdn.my-website.com/media/banner.jpg
+          example: https://media-cdn.my-website.com/projectname/production/media/image-ef5e5ec8c909ed44a800a03fe5667b50.png
         date_published:
           type: string
           description: |
@@ -776,7 +776,7 @@ components:
             You can use *POST /api/v1/media_files/presigned_urls/* to upload the image to the R2 bucket.
             Then you can use the returned *media_url* as the icon.
           example:
-            https://cdn-my-website.com/images/my-podcast-cover-image.png
+            https://media-cdn.my-website.com/projectname/production/images/channel-1f7e6bdb428ee91c298dfe1bc399fd23.png
         authors:
           type: array
           description: |
@@ -907,7 +907,7 @@ components:
                 You can use *POST /api/v1/media_files/presigned_urls/* to upload to the R2 bucket.
                 Then you can use the returned *media_url* for *url*.
                 If it's an external_url, then it should be the url of the external resource.
-              example: https://cdn-example.com/episode1.mp3
+              example: https://media-cdn.my-website.com/projectname/production/media/audio-ef5e5ec8c909ed44a800a03fe5667b50.mp3
             mime_type:
               type: string
               description: |
@@ -943,7 +943,7 @@ components:
             The image should be uploaded to the R2 bucket used by this microfeed instance.
             You can use *POST /api/v1/media_files/presigned_urls/* to upload the image to the R2 bucket.
             Then you can use the returned *media_url* as the image.
-          example: https://cdn.example.com/episode1.png
+          example: https://media-cdn.my-website.com/projectname/production/images/item-1f7e6bdb428ee91c298dfe1bc399fd23.png
         date_published_ms:
           type: integer
           description: |
