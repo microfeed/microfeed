@@ -19,5 +19,6 @@ export async function onRequestPost({ request, data }) {
     headers: {
       'content-type': 'application/json;charset=UTF-8',
     },
+    status: 201,
   });
 }

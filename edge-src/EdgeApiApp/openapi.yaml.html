@@ -90,13 +90,7 @@ paths:
         please see https://www.jsonfeed.org/version/1.1/
       operationId: fetchItemJson
       parameters:
-        - name: id
-          in: path
-          description: This item's unique id.
-          required: true
-          schema:
-            type: string
-          example: EOvEbn2lb8r
+        - $ref: '#/components/parameters/itemIdParam'
       responses:
         200:
           description: Success response.
@@ -123,6 +117,19 @@ paths:
       operationId: apiUpdatePrimaryChannel
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelRequestBodyJson'
+      responses:
+        200:
+          description: Success response.
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /api/items/:
     post:
       tags:
@@ -133,6 +140,19 @@ paths:
       operationId: apiCreateNewItem
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemRequestBodyJson'
+      responses:
+        201:
+          description: Success response.
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /api/items/{id}/:
     put:
       tags:
@@ -143,6 +163,22 @@ paths:
       operationId: apiUpdateItemById
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      - $ref: '#/components/parameters/itemIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemRequestBodyJson'
+      responses:
+        200:
+          description: Success response.
+        404:
+          $ref: '#/components/responses/NotFound'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
     delete:
       tags:
         - Admin API
@@ -152,6 +188,16 @@ paths:
       operationId: apiDeleteItemById
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      - $ref: '#/components/parameters/itemIdParam'
+      responses:
+        200:
+          description: Success response.
+        404:
+          $ref: '#/components/responses/NotFound'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
     get:
       tags:
         - Admin API
@@ -161,6 +207,20 @@ paths:
       operationId: apiFetchItemById
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      - $ref: '#/components/parameters/itemIdParam'
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedJson"
+        404:
+          $ref: '#/components/responses/NotFound'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /api/feed/:
     get:
       tags:
@@ -171,6 +231,24 @@ paths:
       operationId: apiFetchFeed
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      responses:
+        200:
+          description: Success response.
+          links:
+            paginate:
+              operationId: apiFetchFeed
+              parameters:
+                next_cursor: $response.body#/_microfeed/items_next_cursor
+                sort: $response.body#/_microfeed/items_sort_order
+              description: Pagination through items.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedJson"
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /api/media_files/presigned_urls/:
     post:
       tags:
@@ -181,6 +259,23 @@ paths:
       operationId: apiGetR2PresignedUrl
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignedUrlRequestBodyJson'
+      responses:
+        201:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponseJson'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        5XX:
+          $ref: '#/components/responses/ServerError'
 components:
   parameters:
     apiKeyParam:
@@ -192,6 +287,16 @@ components:
       schema:
         type: string
       description: "Get API Key on {{baseUrl}}/admin/settings/"
+    itemIdParam:
+      name: id
+      in: path
+      description: An item's id.
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+      example: GOwipulXxh9
   schemas:
     FeedJson:
       type: object
@@ -607,3 +712,51 @@ components:
             If you specify true, indicating the presence of explicit content, Apple Podcasts displays an Explicit parental advisory graphic for your episode. Episodes containing explicit material aren’t available in some Apple Podcasts territories.
             If you specify false, indicating that the episode does not contain explicit language or adult content, Apple Podcasts displays a Clean parental advisory graphic for your episode.
           default: false
+    ChannelRequestBodyJson:
+      type: object
+      properties:
+        title:
+          type: string
+          description: |
+            The channel's title.
+          example: The Daily Podcast
+    ItemRequestBodyJson:
+      type: object
+      properties:
+        title:
+          type: string
+          description: |
+            The item's title.
+          example: Episode 1 - Introduction
+    PresignedUrlRequestBodyJson:
+      type: object
+      properties:
+        item_id:
+          type: string
+        category:
+          type: string
+        full_local_file_path:
+          type: string
+      required:
+        - category
+        - full_local_file_path
+    PresignedUrlResponseJson:
+      type: object
+      properties:
+        presigned_url:
+          type: string
+          description: |
+            The presigned url for uploading the file to the storage.
+            The url is valid for 60 minutes.
+        media_url:
+          type: string
+          description: |
+            The full url of the future uploaded file.
+            Please note that the url is not valid until the file is uploaded via the presigned url.
+  responses:
+    Unauthorized:
+      description: Invalid api key.
+    ServerError:
+      description: Unexpected server errors.
+    NotFound:
+      description: Endpoint not exist, or item not exist.
