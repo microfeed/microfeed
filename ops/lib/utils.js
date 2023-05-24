@@ -31,8 +31,8 @@ class WranglerCmd {
   }
 
   _getCmd(wranglerCmd) {
-    return `CLOUDFLARE_ACCOUNT_ID=${this.v.get('CLOUDFLARE_ACCOUNT_ID')} ` +
-      `CLOUDFLARE_API_TOKEN=${this.v.get('CLOUDFLARE_API_TOKEN')} ` + wranglerCmd;
+    return `set CLOUDFLARE_ACCOUNT_ID=${this.v.get('CLOUDFLARE_ACCOUNT_ID')} &&` +
+      `set CLOUDFLARE_API_TOKEN=${this.v.get('CLOUDFLARE_API_TOKEN')} &&` + wranglerCmd;
   }
 
   publishProject() {

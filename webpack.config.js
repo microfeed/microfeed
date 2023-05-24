@@ -18,7 +18,7 @@ if (prod) {
       // XXX: when edge-src/ has syntax error, webpack dev server will crash; after we restart, previous
       // node processes may still be alive, which would take up the same PORT number and prevent dev server
       // to run again. We have to kill all node process
-      scripts: ['pkill node'],
+      scripts: ['taskkill node*'],
       blocking: true,
       parallel: false
     },
