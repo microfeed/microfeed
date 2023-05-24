@@ -19,7 +19,7 @@
     <a href="mailto:support@microfeed.org"><b>メールで問い合わせる</b></a>
   </p>
   
-microfeed へようこそ！microfeed は、Cloudflare 上で自己ホストできる軽量なコンテンツ管理システム (CMS) です。
+microfeed へようこそ！microfeed は、Cloudflare 上で自己ホストできる軽量なコンテンツ管理システム (CMS) です
 microfeed を使えば、オーディオ、ビデオ、写真、ドキュメント、ブログ投稿、外部 URL など、様々なコンテンツを
 Web、RSS、JSON のフィード形式で簡単に公開することができます。自分でサーバーを運営せずに、自分自身の CMS を自己ホストしたいテクノロジーに精通した個人に最適なソリューションです。
 
