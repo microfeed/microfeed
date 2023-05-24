@@ -1,13 +1,7 @@
-import {JsonResponseBuilder} from "../../edge-src/common/PageUtils";
-import {STATUSES} from "../../common-src/Constants";
+import {onFetchFeedJsonRequestGet} from "../../edge-src/EdgeCommonRequests";
 
 export async function onRequestGet({env, request}) {
-  const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
-    queryKwargs: {
-      status: STATUSES.PUBLISHED,
-    },
-  });
-  return await jsonResponseBuilder.getResponse();
+  return await onFetchFeedJsonRequestGet({env, request}, true);
 }
 
 export function onRequestHead() {
