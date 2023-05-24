@@ -2,7 +2,12 @@ import React from 'react';
 import SettingsBase from '../SettingsBase';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminInput from "../../../components/AdminInput";
-import {DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE} from "../../../../common-src/Constants";
+import {
+  SETTINGS_CATEGORIES,
+  DEFAULT_ITEMS_PER_PAGE,
+  ITEMS_SORT_ORDERS,
+  MAX_ITEMS_PER_PAGE,
+} from "../../../../common-src/Constants";
 import AdminRadio from "../../../components/AdminRadio";
 import {showToast} from "../../../common/ToastUtils";
 import ExplainText from "../../../components/ExplainText";
@@ -13,7 +18,7 @@ export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
     super(props);
 
-    const currentType = 'webGlobalSettings';
+    const currentType = SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS;
     const {feed} = props;
 
     let favicon = '';

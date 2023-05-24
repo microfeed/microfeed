@@ -1,4 +1,4 @@
-import {randomShortUUID, buildAudioUrlWithTracking} from "./StringUtils";
+import {randomShortUUID, buildAudioUrlWithTracking, removeHostFromUrl} from "./StringUtils";
 
 test('randomShortUUID', () => {
   expect(randomShortUUID().length).toBe(11);
@@ -24,4 +24,11 @@ test('buildAudioUrlWithTracking', () => {
 
   trackingUrls = [''];
   expect(buildAudioUrlWithTracking(audioUrl, trackingUrls)).toBe(audioUrl);
+});
+
+test('removeHostFromUrl', () => {
+  const url = 'https://www.audio.com/project/hello/audio.mp3';
+  expect(removeHostFromUrl(url)).toBe('project/hello/audio.mp3');
+  const badUrl = 'asfafffaf'
+  expect(removeHostFromUrl(badUrl)).toBe(badUrl);
 });

@@ -23,7 +23,7 @@ a {
 }
 
 .lh-btn-secondary {
-  @apply bg-bgsecondary-color text-fgsecondary-color border border-bdgray-color text-sm;
+  @apply bg-bgsecondary-color text-fgsecondary-color border border-bdgray-color text-sm hover:border-brand-light hover:text-muted-color
 }
 
 .lh-btn-brand-dark {
