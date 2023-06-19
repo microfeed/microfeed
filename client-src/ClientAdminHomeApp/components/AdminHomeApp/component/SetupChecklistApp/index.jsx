@@ -30,7 +30,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
   const [url, setUrl] = useState(publicBucketUrl);
   const [submitStatus, setSubmitStatus] = useState(null);
   const submitting = submitStatus === SUBMIT_STATUS__START;
-  return (<CheckListItem onboardState={onboardState} title="Setup R2 public bucket url">
+  return (<CheckListItem onboardState={onboardState} title="R2のpublic bucketのURLをセットアップする。">
     <div className="flex">
       <div className="mr-4 flex-1">
         <AdminInput
@@ -83,7 +83,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
       <details>
         <summary className="cursor-pointer font-semibold hover:opacity-50">
-          Where to find your R2 public bucket url?
+          R2のpublic bucketのURLはどこにありますか?
         </summary>
         <div className="my-8 text-helper-color">
           <div>
@@ -110,7 +110,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
       </details>
       <details>
         <summary className="cursor-pointer font-semibold hover:opacity-50">
-          What is R2 public bucket url used for?
+          R2のpublic bucketのURLは何に使用されますか?
         </summary>
         <div className="my-8 text-helper-color">
           <div>
@@ -139,7 +139,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
 }
 
 function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
-  return (<CheckListItem onboardState={onboardState} title="Add Login to Admin Dashboard">
+  return (<CheckListItem onboardState={onboardState} title="管理者用のダッシュボードにログインする。">
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <div className="mb-2">
         You will use <a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/" target="_blank">
@@ -232,7 +232,7 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
 }
 
 function CustomDomain({onboardState, cloudflareUrls}) {
-  return (<CheckListItem onboardState={onboardState} title="Use Custom Domain">
+  return (<CheckListItem onboardState={onboardState} title="カスタムドメインを使用する。">
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <div className="mb-2">
         Using custom domain, you can benefit from Cloudflare features such as bot management, Access, and Cache.
@@ -286,12 +286,12 @@ export default class SetupChecklistApp extends React.Component {
 
     return (<div className="lh-page-card">
       <div className="lh-page-title">
-        Setup checklist
+        セットアップチェックリスト
       </div>
       {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded p-2">
-        <i>You are all set!</i>
+        <i>セットが完了しました!</i>
         <div className="mt-2">
-          Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a>
+          新しいアイテムを追加して <a href={ADMIN_URLS.newItem()}>発行を開始する <span className="lh-icon-arrow-right" /></a>
         </div>
       </div>}
       <div className="mt-8">
