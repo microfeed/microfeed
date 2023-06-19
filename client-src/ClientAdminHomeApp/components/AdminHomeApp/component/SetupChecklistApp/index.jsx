@@ -87,12 +87,12 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
         </summary>
         <div className="my-8 text-helper-color">
           <div>
-            Go to <a href={cloudflareUrls.r2BucketSettingsUrl} target="_blank" rel="noopener noreferrer">
-              Cloudflare Dashboard / R2 Bucket Settings <span className="lh-icon-arrow-right" /></a>
+            <a href={cloudflareUrls.r2BucketSettingsUrl} target="_blank" rel="noopener noreferrer">
+              Cloudflare Dashboard / R2 Bucket Settings に移動する。<span className="lh-icon-arrow-right"/></a>
           </div>
           <div className="mt-4">
             <div>
-              <span className="text-brand-light font-bold">[Recommended]</span> Add a custom domain (e.g., media-cdn.microfeed.org). Then copy this custom domain here (e.g., https://media-cdn.microfeed.org).
+              <span className="text-brand-light font-bold">[Recommended]</span> カスタムドメインを追加します（例:media-cdn.microfeed.org）。次に、このカスタムドメインをここにコピーします（例:https://media-cdn.microfeed.org）。
             </div>
             <div className="mt-2">
               <img src="/assets/howto/get-r2-public-bucket-url-howto2.png" className="w-full" />
@@ -100,7 +100,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
           </div>
           <div className="mt-4">
             <div>
-              <span className="text-brand-light">[Ok, but not recommended]</span> If you don't have a custom domain, you can also use Cloudflare's r2.dev domain - Click "Allow Access". Then copy "Public Bucket URL" here (e.g., https://pub-xxxx.r2.dev).
+              <span className="text-brand-light">[Ok, but not recommended]</span> カスタムドメインを持っていない場合は、Cloudflareのr2.devドメインも使用できます。"Allow Access "をクリックします。そして、ここに「Public Bucket URL」をコピーします（例:https://pub-xxxx.r2.dev）。
             </div>
             <div className="mt-2">
               <img src="/assets/howto/get-r2-public-bucket-url-howto1.png" className="w-full" />
@@ -114,20 +114,20 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
         </summary>
         <div className="my-8 text-helper-color">
           <div>
-            You will store media files (e.g., audio, video, image, document...) on Cloudflare R2. In order to serve those media files to the public, you have to provide a R2 public bucket url.
+            あなたはCloudflare R2にメディアファイル（例:オーディオ、ビデオ、画像、ドキュメント...）を保存することになります。これらのメディアファイルを公開するためには、R2 public bucket URLを提供する必要があります。
           </div>
           <div className="mt-2">
-            Assuming the R2 public bucket url is https://cdn.example.com, a media file (e.g., audio) will be accessed via a link like https://cdn.example.com/some-audio.mp3
+            R2 public bucket URLを https://cdn.example.com とすると、メディアファイル（オーディオなど）は https://cdn.example.com/some-audio.mp3 のようなリンクでアクセスすることになります。
           </div>
         </div>
       </details>
       <details>
         <summary className="cursor-pointer font-semibold hover:opacity-50">
-          How to make sure this url is valid?
+        このURLが有効かどうかをどうやって確かめますか？
         </summary>
         <div className="my-8 text-helper-color">
           <div>
-            When you open this R2 public bucket url, you will see a 404 page like this (e.g., <a href={OUR_BRAND.exampleCdnUrl} target="_blank">https://media-cdn.microfeed.org</a>):
+            このR2 public bucketのurlを開くと、以下のような404ページが表示されます。 (例: <a href={OUR_BRAND.exampleCdnUrl} target="_blank">https://media-cdn.microfeed.org</a>):
           </div>
           <div className="mt-2">
             <img src="/assets/howto/get-r2-public-bucket-url-howto3.png" className="w-full" />
@@ -142,21 +142,21 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="管理者用のダッシュボードにログインする。">
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <div className="mb-2">
-        You will use <a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/" target="_blank">
-        Cloudflare Zero Trust</a> to add a login, so ONLY authorized users can access this admin dashboard.
+        <a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/" target="_blank">
+        Cloudflare Zero Trust</a> を使用してログインし、許可されたユーザーだけがこの管理ダッシュボードにアクセスできます。
       </div>
       <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 1: Add an access group
+          ステップ1:アクセスグループを追加する。
         </summary>
         <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAccessGroupUrl} target="_blank">Cloudflare Dashboard / Add an access group <span className="lh-icon-arrow-right"/></a>
+          <a href={cloudflareUrls.addAccessGroupUrl} target="_blank">Cloudflare Dashboard / アクセスグループの追加にアクセスする。<span className="lh-icon-arrow-right"/></a>
         </div>
         <div className="my-4">
-          If this is the first time you use Cloudflare Zero Trust, you may need to sign up a Free plan first.
+          Cloudflare Zero Trustを初めてご利用になる場合は、まず無料プランのご契約が必要な場合があります。
         </div>
         <div className="mt-4">
-          You need to specify what emails are allowed to access this admin dashboard:
+          管理ダッシュボードにアクセスするために許可されたメールアドレスを指定する必要があります。
         </div>
         <div className="mt-2">
           <img src="/assets/howto/add-access-group.png" className="w-full border"/>
@@ -164,32 +164,33 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
       </details>
       <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 2: Create a self-hosted app to protect <b>{cloudflareUrls.pagesDevUrl}/admin</b>
+          ステップ2:<b>{cloudflareUrls.pagesDevUrl}/admin</b>を保護するためのセルフホストアプリを作成する。
         </summary>
         <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAppUrl} target="_blank">
-          Cloudflare Dashboard / Create a self-hosted app <span className="lh-icon-arrow-right"/>
+          <a href={cloudflareUrls.addAppUrl} target="_blank">
+          Cloudflare Dashboardに移動する / セルフホストアプリを作成する<span className="lh-icon-arrow-right"/>
         </a>
         </div>
         <div className="mt-4">
-          Select "Self-hosted" here:
+          ここで Self-hosted を選択する。
         </div>
         <div className="mt-2">
           <img src="/assets/howto/select-self-hosted-app.png" className="w-full border"/>
         </div>
         <div className="mt-4">
-          Fill in info for <b>{cloudflareUrls.pagesDevUrl}/admin</b>:
+          <b>{cloudflareUrls.pagesDevUrl}/admin</b> の情報を記入する。
         </div>
         <div className="mt-2 text-red-500">
-          {'Note: Please follow numbered arrows in order. Otherwise, "Path" may not be edited. ' +
-           'If you see "the zone does not exist" message, please ignore it and go ahead to Next. ' +
-           'We hope Cloudflare can improve their UI to make things less confusing :)'}
+          {'注意: 番号のついた矢印を順番にたどってください。そうしないと、"Path "が編集できない場合があります。' +
+          'もし"the zone does not exist"というメッセージが表示されたら、それを無視して次に進んでください。' +
+          '私達はCloudflareがUIを改善し、より分かりやすくなることを期待しています。 :)'
+          }
         </div>
         <div className="mt-2">
           <img src="/assets/howto/add-app1.png" className="w-full border"/>
         </div>
         <div className="mt-4">
-          Add policy name, then click "Next" all the way until you add the app:
+          ポリシー名を追加し、アプリを追加するまでずっと「次へ」をクリックします
         </div>
         <div className="my-4">
           <img src="/assets/howto/add-app2.png" className="w-full border"/>
@@ -197,10 +198,10 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
       </details>
       <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 3: Check if it works
+          ステップ:動くかどうかを確認する。
         </summary>
         <div className="mt-4">
-          Refresh current page and you should be able to login with your email.
+          現在のページを更新すると、あなたのEメールでログインできるようになります。
         </div>
         <div className="my-4">
           <img src="/assets/howto/app-access-login.png" className="w-full border"/>
@@ -208,20 +209,20 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
       </details>
       <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Bonus: Create a self-hosted app for <b>*.{cloudflareUrls.pagesDevUrl}</b>
+          おまけ:<b>*.{cloudflareUrls.pagesDevUrl}</b>のセルフホストアプリを作成する。
         </summary>
         <div className="mt-4">
-        You may want to create a 2nd self-hosted app for <b>*.{cloudflareUrls.pagesDevUrl}</b>, which will
-        protect all <a href="https://developers.cloudflare.com/pages/platform/preview-deployments/" target="_blank">preview
-        deployments</a>.
+          <b>*.{cloudflareUrls.pagesDevUrl}</b>のために2番目のセルフホストアプリを作成すると、すべての
+        <a href="https://developers.cloudflare.com/pages/platform/preview-deployments/" target="_blank">preview
+        deployments</a>を保護することができます。
         </div>
         <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAppUrl} target="_blank">
-          Cloudflare Dashboard / Create a self-hosted app <span className="lh-icon-arrow-right"/>
+          <a href={cloudflareUrls.addAppUrl} target="_blank">
+          Cloudflare Dashboardに移動する / セルフホストアプリを作成する<span className="lh-icon-arrow-right"/>
         </a>
         </div>
         <div className="my-4">
-          Put an asterisk (*) to Subdomain:
+          サブドメインにアスタリスク（*）を付ける：
         </div>
         <div className="my-4">
           <img src="/assets/howto/protect-preview.png" className="w-full border"/>
@@ -235,14 +236,14 @@ function CustomDomain({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="カスタムドメインを使用する。">
     <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <div className="mb-2">
-        Using custom domain, you can benefit from Cloudflare features such as bot management, Access, and Cache.
+        カスタムドメインを使用すると、ボット管理、アクセス、キャッシュなどのCloudflareの機能を利用することができます。
       </div>
       <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 1: Setup custom domain for this site
+          ステップ1:このサイトのカスタムドメインをセットアップする。
         </summary>
         <div className="mt-4">
-          Go to <a href={cloudflareUrls.pagesCustomDomainUrl} target="_blank">Cloudflare Dashboard / Pages Settings<span
+          <a href={cloudflareUrls.pagesCustomDomainUrl} target="_blank">Cloudflare Dashboard / Pages Settingsに移動する。<span
           className="lh-icon-arrow-right"/></a>
         </div>
         <div className="my-4">
@@ -251,16 +252,16 @@ function CustomDomain({onboardState, cloudflareUrls}) {
       </details>
       <details>
         <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 2: Create a self-hosted app to protect admin dashboard
+          ステップ2:管理者用ダッシュボードを保護するためのセルフホストアプリを作成する。
         </summary>
         <div className="mt-4">
-          If you want to access this admin dashboard from your newly added custom domain, you have to create a
-          self-hosted app for the admin url. Instead of using {cloudflareUrls.pagesDevUrl}, use your new custom domain
-          this time.
+          新しく追加したカスタムドメインからこの管理ダッシュボードにアクセスしたい場合、
+          管理URLのセルフホストアプリを作成する必要があります。{cloudflareUrls.pagesDevUrl}, 
+          を使う代わりに、今回は新しいカスタムドメインを使用します。
         </div>
         <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAppUrl} target="_blank">
-            Cloudflare Dashboard / Add an application <span className="lh-icon-arrow-right"/>
+          <a href={cloudflareUrls.addAppUrl} target="_blank">
+            Cloudflare Dashboard / Add an application にアクセスする。<span className="lh-icon-arrow-right"/>
           </a>
         </div>
         <div className="my-4">
@@ -310,7 +311,7 @@ export default class SetupChecklistApp extends React.Component {
         />
       </div>
       <div className="text-right mt-4 text-sm text-helper-color">
-        <span className="text-red-500">*</span> required
+        <span className="text-red-500">*</span> 必須
       </div>
     </div>);
   }
