@@ -5,11 +5,21 @@ import {
   secondsToHHMMSS,
   htmlToPlainText
 } from "../../common-src/StringUtils";
-import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
-import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
-import {isValidMediaFile} from "../../common-src/MediaFileUtils";
+import {
+  humanizeMs,
+  msToRFC3339
+} from "../../common-src/TimeUtils";
+import {
+  ENCLOSURE_CATEGORIES,
+  STATUSES
+} from "../../common-src/Constants";
+import {
+  isValidMediaFile
+} from "../../common-src/MediaFileUtils";
 
-const {MICROFEED_VERSION} = require('../../common-src/Version');
+const {
+  MICROFEED_VERSION
+} = require('../../common-src/Version');
 
 export default class FeedPublicJsonBuilder {
   constructor(content, baseUrl, request, forOneItem = false) {
@@ -42,6 +52,8 @@ export default class FeedPublicJsonBuilder {
       item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
       item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
       item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
+      item.mediaFile.isBlog = item.mediaFile.category === ENCLOSURE_CATEGORIES.BLOG;
+
 
       if (!item.mediaFile.isExternalUrl) {
         item.mediaFile.url = urlJoinWithRelative(this.publicBucketUrl, item.mediaFile.url);
@@ -72,8 +84,8 @@ export default class FeedPublicJsonBuilder {
     }
 
     if (this.webGlobalSettings.favicon && this.webGlobalSettings.favicon.url) {
-        publicContent['favicon'] = urlJoinWithRelative(
-          this.publicBucketUrl, this.webGlobalSettings.favicon.url, this.baseUrl);
+      publicContent['favicon'] = urlJoinWithRelative(
+        this.publicBucketUrl, this.webGlobalSettings.favicon.url, this.baseUrl);
     }
 
     if (channel.publisher) {
@@ -94,7 +106,9 @@ export default class FeedPublicJsonBuilder {
 
   _buildPublicContentMicrofeedExtra(publicContent) {
     const channel = this.content.channel || {};
-    const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
+    const subscribeMethods = this.settings.subscribeMethods || {
+      'methods': []
+    };
     const microfeedExtra = {
       microfeed_version: MICROFEED_VERSION,
       base_url: this.baseUrl,
@@ -285,7 +299,9 @@ export default class FeedPublicJsonBuilder {
       ...this._buildPublicContentChannel(this.content),
     };
 
-    const {items} = this.content;
+    const {
+      items
+    } = this.content;
     const existingitems = items || [];
     publicContent['items'] = [];
     existingitems.forEach((item) => {

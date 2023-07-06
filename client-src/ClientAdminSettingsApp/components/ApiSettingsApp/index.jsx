@@ -2,9 +2,10 @@ import React from 'react';
 import SettingsBase from "../SettingsBase";
 import AdminSwitch from "../../../components/AdminSwitch";
 import clsx from "clsx";
-import {randomHex, randomShortUUID} from "../../../../common-src/StringUtils";
+import { randomHex, randomShortUUID } from "../../../../common-src/StringUtils";
 import AdminInput from "../../../components/AdminInput";
-import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
+// import AdminTagsInput from "../../../components/AdminTagsInput";
+import { SETTINGS_CATEGORIES } from "../../../../common-src/Constants";
 
 export default class ApiSettingsApp extends React.Component {
   constructor(props) {
@@ -14,7 +15,7 @@ export default class ApiSettingsApp extends React.Component {
     this.updateApiApps = this.updateApiApps.bind(this);
 
     const currentType = SETTINGS_CATEGORIES.API_SETTINGS;
-    const {feed} = props;
+    const { feed } = props;
 
     let apiBundle = {
       enabled: false,
@@ -39,27 +40,27 @@ export default class ApiSettingsApp extends React.Component {
   }
 
   setApiEnabled(checked) {
-    this.setState({apiBundle: {...this.state.apiBundle, enabled: checked}}, () => {
+    this.setState({ apiBundle: { ...this.state.apiBundle, enabled: checked } }, () => {
       this.props.setChanged();
     });
   }
 
   updateApiApps(app) {
-    const {apiBundle} = this.state;
+    const { apiBundle } = this.state;
     const newApps = apiBundle.apps.map((a) => {
       if (a.id === app.id) {
         return app;
       }
       return a;
     });
-    this.setState({apiBundle: {...apiBundle, apps: newApps}}, () => {
+    this.setState({ apiBundle: { ...apiBundle, apps: newApps } }, () => {
       this.props.setChanged();
     });
   }
 
   render() {
-    const {currentType, apiBundle} = this.state;
-    const {submitting, submitForType} = this.props;
+    const { currentType, apiBundle } = this.state;
+    const { submitting, submitForType } = this.props;
     const app = apiBundle.apps[0];
     return (<SettingsBase
       title="API"
@@ -108,7 +109,7 @@ export default class ApiSettingsApp extends React.Component {
                 e.preventDefault();
                 const ok = confirm('Are you sure you want to reset the API key?');
                 if (ok) {
-                  this.updateApiApps({...app, token: randomHex()});
+                  this.updateApiApps({ ...app, token: randomHex() });
                 }
               }}
             >
@@ -125,7 +126,7 @@ export default class ApiSettingsApp extends React.Component {
         </div>
         <div className="mt-8">
           <a href="/json/openapi.html" target="_blank" rel="noopener noreferrer">
-            Documentation of microfeed's API <span className="lh-icon-arrow-right"/>
+            Documentation of microfeed's API <span className="lh-icon-arrow-right" />
           </a>
         </div>
         <div className="mt-4">

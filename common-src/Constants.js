@@ -140,6 +140,7 @@ export const ENCLOSURE_CATEGORIES = {
   VIDEO: 'video',
   IMAGE: 'image',
   EXTERNAL_URL: 'external_url',
+  BLOG: 'blog'
 };
 export const ENCLOSURE_CATEGORIES_DICT = {
   [ENCLOSURE_CATEGORIES.AUDIO]: {
@@ -156,10 +157,14 @@ export const ENCLOSURE_CATEGORIES_DICT = {
   },
   [ENCLOSURE_CATEGORIES.IMAGE]: {
     name: 'image',
-    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2'],
+    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2', 'webp', 'slw'],
   },
   [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
     name: 'external url',
+    fileTypes: [],
+  },
+  [ENCLOSURE_CATEGORIES.BLOG]: {
+    name: 'blog',
     fileTypes: [],
   },
 };
@@ -170,6 +175,7 @@ export const SUPPORTED_ENCLOSURE_CATEGORIES = [
   ENCLOSURE_CATEGORIES.DOCUMENT,
   ENCLOSURE_CATEGORIES.IMAGE,
   ENCLOSURE_CATEGORIES.EXTERNAL_URL,
+  ENCLOSURE_CATEGORIES.BLOG
 ];
 
 export const NAV_ITEMS = {
@@ -247,8 +253,7 @@ export const ITEM_STATUSES_DICT = {
   },
 };
 
-export const LANGUAGE_CODES_LIST = [
-  {
+export const LANGUAGE_CODES_LIST = [{
     "name": "Afrikaans",
     "code": "af"
   },
@@ -761,7 +766,6 @@ export const ITUNES_CATEGORIES_DICT = {
   ]
 };
 
-const Constants = {
-};
+const Constants = {};
 
 export default Constants;

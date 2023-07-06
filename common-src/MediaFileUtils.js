@@ -1,4 +1,7 @@
-import {ENCLOSURE_CATEGORIES, SUPPORTED_ENCLOSURE_CATEGORIES} from "./Constants";
+import {
+  ENCLOSURE_CATEGORIES,
+  SUPPORTED_ENCLOSURE_CATEGORIES
+} from "./Constants";
 
 export function isValidMediaFile(mediaFile) {
   return mediaFile && mediaFile.category && mediaFile.url && mediaFile.url.trim();
@@ -24,3 +27,4 @@ export function getMediaFileFromUrl(urlParams) {
   }
   return mediaFile;
 }
+``
