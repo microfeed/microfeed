@@ -403,7 +403,10 @@ export default class EditItemApp extends React.Component {
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
                 onClick={this.onSubmit}
                 disabled={submitting || !changed}
+                onChange={(e) => this.onUpdateItemMeta({ 'tags': e.target.value })}
+
               >
+
                 {submitting ? submittingButtonText : buttonText}
               </button>
             </div>
