@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "yarn"
+    directory: "/"
     schedule:
-      interval: 'weekly'
+      interval: "daily"
