@@ -211,16 +211,9 @@
           newImage.src = lazyImage.dataset.src;
           newImage.onload = function () {
             lazyImage.classList.remove("loader");
-            const wrapper = document.createElement('a');
-            wrapper.setAttribute('href', newImage.src);
-            wrapper.setAttribute('target', "_blank");
-            wrapper.appendChild(newImage.cloneNode(true));
-            if (lazyImage.parentElement) {
-              lazyImage.parentElement.replaceChild(wrapper, lazyImage);
-              lazyImage.remove();
-            }
           };
-          lazyImageObserver.unobserve(lazyImage);
+          lazyImage.parentElement.replaceChild(newImage, lazyImage);
+          lazyImageObserver.unobserve(newImage);
         }
       });
     });
