@@ -1,1 +1,69 @@
-<!-- right after <body> tag -->
+<header>
+  <div class="container my-3 mx-auto" style="max-width: 100ch;">
+    <div class="d-flex flex-row align-items-center">
+      {{#icon}}
+      <div class="me-4">
+        <a href="{{icon}}" target="_blank">
+          <img alt="{{title}}" src="{{icon}}" class="img-thumnail" style="max-width: 7.5em" loading="lazy" />
+        </a>
+      </div>
+      {{/icon}}
+      <div>
+        <h1>{{title}}</h1>
+        {{#authors}}
+        <div style="
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+        ">
+          <span title="{{name}}">{{name}}</span>
+        </div>
+        {{/authors}}
+      </div>
+      <div class="ms-auto">
+        <div>
+          {{#_microfeed.subscribe_methods.length}}
+          <div class="fs-6">
+            Subscribe:
+          </div>
+          {{/_microfeed.subscribe_methods.length}}
+          <div class="d-flex flex-wrap">
+            {{#_microfeed.subscribe_methods}}
+            <a href="{{url}}" class="me-3">
+              <div class="d-flex align-items-center">
+                <img src="{{image}}" class="flex-none" style="max-width: 1em" alt="{{name}}" loading="lazy" />
+                <div class="ms-1 fs-6 d-none d-lg-block" style="flex: 1">{{name}}</div>
+              </div>
+            </a>
+            {{/_microfeed.subscribe_methods}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="mainNav">
+  <div class="container mx-auto" style="max-width: 100ch;">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav flex-grow-1 pe-3">
+        <li class="nav-item flex-grow-1 text-center border-end">
+          <a class="nav-link" href="#">ホーム</a>
+        </li>
+        <li class="nav-item flex-grow-1 text-center border-end">
+          <a class="nav-link" href="#">コース</a>
+        </li>
+        <li class="nav-item flex-grow-1 text-center border-end">
+          <a class="nav-link" href="#">事業概要</a>
+        </li>
+        <li class="nav-item flex-grow-1 text-center">
+          <a class="nav-link" href="#">問い合わせ</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
