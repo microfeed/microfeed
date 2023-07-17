@@ -1,5 +1,5 @@
 <main class="bg-light py-5">
-  <div class="container p-5 mx-auto bg-white" style="max-width: 100ch;">
+  <div class="container p-5 mx-auto bg-white" style="max-width: 100ch">
     {{#description}}
     <section class="mb-5">
       <h2 class="mb-4 border-bottom">About</h2>
@@ -8,44 +8,57 @@
     {{/description}}
 
     <section>
-      <h2 class="mb-4 border-bottom">
-        Latest
-      </h2>
+      <h2 class="mb-4 border-bottom">Latest</h2>
 
       <div>
-        {{^items.length}}
-        No items.
-        {{/items.length}}
-
-        {{#items}}
-        <div class="mb-5">
-          <a href="{{_microfeed.web_url}}" class="mb-5">
-            {{title}}
-            <span>→</span>
-          </a>
-          <div class="fs-6">
-            {{_microfeed.date_published_short}}
-
-            {{#_microfeed.duration_hhmmss}}
-            &middot;
-            <i>{{_microfeed.duration_hhmmss}}</i>
-            {{/_microfeed.duration_hhmmss}}
+        {{^items.length}} No items. {{/items.length}} {{#items}}
+        <a
+          href="{{_microfeed.web_url}}"
+          class="card mb-5 d-flex flex-row text-decoration-none"
+        >
+          <img
+            src="{{image}}"
+            class="rounded-start"
+            loading="lazy"
+            height="120"
+            width="120"
+          />
+          <div class="card-body">
+            <h5
+              class="card-title"
+              style="
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+              "
+            >
+              {{title}}
+            </h5>
+            <div class="card-text">
+              {{_microfeed.date_published_short}}
+              {{#_microfeed.duration_hhmmss}} &middot;
+              <i>{{_microfeed.duration_hhmmss}}</i>
+              {{/_microfeed.duration_hhmmss}}
+            </div>
           </div>
-        </div>
+        </a>
         {{/items}}
       </div>
 
       <div class="d-flex justify-content-center">
         {{#_microfeed.items_prev_cursor}}
         <div class="px-5">
-          <a href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"><span
-            class="icon-arrow-left">← Prev</span></a>
+          <a
+            href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"
+            ><span class="icon-arrow-left">← Prev</span></a
+          >
         </div>
-        {{/_microfeed.items_prev_cursor}}
-
-        {{#_microfeed.items_next_cursor}}
+        {{/_microfeed.items_prev_cursor}} {{#_microfeed.items_next_cursor}}
         <div class="px-5">
-          <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">Next →</a>
+          <a
+            href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}"
+            >Next →</a
+          >
         </div>
         {{/_microfeed.items_next_cursor}}
       </div>
