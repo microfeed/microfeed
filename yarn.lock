@@ -304,11 +304,6 @@
   dependencies:
     mime "^3.0.0"
 
-"@cloudflare/pages-plugin-mailchannels@^0.1.2":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@cloudflare/pages-plugin-mailchannels/-/pages-plugin-mailchannels-0.1.2.tgz#d8483ab342eb10da36257a4a8fa08d52c02f392d"
-  integrity sha512-xPZNM4NEhFkxnx6JNqoWzk3zgvyoPTFb5KbBz5Z1bc4X/D3gidR776WyUVQzR5OphzTqZfFiC9B8mYUyG0WEVg==
-
 "@cnakazawa/watch@^1.0.3":
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/@cnakazawa/watch/-/watch-1.0.4.tgz#f864ae85004d0fcab6f50be9141c4da368d1656a"
