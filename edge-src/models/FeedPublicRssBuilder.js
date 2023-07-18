@@ -27,6 +27,10 @@ export default class FeedPublicRssBuilder {
      if (item['url']) {
        itemJson['link'] = item['url'];
      }
+      if (item.tags && item.tags.length > 0) {
+        itemJson['category'] = item.tags.join(',');
+      }
+    
 
      if (item.image) {
        itemJson['itunes:image'] = {

@@ -113,8 +113,9 @@ export default class FeedPublicJsonBuilder {
       microfeed_version: MICROFEED_VERSION,
       base_url: this.baseUrl,
       categories: [],
+      tags: [],
     };
-    const channelCategories = channel.categories || [];
+    const channelCategories = channel.categories || [];    
     channelCategories.forEach((c) => {
       const topAndSubCats = c.split('/');
       let cat;
@@ -134,6 +135,13 @@ export default class FeedPublicJsonBuilder {
         microfeedExtra['categories'].push(cat);
       }
     });
+    // add tag support to microfeed
+    if (channel.tags) {
+      channel.tags.forEach((t) => {
+        microfeedExtra['tags'].push({
+          'name': t.trim(),
+        });
+      });
     if (!subscribeMethods.methods) {
       microfeedExtra['subscribe_methods'] = '';
     } else {
@@ -214,6 +222,7 @@ export default class FeedPublicJsonBuilder {
       is_external_url: mediaFile.isExternalUrl,
       is_video: mediaFile.isVideo,
       is_image: mediaFile.isImage,
+      is_blog: mediaFile.isBlog,
       web_url: item.webUrl,
       json_url: item.jsonUrl,
       rss_url: item.rssUrl,
@@ -314,6 +323,7 @@ export default class FeedPublicJsonBuilder {
       publicContent.items.push(newItem);
     })
 
+
     // Note: We don't proactively sort items based on itunes:type.
     //       Instead, we rely on ?sort= query param and settings
     // if (channel['itunes:type'] === 'episodic') {
@@ -325,4 +335,5 @@ export default class FeedPublicJsonBuilder {
     publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra(publicContent);
     return publicContent;
   }
+}
 }
