@@ -34,7 +34,7 @@ async function fetchFeedAndAuth({request, next, env, data}) {
 }
 
 function mailChannels(context) {
-  mailChannelsPlugin({
+  return mailChannelsPlugin({
     personalizations: [
       {
         to: [{ name: "ACME Support", email: `${context.env.RECEIVER_EMAIL}` }],
