@@ -2,7 +2,6 @@ import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
-import AdminTagsInput from "../../../components/AdminTagsInput";
 import Requests from "../../../common/requests";
 import { randomShortUUID, ADMIN_URLS, PUBLIC_URLS } from '../../../../common-src/StringUtils';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
@@ -28,6 +27,7 @@ import {
 } from "./FormExplainTexts";
 import { preventCloseWhenChanged } from "../../../common/BrowserUtils";
 import { getMediaFileFromUrl } from "../../../../common-src/MediaFileUtils";
+import { TagsInput } from 'react-tag-input-component';
 
 const SUBMIT_STATUS__START = 1;
 
@@ -62,7 +62,14 @@ export default class EditItemApp extends React.Component {
     if (!feed.items) {
       feed.items = [];
     }
+
     const item = feed.item || initItem();
+
+    if (!item.tags) {
+      item.tags = [];
+    }
+
+    console.log(item);
 
     this.state = {
       feed,
@@ -390,7 +397,13 @@ export default class EditItemApp extends React.Component {
             <details>
               <summary className="m-page-summary">Post Specific Fields</summary>
               <div className="grid grid-cols-1 gap-8">
-                <AdminTagsInput />
+                <TagsInput
+                  value={item.tags}
+                  name={"tags"}
+                  onChange={(e) => {
+                    this.onUpdateItemMeta({ 'tags': e })
+                  }}
+                />
               </div>
             </details>
           </div>

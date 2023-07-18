@@ -4,7 +4,6 @@ import SettingsBase from "../SettingsBase";
 import { PUBLIC_URLS, randomShortUUID } from "../../../../common-src/StringUtils";
 import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from '@heroicons/react/24/outline';
 import AdminInput from "../../../components/AdminInput";
-// import AdminTagsInput from "../../../components/AdminTagsInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
 import { PREDEFINED_SUBSCRIBE_METHODS, SETTINGS_CATEGORIES } from '../../../../common-src/Constants';

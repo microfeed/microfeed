@@ -3,7 +3,6 @@ import Requests from '../../../common/requests';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminImageUploaderApp from '../../../components/AdminImageUploaderApp';
 import AdminInput from "../../../components/AdminInput";
-// import AdminTagsInput from "../../../components/AdminTagsInput";
 import AdminRadio from "../../../components/AdminRadio";
 import { unescapeHtml } from '../../../../common-src/StringUtils';
 import { showToast } from "../../../common/ToastUtils";
