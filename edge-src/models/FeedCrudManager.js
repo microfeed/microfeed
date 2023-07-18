@@ -1,5 +1,12 @@
-import {randomShortUUID, removeHostFromUrl} from "../../common-src/StringUtils";
-import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT, LANGUAGE_CODES_LIST} from "../../common-src/Constants";
+import {
+  randomShortUUID,
+  removeHostFromUrl
+} from "../../common-src/StringUtils";
+import {
+  ENCLOSURE_CATEGORIES,
+  ENCLOSURE_CATEGORIES_DICT,
+  LANGUAGE_CODES_LIST
+} from "../../common-src/Constants";
 
 const LANGUAGE_CODES = LANGUAGE_CODES_LIST.map((lc) => lc.code);
 
@@ -22,8 +29,8 @@ export default class FeedCrudManager {
     }
 
     if (item.attachment &&
-        ENCLOSURE_CATEGORIES_DICT[item.attachment.category] &&
-        item.attachment.url) {
+      ENCLOSURE_CATEGORIES_DICT[item.attachment.category] &&
+      item.attachment.url) {
       const mediaFile = {};
       if (item.attachment.category) {
         mediaFile.category = item.attachment.category;
@@ -91,6 +98,11 @@ export default class FeedCrudManager {
     if (typeof item._microfeed['itunes:explicit'] === 'boolean') {
       internalSchema['itunes:explicit'] = item._microfeed['itunes:explicit'];
     }
+
+    if (!item.tags) {
+      item.tags = [];
+    }
+
     return internalSchema;
   }
 
@@ -138,6 +150,11 @@ export default class FeedCrudManager {
     if (channel._microfeed['itunes:email']) {
       internalSchema['itunes:email'] = channel._microfeed['itunes:email'];
     }
+
+    if (channel.tags) {
+      internalSchema.tags = channel.tags;
+    }
+
     return internalSchema;
   }
 

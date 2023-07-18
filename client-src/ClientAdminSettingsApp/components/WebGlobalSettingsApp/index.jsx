@@ -9,17 +9,17 @@ import {
   MAX_ITEMS_PER_PAGE,
 } from "../../../../common-src/Constants";
 import AdminRadio from "../../../components/AdminRadio";
-import {showToast} from "../../../common/ToastUtils";
+import { showToast } from "../../../common/ToastUtils";
 import ExplainText from "../../../components/ExplainText";
-import {CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS} from "../FormExplainTexts";
-import {isValidUrl} from "../../../../common-src/StringUtils";
+import { CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS } from "../FormExplainTexts";
+import { isValidUrl } from "../../../../common-src/StringUtils";
 
 export default class WebGlobalSettingsApp extends React.Component {
   constructor(props) {
     super(props);
 
     const currentType = SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS;
-    const {feed} = props;
+    const { feed } = props;
 
     let favicon = '';
     let publicBucketUrl = '';
@@ -43,8 +43,8 @@ export default class WebGlobalSettingsApp extends React.Component {
   }
 
   render() {
-    const {feed, currentType, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
-    const {submitting, submitForType, setChanged} = this.props;
+    const { feed, currentType, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder } = this.state;
+    const { submitting, submitForType, setChanged } = this.props;
     return (<SettingsBase
       title="Web global settings"
       submitting={submitting}
@@ -74,7 +74,7 @@ export default class WebGlobalSettingsApp extends React.Component {
             type="url"
             customClass="text-xs"
             value={publicBucketUrl}
-            onChange={(e) => this.setState({publicBucketUrl: e.target.value}, () => setChanged())}
+            onChange={(e) => this.setState({ publicBucketUrl: e.target.value }, () => setChanged())}
           />
         </details>
         <details open>
@@ -99,7 +99,7 @@ export default class WebGlobalSettingsApp extends React.Component {
                   } else if (newItemsPerPage < 0) {
                     showToast('Items per page should not be a negative number', 'error', 5000)
                   }
-                  this.setState({itemsPerPage: newItemsPerPage}, () => setChanged())
+                  this.setState({ itemsPerPage: newItemsPerPage }, () => setChanged())
                 }}
               />
             </div>
@@ -120,7 +120,7 @@ export default class WebGlobalSettingsApp extends React.Component {
                   value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
                   checked: itemsSortOrder === ITEMS_SORT_ORDERS.OLDEST_FIRST,
                 }]}
-                onChange={(e) => this.setState({itemsSortOrder: e.target.value}, () => setChanged())}
+                onChange={(e) => this.setState({ itemsSortOrder: e.target.value }, () => setChanged())}
               />
             </div>
           </div>

@@ -1,4 +1,6 @@
-import {ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
+import {
+  ITEM_STATUSES_DICT
+} from "../../../../common-src/Constants";
 
 export const ITEM_CONTROLS = {
   TITLE: 'item_title',
@@ -72,6 +74,13 @@ export const CONTROLS_TEXTS_DICT = {
       "If this is a blog post, then you can write as many words as you want :)",
     rss: '<channel><item><description><![CDATA[<p>some text here<br></p>]]></description></item></channel>',
     json: '{ "items": [{"content_html": "<p>some text here<br></p>", "content_text": "some text here"}] }',
+  },
+  [ITEM_CONTROLS.TAGS]: {
+    linkName: 'Tags',
+    modalTitle: 'Tags',
+    text: "Post Tags",
+    rss: '<channe><item><tags>health, etc..</tags></item></channel>',
+    json: '{ "items": [{"_microfeed": {"tags": health, etc..""}}]}',
   },
   [ITEM_CONTROLS.GUID]: {
     linkName: '<guid>',

@@ -1,12 +1,12 @@
 import React from 'react';
 import clsx from "clsx";
 import SettingsBase from "../SettingsBase";
-import {PUBLIC_URLS, randomShortUUID} from "../../../../common-src/StringUtils";
+import { PUBLIC_URLS, randomShortUUID } from "../../../../common-src/StringUtils";
 import { PlusCircleIcon, TrashIcon, ArrowSmallUpIcon, ArrowSmallDownIcon } from '@heroicons/react/24/outline';
 import AdminInput from "../../../components/AdminInput";
 import AdminSwitch from "../../../components/AdminSwitch";
 import ExternalLink from "../../../components/ExternalLink";
-import {PREDEFINED_SUBSCRIBE_METHODS, SETTINGS_CATEGORIES} from '../../../../common-src/Constants';
+import { PREDEFINED_SUBSCRIBE_METHODS, SETTINGS_CATEGORIES } from '../../../../common-src/Constants';
 import NewSubscribeDialog from "./components/NewSubscribeDialog";
 import ExplainText from "../../../components/ExplainText";
 import {
@@ -17,13 +17,13 @@ import {
 function initMethodsDict() {
   return {
     methods: [
-      {...PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false, enabled: true},
-      {...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false, enabled: true},
+      { ...PREDEFINED_SUBSCRIBE_METHODS.rss, id: randomShortUUID(), editable: false, enabled: true },
+      { ...PREDEFINED_SUBSCRIBE_METHODS.json, id: randomShortUUID(), editable: false, enabled: true },
     ],
   };
 }
 
-function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, moveCard}) {
+function MethodRow({ method, updateMethodByAttr, index, firstIndex, lastIndex, moveCard }) {
   const { id, name, type, editable, enabled, image, deleted } = method;
   let { url } = method;
   if (!url && !editable) {
@@ -78,7 +78,7 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
               customClass="text-xs p-1"
             />
             <div className="flex-none ml-1">
-              <ExternalLink url={url} text="" linkClass="text-xs"/>
+              <ExternalLink url={url} text="" linkClass="text-xs" />
             </div>
           </div>
         </div>
@@ -101,7 +101,7 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
                 updateMethodByAttr(id, 'deleted', true);
               }}>
               <div className="flex items-center">
-                <div className="mr-1"><TrashIcon className="w-4"/></div>
+                <div className="mr-1"><TrashIcon className="w-4" /></div>
                 <div>Delete</div>
               </div>
             </a></div> : <div className="text-xs text-muted-color">
@@ -120,7 +120,7 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
   </div>);
 }
 
-function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
+function AddNewMethod({ isOpenNewMethod, setIsOpenNewMethod, addNewMethod }) {
   return (<div>
     <a
       href="#"
@@ -130,7 +130,7 @@ function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
       }}
     >
       <div className="flex items-center justify-center">
-        <div className="w-4 mr-1"><PlusCircleIcon/></div>
+        <div className="w-4 mr-1"><PlusCircleIcon /></div>
         <div>Add new subscribe method</div>
       </div>
     </a>
@@ -152,7 +152,7 @@ export default class SubscribeSettingsApp extends React.Component {
     this.moveCard = this.moveCard.bind(this);
 
     const currentType = SETTINGS_CATEGORIES.SUBSCRIBE_METHODS;
-    const {settings} = props.feed;
+    const { settings } = props.feed;
     let methodsDict;
     if (settings && settings[currentType]) {
       methodsDict = settings[currentType];
@@ -167,7 +167,7 @@ export default class SubscribeSettingsApp extends React.Component {
   }
 
   updateMethodByAttr(methodId, attrName, attrValue) {
-    const {methods} = this.state.methodsDict;
+    const { methods } = this.state.methodsDict;
     methods.forEach((method) => {
       if (method.id !== methodId) {
         return;
@@ -201,18 +201,18 @@ export default class SubscribeSettingsApp extends React.Component {
 
   moveCard(e, oldIndex, newIndex) {
     e.preventDefault();
-    const {methods} = this.state.methodsDict;
+    const { methods } = this.state.methodsDict;
     const element = methods.splice(oldIndex, 1)[0];
     methods.splice(newIndex, 0, element);
     this.updateMethodsDict(methods);
   }
 
   render() {
-    const {currentType, methodsDict, isOpenNewMethod} = this.state;
-    const {submitting, submitForType} = this.props;
+    const { currentType, methodsDict, isOpenNewMethod } = this.state;
+    const { submitting, submitForType } = this.props;
     const methods = methodsDict.methods || [];
     return (<SettingsBase
-      titleComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.SUBSCRIBE_METHODS]}/>}
+      titleComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.SUBSCRIBE_METHODS]} />}
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
@@ -240,7 +240,7 @@ export default class SubscribeSettingsApp extends React.Component {
       </div>
       <AddNewMethod
         isOpenNewMethod={isOpenNewMethod}
-        setIsOpenNewMethod={(isOpen) => this.setState({isOpenNewMethod: isOpen})}
+        setIsOpenNewMethod={(isOpen) => this.setState({ isOpenNewMethod: isOpen })}
         addNewMethod={this.addNewMethod}
       />
     </SettingsBase>);

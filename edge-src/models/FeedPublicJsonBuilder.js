@@ -5,11 +5,21 @@ import {
   secondsToHHMMSS,
   htmlToPlainText
 } from "../../common-src/StringUtils";
-import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
-import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
-import {isValidMediaFile} from "../../common-src/MediaFileUtils";
+import {
+  humanizeMs,
+  msToRFC3339
+} from "../../common-src/TimeUtils";
+import {
+  ENCLOSURE_CATEGORIES,
+  STATUSES
+} from "../../common-src/Constants";
+import {
+  isValidMediaFile
+} from "../../common-src/MediaFileUtils";
 
-const {MICROFEED_VERSION} = require('../../common-src/Version');
+const {
+  MICROFEED_VERSION
+} = require('../../common-src/Version');
 
 export default class FeedPublicJsonBuilder {
   constructor(content, baseUrl, request, forOneItem = false) {
@@ -42,6 +52,8 @@ export default class FeedPublicJsonBuilder {
       item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
       item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
       item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
+      item.mediaFile.isBlog = item.mediaFile.category === ENCLOSURE_CATEGORIES.BLOG;
+
 
       if (!item.mediaFile.isExternalUrl) {
         item.mediaFile.url = urlJoinWithRelative(this.publicBucketUrl, item.mediaFile.url);
@@ -72,8 +84,8 @@ export default class FeedPublicJsonBuilder {
     }
 
     if (this.webGlobalSettings.favicon && this.webGlobalSettings.favicon.url) {
-        publicContent['favicon'] = urlJoinWithRelative(
-          this.publicBucketUrl, this.webGlobalSettings.favicon.url, this.baseUrl);
+      publicContent['favicon'] = urlJoinWithRelative(
+        this.publicBucketUrl, this.webGlobalSettings.favicon.url, this.baseUrl);
     }
 
     if (channel.publisher) {
@@ -94,13 +106,16 @@ export default class FeedPublicJsonBuilder {
 
   _buildPublicContentMicrofeedExtra(publicContent) {
     const channel = this.content.channel || {};
-    const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
+    const subscribeMethods = this.settings.subscribeMethods || {
+      'methods': []
+    };
     const microfeedExtra = {
       microfeed_version: MICROFEED_VERSION,
       base_url: this.baseUrl,
       categories: [],
+      tags: [],
     };
-    const channelCategories = channel.categories || [];
+    const channelCategories = channel.categories || [];    
     channelCategories.forEach((c) => {
       const topAndSubCats = c.split('/');
       let cat;
@@ -120,6 +135,13 @@ export default class FeedPublicJsonBuilder {
         microfeedExtra['categories'].push(cat);
       }
     });
+    // add tag support to microfeed
+    if (channel.tags) {
+      channel.tags.forEach((t) => {
+        microfeedExtra['tags'].push({
+          'name': t.trim(),
+        });
+      });
     if (!subscribeMethods.methods) {
       microfeedExtra['subscribe_methods'] = '';
     } else {
@@ -182,73 +204,76 @@ export default class FeedPublicJsonBuilder {
     }
     return microfeedExtra;
   }
+}
 
-  _buildPublicContentItem(item, mediaFile) {
-    let trackingUrls = [];
-    if (this.settings.analytics && this.settings.analytics.urls) {
-      trackingUrls = this.settings.analytics.urls || [];
-    }
-
-    const newItem = {
-      id: item.id,
-      title: item.title || 'untitled',
-    };
-    const attachment = {};
-    const _microfeed = {
-      is_audio: mediaFile.isAudio,
-      is_document: mediaFile.isDocument,
-      is_external_url: mediaFile.isExternalUrl,
-      is_video: mediaFile.isVideo,
-      is_image: mediaFile.isImage,
-      web_url: item.webUrl,
-      json_url: item.jsonUrl,
-      rss_url: item.rssUrl,
-      guid: item.guid,
-    };
-
-    if (isValidMediaFile(mediaFile)) {
-      if (mediaFile.url) {
-        attachment['url'] = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
+  
+    _buildPublicContentItem(item, mediaFile) {
+      let trackingUrls = [];
+      if (this.settings.analytics && this.settings.analytics.urls) {
+        trackingUrls = this.settings.analytics.urls || [];
       }
-      if (mediaFile.contentType) {
-        attachment['mime_type'] = mediaFile.contentType;
+  
+      const newItem = {
+        id: item.id,
+        title: item.title || 'untitled',
+      };
+      const attachment = {};
+      const _microfeed = {
+        is_audio: mediaFile.isAudio,
+        is_document: mediaFile.isDocument,
+        is_external_url: mediaFile.isExternalUrl,
+        is_video: mediaFile.isVideo,
+        is_image: mediaFile.isImage,
+        is_blog: mediaFile.isBlog,
+        web_url: item.webUrl,
+        json_url: item.jsonUrl,
+        rss_url: item.rssUrl,
+        guid: item.guid,
+      };
+  
+      if (isValidMediaFile(mediaFile)) {
+        if (mediaFile.url) {
+          attachment.url = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
+        }
+        if (mediaFile.contentType) {
+          attachment.mime_type = mediaFile.contentType;
+        }
+        if (mediaFile.sizeByte) {
+          attachment.size_in_byte = mediaFile.sizeByte;
+        }
+        if (mediaFile.durationSecond) {
+          attachment.duration_in_seconds = mediaFile.durationSecond;
+          _microfeed.duration_hhmmss = secondsToHHMMSS(mediaFile.durationSecond);
+        }
+        if (Object.keys(attachment).length > 0) {
+          newItem.attachments = [attachment];
+        }
       }
-      if (mediaFile.sizeByte) {
-        attachment['size_in_byte'] = mediaFile.sizeByte;
+      if (item.link) {
+        newItem.url = item.link;
       }
-      if (mediaFile.durationSecond) {
-        attachment['duration_in_seconds'] = mediaFile.durationSecond;
-        _microfeed['duration_hhmmss'] = secondsToHHMMSS(mediaFile.durationSecond);
+      if (mediaFile.isExternalUrl && mediaFile.url) {
+        newItem.external_url = mediaFile.url;
       }
-      if (Object.keys(attachment).length > 0) {
-        newItem['attachments'] = [attachment];
+  
+      newItem.content_html = item.description || '';
+      newItem.content_text = item.descriptionText || '';
+  
+      if (item.image) {
+        newItem.image = item.image;
       }
-    }
-    if (item.link) {
-      newItem['url'] = item.link;
-    }
-    if (mediaFile.isExternalUrl && mediaFile.url) {
-      newItem['external_url'] = mediaFile.url;
-    }
-
-    newItem['content_html'] = item.description || '';
-    newItem['content_text'] = item.descriptionText || '';
-
-    if (item.image) {
-      newItem['image'] = item.image;
-    }
-    if (mediaFile.isImage && mediaFile.url) {
-      newItem['banner_image'] = mediaFile.url;
-    }
-    if (item.pubDateRfc3339) {
-      newItem['date_published'] = item.pubDateRfc3339;
-    }
-    if (item.updatedDateRfc3339) {
-      newItem['date_modified'] = item.updatedDateRfc3339;
-    }
-    if (item.language) {
-      newItem['language'] = item.language;
-    }
+      if (mediaFile.isImage && mediaFile.url) {
+        newItem.banner_image = mediaFile.url;
+      }
+      if (item.pubDateRfc3339) {
+        newItem.date_published = item.pubDateRfc3339;
+      }
+      if (item.updatedDateRfc3339) {
+        newItem.date_modified = item.updatedDateRfc3339;
+      }
+      if (item.language) {
+        newItem.language = item.language;
+      }
 
     if (item['itunes:title']) {
       _microfeed['itunes:title'] = item['itunes:title'];
@@ -275,9 +300,11 @@ export default class FeedPublicJsonBuilder {
       _microfeed['date_published_ms'] = item.pubDateMs;
     }
 
-    newItem['_microfeed'] = _microfeed;
+    newItem._microfeed = _microfeed;
     return newItem;
   }
+
+
 
   getJsonData() {
     const publicContent = {
@@ -285,10 +312,11 @@ export default class FeedPublicJsonBuilder {
       ...this._buildPublicContentChannel(this.content),
     };
 
-    const {items} = this.content;
-    const existingitems = items || [];
-    publicContent['items'] = [];
-    existingitems.forEach((item) => {
+    const { items } = this.content;
+    const existingItems = items || [];
+    publicContent.items = [];
+
+    existingItems.forEach((item) => {
       if (![STATUSES.PUBLISHED, STATUSES.UNLISTED].includes(item.status)) {
         return;
       }
@@ -296,17 +324,12 @@ export default class FeedPublicJsonBuilder {
       const mediaFile = item.mediaFile || {};
       const newItem = this._buildPublicContentItem(item, mediaFile);
       publicContent.items.push(newItem);
-    })
+    });
 
-    // Note: We don't proactively sort items based on itunes:type.
-    //       Instead, we rely on ?sort= query param and settings
-    // if (channel['itunes:type'] === 'episodic') {
-    //   publicContent.items.sort((a, b) => b['_microfeed']['date_published_ms'] - a['_microfeed']['date_published_ms']);
-    // } else {
-    //   publicContent.items.sort((a, b) => a['_microfeed']['date_published_ms'] - b['_microfeed']['date_published_ms']);
-    // }
+    // Note: You can add the sorting logic here if needed
 
-    publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra(publicContent);
+    publicContent._microfeed = this._buildPublicContentMicrofeedExtra(publicContent);
     return publicContent;
+    // fix syntax error
   }
 }
