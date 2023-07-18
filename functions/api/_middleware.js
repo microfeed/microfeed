@@ -1,7 +1,6 @@
 import FeedDb from "../../edge-src/models/FeedDb";
 import FeedCrudManager from "../../edge-src/models/FeedCrudManager";
 import { SETTINGS_CATEGORIES } from "../../common-src/Constants";
-import mailChannelsPlugin from "@cloudflare/pages-plugin-mailchannels";
 
 async function fetchFeedAndAuth({request, next, env, data}) {
   const feedDb = new FeedDb(env, request);
@@ -33,23 +32,4 @@ async function fetchFeedAndAuth({request, next, env, data}) {
   return new Response('Unauthorized', {status: 401});
 }
 
-function mailChannels(context) {
-  mailChannelsPlugin({
-    personalizations: [
-      {
-        to: [{ name: "ACME Support", email: `${context.env.RECEIVER_EMAIL}` }],
-      },
-    ],
-    from: {
-      name: "Contact Us Form Inquiry",
-      email: `${context.env.SENDER_EMAIL}`,
-    },
-    respondWith: () => {
-      return new Response(
-        `Thank you for submitting your inquiry. A member of the team will be in touch shortly.`
-      );
-    },
-  })(context);
-}
-
-export const onRequest = [fetchFeedAndAuth, mailChannels];
+export const onRequest = [fetchFeedAndAuth];
