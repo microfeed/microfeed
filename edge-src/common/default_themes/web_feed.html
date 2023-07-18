@@ -1,14 +1,14 @@
 <main class="bg-light py-5">
-  <div class="container p-5 mx-auto bg-white" style="max-width: 100ch">
+  <div class="container p-5 mx-auto bg-white" style="max-width: 100ch;">
     {{#description}}
     <section class="mb-5">
-      <h2 class="mb-4 border-bottom">About</h2>
+      <h1 class="mb-4">About</h1>
       <div>{{{description}}}</div>
     </section>
     {{/description}}
 
     <section>
-      <h2 class="mb-4 border-bottom">Latest</h2>
+      <h2 class="mb-4">Latest</h2>
 
       <div>
         {{^items.length}} No items. {{/items.length}} {{#items}}
@@ -24,16 +24,16 @@
             width="120"
           />
           <div class="card-body">
-            <h5
-              class="card-title"
+            <div
+              class="card-title fs-5"
               style="
-                display: -webkit-box;
-                -webkit-box-orient: vertical;
-                -webkit-line-clamp: 2;
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 2;
               "
             >
               {{title}}
-            </h5>
+          </div>
             <div class="card-text">
               {{_microfeed.date_published_short}}
               {{#_microfeed.duration_hhmmss}} &middot;
