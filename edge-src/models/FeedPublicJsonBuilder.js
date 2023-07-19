@@ -6,7 +6,7 @@ import {
   htmlToPlainText
 } from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
-import {ENCLOSURE_CATEGORIES, STATUSES} from "../../common-src/Constants";
+import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "../../common-src/Constants";
 import {isValidMediaFile} from "../../common-src/MediaFileUtils";
 
 const {MICROFEED_VERSION} = require('../../common-src/Version');
@@ -204,6 +204,7 @@ export default class FeedPublicJsonBuilder {
       json_url: item.jsonUrl,
       rss_url: item.rssUrl,
       guid: item.guid,
+      status: ITEM_STATUSES_DICT[item.status] ? ITEM_STATUSES_DICT[item.status].name : 'published',
     };
 
     if (isValidMediaFile(mediaFile)) {

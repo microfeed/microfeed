@@ -9,7 +9,7 @@ export async function onRequestPut({ params, request, data }) {
   } else {
     const channelJson = await request.json();
     const { feedCrud } = data;
-    feedCrud.upsertChannel(channelJson);
+    await feedCrud.upsertChannel(channelJson);
   }
 
   return new Response(JSON.stringify(response), {
