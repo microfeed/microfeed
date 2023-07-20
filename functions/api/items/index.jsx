@@ -1,4 +1,4 @@
-import { ITEM_STATUSES_STRINGS_DICT, STATUSES } from '../../../common-src/constants';
+import { ITEM_STATUSES_STRINGS_DICT, STATUSES } from '../../../common-src/Constants';
 import {datetimeLocalToMs} from "../../../common-src/TimeUtils";
 
 // TODO: defensive code to handle some common errors
