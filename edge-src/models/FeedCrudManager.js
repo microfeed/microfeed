@@ -141,7 +141,7 @@ export default class FeedCrudManager {
     return internalSchema;
   }
 
-  upsertItem(item) {
+  async upsertItem(item) {
     const itemId = item.id ? item.id : randomShortUUID();
     const guid = item.guid ? item.guid : itemId;
     this.feedContent.item = {
@@ -149,7 +149,7 @@ export default class FeedCrudManager {
       id: itemId,
       guid,
     };
-    this.feedDb.putContent(this.feedContent);
+    await this.feedDb.putContent(this.feedContent);
     return itemId;
   }
 
@@ -157,12 +157,12 @@ export default class FeedCrudManager {
    * Assume it's primary channel for now
    * @param channel {Object}
    */
-  upsertChannel(channel) {
+  async upsertChannel(channel) {
     this.feedContent.channel = {
       ...this.feedContent.channel,
       ...this._publicToInternalSchemaForChannel(channel),
     };
-    this.feedDb.putContent(this.feedContent);
+    await this.feedDb.putContent(this.feedContent);
     return this.feedContent.id;
   }
 }
