@@ -99,8 +99,8 @@ export default class FeedCrudManager {
       internalSchema['itunes:explicit'] = item._microfeed['itunes:explicit'];
     }
 
-    if (!item.tags) {
-      item.tags = [];
+    if (item.tags) {
+      internalSchema.tags = item.tags;
     }
 
     return internalSchema;

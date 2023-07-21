@@ -115,7 +115,7 @@ export default class FeedPublicJsonBuilder {
       categories: [],
       tags: [],
     };
-    const channelCategories = channel.categories || [];    
+    const channelCategories = channel.categories || [];
     channelCategories.forEach((c) => {
       const topAndSubCats = c.split('/');
       let cat;
@@ -142,138 +142,139 @@ export default class FeedPublicJsonBuilder {
           'name': t.trim(),
         });
       });
-    if (!subscribeMethods.methods) {
-      microfeedExtra['subscribe_methods'] = '';
-    } else {
-      microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
-        // TODO: supports custom icons that are hosted on R2
-        m.image = urlJoinWithRelative(this.publicBucketUrl, m.image, this.baseUrl);
-        if (!m.editable) {
-          switch (m.type) {
-            case 'rss':
-              m.url = PUBLIC_URLS.rssFeed(this.baseUrl);
-              return m;
-            case 'json':
-              m.url = PUBLIC_URLS.jsonFeed(this.baseUrl);
-              return m;
-            default:
-              return m;
+      if (!subscribeMethods.methods) {
+        microfeedExtra['subscribe_methods'] = '';
+      } else {
+        microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+          // TODO: supports custom icons that are hosted on R2
+          m.image = urlJoinWithRelative(this.publicBucketUrl, m.image, this.baseUrl);
+          if (!m.editable) {
+            switch (m.type) {
+              case 'rss':
+                m.url = PUBLIC_URLS.rssFeed(this.baseUrl);
+                return m;
+              case 'json':
+                m.url = PUBLIC_URLS.jsonFeed(this.baseUrl);
+                return m;
+              default:
+                return m;
+            }
           }
-        }
-        return m;
-      });
-    }
-    microfeedExtra['description_text'] = htmlToPlainText(channel.description);
+          return m;
+        });
+      }
+      microfeedExtra['description_text'] = htmlToPlainText(channel.description);
 
-    if (channel['itunes:explicit']) {
-      microfeedExtra['itunes:explicit'] = true;
+      if (channel['itunes:explicit']) {
+        microfeedExtra['itunes:explicit'] = true;
+      }
+      if (channel['itunes:title']) {
+        microfeedExtra['itunes:title'] = channel['itunes:title'];
+      }
+      if (channel['copyright']) {
+        microfeedExtra['copyright'] = channel['copyright'];
+      }
+      if (channel['itunes:title']) {
+        microfeedExtra['itunes:title'] = channel['itunes:title'];
+      }
+      if (channel['itunes:type']) {
+        microfeedExtra['itunes:type'] = channel['itunes:type'];
+      }
+      if (channel['itunes:block']) {
+        microfeedExtra['itunes:block'] = channel['itunes:block'];
+      }
+      if (channel['itunes:complete']) {
+        microfeedExtra['itunes:complete'] = channel['itunes:complete'];
+      }
+      if (channel['itunes:new-feed-url']) {
+        microfeedExtra['itunes:new-feed-url'] = channel['itunes:new-feed-url'];
+      }
+      if (channel['itunes:email']) {
+        microfeedExtra['itunes:email'] = channel['itunes:email'];
+      }
+      microfeedExtra['items_sort_order'] = this.content.items_sort_order;
+      if (this.content.items_next_cursor && !this.forOneItem) {
+        microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
+        microfeedExtra['next_url'] = publicContent['next_url'];
+      }
+      if (this.content.items_prev_cursor && !this.forOneItem) {
+        microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
+        microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
+          `sort=${this.content.items_sort_order}`;
+      }
+      return microfeedExtra;
     }
-    if (channel['itunes:title']) {
-      microfeedExtra['itunes:title'] = channel['itunes:title'];
-    }
-    if (channel['copyright']) {
-      microfeedExtra['copyright'] = channel['copyright'];
-    }
-    if (channel['itunes:title']) {
-      microfeedExtra['itunes:title'] = channel['itunes:title'];
-    }
-    if (channel['itunes:type']) {
-      microfeedExtra['itunes:type'] = channel['itunes:type'];
-    }
-    if (channel['itunes:block']) {
-      microfeedExtra['itunes:block'] = channel['itunes:block'];
-    }
-    if (channel['itunes:complete']) {
-      microfeedExtra['itunes:complete'] = channel['itunes:complete'];
-    }
-    if (channel['itunes:new-feed-url']) {
-      microfeedExtra['itunes:new-feed-url'] = channel['itunes:new-feed-url'];
-    }
-    if (channel['itunes:email']) {
-      microfeedExtra['itunes:email'] = channel['itunes:email'];
-    }
-    microfeedExtra['items_sort_order'] = this.content.items_sort_order;
-    if (this.content.items_next_cursor && !this.forOneItem) {
-      microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
-      microfeedExtra['next_url'] = publicContent['next_url'];
-    }
-    if (this.content.items_prev_cursor && !this.forOneItem) {
-      microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
-      microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
-        `sort=${this.content.items_sort_order}`;
-    }
-    return microfeedExtra;
   }
-}
 
-  
-    _buildPublicContentItem(item, mediaFile) {
-      let trackingUrls = [];
-      if (this.settings.analytics && this.settings.analytics.urls) {
-        trackingUrls = this.settings.analytics.urls || [];
+
+  _buildPublicContentItem(item, mediaFile) {
+    let trackingUrls = [];
+    if (this.settings.analytics && this.settings.analytics.urls) {
+      trackingUrls = this.settings.analytics.urls || [];
+    }
+
+    const newItem = {
+      id: item.id,
+      title: item.title || 'untitled',
+    };
+    const attachment = {};
+    const _microfeed = {
+      is_audio: mediaFile.isAudio,
+      is_document: mediaFile.isDocument,
+      is_external_url: mediaFile.isExternalUrl,
+      is_video: mediaFile.isVideo,
+      is_image: mediaFile.isImage,
+      is_blog: mediaFile.isBlog,
+      web_url: item.webUrl,
+      json_url: item.jsonUrl,
+      rss_url: item.rssUrl,
+      guid: item.guid,
+      tags: item.tags,
+    };
+
+    if (isValidMediaFile(mediaFile)) {
+      if (mediaFile.url) {
+        attachment.url = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
       }
-  
-      const newItem = {
-        id: item.id,
-        title: item.title || 'untitled',
-      };
-      const attachment = {};
-      const _microfeed = {
-        is_audio: mediaFile.isAudio,
-        is_document: mediaFile.isDocument,
-        is_external_url: mediaFile.isExternalUrl,
-        is_video: mediaFile.isVideo,
-        is_image: mediaFile.isImage,
-        is_blog: mediaFile.isBlog,
-        web_url: item.webUrl,
-        json_url: item.jsonUrl,
-        rss_url: item.rssUrl,
-        guid: item.guid,
-      };
-  
-      if (isValidMediaFile(mediaFile)) {
-        if (mediaFile.url) {
-          attachment.url = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
-        }
-        if (mediaFile.contentType) {
-          attachment.mime_type = mediaFile.contentType;
-        }
-        if (mediaFile.sizeByte) {
-          attachment.size_in_byte = mediaFile.sizeByte;
-        }
-        if (mediaFile.durationSecond) {
-          attachment.duration_in_seconds = mediaFile.durationSecond;
-          _microfeed.duration_hhmmss = secondsToHHMMSS(mediaFile.durationSecond);
-        }
-        if (Object.keys(attachment).length > 0) {
-          newItem.attachments = [attachment];
-        }
+      if (mediaFile.contentType) {
+        attachment.mime_type = mediaFile.contentType;
       }
-      if (item.link) {
-        newItem.url = item.link;
+      if (mediaFile.sizeByte) {
+        attachment.size_in_byte = mediaFile.sizeByte;
       }
-      if (mediaFile.isExternalUrl && mediaFile.url) {
-        newItem.external_url = mediaFile.url;
+      if (mediaFile.durationSecond) {
+        attachment.duration_in_seconds = mediaFile.durationSecond;
+        _microfeed.duration_hhmmss = secondsToHHMMSS(mediaFile.durationSecond);
       }
-  
-      newItem.content_html = item.description || '';
-      newItem.content_text = item.descriptionText || '';
-  
-      if (item.image) {
-        newItem.image = item.image;
+      if (Object.keys(attachment).length > 0) {
+        newItem.attachments = [attachment];
       }
-      if (mediaFile.isImage && mediaFile.url) {
-        newItem.banner_image = mediaFile.url;
-      }
-      if (item.pubDateRfc3339) {
-        newItem.date_published = item.pubDateRfc3339;
-      }
-      if (item.updatedDateRfc3339) {
-        newItem.date_modified = item.updatedDateRfc3339;
-      }
-      if (item.language) {
-        newItem.language = item.language;
-      }
+    }
+    if (item.link) {
+      newItem.url = item.link;
+    }
+    if (mediaFile.isExternalUrl && mediaFile.url) {
+      newItem.external_url = mediaFile.url;
+    }
+
+    newItem.content_html = item.description || '';
+    newItem.content_text = item.descriptionText || '';
+
+    if (item.image) {
+      newItem.image = item.image;
+    }
+    if (mediaFile.isImage && mediaFile.url) {
+      newItem.banner_image = mediaFile.url;
+    }
+    if (item.pubDateRfc3339) {
+      newItem.date_published = item.pubDateRfc3339;
+    }
+    if (item.updatedDateRfc3339) {
+      newItem.date_modified = item.updatedDateRfc3339;
+    }
+    if (item.language) {
+      newItem.language = item.language;
+    }
 
     if (item['itunes:title']) {
       _microfeed['itunes:title'] = item['itunes:title'];
@@ -312,7 +313,9 @@ export default class FeedPublicJsonBuilder {
       ...this._buildPublicContentChannel(this.content),
     };
 
-    const { items } = this.content;
+    const {
+      items
+    } = this.content;
     const existingItems = items || [];
     publicContent.items = [];
 

@@ -1,7 +1,16 @@
-import {XMLBuilder} from "fast-xml-parser";
-import {PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
-import {msToUtcString} from "../../common-src/TimeUtils";
-import {OUR_BRAND} from "../../common-src/Constants";
+import {
+  XMLBuilder
+} from "fast-xml-parser";
+import {
+  PUBLIC_URLS,
+  secondsToHHMMSS
+} from "../../common-src/StringUtils";
+import {
+  msToUtcString
+} from "../../common-src/TimeUtils";
+import {
+  OUR_BRAND
+} from "../../common-src/Constants";
 
 export default class FeedPublicRssBuilder {
   constructor(jsonData, baseUrl) {
@@ -10,77 +19,80 @@ export default class FeedPublicRssBuilder {
   }
 
   _buildItemsRss() {
-   const items = [];
-   this.jsonData.items.forEach((item) => {
-     const _microfeed = item._microfeed || {};
-     const itemJson = {
-       'title': item.title || 'untitled',
-       'guid': item.id,
-       'pubDate': msToUtcString(item._microfeed.date_published_ms),
-       'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
-     };
-     if (item['content_html']) {
-       itemJson['description'] = {
-         '@cdata': item['content_html'],
-       };
-     }
-     if (item['url']) {
-       itemJson['link'] = item['url'];
-     }
+    const items = [];
+    this.jsonData.items.forEach((item) => {
+      const _microfeed = item._microfeed || {};
+      const itemJson = {
+        'title': item.title || 'untitled',
+        'guid': item.id,
+        'pubDate': msToUtcString(item._microfeed.date_published_ms),
+        'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
+        'tags': item.tags
+      };
+      if (item['content_html']) {
+        itemJson['description'] = {
+          '@cdata': item['content_html'],
+        };
+      }
+      if (item['url']) {
+        itemJson['link'] = item['url'];
+      }
       if (item.tags && item.tags.length > 0) {
         itemJson['category'] = item.tags.join(',');
       }
-    
 
-     if (item.image) {
-       itemJson['itunes:image'] = {
-         '@_href': item.image,
-       };
-     }
 
-     if (_microfeed['itunes:title'] && _microfeed['itunes:title'].trim().length > 0) {
-       itemJson['itunes:title'] = _microfeed['itunes:title'].trim();
-     }
+      if (item.image) {
+        itemJson['itunes:image'] = {
+          '@_href': item.image,
+        };
+      }
 
-     if (_microfeed['itunes:block']) {
-       itemJson['itunes:block'] = 'Yes';
-     }
+      if (_microfeed['itunes:title'] && _microfeed['itunes:title'].trim().length > 0) {
+        itemJson['itunes:title'] = _microfeed['itunes:title'].trim();
+      }
 
-     if (_microfeed['itunes:season']) {
-       itemJson['itunes:season'] = _microfeed['itunes:season'];
-     }
+      if (_microfeed['itunes:block']) {
+        itemJson['itunes:block'] = 'Yes';
+      }
 
-     if (_microfeed['itunes:episode']) {
-       itemJson['itunes:episode'] = _microfeed['itunes:episode'];
-     }
+      if (_microfeed['itunes:season']) {
+        itemJson['itunes:season'] = _microfeed['itunes:season'];
+      }
 
-     if (['full', 'trailer', 'bonus'].includes(_microfeed['itunes:episodeType'])) {
-       itemJson['itunes:episodeType'] = _microfeed['itunes:episodeType'];
-     }
+      if (_microfeed['itunes:episode']) {
+        itemJson['itunes:episode'] = _microfeed['itunes:episode'];
+      }
 
-     const {attachments} = item;
-     let mediaFile;
-     if (attachments && attachments[0]) {
-       mediaFile = attachments[0];
-     }
-     if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
-       itemJson.enclosure = {
-         '@_url': mediaFile.url,
-       };
-       if (mediaFile.mime_type) {
-         itemJson.enclosure['@_type'] = mediaFile.mime_type;
-       }
-       if (mediaFile.size_in_byte && mediaFile.size_in_byte > 0) {
-         itemJson.enclosure['@_length'] = mediaFile.size_in_byte;
-       }
-       if (mediaFile.duration_in_seconds && mediaFile.duration_in_seconds > 0) {
-         itemJson['itunes:duration'] = secondsToHHMMSS(mediaFile.duration_in_seconds);
-       }
-     }
-     items.push(itemJson);
-   });
-   return items;
- }
+      if (['full', 'trailer', 'bonus'].includes(_microfeed['itunes:episodeType'])) {
+        itemJson['itunes:episodeType'] = _microfeed['itunes:episodeType'];
+      }
+
+      const {
+        attachments
+      } = item;
+      let mediaFile;
+      if (attachments && attachments[0]) {
+        mediaFile = attachments[0];
+      }
+      if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
+        itemJson.enclosure = {
+          '@_url': mediaFile.url,
+        };
+        if (mediaFile.mime_type) {
+          itemJson.enclosure['@_type'] = mediaFile.mime_type;
+        }
+        if (mediaFile.size_in_byte && mediaFile.size_in_byte > 0) {
+          itemJson.enclosure['@_length'] = mediaFile.size_in_byte;
+        }
+        if (mediaFile.duration_in_seconds && mediaFile.duration_in_seconds > 0) {
+          itemJson['itunes:duration'] = secondsToHHMMSS(mediaFile.duration_in_seconds);
+        }
+      }
+      items.push(itemJson);
+    });
+    return items;
+  }
 
   _buildChannelRss() {
     const _microfeed = this.jsonData._microfeed || {};
@@ -101,7 +113,10 @@ export default class FeedPublicRssBuilder {
       linksTags.push(this.jsonData.home_page_url);
     }
     if (this.jsonData._microfeed.items_next_cursor) {
-      const {items_next_cursor, items_sort_order} = this.jsonData._microfeed;
+      const {
+        items_next_cursor,
+        items_sort_order
+      } = this.jsonData._microfeed;
       linksTags.push({
         '@_rel': 'next',
         '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?next_cursor=${items_next_cursor}&sort=${items_sort_order}`,
@@ -109,7 +124,10 @@ export default class FeedPublicRssBuilder {
       });
     }
     if (this.jsonData._microfeed.items_prev_cursor) {
-      const {items_prev_cursor, items_sort_order} = this.jsonData._microfeed;
+      const {
+        items_prev_cursor,
+        items_sort_order
+      } = this.jsonData._microfeed;
       linksTags.push({
         '@_rel': 'prev',
         '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?prev_cursor=${items_prev_cursor}&sort=${items_sort_order}`,
