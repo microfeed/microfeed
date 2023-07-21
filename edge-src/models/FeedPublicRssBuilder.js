@@ -27,7 +27,6 @@ export default class FeedPublicRssBuilder {
         'guid': item.id,
         'pubDate': msToUtcString(item._microfeed.date_published_ms),
         'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
-        'tags': item.tags
       };
       if (item['content_html']) {
         itemJson['description'] = {
@@ -37,10 +36,6 @@ export default class FeedPublicRssBuilder {
       if (item['url']) {
         itemJson['link'] = item['url'];
       }
-      if (item.tags && item.tags.length > 0) {
-        itemJson['category'] = item.tags.join(',');
-      }
-
 
       if (item.image) {
         itemJson['itunes:image'] = {

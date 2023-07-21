@@ -113,7 +113,6 @@ export default class FeedPublicJsonBuilder {
       microfeed_version: MICROFEED_VERSION,
       base_url: this.baseUrl,
       categories: [],
-      tags: [],
     };
     const channelCategories = channel.categories || [];
     channelCategories.forEach((c) => {
@@ -135,77 +134,68 @@ export default class FeedPublicJsonBuilder {
         microfeedExtra['categories'].push(cat);
       }
     });
-    // add tag support to microfeed
-    if (channel.tags) {
-      channel.tags.forEach((t) => {
-        microfeedExtra['tags'].push({
-          'name': t.trim(),
-        });
-      });
-      if (!subscribeMethods.methods) {
-        microfeedExtra['subscribe_methods'] = '';
-      } else {
-        microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
-          // TODO: supports custom icons that are hosted on R2
-          m.image = urlJoinWithRelative(this.publicBucketUrl, m.image, this.baseUrl);
-          if (!m.editable) {
-            switch (m.type) {
-              case 'rss':
-                m.url = PUBLIC_URLS.rssFeed(this.baseUrl);
-                return m;
-              case 'json':
-                m.url = PUBLIC_URLS.jsonFeed(this.baseUrl);
-                return m;
-              default:
-                return m;
-            }
+    if (!subscribeMethods.methods) {
+      microfeedExtra['subscribe_methods'] = '';
+    } else {
+      microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+        // TODO: supports custom icons that are hosted on R2
+        m.image = urlJoinWithRelative(this.publicBucketUrl, m.image, this.baseUrl);
+        if (!m.editable) {
+          switch (m.type) {
+            case 'rss':
+              m.url = PUBLIC_URLS.rssFeed(this.baseUrl);
+              return m;
+            case 'json':
+              m.url = PUBLIC_URLS.jsonFeed(this.baseUrl);
+              return m;
+            default:
+              return m;
           }
-          return m;
-        });
-      }
-      microfeedExtra['description_text'] = htmlToPlainText(channel.description);
-
-      if (channel['itunes:explicit']) {
-        microfeedExtra['itunes:explicit'] = true;
-      }
-      if (channel['itunes:title']) {
-        microfeedExtra['itunes:title'] = channel['itunes:title'];
-      }
-      if (channel['copyright']) {
-        microfeedExtra['copyright'] = channel['copyright'];
-      }
-      if (channel['itunes:title']) {
-        microfeedExtra['itunes:title'] = channel['itunes:title'];
-      }
-      if (channel['itunes:type']) {
-        microfeedExtra['itunes:type'] = channel['itunes:type'];
-      }
-      if (channel['itunes:block']) {
-        microfeedExtra['itunes:block'] = channel['itunes:block'];
-      }
-      if (channel['itunes:complete']) {
-        microfeedExtra['itunes:complete'] = channel['itunes:complete'];
-      }
-      if (channel['itunes:new-feed-url']) {
-        microfeedExtra['itunes:new-feed-url'] = channel['itunes:new-feed-url'];
-      }
-      if (channel['itunes:email']) {
-        microfeedExtra['itunes:email'] = channel['itunes:email'];
-      }
-      microfeedExtra['items_sort_order'] = this.content.items_sort_order;
-      if (this.content.items_next_cursor && !this.forOneItem) {
-        microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
-        microfeedExtra['next_url'] = publicContent['next_url'];
-      }
-      if (this.content.items_prev_cursor && !this.forOneItem) {
-        microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
-        microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
-          `sort=${this.content.items_sort_order}`;
-      }
-      return microfeedExtra;
+        }
+        return m;
+      });
     }
-  }
+    microfeedExtra['description_text'] = htmlToPlainText(channel.description);
 
+    if (channel['itunes:explicit']) {
+      microfeedExtra['itunes:explicit'] = true;
+    }
+    if (channel['itunes:title']) {
+      microfeedExtra['itunes:title'] = channel['itunes:title'];
+    }
+    if (channel['copyright']) {
+      microfeedExtra['copyright'] = channel['copyright'];
+    }
+    if (channel['itunes:title']) {
+      microfeedExtra['itunes:title'] = channel['itunes:title'];
+    }
+    if (channel['itunes:type']) {
+      microfeedExtra['itunes:type'] = channel['itunes:type'];
+    }
+    if (channel['itunes:block']) {
+      microfeedExtra['itunes:block'] = channel['itunes:block'];
+    }
+    if (channel['itunes:complete']) {
+      microfeedExtra['itunes:complete'] = channel['itunes:complete'];
+    }
+    if (channel['itunes:new-feed-url']) {
+      microfeedExtra['itunes:new-feed-url'] = channel['itunes:new-feed-url'];
+    }
+    if (channel['itunes:email']) {
+      microfeedExtra['itunes:email'] = channel['itunes:email'];
+    }
+    microfeedExtra['items_sort_order'] = this.content.items_sort_order;
+    if (this.content.items_next_cursor && !this.forOneItem) {
+      microfeedExtra['items_next_cursor'] = this.content.items_next_cursor;
+      microfeedExtra['next_url'] = publicContent['next_url'];
+    }
+    if (this.content.items_prev_cursor && !this.forOneItem) {
+      microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
+      microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
+        `sort=${this.content.items_sort_order}`;
+    }
+    return microfeedExtra;
+  }
 
   _buildPublicContentItem(item, mediaFile) {
     let trackingUrls = [];
@@ -224,7 +214,6 @@ export default class FeedPublicJsonBuilder {
       is_external_url: mediaFile.isExternalUrl,
       is_video: mediaFile.isVideo,
       is_image: mediaFile.isImage,
-      is_blog: mediaFile.isBlog,
       web_url: item.webUrl,
       json_url: item.jsonUrl,
       rss_url: item.rssUrl,
@@ -234,46 +223,46 @@ export default class FeedPublicJsonBuilder {
 
     if (isValidMediaFile(mediaFile)) {
       if (mediaFile.url) {
-        attachment.url = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
+        attachment['url'] = buildAudioUrlWithTracking(mediaFile.url, trackingUrls);
       }
       if (mediaFile.contentType) {
-        attachment.mime_type = mediaFile.contentType;
+        attachment['mime_type'] = mediaFile.contentType;
       }
       if (mediaFile.sizeByte) {
-        attachment.size_in_byte = mediaFile.sizeByte;
+        attachment['size_in_byte'] = mediaFile.sizeByte;
       }
       if (mediaFile.durationSecond) {
-        attachment.duration_in_seconds = mediaFile.durationSecond;
-        _microfeed.duration_hhmmss = secondsToHHMMSS(mediaFile.durationSecond);
+        attachment['duration_in_seconds'] = mediaFile.durationSecond;
+        _microfeed['duration_hhmmss'] = secondsToHHMMSS(mediaFile.durationSecond);
       }
       if (Object.keys(attachment).length > 0) {
-        newItem.attachments = [attachment];
+        newItem['attachments'] = [attachment];
       }
     }
     if (item.link) {
-      newItem.url = item.link;
+      newItem['url'] = item.link;
     }
     if (mediaFile.isExternalUrl && mediaFile.url) {
-      newItem.external_url = mediaFile.url;
+      newItem['external_url'] = mediaFile.url;
     }
 
-    newItem.content_html = item.description || '';
-    newItem.content_text = item.descriptionText || '';
+    newItem['content_html'] = item.description || '';
+    newItem['content_text'] = item.descriptionText || '';
 
     if (item.image) {
-      newItem.image = item.image;
+      newItem['image'] = item.image;
     }
     if (mediaFile.isImage && mediaFile.url) {
-      newItem.banner_image = mediaFile.url;
+      newItem['banner_image'] = mediaFile.url;
     }
     if (item.pubDateRfc3339) {
-      newItem.date_published = item.pubDateRfc3339;
+      newItem['date_published'] = item.pubDateRfc3339;
     }
     if (item.updatedDateRfc3339) {
-      newItem.date_modified = item.updatedDateRfc3339;
+      newItem['date_modified'] = item.updatedDateRfc3339;
     }
     if (item.language) {
-      newItem.language = item.language;
+      newItem['language'] = item.language;
     }
 
     if (item['itunes:title']) {
@@ -301,11 +290,9 @@ export default class FeedPublicJsonBuilder {
       _microfeed['date_published_ms'] = item.pubDateMs;
     }
 
-    newItem._microfeed = _microfeed;
+    newItem['_microfeed'] = _microfeed;
     return newItem;
   }
-
-
 
   getJsonData() {
     const publicContent = {
@@ -316,10 +303,9 @@ export default class FeedPublicJsonBuilder {
     const {
       items
     } = this.content;
-    const existingItems = items || [];
-    publicContent.items = [];
-
-    existingItems.forEach((item) => {
+    const existingitems = items || [];
+    publicContent['items'] = [];
+    existingitems.forEach((item) => {
       if (![STATUSES.PUBLISHED, STATUSES.UNLISTED].includes(item.status)) {
         return;
       }
@@ -327,12 +313,17 @@ export default class FeedPublicJsonBuilder {
       const mediaFile = item.mediaFile || {};
       const newItem = this._buildPublicContentItem(item, mediaFile);
       publicContent.items.push(newItem);
-    });
+    })
 
-    // Note: You can add the sorting logic here if needed
+    // Note: We don't proactively sort items based on itunes:type.
+    //       Instead, we rely on ?sort= query param and settings
+    // if (channel['itunes:type'] === 'episodic') {
+    //   publicContent.items.sort((a, b) => b['_microfeed']['date_published_ms'] - a['_microfeed']['date_published_ms']);
+    // } else {
+    //   publicContent.items.sort((a, b) => a['_microfeed']['date_published_ms'] - b['_microfeed']['date_published_ms']);
+    // }
 
-    publicContent._microfeed = this._buildPublicContentMicrofeedExtra(publicContent);
+    publicContent['_microfeed'] = this._buildPublicContentMicrofeedExtra(publicContent);
     return publicContent;
-    // fix syntax error
   }
 }
