@@ -1,7 +1,7 @@
 {
 	"configurations": [
 		{
-			"type": "chrome",
+			"type": "firefox",
 			"name": "http://127.0.0.1:8788/",
 			"request": "launch",
 			"url": "http://127.0.0.1:8788/"

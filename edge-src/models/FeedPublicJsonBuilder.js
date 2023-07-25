@@ -52,8 +52,6 @@ export default class FeedPublicJsonBuilder {
       item.mediaFile.isExternalUrl = item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL;
       item.mediaFile.isVideo = item.mediaFile.category === ENCLOSURE_CATEGORIES.VIDEO;
       item.mediaFile.isImage = item.mediaFile.category === ENCLOSURE_CATEGORIES.IMAGE;
-      item.mediaFile.isBlog = item.mediaFile.category === ENCLOSURE_CATEGORIES.BLOG;
-
 
       if (!item.mediaFile.isExternalUrl) {
         item.mediaFile.url = urlJoinWithRelative(this.publicBucketUrl, item.mediaFile.url);
@@ -214,6 +212,7 @@ export default class FeedPublicJsonBuilder {
       is_external_url: mediaFile.isExternalUrl,
       is_video: mediaFile.isVideo,
       is_image: mediaFile.isImage,
+      is_blog: item.is_blog,
       web_url: item.webUrl,
       json_url: item.jsonUrl,
       rss_url: item.rssUrl,

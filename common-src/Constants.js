@@ -139,8 +139,7 @@ export const ENCLOSURE_CATEGORIES = {
   DOCUMENT: 'document',
   VIDEO: 'video',
   IMAGE: 'image',
-  EXTERNAL_URL: 'external_url',
-  BLOG: 'blog'
+  EXTERNAL_URL: 'external_url'
 };
 export const ENCLOSURE_CATEGORIES_DICT = {
   [ENCLOSURE_CATEGORIES.AUDIO]: {
@@ -163,10 +162,6 @@ export const ENCLOSURE_CATEGORIES_DICT = {
     name: 'external url',
     fileTypes: [],
   },
-  [ENCLOSURE_CATEGORIES.BLOG]: {
-    name: 'blog',
-    fileTypes: [],
-  },
 };
 
 export const SUPPORTED_ENCLOSURE_CATEGORIES = [
@@ -175,7 +170,6 @@ export const SUPPORTED_ENCLOSURE_CATEGORIES = [
   ENCLOSURE_CATEGORIES.DOCUMENT,
   ENCLOSURE_CATEGORIES.IMAGE,
   ENCLOSURE_CATEGORIES.EXTERNAL_URL,
-  ENCLOSURE_CATEGORIES.BLOG
 ];
 
 export const NAV_ITEMS = {

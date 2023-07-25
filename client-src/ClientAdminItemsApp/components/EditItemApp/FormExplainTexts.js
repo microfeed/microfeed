@@ -162,4 +162,9 @@ export const CONTROLS_TEXTS_DICT = {
         `<li>${ITEM_STATUSES_DICT[k].name}: ${ITEM_STATUSES_DICT[k].description}</li>`)).join('')}` +
       "</ul>",
   },
+  [ITEM_CONTROLS.IS_BLOG]: {
+    linkName: 'Is blog?',
+    modalTitle: 'Is item a blog post?',
+    text: "This checkbox indicates that the item is designed to be a blog post."
+  },
 };
