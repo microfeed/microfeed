@@ -1,4 +1,4 @@
-import { ITEM_STATUSES_STRINGS_DICT, STATUSES } from '../../../common-src/constants';
+import { ITEM_STATUSES_STRINGS_DICT, STATUSES } from '../../../common-src/Constants';
 import {datetimeLocalToMs} from "../../../common-src/TimeUtils";
 
 // TODO: defensive code to handle some common errors
@@ -11,7 +11,7 @@ export async function onRequestPost({ request, data }) {
   itemJson.date_published_ms = itemJson.date_published_ms ? itemJson.date_published_ms : datetimeLocalToMs(new Date());
 
   const { feedCrud } = data;
-  const itemId = feedCrud.upsertItem(itemJson);
+  const itemId = await feedCrud.upsertItem(itemJson);
 
   return new Response(JSON.stringify({
     id: itemId,

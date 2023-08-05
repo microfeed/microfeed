@@ -646,6 +646,13 @@ components:
       type: object
       description: microfeed-specific data fields for an item.
       properties:
+        status:
+          type: string
+          description: The status of this item.
+          enum:
+            - published
+            - unlisted
+            - unpublished
         is_audio:
           type: boolean
           description: Is the media file associated with this item an audio?

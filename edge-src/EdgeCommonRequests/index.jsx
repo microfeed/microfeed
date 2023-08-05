@@ -17,7 +17,7 @@ export async function onFetchFeedJsonRequestGet({env, request}, checkIsAllowed =
   return await jsonResponseBuilder.getResponse({checkIsAllowed});
 }
 
-export async function onFetchItemRequestGet({params, env, request}, checkIsAllowed = true) {
+export async function onFetchItemRequestGet({params, env, request}, checkIsAllowed = true, statuses = null) {
   const {slug, itemId} = params;
   const theItemId = itemId || getIdFromSlug(slug);
 
@@ -25,7 +25,7 @@ export async function onFetchItemRequestGet({params, env, request}, checkIsAllow
     const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
       queryKwargs: {
         id: theItemId,
-        'status__in': [STATUSES.PUBLISHED, STATUSES.UNLISTED],
+        'status__in': statuses || [STATUSES.PUBLISHED, STATUSES.UNLISTED],
       },
       limit: 1,
     });
