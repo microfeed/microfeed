@@ -144,7 +144,7 @@ export const ENCLOSURE_CATEGORIES = {
 export const ENCLOSURE_CATEGORIES_DICT = {
   [ENCLOSURE_CATEGORIES.AUDIO]: {
     name: 'audio',
-    fileTypes: ['mp3'],
+    fileTypes: ['mp3', 'm4b'],
   },
   [ENCLOSURE_CATEGORIES.VIDEO]: {
     name: 'video',
