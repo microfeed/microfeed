@@ -57,7 +57,7 @@ People (and bots) publish items to a feed, and others can subscribe to that feed
 microfeed makes it easy for individuals to self-host their own feed on Cloudflare, including but not limited to
 * a podcast feed of audios
 * a blog feed of posts
-* an Instagram-like feed of images (e.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/))
+* an Instagram-like feed of images (e.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/), [brand-assets.listennotes.com](https://brand-assets.listennotes.com/))
 * a YouTube-like feed of videos
 * a personal website with custom links (e.g., [wenbin.org](https://www.wenbin.org/))
 * a content curation feed of external news article urls
