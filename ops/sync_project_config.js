@@ -2,17 +2,17 @@ const https = require('https');
 const {VarsReader, WranglerCmd} = require('./lib/utils');
 
 const ALLOWED_VARS = [
-  {name: 'CLOUDFLARE_ACCOUNT_ID', encrypted: true},
-  {name: 'CLOUDFLARE_PROJECT_NAME', encrypted: true},
-  {name: 'CLOUDFLARE_API_TOKEN', encrypted: true},
-  {name: 'DEPLOYMENT_ENVIRONMENT', encrypted: false},
+  {name: 'CLOUDFLARE_ACCOUNT_ID', encrypted: true, required: true},
+  {name: 'CLOUDFLARE_PROJECT_NAME', encrypted: true, required: true},
+  {name: 'CLOUDFLARE_API_TOKEN', encrypted: true, required: true},
+  {name: 'DEPLOYMENT_ENVIRONMENT', encrypted: false, required: false},
 
-  {name: 'R2_ACCESS_KEY_ID', encrypted: true},
-  {name: 'R2_SECRET_ACCESS_KEY', encrypted: true},
-  {name: 'R2_PUBLIC_BUCKET', encrypted: true},
+  {name: 'R2_ACCESS_KEY_ID', encrypted: true, required: true},
+  {name: 'R2_SECRET_ACCESS_KEY', encrypted: true, required: true},
+  {name: 'R2_PUBLIC_BUCKET', encrypted: true, required: false},
 
-  {name: 'NODE_VERSION', encrypted: false},  // Cloudflare Pages CI needs this to use the right Node version.
-  {name: 'MICROFEED_VERSION', encrypted: false},
+  {name: 'NODE_VERSION', encrypted: false, required: false},  // Cloudflare Pages CI needs this to use the right Node version.
+  {name: 'MICROFEED_VERSION', encrypted: false, required: false},
 ];
 
 class SyncProjectConfig {
@@ -93,6 +93,24 @@ class SyncProjectConfig {
 
   syncEnvVars() {
     console.log(`Sync-ing for [${this.currentEnv}]...`);
+
+    // ensure that required vars are set
+    let missingVars = [];
+    ALLOWED_VARS.forEach((varDict) => {
+      if (varDict.required && !this.v.get(varDict.name)) {
+        missingVars.push(varDict.name);
+      }
+    });
+    if (missingVars.length > 0) {
+      console.error(`Missing required vars: ${missingVars.join(', ')}`);
+      process.exit(1);
+    }
+    // ensure that the project name is valid
+    if (!this.v.get('CLOUDFLARE_PROJECT_NAME').match(/^[a-zA-Z0-9-]+$/)) {
+      console.error(`Invalid project name: ${this.v.get('CLOUDFLARE_PROJECT_NAME')}`);
+      process.exit(1);
+    }
+
 
     this.cmd.getDatabaseId((databaseId) => {
       console.log('Database id (num of chars): ', databaseId.length)
