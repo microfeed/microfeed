@@ -18,22 +18,19 @@
     ·
     <a href="mailto:support@microfeed.org"><b>メールで問い合わせる</b></a>
   </p>
-  
-microfeed へようこそ！microfeed は、Cloudflare 上で自己ホストできる軽量なコンテンツ管理システム (CMS) です
-microfeed を使えば、オーディオ、ビデオ、写真、ドキュメント、ブログ投稿、外部 URL など、様々なコンテンツを
-Web、RSS、JSON のフィード形式で簡単に公開することができます。自分でサーバーを運営せずに、自分自身の CMS を自己ホストしたいテクノロジーに精通した個人に最適なソリューションです。
 
-microfeed は [Listen Notes](https://www.listennotes.com/) によって開発され、Cloudflare の
-[Pages](https://pages.cloudflare.com/),
-[R2](https://www.cloudflare.com/products/r2/),
-[D1](https://developers.cloudflare.com/d1/),
-[Zero Trust](https://www.cloudflare.com/products/zero-trust/)
-でホストされています。
+Welcome to microfeed, a lightweight content management system (CMS) self-hosted on Cloudflare.
+With microfeed, you can easily publish a variety of content such as audios, videos, photos, documents, blog posts,
+and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect solution for tech-savvy individuals who
+want to self-host their own CMS without having to run their own servers.
 
-ご質問やフィードバックがある場合は、support@microfeed.org までお気軽にお問い合わせください。私たちはあなたからのご連絡をお待ちしております！
+microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Pages](https://pages.cloudflare.com/),
+[R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/).
 
-## 📚 目次
-[![Cloudflare Pages にデプロイする](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
+If you have any questions or feedback, please don't hesitate to reach out to us at support@microfeed.org. We'd love to hear from you!
+
+## 📚 Table of contents
+[![Deploy to Cloudflare Pages](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml/badge.svg?event=workflow_dispatch)](https://github.com/microfeed/microfeed/actions/workflows/deploy.yml)
 [![CI](https://github.com/microfeed/microfeed/actions/workflows/ci.yml/badge.svg)](https://github.com/microfeed/microfeed/actions/workflows/ci.yml)
 [![Eメールサポート](https://img.shields.io/badge/Email-support%40microfeed.org-blue)](mailto:support@microfeed.org)
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://www.microfeed.org/i/introducing-microfeed-self-hosted-cms-on-cloudflare-opensource-serverless-free-uhbQEmArlC2/)
@@ -52,22 +49,22 @@ microfeed は [Listen Notes](https://www.listennotes.com/) によって開発さ
   * [microfeed をローカルで実行する](#run-microfeed-on-local)
 * [🛡️ ライセンス](#%EF%B8%8F-license)
 
-## ⭐️ 仕組み
+## ⭐️ How it works
 
-1990年代以降、ウェブの大部分はフィードによって支えられています。
-人々（そしてボット）がフィードにアイテムを公開し、他の人々がそのフィードを購読して新しいコンテンツを受け取ります。
+Since the 1990s, a significant portion of the web has been powered by feeds.
+People (and bots) publish items to a feed, and others can subscribe to that feed to receive new content.
 
-microfeedでは、個人が自分自身のフィードをCloudflare上でホストすることが容易になります。以下に示すものだけでなく、
-* オーディオのポッドキャストフィード
-* 投稿のブログフィード
-* 画像のInstagramのようなフィード（例：[llamacorn.listennotes.com](https://llamacorn.listennotes.com/)）
-* 動画のYouTubeのようなフィード
-* カスタムリンクを持つ個人ウェブサイト（例：[wenbin.org](https://www.wenbin.org/)）
-* 外部ニュース記事のURLのコンテンツキュレーションフィード
-* 更新情報と報道カバレッジを持つマーケティングサイト（例：[microfeed.org](https://www.microfeed.org/)）
-* GUIダッシュボードと公開用jsonフィードを持つヘッドレスCMS（例：[microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html)）
-* 販売用のドメイン名リスト（例：[listen411.com](https://www.listen411.com/)、[ListenHost.com](https://www.listenhost.com/)...）
-* 1冊の本のウェブサイト（例：[The Art of War](https://the-art-of-war.dripbook.xyz/)）
+microfeed makes it easy for individuals to self-host their own feed on Cloudflare, including but not limited to
+* a podcast feed of audios
+* a blog feed of posts
+* an Instagram-like feed of images (e.g., [llamacorn.listennotes.com](https://llamacorn.listennotes.com/), [brand-assets.listennotes.com](https://brand-assets.listennotes.com/))
+* a YouTube-like feed of videos
+* a personal website with custom links (e.g., [wenbin.org](https://www.wenbin.org/))
+* a content curation feed of external news article urls
+* a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
+* a headless cms with a GUI dashboard and a public json feed (e.g., [microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html))
+* a list of domain names for sale (e.g., [listen411.com](https://www.listen411.com/), [ListenHost.com](https://www.listenhost.com/)...)
+* a website for an entire book (e.g., [The Art of War](https://the-art-of-war.dripbook.xyz/))
 * ...
 
 microfeedは、Cloudflare [Pages](https://pages.cloudflare.com/) を使用してコードをホストおよび実行し、
@@ -177,9 +174,10 @@ Cloudflare PagesとD1の両方に編集権限が必要です：
 
   <img width="1328" alt="Screenshot 2022-12-04 at 4 43 58 PM" src="https://user-images.githubusercontent.com/1719237/205526381-cc11d4fe-b053-49d0-9072-de54db31b3b7.png">
 
-"編集"権限を選択し、APIトークンを作成します：
+Select "Admin Read & Write" permission and create an API token:
 
-  <img width="849" alt="Screenshot 2022-12-04 at 4 45 18 PM" src="https://user-images.githubusercontent.com/1719237/205526491-79a87e1e-02e0-4268-9f88-7d9cdc6b3b68.png">
+  <img width="858" alt="Screenshot 2023-08-08 at 4 33 55 PM" src="https://github.com/microfeed/microfeed/assets/1719237/1a90df29-5660-49d4-b66a-24873812492d">
+
 
 R2_ACCESS_KEY_IDのためにAccess Key IDをコピーし、R2_SECRET_ACCESS_KEYのためにSecret Access Keyをコピーします
   <img width="728" alt="Screenshot 2022-12-04 at 4 45 35 PM" src="https://user-images.githubusercontent.com/1719237/205526582-92f440ac-21c4-46d9-a065-cfc1937391c8.png">
@@ -328,7 +326,7 @@ microfeedは、Cloudflare D1およびR2にデータを保存します。した�
 
 <b>R2からメディアファイルをダウンロードする方法は？</b>
 
-2023年2月16日現在、Cloudflareは、R2バケットからすべてのファイルを一括ダウンロードするためのツールを提供していません。
+As of Feb 16, 2023, Cloudflare has not provided tools to to batch download all files from a R2 bucket.
 
 特定のR2バケットからすべてのオブジェクトをフェッチするために、[S3互換API](https://developers.cloudflare.com/r2/data-access/s3-api/api/)を使用するスクリプトを記述する必要があります。
 
@@ -336,14 +334,16 @@ microfeedは、Cloudflare D1およびR2にデータを保存します。した�
 
 [📚TOCに戻る](#-table-of-contents)
 
-## 💪 コントリビューション
-microfeedへのコントリビューションを歓迎します！
-新機能のアイデアがある場合やバグを見つけた場合は、リポジトリ内で[問題を開いて](https://github.com/microfeed/microfeed/issues/new)ください。
-修正や新機能を提出したい場合は、変更の詳細な説明を含むプルリクエストを作成してください。
+## 💪 Contributions
+We welcome contributions to microfeed!
+If you have an idea for a new feature or have found a bug, please [open an issue](https://github.com/microfeed/microfeed/issues/new) in the repository.
+If you'd like to submit a fix or new feature, please create a pull request with a detailed description of your changes.
 
-### ローカルでmicrofeedを実行する
+### Run microfeed on local
 
-まず、microfeedのルートディレクトリ（このREADME.mdファイルと同じレベル）に.vars.tomlファイルを作成し、.vars.tomlファイルに5つのシークレットを入力します（[ステップ2. フォークしたリポジトリにシークレットを入れる](#step-2-put-some-secrets-on-your-forked-repo)と同様に）：
+Pre-requisites: node / npm, yarn, and wrangler
+
+First, create a .vars.toml file in microfeed's root directory (same level as this README.md file) and put 5 secrets in the .vars.toml file (Similar to [Step 2. Put some secrets on your forked repo](#step-2-put-some-secrets-on-your-forked-repo)):
 ```toml
 # .vars.toml
 CLOUDFLARE_PROJECT_NAME = "your-project-org"
