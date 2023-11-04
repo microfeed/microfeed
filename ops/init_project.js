@@ -69,9 +69,10 @@ class InitProject {
           let json = JSON.parse(body);
           onSuccess(json);
         } catch (error) {
-          console.log('_createProject error', error);
+          console.error('_createProject error', error);
+          console.error('body: ', body);
           console.error(error.message);
-          process.exit(1);
+          // process.exit(1);
         }
       });
     });
