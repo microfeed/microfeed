@@ -1,6 +1,6 @@
 const https = require('https');
 
-const {VarsReader} = require('./lib/utils');
+const { VarsReader } = require('./lib/utils');
 
 class InitProject {
   constructor() {
@@ -32,7 +32,7 @@ class InitProject {
       res.on('data', (d) => {
         body += d;
       });
-      res.on('end', function () {
+      res.on('end', function() {
         try {
           let json = JSON.parse(body);
           onProjectExists(json);
@@ -69,6 +69,7 @@ class InitProject {
           let json = JSON.parse(body);
           onSuccess(json);
         } catch (error) {
+          console.log('_createProject error', error);
           console.error(error.message);
           process.exit(1);
         }
