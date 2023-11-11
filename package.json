@@ -19,7 +19,7 @@
     "@tanstack/react-table": "^8.5.28",
     "@uiw/react-textarea-code-editor": "^2.0.4",
     "aws4fetch": "^1.0.16",
-    "axios": "^1.2.1",
+    "axios": "^1.6.0",
     "clsx": "^1.2.1",
     "cropperjs": "^1.5.12",
     "fast-xml-parser": "^4.2.5",

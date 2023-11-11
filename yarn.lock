@@ -2082,10 +2082,10 @@ aws4fetch@^1.0.16:
   resolved "https://registry.yarnpkg.com/aws4fetch/-/aws4fetch-1.0.17.tgz#0e4f7170f5a7d85ef2981c80209136606eabfada"
   integrity sha512-4IbOvsxqxeOSxI4oA+8xEO8SzBMVlzbSTgGy/EF83rHnQ/aKtP6Sc6YV/k0oiW0mqrcxuThlbDosnvetGOuO+g==
 
-axios@^1.2.1:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.4.0.tgz#38a7bf1224cd308de271146038b551d725f0be1f"
-  integrity sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==
+axios@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.0.tgz#f1e5292f26b2fd5c2e66876adc5b06cdbd7d2102"
+  integrity sha512-EZ1DYihju9pwVB+jg67ogm+Tmqc6JmhamRN6I4Zt8DfZu5lbcQGw3ozH9lFejSJgs/ibaef3A9PMXPLeefFGJg==
   dependencies:
     follow-redirects "^1.15.0"
     form-data "^4.0.0"
