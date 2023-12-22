@@ -63,7 +63,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
 * a headless cms with a GUI dashboard and a public json feed (e.g., [microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html))
-* a list of domain names for sale (e.g., [listen411.com](https://www.listen411.com/), [ListenHost.com](https://www.listenhost.com/)...)
+* a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
 * a website for an entire book (e.g., [The Art of War](https://the-art-of-war.dripbook.xyz/))
 * ...
 
