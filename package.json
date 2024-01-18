@@ -44,7 +44,7 @@
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/line-clamp": "^0.4.2",
     "autoprefixer": "^10.4.12",
-    "aws-sdk": "^2.1238.0",
+    "aws-sdk": "^2.1539.0",
     "better-sqlite3": "7.6.2",
     "clean-webpack-plugin": "^4.0.0",
     "css-loader": "^6.7.1",
