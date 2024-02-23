@@ -9,6 +9,10 @@ import AdminDialog from "../AdminDialog";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
 import {showToast} from "../../common/ToastUtils";
+import {
+  ENCLOSURE_CATEGORIES,
+  ENCLOSURE_CATEGORIES_DICT,
+} from "../../../common-src/Constants";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -162,7 +166,7 @@ export default class AdminImageUploaderApp extends React.Component {
   render() {
     const {uploadStatus, currentImageUrl, progressText, showModal, publicBucketUrl, previewImageUrl, imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
-    const fileTypes = ['PNG', 'JPG', 'JPEG'];
+    const fileTypes = ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.IMAGE];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
     const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
