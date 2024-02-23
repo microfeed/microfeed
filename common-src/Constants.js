@@ -144,11 +144,11 @@ export const ENCLOSURE_CATEGORIES = {
 export const ENCLOSURE_CATEGORIES_DICT = {
   [ENCLOSURE_CATEGORIES.AUDIO]: {
     name: 'audio',
-    fileTypes: ['mp3', 'm4b', 'flac'],
+    fileTypes: ['mp3', 'm4b', 'flac', 'wav', 'ogg'],
   },
   [ENCLOSURE_CATEGORIES.VIDEO]: {
     name: 'video',
-    fileTypes: ['mp4'],
+    fileTypes: ['mp4', 'webm', 'ogg'],
   },
   [ENCLOSURE_CATEGORIES.DOCUMENT]: {
     name: 'document',
@@ -156,7 +156,7 @@ export const ENCLOSURE_CATEGORIES_DICT = {
   },
   [ENCLOSURE_CATEGORIES.IMAGE]: {
     name: 'image',
-    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2'],
+    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2', 'bmp'],
   },
   [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
     name: 'external url',
