@@ -32,11 +32,11 @@ jobs:
       name: ${{ github.event.inputs.DEPLOYMENT_ENVIRONMENT }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: 17.x
+          node-version: 18.x
           cache: 'yarn'
       - name: Setup
         run: yarn setup:production
