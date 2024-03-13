@@ -54,7 +54,7 @@ export default class AdminNavApp extends React.Component {
     return (<div className="flex flex-col min-h-screen min-w-screen">
       <div className="grid grid-cols-12 gap-4 bg-white flex items-center border-b drop-shadow">
         <div className="col-span-2 py-4 px-4 xl:px-8">
-          <a href={OUR_BRAND.whatsnewWebsite} target="_blank" className="hover:opacity-50">
+          <a href={ADMIN_URLS.home} target="_blank" className="hover:opacity-50">
             <img src="/assets/brands/microfeed/horizontal-logo.png" className="w-full"/>
           </a>
         </div>
