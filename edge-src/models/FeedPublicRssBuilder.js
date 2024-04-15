@@ -24,9 +24,7 @@ export default class FeedPublicRssBuilder {
          '@cdata': item['content_html'],
        };
      }
-     if (item['url']) {
-       itemJson['link'] = item['url'];
-     }
+     itemJson['link'] = _microfeed['web_url'] || item['url'];
 
      if (item.image) {
        itemJson['itunes:image'] = {

@@ -225,9 +225,7 @@ export default class FeedPublicJsonBuilder {
         newItem['attachments'] = [attachment];
       }
     }
-    if (item.link) {
-      newItem['url'] = item.link;
-    }
+    newItem['url'] = _microfeed['web_url'] || item.link;
     if (mediaFile.isExternalUrl && mediaFile.url) {
       newItem['external_url'] = mediaFile.url;
     }
