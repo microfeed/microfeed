@@ -2,7 +2,7 @@ import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
 import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
-import {ADMIN_URLS, urlJoinWithRelative} from "../../common-src/StringUtils";
+import {ADMIN_URLS, escapeHtml, urlJoinWithRelative} from "../../common-src/StringUtils";
 import OnboardingChecker from "../../common-src/OnboardingUtils";
 
 export function renderReactToHtml(Component) {
@@ -177,7 +177,7 @@ export class SitemapResponseBuilder extends ResponseBuilder {
           if (attachment.mime_type.startsWith('image/')) {
             xml += `<image:image><image:loc>${attachment.url}</image:loc></image:image>`
           } else if (attachment.mime_type.startsWith('video/')) {
-            xml += `<video:video><video:title>${item.title}</video:title><video:publication_date>${item.date_published}</video:publication_date><video:content_loc>${attachment.url}</video:content_loc></video:video>`
+            xml += `<video:video><video:title>${escapeHtml(item.title)}</video:title><video:publication_date>${item.date_published}</video:publication_date><video:content_loc>${attachment.url}</video:content_loc></video:video>`
           }
         })
       }
