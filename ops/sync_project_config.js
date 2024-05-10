@@ -11,6 +11,8 @@ const ALLOWED_VARS = [
   {name: 'R2_SECRET_ACCESS_KEY', encrypted: true, required: true},
   {name: 'R2_PUBLIC_BUCKET', encrypted: true, required: false},
 
+  {name: 'D1_DATABASE_NAME', encrypted: true, required: false},
+
   {name: 'NODE_VERSION', encrypted: false, required: false},  // Cloudflare Pages CI needs this to use the right Node version.
   {name: 'MICROFEED_VERSION', encrypted: false, required: false},
 ];
