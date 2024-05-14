@@ -48,7 +48,8 @@ class WranglerCmd {
   }
 
   _non_dev_db() {
-    return `${this.v.get('CLOUDFLARE_PROJECT_NAME')}_feed_db_${this.currentEnv}`;
+    return this.v.get('D1_DATABASE_NAME') ||
+      `${this.v.get('CLOUDFLARE_PROJECT_NAME')}_feed_db_${this.currentEnv}`;
   }
 
   createFeedDb() {
