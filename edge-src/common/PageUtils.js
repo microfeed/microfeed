@@ -2,7 +2,7 @@ import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
 import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
-import {ADMIN_URLS, urlJoinWithRelative} from "../../common-src/StringUtils";
+import {ADMIN_URLS, escapeHtml, urlJoinWithRelative} from "../../common-src/StringUtils";
 import OnboardingChecker from "../../common-src/OnboardingUtils";
 
 export function renderReactToHtml(Component) {
@@ -158,6 +158,43 @@ export class JsonResponseBuilder extends ResponseBuilder {
     const newResponse = new Response(JSON.stringify(this.jsonData), res);
     newResponse.headers.set('Access-Control-Allow-Origin', '*');
     return newResponse;
+  }
+}
+
+export class SitemapResponseBuilder extends ResponseBuilder {
+  get _contentType() {
+    return 'text/xml';
+  }
+
+  _getResponse(props) {
+    const res = super._getResponse(props);
+    let xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">'
+    xml += `<url><loc>${this.jsonData.home_page_url}</loc><image:image><image:loc>${this.jsonData.icon}</image:loc></image:image></url>`;
+    this.jsonData.items.map((item) => {
+      xml += `<url><loc>${item._microfeed.web_url}</loc><lastmod>${item.date_published}</lastmod>`
+      if (item.attachments) {
+        item.attachments.forEach((attachment) => {
+          if (attachment.mime_type.startsWith('image/')) {
+            xml += `<image:image><image:loc>${attachment.url}</image:loc></image:image>`
+          } else if (attachment.mime_type.startsWith('video/')) {
+            xml += `<video:video><video:title>${escapeHtml(item.title)}</video:title><video:publication_date>${item.date_published}</video:publication_date><video:content_loc>${attachment.url}</video:content_loc></video:video>`
+          }
+        })
+      }
+      xml += `</url>`
+    })
+    xml += '</urlset>';
+    return new Response(xml, res);
+  }
+
+  get _fetchItems() {
+    const queryKwargs  = this.fetchItemsObj.queryKwargs || {};
+    return getFetchItemsParams(
+      this.request,
+      {
+        // status: STATUSES.PUBLISHED,
+        ...queryKwargs,
+      }, -1);
   }
 }
 

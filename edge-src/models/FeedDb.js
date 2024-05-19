@@ -345,7 +345,10 @@ export default class FeedDb {
         orderBy,
         queryKwargs,
       };
-      if (fetchItemsParams.limit > MAX_ITEMS_PER_PAGE) {
+
+      if (fetchItemsParams.limit < 0) {
+        fetchItemsParams.limit = undefined;
+      } else if (fetchItemsParams.limit > MAX_ITEMS_PER_PAGE) {
         fetchItemsParams.limit = MAX_ITEMS_PER_PAGE;
       }
       things = [{
