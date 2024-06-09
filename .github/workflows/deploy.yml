@@ -1,10 +1,6 @@
 name: Deploy to Cloudflare Pages
 
 on:
-  # push:
-  #  branches: ["dev-v1"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
       DEPLOYMENT_ENVIRONMENT:
@@ -26,6 +22,7 @@ env:
   D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
   DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
   PRODUCTION_BRANCH: main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,12 +31,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 20
           cache: 'yarn'
+
       - name: Setup
         run: yarn setup:production
+
       - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         run: yarn deploy:github
