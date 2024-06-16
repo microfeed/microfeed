@@ -1,24 +1,26 @@
-import {JsonResponseBuilder} from "../common/PageUtils";
-import {STATUSES} from "../../common-src/Constants";
-import {getIdFromSlug} from "../../common-src/StringUtils";
-import {AwsClient} from "aws4fetch";
-import {projectPrefix} from "../../common-src/R2Utils";
+import { JsonResponseBuilder } from "../common/PageUtils";
+import { STATUSES } from "../../common-src/Constants";
+import { getIdFromSlug } from "../../common-src/StringUtils";
+import { S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { projectPrefix } from "../../common-src/R2Utils";
 
 //
 // Fetch feed / item json
 //
 
-export async function onFetchFeedJsonRequestGet({env, request}, checkIsAllowed = true) {
+export async function onFetchFeedJsonRequestGet({ env, request }, checkIsAllowed = true) {
   const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
     queryKwargs: {
       status: STATUSES.PUBLISHED,
     },
   });
-  return await jsonResponseBuilder.getResponse({checkIsAllowed});
+  return await jsonResponseBuilder.getResponse({ checkIsAllowed });
 }
 
-export async function onFetchItemRequestGet({params, env, request}, checkIsAllowed = true, statuses = null) {
-  const {slug, itemId} = params;
+export async function onFetchItemRequestGet({ params, env, request }, checkIsAllowed = true, statuses = null) {
+  const { slug, itemId } = params;
   const theItemId = itemId || getIdFromSlug(slug);
 
   if (theItemId) {
@@ -47,32 +49,29 @@ export async function onFetchItemRequestGet({params, env, request}, checkIsAllow
 // Fetch presigned url from R2
 //
 
-async function _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, region) {
-  const aws = new AwsClient({
-    accessKeyId,
-    secretAccessKey,
-    'service': 's3',
-    region,
-  });
-
-  const request = new Request(endpoint, {
-    method: 'PUT',
-  });
-
-  const presigned = await aws.sign(request, { aws: { signQuery: true }})
-  return presigned.url;
-}
-
 async function getPresignedUrlFromR2(env, bucket, inputParams) {
-  const {
-    key,
-    // size,
-    // type,
-  } = inputParams;
-  const accessKeyId = `${env.R2_ACCESS_KEY_ID}`
+  const { key } = inputParams;
+  const accessKeyId = `${env.R2_ACCESS_KEY_ID}`;
   const secretAccessKey = `${env.R2_SECRET_ACCESS_KEY}`;
-  const endpoint = `https://${bucket}.${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${projectPrefix(env)}/${key}`;
-  return _getPresignedUrl(accessKeyId, secretAccessKey, endpoint, 'auto');
+  const endpoint = `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const region = "auto"; // Use appropriate region
+
+  const s3Client = new S3Client({
+    region,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+    endpoint,
+  });
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: `${projectPrefix(env)}/${key}`,
+  });
+
+  const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  return presignedUrl;
 }
 
 /**
@@ -94,7 +93,7 @@ async function getPresignedUrlFromR2(env, bucket, inputParams) {
  *   "mediaBaseUrl": "<pages-project-name>>/<environment>"
  * }
  */
-export async function onGetR2PresignedUrlRequestPost({inputParams, env}) {
+export async function onGetR2PresignedUrlRequestPost({ inputParams, env }) {
   const presignedUrl = await getPresignedUrlFromR2(env, env.R2_PUBLIC_BUCKET, inputParams);
   return {
     presignedUrl,
