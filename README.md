@@ -25,7 +25,7 @@ and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect 
 want to self-host their own CMS without having to run their own servers.
 
 microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Pages](https://pages.cloudflare.com/),
-[R2](https://www.cloudflare.com/developer-platform/r2/), [D1](https://developers.cloudflare.com/d1/), and [Access (fka Zero Trust)](https://www.cloudflare.com/zero-trust/products/access/).
+[R2](https://www.cloudflare.com/developer-platform/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust Access](https://www.cloudflare.com/zero-trust/products/access/).
 
 If you have any questions or feedback, please don't hesitate to reach out to us at support@microfeed.org. We'd love to hear from you!
 
@@ -222,7 +222,7 @@ You can access the site via ${CLOUDFLARE_PROJECT_NAME}.pages.dev, for example, [
 
 ### Step 4. Make a few clicks on Cloudflare dashboard
 
-To manage your microfeed instance, you'll use the admin dashboard at ${CLOUDFLARE_PROJECT_NAME}.pages.dev/admin, for example, [https://microfeed-org.pages.dev/admin/](https://microfeed-org.pages.dev/admin/) (the admin dashboard needs to be protected by Cloudflare Zero Trust).
+To manage your microfeed instance, you'll use the admin dashboard at ${CLOUDFLARE_PROJECT_NAME}.pages.dev/admin, for example, [https://microfeed-org.pages.dev/admin/](https://microfeed-org.pages.dev/admin/). After creating a [Cloudflare Zero Trust](https://one.dash.cloudflare.com) account, create a new Self-Hosted Access Application.
 
 Upon accessing the admin dashboard for the first time, you'll complete the setup process by following the checklist:
 
