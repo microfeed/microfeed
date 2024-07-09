@@ -71,7 +71,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 microfeed uses Cloudflare [Pages](https://pages.cloudflare.com/) to host and run the code,
 [R2](https://www.cloudflare.com/developer-platform/r2/) to host and serve media files,
 [D1](https://developers.cloudflare.com/d1/) to store metadata,
-and [Access](https://www.cloudflare.com/zero-trust/products/access/) to provide logins to the admin dashboard.
+and [Zero Trust Access](https://www.cloudflare.com/zero-trust/products/access/) to provide logins to the admin dashboard.
 Cloudflare provides very generous free usage quotas, making it an affordable solution for personal or small business use.
 While you will still need to pay for a domain name, hosting microfeed on Cloudflare is essentially free.
 
