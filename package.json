@@ -36,6 +36,8 @@
     "slugify": "^1.6.5"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.231.0",
+    "@aws-sdk/s3-request-presigner": "^3.231.0",
     "@babel/core": "^7.20.12",
     "@babel/runtime": "^7.20.13",
     "@databases/split-sql-query": "1.0.3",
@@ -45,9 +47,7 @@
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/line-clamp": "^0.4.2",
     "autoprefixer": "^10.4.12",
-    "@aws-sdk/client-s3": "^3.231.0",
-    "@aws-sdk/s3-request-presigner": "^3.231.0",
-    "better-sqlite3": "7.6.2",
+    "better-sqlite3": "^11.1.2",
     "clean-webpack-plugin": "^4.0.0",
     "css-loader": "^6.7.1",
     "dotenv": "^16.0.3",
