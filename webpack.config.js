@@ -17,8 +17,8 @@ if (prod) {
     onBuildStart: {
       // XXX: when edge-src/ has syntax error, webpack dev server will crash; after we restart, previous
       // node processes may still be alive, which would take up the same PORT number and prevent dev server
-      // to run again. We have to kill all node process
-      scripts: ['pkill node'],
+      // to run again. We have to kill all wrangler processes
+      scripts: ['ps aux | grep -e "node_modules/wrangler" | grep -e "proxy" | awk \'{print $2}\' | xargs kill -9'],
       blocking: true,
       parallel: false
     },
