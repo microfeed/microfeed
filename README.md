@@ -8,7 +8,11 @@
   </picture>
   </a>
 </div>
-
+- https://www.podbean.com/eas/pb-8hhij-171ad07
+- https://www.spreaker.com/episode/mastering-the-pte-strategies-for-success--62497738
+- https://go.ivoox.com/rf/135210290
+- https://podcasters.spotify.com/pod/show/akia-monga
+- https://open.spotify.com/show/2xsYVPGSzLaI2iPjYxCzS4
 <h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>
 
   <p align="center">
