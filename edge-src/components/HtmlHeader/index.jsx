@@ -32,7 +32,7 @@ export default class HtmlHeader extends React.Component {
           const realUrl = this.getWebpackRealUrl(js);
           return (realUrl ? <script key={js} type="text/javascript" src={realUrl} defer/> : '');
         })}
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/skeleton-css@2/css/normalize.css,npm/skeleton-css@2/css/skeleton.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/skeleton-css@2/css/normalize.css,npm/skeleton-css@2/css/skeleton.css"/>
 
         {webpackCssList && webpackCssList.length > 0 && webpackCssList.map((css) => {
           const realUrl = this.getWebpackRealUrl(css);

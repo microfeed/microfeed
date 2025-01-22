@@ -32,7 +32,7 @@ export default class AdminWholeHtml extends React.Component {
           'theme-color': '#2c2b3d',
         }}
       />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/skeleton-css@2/css/normalize.css,npm/skeleton-css@2/css/skeleton.css">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/skeleton-css@2/css/normalize.css,npm/skeleton-css@2/css/skeleton.css"/>
       <body>
       <div id="client-side-root"/>
       {this.props.children}
