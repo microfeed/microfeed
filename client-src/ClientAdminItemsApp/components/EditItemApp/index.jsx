@@ -409,24 +409,19 @@ export default class EditItemApp extends React.Component {
               </div>
             </details>
           </div>
-          <div className="grid grid-cols-1 gap-2 mt-4">
-            <AdminRadio
-              labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IS_BLOG]} />}
-              groupName="item-type"
-              buttons={[
-                {
-                  name: 'yes',
-                  checked: item.is_blog,
-                },
-                {
-                  name: 'no',
-                  checked: !item.is_blog,
-                }
-              ]}
-              onChange={(e) => {
-                this.onUpdateItemMeta({ 'is_blog': e.target.value === 'yes' })
-              }}
-            />
+          <div className="lh-page-card">
+            <details>
+              <summary className="m-page-summary">Post Specific Fields</summary>
+              <div className="grid grid-cols-1 gap-8">
+                <TagsInput
+                  value={item.tags}
+                  name={"tags"}
+                  onChange={(e) => {
+                    this.onUpdateItemMeta({ 'tags': e })
+                  }}
+                />
+              </div>
+            </details>
           </div>
         </div>
         <div className="col-span-3">
