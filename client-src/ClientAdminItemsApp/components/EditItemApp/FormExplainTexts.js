@@ -7,6 +7,7 @@ export const ITEM_CONTROLS = {
   PUB_DATE: 'item_pub_date',
   LINK: 'item_link',
   DESCRIPTION: 'item_description',
+  TAGS: 'item_tags',
   GUID: 'item_guid',
   ITUNES_EXPLICIT: 'item_itunes_explicit',
   ITUNES_TITLE: 'item_itunes_title',
@@ -15,6 +16,7 @@ export const ITEM_CONTROLS = {
   ITUNES_EPISODE: 'item_itunes_episode',
   ITUNES_BLOCK: 'item_itunes_block',
   STATUS: 'item_status',
+  IS_BLOG: 'item_is_blog',
 };
 
 export const CONTROLS_TEXTS_DICT = {
