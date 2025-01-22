@@ -73,6 +73,13 @@ export const CONTROLS_TEXTS_DICT = {
     rss: '<channel><item><description><![CDATA[<p>some text here<br></p>]]></description></item></channel>',
     json: '{ "items": [{"content_html": "<p>some text here<br></p>", "content_text": "some text here"}] }',
   },
+  [ITEM_CONTROLS.TAGS]: {
+    linkName: 'Tags',
+    modalTitle: 'Tags',
+    text: "Post Tags",
+    rss: '<channe><item><tags>health, etc..</tags></item></channel>',
+    json: '{ "items": [{"_microfeed": {"tags": health, etc..""}}]}',
+  },
   [ITEM_CONTROLS.GUID]: {
     linkName: '<guid>',
     modalTitle: 'Item / Description',
@@ -152,5 +159,10 @@ export const CONTROLS_TEXTS_DICT = {
       `${Object.keys(ITEM_STATUSES_DICT).map((k) => (
         `<li>${ITEM_STATUSES_DICT[k].name}: ${ITEM_STATUSES_DICT[k].description}</li>`)).join('')}` +
       "</ul>",
+  },
+  [ITEM_CONTROLS.IS_BLOG]: {
+    linkName: 'Is blog?',
+    modalTitle: 'Is item a blog post?',
+    text: "This checkbox indicates that the item is designed to be a blog post."
   },
 };

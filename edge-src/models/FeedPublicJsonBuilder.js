@@ -200,10 +200,12 @@ export default class FeedPublicJsonBuilder {
       is_external_url: mediaFile.isExternalUrl,
       is_video: mediaFile.isVideo,
       is_image: mediaFile.isImage,
+      is_blog: item.is_blog,
       web_url: item.webUrl,
       json_url: item.jsonUrl,
       rss_url: item.rssUrl,
       guid: item.guid,
+      tags: item.tags,
       status: ITEM_STATUSES_DICT[item.status] ? ITEM_STATUSES_DICT[item.status].name : 'published',
     };
 

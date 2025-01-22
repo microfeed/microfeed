@@ -10,6 +10,7 @@ test('_publicToInternalSchemaForChannel', () => {
     'authors': [{'name': 'author'}],
     'language': 'en',
     'expired': true,
+    "tags": "tag1,tag2",
     '_microfeed': {
       'itunes:explicit': true,
       'itunes:title': 'title2',
@@ -24,6 +25,7 @@ test('_publicToInternalSchemaForChannel', () => {
   expect(internalChannel.link).toBe(publicChannel.home_page_url);
   expect(internalChannel.description).toBe(publicChannel.description);
   expect(internalChannel.image).toBe('abc/image.jpg');
+  expect(internalChannel.tags).toBe(publicChannel.tags);
   expect(internalChannel.publisher).toBe(publicChannel.authors[0].name);
   expect(internalChannel['itunes:explicit']).toBe(publicChannel._microfeed['itunes:explicit']);
   expect(internalChannel['itunes:block']).toBe(publicChannel._microfeed['itunes:block']);
@@ -37,6 +39,7 @@ test('_publicToInternalSchemaForItem', () => {
     'title': 'title',
     'image': 'https://www.image.com/abc/image.jpg',
     'status': STATUSES.UNPUBLISHED,
+    "tags": "tag1,tag2",
     'attachment': {
       'url': 'https://www.audio.com/bbc/audio.mp3',
       'category': 'audio',
@@ -57,6 +60,7 @@ test('_publicToInternalSchemaForItem', () => {
   expect(internalItem.mediaFile.url).toBe('bbc/audio.mp3');
   expect(internalItem.mediaFile.category).toBe(publicItem.attachment.category);
   expect(internalItem.pubDateMs).toBe(publicItem.date_published_ms);
+  expect(internalItem.tags).toBe(publicItem.tags);
   expect(internalItem['itunes:block']).toBe(publicItem._microfeed['itunes:block']);
   expect(internalItem['itunes:episodeType']).toBe(publicItem._microfeed['itunes:episodeType']);
   expect(internalItem['itunes:explicit']).toBe(publicItem._microfeed['itunes:explicit']);

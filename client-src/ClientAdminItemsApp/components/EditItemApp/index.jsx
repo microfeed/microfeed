@@ -27,6 +27,7 @@ import {
 } from "./FormExplainTexts";
 import {preventCloseWhenChanged} from "../../../common/BrowserUtils";
 import {getMediaFileFromUrl} from "../../../../common-src/MediaFileUtils";
+import {TagsInput} from 'react-tag-input-component';
 
 const SUBMIT_STATUS__START = 1;
 
@@ -34,7 +35,9 @@ function initItem(itemId) {
   return ({
     status: STATUSES.PUBLISHED,
     pubDateMs: datetimeLocalToMs(new Date()),
+    tags: [],
     guid: itemId,
+    is_blog: false,
     'itunes:explicit': false,
     'itunes:block': false,
     'itunes:episodeType': 'full',
@@ -62,6 +65,8 @@ export default class EditItemApp extends React.Component {
       feed.items = [];
     }
     const item = feed.item || initItem();
+
+    console.log(item);
 
     this.state = {
       feed,
@@ -286,6 +291,25 @@ export default class EditItemApp extends React.Component {
                   />
                   <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: ITEM_STATUSES_DICT[status].description}} />
                 </div>
+                <div className="grid grid-cols-1 gap-2 mt-4">
+                  <AdminRadio
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IS_BLOG]} />}
+                    groupName="item-type"
+                    buttons={[
+                      {
+                        name: 'yes',
+                        checked: item.is_blog,
+                      },
+                      {
+                        name: 'no',
+                        checked: !item.is_blog,
+                      }
+                    ]}
+                    onChange={(e) => {
+                      this.onUpdateItemMeta({ 'is_blog': e.target.value === 'yes' })
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <div className="mt-8 pt-8 border-t">
@@ -385,6 +409,25 @@ export default class EditItemApp extends React.Component {
               </div>
             </details>
           </div>
+          <div className="grid grid-cols-1 gap-2 mt-4">
+            <AdminRadio
+              labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IS_BLOG]} />}
+              groupName="item-type"
+              buttons={[
+                {
+                  name: 'yes',
+                  checked: item.is_blog,
+                },
+                {
+                  name: 'no',
+                  checked: !item.is_blog,
+                }
+              ]}
+              onChange={(e) => {
+                this.onUpdateItemMeta({ 'is_blog': e.target.value === 'yes' })
+              }}
+            />
+          </div>
         </div>
         <div className="col-span-3">
           <div className="sticky top-8">
@@ -394,6 +437,7 @@ export default class EditItemApp extends React.Component {
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
                 onClick={this.onSubmit}
                 disabled={submitting || !changed}
+                onChange={(e) => this.onUpdateItemMeta({ 'tags': e.target.value })}
               >
                 {submitting ? submittingButtonText : buttonText}
               </button>
