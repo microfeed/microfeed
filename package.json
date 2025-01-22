@@ -32,6 +32,7 @@
     "react-drag-drop-files": "^2.3.7",
     "react-quill": "^2.0.0",
     "react-select": "^5.6.0",
+    "react-tag-input-component": "^2.0.2",
     "react-textarea-autosize": "^8.4.0",
     "react-toastify": "^9.1.0",
     "slugify": "^1.6.5"

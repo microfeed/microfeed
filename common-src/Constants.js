@@ -156,7 +156,7 @@ export const ENCLOSURE_CATEGORIES_DICT = {
   },
   [ENCLOSURE_CATEGORIES.IMAGE]: {
     name: 'image',
-    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2', 'bmp'],
+    fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2', 'bmp', 'webp', 'slw'],
   },
   [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
     name: 'external url',

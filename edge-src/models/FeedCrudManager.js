@@ -91,6 +91,11 @@ export default class FeedCrudManager {
     if (typeof item._microfeed['itunes:explicit'] === 'boolean') {
       internalSchema['itunes:explicit'] = item._microfeed['itunes:explicit'];
     }
+
+    if (item.tags) {
+      internalSchema.tags = item.tags;
+    }
+
     return internalSchema;
   }
 
@@ -138,6 +143,10 @@ export default class FeedCrudManager {
     if (channel._microfeed['itunes:email']) {
       internalSchema['itunes:email'] = channel._microfeed['itunes:email'];
     }
+    if (channel.tags) {
+      internalSchema.tags = channel.tags;
+    }
+    
     return internalSchema;
   }
 
