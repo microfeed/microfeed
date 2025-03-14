@@ -35,10 +35,11 @@ function TabButton({name, onClick, selected}) {
       e.preventDefault();
       onClick();
     }}
-    className={clsx('py-2 px-3', selected ?
-      'bg-helper-color text-white hover:text-white' : '')}
   >
-    {name}
+    <span
+      className={clsx('py-2 px-3', selected ?
+        'bg-helper-color text-white hover:text-white' : '')}
+    >{name}</span>
   </a>);
 }
 

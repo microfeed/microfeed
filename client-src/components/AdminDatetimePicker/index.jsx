@@ -9,7 +9,7 @@ export default function AdminDatetimePicker({ label, value, onChange, labelCompo
       <input
         type="datetime-local"
         value={value ? msToDatetimeLocalString(value) : datetimeLocalToString(new Date())}
-        className="w-full text-sm rounded"
+        className="w-full text-sm rounded-sm"
         onChange={onChange}
       />
     </div>

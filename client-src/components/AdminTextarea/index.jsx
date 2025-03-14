@@ -8,7 +8,7 @@ export default function AdminTextarea({ label, value, onChange, minRows = 3, max
     <div className="lh-page-subtitle">{label}</div>
     <div className="w-full">
       <TextareaAutosize
-        className={clsx('w-full rounded', customCss)}
+        className={clsx('w-full rounded-sm', customCss)}
         value={value || ''}
         onChange={onChange}
         placeholder={placeholder}

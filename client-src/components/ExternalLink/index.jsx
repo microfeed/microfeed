@@ -4,8 +4,8 @@ import clsx from "clsx";
 
 export default function ExternalLink({url, text, linkClass, iconClass}) {
   return (
-    <a href={url} target="_blank" rel="noopener noreferer" title={text} className={linkClass || ''}>
-      <div className="flex">
+    <a href={url} target="_blank" rel="noopener noreferer" title={text}>
+      <div className={clsx('flex', linkClass || '')}>
         <div className="inline break-all">
           {text}
         </div>
