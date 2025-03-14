@@ -7,7 +7,6 @@ export default class HtmlHeader extends React.Component {
     try {
       return webpackStats.assets[webpackStats.chunks[key][0]].publicPath;
     } catch (err) {
-      console.log(err);
       return null;
     }
   }

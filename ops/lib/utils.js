@@ -42,7 +42,7 @@ class WranglerCmd {
     // Cloudflare Pages direct upload uses branch to decide deployment environment.
     // If we want production, then use production_branch. Otherwise, just something else
     const branch = this.currentEnv === 'production' ? productionBranch : `${productionBranch}-preview`;
-    const wranglerCmd = `wrangler pages publish public --project-name ${projectName} --branch ${branch}`;
+    const wranglerCmd = `wrangler pages deploy public --project-name ${projectName} --branch ${branch}`;
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
@@ -60,8 +60,9 @@ class WranglerCmd {
   }
 
   createFeedDbTables() {
-    const dbName = this.currentEnv !== 'development' ? this._non_dev_db() : 'FEED_DB --local';
-    const wranglerCmd = `wrangler d1 execute ${dbName} --file ops/db/init.sql`;
+    const dbName = this.currentEnv !== 'development' ?
+      `${this._non_dev_db()} --remote` : 'FEED_DB --local';
+    const wranglerCmd = `wrangler d1 execute ${dbName} -e ${this.currentEnv} --file ops/db/init.sql`;
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
