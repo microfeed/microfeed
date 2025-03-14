@@ -354,17 +354,23 @@ First, create a .vars.toml file in microfeed's root directory (same level as thi
 CLOUDFLARE_PROJECT_NAME = "your-project-org"
 CLOUDFLARE_ACCOUNT_ID = "account id"
 CLOUDFLARE_API_TOKEN = 'api token'
-
 R2_ACCESS_KEY_ID = "access key"
 R2_SECRET_ACCESS_KEY = "secret key"
+
+R2_PUBLIC_BUCKET = "your-r2-bucket-name"
 ```
 
 Second, run local dev server:
 ```bash
-npm run dev
+yarn dev
 ```
 
 You should be able to access to a local microfeed instance via http://127.0.0.1:8788/.
+
+**How does `yarn dev` work?**
+Essentially, it concurrently runs two processes: `yarn dev:client` and `yarn dev:edge`.
+The `yarn dev:client` process launches [the webpack DevServer for client-side JavaScript code](https://webpack.js.org/configuration/dev-server/),
+while `yarn dev:edge` starts [Wrangler to serve the Pages (edge) code](https://developers.cloudflare.com/pages/functions/local-development/).
 
 [Back to 📚TOC](#-table-of-contents)
 
