@@ -408,7 +408,6 @@ export default class EditItemApp extends React.Component {
               <div className="lh-page-card mt-4 flex justify-center">
                 <a
                   href="#"
-                  className="text-red-500 text-sm"
                   onClick={(e) => {
                     e.preventDefault();
                     const ok = confirm('Are you going to permanently delete this item?');
@@ -416,7 +415,7 @@ export default class EditItemApp extends React.Component {
                       this.onDelete();
                     }
                   }
-                }><div className="flex items-center">
+                }><div className="flex items-center text-red-500 text-sm hover:text-brand-light">
                   <TrashIcon className="w-4" />
                   <div className="ml-1">Delete this item</div>
                   </div>
