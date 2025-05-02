@@ -15,7 +15,7 @@ export default function AdminInput(
         value={value || ''}
         onChange={onChange}
         ref={(ref) => setRef(ref)}
-        className={clsx('w-full rounded', customClass || 'text-sm', disabled && 'bg-gray-100')}
+        className={clsx('w-full rounded-sm', customClass || 'text-sm', disabled && 'bg-gray-100')}
         disabled={disabled}
         {...extraParams}
       />

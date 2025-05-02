@@ -80,7 +80,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
         </button>
       </div>
     </div>
-    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
+    <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
       <details>
         <summary className="cursor-pointer font-semibold hover:opacity-50">
           Where to find your R2 public bucket url?
@@ -140,7 +140,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
 
 function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="Add Login to Admin Dashboard">
-    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
+    <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <div className="mb-2">
         You will use <a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/" target="_blank">
         Cloudflare Zero Trust</a> to add a login, so ONLY authorized users can access this admin dashboard.
@@ -233,7 +233,7 @@ function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
 
 function CustomDomain({onboardState, cloudflareUrls}) {
   return (<CheckListItem onboardState={onboardState} title="Use Custom Domain">
-    <div className="mt-4 rounded bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
+    <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <div className="mb-2">
         Using custom domain, you can benefit from Cloudflare features such as bot management, Access, and Cache.
       </div>
@@ -288,7 +288,7 @@ export default class SetupChecklistApp extends React.Component {
       <div className="lh-page-title">
         Setup checklist
       </div>
-      {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded p-2">
+      {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
         <i>You are all set!</i>
         <div className="mt-2">
           Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a>

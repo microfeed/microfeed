@@ -9,7 +9,7 @@ export default function AdminDialog({title, isOpen, setIsOpen, children, disable
   >
     <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
     <div className="fixed inset-0 flex items-center justify-center p-4">
-      <Dialog.Panel className="w-full sm:max-w-lg lg:max-w-xl max-h-full rounded bg-white p-4">
+      <Dialog.Panel className="w-full sm:max-w-lg lg:max-w-xl max-h-full rounded-sm bg-white p-4">
         <div className="flex justify-end border-b mb-2 pb-2">
           <div className="flex-1 font-semibold text-helper-color">{title}</div>
           <div className="flex-none">
