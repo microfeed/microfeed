@@ -24,8 +24,12 @@ export default class FeedPublicRssBuilder {
          '@cdata': item['content_html'],
        };
      }
+
      if (item['url']) {
        itemJson['link'] = item['url'];
+     } else {
+      // use _microfeed.web_url as the link to the item post
+      itemJson['link'] = _microfeed['web_url'];
      }
 
      if (item.image) {
