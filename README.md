@@ -25,7 +25,7 @@ and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect 
 want to self-host their own CMS without having to run their own servers.
 
 microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Pages](https://pages.cloudflare.com/),
-[R2](https://www.cloudflare.com/products/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust](https://www.cloudflare.com/products/zero-trust/).
+[R2](https://www.cloudflare.com/developer-platform/r2/), [D1](https://developers.cloudflare.com/d1/), and [Zero Trust Access](https://www.cloudflare.com/zero-trust/products/access/).
 
 If you have any questions or feedback, please don't hesitate to reach out to us at support@microfeed.org. We'd love to hear from you!
 
@@ -69,9 +69,9 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * ...
 
 microfeed uses Cloudflare [Pages](https://pages.cloudflare.com/) to host and run the code,
-[R2](https://www.cloudflare.com/products/r2/) to host and serve media files,
+[R2](https://www.cloudflare.com/developer-platform/r2/) to host and serve media files,
 [D1](https://developers.cloudflare.com/d1/) to store metadata,
-and [Zero Trust](https://www.cloudflare.com/products/zero-trust/) to provide logins to the admin dashboard.
+and [Zero Trust Access](https://www.cloudflare.com/zero-trust/products/access/) to provide logins to the admin dashboard.
 Cloudflare provides very generous free usage quotas, making it an affordable solution for personal or small business use.
 While you will still need to pay for a domain name, hosting microfeed on Cloudflare is essentially free.
 
@@ -222,7 +222,7 @@ You can access the site via ${CLOUDFLARE_PROJECT_NAME}.pages.dev, for example, [
 
 ### Step 4. Make a few clicks on Cloudflare dashboard
 
-To manage your microfeed instance, you'll use the admin dashboard at ${CLOUDFLARE_PROJECT_NAME}.pages.dev/admin, for example, [https://microfeed-org.pages.dev/admin/](https://microfeed-org.pages.dev/admin/) (the admin dashboard needs to be protected by Cloudflare Zero Trust).
+To manage your microfeed instance, you'll use the admin dashboard at ${CLOUDFLARE_PROJECT_NAME}.pages.dev/admin, for example, [https://microfeed-org.pages.dev/admin/](https://microfeed-org.pages.dev/admin/). After creating a [Cloudflare Zero Trust](https://one.dash.cloudflare.com) account, create a new Self-Hosted Access Application.
 
 Upon accessing the admin dashboard for the first time, you'll complete the setup process by following the checklist:
 
