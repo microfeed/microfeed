@@ -284,34 +284,20 @@ export default class SetupChecklistApp extends React.Component {
     const {settings} = feed;
     const webGlobalSettings = settings[SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS] || {};
 
-    return (<div className="lh-page-card">
-      <div className="lh-page-title">
-        Setup checklist
-      </div>
-      {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
-        <i>You are all set!</i>
-        <div className="mt-2">
-          Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a>
-        </div>
-      </div>}
-      <div className="mt-8">
-        <SetupPublicBucketUrl
-          onboardState={onboardingResult.result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL]}
-          webGlobalSettings={webGlobalSettings}
-          cloudflareUrls={onboardingResult.cloudflareUrls}
-        />
-        <ProtectedAdminDashboard
-          onboardState={onboardingResult.result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD]}
-          cloudflareUrls={onboardingResult.cloudflareUrls}
-        />
-        <CustomDomain
-          onboardState={onboardingResult.result[ONBOARDING_TYPES.CUSTOM_DOMAIN]}
-          cloudflareUrls={onboardingResult.cloudflareUrls}
-        />
-      </div>
-      <div className="text-right mt-4 text-sm text-helper-color">
-        <span className="text-red-500">*</span> required
-      </div>
-    </div>);
+    
+      return (
+        <div className="lh-page-card">
+          <div className="lh-page-title">
+            Setup checklist
+          </div>
+          {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
+            <i>You are all set!</i>
+            <div className="mt-2">
+              Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a>
+            </div>
+          </div>}
+        </div>
+      );
+
   }
 }
