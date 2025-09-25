@@ -35,6 +35,12 @@ test('_publicToInternalSchemaForChannel', () => {
 test('_publicToInternalSchemaForItem', () => {
   const publicItem = {
     'title': 'title',
+    'subtitle': 'test subtitle',
+    'desc': 'test description',
+    'buttonText': 'Read More',
+    'name': 'test name',
+    'enabled': true,
+    'custom_link': 'https://example.com/custom',
     'image': 'https://www.image.com/abc/image.jpg',
     'status': STATUSES.UNPUBLISHED,
     'attachment': {
@@ -52,6 +58,12 @@ test('_publicToInternalSchemaForItem', () => {
   const internalItem = mgr._publicToInternalSchemaForItem(publicItem);
 
   expect(internalItem.title).toBe(publicItem.title);
+  expect(internalItem.subtitle).toBe(publicItem.subtitle);
+  expect(internalItem.desc).toBe(publicItem.desc);
+  expect(internalItem.buttonText).toBe(publicItem.buttonText);
+  expect(internalItem.name).toBe(publicItem.name);
+  expect(internalItem.enabled).toBe(publicItem.enabled);
+  expect(internalItem.custom_link).toBe(publicItem.custom_link);
   expect(internalItem.image).toBe('abc/image.jpg');
   expect(internalItem.status).toBe(publicItem.status);
   expect(internalItem.mediaFile.url).toBe('bbc/audio.mp3');

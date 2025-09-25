@@ -2,6 +2,12 @@ import {ITEM_STATUSES_DICT} from "../../../../common-src/Constants";
 
 export const ITEM_CONTROLS = {
   TITLE: 'item_title',
+  SUBTITLE: 'item_subtitle',
+  DESC: 'item_desc',
+  BUTTON_TEXT: 'item_button_text',
+  NAME: 'item_name',
+  ENABLED: 'item_enabled',
+  CUSTOM_LINK: 'item_custom_link',
   IMAGE: 'item_image',
   MEDIA_FILE: 'item_media_file',
   PUB_DATE: 'item_pub_date',
@@ -27,6 +33,54 @@ export const CONTROLS_TEXTS_DICT = {
       "Also, don’t repeat the title of your show within your episode title.",
     rss: '<channel><item><title>Title Here</title></item></channel>',
     json: '{ "items": [{"title": "Title Here"}] }',
+  },
+  [ITEM_CONTROLS.SUBTITLE]: {
+    linkName: 'Subtitle',
+    modalTitle: 'Item / Subtitle',
+    text: "An optional subtitle for the item. This provides additional context or a brief description that complements the main title. " +
+      "Useful for providing more detail about the content without making the main title too long.",
+    rss: '<channel><item><subtitle>Subtitle Here</subtitle></item></channel>',
+    json: '{ "items": [{"subtitle": "Subtitle Here"}] }',
+  },
+  [ITEM_CONTROLS.DESC]: {
+    linkName: 'Short Description',
+    modalTitle: 'Item / Short Description',
+    text: "A brief description or summary of the item. This is different from the main description field and is intended for " +
+      "shorter, more concise descriptions that can be used in previews, cards, or summary views.",
+    rss: '<channel><item><desc>Short description here</desc></item></channel>',
+    json: '{ "items": [{"desc": "Short description here"}] }',
+  },
+  [ITEM_CONTROLS.BUTTON_TEXT]: {
+    linkName: 'Button Text',
+    modalTitle: 'Item / Button Text',
+    text: "Custom text for action buttons related to this item. This could be used for call-to-action buttons, " +
+      "download links, or any interactive elements associated with the item.",
+    rss: '<channel><item><buttonText>Read More</buttonText></item></channel>',
+    json: '{ "items": [{"buttonText": "Read More"}] }',
+  },
+  [ITEM_CONTROLS.NAME]: {
+    linkName: 'Name',
+    modalTitle: 'Item / Name',
+    text: "A name field for the item. This can be used to provide an alternative identifier or display name " +
+      "that differs from the main title.",
+    rss: '<channel><item><name>Item Name</name></item></channel>',
+    json: '{ "items": [{"name": "Item Name"}] }',
+  },
+  [ITEM_CONTROLS.ENABLED]: {
+    linkName: 'Enabled',
+    modalTitle: 'Item / Enabled',
+    text: "A boolean flag to indicate whether this item is enabled or disabled. This can be used for " +
+      "conditional display logic or feature toggles.",
+    rss: '<channel><item><enabled>true</enabled></item></channel>',
+    json: '{ "items": [{"enabled": true}] }',
+  },
+  [ITEM_CONTROLS.CUSTOM_LINK]: {
+    linkName: 'Custom Link',
+    modalTitle: 'Item / Custom Link',
+    text: "A custom link URL for the item. This is separate from the main item link and can be used for " +
+      "additional navigation, external references, or custom actions.",
+    rss: '<channel><item><customLink>https://example.com/custom</customLink></item></channel>',
+    json: '{ "items": [{"custom_link": "https://example.com/custom"}] }',
   },
   [ITEM_CONTROLS.IMAGE]: {
     linkName: 'Item image',

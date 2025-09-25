@@ -19,6 +19,18 @@ export default class FeedPublicRssBuilder {
        'pubDate': msToUtcString(item._microfeed.date_published_ms),
        'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
      };
+
+     if (item.subtitle) {
+       itemJson['subtitle'] = item.subtitle;
+     }
+
+     if (item.desc) {
+       itemJson['desc'] = item.desc;
+     }
+
+     if (item.buttonText) {
+       itemJson['buttonText'] = item.buttonText;
+     }
      if (item['content_html']) {
        itemJson['description'] = {
          '@cdata': item['content_html'],

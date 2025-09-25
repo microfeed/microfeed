@@ -17,6 +17,30 @@ export default class FeedCrudManager {
       internalSchema.title = item.title;
     }
 
+    if (item.subtitle) {
+      internalSchema.subtitle = item.subtitle;
+    }
+
+    if (item.desc) {
+      internalSchema.desc = item.desc;
+    }
+
+    if (item.buttonText) {
+      internalSchema.buttonText = item.buttonText;
+    }
+
+    if (item.name) {
+      internalSchema.name = item.name;
+    }
+
+    if (typeof item.enabled === 'boolean') {
+      internalSchema.enabled = item.enabled;
+    }
+
+    if (item.custom_link) {
+      internalSchema.custom_link = item.custom_link;
+    }
+
     if (item.status) {
       internalSchema.status = item.status;
     }

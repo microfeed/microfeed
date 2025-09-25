@@ -193,6 +193,18 @@ export default class FeedPublicJsonBuilder {
       id: item.id,
       title: item.title || 'untitled',
     };
+
+    if (item.subtitle) {
+      newItem.subtitle = item.subtitle;
+    }
+
+    if (item.desc) {
+      newItem.desc = item.desc;
+    }
+
+    if (item.buttonText) {
+      newItem.buttonText = item.buttonText;
+    }
     const attachment = {};
     const _microfeed = {
       is_audio: mediaFile.isAudio,

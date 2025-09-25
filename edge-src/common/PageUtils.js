@@ -4,12 +4,14 @@ import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
 import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
 import {ADMIN_URLS, escapeHtml, urlJoinWithRelative} from "../../common-src/StringUtils";
 import OnboardingChecker from "../../common-src/OnboardingUtils";
+import FeedRssBuilder from "../models/FeedRssBuilder";
+import FeedJsonFeedBuilder from "../models/FeedJsonFeedBuilder";
 
 export function renderReactToHtml(Component) {
   return `<!DOCTYPE html>${ReactDOMServer.renderToString(Component)}`;
 }
 
-class ResponseBuilder {
+export class ResponseBuilder {
   constructor(env, request, fetchItemsObj = null) {
     this.feed = new FeedDb(env, request);
     this.request = request;
@@ -22,6 +24,7 @@ class ResponseBuilder {
     this.settings = this.content.settings || {};
     const queryKwargs = this.fetchItemsObj.queryKwargs || {};
     const forOneItem = !!queryKwargs.id;
+    this.schema = await this.feed.getPublicSchema(this.content, forOneItem);
     this.jsonData = await this.feed.getPublicJsonData(this.content, forOneItem);
   }
 
@@ -130,6 +133,58 @@ export class RssResponseBuilder extends ResponseBuilder {
       return ResponseBuilder.Response404();
     }
     return new Response(rssRes, res);
+  }
+}
+
+export class SchemaRssResponseBuilder extends ResponseBuilder {
+  get _contentType() {
+    return 'application/xml';
+  }
+
+  _getResponse(props) {
+    const res = super._getResponse(props);
+    const {subscribeMethods} = this.settings;
+    let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'rss');
+    if (notFoundRes) {
+      return notFoundRes;
+    }
+    const builder = new FeedRssBuilder(this.schema);
+    const rssRes = builder.getRssData();
+    if (!rssRes) {
+      return ResponseBuilder.Response404();
+    }
+    return new Response(rssRes, res);
+  }
+}
+
+export class SchemaJsonFeedResponseBuilder extends ResponseBuilder {
+  get _contentType() {
+    return 'application/json;charset=UTF-8';
+  }
+
+  _getResponse(props) {
+    const res = super._getResponse(props);
+
+    if (props) {
+      if (props.checkIsAllowed) {
+        const {subscribeMethods} = this.settings;
+        let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'json');
+        if (notFoundRes) {
+          return notFoundRes;
+        }
+      }
+      if (props.isValid) {
+        if (!props.isValid(this.schema)) {
+          return ResponseBuilder.Response404();
+        }
+      }
+    }
+    
+    const builder = new FeedJsonFeedBuilder(this.schema, this.settings);
+    const jsonFeed = builder.getJsonFeed();
+    const newResponse = new Response(JSON.stringify(jsonFeed), res);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return newResponse;
   }
 }
 

@@ -5,6 +5,7 @@ import {
 } from '../../common-src/Constants';
 import {msToRFC3339, rfc3399ToMs} from "../../common-src/TimeUtils";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
+import FeedPublicSchemaBuilder from "./FeedPublicSchemaBuilder";
 
 /**
  * support url query parameters:
@@ -431,6 +432,14 @@ export default class FeedDb {
     if (item) {
       await this._putItemToContent(item);
     }
+  }
+
+  async getPublicSchema(content=null, forOneItem=false) {
+    if (!content) {
+      content = await this.getContent();
+    }
+    const builder = new FeedPublicSchemaBuilder(content, this.baseUrl, this.request, forOneItem);
+    return builder.getSchema();
   }
 
   async getPublicJsonData(content=null, forOneItem=false) {

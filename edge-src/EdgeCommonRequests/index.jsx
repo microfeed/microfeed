@@ -1,20 +1,53 @@
-import {JsonResponseBuilder} from "../common/PageUtils";
+import {JsonResponseBuilder, ResponseBuilder} from "../common/PageUtils";
 import {STATUSES} from "../../common-src/Constants";
 import {getIdFromSlug} from "../../common-src/StringUtils";
 import {AwsClient} from "aws4fetch";
 import {projectPrefix} from "../../common-src/R2Utils";
 
 //
+// Schema Response Builder - returns plain JSON schema
+//
+class SchemaResponseBuilder extends ResponseBuilder {
+  get _contentType() {
+    return 'application/json;charset=UTF-8';
+  }
+
+  _getResponse(props) {
+    const res = super._getResponse(props);
+
+    if (props) {
+      if (props.checkIsAllowed) {
+        const {subscribeMethods} = this.settings;
+        let notFoundRes = ResponseBuilder.notEnabledResponse(subscribeMethods, 'json');
+        if (notFoundRes) {
+          return notFoundRes;
+        }
+      }
+      if (props.isValid) {
+        if (!props.isValid(this.schema)) {
+          return ResponseBuilder.Response404();
+        }
+      }
+    }
+    
+    // Return the plain schema directly (not JSON Feed format)
+    const newResponse = new Response(JSON.stringify(this.schema), res);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return newResponse;
+  }
+}
+
+//
 // Fetch feed / item json
 //
 
 export async function onFetchFeedJsonRequestGet({env, request}, checkIsAllowed = true) {
-  const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
+  const schemaResponseBuilder = new SchemaResponseBuilder(env, request, {
     queryKwargs: {
       status: STATUSES.PUBLISHED,
     },
   });
-  return await jsonResponseBuilder.getResponse({checkIsAllowed});
+  return await schemaResponseBuilder.getResponse({checkIsAllowed});
 }
 
 export async function onFetchItemRequestGet({params, env, request}, checkIsAllowed = true, statuses = null) {
@@ -22,16 +55,16 @@ export async function onFetchItemRequestGet({params, env, request}, checkIsAllow
   const theItemId = itemId || getIdFromSlug(slug);
 
   if (theItemId) {
-    const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
+    const schemaResponseBuilder = new SchemaResponseBuilder(env, request, {
       queryKwargs: {
         id: theItemId,
         'status__in': statuses || [STATUSES.PUBLISHED, STATUSES.UNLISTED],
       },
       limit: 1,
     });
-    return jsonResponseBuilder.getResponse({
-      isValid: (jsonData) => {
-        const item = jsonData.items && jsonData.items.length > 0 ? jsonData.items[0] : null;
+    return schemaResponseBuilder.getResponse({
+      isValid: (schema) => {
+        const item = schema.items && schema.items.length > 0 ? schema.items[0] : null;
         if (!item) {
           return false;
         }
@@ -40,7 +73,7 @@ export async function onFetchItemRequestGet({params, env, request}, checkIsAllow
       checkIsAllowed,
     });
   }
-  return JsonResponseBuilder.Response404();
+  return ResponseBuilder.Response404();
 }
 
 //

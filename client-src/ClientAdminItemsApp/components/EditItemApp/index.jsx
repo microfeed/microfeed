@@ -246,6 +246,51 @@ export default class EditItemApp extends React.Component {
                     this.onUpdateItemMeta(attrDict);
                   }}
                 />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.SUBTITLE]}/>}
+                  value={item.subtitle}
+                  onChange={(e) => this.onUpdateItemMeta({'subtitle': e.target.value})}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.DESC]}/>}
+                  value={item.desc}
+                  onChange={(e) => this.onUpdateItemMeta({'desc': e.target.value})}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.BUTTON_TEXT]}/>}
+                  value={item.buttonText}
+                  onChange={(e) => this.onUpdateItemMeta({'buttonText': e.target.value})}
+                />
+                <AdminInput
+                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.NAME]}/>}
+                  value={item.name}
+                  onChange={(e) => this.onUpdateItemMeta({'name': e.target.value})}
+                />
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <AdminRadio
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ENABLED]}/>}
+                    groupName="item-enabled"
+                    buttons={[
+                      {
+                        name: 'Enabled',
+                        value: 'true',
+                        checked: item.enabled === true,
+                      },
+                      {
+                        name: 'Disabled',
+                        value: 'false',
+                        checked: item.enabled === false,
+                      }]}
+                    onChange={(e) => {
+                      this.onUpdateItemMeta({'enabled': e.target.value === 'true'})
+                    }}
+                  />
+                  <AdminInput
+                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.CUSTOM_LINK]}/>}
+                    value={item.custom_link}
+                    onChange={(e) => this.onUpdateItemMeta({'custom_link': e.target.value})}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <AdminDatetimePicker
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
