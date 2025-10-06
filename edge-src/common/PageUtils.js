@@ -1,7 +1,7 @@
 import ReactDOMServer from "react-dom/server";
 import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
-import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
+import {CODE_TYPES, SETTINGS_CATEGORIES} from "../../common-src/Constants";
 import {ADMIN_URLS, escapeHtml, urlJoinWithRelative} from "../../common-src/StringUtils";
 import OnboardingChecker from "../../common-src/OnboardingUtils";
 
@@ -41,7 +41,11 @@ class ResponseBuilder {
           }
           break;
         case 'offline':
-          return ResponseBuilder.Response404();
+          const apiSettings = this.settings[SETTINGS_CATEGORIES.API_SETTINGS];
+          
+          if (!apiSettings?.enabled) {
+            return ResponseBuilder.Response404();
+          }
         default:
           break;
       }
