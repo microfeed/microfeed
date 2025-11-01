@@ -79,6 +79,10 @@ a {
   @apply text-helper-color font-normal text-sm mb-2;
 }
 
+#feed-search {
+  @apply bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-brand-light focus:border-brand-light block w-full p-2.5;
+}
+
 /*
   Simple icons
  */

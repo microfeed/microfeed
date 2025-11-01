@@ -48,7 +48,11 @@
       Latest
     </h2>
 
-    <div>
+    <div class="mb-4">
+      <input type="search" id="feed-search" placeholder="Search posts..." class="w-full p-2 border rounded" />
+    </div>
+
+    <div id="feed-items">
       {{^items.length}}
       No items.
       {{/items.length}}
