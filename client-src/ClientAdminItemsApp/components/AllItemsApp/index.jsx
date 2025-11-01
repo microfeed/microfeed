@@ -157,12 +157,17 @@ export default class AllItemsApp extends React.Component {
           <div className="text-muted-color text-sm flex-1">
             id: {item.id}
           </div>
-          <ExternalLink linkClass="text-xs text-helper-color" url={PUBLIC_URLS.webItem(item.id, item.title)} text="Public page" />
+          <ExternalLink
+            linkClass="text-xs text-helper-color
+            hover:text-brand-light"
+            url={PUBLIC_URLS.webItem(item.id, item.title)}
+            text="Public page"
+          />
           <div className="ml-4 flex-none">
             <a
-              className="block text-xs text-helper-color"
               href={ADMIN_URLS.editItem(item.id)}
-            >Edit this item <span className="lh-icon-arrow-right"/></a>
+            ><span className="block text-xs text-helper-color hover:text-brand-light">
+              Edit this item <span className="lh-icon-arrow-right"/></span></a>
           </div>
         </div>
       </div>,

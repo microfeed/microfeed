@@ -8,7 +8,7 @@ import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
 function AccessOption({value, header, description}) {
   return (<RadioGroup.Option value={value}>
     {({checked}) => (
-      <div className={clsx('border p-2 hover:cursor-pointer rounded',
+      <div className={clsx('border p-2 hover:cursor-pointer rounded-sm',
         checked ? 'border-brand-light' : '')}>
         <div className="flex">
           <div className="flex-none mr-4">

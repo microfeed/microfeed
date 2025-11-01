@@ -69,13 +69,13 @@ export default class DistributionApp extends React.Component {
             <ExternalLink url={bundle.url} text={bundle.label} />
           </div>
           <div className="col-span-10">
-            <div className="select-all bg-gray-200 py-2 px-4 rounded">
+            <div className="select-all bg-gray-200 py-2 px-4 rounded-sm">
               {bundle.url}
             </div>
             <div className="mt-2 text-helper-color text-sm">
               <details>
                 <summary className="hover:cursor-pointer hover:opacity-50">{bundle.summary}</summary>
-                <div className="mt-4 bg-gray-100 px-2 py-1 rounded">
+                <div className="mt-4 bg-gray-100 px-2 py-1 rounded-sm">
                   {bundle.details}
                 </div>
               </details>

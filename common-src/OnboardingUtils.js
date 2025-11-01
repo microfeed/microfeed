@@ -58,7 +58,7 @@ export default class OnboardingChecker {
       allOk: true,
       result,
       cloudflareUrls: {
-        r2BucketSettingsUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/r2/overview/buckets/${this.env['R2_PUBLIC_BUCKET']}/settings`,
+        r2BucketSettingsUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/r2/default/buckets/${this.env['R2_PUBLIC_BUCKET']}/settings`,
         addAccessGroupUrl: urlJoin(accessSettingsUrl, '/groups/add'),
         addAppUrl: urlJoin(accessSettingsUrl, '/apps/add'),
         pagesCustomDomainUrl: `https://dash.cloudflare.com/${this.env['CLOUDFLARE_ACCOUNT_ID']}/pages/view/${this.env['CLOUDFLARE_PROJECT_NAME']}/domains`,

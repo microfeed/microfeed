@@ -1,6 +1,116 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source(none);
+@source '../../client-src/';
+
+@plugin '@tailwindcss/forms';
+@plugin 'tailwind-gradient-mask-image';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-xs: 375px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  --leading-*: initial;
+  --leading-3: 1rem;
+  --leading-4: 1.25rem;
+  --leading-5: 1.5rem;
+  --leading-6: 1.75rem;
+  --leading-7: 2rem;
+  --leading-8: 2.25rem;
+  --leading-9: 2.5rem;
+  --leading-10: 2.75rem;
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.5;
+  --leading-normal: 1.625;
+  --leading-relaxed: 2;
+  --leading-loose: 0.75rem;
+
+  --font-*: initial;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial,
+    Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol,
+    Noto Color Emoji;
+
+  --color-brand-light: #19b7fa;
+  --color-brand-dark: #2c2b3d;
+
+  --color-muted-color: #8e8e8e;
+  --color-title-color: rgba(0, 0, 0, 0.95);
+  --color-body-color: rgba(0, 0, 0, 0.8);
+  --color-helper-color: rgba(0, 0, 0, 0.6);
+  --color-bggray-color: rgba(0, 0, 0, 0.03);
+  --color-bdgray-color: rgba(0, 0, 0, 0.1);
+  --color-bgsecondary-color: rgba(0, 0, 0, 0.05);
+  --color-fgsecondary-color: rgba(0, 0, 0, 0.95);
+  --color-white-overlap: rgba(255, 255, 255, 0.9);
+  --color-warning-color: #a88c0b;
+  --color-dark-deep: rgba(230, 230, 230);
+  --color-dark-light: rgba(240, 240, 240);
+
+  --width-88: 22rem;
+  --width-avatar-xs: 1.2rem;
+  --width-avatar-sm: 1.8rem;
+  --width-avatar-md: 3rem;
+  --width-avatar-lg: 6rem;
+  --width-pod-img-sm: 3rem;
+  --width-pod-img-md: 4.8rem;
+  --width-pod-img-lg: 6rem;
+  --width-ad-image: 8rem;
+
+  --height-avatar-xs: 1.2rem;
+  --height-avatar-sm: 1.8rem;
+  --height-avatar-lg: 6rem;
+  --height-footer-share-bar: 3.15rem;
+  --height-pod-img-sm: 3rem;
+  --height-pod-img-md: 4.8rem;
+  --height-pod-img-lg: 6rem;
+
+  --max-height-112: 28rem;
+  --max-height-128: 32rem;
+
+  --min-height-16: 4rem;
+  --min-height-32: 8rem;
+  --min-height-64: 16rem;
+  --min-height-128: 32rem;
+
+  --min-width-24: 6rem;
+  --min-width-table: 48rem;
+
+  --container-xxs: 12rem;
+  --container-5\/6: 83.3%;
+  --container-4\/5: 80%;
+
+  --text-xxs: 0.525rem;
+  --text-xxs--line-height: 1rem;
+
+  --rotate-30: 30deg;
+
+  --z-index-45: 45;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
 
 body {
   @apply bg-bgsecondary-color;
@@ -18,7 +128,7 @@ a {
    Buttons
  */
 .lh-btn {
-  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded;
+  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded-sm;
   @apply disabled:opacity-50;
 }
 
@@ -31,7 +141,7 @@ a {
 }
 
 .lh-btn-sm {
-  @apply text-sm py-1 px-2 rounded-sm;
+  @apply text-sm py-1 px-2 rounded-xs;
 }
 
 .lh-btn-lg {
@@ -42,7 +152,7 @@ a {
   Cards
  */
 .lh-page-card {
-  @apply border-t border-b lg:border p-4 bg-white hover:shadow dark:bg-dark-light rounded-md;
+  @apply border-t border-b lg:border p-4 bg-white hover:shadow-sm dark:bg-dark-light rounded-md;
 }
 
 .lh-page-title {

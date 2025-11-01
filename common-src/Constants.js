@@ -446,7 +446,7 @@ export const LANGUAGE_CODES_LIST = [
   },
   {
     "name": "Indonesian",
-    "code": "in"
+    "code": "id"
   },
   {
     "name": "Irish",
