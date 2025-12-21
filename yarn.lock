@@ -4197,6 +4197,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"aws4fetch@npm:^1.0.20":
+  version: 1.0.20
+  resolution: "aws4fetch@npm:1.0.20"
+  checksum: 10/1329dd5913224c9a4fcb276633a2677baafe8224c3e4b99083309b30af4b114b33a73b6674369419f1978b83e905c4fff61d4af175c24450707c3cf027bb86da
+  languageName: node
+  linkType: hard
+
 "axios@npm:^1.2.1":
   version: 1.9.0
   resolution: "axios@npm:1.9.0"
@@ -8706,6 +8713,7 @@ __metadata:
     "@tailwindcss/postcss": "npm:^4.0.14"
     "@tanstack/react-table": "npm:^8.5.28"
     "@uiw/react-textarea-code-editor": "npm:^2.1.9"
+    aws4fetch: "npm:^1.0.20"
     axios: "npm:^1.2.1"
     better-sqlite3: "npm:^11.1.2"
     clean-webpack-plugin: "npm:^4.0.0"
