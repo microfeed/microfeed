@@ -2,8 +2,8 @@ compatibility_date = "2025-03-14"
 
 [[ env.development.d1_databases ]]
 binding = "FEED_DB"
-database_name = "microfeed"
-database_id = "b46c74f1-c9d8-4139-8ba9-d592d32c5624"
+database_name = "kiranbrahma-cms_feed_db_production"
+database_id = "3a3db98e-706b-4471-ab8c-17795096a6f6"
 
 [env.production]
 
