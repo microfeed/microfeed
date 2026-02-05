@@ -17,7 +17,7 @@ export async function onRequestGet({env, params, request}) {
   if (content.items && content.items.length > 0) {
     content.item = content.items[0];
   }
-  if (!content.item || content.item.status === STATUSES.DELETED) {
+  if (!content.item || content.item.status === STATUSES.ARCHIVED) {
     return new Response('Not found', {status:404});
   }
   const onboardingChecker = new OnboardingChecker(content, request, env);

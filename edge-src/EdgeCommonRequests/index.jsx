@@ -1,6 +1,6 @@
 import {JsonResponseBuilder} from "../common/PageUtils";
 import {STATUSES} from "../../common-src/Constants";
-import {getIdFromSlug} from "../../common-src/StringUtils";
+import {getIdFromSlug, removeHostFromUrl} from "../../common-src/StringUtils";
 import {AwsClient} from "aws4fetch";
 import {projectPrefix} from "../../common-src/R2Utils";
 
@@ -8,10 +8,15 @@ import {projectPrefix} from "../../common-src/R2Utils";
 // Fetch feed / item json
 //
 
-export async function onFetchFeedJsonRequestGet({env, request}, checkIsAllowed = true) {
+export async function onFetchFeedJsonRequestGet(
+  {env, request},
+  checkIsAllowed = true,
+  extraQueryKwargs = {}
+) {
   const jsonResponseBuilder = new JsonResponseBuilder(env, request, {
     queryKwargs: {
       status: STATUSES.PUBLISHED,
+      ...extraQueryKwargs,
     },
   });
   return await jsonResponseBuilder.getResponse({checkIsAllowed});
@@ -100,4 +105,42 @@ export async function onGetR2PresignedUrlRequestPost({inputParams, env}) {
     presignedUrl,
     mediaBaseUrl: projectPrefix(env),
   };
+}
+
+function getR2ObjectKeyFromUrl(env, mediaUrl) {
+  if (!mediaUrl) {
+    return null;
+  }
+  const normalized = removeHostFromUrl(mediaUrl).replace(/^\/+/, '');
+  if (!normalized) {
+    return null;
+  }
+  const prefix = projectPrefix(env);
+  if (normalized.startsWith(`${prefix}/`)) {
+    return normalized;
+  }
+  if (normalized.startsWith('images/') || normalized.startsWith('media/')) {
+    return `${prefix}/${normalized}`;
+  }
+  return null;
+}
+
+export async function deleteR2ObjectByUrl(env, mediaUrl) {
+  const key = getR2ObjectKeyFromUrl(env, mediaUrl);
+  if (!key) {
+    return {skipped: true};
+  }
+  const accessKeyId = `${env.R2_ACCESS_KEY_ID}`;
+  const secretAccessKey = `${env.R2_SECRET_ACCESS_KEY}`;
+  const endpoint = `https://${env.R2_PUBLIC_BUCKET}.${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
+  const aws = new AwsClient({
+    accessKeyId,
+    secretAccessKey,
+    'service': 's3',
+    region: 'auto',
+  });
+  const request = new Request(endpoint, {method: 'DELETE'});
+  const signedRequest = await aws.sign(request);
+  const res = await fetch(signedRequest);
+  return {ok: res.ok, status: res.status};
 }

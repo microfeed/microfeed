@@ -3,7 +3,8 @@ import {
   buildAudioUrlWithTracking,
   PUBLIC_URLS,
   secondsToHHMMSS,
-  htmlToPlainText
+  htmlToPlainText,
+  isValidUrl,
 } from "../../common-src/StringUtils";
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "../../common-src/Constants";
@@ -20,17 +21,36 @@ export default class FeedPublicJsonBuilder {
     this.baseUrl = baseUrl;
     this.forOneItem = forOneItem;
     this.request = request;
+
+    this.itemTypesById = {};
+    (content.itemTypes || []).forEach((type) => {
+      this.itemTypesById[type.id] = type;
+    });
+    this.categoriesById = {};
+    (content.categories || []).forEach((category) => {
+      this.categoriesById[category.id] = category;
+    });
+    this.itunesSeriesById = {};
+    (content.itunesSeries || []).forEach((series) => {
+      this.itunesSeriesById[series.id] = series;
+    });
   }
 
   _decorateForItem(item, baseUrl) {
-    item.webUrl = PUBLIC_URLS.webItem(item.id, item.title, baseUrl);
-    item.jsonUrl = PUBLIC_URLS.jsonItem(item.id, null, baseUrl);
-    item.rssUrl = PUBLIC_URLS.rssItem(item.id, null, baseUrl);
+    item.webUrl = PUBLIC_URLS.webItem(item.id, item.title, baseUrl, 'en', item.slug);
+    item.jsonUrl = PUBLIC_URLS.jsonItem(item.id, null, baseUrl, 'en', item.slug);
+    item.rssUrl = PUBLIC_URLS.rssItem(item.id, null, baseUrl, 'en', item.slug);
 
     // Try our best to use local time of a website visitor
     const timezone = this.request.cf ? this.request.cf.timezone : null;
     item.pubDate = humanizeMs(item.pubDateMs, timezone);
     item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
+    if (item.updatedAt) {
+      try {
+        item.updatedDateRfc3339 = (new Date(item.updatedAt)).toISOString();
+      } catch (e) { // eslint-disable-line
+      }
+    }
     item.descriptionText = htmlToPlainText(item.description);
 
     if (item.image) {
@@ -58,11 +78,17 @@ export default class FeedPublicJsonBuilder {
       publicContent['home_page_url'] = channel.link;
     }
 
-    publicContent['feed_url'] = PUBLIC_URLS.jsonFeed(this.baseUrl);
+    const feedUrlObj = new URL(this.request.url);
+    feedUrlObj.searchParams.delete('next_cursor');
+    feedUrlObj.searchParams.delete('prev_cursor');
+    feedUrlObj.searchParams.delete('sort');
+    publicContent['feed_url'] = `${feedUrlObj.origin}${feedUrlObj.pathname}${feedUrlObj.search}`;
 
     if (this.content.items_next_cursor && !this.forOneItem) {
-      publicContent['next_url'] = `${publicContent['feed_url']}?next_cursor=${this.content.items_next_cursor}&` +
-        `sort=${this.content.items_sort_order}`;
+      const nextUrlObj = new URL(publicContent['feed_url']);
+      nextUrlObj.searchParams.set('next_cursor', this.content.items_next_cursor);
+      nextUrlObj.searchParams.set('sort', this.content.items_sort_order);
+      publicContent['next_url'] = nextUrlObj.toString();
     }
 
     publicContent['description'] = channel.description || '';
@@ -177,9 +203,51 @@ export default class FeedPublicJsonBuilder {
     }
     if (this.content.items_prev_cursor && !this.forOneItem) {
       microfeedExtra['items_prev_cursor'] = this.content.items_prev_cursor;
-      microfeedExtra['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
-        `sort=${this.content.items_sort_order}`;
+      const prevUrlObj = new URL(publicContent['feed_url']);
+      prevUrlObj.searchParams.set('prev_cursor', this.content.items_prev_cursor);
+      prevUrlObj.searchParams.set('sort', this.content.items_sort_order);
+      microfeedExtra['prev_url'] = prevUrlObj.toString();
     }
+    const siteSeo = this.content.siteSeo || {};
+    const defaultOgImage = siteSeo.defaultOgImage ?
+      (isValidUrl(siteSeo.defaultOgImage) ? siteSeo.defaultOgImage :
+        urlJoinWithRelative(this.publicBucketUrl, siteSeo.defaultOgImage, this.baseUrl)) : '';
+    const logoUrl = siteSeo.logoUrl ?
+      (isValidUrl(siteSeo.logoUrl) ? siteSeo.logoUrl :
+        urlJoinWithRelative(this.publicBucketUrl, siteSeo.logoUrl, this.baseUrl)) : '';
+    microfeedExtra['site_seo'] = {
+      site_name: siteSeo.siteName || '',
+      default_title: siteSeo.defaultTitle || '',
+      default_description: siteSeo.defaultDescription || '',
+      default_og_image: defaultOgImage,
+      twitter_handle: siteSeo.twitterHandle || '',
+      logo_url: logoUrl,
+      language: siteSeo.language || '',
+    };
+    microfeedExtra['item_types'] = (this.content.itemTypes || []).map((type) => ({
+      id: type.id,
+      name: type.name,
+      slug: type.slug,
+      description: type.description,
+      sort_order: type.sortOrder || 0,
+    }));
+    microfeedExtra['categories_flat'] = (this.content.categories || []).map((category) => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      parent_id: category.parentId,
+      description: category.description,
+      sort_order: category.sortOrder || 0,
+    }));
+    microfeedExtra['itunes_series'] = (this.content.itunesSeries || []).map((series) => ({
+      id: series.id,
+      name: series.name,
+      slug: series.slug,
+      description: series.description,
+      image: series.image ? (isValidUrl(series.image) ? series.image :
+        urlJoinWithRelative(this.publicBucketUrl, series.image, this.baseUrl)) : '',
+      sort_order: series.sortOrder || 0,
+    }));
     return microfeedExtra;
   }
 
@@ -254,6 +322,9 @@ export default class FeedPublicJsonBuilder {
     if (item['itunes:title']) {
       _microfeed['itunes:title'] = item['itunes:title'];
     }
+    if (item['itunes:series']) {
+      _microfeed['itunes:series'] = item['itunes:series'];
+    }
     if (item['itunes:block']) {
       _microfeed['itunes:block'] = item['itunes:block'];
     }
@@ -274,6 +345,64 @@ export default class FeedPublicJsonBuilder {
     }
     if (item.pubDateMs) {
       _microfeed['date_published_ms'] = item.pubDateMs;
+    }
+    if (item.updatedDateRfc3339) {
+      _microfeed['date_modified'] = item.updatedDateRfc3339;
+    }
+    if (item.typeId && this.itemTypesById[item.typeId]) {
+      const type = this.itemTypesById[item.typeId];
+      _microfeed['type'] = {
+        id: type.id,
+        name: type.name,
+        slug: type.slug,
+      };
+    }
+    const categories = [];
+    if (item.primaryCategoryId && this.categoriesById[item.primaryCategoryId]) {
+      categories.push({
+        id: item.primaryCategoryId,
+        ...this.categoriesById[item.primaryCategoryId],
+        role: 'primary',
+      });
+    }
+    if (item.secondaryCategoryId && this.categoriesById[item.secondaryCategoryId]) {
+      categories.push({
+        id: item.secondaryCategoryId,
+        ...this.categoriesById[item.secondaryCategoryId],
+        role: 'secondary',
+      });
+    }
+    if (categories.length > 0) {
+      _microfeed['categories'] = categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        parent_id: cat.parentId,
+        role: cat.role,
+      }));
+    }
+    if (item.itunesSeriesId && this.itunesSeriesById[item.itunesSeriesId]) {
+      const series = this.itunesSeriesById[item.itunesSeriesId];
+      _microfeed['itunes:series'] = series.name;
+      _microfeed['itunes_series'] = {
+        id: series.id,
+        name: series.name,
+        slug: series.slug,
+      };
+    }
+    const seoOgImage = item.ogImage ?
+      (isValidUrl(item.ogImage) ? item.ogImage :
+        urlJoinWithRelative(this.publicBucketUrl, item.ogImage, this.baseUrl)) : null;
+    const seo = {
+      slug: item.slug,
+      title: item.seoTitle,
+      description: item.seoDescription,
+      canonical_url: item.canonicalUrl,
+      noindex: !!item.noindex,
+      og_image: seoOgImage,
+    };
+    if (Object.values(seo).some((value) => value)) {
+      _microfeed['seo'] = seo;
     }
 
     newItem['_microfeed'] = _microfeed;

@@ -4,9 +4,10 @@ import {msToUtcString} from "../../common-src/TimeUtils";
 import {OUR_BRAND} from "../../common-src/Constants";
 
 export default class FeedPublicRssBuilder {
-  constructor(jsonData, baseUrl) {
+  constructor(jsonData, baseUrl, feedUrl = null) {
     this.jsonData = jsonData;
     this.baseUrl = baseUrl;
+    this.feedUrl = feedUrl || PUBLIC_URLS.rssFeed(this.baseUrl);
   }
 
   _buildItemsRss() {
@@ -40,6 +41,9 @@ export default class FeedPublicRssBuilder {
 
      if (_microfeed['itunes:title'] && _microfeed['itunes:title'].trim().length > 0) {
        itemJson['itunes:title'] = _microfeed['itunes:title'].trim();
+     }
+     if (_microfeed['itunes:series'] && _microfeed['itunes:series'].trim().length > 0) {
+       itemJson['itunes:series'] = _microfeed['itunes:series'].trim();
      }
 
      if (_microfeed['itunes:block']) {
@@ -93,7 +97,7 @@ export default class FeedPublicRssBuilder {
     };
     channelRss['atom:link'] = {
       '@_rel': 'self',
-      '@_href': PUBLIC_URLS.rssFeed(this.baseUrl),
+      '@_href': this.feedUrl,
       '@_type': 'application/rss+xml',
     };
     const linksTags = [];
@@ -102,17 +106,23 @@ export default class FeedPublicRssBuilder {
     }
     if (this.jsonData._microfeed.items_next_cursor) {
       const {items_next_cursor, items_sort_order} = this.jsonData._microfeed;
+      const nextUrlObj = new URL(this.feedUrl);
+      nextUrlObj.searchParams.set('next_cursor', items_next_cursor);
+      nextUrlObj.searchParams.set('sort', items_sort_order);
       linksTags.push({
         '@_rel': 'next',
-        '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?next_cursor=${items_next_cursor}&sort=${items_sort_order}`,
+        '@_href': nextUrlObj.toString(),
         '@_type': 'application/rss+xml',
       });
     }
     if (this.jsonData._microfeed.items_prev_cursor) {
       const {items_prev_cursor, items_sort_order} = this.jsonData._microfeed;
+      const prevUrlObj = new URL(this.feedUrl);
+      prevUrlObj.searchParams.set('prev_cursor', items_prev_cursor);
+      prevUrlObj.searchParams.set('sort', items_sort_order);
       linksTags.push({
         '@_rel': 'prev',
-        '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?prev_cursor=${items_prev_cursor}&sort=${items_sort_order}`,
+        '@_href': prevUrlObj.toString(),
         '@_type': 'application/rss+xml',
       });
     }

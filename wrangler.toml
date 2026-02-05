@@ -1,10 +1,20 @@
 compatibility_date = "2025-03-14"
 
+[[ d1_databases ]]
+binding = "FEED_DB"
+database_name = "kiranbrahma-cms_feed_db_production"
+database_id = "3a3db98e-706b-4471-ab8c-17795096a6f6"
+
 [[ env.development.d1_databases ]]
 binding = "FEED_DB"
 database_name = "kiranbrahma-cms_feed_db_production"
 database_id = "3a3db98e-706b-4471-ab8c-17795096a6f6"
 
 [env.production]
+  [[env.production.d1_databases]]
+  binding = "FEED_DB"
+  database_name = "kiranbrahma-cms_feed_db_production"
+  database_id = "3a3db98e-706b-4471-ab8c-17795096a6f6"
+
 
 [env.preview]

@@ -81,6 +81,36 @@ paths:
               schema:
                 type: string
                 description: "Not Found"
+  /json/audio:
+    get:
+      tags:
+        - Feed API
+      summary: Fetches json for audio items (podcast)
+      description: |
+        Fetches json data for items of type "podcast".
+      operationId: fetchFeedJsonAudio
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedJson"
+  /json/video:
+    get:
+      tags:
+        - Feed API
+      summary: Fetches json for video items
+      description: |
+        Fetches json data for items of type "video".
+      operationId: fetchFeedJsonVideo
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedJson"
   /i/{id}/json:
     get:
       tags:
@@ -186,12 +216,18 @@ paths:
         - Admin API
       summary: Deletes an item.
       description: |
-        Deletes an item.
-        Please note that this endpoint doesn't delete the media files associated with this item (e.g., audio, image...).
+        Archives an item by default. Use `hard=true` to permanently delete the item and its media files.
       operationId: apiDeleteItemById
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
       - $ref: '#/components/parameters/itemIdParam'
+      - name: hard
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: |
+          If true, permanently delete the item and its media files.
       responses:
         200:
           description: Success response.
@@ -304,6 +340,241 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         5XX:
           $ref: '#/components/responses/ServerError'
+  /api/item_types/:
+    get:
+      tags:
+        - Admin API
+      summary: List item types
+      operationId: apiListItemTypes
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      tags:
+        - Admin API
+      summary: Create an item type
+      operationId: apiCreateItemType
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Success response.
+  /api/item_types/{typeId}/:
+    put:
+      tags:
+        - Admin API
+      summary: Update an item type
+      operationId: apiUpdateItemType
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      - name: typeId
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Success response.
+    delete:
+      tags:
+        - Admin API
+      summary: Delete an item type
+      operationId: apiDeleteItemType
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      - name: typeId
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        200:
+          description: Success response.
+  /api/categories/:
+    get:
+      tags:
+        - Admin API
+      summary: List categories
+      operationId: apiListCategories
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      tags:
+        - Admin API
+      summary: Create a category
+      operationId: apiCreateCategory
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Success response.
+  /api/categories/{categoryId}/:
+    put:
+      tags:
+        - Admin API
+      summary: Update a category
+      operationId: apiUpdateCategory
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Success response.
+    delete:
+      tags:
+        - Admin API
+      summary: Delete a category
+      operationId: apiDeleteCategory
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        200:
+          description: Success response.
+  /api/site_seo/:
+    get:
+      tags:
+        - Admin API
+      summary: Get site SEO settings
+      operationId: apiGetSiteSeo
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      tags:
+        - Admin API
+      summary: Update site SEO settings
+      operationId: apiUpdateSiteSeo
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Success response.
+  /api/itunes_series/:
+    get:
+      tags:
+        - Admin API
+      summary: List iTunes series
+      operationId: apiListItunesSeries
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      responses:
+        200:
+          description: Success response.
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      tags:
+        - Admin API
+      summary: Create an iTunes series
+      operationId: apiCreateItunesSeries
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Success response.
+  /api/itunes_series/{seriesId}/:
+    put:
+      tags:
+        - Admin API
+      summary: Update an iTunes series
+      operationId: apiUpdateItunesSeries
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      - name: seriesId
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Success response.
+    delete:
+      tags:
+        - Admin API
+      summary: Delete an iTunes series
+      operationId: apiDeleteItunesSeries
+      parameters:
+      - $ref: '#/components/parameters/apiKeyParam'
+      - name: seriesId
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        200:
+          description: Success response.
 components:
   parameters:
     apiKeyParam:
@@ -596,6 +867,76 @@ components:
             This data field is for pagination through items.
             You can pass a next_cursor=[items_next_cursor] query string to feed_url to fetch next page of items.
           example: 1672705853661
+        site_seo:
+          type: object
+          description: Site-level SEO settings.
+          properties:
+            site_name:
+              type: string
+            default_title:
+              type: string
+            default_description:
+              type: string
+            default_og_image:
+              type: string
+            twitter_handle:
+              type: string
+            logo_url:
+              type: string
+            language:
+              type: string
+        item_types:
+          type: array
+          description: List of item types.
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              slug:
+                type: string
+              description:
+                type: string
+              sort_order:
+                type: integer
+        categories_flat:
+          type: array
+          description: Flat list of categories.
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              slug:
+                type: string
+              parent_id:
+                type: integer
+              description:
+                type: string
+              sort_order:
+                type: integer
+        itunes_series:
+          type: array
+          description: List of iTunes series.
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              slug:
+                type: string
+              description:
+                type: string
+              image:
+                type: string
+              sort_order:
+                type: integer
         "itunes:block":
           type: boolean
           description: |
@@ -653,6 +994,49 @@ components:
             - published
             - unlisted
             - unpublished
+        type:
+          type: object
+          description: The type of this item.
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            slug:
+              type: string
+        categories:
+          type: array
+          description: Categories associated with this item.
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              slug:
+                type: string
+              parent_id:
+                type: integer
+              role:
+                type: string
+                enum: [ "primary", "secondary" ]
+        seo:
+          type: object
+          description: SEO metadata for this item.
+          properties:
+            slug:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            canonical_url:
+              type: string
+            noindex:
+              type: boolean
+            og_image:
+              type: string
         is_audio:
           type: boolean
           description: Is the media file associated with this item an audio?
@@ -711,6 +1095,10 @@ components:
             Don’t specify the episode number or season number in this tag. Instead, specify those details in the appropriate tags ( itunes:episode, itunes:season). Also, don’t repeat the title of your show within your episode title.
             Separating episode and season number from the title makes it possible for Apple to easily index and order content from all shows.
           example: An alternative title of this episode on Apple Podcasts
+        "itunes:series":
+          type: string
+          description: |
+            The series name associated with this episode (optional).
         "itunes:block":
           type: boolean
           description: |
@@ -883,6 +1271,56 @@ components:
             - published
             - unpublished
             - unlisted
+        type_id:
+          type: integer
+          description: |
+            The id of the item type (e.g., Podcast, Video, Blog Post, Static Page).
+          example: 1
+        primary_category_id:
+          type: integer
+          description: |
+            The primary category id.
+          example: 10
+        secondary_category_id:
+          type: integer
+          description: |
+            The secondary category id (optional).
+          example: 12
+        itunes_series_id:
+          type: integer
+          description: |
+            The iTunes series id (optional, used for podcast episodes).
+          example: 3
+        slug:
+          type: string
+          description: |
+            The slug used in the item URL. If omitted, it will be auto-generated from title.
+          example: my-first-episode
+        seo_title:
+          type: string
+          description: |
+            The SEO title for this item (optional).
+          example: My First Episode | My Podcast
+        seo_description:
+          type: string
+          description: |
+            The SEO description for this item (optional).
+          example: A short summary of this episode for search engines.
+        canonical_url:
+          type: string
+          description: |
+            Canonical URL for this item (optional).
+          example: https://example.com/p/my-first-episode/
+        noindex:
+          type: boolean
+          description: |
+            Whether to set noindex for this item (optional).
+          example: false
+        og_image:
+          type: string
+          description: |
+            Custom OG image URL for this item (optional).
+          example: https://media-cdn.my-website.com/projectname/production/images/item-1f7e6bdb428ee91c298dfe1bc399fd23.png
         attachment:
           type: object
           description: |

@@ -23,7 +23,7 @@ export async function onRequestGet({params, env, request}) {
           return null;
         }
         const urlObject = new URL(request.url);
-        const canonicalUrl = PUBLIC_URLS.webItem(itemId, item.title, urlObject.origin);
+        const canonicalUrl = PUBLIC_URLS.webItem(itemId, item.title, urlObject.origin, 'en', item.slug);
         return <EdgeItemApp item={item} theme={theme} jsonData={jsonData} canonicalUrl={canonicalUrl}/>;
       },
     });

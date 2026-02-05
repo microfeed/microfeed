@@ -91,6 +91,64 @@ export default class FeedCrudManager {
     if (typeof item._microfeed['itunes:explicit'] === 'boolean') {
       internalSchema['itunes:explicit'] = item._microfeed['itunes:explicit'];
     }
+
+    const microfeed = item._microfeed || {};
+
+    if (item.type_id || item.typeId || microfeed.type_id || microfeed.typeId) {
+      internalSchema.typeId = parseInt(item.type_id || item.typeId || microfeed.type_id || microfeed.typeId, 10);
+    } else if (microfeed.type && microfeed.type.id) {
+      internalSchema.typeId = parseInt(microfeed.type.id, 10);
+    }
+    if (item.primary_category_id || item.primaryCategoryId || microfeed.primary_category_id) {
+      internalSchema.primaryCategoryId = parseInt(item.primary_category_id || item.primaryCategoryId ||
+        microfeed.primary_category_id, 10);
+    }
+    if (item.secondary_category_id || item.secondaryCategoryId || microfeed.secondary_category_id) {
+      internalSchema.secondaryCategoryId = parseInt(item.secondary_category_id || item.secondaryCategoryId ||
+        microfeed.secondary_category_id, 10);
+    }
+    if (!internalSchema.primaryCategoryId && Array.isArray(microfeed.categories) && microfeed.categories.length > 0) {
+      const primary = microfeed.categories.find((c) => c.role === 'primary') || microfeed.categories[0];
+      if (primary && primary.id) {
+        internalSchema.primaryCategoryId = parseInt(primary.id, 10);
+      }
+      const secondary = microfeed.categories.find((c) => c.role === 'secondary') ||
+        (microfeed.categories.length > 1 ? microfeed.categories[1] : null);
+      if (secondary && secondary.id) {
+        internalSchema.secondaryCategoryId = parseInt(secondary.id, 10);
+      }
+    }
+    if (item.itunes_series_id || item.itunesSeriesId || microfeed.itunes_series_id) {
+      internalSchema.itunesSeriesId = parseInt(item.itunes_series_id || item.itunesSeriesId ||
+        microfeed.itunes_series_id, 10);
+    } else if (microfeed.itunes_series && microfeed.itunes_series.id) {
+      internalSchema.itunesSeriesId = parseInt(microfeed.itunes_series.id, 10);
+    }
+
+    if (item.slug || microfeed.slug) {
+      internalSchema.slug = item.slug || microfeed.slug;
+    }
+    const seo = microfeed.seo || {};
+    if (item.seo_title || microfeed.seo_title || seo.title) {
+      internalSchema.seoTitle = item.seo_title || microfeed.seo_title || seo.title;
+    }
+    if (item.seo_description || microfeed.seo_description || seo.description) {
+      internalSchema.seoDescription = item.seo_description || microfeed.seo_description || seo.description;
+    }
+    if (item.canonical_url || microfeed.canonical_url || seo.canonical_url) {
+      internalSchema.canonicalUrl = item.canonical_url || microfeed.canonical_url || seo.canonical_url;
+    }
+    if (typeof item.noindex === 'boolean' || typeof microfeed.noindex === 'boolean') {
+      internalSchema.noindex = typeof item.noindex === 'boolean' ? item.noindex : microfeed.noindex;
+    } else if (typeof seo.noindex === 'boolean') {
+      internalSchema.noindex = seo.noindex;
+    }
+    if (item.og_image || microfeed.og_image || seo.og_image) {
+      internalSchema.ogImage = item.og_image || microfeed.og_image || seo.og_image;
+    }
+    if (microfeed['itunes:series']) {
+      internalSchema['itunes:series'] = microfeed['itunes:series'];
+    }
     return internalSchema;
   }
 

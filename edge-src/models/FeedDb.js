@@ -1,4 +1,4 @@
-import {randomShortUUID} from "../../common-src/StringUtils";
+import {buildItemSlug, randomShortUUID} from "../../common-src/StringUtils";
 import {
   STATUSES, PREDEFINED_SUBSCRIBE_METHODS,
   SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE,
@@ -65,6 +65,18 @@ function getItemJson(itemObj) {
   return {
     id: itemObj.id,
     status: itemObj.status,
+    typeId: itemObj.type_id,
+    primaryCategoryId: itemObj.primary_category_id,
+    secondaryCategoryId: itemObj.secondary_category_id,
+    itunesSeriesId: itemObj.itunes_series_id,
+    slug: itemObj.slug,
+    seoTitle: itemObj.seo_title,
+    seoDescription: itemObj.seo_description,
+    canonicalUrl: itemObj.canonical_url,
+    noindex: !!itemObj.noindex,
+    ogImage: itemObj.og_image,
+    createdAt: itemObj.created_at,
+    updatedAt: itemObj.updated_at,
     pubDateMs: rfc3399ToMs(itemObj.pub_date),
     ...JSON.parse(itemObj.data)
   };
@@ -184,6 +196,32 @@ export default class FeedDb {
       }));
     })
 
+    const defaultItemTypes = [
+      {name: 'Podcast', slug: 'podcast', description: '', sort_order: 1},
+      {name: 'Video', slug: 'video', description: '', sort_order: 2},
+      {name: 'Blog Post', slug: 'blog-post', description: '', sort_order: 3},
+      {name: 'Static Page', slug: 'static-page', description: '', sort_order: 4},
+    ];
+    defaultItemTypes.forEach((type) => {
+      batchStatements.push(this.getInsertSql('item_types', {
+        name: type.name,
+        slug: type.slug,
+        description: type.description,
+        sort_order: type.sort_order,
+      }));
+    });
+
+    batchStatements.push(this.getInsertSql('site_seo', {
+      id: 1,
+      site_name: '',
+      default_title: '',
+      default_description: '',
+      default_og_image: '',
+      twitter_handle: '',
+      logo_url: '',
+      language: '',
+    }));
+
     await this.FEED_DB.batch(batchStatements);
 
     return {
@@ -265,6 +303,52 @@ export default class FeedDb {
             contentJson['channel'] = getChannelJson(result);
           }
         });
+      } else if (thing.table === 'item_types') {
+        contentJson.itemTypes = response.results.map((result) => ({
+          id: result.id,
+          name: result.name,
+          slug: result.slug,
+          description: result.description,
+          sortOrder: result.sort_order,
+          createdAt: result.created_at,
+          updatedAt: result.updated_at,
+        }));
+      } else if (thing.table === 'categories') {
+        contentJson.categories = response.results.map((result) => ({
+          id: result.id,
+          name: result.name,
+          slug: result.slug,
+          parentId: result.parent_id,
+          description: result.description,
+          sortOrder: result.sort_order,
+          createdAt: result.created_at,
+          updatedAt: result.updated_at,
+        }));
+      } else if (thing.table === 'site_seo') {
+        const siteSeo = response.results && response.results.length > 0 ? response.results[0] : null;
+        contentJson.siteSeo = siteSeo ? {
+          id: siteSeo.id,
+          siteName: siteSeo.site_name,
+          defaultTitle: siteSeo.default_title,
+          defaultDescription: siteSeo.default_description,
+          defaultOgImage: siteSeo.default_og_image,
+          twitterHandle: siteSeo.twitter_handle,
+          logoUrl: siteSeo.logo_url,
+          language: siteSeo.language,
+          createdAt: siteSeo.created_at,
+          updatedAt: siteSeo.updated_at,
+        } : {};
+      } else if (thing.table === 'itunes_series') {
+        contentJson.itunesSeries = response.results.map((result) => ({
+          id: result.id,
+          name: result.name,
+          slug: result.slug,
+          description: result.description,
+          image: result.image,
+          sortOrder: result.sort_order,
+          createdAt: result.created_at,
+          updatedAt: result.updated_at,
+        }));
       } else if (thing.table === 'items') {
         let nextCursor;
         let prevCursor;
@@ -303,6 +387,22 @@ export default class FeedDb {
       },
       {
         table: 'settings',
+      },
+      {
+        table: 'item_types',
+        orderBy: ['sort_order', 'id'],
+      },
+      {
+        table: 'categories',
+        orderBy: ['sort_order', 'id'],
+      },
+      {
+        table: 'site_seo',
+        limit: 1,
+      },
+      {
+        table: 'itunes_series',
+        orderBy: ['sort_order', 'id'],
       },
     ];
 
@@ -402,9 +502,40 @@ export default class FeedDb {
   }
 
   async _putItemToContent(item) {
-    const {id, pubDateMs, status, ...data} = item;
+    const {
+      id,
+      pubDateMs,
+      status,
+      typeId,
+      primaryCategoryId,
+      secondaryCategoryId,
+      itunesSeriesId,
+      slug,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      noindex,
+      ogImage,
+      ...data
+    } = item;
+    let finalSlug = slug;
+    if (!finalSlug && data.title) {
+      finalSlug = buildItemSlug(data.title);
+    } else if (finalSlug) {
+      finalSlug = buildItemSlug(finalSlug);
+    }
     const keyValuePairs = {
       status,
+      type_id: typeId,
+      primary_category_id: primaryCategoryId,
+      secondary_category_id: secondaryCategoryId,
+      itunes_series_id: itunesSeriesId,
+      slug: finalSlug,
+      seo_title: seoTitle,
+      seo_description: seoDescription,
+      canonical_url: canonicalUrl,
+      noindex: typeof noindex === 'boolean' ? (noindex ? 1 : 0) : (noindex ? 1 : 0),
+      og_image: ogImage,
       'pub_date': msToRFC3339(pubDateMs),
       data: JSON.stringify(data),
     };
@@ -439,5 +570,19 @@ export default class FeedDb {
     }
     const builder = new FeedPublicJsonBuilder(content, this.baseUrl, this.request, forOneItem);
     return builder.getJsonData();
+  }
+
+  async getItemTypeBySlug(slug) {
+    if (!slug) {
+      return null;
+    }
+    const res = await this.FEED_DB.prepare(
+      'SELECT * FROM item_types WHERE slug = ? LIMIT 1'
+    ).bind(slug).all();
+    return res && res.results && res.results.length > 0 ? res.results[0] : null;
+  }
+
+  async deleteItemById(itemId) {
+    return await this.FEED_DB.prepare('DELETE FROM items WHERE id = ?').bind(itemId).run();
   }
 }
