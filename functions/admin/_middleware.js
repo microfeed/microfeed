@@ -14,7 +14,7 @@ async function fetchFeed({request, next, env, data}) {
   if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/feed/json')) ||
       urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/items/list'))) {
     fetchItems = getFetchItemsParams(request, {
-      'status__!=': STATUSES.DELETED,
+      'status__!=': STATUSES.ARCHIVED,
     });
   } else if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/items/'))) {
     // Either /items/ or /items/{id}
@@ -23,7 +23,7 @@ async function fetchFeed({request, next, env, data}) {
     }
   } else if (urlObj.pathname.startsWith(urlJoin(ADMIN_URLS.home(), '/settings/code-editor'))) {
     fetchItems = getFetchItemsParams(request, {
-      'status__!=': STATUSES.DELETED,
+      'status__!=': STATUSES.ARCHIVED,
     }, 1);
   }
 

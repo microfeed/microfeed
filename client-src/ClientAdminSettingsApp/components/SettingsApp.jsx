@@ -11,6 +11,10 @@ import {showToast} from "../../common/ToastUtils";
 import {NAV_ITEMS} from "../../../common-src/Constants";
 import {preventCloseWhenChanged} from "../../common/BrowserUtils";
 import ApiSettingsApp from "./ApiSettingsApp";
+import SiteSeoSettingsApp from "./SiteSeoSettingsApp";
+import ItemTypesSettingsApp from "./ItemTypesSettingsApp";
+import CategoriesSettingsApp from "./CategoriesSettingsApp";
+import ItunesSeriesSettingsApp from "./ItunesSeriesSettingsApp";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -124,6 +128,24 @@ export default class SettingsApp extends React.Component {
               onSubmit={this.onSubmit}
               setChanged={this.setChanged}
             />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-1 h-full">
+            <SiteSeoSettingsApp
+              feed={feed}
+            />
+          </div>
+          <div className="col-span-1 h-full">
+            <ItemTypesSettingsApp />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-1 h-full">
+            <CategoriesSettingsApp />
+          </div>
+          <div className="col-span-1 h-full">
+            <ItunesSeriesSettingsApp feed={feed} />
           </div>
         </div>
       </div>

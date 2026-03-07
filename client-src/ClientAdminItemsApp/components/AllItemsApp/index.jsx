@@ -160,7 +160,7 @@ export default class AllItemsApp extends React.Component {
           <ExternalLink
             linkClass="text-xs text-helper-color
             hover:text-brand-light"
-            url={PUBLIC_URLS.webItem(item.id, item.title)}
+            url={PUBLIC_URLS.webItem(item.id, item.title, '/', 'en', item.slug)}
             text="Public page"
           />
           <div className="ml-4 flex-none">

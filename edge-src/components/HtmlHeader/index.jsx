@@ -19,6 +19,10 @@ export default class HtmlHeader extends React.Component {
       webpackCssList,
       favicon,
       canonicalUrl,
+      og,
+      twitter,
+      robots,
+      jsonLd,
     } = this.props;
     return (
       <head>
@@ -27,6 +31,23 @@ export default class HtmlHeader extends React.Component {
         {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         {description && <meta name="description" content={description}/>}
+        {robots && <meta name="robots" content={robots} />}
+        {og && og.title && <meta property="og:title" content={og.title} />}
+        {og && og.description && <meta property="og:description" content={og.description} />}
+        {og && og.image && <meta property="og:image" content={og.image} />}
+        {og && og.type && <meta property="og:type" content={og.type} />}
+        {og && og.url && <meta property="og:url" content={og.url} />}
+        {og && og.siteName && <meta property="og:site_name" content={og.siteName} />}
+        {twitter && twitter.card && <meta name="twitter:card" content={twitter.card} />}
+        {twitter && twitter.title && <meta name="twitter:title" content={twitter.title} />}
+        {twitter && twitter.description && <meta name="twitter:description" content={twitter.description} />}
+        {twitter && twitter.image && <meta name="twitter:image" content={twitter.image} />}
+        {twitter && twitter.site && <meta name="twitter:site" content={twitter.site} />}
+        {twitter && twitter.creator && <meta name="twitter:creator" content={twitter.creator} />}
+        {jsonLd && <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{__html: JSON.stringify(jsonLd)}}
+        />}
         {webpackJsList && webpackJsList.length > 0 && webpackJsList.map((js) => {
           const realUrl = this.getWebpackRealUrl(js);
           return (realUrl ? <script key={js} type="text/javascript" src={realUrl} defer/> : '');

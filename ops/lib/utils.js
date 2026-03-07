@@ -60,9 +60,12 @@ class WranglerCmd {
   }
 
   createFeedDbTables() {
-    const dbName = this.currentEnv !== 'development' ?
-      `${this._non_dev_db()} --remote` : 'FEED_DB --local';
-    const wranglerCmd = `wrangler d1 execute ${dbName} -e ${this.currentEnv} --file ops/db/init.sql`;
+    const isDev = this.currentEnv === 'development';
+    const dbName = isDev ? 'FEED_DB --local' : `${this._non_dev_db()} --remote`;
+    // For Pages dev, there is no --env, so use the default environment for local.
+    const envArg = isDev ? '' : ` -e ${this.currentEnv}`;
+    const persistArg = isDev ? ' --persist-to .wrangler/state/v3/feeddblocal' : '';
+    const wranglerCmd = `wrangler d1 execute ${dbName}${envArg}${persistArg} --file ops/db/init.sql`;
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }

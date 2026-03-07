@@ -2,8 +2,7 @@ name: Deploy to Cloudflare Pages
 
 on:
   # push:
-  #  branches: ["dev-v1"]
-
+  #   branches: ["dev-v1"]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
@@ -12,34 +11,75 @@ on:
         required: true
         type: choice
         options:
-        - preview
-        - production
+          - preview
+          - production
         default: 'production'
 
-env:
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
-  R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-  R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-  R2_PUBLIC_BUCKET: ${{ secrets.R2_PUBLIC_BUCKET || secrets.CLOUDFLARE_PROJECT_NAME }}
-  D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
-  DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
-  PRODUCTION_BRANCH: main
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.DEPLOYMENT_ENVIRONMENT }}
+    
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_PUBLIC_BUCKET: ${{ secrets.R2_PUBLIC_BUCKET || secrets.CLOUDFLARE_PROJECT_NAME }}
+      D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
+      DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
+      PRODUCTION_BRANCH: main
+      # Added these environment variables to fix R2 initialization
+      R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_REGION: auto
+      AWS_DEFAULT_REGION: auto
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+      
+      - name: Use Node.js 18.x
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'yarn'
-      - name: Setup
-        run: yarn setup:production
+      
+      - name: Setup environment for R2
+        run: |
+          # Create .env file with required variables for local scripts
+          echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" > .env
+          echo "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID" >> .env
+          echo "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY" >> .env
+          echo "R2_PUBLIC_BUCKET=$R2_PUBLIC_BUCKET" >> .env
+          echo "R2_ENDPOINT=$R2_ENDPOINT" >> .env
+          echo "AWS_REGION=$AWS_REGION" >> .env
+          echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> .env
+      
+      - name: Debug environment (without sensitive data)
+        run: |
+          echo "Checking for required environment variables:"
+          echo "CLOUDFLARE_ACCOUNT_ID set: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}"
+          echo "CLOUDFLARE_PROJECT_NAME set: ${{ secrets.CLOUDFLARE_PROJECT_NAME != '' }}"
+          echo "R2_PUBLIC_BUCKET set: ${{ env.R2_PUBLIC_BUCKET != '' }}"
+          echo "R2_ENDPOINT: $R2_ENDPOINT"
+          echo "AWS_REGION: $AWS_REGION"
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Generate vars.toml
+        run: sh ops/generate_vars_toml.sh
+      
+      - name: Initialize R2
+        run: node ops/init_r2.js
+      
+      - name: Initialize Feed Database
+        run: node ops/init_feed_db.js
+      
+      - name: Initialize Project
+        run: node ops/init_project.js
+      
       - name: Deploy to Cloudflare Pages [${{ inputs.DEPLOYMENT_ENVIRONMENT }}]
         run: yarn deploy:github

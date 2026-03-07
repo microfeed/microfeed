@@ -8,7 +8,7 @@ class SetupR2 {
     const currentEnv = process.env.DEPLOYMENT_ENVIRONMENT || 'production';
     this.v = new VarsReader(currentEnv);
     this.endpoint = `https://${this.v.get('CLOUDFLARE_ACCOUNT_ID')}.r2.cloudflarestorage.com`;
-    
+
     this.s3 = new S3Client({
       region: 'auto',
       credentials: {

@@ -5,6 +5,7 @@ export async function onRequestGet({env, request}) {
   const sitemapResponseBuilder = new SitemapResponseBuilder(env, request, {
     queryKwargs: {
       status: STATUSES.PUBLISHED,
+      'noindex__!=': 1,
     },
   });
   return sitemapResponseBuilder.getResponse({

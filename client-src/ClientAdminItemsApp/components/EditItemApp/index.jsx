@@ -2,8 +2,10 @@ import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import AdminNavApp from '../../../components/AdminNavApp';
 import AdminInput from "../../../components/AdminInput";
+import AdminSelect from "../../../components/AdminSelect";
+import AdminTextarea from "../../../components/AdminTextarea";
 import Requests from "../../../common/requests";
-import {randomShortUUID, ADMIN_URLS, PUBLIC_URLS} from '../../../../common-src/StringUtils';
+import {buildItemSlug, randomShortUUID, ADMIN_URLS, PUBLIC_URLS} from '../../../../common-src/StringUtils';
 import AdminImageUploaderApp from "../../../components/AdminImageUploaderApp";
 import AdminDatetimePicker from '../../../components/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "../../../../common-src/TimeUtils";
@@ -35,6 +37,16 @@ function initItem(itemId) {
     status: STATUSES.PUBLISHED,
     pubDateMs: datetimeLocalToMs(new Date()),
     guid: itemId,
+    slug: '',
+    seoTitle: '',
+    seoDescription: '',
+    canonicalUrl: '',
+    noindex: false,
+    ogImage: '',
+    typeId: null,
+    primaryCategoryId: null,
+    secondaryCategoryId: null,
+    itunesSeriesId: null,
     'itunes:explicit': false,
     'itunes:block': false,
     'itunes:episodeType': 'full',
@@ -47,6 +59,7 @@ export default class EditItemApp extends React.Component {
 
     this.onSubmit = this.onSubmit.bind(this);
     this.onDelete = this.onDelete.bind(this);
+    this.onHardDelete = this.onHardDelete.bind(this);
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdateItemMeta = this.onUpdateItemMeta.bind(this);
     this.onUpdateItemToFeed = this.onUpdateItemToFeed.bind(this);
@@ -61,7 +74,17 @@ export default class EditItemApp extends React.Component {
     if (!feed.items) {
       feed.items = [];
     }
+    const itemTypes = feed.itemTypes || [];
+    const podcastType = itemTypes.find((type) => type.slug === 'podcast');
     const item = feed.item || initItem();
+    if (!item.typeId && podcastType) {
+      item.typeId = podcastType.id;
+    } else if (!item.typeId && itemTypes.length > 0) {
+      item.typeId = itemTypes[0].id;
+    }
+    if (!item.slug && item.title) {
+      item.slug = buildItemSlug(item.title);
+    }
 
     this.state = {
       feed,
@@ -72,6 +95,7 @@ export default class EditItemApp extends React.Component {
       action,
 
       userChangedLink: false,
+      userChangedSlug: false,
       changed: false,
     };
   }
@@ -90,6 +114,7 @@ export default class EditItemApp extends React.Component {
       if (mediaFileFromUrl && Object.keys(mediaFileFromUrl).length > 0) {
         const attrDict = {
           title,
+          slug: buildItemSlug(title),
           mediaFile: {
             ...mediaFile,
             ...mediaFileFromUrl,
@@ -129,9 +154,9 @@ export default class EditItemApp extends React.Component {
   onDelete() {
     const {item} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.DELETED}})
+    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.ARCHIVED}})
       .then(() => {
-        showToast('Deleted!', 'success');
+        showToast('Archived!', 'success');
         this.setState({submitStatus: null, changed: false}, () => {
           setTimeout(() => {
             location.href = ADMIN_URLS.allItems();
@@ -147,6 +172,31 @@ export default class EditItemApp extends React.Component {
           }
         });
       });
+  }
+
+  onHardDelete() {
+    const {itemId} = this.state;
+    this.setState({submitStatus: SUBMIT_STATUS__START});
+    fetch(`${ADMIN_URLS.home()}ajax/items/${itemId}?hard=true`, {
+      method: 'DELETE',
+    }).then((res) => {
+      if (res.ok) {
+        showToast('Permanently deleted!', 'success');
+        this.setState({submitStatus: null, changed: false}, () => {
+          setTimeout(() => {
+            location.href = ADMIN_URLS.allItems();
+          }, 1000);
+        });
+      } else {
+        this.setState({submitStatus: null}, () => {
+          showToast('Failed. Please try again.', 'error');
+        });
+      }
+    }).catch(() => {
+      this.setState({submitStatus: null}, () => {
+        showToast('Network error. Please refresh the page and try again.', 'error');
+      });
+    });
   }
 
   onSubmit(e) {
@@ -186,6 +236,42 @@ export default class EditItemApp extends React.Component {
 
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
+    const itemTypes = feed.itemTypes || [];
+    const categories = feed.categories || [];
+    const itunesSeries = feed.itunesSeries || [];
+    const categoryById = {};
+    categories.forEach((cat) => {
+      categoryById[cat.id] = cat;
+    });
+    const typeOptions = itemTypes.map((type) => ({
+      value: type.id,
+      label: type.name,
+      slug: type.slug,
+    }));
+    const typeIdValue = typeof item.typeId === 'string' ? parseInt(item.typeId, 10) : item.typeId;
+    const primaryCategoryIdValue = typeof item.primaryCategoryId === 'string' ?
+      parseInt(item.primaryCategoryId, 10) : item.primaryCategoryId;
+    const secondaryCategoryIdValue = typeof item.secondaryCategoryId === 'string' ?
+      parseInt(item.secondaryCategoryId, 10) : item.secondaryCategoryId;
+    const itunesSeriesIdValue = typeof item.itunesSeriesId === 'string' ?
+      parseInt(item.itunesSeriesId, 10) : item.itunesSeriesId;
+    const selectedType = typeOptions.find((type) => type.value === typeIdValue) || null;
+    const categoryOptions = categories.map((cat) => {
+      const parent = cat.parentId ? categoryById[cat.parentId] : null;
+      const label = parent ? `${parent.name} / ${cat.name}` : cat.name;
+      return {
+        value: cat.id,
+        label,
+      };
+    }).sort((a, b) => a.label.localeCompare(b.label));
+    const primaryCategory = categoryOptions.find((cat) => cat.value === primaryCategoryIdValue) || null;
+    const secondaryCategory = categoryOptions.find((cat) => cat.value === secondaryCategoryIdValue) || null;
+    const itunesSeriesOptions = itunesSeries.map((series) => ({
+      value: series.id,
+      label: series.name,
+    }));
+    const selectedSeries = itunesSeriesOptions.find((series) => series.value === itunesSeriesIdValue) || null;
+    const isPodcastType = selectedType && selectedType.slug === 'podcast';
 
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
@@ -240,12 +326,67 @@ export default class EditItemApp extends React.Component {
                   value={item.title}
                   onChange={(e) => {
                     const attrDict = {'title': e.target.value};
+                    if (!this.state.userChangedSlug) {
+                      attrDict.slug = buildItemSlug(e.target.value);
+                    }
                     if (action !== 'edit' && !this.state.userChangedLink) {
-                      attrDict.link = PUBLIC_URLS.webItem(itemId, item.title, getPublicBaseUrl());
+                      attrDict.link = PUBLIC_URLS.webItem(itemId, e.target.value, getPublicBaseUrl(), 'en', attrDict.slug);
                     }
                     this.onUpdateItemMeta(attrDict);
                   }}
                 />
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <AdminInput
+                    label="Slug"
+                    value={item.slug}
+                    onChange={(e) => {
+                      this.onUpdateItemMeta(
+                        {'slug': buildItemSlug(e.target.value)},
+                        {userChangedSlug: true}
+                      );
+                    }}
+                  />
+                  <AdminSelect
+                    label="Type"
+                    value={selectedType}
+                    options={typeOptions}
+                    onChange={(option) => {
+                      const newTypeId = option ? option.value : null;
+                      const isPodcast = option && option.slug === 'podcast';
+                      this.onUpdateItemMeta({
+                        typeId: newTypeId,
+                        itunesSeriesId: isPodcast ? item.itunesSeriesId : null,
+                      });
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <AdminSelect
+                    label="Primary category"
+                    value={primaryCategory}
+                    options={categoryOptions}
+                    extraParams={{isClearable: true}}
+                    onChange={(option) => {
+                      const newPrimaryId = option ? option.value : null;
+                      this.onUpdateItemMeta({
+                        primaryCategoryId: newPrimaryId,
+                        secondaryCategoryId: newPrimaryId === secondaryCategoryIdValue ? null : secondaryCategoryIdValue,
+                      });
+                    }}
+                  />
+                  <AdminSelect
+                    label="Secondary category (optional)"
+                    value={secondaryCategory}
+                    options={categoryOptions.filter((option) => option.value !== primaryCategoryIdValue)}
+                    extraParams={{isClearable: true}}
+                    onChange={(option) => {
+                      const newSecondaryId = option ? option.value : null;
+                      this.onUpdateItemMeta({
+                        secondaryCategoryId: newSecondaryId === primaryCategoryIdValue ? null : newSecondaryId,
+                      });
+                    }}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <AdminDatetimePicker
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
@@ -285,6 +426,49 @@ export default class EditItemApp extends React.Component {
                     }}
                   />
                   <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: ITEM_STATUSES_DICT[status].description}} />
+                </div>
+                <div className="mt-6">
+                  <details>
+                    <summary className="m-page-summary">SEO</summary>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <AdminInput
+                        label="SEO title"
+                        value={item.seoTitle}
+                        onChange={(e) => this.onUpdateItemMeta({'seoTitle': e.target.value})}
+                      />
+                      <AdminInput
+                        label="Canonical URL"
+                        value={item.canonicalUrl}
+                        onChange={(e) => this.onUpdateItemMeta({'canonicalUrl': e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 mt-4">
+                      <AdminTextarea
+                        label="SEO description"
+                        value={item.seoDescription}
+                        onChange={(e) => this.onUpdateItemMeta({'seoDescription': e.target.value})}
+                        minRows={3}
+                        maxRows={6}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <AdminInput
+                        label="OG image URL"
+                        value={item.ogImage}
+                        onChange={(e) => this.onUpdateItemMeta({'ogImage': e.target.value})}
+                      />
+                      <AdminRadio
+                        label="Noindex"
+                        groupName="item-noindex"
+                        buttons={[
+                          {name: 'No', checked: !item.noindex},
+                          {name: 'Yes', checked: !!item.noindex},
+                        ]}
+                        value={item.noindex}
+                        onChange={(e) => this.onUpdateItemMeta({'noindex': e.target.value === 'Yes'})}
+                      />
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>
@@ -334,6 +518,17 @@ export default class EditItemApp extends React.Component {
                     onChange={(e) => this.onUpdateItemMeta({'itunes:title': e.target.value})}
                   />
                 </div>
+                {isPodcastType && <div className="grid grid-cols-2 gap-4">
+                  <AdminSelect
+                    label="iTunes series"
+                    value={selectedSeries}
+                    options={itunesSeriesOptions}
+                    extraParams={{isClearable: true}}
+                    onChange={(option) => {
+                      this.onUpdateItemMeta({'itunesSeriesId': option ? option.value : null});
+                    }}
+                  />
+                </div>}
                 <div className="grid grid-cols-3 gap-4">
                   <AdminRadio
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
@@ -401,23 +596,37 @@ export default class EditItemApp extends React.Component {
             {action === 'edit' && <div>
               <AdminSideQuickLinks
                 AdditionalLinksDiv={<div className="flex flex-wrap">
-                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="web item"/>
-                  <SideQuickLink url={PUBLIC_URLS.jsonItem(itemId)} text="json item"/>
+                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title, '/', 'en', item.slug)} text="web item"/>
+                  <SideQuickLink url={PUBLIC_URLS.jsonItem(itemId, null, '/', 'en', item.slug)} text="json item"/>
                 </div>}
               />
-              <div className="lh-page-card mt-4 flex justify-center">
+              <div className="lh-page-card mt-4 flex flex-col items-center gap-2">
                 <a
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    const ok = confirm('Are you going to permanently delete this item?');
+                    const ok = confirm('Are you going to archive this item?');
                     if (ok) {
                       this.onDelete();
                     }
                   }
                 }><div className="flex items-center text-red-500 text-sm hover:text-brand-light">
                   <TrashIcon className="w-4" />
-                  <div className="ml-1">Delete this item</div>
+                  <div className="ml-1">Archive this item</div>
+                  </div>
+                </a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const ok = confirm('This will permanently delete the item and its media files. Continue?');
+                    if (ok) {
+                      this.onHardDelete();
+                    }
+                  }
+                }><div className="flex items-center text-red-600 text-sm hover:text-brand-light">
+                  <TrashIcon className="w-4" />
+                  <div className="ml-1">Hard delete</div>
                   </div>
                 </a>
               </div>

@@ -1,6 +1,7 @@
 import {getIdFromSlug} from "../../../../common-src/StringUtils";
-import {ITEM_STATUSES_STRINGS_DICT, STATUSES} from "../../../../common-src/Constants";
+import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_STRINGS_DICT, STATUSES} from "../../../../common-src/Constants";
 import {onFetchItemRequestGet} from "../../../../edge-src/EdgeCommonRequests";
+import {deleteR2ObjectByUrl} from "../../../../edge-src/EdgeCommonRequests";
 
 export async function onRequestGet({params, env, request}) {
   return await onFetchItemRequestGet(
@@ -9,15 +10,60 @@ export async function onRequestGet({params, env, request}) {
 }
 
 // TODO: defensive code to handle some common errors
-export async function onRequestDelete({ params, data }) {
+export async function onRequestDelete({ params, data, request, env }) {
   const {itemId} = params;
   const itemUniqId = getIdFromSlug(itemId);
+  const urlObj = new URL(request.url);
+  const hardParam = urlObj.searchParams.get('hard');
+  const hardDelete = hardParam === 'true' || hardParam === '1';
+
+  if (hardDelete) {
+    const {feedDb} = data;
+    const content = await feedDb.getContent({
+      queryKwargs: {
+        id: itemUniqId,
+      },
+      limit: 1,
+    });
+    const item = content.items && content.items.length > 0 ? content.items[0] : null;
+    if (!item) {
+      return new Response(JSON.stringify({error: 'Not found'}), {
+        headers: {
+          'content-type': 'application/json;charset=UTF-8',
+        },
+        status: 404,
+      });
+    }
+
+    const urlsToDelete = new Set();
+    if (item.image) {
+      urlsToDelete.add(item.image);
+    }
+    if (item.ogImage) {
+      urlsToDelete.add(item.ogImage);
+    }
+    if (item.mediaFile && item.mediaFile.url && item.mediaFile.category !== ENCLOSURE_CATEGORIES.EXTERNAL_URL) {
+      urlsToDelete.add(item.mediaFile.url);
+    }
+    for (const mediaUrl of urlsToDelete) {
+      try {
+        await deleteR2ObjectByUrl(env, mediaUrl);
+      } catch (e) { // eslint-disable-line
+      }
+    }
+    await feedDb.deleteItemById(itemUniqId);
+    return new Response(JSON.stringify({}), {
+      headers: {
+        'content-type': 'application/json;charset=UTF-8',
+      },
+    });
+  }
 
   const { feedCrud } = data;
   await feedCrud.upsertItem({
     id: itemUniqId,
     date_published_ms: new Date().getTime(),
-    status: STATUSES.DELETED,
+    status: STATUSES.ARCHIVED,
   });
 
   return new Response(JSON.stringify({}), {

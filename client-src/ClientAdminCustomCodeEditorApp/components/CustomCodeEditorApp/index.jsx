@@ -130,7 +130,7 @@ function getFirstItemUrl(feed) {
   const {items} = feed;
   if (items && items.length > 0) {
     const item = items[0];
-    return PUBLIC_URLS.webItem(item.id, item.title || 'Untitled');
+    return PUBLIC_URLS.webItem(item.id, item.title || 'Untitled', '/', 'en', item.slug);
   }
   return '/'
 }

@@ -29,6 +29,30 @@ export function randomShortUUID(length = 11) {
   return result;
 }
 
+export function buildItemSlug(input, locale = 'en') {
+  if (!input) {
+    return '';
+  }
+  let slug = slugify(input, {
+    lower: true,
+    strict: true,
+    locale,
+  });
+  if (!slug) {
+    slug = input
+      .toString()
+      .normalize('NFKD')
+      .toLowerCase()
+      .trim()
+      .replace(/['!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g, '-')
+      .replace(/\s+/g, '-')
+      .replace(/\_/g, '-')
+      .replace(/\-\-+/g, '-')
+      .replace(/\-$/g, '');
+  }
+  return slug;
+}
+
 export function secondsToHHMMSS(secs) {
   if (!secs) {
     return '00:00:00';
@@ -247,31 +271,14 @@ export const ADMIN_URLS = {
 /**
  * Public urls
  */
-function webItem(itemId, itemTitle = null, baseUrl = '/', locale = 'en') {
-  if (itemTitle) {
-    const title = truncateString(itemTitle, 50, false);
-    let slug = slugify(title, {
-      lower: true,
-      strict: true, // strip special characters except replacement
-      locale,
-    });
-    // Fallback to a custom implementation to deal with all non-English characters.
-    if (!slug) {
-      slug = title
-        .toString()
-        .normalize('NFKD')
-        .toLowerCase()
-        .trim()
-        .replace(/['!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g, '-')
-        .replace(/\s+/g, '-')
-        .replace(/\_/g, '-')
-        .replace(/\-\-+/g, '-')
-        .replace(/\-$/g, '');
-    }
+function webItem(itemId, itemTitle = null, baseUrl = '/', locale = 'en', itemSlug = null) {
+  const slugSource = itemSlug || itemTitle;
+  if (slugSource) {
+    const title = truncateString(slugSource, 50, false);
+    const slug = buildItemSlug(title, locale);
     return urlJoin(baseUrl, `/i/${slug}-${itemId}/`);
-  } else {
-    return urlJoin(baseUrl, `/i/${itemId}/`);
   }
+  return urlJoin(baseUrl, `/i/${itemId}/`);
 }
 
 export const PUBLIC_URLS = {
@@ -294,10 +301,10 @@ export const PUBLIC_URLS = {
     return urlJoin(baseUrl, 'json/openapi.html');
   },
   webItem,
-  jsonItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en') => {
-    return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');
+  jsonItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en', itemSlug = null) => {
+    return urlJoin(webItem(itemId, itemTitle, baseUrl, locale, itemSlug), 'json/');
   },
-  rssItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en') => {
-    return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'rss/');
+  rssItem: (itemId, itemTitle = null, baseUrl = '/', locale = 'en', itemSlug = null) => {
+    return urlJoin(webItem(itemId, itemTitle, baseUrl, locale, itemSlug), 'rss/');
   },
 };

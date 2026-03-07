@@ -1,7 +1,7 @@
 export const STATUSES = {
   PUBLISHED: 1,
   UNPUBLISHED: 2,
-  DELETED: 3,
+  ARCHIVED: 3,
   UNLISTED: 4,
 };
 
@@ -229,6 +229,7 @@ export const ITEM_STATUSES_STRINGS_DICT = {
   'published': STATUSES.PUBLISHED,
   'unpublished': STATUSES.UNPUBLISHED,
   'unlisted': STATUSES.UNLISTED,
+  'archived': STATUSES.ARCHIVED,
 };
 
 export const ITEM_STATUSES_DICT = {
@@ -244,6 +245,11 @@ export const ITEM_STATUSES_DICT = {
   [STATUSES.UNLISTED]: {
     name: 'unlisted',
     description: '<b>not listed</b> on the web/rss/json feed, but <b>visible</b> via the direct web link.'
+  },
+  [STATUSES.ARCHIVED]: {
+    name: 'archived',
+    description: '<b>not listed</b> on the web/rss/json feed, and <b>not visible</b> via the direct web link. ' +
+      'Archived items are hidden by default.',
   },
 };
 
