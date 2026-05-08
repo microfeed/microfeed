@@ -9,6 +9,7 @@ import AdminDialog from "../AdminDialog";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
 import {showToast} from "../../common/ToastUtils";
+import {pickDocumentText} from "../../common/LanguageUtils";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -18,7 +19,7 @@ function EmptyImage({fileTypes}) {
       <CloudArrowUpIcon className="w-8" />
     </div>
     <div className="font-semibold">
-      Click or drag here to upload image
+      {pickDocumentText('点击或拖拽到这里上传图片', 'Click or drag here to upload image')}
     </div>
     <div className="mt-2">
       {fileTypes.join(',')}
@@ -34,7 +35,7 @@ function PreviewImage({url}) {
     />
     <div className="absolute bottom-4 text-sm font-normal text-brand-light">
       <em>
-        Click or drag here to change image
+        {pickDocumentText('点击或拖拽到这里更换图片', 'Click or drag here to change image')}
       </em>
     </div>
   </div>);
@@ -145,14 +146,14 @@ export default class AdminImageUploaderApp extends React.Component {
           currentImageUrl: cdnUrl,
         });
       }, () => {
-        showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
+        showToast(pickDocumentText('上传失败，请刷新页面后重试。', 'Failed to upload. Please refresh this page and try again.'), 'error', 2000);
         this.setState({...this.initState});
       }, (error) => {
         this.setState({...this.initState}, () => {
           if (!error.response) {
-            showToast('Network error. Please refresh the page and try again.', 'error');
+            showToast(pickDocumentText('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
           } else {
-            showToast('Failed. Please try again.', 'error');
+            showToast(pickDocumentText('上传失败，请重试。', 'Failed. Please try again.'), 'error');
           }
         });
       });
@@ -168,8 +169,10 @@ export default class AdminImageUploaderApp extends React.Component {
     const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
       imageWidth < 1400 || imageHeight < 1400;
     const imageSizeNotOkayMsg = imageSizeNotOkayMsgFunc ? imageSizeNotOkayMsgFunc(imageWidth, imageHeight) :
-      `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
-      "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
+      pickDocumentText(
+        `图片过小：${parseInt(imageWidth)} x ${parseInt(imageHeight)} 像素。如果这是播客封面图，Apple Podcasts 要求图片尺寸在 1400 x 1400 到 3000 x 3000 像素之间。`,
+        `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.`
+      );
     return (<div className="lh-upload-wrapper">
       <FileUploader
         handleChange={this.onFileUpload}
@@ -184,7 +187,7 @@ export default class AdminImageUploaderApp extends React.Component {
         </div>
       </FileUploader>
       {absoluteImageUrl && <div className="text-sm flex justify-center mt-1">
-        <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={absoluteImageUrl} />
+        <ExternalLink linkClass="text-helper-color text-xs" text={pickDocumentText('预览图片', 'preview image')} url={absoluteImageUrl} />
       </div>}
       <AdminDialog
         isOpen={showModal}
@@ -226,12 +229,12 @@ export default class AdminImageUploaderApp extends React.Component {
             onClick={this.onFileUploadToR2}
             disabled={uploading}
           >
-            {uploading ? `Uploading... ${progressText}` : 'Upload'}
+            {uploading ? `${pickDocumentText('上传中...', 'Uploading...')} ${progressText}` : pickDocumentText('上传', 'Upload')}
           </button>
         </div>
         {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", imageSizeNotOkay ? 'text-red-500' : 'text-green-500')}>
           {imageSizeNotOkay ? <div>{imageSizeNotOkayMsg}</div> :
-            <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
+            <div>{pickDocumentText('图片尺寸可用：', 'Image ok: ')}{parseInt(imageWidth)} x {parseInt(imageHeight)} {pickDocumentText('像素。', 'pixels.')}</div>}
         </div>}
       </AdminDialog>
     </div>);

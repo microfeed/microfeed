@@ -5,6 +5,7 @@ import AdminInput from "../../../../../components/AdminInput";
 import Requests from "../../../../../common/requests";
 import {ADMIN_URLS, isValidUrl} from "../../../../../../common-src/StringUtils";
 import {showToast} from "../../../../../common/ToastUtils";
+import {pickDocumentText} from "../../../../../common/LanguageUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -30,12 +31,13 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
   const [url, setUrl] = useState(publicBucketUrl);
   const [submitStatus, setSubmitStatus] = useState(null);
   const submitting = submitStatus === SUBMIT_STATUS__START;
-  return (<CheckListItem onboardState={onboardState} title="Setup R2 public bucket url">
+
+  return (<CheckListItem onboardState={onboardState} title={pickDocumentText('配置 R2 公共存储桶 URL', 'Set up R2 public bucket URL')}>
     <div className="flex">
       <div className="mr-4 flex-1">
         <AdminInput
           type="url"
-          placeholder="e.g., https://cdn.example.com"
+          placeholder={pickDocumentText('例如：https://cdn.example.com', 'For example: https://cdn.example.com')}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
         />
@@ -48,9 +50,14 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
           onClick={(e) => {
             e.preventDefault();
             if (!isValidUrl(url)) {
-              showToast('Invalid url. A valid url should start with http:// or https://, ' +
-                'for example, https://media-cdn.microfeed.org',
-                'error', 5000);
+              showToast(
+                pickDocumentText(
+                  'URL 无效。请填写以 http:// 或 https:// 开头的完整地址，例如：https://media-cdn.microfeed.org',
+                  'Invalid URL. Please enter a full URL that starts with http:// or https://, for example: https://media-cdn.microfeed.org',
+                ),
+                'error',
+                5000,
+              );
               return;
             }
             setSubmitStatus(SUBMIT_STATUS__START);
@@ -62,76 +69,52 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
                 },
               }
             }).then(() => {
-              showToast('Updated!', 'success');
+              showToast(pickDocumentText('更新成功！', 'Updated!'), 'success');
               setTimeout(() => {
                 location.href = '';
               }, 1500);
             }).catch((error) => {
               setSubmitStatus(null);
               if (!error.response) {
-                showToast('Network error. Please refresh the page and try again.', 'error');
+                showToast(pickDocumentText('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
               } else {
-                showToast('Failed. Please try again.', 'error');
+                showToast(pickDocumentText('更新失败，请重试。', 'Failed. Please try again.'), 'error');
               }
             });
           }}
         >
-          {submitting ? 'Updating...' : 'Update'}
+          {submitting ? pickDocumentText('更新中...', 'Updating...') : pickDocumentText('更新', 'Update')}
         </button>
       </div>
     </div>
-    <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2">
+    <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
       <details>
-        <summary className="cursor-pointer font-semibold hover:opacity-50">
-          Where to find your R2 public bucket url?
+        <summary className="cursor-pointer font-semibold hover:opacity-50 text-black">
+          {pickDocumentText('去哪里找到 R2 公共存储桶 URL？', 'Where can I find the R2 public bucket URL?')}
         </summary>
-        <div className="my-8 text-helper-color">
-          <div>
-            Go to <a href={cloudflareUrls.r2BucketSettingsUrl} target="_blank" rel="noopener noreferrer">
-              Cloudflare Dashboard / R2 Bucket Settings <span className="lh-icon-arrow-right" /></a>
-          </div>
-          <div className="mt-4">
-            <div>
-              <span className="text-brand-light font-bold">[Recommended]</span> Add a custom domain (e.g., media-cdn.microfeed.org). Then copy this custom domain here (e.g., https://media-cdn.microfeed.org).
-            </div>
-            <div className="mt-2">
-              <img src="/assets/howto/get-r2-public-bucket-url-howto2.png" className="w-full" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div>
-              <span className="text-brand-light">[Ok, but not recommended]</span> If you don't have a custom domain, you can also use Cloudflare's r2.dev domain - Click "Allow Access". Then copy "Public Bucket URL" here (e.g., https://pub-xxxx.r2.dev).
-            </div>
-            <div className="mt-2">
-              <img src="/assets/howto/get-r2-public-bucket-url-howto1.png" className="w-full" />
-            </div>
-          </div>
+        <div className="my-4">
+          {pickDocumentText('前往 ', 'Go to ')}<a href={cloudflareUrls.r2BucketSettingsUrl} target="_blank" rel="noopener noreferrer">
+            {pickDocumentText('Cloudflare 控制台 / R2 Bucket Settings', 'Cloudflare Dashboard / R2 Bucket Settings')} <span className="lh-icon-arrow-right" /></a>
+        </div>
+        <div>
+          {pickDocumentText('推荐先绑定一个自定义域名，再把完整地址填到这里。也可以临时使用 Cloudflare 提供的 r2.dev 公共地址。', 'We recommend using a custom domain for the bucket and pasting the full URL here. You can also temporarily use the public r2.dev URL provided by Cloudflare.')}
         </div>
       </details>
       <details>
-        <summary className="cursor-pointer font-semibold hover:opacity-50">
-          What is R2 public bucket url used for?
+        <summary className="cursor-pointer font-semibold hover:opacity-50 text-black">
+          {pickDocumentText('这个 URL 有什么用途？', 'What is this URL used for?')}
         </summary>
-        <div className="my-8 text-helper-color">
-          <div>
-            You will store media files (e.g., audio, video, image, document...) on Cloudflare R2. In order to serve those media files to the public, you have to provide a R2 public bucket url.
-          </div>
-          <div className="mt-2">
-            Assuming the R2 public bucket url is https://cdn.example.com, a media file (e.g., audio) will be accessed via a link like https://cdn.example.com/some-audio.mp3
-          </div>
+        <div className="my-4">
+          {pickDocumentText('你的音频、视频、图片和文档等媒体文件会存放在 Cloudflare R2 中。这个公共 URL 会作为这些文件的访问前缀。', 'Your audio, video, image, and document files will be stored in Cloudflare R2. This public URL becomes the access prefix for those files.')}
         </div>
       </details>
       <details>
-        <summary className="cursor-pointer font-semibold hover:opacity-50">
-          How to make sure this url is valid?
+        <summary className="cursor-pointer font-semibold hover:opacity-50 text-black">
+          {pickDocumentText('怎么确认这个 URL 是有效的？', 'How can I verify this URL?')}
         </summary>
-        <div className="my-8 text-helper-color">
-          <div>
-            When you open this R2 public bucket url, you will see a 404 page like this (e.g., <a href={OUR_BRAND.exampleCdnUrl} target="_blank">https://media-cdn.microfeed.org</a>):
-          </div>
-          <div className="mt-2">
-            <img src="/assets/howto/get-r2-public-bucket-url-howto3.png" className="w-full" />
-          </div>
+        <div className="my-4">
+          {pickDocumentText('直接打开这个地址时，通常会看到一个类似 404 的页面，这通常是正常的。只要后续具体文件地址可以打开即可。示例：', 'When you open the bucket root directly, you will usually see a 404-like page. That is normally fine as long as actual file URLs work. Example: ')}
+          <a href={OUR_BRAND.exampleCdnUrl} target="_blank" rel="noopener noreferrer">{OUR_BRAND.exampleCdnUrl}</a>
         </div>
       </details>
     </div>
@@ -139,146 +122,53 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
 }
 
 function ProtectedAdminDashboard({onboardState, cloudflareUrls}) {
-  return (<CheckListItem onboardState={onboardState} title="Add Login to Admin Dashboard">
+  return (<CheckListItem onboardState={onboardState} title={pickDocumentText('给管理后台添加登录保护', 'Protect the admin dashboard')}>
     <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
-      <div className="mb-2">
-        You will use <a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/" target="_blank">
-        Cloudflare Zero Trust</a> to add a login, so ONLY authorized users can access this admin dashboard.
+      <div>
+        {pickDocumentText('推荐使用 ', 'We recommend using ')}<a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/" target="_blank" rel="noopener noreferrer">Cloudflare Zero Trust</a>{pickDocumentText(' 为后台加登录保护。', ' to add sign-in protection to the admin dashboard.')}
       </div>
-      <details>
-        <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 1: Add an access group
-        </summary>
-        <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAccessGroupUrl} target="_blank">Cloudflare Dashboard / Add an access group <span className="lh-icon-arrow-right"/></a>
-        </div>
-        <div className="my-4">
-          If this is the first time you use Cloudflare Zero Trust, you may need to sign up a Free plan first.
-        </div>
-        <div className="mt-4">
-          You need to specify what emails are allowed to access this admin dashboard:
-        </div>
-        <div className="mt-2">
-          <img src="/assets/howto/add-access-group.png" className="w-full border"/>
-        </div>
-      </details>
-      <details>
-        <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 2: Create a self-hosted app to protect <b>{cloudflareUrls.pagesDevUrl}/admin</b>
-        </summary>
-        <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAppUrl} target="_blank">
-          Cloudflare Dashboard / Create a self-hosted app <span className="lh-icon-arrow-right"/>
+      <div>
+        {pickDocumentText('步骤 1：创建一个 Access Group，定义哪些邮箱可以登录。', 'Step 1: Create an Access Group that defines which email addresses can log in.')}
+      </div>
+      <div>
+        <a href={cloudflareUrls.addAccessGroupUrl} target="_blank" rel="noopener noreferrer">
+          {pickDocumentText('打开 Cloudflare 控制台 / Add an access group', 'Open Cloudflare Dashboard / Add an access group')} <span className="lh-icon-arrow-right"/>
         </a>
-        </div>
-        <div className="mt-4">
-          Select "Self-hosted" here:
-        </div>
-        <div className="mt-2">
-          <img src="/assets/howto/select-self-hosted-app.png" className="w-full border"/>
-        </div>
-        <div className="mt-4">
-          Fill in info for <b>{cloudflareUrls.pagesDevUrl}/admin</b>:
-        </div>
-        <div className="mt-2 text-red-500">
-          {'Note: Please follow numbered arrows in order. Otherwise, "Path" may not be edited. ' +
-           'If you see "the zone does not exist" message, please ignore it and go ahead to Next. ' +
-           'We hope Cloudflare can improve their UI to make things less confusing :)'}
-        </div>
-        <div className="mt-2">
-          <img src="/assets/howto/add-app1.png" className="w-full border"/>
-        </div>
-        <div className="mt-4">
-          Add policy name, then click "Next" all the way until you add the app:
-        </div>
-        <div className="my-4">
-          <img src="/assets/howto/add-app2.png" className="w-full border"/>
-        </div>
-      </details>
-      <details>
-        <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 3: Check if it works
-        </summary>
-        <div className="mt-4">
-          Refresh current page and you should be able to login with your email.
-        </div>
-        <div className="my-4">
-          <img src="/assets/howto/app-access-login.png" className="w-full border"/>
-        </div>
-      </details>
-      <details>
-        <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Bonus: Create a self-hosted app for <b>*.{cloudflareUrls.pagesDevUrl}</b>
-        </summary>
-        <div className="mt-4">
-        You may want to create a 2nd self-hosted app for <b>*.{cloudflareUrls.pagesDevUrl}</b>, which will
-        protect all <a href="https://developers.cloudflare.com/pages/platform/preview-deployments/" target="_blank">preview
-        deployments</a>.
-        </div>
-        <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAppUrl} target="_blank">
-          Cloudflare Dashboard / Create a self-hosted app <span className="lh-icon-arrow-right"/>
+      </div>
+      <div>
+        {pickDocumentText(`步骤 2：创建一个 self-hosted app，保护 ${cloudflareUrls.pagesDevUrl}/admin。`, `Step 2: Create a self-hosted app that protects ${cloudflareUrls.pagesDevUrl}/admin.`)}
+      </div>
+      <div>
+        <a href={cloudflareUrls.addAppUrl} target="_blank" rel="noopener noreferrer">
+          {pickDocumentText('打开 Cloudflare 控制台 / Create a self-hosted app', 'Open Cloudflare Dashboard / Create a self-hosted app')} <span className="lh-icon-arrow-right"/>
         </a>
-        </div>
-        <div className="my-4">
-          Put an asterisk (*) to Subdomain:
-        </div>
-        <div className="my-4">
-          <img src="/assets/howto/protect-preview.png" className="w-full border"/>
-        </div>
-      </details>
+      </div>
+      <div>
+        {pickDocumentText('步骤 3：刷新当前后台页面，确认登录拦截已经生效。', 'Step 3: Refresh this admin page and confirm the login protection is active.')}
+      </div>
     </div>
   </CheckListItem>);
 }
 
 function CustomDomain({onboardState, cloudflareUrls}) {
-  return (<CheckListItem onboardState={onboardState} title="Use Custom Domain">
+  return (<CheckListItem onboardState={onboardState} title={pickDocumentText('使用自定义域名', 'Use a custom domain')}>
     <div className="mt-4 rounded-sm bg-gray-100 p-2 text-sm grid grid-cols-1 gap-2 text-helper-color">
-      <div className="mb-2">
-        Using custom domain, you can benefit from Cloudflare features such as bot management, Access, and Cache.
+      <div>
+        {pickDocumentText('接入自定义域名后，你会更方便地使用 Cloudflare 的缓存、机器人管理和访问控制能力。', 'A custom domain makes it easier to use Cloudflare caching, bot management, and access control.')}
       </div>
-      <details>
-        <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 1: Setup custom domain for this site
-        </summary>
-        <div className="mt-4">
-          Go to <a href={cloudflareUrls.pagesCustomDomainUrl} target="_blank">Cloudflare Dashboard / Pages Settings<span
-          className="lh-icon-arrow-right"/></a>
-        </div>
-        <div className="my-4">
-          <img src="/assets/howto/pages-custom-domain.png" className="w-full border"/>
-        </div>
-      </details>
-      <details>
-        <summary className="cursor-pointer hover:opacity-50 text-black font-semibold">
-          Step 2: Create a self-hosted app to protect admin dashboard
-        </summary>
-        <div className="mt-4">
-          If you want to access this admin dashboard from your newly added custom domain, you have to create a
-          self-hosted app for the admin url. Instead of using {cloudflareUrls.pagesDevUrl}, use your new custom domain
-          this time.
-        </div>
-        <div className="mt-4">
-          Go to <a href={cloudflareUrls.addAppUrl} target="_blank">
-            Cloudflare Dashboard / Add an application <span className="lh-icon-arrow-right"/>
-          </a>
-        </div>
-        <div className="my-4">
-          <img src="/assets/howto/add-app3.png" className="w-full border"/>
-        </div>
-      </details>
+      <div>
+        <a href={cloudflareUrls.pagesCustomDomainUrl} target="_blank" rel="noopener noreferrer">
+          {pickDocumentText('打开 Cloudflare 控制台 / Pages Settings', 'Open Cloudflare Dashboard / Pages Settings')} <span className="lh-icon-arrow-right"/>
+        </a>
+      </div>
+      <div>
+        {pickDocumentText('如果你还希望从自定义域名访问后台，记得为新的后台域名再创建一次 self-hosted app。', 'If you also want to access the admin dashboard from the custom domain, create another self-hosted app for the new admin URL.')}
+      </div>
     </div>
   </CheckListItem>);
 }
 
 export default class SetupChecklistApp extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-    };
-  }
-
   render() {
     const {feed, onboardingResult} = this.props;
     const {settings} = feed;
@@ -286,12 +176,13 @@ export default class SetupChecklistApp extends React.Component {
 
     return (<div className="lh-page-card">
       <div className="lh-page-title">
-        Setup checklist
+        {pickDocumentText('初始化清单', 'Setup checklist')}
       </div>
       {onboardingResult.allOk && <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
-        <i>You are all set!</i>
+        <i>{pickDocumentText('全部配置完成！', 'Everything is ready!')}</i>
         <div className="mt-2">
-          Start publishing at <a href={ADMIN_URLS.newItem()}>Add new item <span className="lh-icon-arrow-right" /></a>
+          {pickDocumentText('现在可以开始发布内容：', 'You can start publishing content now: ')}
+          <a href={ADMIN_URLS.newItem()}>{pickDocumentText('新建内容', 'New item')} <span className="lh-icon-arrow-right" /></a>
         </div>
       </div>}
       <div className="mt-8">
@@ -310,7 +201,7 @@ export default class SetupChecklistApp extends React.Component {
         />
       </div>
       <div className="text-right mt-4 text-sm text-helper-color">
-        <span className="text-red-500">*</span> required
+        <span className="text-red-500">*</span> {pickDocumentText('必填', 'Required')}
       </div>
     </div>);
   }

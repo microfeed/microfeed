@@ -13,6 +13,7 @@ import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT, NAV_ITEMS} from "../../../.
 import ExplainText from "../../../components/ExplainText";
 import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./FormExplainTexts";
 import {preventCloseWhenChanged} from "../../../common/BrowserUtils";
+import {isChineseLanguage} from "../../../../common-src/I18n";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -45,7 +46,7 @@ Object.keys(ITUNES_CATEGORIES_DICT).forEach((topLevel) => {
       value: subLevelValue,
       label: subLevelValue,
     };
-    CATEGORIES_SELECT_OPTIONS.push(subLevelOption)
+    CATEGORIES_SELECT_OPTIONS.push(subLevelOption);
     CATEGORIES_DICT[subLevelValue] = subLevelOption;
   });
 });
@@ -69,7 +70,7 @@ export default class EditChannelApp extends React.Component {
       channel,
       submitStatus: null,
       changed: false,
-    }
+    };
   }
 
   componentDidMount() {
@@ -85,7 +86,7 @@ export default class EditChannelApp extends React.Component {
           ...props,
         },
       },
-    }), () => onSucceed())
+    }), () => onSucceed());
   }
 
   onUpdateChannelMeta(keyName, value) {
@@ -104,22 +105,23 @@ export default class EditChannelApp extends React.Component {
 
   onSubmit(e) {
     e.preventDefault();
+    const isZh = isChineseLanguage(this.state.channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
     this.onUpdateChannelMetaToFeed(() => {
       const {feed} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
       Requests.axiosPost('/admin/ajax/feed/', {channel: feed.channel})
-        .then((response) => {
-          console.log(response);
+        .then(() => {
           this.setState({submitStatus: null, changed: false}, () => {
-            showToast('Updated!', 'success');
+            showToast(t('更新成功！', 'Updated!'), 'success');
           });
         })
         .catch((error) => {
           this.setState({submitStatus: null}, () => {
             if (!error.response) {
-              showToast('Network error. Please refresh the page and try again.', 'error');
+              showToast(t('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
             } else {
-              showToast('Failed. Please try again.', 'error');
+              showToast(t('更新失败，请重试。', 'Failed. Please try again.'), 'error');
             }
           });
         });
@@ -132,7 +134,10 @@ export default class EditChannelApp extends React.Component {
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
-    return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL} onboardingResult={onboardingResult}>
+    const isZh = isChineseLanguage(channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
+
+    return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL} onboardingResult={onboardingResult} language={channel.language}>
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
@@ -174,9 +179,7 @@ export default class EditChannelApp extends React.Component {
                     }}
                     extraParams={{
                       isMulti: true,
-                      isOptionDisabled: () => {
-                        return categories.length >= 3;
-                      },
+                      isOptionDisabled: () => categories.length >= 3,
                     }}
                   />
                   <AdminSelect
@@ -206,7 +209,7 @@ export default class EditChannelApp extends React.Component {
           </div>
           <details className="lh-page-card">
             <summary className="m-page-summary">
-              Podcast-specific fields
+              {t('播客专用字段', 'Podcast-specific fields')}
             </summary>
             <div className="mt-8 grid grid-cols-1 gap-8">
               <div className="grid grid-cols-3 gap-4">
@@ -214,14 +217,14 @@ export default class EditChannelApp extends React.Component {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
                   groupName="lh-explicit"
                   buttons={[{
-                    'name': 'yes',
-                    'checked': channel['itunes:explicit'],
+                    name: t('是', 'yes'),
+                    checked: channel['itunes:explicit'],
                   }, {
-                    'name': 'no',
-                    'checked': !channel['itunes:explicit'],
+                    name: t('否', 'no'),
+                    checked: !channel['itunes:explicit'],
                   }]}
                   value={channel['itunes:explicit']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'yes')}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === t('是', 'yes'))}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
@@ -239,14 +242,14 @@ export default class EditChannelApp extends React.Component {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TYPE]}/>}
                   groupName="feed-itunes-type"
                   buttons={[{
-                    'name': 'episodic',
-                    'checked': channel['itunes:type'] === 'episodic',
+                    name: t('单集式', 'episodic'),
+                    checked: channel['itunes:type'] === 'episodic',
                   }, {
-                    'name': 'serial',
-                    'checked': channel['itunes:type'] === 'serial',
+                    name: t('连载式', 'serial'),
+                    checked: channel['itunes:type'] === 'serial',
                   }]}
                   value={channel['itunes:type']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:type', e.target.value)}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:type', e.target.value === t('单集式', 'episodic') ? 'episodic' : 'serial')}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EMAIL]}/>}
@@ -266,27 +269,27 @@ export default class EditChannelApp extends React.Component {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
                   groupName="feed-itunes-block"
                   buttons={[{
-                    'name': 'yes',
-                    'checked': channel['itunes:block'],
+                    name: t('是', 'yes'),
+                    checked: channel['itunes:block'],
                   }, {
-                    'name': 'no',
-                    'checked': !channel['itunes:block'],
+                    name: t('否', 'no'),
+                    checked: !channel['itunes:block'],
                   }]}
                   value={channel['itunes:block']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'yes')}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:block', e.target.value === t('是', 'yes'))}
                 />
                 <AdminRadio
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_COMPLETE]}/>}
                   groupName="feed-itunes-complete"
                   buttons={[{
-                    'name': 'yes',
-                    'checked': channel['itunes:complete'],
+                    name: t('是', 'yes'),
+                    checked: channel['itunes:complete'],
                   }, {
-                    'name': 'no',
-                    'checked': !channel['itunes:complete'],
+                    name: t('否', 'no'),
+                    checked: !channel['itunes:complete'],
                   }]}
                   value={channel['itunes:complete']}
-                  onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'yes')}
+                  onChange={(e) => this.onUpdateChannelMeta('itunes:complete', e.target.value === t('是', 'yes'))}
                 />
               </div>
             </div>
@@ -301,7 +304,7 @@ export default class EditChannelApp extends React.Component {
                 onClick={this.onSubmit}
                 disabled={submitting || !changed}
               >
-                {submitting ? 'Updating...' : 'Update'}
+                {submitting ? t('更新中...', 'Updating...') : t('更新', 'Update')}
               </button>
             </div>
             <AdminSideQuickLinks />

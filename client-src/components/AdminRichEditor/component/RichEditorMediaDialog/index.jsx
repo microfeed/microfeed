@@ -9,6 +9,7 @@ import {ENCLOSURE_CATEGORIES_DICT, ENCLOSURE_CATEGORIES} from "../../../../../co
 import {randomHex, urlJoinWithRelative} from "../../../../../common-src/StringUtils";
 import Requests from "../../../../common/requests";
 import {showToast} from "../../../../common/ToastUtils";
+import {pickDocumentText} from "../../../../common/LanguageUtils";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -22,13 +23,13 @@ function FromUrl({url, onChange, onInsert}) {
       <AdminInput
         value={url}
         type="url"
-        placeholder="e.g., https://example.com/something.jpg"
+        placeholder={pickDocumentText('例如：https://example.com/something.jpg', 'e.g., https://example.com/something.jpg')}
         onChange={onChange}
       />
     </div>
     <div className="py-4 flex justify-center">
       <button type="submit" className="lh-btn lh-btn-brand-dark" disabled={disabled} onClick={onInsert}>
-        Insert
+        {pickDocumentText('插入', 'Insert')}
       </button>
     </div>
   </form>);
@@ -47,12 +48,12 @@ function UploadNewFile({uploading, onFileUpload, mediaType, progressText}) {
     >
       <div className="w-full h-24 lh-upload-box p-4 flex items-center justify-center">
         {uploading ? <div className="text-helper-color">
-          <div className="font-semibold">Uploading...</div>
+          <div className="font-semibold">{pickDocumentText('上传中...', 'Uploading...')}</div>
           <div className="text-sm">{progressText}</div>
         </div> : <div className="text-brand-light">
           <div className="flex items-center">
             <div className="mr-1"><CloudArrowUpIcon className="w-8"/></div>
-            <div className="font-semibold">Click or drag here to upload {mediaType}</div>
+            <div className="font-semibold">{pickDocumentText(`点击或拖拽到这里上传${mediaType}`, `Click or drag here to upload ${mediaType}`)}</div>
           </div>
           <div className="text-sm">{fileTypes.join(', ')}</div>
         </div>}
@@ -97,7 +98,7 @@ export default class RichEditorMediaDialog extends React.Component {
       const url = urlJoinWithRelative(publicBucketUrl, cdnUrl);
       this.setState({
         url,
-        progressText: 'Done!',
+        progressText: pickDocumentText('完成！', 'Done!'),
         uploadStatus: null,
       }, () => {
         this.insertMedia();
@@ -106,15 +107,15 @@ export default class RichEditorMediaDialog extends React.Component {
     }, () => {
       this.setState({uploadStatus: null, progressText: null}, () => {
         setIsOpen(false);
-        showToast('Failed. Please try again.', 'error');
+        showToast(pickDocumentText('插入失败，请重试。', 'Failed. Please try again.'), 'error');
       });
     }, (error) => {
       this.setState({uploadStatus: null, progressText: null}, () => {
         setIsOpen(false);
         if (!error.response) {
-          showToast('Network error. Please refresh the page and try again.', 'error');
+          showToast(pickDocumentText('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
         } else {
-          showToast('Failed. Please try again.', 'error');
+          showToast(pickDocumentText('插入失败，请重试。', 'Failed. Please try again.'), 'error');
         }
       });
     });
@@ -144,7 +145,7 @@ export default class RichEditorMediaDialog extends React.Component {
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (
       <AdminDialog
-        title={`Insert ${mediaType}`}
+        title={pickDocumentText(`插入${mediaType}`, `Insert ${mediaType}`)}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         disabledClose={disabledClose}
@@ -155,12 +156,12 @@ export default class RichEditorMediaDialog extends React.Component {
             customClass="text-sm font-semibold"
             buttons={[
               {
-                'name': 'Upload a new file',
+                'name': pickDocumentText('上传新文件', 'Upload a new file'),
                 'value': 'upload',
                 'checked': mode === 'upload',
               },
               {
-                'name': 'From URL',
+                'name': pickDocumentText('通过 URL', 'From URL'),
                 'value': 'url',
                 'checked': mode === 'url',
               },

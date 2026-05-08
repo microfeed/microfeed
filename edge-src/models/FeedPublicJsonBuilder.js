@@ -8,6 +8,7 @@ import {
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "../../common-src/Constants";
 import {isValidMediaFile} from "../../common-src/MediaFileUtils";
+import {isChineseLanguage} from "../../common-src/I18n";
 
 const {MICROFEED_VERSION} = require('../../common-src/Version');
 
@@ -94,6 +95,7 @@ export default class FeedPublicJsonBuilder {
 
   _buildPublicContentMicrofeedExtra(publicContent) {
     const channel = this.content.channel || {};
+    const isZh = isChineseLanguage(channel.language);
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra = {
       microfeed_version: MICROFEED_VERSION,
@@ -124,6 +126,7 @@ export default class FeedPublicJsonBuilder {
       microfeedExtra['subscribe_methods'] = '';
     } else {
       microfeedExtra['subscribe_methods'] = subscribeMethods.methods.filter((m) => m.enabled).map((m) => {
+        m.name = isZh && m.nameZh ? m.nameZh : m.name;
         // TODO: supports custom icons that are hosted on R2
         m.image = urlJoinWithRelative(this.publicBucketUrl, m.image, this.baseUrl);
         if (!m.editable) {

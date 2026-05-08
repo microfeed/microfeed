@@ -4,6 +4,7 @@ import AdminNavApp from "../../../components/AdminNavApp";
 import WhatsNewApp from "./component/WhatsNewApp";
 import DistributionApp from "./component/DistributionApp";
 import SetupChecklistApp from "./component/SetupChecklistApp";
+import LanguageSettingsApp from "./component/LanguageSettingsApp";
 import {unescapeHtml} from "../../../../common-src/StringUtils";
 // import {unescapeHtml} from "../../../../common-src/StringUtils";
 
@@ -20,12 +21,25 @@ export default class AdminHomeApp extends React.Component {
     };
   }
 
+  updateLanguage(language) {
+    this.setState((prevState) => ({
+      feed: {
+        ...prevState.feed,
+        channel: {
+          ...prevState.feed.channel,
+          language,
+        },
+      },
+    }));
+  }
+
   render() {
     const {feed, onboardingResult} = this.state;
 
     return (<AdminNavApp
       currentPage={NAV_ITEMS.ADMIN_HOME}
       onboardingResult={onboardingResult}
+      language={feed.channel.language}
     >
       <form className="grid grid-cols-12 gap-4" onSubmit={(e) => e.preventDefault()}>
         <div className="col-span-8 grid grid-cols-1 gap-4">
@@ -37,6 +51,12 @@ export default class AdminHomeApp extends React.Component {
           </div>
         </div>
         <div className="col-span-4 grid grid-cols-1 gap-4">
+          <div>
+            <LanguageSettingsApp
+              feed={feed}
+              onUpdated={(language) => this.updateLanguage(language)}
+            />
+          </div>
           <div>
             <WhatsNewApp />
           </div>

@@ -7,7 +7,7 @@
       <head>
         <title>
           <xsl:value-of select="/rss/channel/title"/>
-          - RSS Feed
+          - {{_i18n.rssFeedTitleSuffix}}
         </title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <style type="text/css">
@@ -173,7 +173,7 @@
                 </h1>
                 <xsl:if test="/rss/channel/itunes:author">
                   <p>
-                    By
+                    {{_i18n.author}}
                     <span class="podcast-author">
                     <xsl:value-of select="/rss/channel/itunes:author"/>
                   </span>
@@ -181,7 +181,7 @@
                 </xsl:if>
                 <xsl:if test="/rss/channel/itunes:category">
                   <div class="category-container">
-                    Categories:
+                    {{_i18n.categories}}
                     <xsl:for-each select="/rss/channel/itunes:category">
                       <span class="category-item"><xsl:value-of select="@text"/></span>
                       <xsl:if test="itunes:category/@text">
@@ -198,7 +198,7 @@
                           <xsl:value-of select="self::node()"/>
                         </xsl:attribute>
                         <xsl:attribute name="target">_blank</xsl:attribute>
-                        Website &#x2192;
+                        {{_i18n.website}} &#x2192;
                       </a>
                     </p>
                   </xsl:if>
@@ -251,7 +251,7 @@
                     <xsl:attribute name="href">
                       <xsl:value-of select="enclosure/@url"/>
                     </xsl:attribute>
-                    View
+                    {{_i18n.view}}
                     <span class="icon-arrow-right"></span>
                   </a>
                 </xsl:when>
@@ -260,7 +260,7 @@
                     <xsl:attribute name="href">
                       <xsl:value-of select="enclosure/@url"/>
                     </xsl:attribute>
-                    Download
+                    {{_i18n.download}}
                     <span class="icon-arrow-right"></span>
                   </a>
                 </xsl:otherwise>
@@ -276,7 +276,7 @@
                   <xsl:attribute name="href">
                     <xsl:value-of select="@href"/>
                   </xsl:attribute>
-                  <span class="icon-arrow-left"></span> Prev
+                  <span class="icon-arrow-left"></span> {{_i18n.prev}}
                 </a>
               </div>
               </xsl:if>
@@ -288,7 +288,7 @@
                   <xsl:attribute name="href">
                     <xsl:value-of select="@href"/>
                   </xsl:attribute>
-                  Next <span class="icon-arrow-right"></span>
+                  {{_i18n.next}} <span class="icon-arrow-right"></span>
                 </a>
               </div>
               </xsl:if>

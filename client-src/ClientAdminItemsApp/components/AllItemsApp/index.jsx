@@ -13,7 +13,8 @@ import {
   STATUSES,
   ITEM_STATUSES_DICT,
   NAV_ITEMS,
-  NAV_ITEMS_DICT, ITEMS_SORT_ORDERS
+  NAV_ITEMS_DICT,
+  ITEMS_SORT_ORDERS,
 } from "../../../../common-src/Constants";
 import {msToDatetimeLocalString} from '../../../../common-src/TimeUtils';
 import {
@@ -26,29 +27,33 @@ import clsx from "clsx";
 import ExternalLink from "../../../components/ExternalLink";
 import AdminRadio from "../../../components/AdminRadio";
 import {isValidMediaFile} from "../../../../common-src/MediaFileUtils";
+import {isChineseLanguage} from "../../../../common-src/I18n";
 
 const columnHelper = createColumnHelper();
-const columns = [
-  columnHelper.accessor('title', {
-    header: 'Title',
-    cell: info => info.getValue(),
-  }),
-  columnHelper.accessor('status', {
-    header: 'Status',
-    cell: info => <div className={clsx('text-center font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
-      {ITEM_STATUSES_DICT[info.getValue()].name}</div>,
-  }),
-  columnHelper.accessor('pubDateMs', {
-    header: 'Published date',
-    cell: info => <div className="text-center">{msToDatetimeLocalString(info.getValue())}</div>,
-  }),
-  columnHelper.accessor('mediaFile', {
-    header: 'Media file',
-    cell: info => info.getValue(),
-  }),
-];
 
-function ItemListTable({data, feed}) {
+function getColumns(isZh) {
+  return [
+    columnHelper.accessor('title', {
+      header: isZh ? '标题' : 'Title',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('status', {
+      header: isZh ? '状态' : 'Status',
+      cell: info => <div className={clsx('text-center font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
+        {isZh ? ITEM_STATUSES_DICT[info.getValue()].labelZh : ITEM_STATUSES_DICT[info.getValue()].name}</div>,
+    }),
+    columnHelper.accessor('pubDateMs', {
+      header: isZh ? '发布时间' : 'Published date',
+      cell: info => <div className="text-center">{msToDatetimeLocalString(info.getValue())}</div>,
+    }),
+    columnHelper.accessor('mediaFile', {
+      header: isZh ? '媒体文件' : 'Media file',
+      cell: info => info.getValue(),
+    }),
+  ];
+}
+
+function ItemListTable({data, feed, isZh}) {
   let nextUrl;
   let prevUrl;
   if (feed.items_next_cursor) {
@@ -60,21 +65,22 @@ function ItemListTable({data, feed}) {
   const newestFirst = feed.items_sort_order === ITEMS_SORT_ORDERS.NEWEST_FIRST;
   const table = useReactTable({
     data,
-    columns,
+    columns: getColumns(isZh),
     getCoreRowModel: getCoreRowModel(),
   });
+
   return (<div>
     <div className="mb-4">
       <AdminRadio
         groupName="sort-order"
         buttons={[
           {
-            name: 'Newest first',
+            name: isZh ? '最新优先' : 'Newest first',
             value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
             checked: newestFirst,
           },
           {
-            name: 'Oldest first',
+            name: isZh ? '最早优先' : 'Oldest first',
             value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
             checked: !newestFirst,
           },
@@ -114,10 +120,10 @@ function ItemListTable({data, feed}) {
     </table>
     <div className="mt-8 flex justify-center">
       {prevUrl && <div className="mx-2">
-        <a href={prevUrl}><span className="lh-icon-arrow-left" /> Prev</a>
+        <a href={prevUrl}><span className="lh-icon-arrow-left" /> {isZh ? '上一页' : 'Prev'}</a>
       </div>}
       {nextUrl && <div className="mx-2">
-        <a href={nextUrl}>Next <span className="lh-icon-arrow-right" /></a>
+        <a href={nextUrl}>{isZh ? '下一页' : 'Next'} <span className="lh-icon-arrow-right" /></a>
       </div>}
     </div>
   </div>);
@@ -138,11 +144,9 @@ export default class AllItemsApp extends React.Component {
     };
   }
 
-  componentDidMount() {
-  }
-
   render() {
     const {items, feed, onboardingResult} = this.state;
+    const isZh = isChineseLanguage(feed.channel.language);
     const {settings} = feed;
     const {webGlobalSettings} = settings;
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '/';
@@ -151,32 +155,32 @@ export default class AllItemsApp extends React.Component {
       pubDateMs: item.pubDateMs,
       title: <div>
         <div className="line-clamp-2 text-lg">
-          <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title || 'untitled'}</a>
+          <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title || (isZh ? '未命名' : 'untitled')}</a>
         </div>
         <div className="mt-2 flex items-center">
           <div className="text-muted-color text-sm flex-1">
-            id: {item.id}
+            {isZh ? 'ID：' : 'id: '}{item.id}
           </div>
           <ExternalLink
-            linkClass="text-xs text-helper-color
-            hover:text-brand-light"
+            linkClass="text-xs text-helper-color hover:text-brand-light"
             url={PUBLIC_URLS.webItem(item.id, item.title)}
-            text="Public page"
+            text={isZh ? '公开页面' : 'Public page'}
           />
           <div className="ml-4 flex-none">
-            <a
-              href={ADMIN_URLS.editItem(item.id)}
-            ><span className="block text-xs text-helper-color hover:text-brand-light">
-              Edit this item <span className="lh-icon-arrow-right"/></span></a>
+            <a href={ADMIN_URLS.editItem(item.id)}>
+              <span className="block text-xs text-helper-color hover:text-brand-light">
+                {isZh ? '编辑这条内容' : 'Edit this item'} <span className="lh-icon-arrow-right"/>
+              </span>
+            </a>
           </div>
         </div>
       </div>,
       mediaFile: <div className="flex flex-col items-center">
         {isValidMediaFile(item.mediaFile) ? <div>
           <ExternalLink
-            url={item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL ? item.mediaFile.url:
+            url={item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL ? item.mediaFile.url :
               urlJoinWithRelative(publicBucketUrl, item.mediaFile.url)}
-            text={ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category].name}
+            text={isZh ? ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category].labelZh : ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category].name}
           />
           {[ENCLOSURE_CATEGORIES.AUDIO, ENCLOSURE_CATEGORIES.VIDEO].includes(item.mediaFile.category) &&
             <div className="text-xs mt-1">
@@ -189,17 +193,18 @@ export default class AllItemsApp extends React.Component {
     return (<AdminNavApp
       currentPage={NAV_ITEMS.ALL_ITEMS}
       onboardingResult={onboardingResult}
+      language={feed.channel.language}
     >
       <form className="lh-page-card grid grid-cols-1 gap-4">
         <div className="lh-page-title">
-          {NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
+          {isZh ? (NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].labelZh || NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name) : NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
         </div>
         <div>
-          {data.length > 0 ? <ItemListTable data={data} feed={feed} /> : <div>
+          {data.length > 0 ? <ItemListTable data={data} feed={feed} isZh={isZh} /> : <div>
             <div className="mb-8">
-              No items yet.
+              {isZh ? '还没有任何内容。' : 'No items yet.'}
             </div>
-            <a href={ADMIN_URLS.newItem()}>Add a new item now <span className="lh-icon-arrow-right" /></a>
+            <a href={ADMIN_URLS.newItem()}>{isZh ? '现在就新建一条内容' : 'Add a new item now'} <span className="lh-icon-arrow-right" /></a>
           </div>}
         </div>
       </form>

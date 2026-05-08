@@ -1,5 +1,6 @@
 import {CODE_TYPES, SETTINGS_CATEGORIES} from "../../common-src/Constants";
 import {CODE_FILES} from "../../common-src/Constants";
+import {getPublicThemeTexts} from "../../common-src/I18n";
 import DEFAULT_WEB_HEADER from '../common/default_themes/web_header.html';
 import DEFAULT_WEB_BODY_END from '../common/default_themes/web_body_end.html';
 import DEFAULT_WEB_BODY_START from '../common/default_themes/web_body_start.html';
@@ -36,7 +37,7 @@ export default class Theme {
 
   getWebHeader() {
     const tmpl = this.getWebHeaderTmpl();
-    const html = Mustache.render(tmpl, {...this.jsonData,});
+    const html = Mustache.render(tmpl, {...this.jsonData, _i18n: getPublicThemeTexts(this.jsonData.language)});
     return {html};
   }
 
@@ -53,7 +54,7 @@ export default class Theme {
 
   getWebBodyEnd() {
     const tmpl = this.getWebBodyEndTmpl();
-    const html = Mustache.render(tmpl, {...this.jsonData,});
+    const html = Mustache.render(tmpl, {...this.jsonData, _i18n: getPublicThemeTexts(this.jsonData.language)});
     return {html};
   }
 
@@ -70,7 +71,7 @@ export default class Theme {
 
   getWebBodyStart() {
     const tmpl = this.getWebBodyStartTmpl();
-    const html = Mustache.render(tmpl, {...this.jsonData,});
+    const html = Mustache.render(tmpl, {...this.jsonData, _i18n: getPublicThemeTexts(this.jsonData.language)});
     return {html};
   }
 
@@ -93,7 +94,7 @@ export default class Theme {
 
   getRssStylesheet() {
     const tmpl = this.getRssStylesheetTmpl();
-    const stylesheet = Mustache.render(tmpl, {});
+    const stylesheet = Mustache.render(tmpl, {_i18n: getPublicThemeTexts(this.jsonData.language)});
     return {
       stylesheet,
     };
@@ -103,6 +104,7 @@ export default class Theme {
     const tmpl = this.getWebFeedTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
+      _i18n: getPublicThemeTexts(this.jsonData.language),
     });
     return {
       html,
@@ -117,6 +119,7 @@ export default class Theme {
     const tmpl = this.getWebItemTmpl();
     const html = Mustache.render(tmpl, {
       ...this.jsonData,
+      _i18n: getPublicThemeTexts(this.jsonData.language),
 
       // TODO: Remove "item". We don't need this "item" field any more. Use "items.0" instead.
       item,

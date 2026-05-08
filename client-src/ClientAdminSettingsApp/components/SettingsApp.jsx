@@ -11,6 +11,7 @@ import {showToast} from "../../common/ToastUtils";
 import {NAV_ITEMS} from "../../../common-src/Constants";
 import {preventCloseWhenChanged} from "../../common/BrowserUtils";
 import ApiSettingsApp from "./ApiSettingsApp";
+import {isChineseLanguage} from "../../../common-src/I18n";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -30,7 +31,7 @@ export default class SettingsApp extends React.Component {
       onboardingResult,
       submitStatus: null,
       changed: false,
-    }
+    };
   }
 
   componentDidMount() {
@@ -43,18 +44,20 @@ export default class SettingsApp extends React.Component {
 
   onSubmit(e, bundleKey, bundle) {
     e.preventDefault();
+    const isZh = isChineseLanguage(this.state.feed.channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
     this.setState({submitForType: bundleKey, submitStatus: SUBMIT_STATUS__START});
     Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {[bundleKey]: bundle}})
       .then(() => {
         this.setState({submitStatus: null, submitForType: null, changed: false}, () => {
-          showToast('Updated!', 'success');
+          showToast(t('更新成功！', 'Updated!'), 'success');
         });
       }).catch((error) => {
       this.setState({submitStatus: null, submitForType: null}, () => {
         if (!error.response) {
-          showToast('Network error. Please refresh the page and try again.', 'error');
+          showToast(t('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
         } else {
-          showToast('Failed. Please try again.', 'error');
+          showToast(t('更新失败，请重试。', 'Failed. Please try again.'), 'error');
         }
       });
     });
@@ -63,9 +66,11 @@ export default class SettingsApp extends React.Component {
   render() {
     const {submitStatus, feed, submitForType, onboardingResult} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
+
     return (<AdminNavApp
       currentPage={NAV_ITEMS.SETTINGS}
       onboardingResult={onboardingResult}
+      language={feed.channel.language}
     >
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-2 gap-4">

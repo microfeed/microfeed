@@ -1,7 +1,7 @@
 {
   "name": "microfeed",
   "version": "0.1.5",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "volta": {
     "node": "22.0.0",
     "yarn": "4.9.2"

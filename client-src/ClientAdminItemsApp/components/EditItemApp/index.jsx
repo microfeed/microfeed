@@ -27,6 +27,7 @@ import {
 } from "./FormExplainTexts";
 import {preventCloseWhenChanged} from "../../../common/BrowserUtils";
 import {getMediaFileFromUrl} from "../../../../common-src/MediaFileUtils";
+import {isChineseLanguage} from "../../../../common-src/I18n";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -70,7 +71,6 @@ export default class EditItemApp extends React.Component {
       submitStatus: null,
       itemId: itemId || randomShortUUID(),
       action,
-
       userChangedLink: false,
       changed: false,
     };
@@ -106,32 +106,34 @@ export default class EditItemApp extends React.Component {
         ...prevState.feed,
         ...props,
       },
-    }), () => onSuccess())
+    }), () => onSuccess());
   }
 
   onUpdateItemMeta(attrDict, extraDict) {
     this.setState(prevState => ({
       changed: true,
-      item: {...prevState.item, ...attrDict,},
+      item: {...prevState.item, ...attrDict},
       ...extraDict,
     }));
   }
 
   onUpdateItemToFeed(onSuccess) {
-    let {item, itemId, feed} = this.state;
+    const {item, itemId, feed} = this.state;
     const itemsBundle = {
       ...feed.items,
       [itemId]: {...item},
     };
-    this.onUpdateFeed({'items': itemsBundle}, onSuccess);
+    this.onUpdateFeed({items: itemsBundle}, onSuccess);
   }
 
   onDelete() {
     const {item} = this.state;
+    const isZh = isChineseLanguage(this.state.feed.channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.DELETED}})
       .then(() => {
-        showToast('Deleted!', 'success');
+        showToast(t('删除成功！', 'Deleted!'), 'success');
         this.setState({submitStatus: null, changed: false}, () => {
           setTimeout(() => {
             location.href = ADMIN_URLS.allItems();
@@ -141,9 +143,9 @@ export default class EditItemApp extends React.Component {
       .catch((error) => {
         this.setState({submitStatus: null}, () => {
           if (!error.response) {
-            showToast('Network error. Please refresh the page and try again.', 'error');
+            showToast(t('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
           } else {
-            showToast('Failed. Please try again.', 'error');
+            showToast(t('操作失败，请重试。', 'Failed. Please try again.'), 'error');
           }
         });
       });
@@ -151,15 +153,17 @@ export default class EditItemApp extends React.Component {
 
   onSubmit(e) {
     e.preventDefault();
+    const isZh = isChineseLanguage(this.state.feed.channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
     const {item, itemId, action} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
       .then(() => {
         this.setState({submitStatus: null, changed: false}, () => {
           if (action === 'edit') {
-            showToast('Updated!', 'success');
+            showToast(t('更新成功！', 'Updated!'), 'success');
           } else {
-            showToast('Created!', 'success');
+            showToast(t('创建成功！', 'Created!'), 'success');
             if (itemId) {
               setTimeout(() => {
                 location.href = ADMIN_URLS.editItem(itemId);
@@ -170,9 +174,9 @@ export default class EditItemApp extends React.Component {
       }).catch((error) => {
       this.setState({submitStatus: null}, () => {
         if (!error.response) {
-          showToast('Network error. Please refresh the page and try again.', 'error');
+          showToast(t('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
         } else {
-          showToast('Failed. Please try again.', 'error');
+          showToast(t('操作失败，请重试。', 'Failed. Please try again.'), 'error');
         }
       });
     });
@@ -183,28 +187,32 @@ export default class EditItemApp extends React.Component {
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
     const status = item.status || STATUSES.PUBLISHED;
+    const isZh = isChineseLanguage(feed.channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
 
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = webGlobalSettings.publicBucketUrl || '';
 
-    let buttonText = 'Create';
-    let submittingButtonText = 'Creating...';
+    let buttonText = t('创建', 'Create');
+    let submittingButtonText = t('创建中...', 'Creating...');
     let currentPage = NAV_ITEMS.NEW_ITEM;
     let upperLevel;
     if (action === 'edit') {
-      buttonText = 'Update';
-      submittingButtonText = 'Updating...';
+      buttonText = t('更新', 'Update');
+      submittingButtonText = t('更新中...', 'Updating...');
       currentPage = NAV_ITEMS.ALL_ITEMS;
       upperLevel = {
-        name: NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name,
+        name: isZh ? (NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].labelZh || NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name) : NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name,
         url: ADMIN_URLS.allItems(),
-        childName: `Item (id = ${itemId})`,
+        childName: t(`内容（ID = ${itemId}）`, `Item (id = ${itemId})`),
       };
     }
+
     return (<AdminNavApp
       currentPage={currentPage}
       upperLevel={upperLevel}
       onboardingResult={onboardingResult}
+      language={feed.channel.language}
     >
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 grid grid-cols-1 gap-4">
@@ -231,7 +239,7 @@ export default class EditItemApp extends React.Component {
                   mediaType="item"
                   feed={feed}
                   currentImageUrl={item.image}
-                  onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({'image': cdnUrl})}
+                  onImageUploaded={(cdnUrl) => this.onUpdateItemMeta({image: cdnUrl})}
                 />
               </div>
               <div className="ml-8 flex-1">
@@ -239,9 +247,10 @@ export default class EditItemApp extends React.Component {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.TITLE]}/>}
                   value={item.title}
                   onChange={(e) => {
-                    const attrDict = {'title': e.target.value};
+                    const title = e.target.value;
+                    const attrDict = {title};
                     if (action !== 'edit' && !this.state.userChangedLink) {
-                      attrDict.link = PUBLIC_URLS.webItem(itemId, item.title, getPublicBaseUrl());
+                      attrDict.link = PUBLIC_URLS.webItem(itemId, title, getPublicBaseUrl());
                     }
                     this.onUpdateItemMeta(attrDict);
                   }}
@@ -251,13 +260,13 @@ export default class EditItemApp extends React.Component {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
                     value={item.pubDateMs}
                     onChange={(e) => {
-                      this.onUpdateItemMeta({'pubDateMs': datetimeLocalStringToMs(e.target.value)});
+                      this.onUpdateItemMeta({pubDateMs: datetimeLocalStringToMs(e.target.value)});
                     }}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.LINK]}/>}
                     value={item.link}
-                    onChange={(e) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
+                    onChange={(e) => this.onUpdateItemMeta({link: e.target.value}, {userChangedLink: true})}
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-2 mt-4">
@@ -266,25 +275,25 @@ export default class EditItemApp extends React.Component {
                     groupName="item-status"
                     buttons={[
                       {
-                        name: ITEM_STATUSES_DICT[STATUSES.PUBLISHED].name,
+                        name: isZh ? ITEM_STATUSES_DICT[STATUSES.PUBLISHED].labelZh : ITEM_STATUSES_DICT[STATUSES.PUBLISHED].name,
                         value: STATUSES.PUBLISHED,
                         checked: status === STATUSES.PUBLISHED,
                       },
                       {
-                        name: ITEM_STATUSES_DICT[STATUSES.UNLISTED].name,
+                        name: isZh ? ITEM_STATUSES_DICT[STATUSES.UNLISTED].labelZh : ITEM_STATUSES_DICT[STATUSES.UNLISTED].name,
                         value: STATUSES.UNLISTED,
                         checked: status === STATUSES.UNLISTED,
                       },
                       {
-                        name: ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].name,
+                        name: isZh ? ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].labelZh : ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED].name,
                         value: STATUSES.UNPUBLISHED,
                         checked: status === STATUSES.UNPUBLISHED,
                       }]}
                     onChange={(e) => {
-                      this.onUpdateItemMeta({'status': parseInt(e.target.value, 10)})
+                      this.onUpdateItemMeta({status: parseInt(e.target.value, 10)});
                     }}
                   />
-                  <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: ITEM_STATUSES_DICT[status].description}} />
+                  <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: isZh ? ITEM_STATUSES_DICT[status].descriptionZh : ITEM_STATUSES_DICT[status].description}} />
                 </div>
               </div>
             </div>
@@ -292,7 +301,7 @@ export default class EditItemApp extends React.Component {
               <AdminRichEditor
                 labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.DESCRIPTION]}/>}
                 value={item.description}
-                onChange={(value) => this.onUpdateItemMeta({'description': value})}
+                onChange={(value) => this.onUpdateItemMeta({description: value})}
                 extra={{
                   publicBucketUrl,
                   folderName: `items/${itemId}`,
@@ -302,31 +311,31 @@ export default class EditItemApp extends React.Component {
           </div>
           <div className="lh-page-card">
             <details>
-              <summary className="m-page-summary">Podcast-specific fields</summary>
+              <summary className="m-page-summary">{t('播客专用字段', 'Podcast-specific fields')}</summary>
               <div className="grid grid-cols-1 gap-8">
                 <div className="grid grid-cols-3 gap-4 mt-4">
                   <AdminRadio
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
                     groupName="lh-explicit"
                     buttons={[{
-                      'name': 'yes',
-                      'checked': item['itunes:explicit'],
+                      name: t('是', 'yes'),
+                      checked: item['itunes:explicit'],
                     }, {
-                      'name': 'no',
-                      'checked': !item['itunes:explicit'],
+                      name: t('否', 'no'),
+                      checked: !item['itunes:explicit'],
                     }]}
                     value={item['itunes:explicit']}
-                    onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'yes'})}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === t('是', 'yes')})}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
                     value={item.guid || itemId}
                     setRef={(ref) => {
                       if (!item.guid && ref) {
-                        this.onUpdateItemMeta({'guid': ref.value}, {changed: false});
+                        this.onUpdateItemMeta({guid: ref.value}, {changed: false});
                       }
                     }}
-                    onChange={(e) => this.onUpdateItemMeta({'guid': e.target.value})}
+                    onChange={(e) => this.onUpdateItemMeta({guid: e.target.value})}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_TITLE]}/>}
@@ -339,18 +348,20 @@ export default class EditItemApp extends React.Component {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
                     groupName="feed-itunes-episodetype"
                     buttons={[{
-                      'name': 'full',
-                      'checked': item['itunes:episodeType'] === 'full',
+                      name: t('完整内容', 'full'),
+                      checked: item['itunes:episodeType'] === 'full',
                     }, {
-                      'name': 'trailer',
-                      'checked': item['itunes:episodeType'] === 'trailer',
+                      name: t('预告', 'trailer'),
+                      checked: item['itunes:episodeType'] === 'trailer',
                     }, {
-                      'name': 'bonus',
-                      'checked': item['itunes:episodeType'] === 'bonus',
-                    },
-                    ]}
+                      name: t('加更', 'bonus'),
+                      checked: item['itunes:episodeType'] === 'bonus',
+                    }]}
                     value={item['itunes:episodeType']}
-                    onChange={(e) => this.onUpdateItemMeta({'itunes:episodeType': e.target.value})}
+                    onChange={(e) => {
+                      const valueMap = {[t('完整内容', 'full')]: 'full', [t('预告', 'trailer')]: 'trailer', [t('加更', 'bonus')]: 'bonus'};
+                      this.onUpdateItemMeta({'itunes:episodeType': valueMap[e.target.value]});
+                    }}
                   />
                   <AdminInput
                     type="number"
@@ -372,14 +383,14 @@ export default class EditItemApp extends React.Component {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_BLOCK]}/>}
                     groupName="feed-itunes-block"
                     buttons={[{
-                      'name': 'Yes',
-                      'checked': item['itunes:block'],
+                      name: t('是', 'yes'),
+                      checked: item['itunes:block'],
                     }, {
-                      'name': 'No',
-                      'checked': !item['itunes:block'],
+                      name: t('否', 'no'),
+                      checked: !item['itunes:block'],
                     }]}
                     value={item['itunes:block']}
-                    onChange={(e) => this.onUpdateItemMeta({'itunes:block': e.target.value === 'Yes'})}
+                    onChange={(e) => this.onUpdateItemMeta({'itunes:block': e.target.value === t('是', 'yes')})}
                   />
                 </div>
               </div>
@@ -401,8 +412,8 @@ export default class EditItemApp extends React.Component {
             {action === 'edit' && <div>
               <AdminSideQuickLinks
                 AdditionalLinksDiv={<div className="flex flex-wrap">
-                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="web item"/>
-                  <SideQuickLink url={PUBLIC_URLS.jsonItem(itemId)} text="json item"/>
+                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text={t('网页条目', 'web item')}/>
+                  <SideQuickLink url={PUBLIC_URLS.jsonItem(itemId)} text={t('JSON 条目', 'json item')}/>
                 </div>}
               />
               <div className="lh-page-card mt-4 flex justify-center">
@@ -410,14 +421,14 @@ export default class EditItemApp extends React.Component {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    const ok = confirm('Are you going to permanently delete this item?');
+                    const ok = confirm(t('确定要永久删除这条内容吗？', 'Are you going to permanently delete this item?'));
                     if (ok) {
                       this.onDelete();
                     }
                   }
                 }><div className="flex items-center text-red-500 text-sm hover:text-brand-light">
                   <TrashIcon className="w-4" />
-                  <div className="ml-1">Delete this item</div>
+                  <div className="ml-1">{t('删除这条内容', 'Delete this item')}</div>
                   </div>
                 </a>
               </div>

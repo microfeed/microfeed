@@ -4,17 +4,21 @@ import {PREDEFINED_SUBSCRIBE_METHODS} from '../../../../../../common-src/Constan
 import AdminInput from "../../../../../components/AdminInput";
 import {randomShortUUID} from "../../../../../../common-src/StringUtils";
 import AdminSelect from "../../../../../components/AdminSelect";
+import {isChineseLanguage} from "../../../../../../common-src/I18n";
 
-const METHODS_OPTIONS = Object.keys(PREDEFINED_SUBSCRIBE_METHODS).map((key) => {
-  const m = PREDEFINED_SUBSCRIBE_METHODS[key];
-  return {
-    value: key,
-    label: <div className="flex items-center">
-      <div className="flex-none mr-2"><img src={m.image} className="w-4"/></div>
-      <div>{m.name}</div>
-    </div>,
-  };
-});
+function getMethodOptions(isZh) {
+  return Object.keys(PREDEFINED_SUBSCRIBE_METHODS).map((key) => {
+    const m = PREDEFINED_SUBSCRIBE_METHODS[key];
+    const labelName = isZh && m.nameZh ? m.nameZh : m.name;
+    return {
+      value: key,
+      label: <div className="flex items-center">
+        <div className="flex-none mr-2"><img src={m.image} className="w-4"/></div>
+        <div>{labelName}</div>
+      </div>,
+    };
+  });
+}
 
 export default class NewSubscribeDialog extends React.Component {
   constructor(props) {
@@ -22,7 +26,6 @@ export default class NewSubscribeDialog extends React.Component {
 
     this.initState = {
       selectedMethod: null,
-
       name: '',
       url: '',
     };
@@ -37,22 +40,30 @@ export default class NewSubscribeDialog extends React.Component {
       isOpen,
       setIsOpen,
       addNewMethod,
+      language,
     } = this.props;
     const {selectedMethod, name, url} = this.state;
     const method = PREDEFINED_SUBSCRIBE_METHODS[selectedMethod];
+    const isZh = isChineseLanguage(language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
+    const methodOptions = getMethodOptions(isZh);
+
     return (<AdminDialog
-      title="Add new subscribe method"
+      title={t('新增订阅方式', 'Add subscribe method')}
       isOpen={isOpen}
       setIsOpen={setIsOpen}
     >
       <form>
         <div>
           <AdminSelect
-            label="Please choose a subscribe method:"
-            options={METHODS_OPTIONS}
+            label={t('请选择订阅方式：', 'Choose a subscribe method:')}
+            options={methodOptions}
             onChange={({value}) => {
               const m = PREDEFINED_SUBSCRIBE_METHODS[value];
-              this.setState({selectedMethod: value, name: m.name});
+              this.setState({
+                selectedMethod: value,
+                name: isZh && m.nameZh ? m.nameZh : m.name,
+              });
             }}
           />
         </div>
@@ -62,14 +73,14 @@ export default class NewSubscribeDialog extends React.Component {
           </div>
           <div className="w-full grid grid-cols-1 gap-4">
             <AdminInput
-              label="Name"
+              label={t('名称', 'Name')}
               value={name}
               customLabelClass="m-input-label-small"
               customClass="text-xs"
               onChange={(e) => this.setState({name: e.target.value})}
             />
             <AdminInput
-              label="URL"
+              label={t('链接', 'Url')}
               value={url}
               type="url"
               customLabelClass="m-input-label-small"
@@ -94,7 +105,7 @@ export default class NewSubscribeDialog extends React.Component {
               this.setState({...this.initState});
             }}
           >
-            Add new subscribe method
+            {t('新增订阅方式', 'Add subscribe method')}
           </button>
         </div>
       </form>

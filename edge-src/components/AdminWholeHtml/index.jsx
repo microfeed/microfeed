@@ -13,7 +13,7 @@ export default class AdminWholeHtml extends React.Component {
       onboardingResult,
     } = this.props;
     return (
-      <html>
+      <html lang={feedContent?.channel?.language || 'en-us'}>
       <HtmlHeader
         title={title}
         description={description}

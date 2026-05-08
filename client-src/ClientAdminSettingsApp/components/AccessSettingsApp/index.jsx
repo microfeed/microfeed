@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { CheckIcon } from '@heroicons/react/20/solid'
 import SettingsBase from '../SettingsBase';
 import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
+import {isChineseLanguage} from "../../../../common-src/I18n";
 
 function AccessOption({value, header, description}) {
   return (<RadioGroup.Option value={value}>
@@ -61,8 +62,10 @@ export default class AccessSettingsApp extends React.Component {
   render() {
     const {currentType, access} = this.state;
     const {submitting, submitForType} = this.props;
+    const isZh = isChineseLanguage(this.props.feed.channel.language);
+    const t = (zhText, enText) => isZh ? zhText : enText;
     return (<SettingsBase
-      title="Access control"
+      title={t('访问控制', 'Access control')}
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
@@ -80,8 +83,8 @@ export default class AccessSettingsApp extends React.Component {
         <div className="grid grid-cols-1 gap-4">
           <AccessOption
             value="public"
-            header="Public"
-            description="Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed."
+            header={t('公开', 'Public')}
+            description={t('整个站点都可公开访问，包括所有非管理页、RSS feed 和 JSON feed。', 'Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed.')}
           />
           {/*<AccessOption*/}
           {/*  value="passcode"*/}
@@ -90,8 +93,8 @@ export default class AccessSettingsApp extends React.Component {
           {/*/>*/}
           <AccessOption
             value="offline"
-            header="Offline"
-            description="Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed."
+            header={t('离线', 'Offline')}
+            description={t('让整个站点离线。所有非管理页、RSS feed 和 JSON feed 都会返回 404。', 'Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed.')}
           />
         </div>
       </RadioGroup>

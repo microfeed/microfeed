@@ -38,6 +38,7 @@ export const CODE_FILES = {
 export const PREDEFINED_SUBSCRIBE_METHODS = {
   'apple podcasts': {
     name: 'Apple Podcasts',
+    nameZh: '苹果播客',
     type: 'apple podcasts',
     url: '',
     image: '/assets/brands/subscribe/apple.jpg',
@@ -54,6 +55,7 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'google podcasts': {
     name: 'Google Podcasts',
+    nameZh: 'Google 播客',
     type: 'google podcasts',
     url: '',
     image: '/assets/brands/subscribe/google.png',
@@ -62,6 +64,7 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'amazon music': {
     name: 'Amazon Music',
+    nameZh: '亚马逊音乐',
     type: 'amazon music',
     url: '',
     image: '/assets/brands/subscribe/amazon.jpg',
@@ -118,6 +121,7 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
   },
   'custom': {
     name: 'Custom',
+    nameZh: '自定义',
     type: 'custom',
     url: '',
     image: '/assets/brands/subscribe/custom.png',
@@ -144,22 +148,27 @@ export const ENCLOSURE_CATEGORIES = {
 export const ENCLOSURE_CATEGORIES_DICT = {
   [ENCLOSURE_CATEGORIES.AUDIO]: {
     name: 'audio',
+    labelZh: '音频',
     fileTypes: ['mp3', 'm4b', 'flac'],
   },
   [ENCLOSURE_CATEGORIES.VIDEO]: {
     name: 'video',
+    labelZh: '视频',
     fileTypes: ['mp4'],
   },
   [ENCLOSURE_CATEGORIES.DOCUMENT]: {
     name: 'document',
+    labelZh: '文档',
     fileTypes: ['pdf', 'docx', 'doc', 'xlsx', 'ppt', 'pptx', 'txt'],
   },
   [ENCLOSURE_CATEGORIES.IMAGE]: {
     name: 'image',
+    labelZh: '图片',
     fileTypes: ['png', 'jpg', 'jpeg', 'gif', 'heic', 'cr2'],
   },
   [ENCLOSURE_CATEGORIES.EXTERNAL_URL]: {
     name: 'external url',
+    labelZh: '外部链接',
     fileTypes: [],
   },
 };
@@ -183,18 +192,23 @@ export const NAV_ITEMS = {
 export const NAV_ITEMS_DICT = {
   [NAV_ITEMS.ADMIN_HOME]: {
     name: 'Home',
+    labelZh: '首页',
   },
   [NAV_ITEMS.EDIT_CHANNEL]: {
     name: 'Edit channel',
+    labelZh: '编辑频道',
   },
   [NAV_ITEMS.NEW_ITEM]: {
     name: 'Add new item',
+    labelZh: '新建内容',
   },
   [NAV_ITEMS.ALL_ITEMS]: {
     name: 'See all items',
+    labelZh: '全部内容',
   },
   [NAV_ITEMS.SETTINGS]: {
     name: 'Settings',
+    labelZh: '设置',
   },
 };
 
@@ -234,16 +248,22 @@ export const ITEM_STATUSES_STRINGS_DICT = {
 export const ITEM_STATUSES_DICT = {
   [STATUSES.PUBLISHED]: {
     name: 'published',
+    labelZh: '已发布',
     description: '<b>listed</b> on the web/rss/json feed, and <b>visible</b> via the direct web link.',
+    descriptionZh: '<b>会显示</b>在网站、RSS 和 JSON feed 中，并且可以通过直接链接<b>访问</b>。',
   },
   [STATUSES.UNPUBLISHED]: {
     name: 'unpublished',
+    labelZh: '未发布',
     description: '<b>not listed</b> on the web/rss/json feed, and <b>not visible</b> via the direct web link. ' +
-      'An admin can still find it and edit on the <a href="/admin/items/list/">See all items</a> page.</li>'
+      'An admin can still find it and edit on the <a href="/admin/items/list/">See all items</a> page.</li>',
+    descriptionZh: '<b>不会显示</b>在网站、RSS 和 JSON feed 中，也<b>不能</b>通过直接链接访问。管理员仍然可以在 <a href="/admin/items/list/">全部内容</a> 页面找到并编辑它。</li>',
   },
   [STATUSES.UNLISTED]: {
     name: 'unlisted',
-    description: '<b>not listed</b> on the web/rss/json feed, but <b>visible</b> via the direct web link.'
+    labelZh: '未列出',
+    description: '<b>not listed</b> on the web/rss/json feed, but <b>visible</b> via the direct web link.',
+    descriptionZh: '<b>不会显示</b>在网站、RSS 和 JSON feed 中，但仍可通过直接链接<b>访问</b>。'
   },
 };
 

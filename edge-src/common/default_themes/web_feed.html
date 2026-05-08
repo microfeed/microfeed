@@ -18,7 +18,7 @@
         <div>
           {{#_microfeed.subscribe_methods.length}}
           <div class="text-sm mt-4 mb-2">
-            Subscribe:
+            {{_i18n.subscribe}}
           </div>
           {{/_microfeed.subscribe_methods.length}}
           <div class="flex flex-wrap">
@@ -38,19 +38,19 @@
 
   {{#description}}
   <section>
-    <h2 class="border-b">About</h2>
+    <h2 class="border-b">{{_i18n.about}}</h2>
     <div>{{{description}}}</div>
   </section>
   {{/description}}
 
   <section>
     <h2 class="border-b">
-      Latest
+      {{_i18n.latest}}
     </h2>
 
     <div>
       {{^items.length}}
-      No items.
+      {{_i18n.noItems}}
       {{/items.length}}
 
       {{#items}}
@@ -75,13 +75,13 @@
       {{#_microfeed.items_prev_cursor}}
       <div class="px-2">
         <a href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"><span
-          class="icon-arrow-left"> Prev</span></a>
+          class="icon-arrow-left"> {{_i18n.prev}}</span></a>
       </div>
       {{/_microfeed.items_prev_cursor}}
 
       {{#_microfeed.items_next_cursor}}
       <div class="px-2">
-        <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">Next <span
+        <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">{{_i18n.next}} <span
           class="icon-arrow-right"></span></a>
       </div>
       {{/_microfeed.items_next_cursor}}

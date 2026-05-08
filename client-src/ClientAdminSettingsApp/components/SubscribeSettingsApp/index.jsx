@@ -13,6 +13,7 @@ import {
   SETTINGS_CONTROLS,
   CONTROLS_TEXTS_DICT
 } from "../FormExplainTexts";
+import {isChineseLanguage} from "../../../../common-src/I18n";
 
 function initMethodsDict() {
   return {
@@ -23,9 +24,11 @@ function initMethodsDict() {
   };
 }
 
-function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, moveCard}) {
-  const { id, name, type, editable, enabled, image, deleted } = method;
+function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, moveCard, isZh}) {
+  const { id, type, editable, enabled, image, deleted } = method;
+  const name = isZh && method.nameZh ? method.nameZh : method.name;
   let { url } = method;
+
   if (!url && !editable) {
     switch (type) {
       case 'rss':
@@ -84,11 +87,12 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
         </div>
       </div>
       <div className="mt-2 flex items-center">
-        <div className="">
+        <div>
           <AdminSwitch
-            label="Visible"
+            label={isZh ? '显示' : 'Show'}
             customLabelClass={clsx('text-xs', enabled ? 'text-black' : 'text-muted-color')}
-            enabled={enabled} setEnabled={(checked) => updateMethodByAttr(id, 'enabled', checked)}
+            enabled={enabled}
+            setEnabled={(checked) => updateMethodByAttr(id, 'enabled', checked)}
           />
         </div>
         <div className="ml-4">
@@ -102,16 +106,16 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
               }}>
               <div className="flex items-center">
                 <div className="mr-1"><TrashIcon className="w-4"/></div>
-                <div>Delete</div>
+                <div>{isZh ? '删除' : 'Delete'}</div>
               </div>
             </a></div> : <div className="text-xs text-muted-color">
-              <i>Click "Update" to sync up and actually delete it. Or <a
+              <i>{isZh ? '点击“更新”后才会真正删除。或者 ' : 'This will be deleted after you click "Update". Or '}<a
                 href="#"
                 className="text-brand-light text-xs"
                 onClick={(e) => {
                   e.preventDefault();
                   updateMethodByAttr(id, 'deleted', false);
-                }}>Undo</a>.</i>
+                }}>{isZh ? '撤销' : 'undo'}</a>{isZh ? '。' : '.'}</i>
             </div>}
           </div>}
         </div>
@@ -120,7 +124,8 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
   </div>);
 }
 
-function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
+function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod, language}) {
+  const isZh = isChineseLanguage(language);
   return (<div>
     <a
       href="#"
@@ -131,14 +136,17 @@ function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}) {
     >
       <div className="flex items-center justify-center">
         <div className="w-4 mr-1"><PlusCircleIcon/></div>
-        <div>Add new subscribe method</div>
+        <div>{isZh ? '新增订阅方式' : 'Add subscribe method'}</div>
       </div>
     </a>
-    <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify, Listen Notes...</div>
+    <div className="mt-1 text-xs text-muted-color text-center">
+      {isZh ? '例如：苹果播客、Spotify、Listen Notes 等' : 'For example: Apple Podcasts, Spotify, Listen Notes...'}
+    </div>
     <NewSubscribeDialog
       isOpen={isOpenNewMethod}
       setIsOpen={setIsOpenNewMethod}
       addNewMethod={addNewMethod}
+      language={language}
     />
   </div>);
 }
@@ -209,8 +217,11 @@ export default class SubscribeSettingsApp extends React.Component {
 
   render() {
     const {currentType, methodsDict, isOpenNewMethod} = this.state;
-    const {submitting, submitForType} = this.props;
+    const {submitting, submitForType, feed} = this.props;
     const methods = methodsDict.methods || [];
+    const language = feed.channel.language || 'en-us';
+    const isZh = isChineseLanguage(language);
+
     return (<SettingsBase
       titleComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.SUBSCRIBE_METHODS]}/>}
       submitting={submitting}
@@ -236,12 +247,14 @@ export default class SubscribeSettingsApp extends React.Component {
           firstIndex={i === 0}
           lastIndex={i === methods.length - 1}
           moveCard={this.moveCard}
+          isZh={isZh}
         />)}
       </div>
       <AddNewMethod
         isOpenNewMethod={isOpenNewMethod}
         setIsOpenNewMethod={(isOpen) => this.setState({isOpenNewMethod: isOpen})}
         addNewMethod={this.addNewMethod}
+        language={language}
       />
     </SettingsBase>);
   }

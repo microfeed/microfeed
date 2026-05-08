@@ -1,4 +1,5 @@
 import React from 'react';
+import {pickDocumentText} from "../../../common/LanguageUtils";
 
 export default class SettingsBase extends React.Component {
   constructor(props) {
@@ -20,7 +21,7 @@ export default class SettingsBase extends React.Component {
               disabled={submittingForThis || submitting}
               className="lh-btn lh-btn-brand-dark"
               onClick={onSubmit}
-            >{submittingForThis ? 'Updating...' : 'Update'}</button>
+            >{submittingForThis ? pickDocumentText('更新中...', 'Updating...') : pickDocumentText('更新', 'Update')}</button>
           </div>}
         </div>
       </h2>

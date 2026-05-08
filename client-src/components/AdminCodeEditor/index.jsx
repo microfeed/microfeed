@@ -1,15 +1,16 @@
 import React from "react";
 import CodeEditor from "@uiw/react-textarea-code-editor";
+import {pickDocumentText} from "../../common/LanguageUtils";
 
 export default function AdminCodeEditor(
-  {code, language, onChange, placeholder = 'Please enter code here', minHeight = '50vh'}) {
+  {code, language, onChange, placeholder, minHeight = '50vh'}) {
+  const finalPlaceholder = placeholder || pickDocumentText('请在这里输入代码', 'Type code here');
   return (<label className="">
     <CodeEditor
       value={code}
       language={language}
-      placeholder={placeholder}
+      placeholder={finalPlaceholder}
       onChange={onChange}
-      // prefixCls="h-1/2"
       style={{
         minHeight,
         overflow: 'auto',

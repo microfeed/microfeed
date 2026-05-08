@@ -10,45 +10,45 @@
     <div class="mb-4 text-sm">
       <time>{{items.0._microfeed.date_published_short}}</time>
       &middot;
-      <a href="{{items.0._microfeed.json_url}}" target="_blank">json</a>
+      <a href="{{items.0._microfeed.json_url}}" target="_blank">JSON</a>
       &middot;
-      <a href="{{items.0._microfeed.rss_url}}" target="_blank">rss</a>
+      <a href="{{items.0._microfeed.rss_url}}" target="_blank">RSS</a>
     </div>
 
     <div>
       {{#items.0._microfeed.is_audio}}
       <div class="text-sm mb-4">
-        Listen:
+        {{_i18n.listen}}
       </div>
       {{#items.0.attachments}}
       <audio controls preload="metadata" class="w-full">
         <source src="{{url}}" type="{{mime_type}}"/>
-        Your browser does not support the audio element.
+        {{_i18n.audioUnsupported}}
       </audio>
       {{/items.0.attachments}}
       {{/items.0._microfeed.is_audio}}
 
       {{#items.0._microfeed.is_video}}
       <div class="text-sm mb-4">
-        Watch:
+        {{_i18n.watch}}
       </div>
       {{#items.0.attachments}}
       <video controls preload="metadata" class="w-full">
         <source src="{{url}}" type="{{mime_type}}"/>
-        Your browser does not support the video element.
+        {{_i18n.videoUnsupported}}
       </video>
       {{/items.0.attachments}}
       {{/items.0._microfeed.is_video}}
 
       {{#items.0._microfeed.is_document}}
       {{#items.0.attachments}}
-      <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">Download file &#8594;</a>
+      <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">{{_i18n.downloadFile}} &#8594;</a>
       {{/items.0.attachments}}
       {{/items.0._microfeed.is_document}}
 
       {{#items.0._microfeed.is_external_url}}
       {{#items.0.attachments}}
-      <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">View url &#8594;</a>
+      <a href="{{url}}" target="_blank" rel="noopener nofollow" class="font-bold text-lg">{{_i18n.viewUrl}} &#8594;</a>
       {{/items.0.attachments}}
       {{/items.0._microfeed.is_external_url}}
 
@@ -63,7 +63,7 @@
     <div>
       {{#_microfeed.subscribe_methods.length}}
       <div class="text-sm mt-4 mb-2">
-        Subscribe:
+        {{_i18n.subscribe}}
       </div>
       {{/_microfeed.subscribe_methods.length}}
       <div class="flex flex-wrap">
@@ -80,7 +80,7 @@
   </section>
 
   <section>
-    <h2 class="border-b">About</h2>
+    <h2 class="border-b">{{_i18n.about}}</h2>
     <div>
       {{#items.0.image}}
       <div class="mb-4">

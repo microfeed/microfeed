@@ -11,6 +11,13 @@
 
 <h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>
 
+<p align="center">
+  <b>Languages:</b>
+  <a href="./README.md">English</a>
+  ·
+  <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
   <p align="center">
     <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>Report Bug</b></a>
     ·

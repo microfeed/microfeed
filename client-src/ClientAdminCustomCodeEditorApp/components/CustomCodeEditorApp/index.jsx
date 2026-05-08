@@ -11,22 +11,23 @@ import {
   SETTINGS_CATEGORIES,
 } from "../../../../common-src/Constants";
 import AdminSelect from "../../../components/AdminSelect";
+import {pickDocumentText} from "../../../common/LanguageUtils";
 
 const SUBMIT_STATUS__START = 1;
 
-const CODE_TYPE_SELECTOR_OPTIONS = [
-  {
-    label: 'Shared html code',
-    value: CODE_TYPES.SHARED,
-  },
-  {
-    label: 'Theme: custom',
-    value: CODE_TYPES.THEMES,
-    theme: 'custom',
-  },
-];
-const CODE_TYPE_SELECTOR_OPTIONS_DICT = Object.assign({}, ...CODE_TYPE_SELECTOR_OPTIONS.map(
-  (x) => ({[x.value]: x})));
+function getCodeTypeSelectorOptions() {
+  return [
+    {
+      label: pickDocumentText('共用 HTML 代码', 'Shared html code'),
+      value: CODE_TYPES.SHARED,
+    },
+    {
+      label: pickDocumentText('主题：custom', 'Theme: custom'),
+      value: CODE_TYPES.THEMES,
+      theme: 'custom',
+    },
+  ];
+}
 
 function TabButton({name, onClick, selected}) {
   return (<a
@@ -37,63 +38,64 @@ function TabButton({name, onClick, selected}) {
     }}
   >
     <span
-      className={clsx('py-2 px-3', selected ?
-        'bg-helper-color text-white hover:text-white' : '')}
+      className={clsx('py-2 px-3', selected ? 'bg-helper-color text-white hover:text-white' : '')}
     >{name}</span>
   </a>);
 }
 
-const CODE_FILES_DICT = {
-  [CODE_FILES.WEB_FEED]: {
-    name: 'Web Feed',
-    language: 'html',
-    viewUrl: () => PUBLIC_URLS.webFeed(),
-    description: (<div>
-      The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a>.
-    </div>),
-  },
-  [CODE_FILES.WEB_ITEM]: {
-    'name': 'Web Item',
-    language: 'html',
-    viewUrl: (feed) => getFirstItemUrl(feed),
-    description: <div>The code is used for an item web page, which is good for SEO.</div>,
-  },
-  [CODE_FILES.WEB_HEADER]: {
-    name: 'Web Header',
-    language: 'html',
-    viewUrl: () => PUBLIC_URLS.webFeed(),
-    description: (<div>
-      The code is inserted right before the <span
-        dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.
-    </div>),
-  },
-  [CODE_FILES.WEB_BODY_START]: {
-    'name': 'Web Body Start',
-    language: 'html',
-    viewUrl: () => PUBLIC_URLS.webFeed(),
-    description: (<div>
-      The code is inserted right after the <span
-      dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}}/> tag. You can put navigation menus / branding things here.
-    </div>),
-  },
-  [CODE_FILES.WEB_BODY_END]: {
-    'name': 'Web Body End',
-    language: 'html',
-    viewUrl: () => PUBLIC_URLS.webFeed(),
-    description: (<div>
-      The code is inserted right before the <span
-      dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.
-    </div>),
-  },
-  [CODE_FILES.RSS_STYLESHEET]: {
-    name: 'Rss Stylesheet',
-    language: 'css',
-    viewUrl: () => PUBLIC_URLS.rssFeed(),
-    description: (<div>The code is used for <a href={PUBLIC_URLS.rssFeedStylesheet()} target="_blank">
-      {PUBLIC_URLS.rssFeedStylesheet()}</a>, which is included in <a
-      href={PUBLIC_URLS.rssFeed()} target="_blank">the RSS feed</a>.</div>),
-  },
-};
+function getCodeFilesDict() {
+  return {
+    [CODE_FILES.WEB_FEED]: {
+      name: pickDocumentText('网页 Feed', 'Web Feed'),
+      language: 'html',
+      viewUrl: () => PUBLIC_URLS.webFeed(),
+      description: (<div>
+        {pickDocumentText('这段代码用于 ', 'The code is used for ')}<a href={PUBLIC_URLS.webFeed()} target="_blank">{pickDocumentText('站点的公开首页', 'the public homepage of this site')}</a>{pickDocumentText('。', '.')}
+      </div>),
+    },
+    [CODE_FILES.WEB_ITEM]: {
+      name: pickDocumentText('网页条目页', 'Web Item'),
+      language: 'html',
+      viewUrl: (feed) => getFirstItemUrl(feed),
+      description: <div>{pickDocumentText('这段代码用于单条内容页，对 SEO 更友好。', 'The code is used for an item web page, which is good for SEO.')}</div>,
+    },
+    [CODE_FILES.WEB_HEADER]: {
+      name: pickDocumentText('网页 Header', 'Web Header'),
+      language: 'html',
+      viewUrl: () => PUBLIC_URLS.webFeed(),
+      description: (<div>
+        {pickDocumentText('这段代码会插入到 ', 'The code is inserted right before the ')}<span
+          dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} />{pickDocumentText(' 标签之前。你可以在这里放自定义 CSS 或 JavaScript。', ' tag. You can put custom css or javascript code here.')}
+      </div>),
+    },
+    [CODE_FILES.WEB_BODY_START]: {
+      name: pickDocumentText('网页 Body 开始', 'Web Body Start'),
+      language: 'html',
+      viewUrl: () => PUBLIC_URLS.webFeed(),
+      description: (<div>
+        {pickDocumentText('这段代码会插入到 ', 'The code is inserted right after the ')}<span
+        dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}}/>{pickDocumentText(' 标签之后。你可以在这里放导航、品牌内容等。', ' tag. You can put navigation menus / branding things here.')}
+      </div>),
+    },
+    [CODE_FILES.WEB_BODY_END]: {
+      name: pickDocumentText('网页 Body 结束', 'Web Body End'),
+      language: 'html',
+      viewUrl: () => PUBLIC_URLS.webFeed(),
+      description: (<div>
+        {pickDocumentText('这段代码会插入到 ', 'The code is inserted right before the ')}<span
+        dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} />{pickDocumentText(' 标签之前。你可以在这里放链接、页脚、版权信息等。', ' tag. You can put links / footer / copyright here.')}
+      </div>),
+    },
+    [CODE_FILES.RSS_STYLESHEET]: {
+      name: pickDocumentText('RSS 样式表', 'Rss Stylesheet'),
+      language: 'css',
+      viewUrl: () => PUBLIC_URLS.rssFeed(),
+      description: (<div>{pickDocumentText('这段代码用于 ', 'The code is used for ')}<a href={PUBLIC_URLS.rssFeedStylesheet()} target="_blank">
+        {PUBLIC_URLS.rssFeedStylesheet()}</a>{pickDocumentText('，它会被包含进 ', ', which is included in ')}<a
+        href={PUBLIC_URLS.rssFeed()} target="_blank">RSS feed</a>{pickDocumentText('。', '.')}</div>),
+    },
+  };
+}
 
 const CODE_BUNDLE = {
   [CODE_TYPES.SHARED]: [
@@ -111,16 +113,16 @@ const CODE_BUNDLE = {
   ],
 };
 
-function CodeTabs({codeFile, codeType, themeName, setState}) {
+function CodeTabs({codeFile, codeType, themeName, setState, codeFilesDict}) {
   const codeFiles = CODE_BUNDLE[codeType];
   return (<div className="lh-page-card mb-4">
     {codeFiles.map((cf) => (<TabButton
       key={`tab-${cf}`}
-      name={CODE_FILES_DICT[cf].name}
+      name={codeFilesDict[cf].name}
       selected={codeFile === cf}
       onClick={() => {
         setState({codeFile: cf});
-        updateUrlParams(codeType, cf, themeName, true)
+        updateUrlParams(codeType, cf, themeName, true);
       }}
     />))}
   </div>);
@@ -130,9 +132,9 @@ function getFirstItemUrl(feed) {
   const {items} = feed;
   if (items && items.length > 0) {
     const item = items[0];
-    return PUBLIC_URLS.webItem(item.id, item.title || 'Untitled');
+    return PUBLIC_URLS.webItem(item.id, item.title || pickDocumentText('未命名', 'Untitled'));
   }
-  return '/'
+  return '/';
 }
 
 function updateUrlParams(codeType, codeFile, theme = '', push = true) {
@@ -204,7 +206,7 @@ export default class CustomCodeEditorApp extends React.Component {
       codeType,
       codeFile,
       submitStatus: null,
-
+      changed: false,
       themeName,
       rssStylesheet,
       webItem,
@@ -212,7 +214,6 @@ export default class CustomCodeEditorApp extends React.Component {
       webBodyStart,
       webBodyEnd,
       webHeader,
-
       feed,
       onboardingResult,
     };
@@ -238,7 +239,6 @@ export default class CustomCodeEditorApp extends React.Component {
       };
     } else if (codeType === CODE_TYPES.THEMES) {
       customCode = {
-        // TODO: if we support multiple themes, then don't set currentTheme here.
         currentTheme: themeName,
         [CODE_TYPES.THEMES]: {
           ...existingThemes,
@@ -260,7 +260,7 @@ export default class CustomCodeEditorApp extends React.Component {
           },
         }
       },
-    }), () => onSucceed())
+    }), () => onSucceed());
   }
 
   onSubmit(e) {
@@ -268,7 +268,6 @@ export default class CustomCodeEditorApp extends React.Component {
     this.setState({submitStatus: SUBMIT_STATUS__START});
 
     const {codeType} = this.state;
-
     const themeTmpls = {};
     CODE_BUNDLE[codeType].forEach((codeFile) => {
       themeTmpls[codeFile] = this.state[codeFile] || '';
@@ -278,25 +277,28 @@ export default class CustomCodeEditorApp extends React.Component {
       Requests.axiosPost('/admin/ajax/feed/', {settings: {
         [SETTINGS_CATEGORIES.CUSTOM_CODE]: this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]}})
         .then(() => {
-          this.setState({submitStatus: null}, () => {
-            showToast('Updated!', 'success');
+          this.setState({submitStatus: null, changed: false}, () => {
+            showToast(pickDocumentText('更新成功！', 'Updated!'), 'success');
           });
         }).catch((error) => {
-        this.setState({submitStatus: null}, () => {
-          if (!error.response) {
-            showToast('Network error. Please refresh the page and try again.', 'error');
-          } else {
-            showToast('Failed. Please try again.', 'error');
-          }
-        });
+          this.setState({submitStatus: null}, () => {
+            if (!error.response) {
+              showToast(pickDocumentText('网络错误，请刷新页面后重试。', 'Network error. Please refresh the page and try again.'), 'error');
+            } else {
+              showToast(pickDocumentText('更新失败，请重试。', 'Failed. Please try again.'), 'error');
+            }
+          });
         });
     });
   }
 
   render() {
     const {codeFile, submitStatus, feed, codeType, themeName, onboardingResult, changed} = this.state;
+    const codeTypeSelectorOptions = getCodeTypeSelectorOptions();
+    const codeTypeSelectorOptionsDict = Object.assign({}, ...codeTypeSelectorOptions.map((x) => ({[x.value]: x})));
+    const codeFilesDict = getCodeFilesDict();
     const code = this.state[codeFile];
-    const codeBundle = CODE_FILES_DICT[codeFile];
+    const codeBundle = codeFilesDict[codeFile];
     const language = codeBundle.language;
     const viewUrl = codeBundle.viewUrl(feed);
     const description = codeBundle.description;
@@ -305,18 +307,19 @@ export default class CustomCodeEditorApp extends React.Component {
     return (<AdminNavApp
       currentPage="settings"
       onboardingResult={onboardingResult}
-      upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Code Editor'}}
+      language={feed.channel.language}
+      upperLevel={{name: pickDocumentText('设置', 'Settings'), url: ADMIN_URLS.settings(), childName: pickDocumentText('代码编辑器', 'Code Editor')}}
       AccessoryComponent={<div className="ml-4">
         <AdminSelect
-          value={CODE_TYPE_SELECTOR_OPTIONS_DICT[codeType]}
-          options={CODE_TYPE_SELECTOR_OPTIONS}
+          value={codeTypeSelectorOptionsDict[codeType]}
+          options={codeTypeSelectorOptions}
           onChange={(selected) => {
             location.href = `${ADMIN_URLS.codeEditorSettings()}?type=${selected.value}${selected.theme ? `&theme=${selected.theme}` : ''}`;
           }}
         />
       </div>}
     >
-      <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} />
+      <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} codeFilesDict={codeFilesDict} />
       <form className="grid grid-cols-12 gap-4">
         <div className="col-span-9 lh-page-card">
           <div className="text-xs text-muted-color mb-4">{description}</div>
@@ -335,21 +338,20 @@ export default class CustomCodeEditorApp extends React.Component {
                 onClick={this.onSubmit}
                 disabled={submitting || !changed}
               >
-                {submitting ? 'Updating...' : 'Update'}
+                {submitting ? pickDocumentText('更新中...', 'Updating...') : pickDocumentText('更新', 'Update')}
               </button>
             </div>
             <div className="lh-page-card mt-4 flex flex-col items-center">
-              <ExternalLink url={viewUrl} text="View live page"/>
+              <ExternalLink url={viewUrl} text={pickDocumentText('查看线上页面', 'View live page')}/>
               <div className="text-muted-color text-xs">{viewUrl}</div>
             </div>
             <div className="lh-page-card mt-4">
-              <div className="lh-page-subtitle">Pro-tips:</div>
+              <div className="lh-page-subtitle">{pickDocumentText('提示：', 'Pro-tips:')}</div>
               <ul className="text-helper-text text-xs">
-                <li className="mb-2">You can use variables from the <a href={PUBLIC_URLS.jsonFeed()}> json feed</a>.</li>
-                <li className="mb-2">The template system is <a href="https://mustache.github.io/">mustache</a>.</li>
-                <li className="mb-2">See the OpenAPI spec for the json feed: <a href={PUBLIC_URLS.jsonFeedOpenApiYaml()}>
-                  YAML</a> or <a href={PUBLIC_URLS.jsonFeedOpenApiHtml()}>HTML</a>.
-                </li>
+                <li className="mb-2">{pickDocumentText('你可以使用 ', 'You can use variables from the ')}<a href={PUBLIC_URLS.jsonFeed()}>JSON feed</a>{pickDocumentText(' 里的变量。', '.')}</li>
+                <li className="mb-2">{pickDocumentText('模板系统使用的是 ', 'The template system is ')}<a href="https://mustache.github.io/">mustache</a>。</li>
+                <li className="mb-2">{pickDocumentText('JSON feed 的 OpenAPI 说明见：', 'See the OpenAPI spec for the json feed: ')}<a href={PUBLIC_URLS.jsonFeedOpenApiYaml()}>
+                  YAML</a> {pickDocumentText('或', 'or')} <a href={PUBLIC_URLS.jsonFeedOpenApiHtml()}>HTML</a>。</li>
               </ul>
             </div>
           </div>

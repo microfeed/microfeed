@@ -12,6 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 import {ADMIN_URLS} from "../../../common-src/StringUtils";
 import {NAV_ITEMS, NAV_ITEMS_DICT, OUR_BRAND} from "../../../common-src/Constants";
+import {isChineseLanguage} from "../../../common-src/I18n";
+import {getDocumentLanguage} from "../../common/LanguageUtils";
 
 function NavItem({url, title, navId, currentId, Icon, disabled}) {
   return (
@@ -36,17 +38,18 @@ export default class AdminNavApp extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      'currentPage': props.currentPage || NAV_ITEMS.ADMIN_HOME,
-    }
-  }
-
-  componentDidMount() {
+      currentPage: props.currentPage || NAV_ITEMS.ADMIN_HOME,
+    };
   }
 
   render() {
     const {currentPage} = this.state;
     const {upperLevel, AccessoryComponent} = this.props;
     const onboardingResult = this.props.onboardingResult || {requiredOk: true};
+    const language = this.props.language || getDocumentLanguage();
+    const isZh = isChineseLanguage(language);
+    const navLabel = (item) => isZh ? (NAV_ITEMS_DICT[item].labelZh || NAV_ITEMS_DICT[item].name) : NAV_ITEMS_DICT[item].name;
+
     return (<div className="flex flex-col min-h-screen min-w-screen">
       <div className="grid grid-cols-12 gap-4 bg-white flex items-center border-b drop-shadow-sm">
         <div className="col-span-2 py-4 px-4 xl:px-8">
@@ -65,7 +68,7 @@ export default class AdminNavApp extends React.Component {
             <a href={ADMIN_URLS.logout()} className="hover:opacity-50 text-brand-dark font-semibold text-sm">
               <div className="flex items-center justify-end">
                 <div className="mr-1"><ArrowLeftOnRectangleIcon className="w-4"/></div>
-                <div>Logout</div>
+                <div>{isZh ? '退出登录' : 'Logout'}</div>
               </div>
             </a>
           </div>
@@ -76,14 +79,14 @@ export default class AdminNavApp extends React.Component {
           <nav className="py-8">
             <NavItem
               url={ADMIN_URLS.home()}
-              title={NAV_ITEMS_DICT[NAV_ITEMS.ADMIN_HOME].name}
+              title={navLabel(NAV_ITEMS.ADMIN_HOME)}
               navId={NAV_ITEMS.ADMIN_HOME}
               currentId={currentPage}
               Icon={HomeIcon}
             />
             <NavItem
               url={ADMIN_URLS.editPrimaryChannel()}
-              title={NAV_ITEMS_DICT[NAV_ITEMS.EDIT_CHANNEL].name}
+              title={navLabel(NAV_ITEMS.EDIT_CHANNEL)}
               navId={NAV_ITEMS.EDIT_CHANNEL}
               currentId={currentPage}
               Icon={PencilSquareIcon}
@@ -91,7 +94,7 @@ export default class AdminNavApp extends React.Component {
             />
             <NavItem
               url={ADMIN_URLS.newItem()}
-              title={NAV_ITEMS_DICT[NAV_ITEMS.NEW_ITEM].name}
+              title={navLabel(NAV_ITEMS.NEW_ITEM)}
               navId={NAV_ITEMS.NEW_ITEM}
               currentId={currentPage}
               Icon={PlusIcon}
@@ -99,7 +102,7 @@ export default class AdminNavApp extends React.Component {
             />
             <NavItem
               url={ADMIN_URLS.allItems()}
-              title={NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name}
+              title={navLabel(NAV_ITEMS.ALL_ITEMS)}
               navId={NAV_ITEMS.ALL_ITEMS}
               currentId={currentPage}
               Icon={ListBulletIcon}
@@ -107,7 +110,7 @@ export default class AdminNavApp extends React.Component {
             />
             <NavItem
               url={ADMIN_URLS.settings()}
-              title={NAV_ITEMS_DICT[NAV_ITEMS.SETTINGS].name}
+              title={navLabel(NAV_ITEMS.SETTINGS)}
               navId={NAV_ITEMS.SETTINGS}
               currentId={currentPage}
               Icon={Cog6ToothIcon}
@@ -121,9 +124,7 @@ export default class AdminNavApp extends React.Component {
           </div>
         </div>
       </div>
-      <ToastContainer
-        newestOnTop
-      />
+      <ToastContainer newestOnTop />
     </div>);
   }
 }
