@@ -1,3 +1,5 @@
 export function projectPrefix(env) {
-  return `${env.CLOUDFLARE_PROJECT_NAME}/${env.DEPLOYMENT_ENVIRONMENT}`;
+  const projectName = env.CLOUDFLARE_PROJECT_NAME || 'microfeed';
+  const deploymentEnvironment = env.DEPLOYMENT_ENVIRONMENT || 'production';
+  return `${projectName}/${deploymentEnvironment}`;
 }

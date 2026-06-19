@@ -31,8 +31,11 @@ class WranglerCmd {
   }
 
   _getCmd(wranglerCmd) {
-    return `CLOUDFLARE_ACCOUNT_ID=${this.v.get('CLOUDFLARE_ACCOUNT_ID')} ` +
-      `CLOUDFLARE_API_TOKEN=${this.v.get('CLOUDFLARE_API_TOKEN')} ` + wranglerCmd;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || this.v.get('CLOUDFLARE_ACCOUNT_ID');
+    const apiToken = process.env.CLOUDFLARE_API_TOKEN || this.v.get('CLOUDFLARE_API_TOKEN');
+    
+    return `CLOUDFLARE_ACCOUNT_ID=${accountId} ` +
+      `CLOUDFLARE_API_TOKEN=${apiToken} ` + wranglerCmd;
   }
 
   publishProject() {
@@ -42,7 +45,7 @@ class WranglerCmd {
     // Cloudflare Pages direct upload uses branch to decide deployment environment.
     // If we want production, then use production_branch. Otherwise, just something else
     const branch = this.currentEnv === 'production' ? productionBranch : `${productionBranch}-preview`;
-    const wranglerCmd = `wrangler pages deploy public --project-name ${projectName} --branch ${branch}`;
+    const wranglerCmd = `wrangler pages deploy public --project-name ${projectName} --branch ${branch} --commit-dirty=true`;
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
@@ -54,7 +57,7 @@ class WranglerCmd {
 
   createFeedDb() {
     const wranglerCmd = this.currentEnv !== 'development' ?
-      `wrangler d1 create ${this._non_dev_db()}` : 'echo "FEED_DB"';
+      `wrangler d1 create ${this._non_dev_db()} || true` : 'echo "FEED_DB"';
     console.log(wranglerCmd);
     return this._getCmd(wranglerCmd);
   }
@@ -68,13 +71,14 @@ class WranglerCmd {
   }
 
   /**
-   * XXX: We use private api here, which may be changed on the cloudflare end...
-   * https://github.com/cloudflare/wrangler2/blob/main/packages/wrangler/src/d1/list.tsx#L34
+   * Check if database exists, create it if not, then return its ID
+   * This ensures idempotent behavior across deployments
    */
-  getDatabaseId(onSuccess) {
+  ensureFeedDbExists(onSuccess) {
     const dbName = this.currentEnv !== 'development' ? this._non_dev_db() : 'FEED_DB';
     const accountId = this.v.get('CLOUDFLARE_ACCOUNT_ID');
     const apiKey = this.v.get('CLOUDFLARE_API_TOKEN');
+    
     const options = {
       host: 'api.cloudflare.com',
       port: '443',
@@ -84,6 +88,7 @@ class WranglerCmd {
         'Authorization': `Bearer ${apiKey}`,
       },
     };
+    
     const request = https.request(options, (response) => {
       let data = '';
       response.on('data', (chunk) => {
@@ -91,23 +96,109 @@ class WranglerCmd {
       });
 
       response.on('end', () => {
-        const body = JSON.parse(data);
+        let body;
+        try {
+          body = JSON.parse(data);
+        } catch (e) {
+          console.error('[utils.js] JSON parse failed. Raw response:', data.toString());
+          throw new Error(`Invalid JSON response from API: ${e.message}`);
+        }
+
+        const results = body?.result;
+        if (!Array.isArray(results)) {
+          console.error('[utils.js] Expected body.result to be an array, but got:', typeof results, results);
+          console.error('[utils.js] Full response body:', JSON.stringify(body, null, 2));
+          throw new Error(`API returned unexpected structure: body.result is ${results === null ? 'null' : typeof results}`);
+        }
+
         let databaseId = '';
-        body.result.forEach((result) => {
+        results.forEach((result) => {
           if (result.name === dbName) {
             databaseId = result.uuid;
           }
         });
-        onSuccess(databaseId);
+
+        if (databaseId) {
+          console.log(`[utils.js] Database "${dbName}" exists with ID: ${databaseId}`);
+          onSuccess(databaseId);
+        } else {
+          // Database doesn't exist, need to create it
+          console.warn(`[utils.js] Database "${dbName}" not found. Creating...`);
+          this._createDatabase(dbName, onSuccess);
+        }
       });
-    })
+    });
 
     request.on('error', (error) => {
-      console.log('An error', error);
+      console.error('[utils.js] Error checking database existence:', error);
       onSuccess('');
     });
 
     request.end();
+  }
+
+  /**
+   * Create a new D1 database
+   */
+  _createDatabase(dbName, onSuccess) {
+    const accountId = this.v.get('CLOUDFLARE_ACCOUNT_ID');
+    const apiKey = this.v.get('CLOUDFLARE_API_TOKEN');
+
+    const postData = JSON.stringify({
+      name: dbName,
+    });
+
+    const options = {
+      host: 'api.cloudflare.com',
+      port: '443',
+      path: `/client/v4/accounts/${accountId}/d1/database`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Content-Length': postData.length,
+      },
+    };
+
+    const request = https.request(options, (response) => {
+      let data = '';
+      response.on('data', (chunk) => {
+        data = data + chunk.toString();
+      });
+
+      response.on('end', () => {
+        try {
+          const body = JSON.parse(data);
+          if (body.result && body.result.uuid) {
+            console.log(`[utils.js] Database created successfully with ID: ${body.result.uuid}`);
+            onSuccess(body.result.uuid);
+          } else {
+            console.error('[utils.js] Unexpected response from database creation:', body);
+            onSuccess('');
+          }
+        } catch (e) {
+          console.error('[utils.js] Failed to parse database creation response:', e.message);
+          onSuccess('');
+        }
+      });
+    });
+
+    request.on('error', (error) => {
+      console.error('[utils.js] Error creating database:', error);
+      onSuccess('');
+    });
+
+    request.write(postData);
+    request.end();
+  }
+
+  /**
+   * XXX: We use private api here, which may be changed on the cloudflare end...
+   * https://github.com/cloudflare/wrangler2/blob/main/packages/wrangler/src/d1/list.tsx#L34
+   */
+  getDatabaseId(onSuccess) {
+    // Use the new idempotent method that handles both cases
+    this.ensureFeedDbExists(onSuccess);
   }
 }
 

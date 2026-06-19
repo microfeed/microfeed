@@ -108,6 +108,7 @@ webpack-stats.json
 .idea
 *.vars
 .wrangler/
+.wrangler.toml.backup
 .vars.toml
 *.cjs
 *.mjs

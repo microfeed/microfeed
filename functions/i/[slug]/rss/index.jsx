@@ -28,3 +28,11 @@ export async function onRequestGet({request, env, params}) {
   }
   return RssResponseBuilder.Response404();
 }
+
+export function onRequestHead() {
+  return new Response(null, {
+    headers: {
+      'content-type': 'application/xml',
+    },
+  });
+}

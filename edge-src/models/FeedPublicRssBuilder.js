@@ -1,5 +1,5 @@
 import {XMLBuilder} from "fast-xml-parser";
-import {PUBLIC_URLS, secondsToHHMMSS} from "../../common-src/StringUtils";
+import {PUBLIC_URLS, secondsToHHMMSS, htmlToPlainText} from "../../common-src/StringUtils";
 import {msToUtcString} from "../../common-src/TimeUtils";
 import {OUR_BRAND} from "../../common-src/Constants";
 
@@ -15,12 +15,16 @@ export default class FeedPublicRssBuilder {
      const _microfeed = item._microfeed || {};
      const itemJson = {
        'title': item.title || 'untitled',
-       'guid': item.id,
        'pubDate': msToUtcString(item._microfeed.date_published_ms),
        'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
      };
+     itemJson['guid'] = {
+       '#text': item.id,
+       '@_isPermaLink': 'false',
+     };
      if (item['content_html']) {
-       itemJson['description'] = {
+       itemJson['description'] = htmlToPlainText(item['content_html']);
+       itemJson['content:encoded'] = {
          '@cdata': item['content_html'],
        };
      }
@@ -96,31 +100,13 @@ export default class FeedPublicRssBuilder {
       '@_href': PUBLIC_URLS.rssFeed(this.baseUrl),
       '@_type': 'application/rss+xml',
     };
-    const linksTags = [];
     if (this.jsonData.home_page_url) {
-      linksTags.push(this.jsonData.home_page_url);
+      channelRss['link'] = this.jsonData.home_page_url;
+    } else {
+      channelRss['link'] = this.baseUrl;
     }
-    if (this.jsonData._microfeed.items_next_cursor) {
-      const {items_next_cursor, items_sort_order} = this.jsonData._microfeed;
-      linksTags.push({
-        '@_rel': 'next',
-        '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?next_cursor=${items_next_cursor}&sort=${items_sort_order}`,
-        '@_type': 'application/rss+xml',
-      });
-    }
-    if (this.jsonData._microfeed.items_prev_cursor) {
-      const {items_prev_cursor, items_sort_order} = this.jsonData._microfeed;
-      linksTags.push({
-        '@_rel': 'prev',
-        '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?prev_cursor=${items_prev_cursor}&sort=${items_sort_order}`,
-        '@_type': 'application/rss+xml',
-      });
-    }
-    channelRss['link'] = linksTags;
     if (this.jsonData.description) {
-      channelRss['description'] = {
-        '@cdata': this.jsonData.description,
-      };
+      channelRss['description'] = htmlToPlainText(this.jsonData.description);
     }
     if (this.jsonData.authors && this.jsonData.authors.length > 0 && this.jsonData.authors[0].name) {
       channelRss['itunes:author'] = this.jsonData.authors[0].name;
@@ -154,9 +140,6 @@ export default class FeedPublicRssBuilder {
     }
     if (_microfeed['itunes:complete']) {
       channelRss['itunes:complete'] = 'Yes';
-    }
-    if (_microfeed['itunes:title'] && _microfeed['itunes:title'].trim().length > 0) {
-      channelRss['itunes:title'] = _microfeed['itunes:title'].trim();
     }
     if (_microfeed['categories'] && _microfeed['categories'].length > 0) {
       const categories = [];
@@ -200,7 +183,7 @@ export default class FeedPublicRssBuilder {
 
     return "<?xml version='1.0' encoding='UTF-8'?>\n" +
       `<?xml-stylesheet href="${PUBLIC_URLS.rssFeedStylesheet()}" type="text/xsl"?>\n` +
-      "<rss xmlns:content='http://purl.org/rss/1.0/modules/content/' xmlns:taxo='http://purl.org/rss/1.0/modules/taxonomy/' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' xmlns:itunes='http://www.itunes.com/dtds/podcast-1.0.dtd' xmlns:googleplay=\"http://www.google.com/schemas/play-podcasts/1.0\" xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:podbridge='http://www.podbridge.com/podbridge-ad.dtd' version='2.0'>\n" +
+      "<rss xmlns:content='http://purl.org/rss/1.0/modules/content/' xmlns:taxo='http://purl.org/rss/1.0/modules/taxonomy/' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' xmlns:itunes='http://www.itunes.com/dtds/podcast-1.0.dtd' xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:atom='http://www.w3.org/2005/Atom' version='2.0'>\n" +
       xmlOutput + '</rss>';
   }
 }

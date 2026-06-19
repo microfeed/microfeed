@@ -18,5 +18,9 @@ export async function onRequestGet({request, env}) {
 }
 
 export function onRequestHead() {
-  return new Response('ok');
+  return new Response(null, {
+    headers: {
+      'content-type': 'application/xml',
+    },
+  });
 }

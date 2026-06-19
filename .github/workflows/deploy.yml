@@ -25,7 +25,8 @@ env:
   R2_PUBLIC_BUCKET: ${{ secrets.R2_PUBLIC_BUCKET || secrets.CLOUDFLARE_PROJECT_NAME }}
   D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
   DEPLOYMENT_ENVIRONMENT: ${{ inputs.DEPLOYMENT_ENVIRONMENT }}
-  PRODUCTION_BRANCH: main
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  PRODUCTION_BRANCH: feature/i18n-language-toggle-merge
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,9 +34,9 @@ jobs:
       name: ${{ github.event.inputs.DEPLOYMENT_ENVIRONMENT }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.x
           cache: 'yarn'
