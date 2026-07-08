@@ -49,7 +49,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
             e.preventDefault();
             if (!isValidUrl(url)) {
               showToast('Invalid url. A valid url should start with http:// or https://, ' +
-                'for example, https://media-cdn.microfeed.org',
+                'for example, https://media-cdn.example.com',
                 'error', 5000);
               return;
             }
@@ -92,7 +92,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
           </div>
           <div className="mt-4">
             <div>
-              <span className="text-brand-light font-bold">[Recommended]</span> Add a custom domain (e.g., media-cdn.microfeed.org). Then copy this custom domain here (e.g., https://media-cdn.microfeed.org).
+              <span className="text-brand-light font-bold">[Recommended]</span> Add a custom domain (e.g., media-cdn.example.com). Then copy this custom domain here (e.g., https://media-cdn.example.com).
             </div>
             <div className="mt-2">
               <img src="/assets/howto/get-r2-public-bucket-url-howto2.png" className="w-full" />
@@ -127,7 +127,7 @@ function SetupPublicBucketUrl({onboardState, webGlobalSettings, cloudflareUrls})
         </summary>
         <div className="my-8 text-helper-color">
           <div>
-            When you open this R2 public bucket url, you will see a 404 page like this (e.g., <a href={OUR_BRAND.exampleCdnUrl} target="_blank">https://media-cdn.microfeed.org</a>):
+            When you open this R2 public bucket url, you will see a 404 page like this (e.g., <a href={OUR_BRAND.exampleCdnUrl} target="_blank">{OUR_BRAND.exampleCdnUrl}</a>):
           </div>
           <div className="mt-2">
             <img src="/assets/howto/get-r2-public-bucket-url-howto3.png" className="w-full" />

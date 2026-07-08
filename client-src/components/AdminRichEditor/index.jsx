@@ -1,8 +1,7 @@
 import React from "react";
-import 'react-quill/dist/quill.snow.css';
 import AdminRadio from "../AdminRadio";
 import AdminTextarea from "../AdminTextarea";
-import RichEditorQuill from "./component/RichEditorQuill";
+import RichEditorTiptap from "./component/RichEditorTiptap";
 
 export default class AdminRichEditor extends React.Component {
   constructor(props) {
@@ -15,14 +14,14 @@ export default class AdminRichEditor extends React.Component {
   }
   render() {
     const {mode} = this.state;
-    const {label, value, onChange, extra, labelComponent} = this.props;
+    const {label, value, onChange, extra, labelComponent, allowHtmlSourceMode = false} = this.props;
     return (
       <div>
         {label && <div className="lh-page-subtitle">
           {label}
         </div>}
         {labelComponent}
-        <div className="mb-4 max-h-20">
+        {allowHtmlSourceMode && <div className="mb-4 max-h-20">
           <AdminRadio
             customClass="text-sm text-helper-color"
             groupName="richOrHtml"
@@ -32,8 +31,8 @@ export default class AdminRichEditor extends React.Component {
             ]}
             onChange={(e) => this.setState({mode: e.target.value})}
           />
-        </div>
-        {mode === 'rich' ? <RichEditorQuill
+        </div>}
+        {mode === 'rich' ? <RichEditorTiptap
           value={value}
           onChange={onChange}
           extra={extra}

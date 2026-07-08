@@ -8,10 +8,10 @@ export const STATUSES = {
 export const SETTINGS_CATEGORIES = {
   SUBSCRIBE_METHODS: 'subscribeMethods',
   WEB_GLOBAL_SETTINGS: 'webGlobalSettings',
-  CUSTOM_CODE: 'customCode',
   ANALYTICS: 'analytics',
   ACCESS: 'access',
   API_SETTINGS: 'apiSettings',
+  SEO: 'seoSettings',
 };
 
 export const DEFAULT_ITEMS_PER_PAGE = 20;
@@ -19,20 +19,6 @@ export const MAX_ITEMS_PER_PAGE = 300;
 export const ITEMS_SORT_ORDERS = {
   OLDEST_FIRST: 'oldest_first',
   NEWEST_FIRST: 'newest_first',
-};
-
-export const CODE_TYPES = {
-  SHARED: 'shared',
-  THEMES: 'themes',
-};
-
-export const CODE_FILES = {
-  WEB_HEADER: 'webHeader',
-  WEB_BODY_START: 'webBodyStart',
-  WEB_BODY_END: 'webBodyEnd',
-  WEB_FEED: 'webFeed',
-  WEB_ITEM: 'webItem',
-  RSS_STYLESHEET: 'rssStylesheet',
 };
 
 export const PREDEFINED_SUBSCRIBE_METHODS = {
@@ -126,12 +112,13 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
   },
 };
 
+// Neutral, non-"microfeed" default branding. Configured brand values live in
+// webGlobalSettings (see common-src/BrandUtils.js resolveBrand); this object is
+// only the neutral fallback source.
 export const OUR_BRAND = {
-  domain: 'microfeed.org',
-  brandName: 'microfeed',
-  whatsnewEndpoint: 'https://www.microfeed.org/json/',
-  whatsnewWebsite: 'https://www.microfeed.org',
-  exampleCdnUrl: 'https://media-cdn.microfeed.org',
+  domain: 'example.com',
+  brandName: 'My Feed',
+  exampleCdnUrl: 'https://media-cdn.example.com',
 };
 
 export const ENCLOSURE_CATEGORIES = {
@@ -177,6 +164,8 @@ export const NAV_ITEMS = {
   EDIT_CHANNEL: 'edit_channel',
   NEW_ITEM: 'new_item',
   ALL_ITEMS: 'all_items',
+  TAGS: 'tags',
+  MEDIA: 'media',
   SETTINGS: 'settings',
 };
 
@@ -192,6 +181,12 @@ export const NAV_ITEMS_DICT = {
   },
   [NAV_ITEMS.ALL_ITEMS]: {
     name: 'See all items',
+  },
+  [NAV_ITEMS.TAGS]: {
+    name: 'Tags',
+  },
+  [NAV_ITEMS.MEDIA]: {
+    name: 'Media',
   },
   [NAV_ITEMS.SETTINGS]: {
     name: 'Settings',

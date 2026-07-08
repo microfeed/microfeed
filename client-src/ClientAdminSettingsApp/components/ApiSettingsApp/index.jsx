@@ -125,7 +125,7 @@ export default class ApiSettingsApp extends React.Component {
         </div>
         <div className="mt-8">
           <a href="/json/openapi.html" target="_blank" rel="noopener noreferrer">
-            Documentation of microfeed's API <span className="lh-icon-arrow-right"/>
+            API documentation <span className="lh-icon-arrow-right"/>
           </a>
         </div>
         <div className="mt-4">

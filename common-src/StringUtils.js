@@ -238,11 +238,46 @@ export const ADMIN_URLS = {
   newItem: (baseUrl = '/') => urlJoin(baseUrl, `${ADMIN_HOME}/items/new/`),
   allItems: () => `${ADMIN_HOME}/items/list/`,
   settings: () => `${ADMIN_HOME}/settings/`,
-  codeEditorSettings: () => `${ADMIN_HOME}/settings/code-editor/`,
+  tags: () => `${ADMIN_HOME}/tags/`,
+  media: () => `${ADMIN_HOME}/media/`,
   logout: () => '/cdn-cgi/access/logout',
 
   ajaxFeed: () => `${ADMIN_HOME}/ajax/feed/`,
+  ajaxTags: () => `${ADMIN_HOME}/ajax/tags/`,
+  ajaxTag: (tagId) => `${ADMIN_HOME}/ajax/tags/${tagId}/`,
+  ajaxMediaList: () => `${ADMIN_HOME}/ajax/media/list`,
+  ajaxMediaReconcile: () => `${ADMIN_HOME}/ajax/media/reconcile`,
+  ajaxMediaDelete: () => `${ADMIN_HOME}/ajax/media/delete`,
+  ajaxMediaCheckHash: () => `${ADMIN_HOME}/ajax/media/check-hash`,
+  ajaxMediaRegister: () => `${ADMIN_HOME}/ajax/media/register`,
+  ajaxMediaUpdate: () => `${ADMIN_HOME}/ajax/media/update`,
+  ajaxMediaReplace: () => `${ADMIN_HOME}/ajax/media/replace`,
 };
+
+/**
+ * Turn an arbitrary string into a url-friendly slug. Falls back to a manual
+ * normalization when slugify yields nothing (non-English input). Returns '' for
+ * empty/falsey input.
+ */
+export function toSlug(str, locale = 'en') {
+  if (!str) {
+    return '';
+  }
+  let slug = slugify(String(str), {lower: true, strict: true, locale});
+  if (!slug) {
+    slug = String(str)
+      .normalize('NFKD')
+      .toLowerCase()
+      .trim()
+      .replace(/['!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g, '-')
+      .replace(/\s+/g, '-')
+      .replace(/\_/g, '-')
+      .replace(/\-\-+/g, '-')
+      .replace(/^\-+/g, '')
+      .replace(/\-$/g, '');
+  }
+  return slug;
+}
 
 /**
  * Public urls
@@ -280,9 +315,6 @@ export const PUBLIC_URLS = {
   },
   rssFeed: (baseUrl='/') => {
     return urlJoin(baseUrl, '/rss/');
-  },
-  rssFeedStylesheet: (baseUrl='/') => {
-    return urlJoin(baseUrl, '/rss/stylesheet/');
   },
   jsonFeed: (baseUrl='/') => {
     return urlJoin(baseUrl, 'json/');

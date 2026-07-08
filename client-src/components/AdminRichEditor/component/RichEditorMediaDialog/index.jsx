@@ -1,5 +1,4 @@
 import React from "react";
-import {Quill} from "react-quill";
 import {FileUploader} from "react-drag-drop-files";
 import AdminDialog from "../../../AdminDialog";
 import AdminRadio from "../../../AdminRadio";
@@ -8,7 +7,9 @@ import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
 import {ENCLOSURE_CATEGORIES_DICT, ENCLOSURE_CATEGORIES} from "../../../../../common-src/Constants";
 import {randomHex, urlJoinWithRelative} from "../../../../../common-src/StringUtils";
 import Requests from "../../../../common/requests";
+import MediaLibrary from "../../../MediaLibrary";
 import {showToast} from "../../../../common/ToastUtils";
+import {classifyImageFieldFile} from "../../../../common/imageFieldUploadPipeline";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -79,18 +80,20 @@ export default class RichEditorMediaDialog extends React.Component {
   onFileUpload(file) {
     const {mediaType, setIsOpen} = this.props;
     this.setState({uploadStatus: UPLOAD_STATUS__START});
-    const {name} = file;
-    const extension = name.slice((name.lastIndexOf('.') - 1 >>> 0) + 2);
-    let newFilename = `${mediaType}-${randomHex(32)}`;
-    if (extension && extension.length > 0) {
-      newFilename += `.${extension}`;
-    }
     const extra = this.props.extra || {};
     const publicBucketUrl = extra.publicBucketUrl || '';
-    const folderName = extra.folderName || 'unknown';
-    const cdnFilename = `media/rich-editor/${folderName}/${newFilename}`;
+    const isImage = mediaType === 'image';
+    const classification = isImage ? classifyImageFieldFile(file) : null;
+    const fallbackExtension = file.name.slice((file.name.lastIndexOf('.') - 1 >>> 0) + 2);
+    const outputExtension = classification ? classification.outputExtension : fallbackExtension;
+    const outputContentType = classification ? classification.outputContentType : file.type;
+    const newFilename = `${mediaType}-${randomHex(32)}.${outputExtension}`;
+    const cdnFilename = isImage ? `images/${newFilename}` : `media/rich-editor/${extra.folderName || 'unknown'}/${newFilename}`;
+    const uploadFile = classification && classification.kind === 'raster'
+      ? new File([file], newFilename, {type: outputContentType})
+      : file;
 
-    Requests.upload(file, cdnFilename, (percentage) => {
+    Requests.upload(uploadFile, cdnFilename, (percentage) => {
       this.setState({progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`});
     }, (cdnUrl) => {
         // updateState(cdnUrl, 0);
@@ -121,14 +124,13 @@ export default class RichEditorMediaDialog extends React.Component {
   }
 
   insertMedia() {
-    const {quill, quillSelection, mediaType} = this.props;
-    if (!quill) {
+    const {onInsert, mediaType} = this.props;
+    if (!onInsert) {
       return;
     }
     const {url} = this.state;
     if (url) {
-      const index = quillSelection ? quillSelection.index : 0;
-      quill.insertEmbed(index, mediaType, url, Quill.sources.USER);
+      onInsert(url, mediaType);
       this.setState({url: null});
     }
   }
@@ -142,6 +144,14 @@ export default class RichEditorMediaDialog extends React.Component {
     const {mode, url, uploadStatus, progressText} = this.state;
     const disabledClose = false;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
+    const isImage = mediaType === 'image';
+    const radioButtons = [
+      {'name': 'Upload a new file', 'value': 'upload', 'checked': mode === 'upload'},
+    ];
+    if (isImage) {
+      radioButtons.push({'name': 'Choose from uploaded', 'value': 'library', 'checked': mode === 'library'});
+    }
+    radioButtons.push({'name': 'From URL', 'value': 'url', 'checked': mode === 'url'});
     return (
       <AdminDialog
         title={`Insert ${mediaType}`}
@@ -153,18 +163,7 @@ export default class RichEditorMediaDialog extends React.Component {
           <AdminRadio
             groupName="media-insert"
             customClass="text-sm font-semibold"
-            buttons={[
-              {
-                'name': 'Upload a new file',
-                'value': 'upload',
-                'checked': mode === 'upload',
-              },
-              {
-                'name': 'From URL',
-                'value': 'url',
-                'checked': mode === 'url',
-              },
-            ]}
+            buttons={radioButtons}
             onChange={(e) => {
               this.setState({mode: e.target.value});
             }}
@@ -172,7 +171,18 @@ export default class RichEditorMediaDialog extends React.Component {
           />
         </div>
         <div>
-          {mode === 'upload' ?
+          {mode === 'library' && isImage ?
+            <MediaLibrary
+              selectMode
+              onSelect={(absoluteUrl) => {
+                // Editor content stores absolute urls, so insert the browser url.
+                this.setState({url: absoluteUrl}, () => {
+                  this.insertMedia();
+                  setIsOpen(false);
+                });
+              }}
+            /> :
+          mode === 'upload' ?
             <UploadNewFile
               mediaType={mediaType}
               uploading={uploading}

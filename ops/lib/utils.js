@@ -68,6 +68,20 @@ class WranglerCmd {
   }
 
   /**
+   * Run a single SQL statement against the feed DB. Used for idempotent-by-
+   * tolerance schema migrations (ADD COLUMN) that `CREATE TABLE IF NOT EXISTS`
+   * in init.sql can't apply to an already-existing table. Callers ignore the
+   * expected "duplicate column"/"no such table" errors.
+   */
+  executeFeedDbSql(sql) {
+    const dbName = this.currentEnv !== 'development' ?
+      `${this._non_dev_db()} --remote` : 'FEED_DB --local';
+    const wranglerCmd = `wrangler d1 execute ${dbName} -e ${this.currentEnv} --command ${JSON.stringify(sql)}`;
+    console.log(wranglerCmd);
+    return this._getCmd(wranglerCmd);
+  }
+
+  /**
    * XXX: We use private api here, which may be changed on the cloudflare end...
    * https://github.com/cloudflare/wrangler2/blob/main/packages/wrangler/src/d1/list.tsx#L34
    */

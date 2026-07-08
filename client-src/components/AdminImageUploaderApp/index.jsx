@@ -5,12 +5,21 @@ import 'cropperjs/dist/cropper.min.css';
 import {FileUploader} from "react-drag-drop-files";
 import Requests from '../../common/requests';
 import {randomHex, urlJoinWithRelative} from '../../../common-src/StringUtils';
+import {
+  classifyImageFieldFile,
+  getImageFieldAcceptedFileTypes,
+  getNormalizedSquareOutputSize,
+  isImageFieldCompatibleStoredMedia,
+  readImageDimensions,
+} from "../../common/imageFieldUploadPipeline";
 import AdminDialog from "../AdminDialog";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
+import MediaLibraryPicker from "../MediaLibraryPicker";
 import {showToast} from "../../common/ToastUtils";
 
 const UPLOAD_STATUS__START = 1;
+const IMAGE_FIELD_FILE_TYPES = getImageFieldAcceptedFileTypes();
 
 function EmptyImage({fileTypes}) {
   return (<div className="text-brand-light text-sm flex flex-col justify-center items-center h-full">
@@ -40,15 +49,6 @@ function PreviewImage({url}) {
   </div>);
 }
 
-function isInvalidImage() {
-  // TODO: implement it -
-  // - check if it's image
-  // - square size
-  // - at least 1400x1400
-  // - ...
-  // return 'error message'
-}
-
 export default class AdminImageUploaderApp extends React.Component {
   constructor(props) {
     super(props);
@@ -74,6 +74,7 @@ export default class AdminImageUploaderApp extends React.Component {
       contentType: '',
       imageWidth: 0,
       imageHeight: 0,
+      selectedClassification: null,
     };
 
     this.state = {
@@ -103,25 +104,59 @@ export default class AdminImageUploaderApp extends React.Component {
       return;
     }
 
-    const errorMessage = isInvalidImage();
-    if (errorMessage) {
-      // TODO: show error message
+    const classification = classifyImageFieldFile(file);
+    const newFilename = `${mediaType}-${randomHex(32)}.${classification.outputExtension}`;
+
+    if (classification.kind !== "raster") {
+      this.setState({
+        uploadStatus: UPLOAD_STATUS__START,
+        progressText: '0.00%',
+        cdnFilename: `images/${newFilename}`,
+        contentType: classification.outputContentType,
+      }, async () => {
+        const dimensions = await readImageDimensions(file);
+        Requests.upload(
+          file,
+          `images/${newFilename}`,
+          (percentage) => {
+            this.setState({
+              progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`,
+            });
+          },
+          (cdnUrl, _arrayBuffer, meta) => {
+            this.props.onImageUploaded(cdnUrl, classification.outputContentType, meta || dimensions);
+            this.setState({
+              ...this.initState,
+              currentImageUrl: cdnUrl,
+            });
+          },
+          () => {
+            showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
+            this.setState({...this.initState});
+          },
+          (error) => {
+            this.setState({...this.initState}, () => {
+              if (!error.response) {
+                showToast('Network error. Please refresh the page and try again.', 'error');
+              } else {
+                showToast('Failed. Please try again.', 'error');
+              }
+            });
+          },
+          dimensions,
+        );
+      });
       return;
     }
 
-    const {name, type} = file;
-    const extension = name.slice((name.lastIndexOf(".") - 1 >>> 0) + 2);
-    let newFilename = `${mediaType}-${randomHex(32)}`;
-    if (extension && extension.length > 0) {
-      newFilename += `.${extension}`;
-    }
     const previewUrl = URL.createObjectURL(file);
     this.setState({
       previewImageUrl: previewUrl,
       showModal: true,
       cdnFilename: `images/${newFilename}`,
-      contentType: type,
-    })
+      contentType: classification.outputContentType,
+      selectedClassification: classification,
+    });
   }
 
   onFileUploadToR2() {
@@ -130,15 +165,24 @@ export default class AdminImageUploaderApp extends React.Component {
       return;
     }
     this.setState({ uploadStatus: UPLOAD_STATUS__START });
-    cropper.getCroppedCanvas().toBlob((blob) => {
+    const imageData = cropper.getImageData ? cropper.getImageData() : {};
+    const targetSize = getNormalizedSquareOutputSize(
+      imageData.naturalWidth || imageData.width || 0,
+      imageData.naturalHeight || imageData.height || 0,
+    );
+    cropper.getCroppedCanvas({
+      width: targetSize,
+      height: targetSize,
+      imageSmoothingQuality: 'high',
+    }).toBlob((blob) => {
       cropper.disable();
 
       Requests.upload(blob, cdnFilename, (percentage) => {
         this.setState({
           progressText: `${parseFloat(percentage * 100.0).toFixed(2)}%`,
         });
-      }, (cdnUrl) => {
-        this.props.onImageUploaded(cdnUrl, contentType);
+      }, (cdnUrl, _arrayBuffer, meta) => {
+        this.props.onImageUploaded(cdnUrl, contentType, meta || {width: targetSize, height: targetSize});
         cropper.destroy();
         this.setState({
           ...this.initState,
@@ -155,21 +199,20 @@ export default class AdminImageUploaderApp extends React.Component {
             showToast('Failed. Please try again.', 'error');
           }
         });
-      });
-    }, 'image/png');
+      }, {width: targetSize, height: targetSize});
+    }, 'image/avif', 0.8);
   }
 
   render() {
     const {uploadStatus, currentImageUrl, progressText, showModal, publicBucketUrl, previewImageUrl, imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
-    const fileTypes = ['PNG', 'JPG', 'JPEG'];
+    const fileTypes = IMAGE_FIELD_FILE_TYPES;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
-    const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
-      imageWidth < 1400 || imageHeight < 1400;
-    const imageSizeNotOkayMsg = imageSizeNotOkayMsgFunc ? imageSizeNotOkayMsgFunc(imageWidth, imageHeight) :
-      `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
-      "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
+    const imageSizeValidationEnabled = typeof imageSizeNotOkayFunc === 'function';
+    const imageSizeNotOkay = imageSizeValidationEnabled ? imageSizeNotOkayFunc(imageWidth, imageHeight) : false;
+    const imageSizeNotOkayMsg = imageSizeValidationEnabled && imageSizeNotOkayMsgFunc ?
+      imageSizeNotOkayMsgFunc(imageWidth, imageHeight) : '';
     return (<div className="lh-upload-wrapper">
       <FileUploader
         handleChange={this.onFileUpload}
@@ -186,6 +229,22 @@ export default class AdminImageUploaderApp extends React.Component {
       {absoluteImageUrl && <div className="text-sm flex justify-center mt-1">
         <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={absoluteImageUrl} />
       </div>}
+      <div className="flex justify-center mt-2">
+        <MediaLibraryPicker
+          buttonLabel="Or choose from uploaded"
+          buttonClass="text-helper-color text-xs underline"
+          onSelect={(internalUrl, absoluteUrl, media) => {
+            if (media && !isImageFieldCompatibleStoredMedia(media)) {
+              showToast('That file must already be AVIF, SVG, or animated before reuse.', 'warning', 4000);
+              return;
+            }
+            // Reuse an existing image: hand the internal (host-stripped) url to
+            // the parent, exactly as a fresh upload would.
+            this.setState({currentImageUrl: internalUrl});
+            this.props.onImageUploaded(internalUrl, (media && media.content_type) || '');
+          }}
+        />
+      </div>
       <AdminDialog
         isOpen={showModal}
         setIsOpen={(trueOrFalse) => this.setState({showModal: trueOrFalse})}
@@ -229,7 +288,7 @@ export default class AdminImageUploaderApp extends React.Component {
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>
         </div>
-        {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", imageSizeNotOkay ? 'text-red-500' : 'text-green-500')}>
+        {imageSizeValidationEnabled && imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", imageSizeNotOkay ? 'text-red-500' : 'text-green-500')}>
           {imageSizeNotOkay ? <div>{imageSizeNotOkayMsg}</div> :
             <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
         </div>}

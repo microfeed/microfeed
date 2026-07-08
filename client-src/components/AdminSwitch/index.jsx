@@ -9,14 +9,15 @@ export default function AdminSwitch(
       <Switch
         checked={enabled}
         onChange={setEnabled}
-        className={clsx('relative inline-flex h-6 w-11 items-center rounded-full',
-          enabled ? 'bg-brand-light' : 'bg-gray-200', customClass)}
+        className={clsx('relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:ring-offset-1',
+          enabled ? 'bg-brand-light' : 'bg-gray-300', customClass)}
       >
         {label && <span className="sr-only">{label}</span>}
         <span
           className={`${
             enabled ? 'translate-x-6' : 'translate-x-1'
-          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+          } inline-block h-4 w-4 transform rounded-full bg-white shadow transition`}
         />
       </Switch>
     </div>

@@ -25,11 +25,17 @@ export default class WebGlobalSettingsApp extends React.Component {
     let publicBucketUrl = '';
     let itemsPerPage = DEFAULT_ITEMS_PER_PAGE;
     let itemsSortOrder = ITEMS_SORT_ORDERS.NEWEST_FIRST;
+    let brandName = '';
+    let brandDomain = '';
+    let brandLogo = '';
     if (feed.settings && feed.settings[currentType]) {
       favicon = feed.settings[currentType].favicon || {};
       publicBucketUrl = feed.settings[currentType].publicBucketUrl || '';
       itemsSortOrder = feed.settings[currentType].itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
       itemsPerPage = feed.settings[currentType].itemsPerPage || DEFAULT_ITEMS_PER_PAGE;
+      brandName = feed.settings[currentType].brandName || '';
+      brandDomain = feed.settings[currentType].brandDomain || '';
+      brandLogo = feed.settings[currentType].brandLogo || '';
     }
     this.state = {
       feed,
@@ -39,11 +45,14 @@ export default class WebGlobalSettingsApp extends React.Component {
       publicBucketUrl,
       itemsPerPage,
       itemsSortOrder,
+      brandName,
+      brandDomain,
+      brandLogo,
     };
   }
 
   render() {
-    const {feed, currentType, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder} = this.state;
+    const {feed, currentType, favicon, publicBucketUrl, itemsPerPage, itemsSortOrder, brandName, brandDomain, brandLogo} = this.state;
     const {submitting, submitForType, setChanged} = this.props;
     return (<SettingsBase
       title="Web global settings"
@@ -54,7 +63,7 @@ export default class WebGlobalSettingsApp extends React.Component {
         if (publicBucketUrl) {
           if (!isValidUrl(publicBucketUrl)) {
             showToast('Invalid url. A valid url should start with http:// or https://, ' +
-              'for example, https://media-cdn.microfeed.org',
+              'for example, https://media-cdn.example.com',
               'error', 5000);
             return;
           }
@@ -64,10 +73,42 @@ export default class WebGlobalSettingsApp extends React.Component {
           publicBucketUrl,
           itemsSortOrder,
           itemsPerPage,
+          brandName,
+          brandDomain,
+          brandLogo,
         });
       }}
     >
       <div className="grid grid-cols-1 gap-4">
+        <details open>
+          <summary className="lh-page-subtitle cursor-pointer">Branding</summary>
+          <div className="grid grid-cols-1 gap-4">
+            <AdminInput
+              label="Brand name"
+              customClass="text-xs"
+              value={brandName}
+              placeholder="e.g., My Feed"
+              onChange={(e) => this.setState({brandName: e.target.value}, () => setChanged())}
+            />
+            <AdminInput
+              label="Brand domain"
+              customClass="text-xs"
+              value={brandDomain}
+              placeholder="e.g., myfeed.com"
+              onChange={(e) => this.setState({brandDomain: e.target.value}, () => setChanged())}
+            />
+            <div>
+              <div className="m-input-label-small mb-1">Logo</div>
+              <AdminImageUploaderApp
+                feed={feed}
+                mediaType="logo"
+                currentImageUrl={brandLogo}
+                imageSizeNotOkayFunc={() => false}
+                onImageUploaded={(cdnUrl) => this.setState({brandLogo: cdnUrl}, () => setChanged())}
+              />
+            </div>
+          </div>
+        </details>
         <details open>
           <summary className="lh-page-subtitle cursor-pointer">R2 public bucket url</summary>
           <AdminInput
