@@ -1,19 +1,13 @@
-import OpenAPIYaml from '../../../edge-src/EdgeApiApp/openapi.yaml.html';
+import {buildOpenApiSpec} from "../../../edge-src/models/OpenApiBuilder";
 import {MICROFEED_VERSION} from "../../../common-src/Version";
 
-const Mustache = require('mustache');
-
 export async function onRequestGet({request}) {
-  const urlObj = new URL(request.url);
-  const baseUrl = urlObj.origin;
-  const html = Mustache.render(OpenAPIYaml, {
-    baseUrl,
-    microfeedVersion: MICROFEED_VERSION
-  });
+  const baseUrl = new URL(request.url).origin;
+  const spec = buildOpenApiSpec({baseUrl, version: MICROFEED_VERSION});
 
-  return new Response(html, {
+  return new Response(JSON.stringify(spec), {
     headers: {
-      'content-type': 'text/yaml; charset=utf-8',
+      'content-type': 'application/json; charset=utf-8',
     },
   });
 }

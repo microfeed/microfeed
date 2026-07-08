@@ -8,6 +8,7 @@ import {
 import {humanizeMs, msToRFC3339} from "../../common-src/TimeUtils";
 import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "../../common-src/Constants";
 import {isValidMediaFile} from "../../common-src/MediaFileUtils";
+import {serializeItemForFeed} from "./FeedItemSerializer";
 
 const {MICROFEED_VERSION} = require('../../common-src/Version');
 
@@ -293,6 +294,20 @@ export default class FeedPublicJsonBuilder {
       if (![STATUSES.PUBLISHED, STATUSES.UNLISTED].includes(item.status)) {
         return;
       }
+
+      if (item._feedRow) {
+        const {tagIds = [], members = []} = item._feedRow;
+        const newItem = serializeItemForFeed(item._feedRow, {
+          publicBucketUrl: this.publicBucketUrl,
+          tagIds,
+          members,
+        });
+        publicContent.items.push(newItem);
+        return;
+      }
+
+      // Fallback for any legacy caller that builds content.items without a
+      // raw _feedRow (FeedItemSerializer is the source of truth otherwise).
       this._decorateForItem(item, this.baseUrl);
       const mediaFile = item.mediaFile || {};
       const newItem = this._buildPublicContentItem(item, mediaFile);

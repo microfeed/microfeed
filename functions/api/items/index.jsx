@@ -1,24 +1,28 @@
-import { ITEM_STATUSES_STRINGS_DICT, STATUSES } from '../../../common-src/Constants';
-import {datetimeLocalToMs} from "../../../common-src/TimeUtils";
-
-// TODO: defensive code to handle some common errors
-export async function onRequestPost({ request, data }) {
-  const {
-    id, // eslint-disable-line no-unused-vars
-    ...itemJson
-  } = await request.json();
-  itemJson.status = ITEM_STATUSES_STRINGS_DICT[itemJson.status] || STATUSES.PUBLISHED;
-  itemJson.date_published_ms = itemJson.date_published_ms ? itemJson.date_published_ms : datetimeLocalToMs(new Date());
-
-  const { feedCrud } = data;
-  const itemId = await feedCrud.upsertItem(itemJson);
-
-  return new Response(JSON.stringify({
-    id: itemId,
-  }), {
+function jsonResponse(body, status) {
+  return new Response(JSON.stringify(body), {
     headers: {
       'content-type': 'application/json;charset=UTF-8',
     },
-    status: 201,
+    status,
   });
+}
+
+export async function onRequestPost({ request, data }) {
+  const body = await request.json();
+  const { content_type: contentType, ...payload } = body || {};
+
+  if (!contentType) {
+    return jsonResponse({
+      errors: [{ field: 'content_type', message: 'content_type is required' }],
+    }, 400);
+  }
+
+  const { feedCrud } = data;
+  const result = await feedCrud.create(contentType, payload);
+
+  if (result && result.errors) {
+    return jsonResponse({ errors: result.errors }, 400);
+  }
+
+  return jsonResponse({ id: result }, 201);
 }

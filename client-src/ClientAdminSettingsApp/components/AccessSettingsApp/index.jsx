@@ -1,12 +1,12 @@
 import React from 'react';
-import { RadioGroup } from '@headlessui/react'
+import { RadioGroup, Radio } from '@headlessui/react'
 import clsx from "clsx";
 import { CheckIcon } from '@heroicons/react/20/solid'
 import SettingsBase from '../SettingsBase';
 import {SETTINGS_CATEGORIES} from "../../../../common-src/Constants";
 
 function AccessOption({value, header, description}) {
-  return (<RadioGroup.Option value={value}>
+  return (<Radio value={value}>
     {({checked}) => (
       <div className={clsx('border p-2 hover:cursor-pointer rounded-sm',
         checked ? 'border-brand-light' : '')}>
@@ -26,7 +26,7 @@ function AccessOption({value, header, description}) {
         </div>
       </div>
     )}
-  </RadioGroup.Option>);
+  </Radio>);
 }
 
 export default class AccessSettingsApp extends React.Component {

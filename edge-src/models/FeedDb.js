@@ -5,6 +5,14 @@ import {
 } from '../../common-src/Constants';
 import {msToRFC3339, rfc3399ToMs} from "../../common-src/TimeUtils";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
+import FeedPublicRssBuilder from "./FeedPublicRssBuilder";
+import ChannelRepo from "./ChannelRepo";
+import ItemRepo from "./ItemRepo";
+import SettingsRepo from "./SettingsRepo";
+import TagLinkRepo from "./TagLinkRepo";
+import AggregationResolver from "./AggregationResolver";
+import {getFieldDefs, isAggregator} from "../registry/ContentTypeRegistry";
+import {serializeItemForFeed} from "./FeedItemSerializer";
 
 /**
  * support url query parameters:
@@ -53,26 +61,95 @@ function getSettingJson(settingObj) {
 }
 
 function getChannelJson(channelObj) {
+  const channelData = channelObj?.data ? JSON.parse(channelObj.data) : {};
   return {
+    ...channelData,
     id: channelObj.id,
     status: channelObj.status,
     is_primary: channelObj.is_primary,
-    ...JSON.parse(channelObj.data),
   };
 }
 
 function getItemJson(itemObj) {
-  return {
+  const itemData = itemObj?.data ? JSON.parse(itemObj.data) : {};
+  const itemJson = {
+    ...itemData,
     id: itemObj.id,
     status: itemObj.status,
     pubDateMs: rfc3399ToMs(itemObj.pub_date),
-    ...JSON.parse(itemObj.data)
   };
+  if (itemObj.content_type !== undefined) {
+    itemJson.content_type = itemObj.content_type;
+  }
+  if (itemObj.slug !== undefined) {
+    itemJson.slug = itemObj.slug;
+  }
+  return {
+    ...itemJson,
+    // Raw row kept alongside the pre-parsed json above so the feed builder can
+    // run every item through the registry-driven FeedItemSerializer without
+    // disturbing existing consumers of the spread `itemJson` shape.
+    _feedRow: {
+      id: itemObj.id,
+      content_type: itemObj.content_type,
+      status: itemObj.status,
+      slug: itemObj.slug,
+      pub_date: itemObj.pub_date,
+      data: itemObj.data,
+    },
+  };
+}
+
+function channelContentToRow(channel) {
+  const {id, status, is_primary, ...data} = channel;
+  return {
+    id,
+    status,
+    is_primary,
+    data: JSON.stringify(data),
+  };
+}
+
+function settingsContentToRow(category, value) {
+  return {
+    category,
+    data: JSON.stringify(value),
+  };
+}
+
+function itemContentToRow(item) {
+  const {
+    id,
+    status,
+    pubDateMs,
+    pub_date,
+    content_type,
+    slug,
+    ...data
+  } = item;
+  const row = {
+    id,
+    status,
+    content_type,
+    slug,
+    data: JSON.stringify(data),
+  };
+  if (pub_date !== undefined) {
+    row.pub_date = pub_date;
+  } else if (pubDateMs !== undefined) {
+    row.pub_date = msToRFC3339(pubDateMs);
+  }
+  return row;
 }
 
 export default class FeedDb {
   constructor(env, request) {
     this.FEED_DB = env.FEED_DB;
+    this.channelRepo = new ChannelRepo(this.FEED_DB);
+    this.itemRepo = new ItemRepo(this.FEED_DB);
+    this.settingsRepo = new SettingsRepo(this.FEED_DB);
+    this.tagLinkRepo = new TagLinkRepo(this.FEED_DB);
+    this.aggregationResolver = new AggregationResolver(this.FEED_DB);
 
     const urlObj = new URL(request.url);
     this.baseUrl = urlObj.origin;
@@ -81,57 +158,81 @@ export default class FeedDb {
   }
 
   /**
+   * Hydrates the `_feedRow` attached to each item (see getItemJson) with the
+   * data FeedItemSerializer needs but can't derive on its own: the item's
+   * linked tag ids, and — for aggregators (gallery/landing_page) — the
+   * resolved + serialized member items. Runs BEFORE the (synchronous)
+   * FeedPublicJsonBuilder is constructed so the builder itself stays sync.
+   */
+  async _hydrateItemsForFeed(items) {
+    for (const item of items) {
+      const row = item._feedRow;
+      if (!row) {
+        continue;
+      }
+
+      const tagsFieldDef = getFieldDefs(row.content_type).find((fieldDef) => fieldDef.kind === "tags");
+      if (tagsFieldDef) {
+        row.tagIds = await this.tagLinkRepo.getTagIdsForItem(row.id);
+      }
+
+      if (isAggregator(row.content_type)) {
+        const memberRows = await this.aggregationResolver.resolve(row, {
+          statuses: [STATUSES.PUBLISHED, STATUSES.UNLISTED],
+        });
+        const members = [];
+        for (const memberRow of memberRows) {
+          const memberTagsFieldDef = getFieldDefs(memberRow.content_type)
+            .find((fieldDef) => fieldDef.kind === "tags");
+          const memberTagIds = memberTagsFieldDef
+            ? await this.tagLinkRepo.getTagIdsForItem(memberRow.id)
+            : [];
+          members.push(serializeItemForFeed(memberRow, {
+            publicBucketUrl: this._publicBucketUrl(),
+            tagIds: memberTagIds,
+          }));
+        }
+        row.members = members;
+      }
+    }
+    return items;
+  }
+
+  _publicBucketUrl() {
+    const webGlobalSettings = (this._settingsCache && this._settingsCache.webGlobalSettings) || {};
+    return webGlobalSettings.publicBucketUrl || '';
+  }
+
+  _getRepo(table) {
+    switch (table) {
+      case 'channels':
+        return this.channelRepo;
+      case 'items':
+        return this.itemRepo;
+      case 'settings':
+        return this.settingsRepo;
+      default:
+        throw new Error(`Unsupported table: ${table}`);
+    }
+  }
+
+  /**
    * INSERT INTO users (name, age) VALUES (?1, ?2)
    * UPDATE users SET name = ?1 WHERE id = ?2
    */
   getInsertSql(table, keyValuePairs) {
-    let sql = `INSERT INTO ${table}`;
-    const colList = Object.keys(keyValuePairs)
-    const bindList = Object.values(keyValuePairs);
-    const placeholderList = bindList.map(() => '?');
-    sql = `${sql} (${colList.join(', ')}) VALUES (${placeholderList.join(', ')})`;
-    return this.FEED_DB.prepare(sql).bind(...bindList)
+    return this._getRepo(table).buildInsertStatement(keyValuePairs);
   }
 
   getUpdateSql(table, queryKwargs, keyValuePairs) {
-    let sql = `UPDATE ${table} SET`;
-    const setList = ['updated_at = ?'];
-    const bindList = [(new Date()).toISOString()];
-    Object.keys(keyValuePairs).forEach((key) => {
-      setList.push(`${key} = ?`);
-      bindList.push(keyValuePairs[key]);
-    });
-    sql = `${sql} ${setList.join(', ')}`;
-    if (queryKwargs && Object.keys(queryKwargs).length > 0) {
-      const queryKeys = [];
-      Object.keys(queryKwargs).forEach((queryKey) => {
-        queryKeys.push(`${queryKey}=?`);
-        bindList.push(queryKwargs[queryKey]);
-      })
-      sql = `${sql} WHERE ${queryKeys.join(' AND ')}`;
-    }
-    return this.FEED_DB.prepare(sql).bind(...bindList)
+    return this._getRepo(table).buildUpdateStatement(queryKwargs, keyValuePairs);
   }
 
   getUpsertSql(table, primaryKey, queryKwargs, keyValuePairs) {
-    let updateSql = 'UPDATE SET';
-    const setList = ['updated_at = ?'];
-    const updateBindList = [(new Date()).toISOString()];
-    Object.keys(keyValuePairs).forEach((key) => {
-      setList.push(`${key} = ?`);
-      updateBindList.push(keyValuePairs[key]);
+    return this._getRepo(table).buildUpsertStatement({
+      ...queryKwargs,
+      ...keyValuePairs,
     });
-    updateSql = `${updateSql} ${setList.join(', ')}`;
-
-    let insertSql = `INSERT INTO ${table}`;
-    const insertKeyValuePairs = {...queryKwargs, ...keyValuePairs};
-    const colList = Object.keys(insertKeyValuePairs)
-    const insertBindList = Object.values(insertKeyValuePairs);
-    const placeholderList = insertBindList.map(() => '?');
-    insertSql = `${insertSql} (${colList.join(', ')}) VALUES (${placeholderList.join(', ')})`;
-
-    const sql = `${insertSql} ON CONFLICT(${primaryKey}) DO ${updateSql}`;
-    return this.FEED_DB.prepare(sql).bind(...insertBindList, ...updateBindList);
   }
 
   async initDb() {
@@ -154,7 +255,6 @@ export default class FeedDb {
         currentPolicy: 'public',
       },
       [SETTINGS_CATEGORIES.ANALYTICS]: {},
-      [SETTINGS_CATEGORIES.CUSTOM_CODE]: {},
     };
     const channel = {
       image: '/assets/default/channel-image.png',
@@ -167,27 +267,30 @@ export default class FeedDb {
       'itunes:block': false,
       'copyright': `©${(new Date()).getFullYear()}`,
     };
+    const channelId = randomShortUUID();
 
     const batchStatements = [
-      this.getInsertSql('channels', {
-        'id': randomShortUUID(),
-        'status': STATUSES.PUBLISHED,
-        'is_primary': 1,
-        'data': JSON.stringify(channel),
-      }),
+      this.getInsertSql('channels', channelContentToRow({
+        id: channelId,
+        status: STATUSES.PUBLISHED,
+        is_primary: 1,
+        ...channel,
+      })),
     ];
 
     Object.keys(settings).forEach((s) => {
-      batchStatements.push(this.getInsertSql('settings', {
-        'category': s,
-        'data': JSON.stringify(settings[s]),
-      }));
+      batchStatements.push(this.getInsertSql('settings', settingsContentToRow(s, settings[s])));
     })
 
     await this.FEED_DB.batch(batchStatements);
 
     return {
-      channel,
+      channel: {
+        id: channelId,
+        status: STATUSES.PUBLISHED,
+        is_primary: 1,
+        ...channel,
+      },
       items: [],
       settings,
     };
@@ -213,42 +316,11 @@ export default class FeedDb {
    *   ]
    */
   async _getContent(things, sortOrder, fromUrl) {
-    const batchStatements = [];
-    things.forEach((thing) => {
-      let sql = `SELECT * FROM ${thing.table}`;
-      const whereList = [];
-      const bindList = [];
-      if (thing.queryKwargs) {
-        Object.keys(thing.queryKwargs).forEach((kwargKey) => {
-          const kwargKeyComponents = kwargKey.split('__');
-          let key = kwargKeyComponents[0];
-          let op = '==';
-          if (kwargKeyComponents.length > 0 &&
-            ['!=', '>', '<', '>=', '<=', '==', 'in'].includes(kwargKeyComponents[1])) {
-            op = kwargKeyComponents[1];
-          }
-          if (op === 'in') {
-            whereList.push(`${key} ${op} (${thing.queryKwargs[kwargKey].join(',')})`);
-          } else {
-            bindList.push(thing.queryKwargs[kwargKey]);
-            whereList.push(`${key} ${op} ?`);
-          }
-        })
-      }
-      if (whereList.length > 0) {
-        sql = `${sql} WHERE ${whereList.join(' AND ')}`;
-      }
-      if (thing.orderBy && thing.orderBy.length > 0) {
-        sql = `${sql} ORDER BY ${thing.orderBy.join(',')}`
-      }
-      if (thing.limit) {
-        sql = `${sql} LIMIT ${thing.limit}`;
-      }
-      batchStatements.push(
-        this.FEED_DB.prepare(sql).bind(...bindList)
-      );
-    });
-    const responses = await this.FEED_DB.batch(batchStatements);
+    const responses = await Promise.all(things.map((thing) => this._getRepo(thing.table).list({
+      queryKwargs: thing.queryKwargs,
+      orderBy: thing.orderBy,
+      limit: thing.limit,
+    })));
     const contentJson = {};
     for (let i = 0; i < things.length; i++) {
       const response = responses[i];
@@ -266,26 +338,22 @@ export default class FeedDb {
           }
         });
       } else if (thing.table === 'items') {
-        let nextCursor;
-        let prevCursor;
-        contentJson['items'] = response.results.map((result) => getItemJson(result));
-        if (sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST) {
-          contentJson['items'].sort((a, b) => (b.pubDateMs - a.pubDateMs));
-        } else {
-          contentJson['items'].sort((a, b) => (a.pubDateMs - b.pubDateMs));
-        }
-        contentJson['items'].forEach((itemJson) => {
-          nextCursor = itemJson.pubDateMs;
-          if (!prevCursor) {
-            prevCursor = itemJson.pubDateMs;
-          }
+        const page = await this.itemRepo.listPaginated({
+          queryKwargs: thing.queryKwargs,
+          orderBy: thing.orderBy,
+          limit: thing.limit,
+          sortOrder,
+          nextCursor: fromUrl?.nextCursor,
+          prevCursor: fromUrl?.prevCursor,
         });
-
-        if (thing.limit <= contentJson['items'].length) {
-          contentJson['items_next_cursor'] = nextCursor;
+        contentJson['items'] = page.results.map((result) => getItemJson(result));
+        await this._hydrateItemsForFeed(contentJson['items']);
+        contentJson['items_sort_order'] = page.items_sort_order;
+        if (page.items_next_cursor !== undefined) {
+          contentJson['items_next_cursor'] = page.items_next_cursor;
         }
-        if (fromUrl.nextCursor || fromUrl.prevCursor) {
-          contentJson['items_prev_cursor'] = prevCursor;
+        if (page.items_prev_cursor !== undefined) {
+          contentJson['items_prev_cursor'] = page.items_prev_cursor;
         }
       }
     }
@@ -293,106 +361,65 @@ export default class FeedDb {
   }
 
   async getContent(fetchItems = null) {
-    let things = [
-      {
-        table: 'channels',
-        queryKwargs: {
-          status: STATUSES.PUBLISHED,
-          is_primary: 1,
-        },
-      },
-      {
-        table: 'settings',
-      },
-    ];
-
-    let contentJson = await this._getContent(things);
-    if (Object.keys(contentJson).length === 0 || !contentJson.channel ||
-      Object.keys(contentJson.channel).length === 0 || !contentJson.settings ||
-      Object.keys(contentJson.settings).length === 0) {
+    let contentJson = {
+      channel: {},
+      settings: {},
+    };
+    const channelRow = await this.channelRepo.getPrimaryPublished();
+    const settingRows = (await this.settingsRepo.listAll()).results;
+    if (!channelRow || !settingRows || settingRows.length === 0) {
       contentJson = await this.initDb();
+    } else {
+      contentJson.channel = getChannelJson(channelRow);
+      settingRows.forEach((result) => {
+        contentJson.settings[result.category] = getSettingJson(result);
+      });
     }
 
-    let itemJson = {};
+    this._settingsCache = contentJson.settings;
+
     if (fetchItems) {
       const webGlobalSettings = contentJson.settings.webGlobalSettings || {};
-
       const fromUrl = fetchItems.fromUrl || {};
-      const queryKwargs = fetchItems.queryKwargs || {};
+      const queryKwargs = {...(fetchItems.queryKwargs || {})};
       const sortOrder = fromUrl.sortOrder || webGlobalSettings.itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
       const {nextCursor, prevCursor} = fromUrl;
+      let limit = fetchItems.limit || webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE;
 
-      let orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ?
-        ['pub_date desc', 'id'] : ['pub_date', 'id'];
-      if (nextCursor) {
-        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__<' : 'pub_date__>';
-        try {
-          queryKwargs[queryParam] = msToRFC3339(nextCursor);
-        } catch (error) {
-          console.log(error);
-        }
-      } else if (prevCursor) {
-        orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? ['pub_date', 'id'] : ['pub_date desc', 'id'];
-        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__>' : 'pub_date__<';
-        try {
-          queryKwargs[queryParam] = msToRFC3339(prevCursor);
-        } catch (error) {
-          console.log(error);
-        }
+      if (limit < 0) {
+        limit = undefined;
+      } else if (limit > MAX_ITEMS_PER_PAGE) {
+        limit = MAX_ITEMS_PER_PAGE;
       }
-      const fetchItemsParams = {
-        limit: fetchItems.limit || webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
-        orderBy,
+
+      const page = await this.itemRepo.listPaginated({
         queryKwargs,
-      };
-
-      if (fetchItemsParams.limit < 0) {
-        fetchItemsParams.limit = undefined;
-      } else if (fetchItemsParams.limit > MAX_ITEMS_PER_PAGE) {
-        fetchItemsParams.limit = MAX_ITEMS_PER_PAGE;
+        limit,
+        sortOrder,
+        nextCursor,
+        prevCursor,
+      });
+      contentJson.items = page.results.map((result) => getItemJson(result));
+      await this._hydrateItemsForFeed(contentJson.items);
+      contentJson.items_sort_order = page.items_sort_order;
+      if (page.items_next_cursor !== undefined) {
+        contentJson.items_next_cursor = page.items_next_cursor;
       }
-      things = [{
-        table: 'items',
-        ...fetchItemsParams,
-      }];
-      itemJson = await this._getContent(things, sortOrder, fromUrl);
-      itemJson['items_sort_order'] = sortOrder;
+      if (page.items_prev_cursor !== undefined) {
+        contentJson.items_prev_cursor = page.items_prev_cursor;
+      }
     }
 
-    return {...contentJson, ...itemJson};
+    return contentJson;
   }
 
   async _putChannelToContent(channel) {
-    const {id, status, is_primary, ...data} = channel;
-    const batchStatements = [];
-    batchStatements.push(this.getUpdateSql(
-      'channels',
-      {
-        id,
-      },
-      {
-        status,
-        'is_primary': is_primary,
-        data: JSON.stringify(data),
-      },
-    ));
-    await this.FEED_DB.batch(batchStatements);
+    const row = channelContentToRow(channel);
+    await this.channelRepo.upsert(row);
   }
 
   async _updateOrAddSetting(settings, category) {
-    let res;
-    try {
-      res = await this.getUpsertSql(
-        'settings',
-        'category',
-        {category},
-        {
-          data: JSON.stringify(settings[category]),
-        }).run();
-    } catch (error) {
-      console.log('Failed to upsert', error);
-    }
-    console.log('Done', res);
+    await this.settingsRepo.upsert(settingsContentToRow(category, settings[category]));
   }
 
   async _putSettingsToContent(settings) {
@@ -402,20 +429,7 @@ export default class FeedDb {
   }
 
   async _putItemToContent(item) {
-    const {id, pubDateMs, status, ...data} = item;
-    const keyValuePairs = {
-      status,
-      'pub_date': msToRFC3339(pubDateMs),
-      data: JSON.stringify(data),
-    };
-    let res;
-    try {
-      res = await this.getUpsertSql(
-        'items', 'id', {id}, {...keyValuePairs}).run();
-    } catch (error) {
-      console.log('Failed to upsert', error);
-    }
-    console.log('Done!', res);
+    await this.itemRepo.upsert(itemContentToRow(item));
   }
 
   async putContent(feed) {
@@ -439,5 +453,21 @@ export default class FeedDb {
     }
     const builder = new FeedPublicJsonBuilder(content, this.baseUrl, this.request, forOneItem);
     return builder.getJsonData();
+  }
+
+  /**
+   * Builds a type-aware RSS feed string (podcast iTunes RSS or blog basic
+   * RSS 2.0, per the registry's `rss` config) for the given content type.
+   * `content` may be a raw FeedDb content object (channel/settings/items) or
+   * already-built JSON feed data (from getPublicJsonData); both are accepted
+   * so callers can reuse a content fetch across JSON + RSS builds.
+   */
+  async getPublicRssData(content, contentType) {
+    let jsonData = content;
+    if (!jsonData || !jsonData._microfeed) {
+      jsonData = await this.getPublicJsonData(content);
+    }
+    const builder = new FeedPublicRssBuilder(jsonData, this.baseUrl, {contentType});
+    return builder.getRssData();
   }
 }

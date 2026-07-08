@@ -3,7 +3,6 @@ import AdminNavApp from '../../components/AdminNavApp';
 import TrackingSettingsApp from "./TrackingSettingsApp";
 import AccessSettingsApp from "./AccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
-import CustomCodeSettingsApp from "./CustomCodeSettingsApp";
 import WebGlobalSettingsApp from "./WebGlobalSettingsApp";
 import Requests from "../../common/requests";
 import {ADMIN_URLS, unescapeHtml} from "../../../common-src/StringUtils";
@@ -11,6 +10,7 @@ import {showToast} from "../../common/ToastUtils";
 import {NAV_ITEMS} from "../../../common-src/Constants";
 import {preventCloseWhenChanged} from "../../common/BrowserUtils";
 import ApiSettingsApp from "./ApiSettingsApp";
+import SeoSettingsApp from "./SeoSettingsApp";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -110,14 +110,16 @@ export default class SettingsApp extends React.Component {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1 h-full">
-            <CustomCodeSettingsApp
+            <ApiSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
+              onSubmit={this.onSubmit}
+              setChanged={this.setChanged}
             />
           </div>
           <div className="col-span-1 h-full">
-            <ApiSettingsApp
+            <SeoSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}

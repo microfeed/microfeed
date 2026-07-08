@@ -1,8 +1,6 @@
 import ReactDOMServer from "react-dom/server";
-import Theme from "../models/Theme";
 import FeedDb, {getFetchItemsParams} from "../models/FeedDb";
-import {CODE_TYPES, STATUSES} from "../../common-src/Constants";
-import {ADMIN_URLS, escapeHtml, urlJoinWithRelative} from "../../common-src/StringUtils";
+import {ADMIN_URLS, escapeHtml} from "../../common-src/StringUtils";
 import OnboardingChecker from "../../common-src/OnboardingUtils";
 
 export function renderReactToHtml(Component) {
@@ -195,60 +193,5 @@ export class SitemapResponseBuilder extends ResponseBuilder {
         // status: STATUSES.PUBLISHED,
         ...queryKwargs,
       }, -1);
-  }
-}
-
-class CodeInjector {
-  constructor(settings, theme, sharedTheme) {
-    this.settings = settings;
-    this.theme = theme;
-    this.sharedTheme = sharedTheme;
-  }
-  element(element) {
-    if (!this.settings) {
-      return;
-    }
-
-    if (element.tagName === 'head') {
-      if (this.settings.webGlobalSettings) {
-        const {favicon, publicBucketUrl} = this.settings.webGlobalSettings;
-        if (favicon && favicon.url) {
-          const faviconUrl = urlJoinWithRelative(publicBucketUrl, favicon.url);
-          element.append(`<link rel="icon" type="${favicon.contentType}" href="${faviconUrl}">`, {html: true});
-        }
-      }
-      element.append(this.sharedTheme.getWebHeader().html || '', {html: true});
-      const {html} = this.theme.getWebHeader();
-      element.append(html, {html: true});
-    } else if (element.tagName === 'body') {
-      element.prepend(this.theme.getWebBodyStart().html, {html: true});
-      element.prepend(this.sharedTheme.getWebBodyStart().html || '', {html: true});
-
-      element.append(this.sharedTheme.getWebBodyEnd().html || '', {html: true});
-      const {html} = this.theme.getWebBodyEnd();
-      element.append(html, {html: true});
-    }
-  }
-}
-
-export class WebResponseBuilder extends ResponseBuilder {
-  get _contentType() {
-    return 'text/html; charset=utf-8';
-  }
-
-  _getResponse(props) {
-    const res = super._getResponse(props);
-    const theme = new Theme(this.jsonData, this.settings);
-    const sharedTheme = new Theme(this.jsonData, this.settings, CODE_TYPES.SHARED);
-    const component = props.getComponent(this.content, this.jsonData, theme);
-    if (!component) {
-      return ResponseBuilder.Response404();
-    }
-    const fromReact = renderReactToHtml(component);
-    const newRes = new Response(fromReact, res);
-    return new HTMLRewriter()
-      .on('head', new CodeInjector(this.settings, theme, sharedTheme))
-      .on('body', new CodeInjector(this.settings, theme, sharedTheme))
-      .transform(newRes);
   }
 }

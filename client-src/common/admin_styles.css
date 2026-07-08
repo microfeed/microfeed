@@ -128,8 +128,9 @@ a {
    Buttons
  */
 .lh-btn {
-  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded-sm;
-  @apply disabled:opacity-50;
+  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded-md transition-colors;
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-light/30 focus:ring-offset-1;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .lh-btn-secondary {
@@ -140,8 +141,16 @@ a {
   @apply bg-brand-dark text-white text-sm border border-brand-dark hover:bg-brand-light hover:border-brand-light;
 }
 
+.lh-btn-brand-light {
+  @apply bg-brand-light text-white text-sm border border-brand-light hover:bg-brand-dark hover:border-brand-dark;
+}
+
+.lh-btn-red {
+  @apply bg-red-600 text-white text-sm border border-red-600 hover:bg-red-700 hover:border-red-700;
+}
+
 .lh-btn-sm {
-  @apply text-sm py-1 px-2 rounded-xs;
+  @apply text-sm py-1 px-2 rounded-sm;
 }
 
 .lh-btn-lg {
@@ -205,24 +214,11 @@ a {
 }
 
 /*
-  Make Quill styling happy
+  Rich text editor (TipTap)
  */
-.quill .ql-container {
+.lh-rich-editor-content {
   height: auto;
-}
-
-.ql-container .ql-editor {
-  height: auto;
-  min-height:200px;
+  min-height: 200px;
   max-height: 500px;
   overflow: auto;
-  /* @apply min-h-screen; */
-}
-
-.ql-toolbar {
-  @apply rounded-tl rounded-tr;
-}
-
-.ql-container {
-  @apply rounded-bl rounded-br;
 }
