@@ -1,0 +1,26 @@
+---
+import "@fontsource-variable/geist";
+import "@/styles/admin.css";
+import "../styles/interactive.css";
+
+interface Props {
+  adminPath: string;
+  title: string;
+}
+
+const {adminPath, title} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="microfeed-admin-path" content={adminPath} />
+    <title>{title}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

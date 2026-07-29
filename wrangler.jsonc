@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "microfeed",
+  "workers_dev": true,
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-07-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
+  "d1_databases": [
+    {
+      "binding": "FEED_DB",
+      "database_name": "microfeed-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "microfeed-media"
+    }
+  ],
+  "routes": []
+}

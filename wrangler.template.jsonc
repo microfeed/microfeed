@@ -1,0 +1,43 @@
+{
+  "$schema": "__PROJECT_ROOT__/node_modules/wrangler/config-schema.json",
+  "name": "__WORKER_NAME__",
+  "workers_dev": __WORKERS_DEV__,
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-07-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "__PROJECT_ROOT__/dist"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
+  "secrets": {
+    "required": __REQUIRED_SECRETS__
+  },
+  "d1_databases": [
+    {
+      "binding": "FEED_DB",
+      "database_name": "__D1_DATABASE_NAME__",
+      "database_id": "__D1_DATABASE_ID__",
+      "migrations_dir": "__PROJECT_ROOT__/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "__R2_BUCKET_NAME__"
+    }
+  ],
+  "vars": {
+    "CLOUDFLARE_PROJECT_NAME": "__PROJECT_NAME__",
+    "DEPLOYMENT_ENVIRONMENT": "__DEPLOYMENT_ENVIRONMENT__",
+    "MICROFEED_ADMIN_AUTH_MODE": "__ADMIN_AUTH_MODE__",
+    "MICROFEED_ADMIN_PATH": "__ADMIN_PATH__",
+    "MICROFEED_INSTANCE_ID": "__INSTANCE_ID__"
+  },
+  "routes": __ROUTES__
+}

@@ -1,0 +1,32 @@
+{
+  "extends": "astro/tsconfigs/strictest",
+  "compilerOptions": {
+    "allowJs": false,
+    "exactOptionalPropertyTypes": false,
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "moduleResolution": "Bundler",
+    "noImplicitOverride": false,
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "resolveJsonModule": true,
+    "types": [
+      "astro/client",
+      "@cloudflare/vitest-pool-workers/types",
+      "node"
+    ]
+  },
+  "include": [
+    ".astro/types.d.ts",
+    "*.ts",
+    "src/**/*.astro",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "admin-cli/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["dist", "node_modules"]
+}

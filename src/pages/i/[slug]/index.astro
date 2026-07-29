@@ -1,0 +1,66 @@
+---
+import {env} from "cloudflare:workers";
+
+import {CODE_TYPES, STATUSES} from "@/shared/Constants";
+import {getIdFromSlug, PUBLIC_URLS} from "@/shared/StringUtils";
+import Theme from "@/server/themes/Theme";
+import PublicLayout from "../../../layouts/PublicLayout.astro";
+import {loadPublishedFeed, shouldHidePublicFeed} from "@/server/feed/feed";
+
+const itemId = getIdFromSlug(Astro.params.slug ?? "");
+if (!itemId) {
+  return new Response("Not Found", {
+    status: 404,
+    statusText: "Not Found",
+  });
+}
+const loaded = await loadPublishedFeed(env, Astro.request, {
+  limit: 1,
+  queryKwargs: {
+    id: itemId,
+    "status__in": [STATUSES.PUBLISHED, STATUSES.UNLISTED],
+  },
+});
+const item = loaded.publicFeed.items[0];
+const offline = shouldHidePublicFeed(loaded.content);
+if (!offline && !loaded.onboarding.requiredOk) {
+  return Astro.redirect(
+    new URL(`/${env.MICROFEED_ADMIN_PATH || "admin"}/`, Astro.url),
+    302,
+  );
+}
+const unavailable = !item || offline;
+if (unavailable) {
+  Astro.response.status = 404;
+}
+const theme = new Theme(loaded.publicFeed, loaded.content.settings);
+const sharedTheme = new Theme(
+  loaded.publicFeed,
+  loaded.content.settings,
+  CODE_TYPES.SHARED,
+);
+const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
+const canonicalUrl = itemId && item
+  ? PUBLIC_URLS.webItem(itemId, String(item.title ?? ""), Astro.url.origin)
+  : undefined;
+---
+
+{unavailable || !item ? (
+  <h1>Not Found</h1>
+) : (
+  <PublicLayout
+    title={String(item.title ?? "Untitled")}
+    description={String(item.content_text ?? "")}
+    language={loaded.publicFeed.language}
+    canonicalUrl={canonicalUrl}
+    favicon={webSettings.favicon}
+    publicBucketUrl={webSettings.publicBucketUrl}
+    headHtml={theme.getWebHeader().html}
+    sharedHeadHtml={sharedTheme.getWebHeader().html}
+    bodyStart={theme.getWebBodyStart().html}
+    sharedBodyStart={sharedTheme.getWebBodyStart().html}
+    bodyHtml={theme.getWebItem(item).html}
+    bodyEnd={theme.getWebBodyEnd().html}
+    sharedBodyEnd={sharedTheme.getWebBodyEnd().html}
+  />
+)}

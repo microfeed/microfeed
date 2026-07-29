@@ -1,0 +1,46 @@
+---
+import {env} from "cloudflare:workers";
+
+import {CODE_TYPES} from "@/shared/Constants";
+import Theme from "@/server/themes/Theme";
+import PublicLayout from "../layouts/PublicLayout.astro";
+import {loadPublishedFeed, shouldHidePublicFeed} from "@/server/feed/feed";
+
+const loaded = await loadPublishedFeed(env, Astro.request);
+const unavailable = shouldHidePublicFeed(loaded.content);
+if (!unavailable && !loaded.onboarding.requiredOk) {
+  return Astro.redirect(
+    new URL(`/${env.MICROFEED_ADMIN_PATH || "admin"}/`, Astro.url),
+    302,
+  );
+}
+if (unavailable) {
+  Astro.response.status = 404;
+}
+const theme = new Theme(loaded.publicFeed, loaded.content.settings);
+const sharedTheme = new Theme(
+  loaded.publicFeed,
+  loaded.content.settings,
+  CODE_TYPES.SHARED,
+);
+const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
+---
+
+{unavailable ? (
+  <h1>Not Found</h1>
+) : (
+  <PublicLayout
+    title={loaded.publicFeed.title}
+    description={String(loaded.publicFeed._microfeed?.description_text ?? "")}
+    language={loaded.publicFeed.language}
+    favicon={webSettings.favicon}
+    publicBucketUrl={webSettings.publicBucketUrl}
+    headHtml={theme.getWebHeader().html}
+    sharedHeadHtml={sharedTheme.getWebHeader().html}
+    bodyStart={theme.getWebBodyStart().html}
+    sharedBodyStart={sharedTheme.getWebBodyStart().html}
+    bodyHtml={theme.getWebFeed().html}
+    bodyEnd={theme.getWebBodyEnd().html}
+    sharedBodyEnd={sharedTheme.getWebBodyEnd().html}
+  />
+)}

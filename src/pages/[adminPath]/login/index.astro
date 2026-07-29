@@ -1,0 +1,13 @@
+---
+import {env} from "cloudflare:workers";
+
+import {normalizeAdminPath} from "@/shared/AdminPath";
+import AdminLoginApp from "@/components/admin/AdminLoginApp";
+import AdminLoginShell from "../../../layouts/AdminLoginShell.astro";
+
+const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
+---
+
+<AdminLoginShell title="Admin login | microfeed" {adminPath}>
+  <AdminLoginApp client:load />
+</AdminLoginShell>

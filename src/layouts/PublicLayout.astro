@@ -1,0 +1,71 @@
+---
+import {
+  htmlMetaDescription,
+  resolvePublicBucketUrl,
+  urlJoinWithRelative,
+} from "@/shared/StringUtils";
+import "../styles/interactive.css";
+
+interface Props {
+  bodyEnd: string;
+  bodyHtml: string;
+  bodyStart: string;
+  canonicalUrl?: string;
+  description?: string;
+  favicon?: {
+    contentType?: string;
+    url?: string;
+  };
+  headHtml: string;
+  language?: string;
+  publicBucketUrl?: string;
+  sharedBodyEnd: string;
+  sharedBodyStart: string;
+  sharedHeadHtml: string;
+  title?: string;
+}
+
+const {
+  bodyEnd,
+  bodyHtml,
+  bodyStart,
+  canonicalUrl,
+  description,
+  favicon,
+  headHtml,
+  language = "en",
+  publicBucketUrl = "/media/",
+  sharedBodyEnd,
+  sharedBodyStart,
+  sharedHeadHtml,
+  title = "microfeed",
+} = Astro.props;
+const effectivePublicBucketUrl = resolvePublicBucketUrl(
+  publicBucketUrl,
+  Astro.url.hostname,
+);
+const faviconUrl = favicon?.url
+  ? urlJoinWithRelative(effectivePublicBucketUrl, favicon.url, Astro.url.origin)
+  : undefined;
+---
+
+<!doctype html>
+<html lang={language}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    {description && <meta name="description" content={htmlMetaDescription(description, false)} />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {faviconUrl && <link rel="icon" type={favicon?.contentType} href={faviconUrl} />}
+    <Fragment set:html={sharedHeadHtml} />
+    <Fragment set:html={headHtml} />
+  </head>
+  <body>
+    <Fragment set:html={sharedBodyStart} />
+    <Fragment set:html={bodyStart} />
+    <Fragment set:html={bodyHtml} />
+    <Fragment set:html={sharedBodyEnd} />
+    <Fragment set:html={bodyEnd} />
+  </body>
+</html>

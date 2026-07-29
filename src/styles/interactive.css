@@ -1,0 +1,27 @@
+a[href],
+button:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+input[type="reset"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="switch"]:not([aria-disabled="true"]),
+label:has(input[type="checkbox"]:not(:disabled)),
+label:has(input[type="radio"]:not(:disabled)) {
+  cursor: pointer;
+}
+
+a[href][aria-disabled="true"],
+button:disabled,
+input[type="button"]:disabled,
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled,
+input[type="reset"]:disabled,
+input[type="submit"]:disabled,
+[role="button"][aria-disabled="true"],
+[role="switch"][aria-disabled="true"],
+label:has(input[type="checkbox"]:disabled),
+label:has(input[type="radio"]:disabled) {
+  cursor: not-allowed;
+}

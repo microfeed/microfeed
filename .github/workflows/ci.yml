@@ -2,30 +2,29 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-
-    - name: Install dependencies
-      run: yarn
-
-    - name: Run tests
-      run: yarn test
+      - uses: actions/checkout@v4
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+      - run: corepack enable
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Type-check
+        run: yarn typecheck
+      - name: Test
+        run: yarn test
+      - name: Build
+        run: yarn build
+      - name: Verify the Worker bundle
+        run: yarn wrangler deploy --dry-run --strict --config dist/server/wrangler.json

@@ -1,0 +1,5 @@
+# Cloudflare uses these one-time secrets to create the admin login.
+# The deployment removes them after the login is ready. Never commit .dev.vars.
+MICROFEED_SETUP_ADMIN_EMAIL=
+MICROFEED_SETUP_ADMIN_PASSWORD=
+MICROFEED_SETUP_ADMIN_PASSWORD_CONFIRMATION=

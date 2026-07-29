@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy microfeed"
+  short_description: "Deploy microfeed safely through yarn admin"
+  default_prompt: "Use $deploy-microfeed to deploy this microfeed repository to Cloudflare."
