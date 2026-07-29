@@ -1,0 +1,170 @@
+import {randomShortUUID, removeHostFromUrl} from "@/shared/StringUtils";
+import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT, LANGUAGE_CODES_LIST} from "@/shared/Constants";
+
+const LANGUAGE_CODES = LANGUAGE_CODES_LIST.map((lc: any) => lc.code);
+
+export default class FeedCrudManager {
+  [member: string]: any;
+
+  constructor(feedContent?: any, feedDb?: any, request?: any) {
+    this.feedContent = feedContent;
+    this.feedDb = feedDb;
+    this.request = request;
+  }
+
+  _publicToInternalSchemaForItem(item: any): Record<string, any> {
+    const internalSchema: Record<string, any> = {};
+
+    if (item.title) {
+      (internalSchema as any).title = item.title;
+    }
+
+    if (item.status) {
+      (internalSchema as any).status = item.status;
+    }
+
+    if (item.attachment &&
+        ENCLOSURE_CATEGORIES_DICT[item.attachment.category] &&
+        item.attachment.url) {
+      const mediaFile = {};
+      if (item.attachment.category) {
+        (mediaFile as any).category = item.attachment.category;
+      }
+      if (item.attachment.url) {
+        // Media file url for internal schema doesn't have host:
+        // [environment]/media/[file-type]-[uuid].[extension]
+        (mediaFile as any).url = item.attachment.category !== ENCLOSURE_CATEGORIES.EXTERNAL_URL ?
+          removeHostFromUrl(item.attachment.url) : item.attachment.url;
+      }
+      if (item.attachment.mime_type) {
+        (mediaFile as any).contentType = item.attachment.mime_type;
+      }
+      if (item.attachment.size_in_bytes) {
+        (mediaFile as any).sizeByte = item.attachment.size_in_bytes;
+      }
+      if (item.attachment.duration_in_seconds) {
+        (mediaFile as any).durationSecond = item.attachment.duration_in_seconds;
+      }
+      (internalSchema as any).mediaFile = mediaFile;
+    }
+
+    if (item.url) {
+      (internalSchema as any).link = item.url;
+    }
+
+    if (item.content_html) {
+      (internalSchema as any).description = item.content_html;
+    }
+
+    if (item.image) {
+      // Media file url for internal schema doesn't have host:
+      // [environment]/media/[file-type]-[uuid].[extension]
+      (internalSchema as any).image = removeHostFromUrl(item.image);
+    }
+
+    if (item.date_published_ms) {
+      (internalSchema as any).pubDateMs = item.date_published_ms;
+    }
+
+    if (!item._microfeed) {
+      item._microfeed = {};
+    }
+
+    if ('itunes:title' in item._microfeed) {
+      (internalSchema as any)['itunes:title'] = item._microfeed['itunes:title'];
+    }
+
+    if (typeof item._microfeed['itunes:block'] === 'boolean') {
+      (internalSchema as any)['itunes:block'] = item._microfeed['itunes:block'];
+    }
+
+    if (['full', 'trailer', 'bonus'].includes(item._microfeed['itunes:episodeType'])) {
+      (internalSchema as any)['itunes:episodeType'] = item._microfeed['itunes:episodeType'];
+    }
+
+    if (item._microfeed['itunes:season']) {
+      (internalSchema as any)['itunes:season'] = item._microfeed['itunes:season'];
+    }
+
+    if (item._microfeed['itunes:episode']) {
+      (internalSchema as any)['itunes:episode'] = item._microfeed['itunes:episode'];
+    }
+
+    if (typeof item._microfeed['itunes:explicit'] === 'boolean') {
+      (internalSchema as any)['itunes:explicit'] = item._microfeed['itunes:explicit'];
+    }
+    return internalSchema;
+  }
+
+  _publicToInternalSchemaForChannel(channel: any): Record<string, any> {
+    const internalSchema: Record<string, any> = {};
+    if (channel.title) {
+      (internalSchema as any).title = channel.title;
+    }
+    if (channel.home_page_url) {
+      (internalSchema as any).link = channel.home_page_url;
+    }
+    if (channel.description) {
+      (internalSchema as any).description = channel.description;
+    }
+    if (channel.icon) {
+      (internalSchema as any).image = removeHostFromUrl(channel.icon);
+    }
+    if (channel.authors && channel.authors.length > 0 && channel.authors[0].name) {
+      (internalSchema as any).publisher = channel.authors[0].name;
+    }
+    if (LANGUAGE_CODES.includes(channel.language)) {
+      (internalSchema as any).language = channel.language;
+    }
+    if (typeof channel.expired === 'boolean') {
+      (internalSchema as any)['itunes:complete'] = channel.expired;
+    }
+    if (!channel._microfeed) {
+      channel._microfeed = {};
+    }
+    if (typeof channel._microfeed['itunes:explicit'] === 'boolean') {
+      (internalSchema as any)['itunes:explicit'] = channel._microfeed['itunes:explicit'];
+    }
+    if (channel._microfeed['itunes:title']) {
+      (internalSchema as any)['itunes:title'] = channel._microfeed['itunes:title'];
+    }
+    if (typeof channel._microfeed['itunes:block'] === 'boolean') {
+      (internalSchema as any)['itunes:block'] = channel._microfeed['itunes:block'];
+    }
+    if (['episodic', 'serial'].includes(channel._microfeed['itunes:type'])) {
+      (internalSchema as any)['itunes:type'] = channel._microfeed['itunes:type'];
+    }
+    if (channel._microfeed['copyright']) {
+      (internalSchema as any)['copyright'] = channel._microfeed['copyright'];
+    }
+    if (channel._microfeed['itunes:email']) {
+      (internalSchema as any)['itunes:email'] = channel._microfeed['itunes:email'];
+    }
+    return internalSchema;
+  }
+
+  async upsertItem(item: any) {
+    const itemId = item.id ? item.id : randomShortUUID();
+    const guid = item.guid ? item.guid : itemId;
+    this.feedContent.item = {
+      ...this._publicToInternalSchemaForItem(item),
+      id: itemId,
+      guid,
+    };
+    await this.feedDb.putContent(this.feedContent);
+    return itemId;
+  }
+
+  /**
+   * Assume it's primary channel for now
+   * @param channel {Object}
+   */
+  async upsertChannel(channel: any) {
+    this.feedContent.channel = {
+      ...this.feedContent.channel,
+      ...this._publicToInternalSchemaForChannel(channel),
+    };
+    await this.feedDb.putContent(this.feedContent);
+    return this.feedContent.id;
+  }
+}

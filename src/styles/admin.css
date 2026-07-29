@@ -1,0 +1,369 @@
+@import 'tailwindcss' source(none);
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@source '../';
+
+@plugin '@tailwindcss/forms';
+@plugin 'tailwind-gradient-mask-image';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-xs: 375px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  --leading-*: initial;
+  --leading-3: 1rem;
+  --leading-4: 1.25rem;
+  --leading-5: 1.5rem;
+  --leading-6: 1.75rem;
+  --leading-7: 2rem;
+  --leading-8: 2.25rem;
+  --leading-9: 2.5rem;
+  --leading-10: 2.75rem;
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.5;
+  --leading-normal: 1.625;
+  --leading-relaxed: 2;
+  --leading-loose: 0.75rem;
+
+  --font-*: initial;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial,
+    Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol,
+    Noto Color Emoji;
+
+  --color-brand-light: #19b7fa;
+  --color-brand-dark: #2c2b3d;
+
+  --color-muted-color: #8e8e8e;
+  --color-title-color: rgba(0, 0, 0, 0.95);
+  --color-body-color: rgba(0, 0, 0, 0.8);
+  --color-helper-color: rgba(0, 0, 0, 0.6);
+  --color-bggray-color: rgba(0, 0, 0, 0.03);
+  --color-bdgray-color: rgba(0, 0, 0, 0.1);
+  --color-bgsecondary-color: rgba(0, 0, 0, 0.05);
+  --color-fgsecondary-color: rgba(0, 0, 0, 0.95);
+  --color-white-overlap: rgba(255, 255, 255, 0.9);
+  --color-warning-color: #a88c0b;
+  --color-dark-deep: rgba(230, 230, 230);
+  --color-dark-light: rgba(240, 240, 240);
+
+  --width-88: 22rem;
+  --width-avatar-xs: 1.2rem;
+  --width-avatar-sm: 1.8rem;
+  --width-avatar-md: 3rem;
+  --width-avatar-lg: 6rem;
+  --width-pod-img-sm: 3rem;
+  --width-pod-img-md: 4.8rem;
+  --width-pod-img-lg: 6rem;
+  --width-ad-image: 8rem;
+
+  --height-avatar-xs: 1.2rem;
+  --height-avatar-sm: 1.8rem;
+  --height-avatar-lg: 6rem;
+  --height-footer-share-bar: 3.15rem;
+  --height-pod-img-sm: 3rem;
+  --height-pod-img-md: 4.8rem;
+  --height-pod-img-lg: 6rem;
+
+  --max-height-112: 28rem;
+  --max-height-128: 32rem;
+
+  --min-height-16: 4rem;
+  --min-height-32: 8rem;
+  --min-height-64: 16rem;
+  --min-height-128: 32rem;
+
+  --min-width-24: 6rem;
+  --min-width-table: 48rem;
+
+  --container-xxs: 12rem;
+  --container-5\/6: 83.3%;
+  --container-4\/5: 80%;
+
+  --text-xxs: 0.525rem;
+  --text-xxs--line-height: 1rem;
+
+  --rotate-30: 30deg;
+
+  --z-index-45: 45;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+body {
+  @apply bg-bgsecondary-color;
+}
+
+a {
+  @apply text-black hover:text-brand-light font-semibold;
+}
+
+.m-code {
+  @apply p-4 block bg-gray-100 rounded-md mt-2 text-xs text-red-500 select-all break-all;
+}
+
+/*
+   Buttons
+ */
+.lh-btn {
+  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded-sm;
+  @apply disabled:opacity-50;
+}
+
+.lh-btn-secondary {
+  @apply bg-bgsecondary-color text-fgsecondary-color border border-bdgray-color text-sm hover:border-brand-light hover:text-muted-color
+}
+
+.lh-btn-brand-dark {
+  @apply bg-brand-dark text-white text-sm border border-brand-dark hover:bg-brand-light hover:border-brand-light;
+}
+
+.lh-btn-sm {
+  @apply text-sm py-1 px-2 rounded-xs;
+}
+
+.lh-btn-lg {
+  @apply text-lg py-3 px-5 rounded-md;
+}
+
+/*
+  Cards
+ */
+.lh-page-card {
+  @apply border-t border-b lg:border p-4 bg-white hover:shadow-sm dark:bg-dark-light rounded-md;
+}
+
+.lh-page-title {
+  @apply text-lg font-bold text-gray-500 mb-4;
+}
+
+.lh-page-subtitle {
+  @apply font-semibold text-gray-500 mb-2 hover:opacity-50;
+}
+
+.m-page-summary {
+  @apply cursor-pointer font-semibold text-gray-500 hover:opacity-50;
+}
+
+/*
+  Images / Audio
+ */
+.lh-upload-image-size {
+  @apply w-32 h-32 xl:w-64 xl:h-64;
+}
+
+.lh-upload-box {
+  @apply border-dashed text-center border-2 border-brand-light hover:cursor-pointer hover:opacity-50 rounded-md;
+}
+
+.lh-upload-fileinput {
+  @apply relative block;
+}
+
+.lh-upload-fileinput:focus-within {
+  @apply outline outline-2 outline-black;
+}
+
+.lh-upload-fileinput > input[type="file"] {
+  @apply absolute block opacity-0 pointer-events-none;
+}
+
+.lh-upload-wrapper .lh-upload-fileinput.is-disabled {
+  @apply border-0 cursor-not-allowed;
+}
+
+/*
+  Form / Input
+ */
+.m-input-label-small {
+  @apply text-helper-color font-normal text-sm mb-2;
+}
+
+/*
+  Simple icons
+ */
+.lh-icon-arrow-right:before {
+  content: "→";
+}
+
+.lh-icon-arrow-left:before {
+  content: "←";
+}
+
+.lh-icon-x-mark:before {
+  content: "×";
+}
+
+/*
+  Make Quill styling happy
+ */
+.quill .ql-container {
+  height: auto;
+}
+
+.ql-container .ql-editor {
+  height: auto;
+  min-height:200px;
+  max-height: 500px;
+  overflow: auto;
+  /* @apply min-h-screen; */
+}
+
+.ql-toolbar {
+  @apply rounded-tl rounded-tr;
+}
+
+.ql-container {
+  @apply rounded-bl rounded-br;
+}
+/*
+  ---break---
+*/
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+/*
+  ---break---
+*/
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+/*
+  ---break---
+*/
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}

@@ -1,0 +1,43 @@
+---
+import {CODE_TYPES} from "@/shared/Constants";
+import Theme from "@/server/themes/Theme";
+import AdminIsland from "@/components/admin/AdminIsland";
+import AdminShell from "../../../../layouts/AdminShell.astro";
+
+const {feedContent, feedDb, onboardingResult} = Astro.locals;
+if (!feedContent || !feedDb || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const themeName = Astro.url.searchParams.get("theme") || CODE_TYPES.SHARED;
+const invalidTheme = ![CODE_TYPES.SHARED, "custom"].includes(themeName);
+if (invalidTheme) {
+  Astro.response.status = 404;
+}
+const theme = new Theme(
+  await feedDb.getPublicJsonData(feedContent),
+  feedContent.settings,
+  themeName,
+);
+const themeTemplate = {
+  themeName: theme.name(),
+  rssStylesheet: theme.getRssStylesheetTmpl(),
+  webItem: theme.getWebItemTmpl(),
+  webFeed: theme.getWebFeedTmpl(),
+  webBodyStart: theme.getWebBodyStartTmpl(),
+  webBodyEnd: theme.getWebBodyEndTmpl(),
+  webHeader: theme.getWebHeaderTmpl(),
+};
+---
+
+{invalidTheme ? (
+  <h1>Not Found</h1>
+) : (
+  <AdminShell
+    title="Code Editor | microfeed.org"
+    {feedContent}
+    {onboardingResult}
+    {themeTemplate}
+  >
+    <AdminIsland kind="code-editor" client:load />
+  </AdminShell>
+)}

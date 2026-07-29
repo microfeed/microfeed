@@ -81,6 +81,7 @@ typings/
 # Nuxt.js build / generate output
 .nuxt
 dist
+.astro/
 
 # Gatsby files
 .cache/
@@ -109,6 +110,9 @@ webpack-stats.json
 *.vars
 .wrangler/
 .vars.toml
-*.cjs
-*.mjs
-.yarn/
+.yarn/*
+!.yarn/releases/
+.yarn/releases/*
+!.yarn/releases/yarn-4.18.0.cjs
+.microfeed/
+src/worker-configuration.d.ts

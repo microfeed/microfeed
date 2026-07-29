@@ -1,0 +1,71 @@
+# Repository guidance
+
+## Cloudflare deployment
+
+- When a user asks to install, deploy, publish, update, configure, destroy,
+  remove, or uninstall microfeed on Cloudflare, use the repository's
+  `deploy-microfeed` skill.
+- Perform every Cloudflare deployment change through `yarn manage`. Do not
+  improvise with raw Wrangler commands, direct Cloudflare API calls, or a
+  separate deployment implementation.
+- Do not use or recommend Cloudflare repository imports, Workers Builds,
+  deploy buttons, GitHub Actions, or API-token deployment. Both people and
+  agents deploy from a local clone through `yarn manage`.
+- Treat `docs/manage-cli.md` as the canonical command, option, side-effect, and
+  safety reference for both people and agents. Read the relevant command
+  section before using an unfamiliar or destructive option. Keep that reference
+  and `manage-cli/help.ts` synchronized whenever CLI behavior changes.
+- Never delete or overwrite an unrelated Cloudflare resource. Let the
+  management CLI enforce its collision, reuse, and resume checks.
+- For removal, first run `yarn manage destroy --dry-run` and relay its complete
+  resource list and dashboard inspection links. Obtain explicit approval for
+  that exact site, account, application, database, bucket, custom address, and
+  data-deletion scope before running `yarn manage destroy --confirm <site>`.
+  Never use `--yes`, delete reused data, bypass an identity mismatch, or
+  improvise lower-level deletion commands. Do not inspect or change Zero Trust
+  or SSL settings. Report the final Workers & Pages, D1, and R2 dashboard links,
+  the exact resource names, and whether each should be absent or preserved.
+- Never ask for or accept a Cloudflare token or microfeed password in chat.
+  Codex must never use `--admin-password`; that unsafe option is only for
+  non-Codex automation whose operator accepts command-history and process-list
+  exposure.
+- Discover authorization and accounts first with `yarn manage accounts --json`.
+  Let Wrangler open browser authorization when required. If one account is
+  returned, use it; if several are returned, explain their names and ID
+  suffixes in plain language and ask the user to choose. Pass the exact full
+  account ID to initialization and every later operation. Never pick the first
+  account.
+- For built-in login, pass only the sign-in email to initialization. Relay the one-time
+  password-creation link printed after deployment, let the user choose their
+  password in the browser, then rerun `yarn manage status`. Never ask the user
+  to paste the password or the private link back into chat.
+
+## Source architecture
+
+- Keep all Astro and Worker application code under `src/`.
+- Put Worker-only code that uses bindings, D1, R2, or request runtime state in
+  `src/server/`. Server modules may import from `src/shared/`, but never from
+  `src/client/` or browser components.
+- Put browser-only helpers in `src/client/`. React client components may import
+  from `src/client/` and `src/shared/`, but never from `src/server/`.
+- Put runtime-neutral constants, types, paths, and utilities in `src/shared/`.
+- Keep repository deployment tooling in `manage-cli/`. It may import
+  runtime-neutral modules from `src/shared/`, but must not import Worker-only or
+  browser-only modules.
+- Astro routes and middleware coordinate server modules and UI components. Keep
+  route files thin and do not introduce a standalone Worker entry point.
+- Keep stable, unprocessed public assets in `public/`; do not move them into the
+  source bundle or change their public URLs without an explicit migration.
+
+## Frontend components
+
+- Prefer the project-owned shadcn/ui components in `src/components/ui/` for new frontend work and when substantially revising an existing interface.
+- Use the Base UI variants selected in `components.json` whenever shadcn/ui offers them. Prefer extending a shared shadcn/ui component over creating a one-off control or introducing another primitive component library.
+- Compose interfaces from shared components and design tokens, using the `cn` helper for class merging. Keep accessibility behavior supplied by Base UI intact.
+- Migrate legacy interfaces incrementally when they are already being changed; do not rewrite unrelated working screens solely to adopt shadcn/ui.
+
+## Interactive styling
+
+- Every enabled clickable control must use a pointer cursor. This includes links, buttons, radio buttons, checkboxes, switches, and custom controls with `role="button"` or `role="switch"`.
+- Prefer enforcing shared interaction behavior in the global stylesheet instead of repeating cursor utilities in individual components.
+- Disabled controls must use the native `disabled` attribute or `aria-disabled="true"` and show a `not-allowed` cursor rather than a pointer.

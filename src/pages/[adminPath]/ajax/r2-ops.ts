@@ -1,0 +1,18 @@
+import {env} from "cloudflare:workers";
+import type {APIRoute} from "astro";
+
+import {jsonResponse} from "../../../server/http";
+import {createSignedUpload} from "@/server/media/uploads";
+import type {UploadRequest} from "../../../types";
+
+export const POST: APIRoute = async ({request}) => {
+  const input = await request.json() as UploadRequest;
+  try {
+    return jsonResponse(await createSignedUpload(request, env, input));
+  } catch (error) {
+    return jsonResponse(
+      {error: error instanceof Error ? error.message : "Invalid upload request."},
+      {status: 400},
+    );
+  }
+};

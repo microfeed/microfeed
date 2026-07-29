@@ -1,0 +1,13 @@
+---
+import AdminIsland from "@/components/admin/AdminIsland";
+import AdminShell from "../../../../layouts/AdminShell.astro";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+---
+
+<AdminShell title="New item | microfeed.org" {feedContent} {onboardingResult}>
+  <AdminIsland kind="item" client:load />
+</AdminShell>

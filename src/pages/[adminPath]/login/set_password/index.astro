@@ -1,0 +1,36 @@
+---
+import {env} from "cloudflare:workers";
+
+import {normalizeAdminPath} from "@/shared/AdminPath";
+import AdminPasswordSetupApp from "@/components/admin/AdminPasswordSetupApp";
+import AdminLoginShell from "../../../../layouts/AdminLoginShell.astro";
+import {currentAdminPasswordSetup} from "@/server/auth/password-setup";
+
+const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
+const setup = await currentAdminPasswordSetup(env.FEED_DB, Astro.request);
+if (!setup) {
+  return new Response(
+    "This password link has expired or was replaced. Run `yarn manage auth setup` for first-time administrator setup, or `yarn manage auth reset-password` for an existing administrator.",
+    {
+      headers: {
+        "Cache-Control": "no-store",
+        "content-type": "text/plain; charset=utf-8",
+        "Referrer-Policy": "no-referrer",
+        "X-Robots-Tag": "noindex, nofollow",
+      },
+      status: 410,
+    },
+  );
+}
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("Referrer-Policy", "no-referrer");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+---
+
+<AdminLoginShell title="Create admin password | microfeed" {adminPath}>
+  <AdminPasswordSetupApp
+    client:load
+    email={setup.email}
+    purpose={setup.purpose}
+  />
+</AdminLoginShell>

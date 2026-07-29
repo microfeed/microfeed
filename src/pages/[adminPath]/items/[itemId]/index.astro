@@ -1,0 +1,35 @@
+---
+import {env} from "cloudflare:workers";
+
+import {STATUSES} from "@/shared/Constants";
+import AdminIsland from "@/components/admin/AdminIsland";
+import AdminShell from "../../../../layouts/AdminShell.astro";
+import {loadFeed} from "@/server/feed/feed";
+
+const itemId = Astro.params.itemId ?? "";
+const loaded = await loadFeed(env, Astro.request, {
+  adminProtection: Astro.locals.adminProtection,
+  limit: 1,
+  queryKwargs: {id: itemId},
+});
+const item = loaded.content.items?.[0];
+const missing = !item || item.status === STATUSES.DELETED;
+if (missing) {
+  Astro.response.status = 404;
+} else {
+  loaded.content.item = item;
+}
+---
+
+{missing ? (
+  <h1>Not found</h1>
+) : (
+  <AdminShell
+    title={`Edit item (id = ${itemId}) | microfeed.org`}
+    feedContent={loaded.content}
+    onboardingResult={loaded.onboarding}
+    {itemId}
+  >
+    <AdminIsland kind="item" client:load />
+  </AdminShell>
+)}
