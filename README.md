@@ -239,6 +239,19 @@ resource. If several accounts are available, choose the one where you want the
 site to live. `yarn manage init` then asks for the site settings and explains
 the Cloudflare resources before creating them.
 
+If you keep personal and company Cloudflare logins on the same computer, you
+can create or select a named Wrangler login for this local Git copy of the
+repository:
+
+```console
+yarn manage accounts --profile <profile-name>
+```
+
+The profile name is only a local login label and does not need to be globally
+unique. It is different from your microfeed site/Worker name, which should be
+globally distinctive. Add `--reauthorize` when you deliberately want to sign
+that profile in again as a different Cloudflare user.
+
 The installer also asks how to protect the microfeed admin dashboard, where you
 create and edit posts, upload media files, and customize your site:
 
@@ -288,6 +301,7 @@ side effect, and safety check.
 | Task | Command |
 | --- | --- |
 | Sign in to Cloudflare and list available accounts | `yarn manage accounts` |
+| Create or select a separate named Cloudflare login for this local repository | `yarn manage accounts --profile <name>` |
 | Create or resume a Cloudflare, preview, or local site | `yarn manage init` |
 | Connect an existing compatible microfeed Worker without changing it | `yarn manage connect` |
 | Deploy an update | `yarn manage deploy` |
