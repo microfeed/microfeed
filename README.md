@@ -248,7 +248,8 @@ can create or select a named Wrangler login for this local Git copy of the
 repository:
 
 ```console
-yarn manage accounts --profile <profile-name>
+yarn manage accounts --profile personal
+yarn manage accounts --profile company
 ```
 
 The profile name is only a local login label and does not need to be globally
@@ -339,8 +340,8 @@ microfeed instances. An instance can be:
 Create as many isolated local-only instances as you need:
 
 ```console
-yarn manage init --local --instance personal
-yarn manage init --local --instance company
+yarn manage init --local --instance my-podcast-custom-com
+yarn manage init --local --instance jacks-photo-album-com
 ```
 
 During local initialization, the built-in email and password login is optional.
@@ -349,7 +350,7 @@ and open the local microfeed admin dashboard directly. Add it later for a
 specific instance with:
 
 ```console
-yarn manage auth setup --local --instance personal
+yarn manage auth setup --local --instance my-podcast-custom-com
 ```
 
 For production, strongly protect `/admin/` with the built-in login,
@@ -360,8 +361,8 @@ production authentication setting.
 Create new Cloudflare deployments with the same naming convention:
 
 ```console
-yarn manage init --instance art-of-war
-yarn manage init --instance company-changelog
+yarn manage init --instance my-podcast-custom-com
+yarn manage init --instance podcast-corp-com
 ```
 
 To manage an existing microfeed Worker without deploying it again, run:
@@ -382,7 +383,7 @@ select the default saved instance:
 
 ```console
 yarn manage instances
-yarn manage use art-of-war
+yarn manage use my-podcast-custom-com
 ```
 
 The instance list keeps local-only instances in their own section and groups
@@ -394,10 +395,10 @@ The active instance is used by commands that do not specify a name. To target
 one explicitly:
 
 ```console
-yarn manage deploy --instance company-changelog
-yarn manage status --instance art-of-war
-yarn manage domain --instance art-of-war
-yarn manage auth --instance company-changelog
+yarn manage deploy --instance podcast-corp-com
+yarn manage status --instance my-podcast-custom-com
+yarn manage domain --instance my-podcast-custom-com
+yarn manage auth --instance podcast-corp-com
 ```
 
 Every saved instance uses its own gitignored directory under
@@ -408,7 +409,7 @@ development sandbox, but that sandbox is separate from its production D1 and
 R2 resources.
 
 Local and production content never synchronize automatically. Running
-`yarn dev --instance company-changelog` uses that Cloudflare instance's
+`yarn dev --instance podcast-corp-com` uses that Cloudflare instance's
 configuration locally, but it does not download, access, or modify production
 data. Deploying remains a separate explicit operation.
 
@@ -427,7 +428,7 @@ changing anything in Cloudflare.
 First print a read-only plan for the exact saved site:
 
 ```console
-yarn manage destroy --instance art-of-war --dry-run
+yarn manage destroy --instance my-podcast-custom-com --dry-run
 ```
 
 The plan shows the Cloudflare account, public address, hosted application,
@@ -450,12 +451,13 @@ sandbox.
 After exporting anything you need and checking those links, run:
 
 ```console
-yarn manage destroy --instance art-of-war
+yarn manage destroy --instance my-podcast-custom-com
 ```
 
 The interactive command requires you to review the plan and type the exact site
-name. Automation can use `--confirm art-of-war` only after presenting the same
-dry-run plan and receiving explicit approval; `--yes` is deliberately rejected.
+name. Automation can use `--confirm my-podcast-custom-com` only after presenting
+the same dry-run plan and receiving explicit approval; `--yes` is deliberately
+rejected.
 
 Destruction stops the hosted application first, verifies that it is gone, then
 permanently deletes the site's content database and every object in its media
@@ -469,8 +471,8 @@ database and media bucket. Resources marked as reused are always preserved,
 even without that option. If a preview exists, destroy it first:
 
 ```console
-yarn manage destroy --preview --instance art-of-war --dry-run
-yarn manage destroy --preview --instance art-of-war
+yarn manage destroy --preview --instance my-podcast-custom-com --dry-run
+yarn manage destroy --preview --instance my-podcast-custom-com
 ```
 
 The command does not inspect or change Cloudflare Zero Trust or SSL settings.
@@ -771,23 +773,37 @@ It is always a good idea to carefully evaluate any service before using it to en
 </details>
 
 <details>
-<summary><b>How to download / backup data from microfeed / Cloudflare?</b></summary>
+<summary><b>How can I download or back up my microfeed data?</b></summary>
 
-microfeed stores data in Cloudflare D1 and R2. Therefore, you'll download two things to backup your microfeed data:
-* a sqlite database from [Cloudflare D1](https://developers.cloudflare.com/d1/), including all metadata.
-* media files from [Cloudflare R2](https://developers.cloudflare.com/r2/), including audio, image, video...
+microfeed stores metadata in Cloudflare D1 and media files in Cloudflare R2.
+microfeed does not yet provide a whole-site export command, so back up each
+service separately.
 
-<b>How to download a sqlite database from D1?</b>
+<b>Export the D1 database</b>
 
-You can use the command line tool `wrangler` to find sqlite database files and download backups:
+Use Wrangler's [`d1 export`
+command](https://developers.cloudflare.com/workers/wrangler/commands/d1/) to
+export the remote database as a SQL file:
 
-[https://developers.cloudflare.com/workers/wrangler/commands/#d1](https://developers.cloudflare.com/workers/wrangler/commands/#d1)
+```console
+wrangler d1 export <database-name> --remote --output ./microfeed-d1.sql
+```
 
-<b>How to download media files from R2?</b>
+<b>Export the R2 media bucket</b>
 
-As of Feb 16, 2023, Cloudflare has not provided tools to to batch download all files from a R2 bucket.
+Wrangler downloads R2 objects one at a time. For a complete bucket, follow
+Cloudflare's [R2 command-line
+guide](https://developers.cloudflare.com/r2/get-started/cli/) to configure
+`rclone` with R2's S3-compatible credentials, then copy the bucket to a local
+directory:
 
-You may need to write a script to use [S3-compatible APIs](https://developers.cloudflare.com/r2/data-access/s3-api/api/) to fetch all objects from a specific R2 bucket.
+```console
+rclone copy r2:<bucket-name> ./microfeed-r2-backup
+```
+
+Here, `r2` is the example name of the configured rclone remote. A future
+`yarn manage` command may combine the D1 and R2 steps into a complete microfeed
+site export.
 
 </details>
 
