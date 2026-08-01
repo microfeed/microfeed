@@ -51,7 +51,6 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
 * [✍️ Start publishing](#%EF%B8%8F-start-publishing)
 * [💻 FAQs](#-faqs)
 * [💪 Contributions](#-contributions)
-  * [Run microfeed on local](#run-microfeed-on-local)
 * [🛡️ License](#%EF%B8%8F-license)
 
 ## ⭐️ How it works
@@ -795,69 +794,12 @@ You may need to write a script to use [S3-compatible APIs](https://developers.cl
 [Back to 📚TOC](#-table-of-contents)
 
 ## 💪 Contributions
-We welcome contributions to microfeed!
-If you have an idea for a new feature or have found a bug, please [open an issue](https://github.com/microfeed/microfeed/issues/new) in the repository.
-If you'd like to submit a fix or new feature, please create a pull request with a detailed description of your changes.
 
-### Run microfeed on local
-
-Pre-requisites: Node.js 24, Corepack, and Wrangler.
-
-Install dependencies and start the Astro development server:
-
-```console
-corepack enable
-yarn install
-yarn manage init --local --instance personal
-yarn dev --instance personal
-```
-
-Create another fully isolated local instance by choosing another name:
-
-```console
-yarn manage init --local --instance company
-yarn manage use company
-yarn dev
-```
-
-`yarn manage auth setup --local` remains available as a shortcut: in a newly
-created local Git copy of the repository it creates the default `local`
-instance, and for an existing selected instance it configures that instance's
-local dashboard login.
-
-The local initialization prompt lets you skip the built-in login. If you skip it, the
-local dashboard opens without a sign-in screen; enable it later with
-`yarn manage auth setup --local --instance <name>`.
-
-Wrangler provides separate persistent D1 and R2 simulations for every
-instance, and microfeed prepares local database migrations automatically.
-Admin accounts, content, uploaded media, and development secrets are isolated
-between instance names.
-
-You can also run a connected Cloudflare instance locally:
-
-```console
-yarn dev --instance company-changelog
-```
-
-This selects the deployment's configuration shape while still using its
-isolated local D1 and R2 simulations. It never accesses, copies, or changes
-production data, and there is no automatic local-to-production or
-production-to-local synchronization.
-
-The development URL is printed by Astro. One development server at a time is
-supported; automatic port allocation for concurrent instances is not
-currently provided.
-
-Before opening a pull request, run:
-
-```console
-yarn check
-```
-
-The application is written in strict TypeScript and uses Astro with the official Cloudflare adapter, React islands, Vite, and Vitest.
-The package supports Node.js `>=22.12.0`; development and CI use Node.js 24 without pinning a patch release.
-Deployed Workers run on Cloudflare's `workerd` runtime rather than Node.js.
+We welcome bug fixes, features, tests, documentation, and other improvements.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, architecture rules,
+branch naming, validation, and pull request expectations. For substantial
+features or architectural changes, please open an
+[issue](https://github.com/microfeed/microfeed/issues/new) before starting.
 
 [Back to 📚TOC](#-table-of-contents)
 
