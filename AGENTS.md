@@ -1,5 +1,20 @@
 # Repository guidance
 
+## Development workflow
+
+- When a user asks to implement, fix, refactor, test, document, update CI, or
+  otherwise change this repository, use the `develop-microfeed` skill. Do not
+  use it for read-only questions, explanations, reviews, or status reports.
+- Do not make changes directly on `main`. Create or continue a focused branch
+  named `<type>/<short-kebab-case>` where `<type>` is `feature`, `fix`, `docs`,
+  `refactor`, `test`, `ci`, or `chore`. Existing nonconforming branches may be
+  continued when they already contain the task's work.
+- Preserve unrelated changes. Never stash, reset, discard, or stage them to
+  make a task branch clean; use an isolated worktree when necessary.
+- Before publishing, run `git diff --check` and `yarn check`, commit only the
+  scoped files with a concise imperative title, and open a draft pull request
+  against `microfeed/microfeed` when GitHub authentication is available.
+
 ## Cloudflare deployment
 
 - When a user asks to install, deploy, publish, update, configure, destroy,

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Develop microfeed"
+  short_description: "Develop and publish microfeed changes safely"
+  default_prompt: "Use $develop-microfeed to implement a focused microfeed change and open a validated draft pull request."
+
+policy:
+  allow_implicit_invocation: true
