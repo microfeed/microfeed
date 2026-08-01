@@ -295,7 +295,7 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
         </CheckListItem>
         <CheckListItem
           onboardState={customDomain}
-          title="Use a custom domain"
+          title="Use a custom domain for this site"
         >
           Run <code>yarn manage domain</code> from your deployment
           checkout. The command updates the Worker configuration, deploys,
@@ -303,7 +303,7 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
         </CheckListItem>
         <CheckListItem
           onboardState={effectiveMediaDomain}
-          title="Optimize media delivery"
+          title="Use a custom domain for media files"
         >
           <MediaDeliveryDescription
             bucketName={mediaDomain.bucketName}

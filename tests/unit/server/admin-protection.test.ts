@@ -123,6 +123,11 @@ describe("media delivery onboarding", () => {
     const developmentUrl = new OnboardingChecker(request, protection, {
       publicBucketUrl: "https://example.r2.dev/",
     }).getResult();
+    const localMediaRoute = new OnboardingChecker(
+      new Request("http://localhost:4321/admin/"),
+      protection,
+      {publicBucketUrl: "/media/"},
+    ).getResult();
 
     expect(customDomain.result[
       ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
@@ -132,6 +137,10 @@ describe("media delivery onboarding", () => {
       ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
     ]?.ready).toBe(false);
     expect(developmentUrl.allOk).toBe(false);
+    expect(localMediaRoute.result[
+      ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+    ]?.ready).toBe(false);
+    expect(localMediaRoute.allOk).toBe(false);
   });
 
   it("renders the verified bucket link and optimization guidance", () => {

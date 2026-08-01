@@ -1,7 +1,6 @@
 import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {r2BucketDomainsDashboardUrl} from "@/shared/CloudflareDashboard";
 import {
-  isLocalDevelopmentHostname,
   isR2CustomDomainUrl,
   suggestedR2CustomDomainUrl,
 } from "@/shared/StringUtils";
@@ -47,8 +46,7 @@ export default class OnboardingChecker {
 
     const urlObj = new URL(this.request.url);
     const mediaDomain = this.initResult(
-      isLocalDevelopmentHostname(urlObj.hostname) ||
-        isR2CustomDomainUrl(this.options.publicBucketUrl),
+      isR2CustomDomainUrl(this.options.publicBucketUrl),
       false,
     );
     mediaDomain.bucketName = this.options.r2BucketName;
