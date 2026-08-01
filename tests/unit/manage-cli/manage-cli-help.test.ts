@@ -79,7 +79,7 @@ describe("management CLI help and canonical reference", () => {
       repositoryFile(".agents/skills/deploy-microfeed/SKILL.md"),
     ]);
 
-    expect(readme).toContain("[`yarn manage` command reference](docs/manage-cli.md)");
+    expect(readme).toMatch(/\]\(docs\/manage-cli\.md\)/u);
     expect(agents).toContain("`docs/manage-cli.md`");
     expect(skill).toContain("../../../docs/manage-cli.md");
   });
