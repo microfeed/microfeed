@@ -40,6 +40,54 @@ export function isValidPublicBucketUrl(value: unknown) {
   return url === '/media/' || isValidUrl(url);
 }
 
+export function normalizeR2CustomDomainUrl(value: unknown): string {
+  const input = String(value ?? '').trim();
+  if (!input || input.startsWith('/') || /\s/u.test(input)) {
+    return '';
+  }
+
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//iu.test(input) ? input : `https://${input}`);
+  } catch (_) {
+    return '';
+  }
+
+  if (
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    url.port ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash ||
+    url.hostname === 'r2.dev' ||
+    url.hostname.endsWith('.r2.dev') ||
+    url.hostname === 'workers.dev' ||
+    url.hostname.endsWith('.workers.dev')
+  ) {
+    return '';
+  }
+
+  return `${url.origin}/`;
+}
+
+export function isR2CustomDomainUrl(value: unknown): boolean {
+  return Boolean(normalizeR2CustomDomainUrl(value));
+}
+
+export function suggestedR2CustomDomainUrl(hostname: string): string {
+  if (
+    isLocalDevelopmentHostname(hostname) ||
+    hostname.endsWith('.workers.dev')
+  ) {
+    return 'https://media.example.com/';
+  }
+
+  const customHostname = hostname.replace(/^www\./iu, '');
+  return `https://media.${customHostname}/`;
+}
+
 export function resolvePublicBucketUrl(
   value: unknown,
   hostname: string,

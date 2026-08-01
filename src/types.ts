@@ -64,8 +64,11 @@ export interface AdminProtectionStatus {
 
 export interface OnboardingCheck {
   adminProtection?: AdminProtectionStatus;
+  bucketName?: string;
+  dashboardUrl?: string;
   ready: boolean;
   required: boolean;
+  suggestedUrl?: string;
 }
 
 export interface OnboardingResult extends JsonObject {

@@ -1,8 +1,21 @@
 import {ArrowRightCircleIcon, CheckCircleIcon} from "@heroicons/react/20/solid";
-import React from "react";
+import React, {useState} from "react";
 
+import {showToast} from "@/client/ToastUtils";
+import Requests from "@/client/requests";
+import {Button} from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import {Input} from "@/components/ui/input";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
-import {ADMIN_URLS} from "@/shared/StringUtils";
+import {
+  ADMIN_URLS,
+  normalizeR2CustomDomainUrl,
+} from "@/shared/StringUtils";
 import type {AdminProtectionStatus} from "@/types";
 
 function CheckListItem({
@@ -72,51 +85,242 @@ export function AdminProtectionDescription({
   );
 }
 
-export default class SetupChecklistApp extends React.Component<any, any> {
-  render() {
-    const {onboardingResult} = this.props;
-    const access = onboardingResult.result[
-      ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD
-    ];
-    const customDomain = onboardingResult.result[
-      ONBOARDING_TYPES.CUSTOM_DOMAIN
-    ];
-    const adminProtection = access.adminProtection ?? {
-      builtInLogin: false,
-      cloudflareAccess: false,
-    };
+interface MediaDeliveryDescriptionProps {
+  bucketName?: string;
+  configured?: boolean;
+  dashboardUrl?: string;
+  error?: string;
+  mediaDomainUrl: string;
+  onChange: (value: string) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  saving: boolean;
+  suggestedUrl?: string;
+}
 
-    return (
-      <div className="lh-page-card">
-        <div className="lh-page-title">Setup checklist</div>
-        {onboardingResult.allOk && (
-          <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
-            <i>You are all set!</i>
-            <div className="mt-2">
-              Start publishing at{" "}
-              <a href={ADMIN_URLS.newItem()}>
-                Add new item <span className="lh-icon-arrow-right" />
-              </a>
-            </div>
-          </div>
+export function MediaDeliveryDescription({
+  bucketName,
+  configured = false,
+  dashboardUrl,
+  error,
+  mediaDomainUrl,
+  onChange,
+  onSubmit,
+  saving,
+  suggestedUrl,
+}: MediaDeliveryDescriptionProps) {
+  const suggestion = suggestedUrl ?? "https://media.example.com/";
+
+  return (
+    <div className="space-y-4 text-sm">
+      {configured
+        ? (
+          <p>
+            Uploaded images, audio, video, and documents are configured to use
+            this R2 custom domain.
+          </p>
+        )
+        : (
+          <p>
+            Uploaded images, audio, video, and documents are currently served
+            through the microfeed Worker. This works, but uncached requests can
+            be slower and can count toward both Worker and R2 billable usage.
+          </p>
         )}
-        <div className="mt-8">
-          <CheckListItem
-            onboardState={access}
-            title="Dashboard protection"
-          >
-            <AdminProtectionDescription {...adminProtection} />
-          </CheckListItem>
-          <CheckListItem
-            onboardState={customDomain}
-            title="Use a custom domain"
-          >
-            Run <code>yarn manage domain</code> from your deployment
-            checkout. The command updates the Worker configuration, deploys,
-            and verifies the domain and TLS.
-          </CheckListItem>
-        </div>
-      </div>
-    );
+      <p>
+        Connecting a custom domain directly to this R2 bucket allows
+        Cloudflare to cache media closer to visitors. Media can load faster,
+        and fewer requests need to reach R2, which can lower future bills.
+      </p>
+      <ol className="list-decimal space-y-2 pl-5">
+        <li>
+          {dashboardUrl
+            ? (
+              <a
+                className="font-medium underline"
+                href={dashboardUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Open the {bucketName ?? "R2"} bucket domain settings
+              </a>
+            )
+            : (
+              <span>
+                Open this installation&apos;s R2 bucket in the Cloudflare
+                dashboard, then open <strong>Settings</strong>.
+              </span>
+            )}
+        </li>
+        <li>
+          Under <strong>Custom Domains</strong>, connect a separate hostname
+          such as <code>{suggestion}</code>, then wait for its status to become
+          Active.
+        </li>
+        <li>Copy that hostname into the field below and save it.</li>
+      </ol>
+      <p>
+        Do not use the Public Development URL ending in <code>r2.dev</code>.
+        Cloudflare rate-limits that URL and does not provide production edge
+        caching on it.
+      </p>
+      <form className="space-y-3" onSubmit={onSubmit}>
+        <Field data-invalid={Boolean(error)}>
+          <FieldLabel htmlFor="r2-custom-domain">R2 custom domain</FieldLabel>
+          <Input
+            aria-describedby="r2-custom-domain-help"
+            aria-invalid={Boolean(error)}
+            autoCapitalize="none"
+            autoCorrect="off"
+            disabled={saving}
+            id="r2-custom-domain"
+            inputMode="url"
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={suggestion}
+            spellCheck={false}
+            type="text"
+            value={mediaDomainUrl}
+          />
+          <FieldDescription id="r2-custom-domain-help">
+            Use the complete HTTPS address. You can also paste just the
+            hostname; microfeed will add <code>https://</code>.
+          </FieldDescription>
+          <FieldError>{error}</FieldError>
+        </Field>
+        <Button disabled={saving} type="submit">
+          {saving ? "Saving..." : "Save media domain"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export default function SetupChecklistApp({feed, onboardingResult}: any) {
+  const access = onboardingResult.result[
+    ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD
+  ];
+  const customDomain = onboardingResult.result[
+    ONBOARDING_TYPES.CUSTOM_DOMAIN
+  ];
+  const mediaDomain = onboardingResult.result[
+    ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+  ];
+  const currentMediaUrl = normalizeR2CustomDomainUrl(
+    feed.settings?.webGlobalSettings?.publicBucketUrl,
+  );
+  const [mediaDomainUrl, setMediaDomainUrl] = useState(
+    currentMediaUrl || mediaDomain.suggestedUrl || "",
+  );
+  const [mediaDomainSaved, setMediaDomainSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const effectiveMediaDomain = {
+    ...mediaDomain,
+    ready: mediaDomain.ready || mediaDomainSaved,
+  };
+  const effectiveAllOk = Object.entries(onboardingResult.result).every(
+    ([type, check]: [string, any]) =>
+      Number(type) === ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+        ? effectiveMediaDomain.ready
+        : check.ready,
+  );
+  const adminProtection = access.adminProtection ?? {
+    builtInLogin: false,
+    cloudflareAccess: false,
+  };
+
+  async function saveMediaDomain(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedUrl = normalizeR2CustomDomainUrl(mediaDomainUrl);
+    if (!normalizedUrl) {
+      setError(
+        "Enter a custom HTTPS hostname such as https://media.example.com/. " +
+          "Public r2.dev URLs are not supported.",
+      );
+      return;
+    }
+    if (new URL(normalizedUrl).hostname === window.location.hostname) {
+      setError(
+        "Use a separate hostname for R2, such as media.example.com, rather " +
+          "than the domain serving microfeed itself.",
+      );
+      return;
+    }
+
+    setError("");
+    setSaving(true);
+    const currentWebSettings = feed.settings?.webGlobalSettings ?? {};
+    try {
+      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
+        settings: {
+          webGlobalSettings: {
+            ...currentWebSettings,
+            publicBucketUrl: normalizedUrl,
+          },
+        },
+      });
+      setMediaDomainUrl(normalizedUrl);
+      setMediaDomainSaved(true);
+      showToast("Media domain updated!", "success");
+    } catch (requestError: any) {
+      setError(
+        requestError.response
+          ? "The media domain could not be saved. Please try again."
+          : "Network error. Please refresh the page and try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
+
+  return (
+    <div className="lh-page-card">
+      <div className="lh-page-title">Setup checklist</div>
+      {effectiveAllOk && (
+        <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
+          <i>You are all set!</i>
+          <div className="mt-2">
+            Start publishing at{" "}
+            <a href={ADMIN_URLS.newItem()}>
+              Add new item <span className="lh-icon-arrow-right" />
+            </a>
+          </div>
+        </div>
+      )}
+      <div className="mt-8">
+        <CheckListItem
+          onboardState={access}
+          title="Dashboard protection"
+        >
+          <AdminProtectionDescription {...adminProtection} />
+        </CheckListItem>
+        <CheckListItem
+          onboardState={customDomain}
+          title="Use a custom domain for this site"
+        >
+          Run <code>yarn manage domain</code> from your deployment
+          checkout. The command updates the Worker configuration, deploys,
+          and verifies the domain and TLS.
+        </CheckListItem>
+        <CheckListItem
+          onboardState={effectiveMediaDomain}
+          title="Use a custom domain for media files"
+        >
+          <MediaDeliveryDescription
+            bucketName={mediaDomain.bucketName}
+            configured={Boolean(currentMediaUrl || mediaDomainSaved)}
+            dashboardUrl={mediaDomain.dashboardUrl}
+            error={error}
+            mediaDomainUrl={mediaDomainUrl}
+            onChange={(value) => {
+              setMediaDomainUrl(value);
+              setError("");
+            }}
+            onSubmit={saveMediaDomain}
+            saving={saving}
+            suggestedUrl={mediaDomain.suggestedUrl}
+          />
+        </CheckListItem>
+      </div>
+    </div>
+  );
 }

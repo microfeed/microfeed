@@ -26,7 +26,7 @@ export default class AdminHomeApp extends React.Component<any, any> {
       currentPage={NAV_ITEMS.ADMIN_HOME}
       onboardingResult={onboardingResult}
     >
-      <form className="grid grid-cols-12 gap-4" onSubmit={(e: any) => e.preventDefault()}>
+      <div className="grid grid-cols-12 gap-4">
         <div className="col-span-8 grid grid-cols-1 gap-4">
           <div>
             <SetupChecklistApp feed={feed} onboardingResult={onboardingResult} />
@@ -40,7 +40,7 @@ export default class AdminHomeApp extends React.Component<any, any> {
             <WhatsNewApp />
           </div>
         </div>
-      </form>
+      </div>
     </AdminNavApp>);
   }
 }

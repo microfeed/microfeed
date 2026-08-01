@@ -5,12 +5,15 @@ import {
   canonicalPathname,
   hasFileExtension,
   isLocalDevelopmentHostname,
+  isR2CustomDomainUrl,
   isValidPublicBucketUrl,
   normalizePublicBucketUrl,
+  normalizeR2CustomDomainUrl,
   PUBLIC_URLS,
   randomShortUUID,
   removeHostFromUrl,
   resolvePublicBucketUrl,
+  suggestedR2CustomDomainUrl,
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
 
@@ -62,6 +65,33 @@ test('public bucket URLs accept the Worker media route and absolute HTTP URLs', 
   expect(isValidPublicBucketUrl('http://media.example.com/')).toBe(true);
   expect(isValidPublicBucketUrl('/another-path/')).toBe(false);
   expect(isValidPublicBucketUrl('media.example.com')).toBe(false);
+});
+
+test('R2 custom domains normalize safe production hostnames', () => {
+  expect(normalizeR2CustomDomainUrl('media.example.com')).toBe(
+    'https://media.example.com/',
+  );
+  expect(normalizeR2CustomDomainUrl('https://media.example.com')).toBe(
+    'https://media.example.com/',
+  );
+  expect(isR2CustomDomainUrl('https://media.example.com/')).toBe(true);
+  expect(isR2CustomDomainUrl('http://media.example.com/')).toBe(false);
+  expect(isR2CustomDomainUrl('/media/')).toBe(false);
+  expect(isR2CustomDomainUrl('https://example.r2.dev/')).toBe(false);
+  expect(isR2CustomDomainUrl('https://example.workers.dev/')).toBe(false);
+  expect(isR2CustomDomainUrl('https://media.example.com/path')).toBe(false);
+});
+
+test('R2 custom-domain suggestions use the active site domain', () => {
+  expect(suggestedR2CustomDomainUrl('feed.example.com')).toBe(
+    'https://media.feed.example.com/',
+  );
+  expect(suggestedR2CustomDomainUrl('www.example.com')).toBe(
+    'https://media.example.com/',
+  );
+  expect(suggestedR2CustomDomainUrl('example.workers.dev')).toBe(
+    'https://media.example.com/',
+  );
 });
 
 test('local development always uses the Worker media route', () => {
