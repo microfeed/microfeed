@@ -10,8 +10,11 @@ import {
   DEPLOYMENT_VERIFICATION_RETRY_DELAYS_MS,
   deploymentOutcomeMessage,
   deploymentVerificationUrl,
+  initCommand,
   localAdminAuthSetupNotice,
   redeployWithAdminAuthMode,
+  siteNameGuidance,
+  validateWorkerName,
   verifyDeployment,
   workersAndPagesDashboardUrl,
 } from "../../../manage-cli/commands";
@@ -25,6 +28,42 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe("Cloudflare Worker name validation", () => {
+  it("recommends a globally distinctive name derived from a custom address", () => {
+    const guidance = siteNameGuidance();
+
+    expect(guidance.message).toContain("globally unique");
+    expect(guidance.message).toContain("my.domainname.com");
+    expect(guidance.message).toContain("my-domainname-com");
+  });
+
+  it("accepts Cloudflare's workers.dev name boundaries", () => {
+    expect(validateWorkerName("a")).toBeUndefined();
+    expect(validateWorkerName("Personal-Feed-123")).toBeUndefined();
+    expect(validateWorkerName("a".repeat(63))).toBeUndefined();
+  });
+
+  it("reports length, character, and edge-hyphen errors separately", () => {
+    expect(validateWorkerName("")).toContain("1–63");
+    expect(validateWorkerName("a".repeat(64))).toContain("1–63");
+    expect(validateWorkerName("personal_feed")).toContain("underscores");
+    expect(validateWorkerName("personal feed")).toContain("spaces");
+    expect(validateWorkerName("-personal-feed")).toContain("start or end");
+    expect(validateWorkerName("personal-feed-")).toContain("start or end");
+  });
+
+  it("rejects an explicit invalid name before Cloudflare authorization", async () => {
+    const runner = vi.fn<CommandRunner>();
+
+    await expect(initCommand({"project-name": "personal_feed"}, runner))
+      .rejects.toThrow(
+        "Invalid Worker name `personal_feed`. Use only ASCII letters, " +
+          "numbers, and hyphens",
+      );
+    expect(runner).not.toHaveBeenCalled();
+  });
 });
 
 describe("read-only Cloudflare account discovery", () => {

@@ -166,6 +166,30 @@ function instanceTargetMessage(config: MicrofeedConfig): string {
   ].join("\n");
 }
 
+export function validateWorkerName(name: string): string | undefined {
+  if (name.length === 0 || name.length > 63) {
+    return "Use 1–63 characters because microfeed is served on workers.dev.";
+  }
+  if (!/^[A-Za-z0-9-]+$/u.test(name)) {
+    return "Use only ASCII letters, numbers, and hyphens; underscores and " +
+      "spaces are not allowed.";
+  }
+  if (name.startsWith("-") || name.endsWith("-")) {
+    return "The name cannot start or end with a hyphen.";
+  }
+  return undefined;
+}
+
+export function siteNameGuidance(): {message: string; title: string} {
+  return {
+    message:
+      "Choose a globally unique, distinctive site name. If you plan to use " +
+      "a custom address, replace its dots with hyphens—for example, " +
+      "`my.domainname.com` becomes `my-domainname-com`.",
+    title: "Choose a site name",
+  };
+}
+
 function validateResourceName(name: string): string | undefined {
   if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(name)) {
     return "Use lowercase letters, numbers, and hyphens (1–63 characters).";
@@ -195,17 +219,20 @@ async function resourceName(
   flags: Flags,
   flag: string,
   message: string,
-  defaultValue: string,
+  defaultValue?: string,
 ): Promise<string> {
   const fromFlag = flagString(flags, flag);
   const value = fromFlag ?? await askText(message, defaultValue);
-  const error = flag === "d1-name"
-    ? validateD1Name(value)
-    : flag === "r2-name"
-      ? validateR2Name(value)
-      : validateResourceName(value);
+  const error = flag === "project-name"
+    ? validateWorkerName(value)
+    : flag === "d1-name"
+      ? validateD1Name(value)
+      : flag === "r2-name"
+        ? validateR2Name(value)
+        : validateResourceName(value);
   if (error) {
-    throw new Error(`${value}: ${error}`);
+    const resource = flag === "project-name" ? "Worker name" : message;
+    throw new Error(`Invalid ${resource} \`${value}\`. ${error}`);
   }
   return value;
 }
@@ -1458,6 +1485,10 @@ async function initializeProduction(context: CommandContext): Promise<void> {
         "instance name for the Cloudflare deployment.",
     );
   }
+  if (!saved && flagString(context.flags, "project-name") === undefined) {
+    const guidance = siteNameGuidance();
+    prompts.note(guidance.message, guidance.title);
+  }
   const account = await authenticate(
     context,
     saved && !isLocalOnly(saved) ? cloudflareAccountId(saved) : undefined,
@@ -1473,12 +1504,11 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   const projectDefault = flagString(context.flags, "project-name") ??
     process.env.CLOUDFLARE_PROJECT_NAME ??
     saved?.projectName ??
-    context.instanceName ??
-    "microfeed";
+    context.instanceName;
   const projectName = await resourceName(
     context.flags,
     "project-name",
-    "Worker project name",
+    "Site name",
     projectDefault,
   );
   if (saved && saved.projectName !== projectName) {
@@ -1966,6 +1996,17 @@ export async function initCommand(
   };
   const preview = flagBoolean(flags, "preview");
   const local = flagBoolean(flags, "local");
+  const suppliedProjectName = flagString(flags, "project-name");
+  if (!local && suppliedProjectName !== undefined) {
+    const error = validateWorkerName(suppliedProjectName);
+    if (error) {
+      throw new Error(
+        `Invalid Worker name \`${suppliedProjectName}\`. ${error} ` +
+          "No Cloudflare authorization was attempted and no resources " +
+          "were changed.",
+      );
+    }
+  }
   if (local && preview) {
     throw new Error(
       "`--local` and `--preview` cannot be used together. Local instances " +

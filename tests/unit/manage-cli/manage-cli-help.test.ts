@@ -50,6 +50,11 @@ describe("management CLI help and canonical reference", () => {
         expect(commandHelp).toContain(syntax);
       }
     }
+
+    const initHelp = renderCliHelp("init");
+    expect(initHelp).toContain("globally unique site name");
+    expect(initHelp).toContain("my.domainname.com");
+    expect(initHelp).toContain("my-domainname-com");
   });
 
   it("keeps every command and option discoverable in the Markdown contract", async () => {

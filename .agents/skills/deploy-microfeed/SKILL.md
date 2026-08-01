@@ -62,6 +62,11 @@ their Cloudflare email, password, private password-setup link, or token in chat.
 - Assume the user does not know Cloudflare terminology. Ask for a **site
   name**, not an "instance" or "Worker name." Explain that it is a short name
   for the new microfeed and helps form its web address.
+- Before asking for the site name, recommend choosing a globally unique,
+  distinctive name even though Cloudflare technically scopes Worker names to
+  an account. If the user plans to use a custom web address, recommend
+  replacing its dots with hyphens: for `my.domainname.com`, suggest
+  `my-domainname-com`.
 - Ask for the **email used to sign in as administrator**, not an "owner
   email." Explain that this creates the first protected dashboard login.
 - Do not ask the user to name D1 or R2 resources unless they request advanced
@@ -72,14 +77,16 @@ their Cloudflare email, password, private password-setup link, or token in chat.
 - Keep terms such as Worker, D1, R2, instance, binding, and OAuth out of the
   initial questions. Introduce them only when needed for an approval or error,
   and immediately explain what each resource does in plain language.
-- Never ask for all configuration fields at once. Start with: "What would you
-  like to call your site, and what email would you like to use to sign in as
-  administrator?" State separately that the user must not send a password in
-  chat. After receiving those answers, always ask: "Would you like to use your
-  own web address (for example, `feed.example.com`), or start with the free
-  Cloudflare address? You can add your own address later." Do not start
-  initialization until this choice is explicit, unless the user already
-  supplied it.
+- Never ask for all configuration fields at once. Start with: "Choose a
+  globally unique site name. If you plan to use a custom web address, replace
+  its dots with hyphens—for example, `my.domainname.com` becomes
+  `my-domainname-com`. What would you like to call your site, and what email
+  would you like to use to sign in as administrator?" State separately that
+  the user must not send a password in chat. After receiving those answers,
+  always ask: "Would you like to use your own web address (for example,
+  `feed.example.com`), or start with the free Cloudflare address? You can add
+  your own address later." Do not start initialization until this choice is
+  explicit, unless the user already supplied it.
 
 ## Deployment readiness checklist
 
@@ -140,7 +147,8 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
    address; do not silently assume either. If the user wants a custom address,
    collect its exact hostname. Map those answers to the internal values and
    recommend the documented defaults:
-   - site name, internally used as the instance and Worker name: `microfeed`
+   - site name, internally used as the instance and Worker name: the user's
+     globally distinctive name
    - content database (D1): `<worker-name>-db`
    - media storage (R2): `<worker-name>-media`
    - dashboard path (`--admin-path`): `admin`

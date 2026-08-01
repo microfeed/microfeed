@@ -166,7 +166,7 @@ yarn manage init [--instance <name>] [--preview|--local] [options]
 | --- | --- |
 | `--instance <name>` | Select the saved site name. |
 | `--account-id <id>` | Use one exact Cloudflare account. |
-| `--project-name <name>` | Set the production or preview Worker name. |
+| `--project-name <name>` | Set the production or preview Worker name: 1–63 ASCII letters, numbers, or hyphens; no leading or trailing hyphen. |
 | `--d1-name <name>` | Set the production or preview D1 name. |
 | `--r2-name <name>` | Set the production R2 name; preview always shares production media. |
 | `--admin-path <path>` | Set the remote dashboard path, defaulting to `admin`. |
@@ -183,13 +183,27 @@ yarn manage init [--instance <name>] [--preview|--local] [options]
 Examples:
 
 ```console
-yarn manage init --instance personal
-yarn manage init --preview --instance personal
-yarn manage init --local --instance personal
+yarn manage init
+yarn manage init --preview
+yarn manage init --local
 ```
+
+Choose a globally unique, distinctive site name. If you plan to use a custom
+address, replace its dots with hyphens; for `my.domainname.com`, use
+`my-domainname-com`. Fresh interactive Cloudflare initialization does not
+preselect a generic site name.
 
 Rerun the identical command after interruption. Saved progress prevents
 duplicate creation and unrelated-resource overwrite.
+
+microfeed enables the free `workers.dev` address, so Worker names are checked
+against its Cloudflare naming rules: 1–63 ASCII letters, numbers, or hyphens,
+with no leading or trailing hyphen. A one-character Worker name is valid.
+Names only need to be unused in the selected Cloudflare account; before its
+first change, the CLI checks that account for an existing Worker or Pages
+project with the same name. Explicit invalid names are rejected before
+Cloudflare authorization. D1 database and R2 bucket names are validated
+separately before resource creation.
 
 If resource provisioning or the first-password handoff is incomplete, `init`
 resumes only the unfinished work and preserves every recorded resource. When
@@ -331,7 +345,7 @@ yarn manage migrate-pages [--pages-name <name>] [--project-name <name>] [options
 | `--account-id <id>` | Use one exact account. |
 | `--instance <name>` | Choose the new local saved name. |
 | `--pages-name <name>` | Select the existing Pages project. |
-| `--project-name <name>` | Set a new Worker name different from Pages. |
+| `--project-name <name>` | Set a new Worker name different from Pages, using the same Worker naming rules as `init`. |
 | `--d1-name <name>` | Select the existing Pages D1 database. |
 | `--r2-name <name>` | Select the existing Pages R2 bucket. |
 | `--admin-path <path>` | Set the new Worker dashboard path. |

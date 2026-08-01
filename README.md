@@ -36,17 +36,19 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
 
 * [⭐️ How it works](#%EF%B8%8F-how-it-works)
 * [🚀 Installation](#-installation)
-  * [Method 1: AI coding agent (recommended)](#method-1-ai-coding-agent-recommended)
-  * [Method 2: yarn manage CLI (manual)](#method-2-yarn-manage-cli-manual)
-  * [Manage deployments](#manage-deployments)
+  * [Quickstarts](#quickstarts)
+  * [Details](#details)
+    * [Method 1: AI coding agent (recommended)](#method-1-ai-coding-agent-recommended)
+    * [Method 2: yarn manage CLI (manual)](#method-2-yarn-manage-cli-manual)
+  * [Advanced](#advanced)
     * [Multiple local and Cloudflare instances](#multiple-local-and-cloudflare-instances)
     * [Safely remove a deployment](#safely-remove-a-deployment)
     * [Preview deployment](#preview-deployment)
     * [Migrating an existing Pages installation](#migrating-an-existing-pages-installation)
     * [Custom domain and optional extra protection](#custom-domain-and-optional-extra-protection)
     * [Manage the dashboard login](#manage-the-dashboard-login)
-  * [Done. Start publishing](#done-start-publishing)
-  * [Update to the latest version of microfeed](#update-to-the-latest-version-of-microfeed)
+    * [Update to the latest version of microfeed](#update-to-the-latest-version-of-microfeed)
+* [✍️ Start publishing](#%EF%B8%8F-start-publishing)
 * [💻 FAQs](#-faqs)
 * [💪 Contributions](#-contributions)
   * [Run microfeed on local](#run-microfeed-on-local)
@@ -74,7 +76,8 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 microfeed uses Cloudflare [Workers](https://workers.cloudflare.com/) to host and run the code,
 [R2](https://www.cloudflare.com/products/r2/) to host and serve media files,
 [D1](https://developers.cloudflare.com/d1/) to store metadata,
-and a built-in email and password login to protect the admin dashboard.
+and a built-in email and password login to protect the microfeed admin
+dashboard.
 Cloudflare provides very generous free usage quotas, making it an affordable solution for personal or small business use.
 While you will still need to pay for a domain name, hosting microfeed on Cloudflare is essentially free.
 
@@ -85,8 +88,9 @@ Check out some examples of microfeed in action:
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
 
-microfeed provides a simple yet powerful admin dashboard that makes it easy to add items to the feed,
-upload media files, and customize web page styles. If you've used WordPress before, you'll find it familiar.
+microfeed provides a simple yet powerful admin dashboard: the site-management
+area where you create and edit posts, upload media files, and customize how
+your site looks. If you've used WordPress before, you'll find it familiar.
 
 ![image-6d056193c81c0b8f5de0503f5af18116](https://user-images.githubusercontent.com/1719237/209486588-00acefe0-dd51-4bfc-aed7-1f63850aa720.png)
 
@@ -94,9 +98,13 @@ upload media files, and customize web page styles. If you've used WordPress befo
 
 ## 🚀 Installation
 
+### Quickstarts
+
 The simplest way to install microfeed is with a local AI coding agent:
 
-1. Clone this repository:
+1. Create a local copy of this Git repository on your computer. Developers call
+   this a **Git clone**. [Install Git](https://git-scm.com/downloads) first if
+   the `git` command is not available on your computer:
 
    ```console
    git clone https://github.com/microfeed/microfeed.git
@@ -116,16 +124,22 @@ That's it. The agent guides the setup, runs the deployment, and verifies the
 finished site. You only step in for Cloudflare browser authorization, choices
 that require your approval, and creating your private dashboard password.
 
+Throughout this guide, the **microfeed admin dashboard** means the
+site-management area where you create and edit posts, upload media files, and
+customize your site.
+
+### Details
+
 Under the hood, microfeed has one supported deployment engine: `yarn manage`
-from a local repository clone. The AI agent follows the repository's deployment
-skill and uses that same CLI and its safety checks. You can also operate the CLI
-yourself.
+from a local Git copy of this repository. The AI agent follows the repository's
+deployment skill and uses that same CLI and its safety checks. You can also
+operate the CLI yourself.
 
 | | AI agent + repository skill | `yarn manage` CLI |
 | --- | --- | --- |
 | Driven by | A local AI agent operating the guided commands | A person running the guided commands |
 | Best for | Getting started quickly while the agent handles command execution and verification | Direct control over initialization and management |
-| Local clone | Required | Required |
+| Local Git copy of this repository | Required | Required |
 | Cloudflare changes | Performed by `yarn manage`; the skill guides the agent | Performed by `yarn manage` |
 | Human handoffs | Approvals, browser authorization, account choice when needed, password page | Browser authorization, genuine choices, password page |
 
@@ -133,25 +147,31 @@ Cloudflare repository imports, Workers Builds, deploy buttons, GitHub Actions,
 and user-created API tokens are not supported deployment paths. Neither method
 requires R2 credentials or GitHub secrets.
 
-### Method 1: AI coding agent (recommended)
+#### Method 1: AI coding agent (recommended)
 
 Choose this method when you want an agent to get microfeed running for you. The
 agent is the guide and operator; it does not deploy through a separate API,
 plugin, MCP server, or hand-written Cloudflare commands.
 
 This repository includes the `deploy-microfeed` skill under `.agents/skills/`.
-OpenAI Codex discovers it automatically when you open the clone and ask to
-deploy, publish, update, or configure microfeed. Other compatible local coding
-agents can follow the same repository instructions. No separately installed
-skill, Cloudflare plugin, or MCP server is required.
+OpenAI Codex discovers it automatically when you open the local `microfeed`
+folder created by `git clone` and ask to deploy, publish, update, or configure
+microfeed. Other compatible local coding agents can follow the same repository
+instructions. No separately installed skill, Cloudflare plugin, or MCP server
+is required.
 
-The short prompt at the top of this section is enough. If you already know the
-site name or administrator email you want to use, you can include them:
+Use the same short prompt shown at the top of this section:
 
 ```text
-Deploy microfeed to Cloudflare as a new site called personal-feed.
-Use me@example.com to sign in as administrator.
+Deploy microfeed to Cloudflare.
 ```
+
+The agent asks for your site name and administrator sign-in email during the
+guided setup. Choose a globally unique, distinctive site name. If you plan to
+use a custom address, a useful convention is to replace its dots with hyphens:
+for `my.domainname.com`, use `my-domainname-com`. The management CLI validates
+the name and checks the selected Cloudflare account for conflicts before
+creating anything.
 
 The agent:
 
@@ -177,13 +197,14 @@ may relay the one-time link printed by the trusted CLI, but it must not ask you
 to paste that link or your password back into chat. The dashboard returns HTTP
 403 until you finish creating the password.
 
-This workflow requires a local agent with access to the clone and a browser
-that can complete Wrangler's local Cloudflare callback. Hosted/headless agents
-and unattended API-token deployment are not supported.
+This workflow requires a local agent with access to your local Git copy of the
+repository and a browser that can complete Wrangler's local Cloudflare
+callback. Hosted/headless agents and unattended API-token deployment are not
+supported.
 
 [Back to 📚TOC](#-table-of-contents)
 
-### Method 2: `yarn manage` CLI (manual)
+#### Method 2: `yarn manage` CLI (manual)
 
 Choose this method when you want to run guided initialization yourself from a
 local terminal. It includes the recommended built-in dashboard login and
@@ -192,13 +213,14 @@ domains, and Cloudflare Pages migrations.
 
 For every command, option, side effect, safety rule, and example, see the
 canonical [`yarn manage` command reference](docs/manage-cli.md). You can also
-run `yarn manage help <command>` from the clone for matching terminal help.
+run `yarn manage help <command>` from your local `microfeed` folder for
+matching terminal help.
 
 The `yarn manage` command is included in this repository—it is not a command
 installed on your computer globally. Before you can use it, install
 [Git](https://git-scm.com/downloads) and
-[Node.js 24](https://nodejs.org/en/download), then clone a copy of microfeed
-to your computer:
+[Node.js 24](https://nodejs.org/en/download), then use Git to create a local
+copy of this repository on your computer:
 
 ```console
 git clone https://github.com/microfeed/microfeed.git
@@ -217,15 +239,17 @@ resource. If several accounts are available, choose the one where you want the
 site to live. `yarn manage init` then asks for the site settings and explains
 the Cloudflare resources before creating them.
 
-The installer also asks how to protect the admin dashboard:
+The installer also asks how to protect the microfeed admin dashboard, where you
+create and edit posts, upload media files, and customize your site:
 
 * **Set up dashboard login (Recommended):** Enter the email you will use to sign
   in as administrator. After deployment, the installer opens a private one-time
   page where you choose the password. The email does not need to match your
   Cloudflare account and is not shown publicly.
-* **Skip authentication:** Leave the admin dashboard public until you protect
-  it with [Cloudflare Zero Trust Access](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/). Anyone on the internet can create,
-  edit, or delete content while it is unprotected.
+* **Skip authentication:** Leave the microfeed admin dashboard public until you
+  protect it with [Cloudflare Zero Trust Access](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/).
+  Anyone on the internet can create, edit, or delete content while it is
+  unprotected.
 
 The admin address defaults to `/admin/`, and you can choose a different
 address if you prefer.
@@ -241,12 +265,6 @@ New installations upload to and serve media through the Worker, so you do not
 need to configure public R2 access, CORS, an R2 custom domain, or S3
 credentials.
 
-You can supply the default Worker name without a prompt:
-
-```console
-CLOUDFLARE_PROJECT_NAME=my-feed yarn manage init
-```
-
 For later deployments and diagnostics, use:
 
 ```console
@@ -256,24 +274,49 @@ yarn manage status
 
 [Back to 📚TOC](#-table-of-contents)
 
-### Manage deployments
+### Advanced
 
 Both operating styles share the same saved configuration and commands because
 the agent always operates through `yarn manage`. You can start with an agent and
 later run the CLI yourself—or do the reverse—without creating a different kind
 of installation.
 
+Here is a map of what the management CLI can do. The
+[`yarn manage` command reference](docs/manage-cli.md) documents every option,
+side effect, and safety check.
+
+| Task | Command |
+| --- | --- |
+| Sign in to Cloudflare and list available accounts | `yarn manage accounts` |
+| Create or resume a Cloudflare, preview, or local site | `yarn manage init` |
+| Connect an existing compatible microfeed Worker without changing it | `yarn manage connect` |
+| Deploy an update | `yarn manage deploy` |
+| Check deployment health and dashboard protection | `yarn manage status` |
+| List sites or select the default site | `yarn manage instances`, `yarn manage use` |
+| Add a custom domain | `yarn manage domain` |
+| Add optional Cloudflare Access protection to the dashboard | `yarn manage access` |
+| Set up or change the administrator login and dashboard address | `yarn manage auth` |
+| Create and inspect an isolated preview deployment | `yarn manage init --preview`, `yarn manage deploy --preview`, `yarn manage status --preview` |
+| Migrate an older Cloudflare Pages installation | `yarn manage migrate-pages` |
+| Safely plan and remove a deployment | `yarn manage destroy` |
+| Validate and regenerate local configuration | `yarn manage config` |
+| Run a site locally on your computer | `yarn manage dev` |
+
+For automated initialization, `CLOUDFLARE_PROJECT_NAME` can provide your own
+globally distinctive site name without an interactive prompt.
+
 #### Multiple local and Cloudflare instances
 
-One clone can keep any number of independent microfeed instances. An instance
-can be:
+One local Git copy of this repository can keep any number of independent
+microfeed instances. An instance can be:
 
 * **Local only:** Runs on your computer with simulated D1 and R2 resources and
   has no Cloudflare deployment.
-* **Cloudflare — managed here:** Has saved configuration in this clone and can
-  be deployed or administered from it.
+* **Cloudflare — managed here:** Has saved configuration in this local Git copy
+  and can be deployed or administered from it.
 * **Cloudflare — available to connect:** Is an existing compatible Worker in
-  your Cloudflare account that has not been connected to this clone yet.
+  your Cloudflare account that has not been connected to this local Git copy
+  yet.
 
 Create as many isolated local-only instances as you need:
 
@@ -282,9 +325,10 @@ yarn manage init --local --instance personal
 yarn manage init --local --instance company
 ```
 
-During local initialization, the built-in email and password login is optional. You can
-enable it to try the same sign-in flow used in production, or skip it and open
-the local admin dashboard directly. Add it later for a specific instance with:
+During local initialization, the built-in email and password login is optional.
+You can enable it to try the same sign-in flow used in production, or skip it
+and open the local microfeed admin dashboard directly. Add it later for a
+specific instance with:
 
 ```console
 yarn manage auth setup --local --instance personal
@@ -536,7 +580,8 @@ yarn manage domain
 After custom-domain setup:
 
 * Public pages, feeds, media, and APIs use the custom domain.
-* The built-in login protects the admin dashboard at its configured address.
+* The built-in login protects the microfeed admin dashboard at its configured
+  address.
 * The project's `workers.dev` address is disabled by default. You can enable it
   from [Workers & Pages](https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages)
   by selecting the Worker and opening **Settings → Domains & Routes**. A later
@@ -544,7 +589,7 @@ After custom-domain setup:
 
 The recommended built-in login is all you need. If you want Cloudflare Access
 as a second gate—or skipped the built-in login and need to protect the public
-admin dashboard—run:
+microfeed admin dashboard—run:
 
 ```console
 yarn manage access
@@ -558,8 +603,9 @@ token.
 
 #### Manage the dashboard login
 
-To change the owner email, reset the owner password, or move the dashboard to a
-different address, run:
+The microfeed admin dashboard is where you create and edit posts, upload media
+files, and customize your site. To change its administrator email, reset its
+password, or move it to a different address, run:
 
 ```console
 yarn manage auth
@@ -599,26 +645,12 @@ The old address returns 404.
 
 [Back to 📚TOC](#-table-of-contents)
 
-### Done. Start publishing
-
-Once initialization is complete, your microfeed instance is ready to use.
-You can add, update, or delete items from the admin dashboard.
-
-You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
-
-<img width="1098" alt="Screenshot 2022-12-30 at 7 57 45 PM" src="https://user-images.githubusercontent.com/1719237/210062910-e56135f6-557e-419e-a00d-b25dd391c93d.png">
-
-The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a templating language, where you can access to variables from Feed Json or Item Json. For example, on our marketing website [microfeed.org](https://www.microfeed.org/)'s home page (Feed Web), we use variables in the html code from [microfeed.org/json/](https://www.microfeed.org/json/), and on [an item's page](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/) (Item Web), we use variables from [${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json).
-
-With the easy access to the json data of a microfeed instance (i.e., [Feed Json](https://www.microfeed.org/json/) and [Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json), you can use it as a headless CMS and build your own client apps to display the content.
-
-[Back to 📚TOC](#-table-of-contents)
-
-### Update to the latest version of microfeed
+#### Update to the latest version of microfeed
 
 We will continue to add features and fix bugs in this repository.
 
-If you use an AI agent, pull the latest code from your local `microfeed` folder:
+If you use an AI agent, pull the latest code into your local Git copy of the
+repository from the `microfeed` folder:
 
 ```console
 git pull --ff-only
@@ -641,8 +673,24 @@ yarn install
 yarn manage deploy
 ```
 
-If one clone manages several installations, add `--instance <name>` to deploy
-the one you want to update.
+If one local Git copy manages several installations, add `--instance <name>`
+to deploy the one you want to update.
+
+[Back to 📚TOC](#-table-of-contents)
+
+## ✍️ Start publishing
+
+Once initialization is complete, your microfeed instance is ready to use.
+From the microfeed admin dashboard, you can create, edit, or delete posts;
+upload audio, video, images, and other media files; and customize your site.
+
+You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
+
+<img width="1098" alt="Screenshot 2022-12-30 at 7 57 45 PM" src="https://user-images.githubusercontent.com/1719237/210062910-e56135f6-557e-419e-a00d-b25dd391c93d.png">
+
+The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a templating language, where you can access to variables from Feed Json or Item Json. For example, on our marketing website [microfeed.org](https://www.microfeed.org/)'s home page (Feed Web), we use variables in the html code from [microfeed.org/json/](https://www.microfeed.org/json/), and on [an item's page](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/) (Item Web), we use variables from [${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json).
+
+With the easy access to the json data of a microfeed instance (i.e., [Feed Json](https://www.microfeed.org/json/) and [Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json), you can use it as a headless CMS and build your own client apps to display the content.
 
 [Back to 📚TOC](#-table-of-contents)
 
@@ -753,9 +801,10 @@ yarn manage use company
 yarn dev
 ```
 
-`yarn manage auth setup --local` remains available as a shortcut: in a fresh
-clone it creates the default `local` instance, and for an existing selected
-instance it configures that instance's local dashboard login.
+`yarn manage auth setup --local` remains available as a shortcut: in a newly
+created local Git copy of the repository it creates the default `local`
+instance, and for an existing selected instance it configures that instance's
+local dashboard login.
 
 The local initialization prompt lets you skip the built-in login. If you skip it, the
 local dashboard opens without a sign-in screen; enable it later with

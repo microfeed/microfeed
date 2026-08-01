@@ -41,21 +41,25 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Creates or updates Cloudflare resources, or creates an isolated local sandbox with --local.",
     details: [
+      "Choose a globally unique site name; for a custom address such as my.domainname.com, use my-domainname-com.",
       "Production initialization creates or reuses a Worker, D1 database, R2 bucket, secrets, migrations, and optional custom domain.",
       "Preview initialization creates a separate Worker and D1 database while reusing production media storage.",
       "Built-in authentication normally prints a private browser link for setting the first password.",
       "A completed installation stops with guidance to use deploy, status, domain, or auth instead.",
     ],
     examples: [
-      "yarn manage init --instance personal",
-      "yarn manage init --preview --instance personal",
-      "yarn manage init --local --instance personal",
+      "yarn manage init",
+      "yarn manage init --preview",
+      "yarn manage init --local",
     ],
     name: "init",
     options: [
       option("--instance <name>", "Select the saved site name."),
       option("--account-id <id>", "Use one exact Cloudflare account."),
-      option("--project-name <name>", "Set the Worker name; for preview, set the preview Worker name."),
+      option(
+        "--project-name <name>",
+        "Set the Worker name: 1–63 ASCII letters, numbers, or hyphens; no edge hyphen.",
+      ),
       option("--d1-name <name>", "Set the production or preview D1 database name."),
       option("--r2-name <name>", "Set the production R2 bucket name; preview always reuses production storage."),
       option("--admin-path <path>", "Set the Cloudflare dashboard path, defaulting to admin."),
@@ -186,7 +190,10 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--account-id <id>", "Use one exact Cloudflare account."),
       option("--instance <name>", "Choose the new local saved site name."),
       option("--pages-name <name>", "Select the existing Pages project."),
-      option("--project-name <name>", "Set the new, different Worker name."),
+      option(
+        "--project-name <name>",
+        "Set the new, different Worker name: 1–63 ASCII letters, numbers, or hyphens; no edge hyphen.",
+      ),
       option("--d1-name <name>", "Select the existing Pages D1 database."),
       option("--r2-name <name>", "Select the existing Pages R2 bucket."),
       option("--admin-path <path>", "Set the new Worker's dashboard path."),
