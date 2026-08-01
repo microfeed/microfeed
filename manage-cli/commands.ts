@@ -53,6 +53,7 @@ import {
   pagesCollisionMessage,
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
+  validateWranglerProfileName,
 } from "./lib/cloudflare";
 import {
   openUrl,
@@ -317,8 +318,10 @@ function cloudflareAuthorizationMessage(): string {
     "workers_scripts:write, d1:write, pages:write, and zone:read. " +
     "workers_scripts:write is required to safely check and deploy the " +
     "selected site. pages:write is requested only because Wrangler does " +
-    "not expose a pages:read OAuth scope. `yarn manage accounts` only reads " +
-    "your identity and account list; it never changes Cloudflare resources.";
+    "not expose a pages:read OAuth scope. `yarn manage accounts` never " +
+    "changes Cloudflare account resources. With `--profile`, it may create " +
+    "local OAuth credentials and bind that Wrangler profile to this local " +
+    "repository.";
 }
 
 export async function accountsCommand(
@@ -332,6 +335,25 @@ export async function accountsCommand(
     runner,
   };
   const json = flagBoolean(flags, "json");
+  if (flags.profile === true) {
+    throw new Error(
+      "`--profile` requires a name, for example `--profile company`. " +
+        "No Cloudflare resources were changed.",
+    );
+  }
+  const requestedProfile = flagString(flags, "profile");
+  if (requestedProfile) {
+    const profileError = validateWranglerProfileName(requestedProfile);
+    if (profileError) {
+      throw new Error(
+        `Invalid Wrangler profile name \`${requestedProfile}\`. ` +
+          `${profileError} No Cloudflare resources were changed.`,
+      );
+    }
+  }
+  const reauthorizeCommand = requestedProfile
+    ? `yarn manage accounts --profile ${requestedProfile} --reauthorize`
+    : "yarn manage accounts --reauthorize";
   const explainAuthorization = () => {
     if (json) {
       process.stderr.write(`\nCloudflare authorization\n${
@@ -345,39 +367,67 @@ export async function accountsCommand(
     }
   };
 
+  const readIdentity = async (): Promise<{
+    identity: CloudflareIdentity;
+    scopesGranted: boolean;
+  }> => {
+    const identity = await context.cloudflare.identity();
+    return {
+      identity,
+      scopesGranted: identity.accounts.length > 0 &&
+        await context.cloudflare.hasRequiredScopes(),
+    };
+  };
+
   let identity: CloudflareIdentity;
   let scopesGranted: boolean;
-  if (flagBoolean(flags, "reauthorize")) {
+  if (requestedProfile) {
+    let authorizationPerformed = flagBoolean(flags, "reauthorize");
+    if (!authorizationPerformed) {
+      authorizationPerformed = !await context.cloudflare.profileExists(
+        requestedProfile,
+      );
+    }
+    if (authorizationPerformed) {
+      explainAuthorization();
+      await context.cloudflare.authorizeProfile(requestedProfile);
+    }
+    await context.cloudflare.activateProfile(requestedProfile);
+    ({identity, scopesGranted} = await readIdentity());
+    if (
+      !authorizationPerformed &&
+      (identity.accounts.length === 0 || !scopesGranted)
+    ) {
+      explainAuthorization();
+      await context.cloudflare.authorizeProfile(requestedProfile);
+      await context.cloudflare.activateProfile(requestedProfile);
+      ({identity, scopesGranted} = await readIdentity());
+    }
+  } else if (flagBoolean(flags, "reauthorize")) {
     explainAuthorization();
     await context.cloudflare.login();
-    identity = await context.cloudflare.identity();
-    scopesGranted = identity.accounts.length > 0 &&
-      await context.cloudflare.hasRequiredScopes();
+    ({identity, scopesGranted} = await readIdentity());
   } else {
-    identity = await context.cloudflare.identity();
-    scopesGranted = identity.accounts.length > 0 &&
-      await context.cloudflare.hasRequiredScopes();
+    ({identity, scopesGranted} = await readIdentity());
     if (identity.accounts.length === 0 || !scopesGranted) {
       explainAuthorization();
       await context.cloudflare.login();
-      identity = await context.cloudflare.identity();
-      scopesGranted = identity.accounts.length > 0 &&
-        await context.cloudflare.hasRequiredScopes();
+      ({identity, scopesGranted} = await readIdentity());
     }
   }
 
   if (identity.accounts.length === 0) {
     throw new Error(
       "Cloudflare did not return any accounts for this login. No " +
-        "Cloudflare resources were changed. Use `yarn manage accounts " +
-        "--reauthorize` to sign in with another Cloudflare user.",
+        "Cloudflare resources were changed. Use `" + reauthorizeCommand +
+        "` to sign in with another Cloudflare user.",
     );
   }
   if (!scopesGranted) {
     throw new Error(
       "Cloudflare authorization did not grant all permissions microfeed " +
-        "needs. No Cloudflare resources were changed. Run `yarn manage " +
-        "accounts --reauthorize` and approve every requested permission.",
+        "needs. No Cloudflare resources were changed. Run `" +
+        reauthorizeCommand + "` and approve every requested permission.",
     );
   }
 

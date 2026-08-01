@@ -163,6 +163,126 @@ describe("read-only Cloudflare account discovery", () => {
       args[0] === "login" && args.includes("--use-keyring")
     )).toBe(true);
   });
+
+  it("creates and activates a separately named Cloudflare login", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command.startsWith("auth create company --scopes ")) {
+        return {exitCode: 0, stderr: "", stdout: "Authorized"};
+      }
+      if (command === `auth activate company ${process.cwd()}`) {
+        return {exitCode: 0, stderr: "", stdout: "Activated"};
+      }
+      if (command === "auth list") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: [
+            "│ Profile │ Bound Directories │",
+            `│ company │ ${process.cwd()} │`,
+          ].join("\n"),
+        };
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-company", name: "Company"}],
+            authType: "OAuth Token",
+            email: "company@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({
+      json: true,
+      profile: "company",
+      reauthorize: true,
+    }, runner);
+
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "auth" && args[1] === "create" && args[2] === "company"
+    )).toBe(true);
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "auth" && args[1] === "activate" &&
+      args[2] === "company"
+    )).toBe(true);
+    expect(runner.mock.calls.some(([, , options]) =>
+      options?.env?.CLOUDFLARE_AUTH_USE_KEYRING === "true"
+    )).toBe(true);
+  });
+
+  it("selects an existing named profile without replacing its login", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "auth list") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: [
+            "│ Profile │ Bound Directories │",
+            `│ company │ ${process.cwd()} │`,
+          ].join("\n"),
+        };
+      }
+      if (command === `auth activate company ${process.cwd()}`) {
+        return {exitCode: 0, stderr: "", stdout: "Activated"};
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-company", name: "Company"}],
+            authType: "OAuth Token",
+            email: "company@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({json: true, profile: "company"}, runner);
+
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "login" || (args[0] === "auth" && args[1] === "create")
+    )).toBe(false);
+  });
+
+  it("rejects missing, illegal, and reserved profile names before authorization", async () => {
+    for (const profile of [true, "company account", "default"]) {
+      const runner = vi.fn<CommandRunner>();
+
+      await expect(accountsCommand({profile}, runner)).rejects.toThrow(
+        /profile|Wrangler/iu,
+      );
+      expect(runner).not.toHaveBeenCalled();
+    }
+  });
 });
 
 describe("deployment verification URL", () => {

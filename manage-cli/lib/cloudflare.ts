@@ -187,6 +187,20 @@ export interface CloudflareIdentity {
   profile: string | null;
 }
 
+const RESERVED_WRANGLER_PROFILE_NAMES = new Set(["default", "staging"]);
+
+export function validateWranglerProfileName(
+  name: string,
+): string | undefined {
+  if (RESERVED_WRANGLER_PROFILE_NAMES.has(name.toLowerCase())) {
+    return `\`${name}\` is reserved by Wrangler. Choose another name.`;
+  }
+  if (!/^[A-Za-z0-9_-]+$/u.test(name)) {
+    return "Use only ASCII letters, numbers, hyphens, and underscores.";
+  }
+  return undefined;
+}
+
 function accountsFromWhoami(data: Record<string, unknown>): Account[] {
   const candidates = (
     Array.isArray(data.accounts)
@@ -208,12 +222,17 @@ function accountsFromWhoami(data: Record<string, unknown>): Account[] {
   });
 }
 
-function activeProfileFromList(output: string): string | null {
+interface WranglerProfile {
+  boundDirectories: string;
+  name: string;
+}
+
+function profilesFromList(output: string): WranglerProfile[] {
   const withoutAnsi = output.replace(
     /\u001B\[[0-?]*[ -/]*[@-~]/gu,
     "",
   );
-  let hasDefaultProfile = false;
+  const profiles: WranglerProfile[] = [];
   for (const line of withoutAnsi.split(/\r?\n/u)) {
     const cells = line.split("│").map((cell) => cell.trim());
     if (cells.length < 4) {
@@ -221,15 +240,21 @@ function activeProfileFromList(output: string): string | null {
     }
     const profile = cells[1];
     const boundDirectories = cells[2];
-    if (!profile || profile === "Profile" || !boundDirectories) {
+    if (!profile || profile === "Profile") {
       continue;
     }
-    hasDefaultProfile ||= profile === "default";
-    if (boundDirectories.includes(repositoryRoot)) {
-      return profile;
-    }
+    profiles.push({boundDirectories: boundDirectories ?? "", name: profile});
   }
-  return hasDefaultProfile ? "default" : null;
+  return profiles;
+}
+
+function activeProfileFromList(output: string): string | null {
+  const profiles = profilesFromList(output);
+  return profiles.find(({boundDirectories}) =>
+    boundDirectories.includes(repositoryRoot)
+  )?.name ?? (profiles.some(({name}) => name === "default")
+    ? "default"
+    : null);
 }
 
 function parsePagesProjects(output: string): PagesProject[] {
@@ -293,6 +318,61 @@ export class CloudflareClient {
       );
     }
     this.credentialsPromise = undefined;
+  }
+
+  async authorizeProfile(profile: string): Promise<void> {
+    try {
+      await runWrangler(
+        this.runner,
+        ["auth", "create", profile, "--scopes", ...OAUTH_SCOPES],
+        {
+          env: {
+            ...process.env,
+            CLOUDFLARE_AUTH_USE_KEYRING: "true",
+          },
+          interactive: true,
+        },
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Cloudflare authorization for Wrangler profile \`${profile}\` did ` +
+          "not complete. No Cloudflare resources were changed. Approve the " +
+          "requested permissions and keep this command open until the " +
+          `browser callback finishes, then retry. ${detail}`,
+      );
+    }
+    this.credentialsPromise = undefined;
+  }
+
+  async activateProfile(profile: string): Promise<void> {
+    try {
+      await runWrangler(
+        this.runner,
+        ["auth", "activate", profile, repositoryRoot],
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Wrangler profile \`${profile}\` could not be activated for this ` +
+          "local repository. No Cloudflare resources were changed. " + detail,
+      );
+    }
+    this.credentialsPromise = undefined;
+  }
+
+  async profileExists(profile: string): Promise<boolean> {
+    try {
+      const result = await runWrangler(
+        this.runner,
+        ["auth", "list"],
+        {allowFailure: true},
+      );
+      return result.exitCode === 0 &&
+        profilesFromList(result.stdout).some(({name}) => name === profile);
+    } catch {
+      return false;
+    }
   }
 
   async accounts(): Promise<Account[]> {

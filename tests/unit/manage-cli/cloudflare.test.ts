@@ -8,6 +8,7 @@ import {
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
   pagesProjectDomainsDashboardUrl,
+  validateWranglerProfileName,
 } from "../../../manage-cli/lib/cloudflare";
 import type {
   CommandRunner,
@@ -142,6 +143,42 @@ describe("CloudflareClient", () => {
     await expect(new CloudflareClient(runner).login()).rejects.toThrow(
       "No Cloudflare resources were changed",
     );
+  });
+
+  it("creates named OAuth profiles in the keyring and activates the repository binding", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult());
+    const cloudflare = new CloudflareClient(runner);
+
+    await cloudflare.authorizeProfile("company");
+    await cloudflare.activateProfile("company");
+
+    expect(runner).toHaveBeenNthCalledWith(
+      1,
+      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      ["auth", "create", "company", "--scopes", ...OAUTH_SCOPES],
+      expect.objectContaining({
+        env: expect.objectContaining({
+          CLOUDFLARE_AUTH_USE_KEYRING: "true",
+        }),
+        interactive: true,
+      }),
+    );
+    expect(runner).toHaveBeenNthCalledWith(
+      2,
+      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      ["auth", "activate", "company", repositoryRoot],
+      expect.objectContaining({cwd: repositoryRoot}),
+    );
+  });
+
+  it("validates named profiles before Wrangler runs", () => {
+    expect(validateWranglerProfileName("company")).toBeUndefined();
+    expect(validateWranglerProfileName("team_login-2")).toBeUndefined();
+    expect(validateWranglerProfileName("company account")).toContain(
+      "ASCII letters",
+    );
+    expect(validateWranglerProfileName("default")).toContain("reserved");
+    expect(validateWranglerProfileName("STAGING")).toContain("reserved");
   });
 
   it("parses accounts and confirms the required permission set", async () => {

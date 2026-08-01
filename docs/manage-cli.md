@@ -78,7 +78,7 @@ use this `yarn manage` interface.
 
 | Command | Purpose | External effect |
 | --- | --- | --- |
-| `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local OAuth credentials |
+| `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local OAuth profiles and the repository binding |
 | `init` | Initialize production, preview, or local installation | Creates or updates Cloudflare resources, or local-only state |
 | `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
 | `deploy` | Check, migrate, deploy, and verify | Updates Worker code and D1 migrations |
@@ -108,6 +108,11 @@ Use `yarn manage accounts` first. Commands that operate on a saved deployment
 automatically require its recorded account. Supplying `--account-id <id>` is an
 additional exact-account assertion; it cannot override saved ownership.
 
+To keep separate Cloudflare logins on the same computer, use
+`yarn manage accounts --profile <name>`. The named Wrangler profile is local to
+your computer and does not need to be globally unique. It is separate from the
+microfeed site/Worker name, which should be globally distinctive.
+
 ### Production, preview, and local data
 
 - No environment flag means the production Cloudflare installation.
@@ -128,19 +133,30 @@ deliberately rejects it.
 
 **Purpose:** Authorize Cloudflare and list available accounts.
 
-**Changes:** Read-only Cloudflare discovery; may update local OAuth credentials.
+**Changes:** Read-only Cloudflare discovery; may update local OAuth profiles
+and the repository binding.
 
 Authorize Cloudflare and list every account available to the active Wrangler
 login. This command never creates or changes a Worker, D1 database, R2 bucket,
 domain, or microfeed configuration.
 
+Use `--profile <name>` to create or select a named Wrangler OAuth login and
+bind it to this local Git copy of the repository. If the profile does not yet
+exist, the command opens Cloudflare authorization to create it. If it already
+exists, the command selects it without changing its credentials. Add
+`--reauthorize` to replace that named profile's authorization deliberately.
+Wrangler profile names accept ASCII letters, numbers, hyphens, and underscores;
+`default` and `staging` are reserved. Wrangler currently labels named profiles
+as a beta feature.
+
 ```console
-yarn manage accounts [--json] [--reauthorize]
+yarn manage accounts [--json] [--profile <name>] [--reauthorize]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--json` | Print the login, active profile, and `{name, id}` accounts as JSON. |
+| `--profile <name>` | Create or select a named Wrangler OAuth login and bind it to this local repository. |
 | `--reauthorize` | Force fresh browser authorization, for example when the desired account is missing. |
 
 OAuth rejection, missing permissions, zero accounts, or an unavailable browser
