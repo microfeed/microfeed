@@ -4,6 +4,7 @@ import {describe, expect, it} from "vitest";
 
 import {
   AdminProtectionDescription,
+  MediaDeliveryDescription,
 } from "@/components/admin/home/AdminHomeApp/component/SetupChecklistApp";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {
@@ -74,6 +75,7 @@ describe("dashboard protection detection", () => {
       const result = new OnboardingChecker(
         new Request("https://feed.example.com/admin/"),
         adminProtection,
+        {publicBucketUrl: "https://media.example.com/"},
       ).getResult();
       const protectionCheck = result.result[
         ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD
@@ -84,6 +86,75 @@ describe("dashboard protection detection", () => {
       expect(result.allOk).toBe(allOk);
     },
   );
+});
+
+describe("media delivery onboarding", () => {
+  it("links to the exact managed bucket and suggests a media hostname", () => {
+    const result = new OnboardingChecker(
+      new Request("https://feed.example.com/admin/"),
+      {builtInLogin: true, cloudflareAccess: false},
+      {
+        accountId: "0123456789abcdef0123456789abcdef",
+        publicBucketUrl: "/media/",
+        r2BucketName: "microfeed-example-media",
+      },
+    ).getResult();
+    const media = result.result[
+      ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+    ]!;
+
+    expect(media.ready).toBe(false);
+    expect(media.bucketName).toBe("microfeed-example-media");
+    expect(media.dashboardUrl).toBe(
+      "https://dash.cloudflare.com/0123456789abcdef0123456789abcdef/" +
+        "r2/default/buckets/microfeed-example-media/settings#domains",
+    );
+    expect(media.suggestedUrl).toBe("https://media.feed.example.com/");
+    expect(result.allOk).toBe(false);
+  });
+
+  it("completes only for a production R2 custom domain", () => {
+    const request = new Request("https://feed.example.com/admin/");
+    const protection = {builtInLogin: true, cloudflareAccess: false};
+
+    const customDomain = new OnboardingChecker(request, protection, {
+      publicBucketUrl: "https://media.example.com/",
+    }).getResult();
+    const developmentUrl = new OnboardingChecker(request, protection, {
+      publicBucketUrl: "https://example.r2.dev/",
+    }).getResult();
+
+    expect(customDomain.result[
+      ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+    ]?.ready).toBe(true);
+    expect(customDomain.allOk).toBe(true);
+    expect(developmentUrl.result[
+      ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+    ]?.ready).toBe(false);
+    expect(developmentUrl.allOk).toBe(false);
+  });
+
+  it("renders the verified bucket link and optimization guidance", () => {
+    const dashboardUrl =
+      "https://dash.cloudflare.com/account/r2/default/buckets/media/" +
+      "settings#domains";
+    const output = renderToStaticMarkup(
+      React.createElement(MediaDeliveryDescription, {
+        bucketName: "media",
+        dashboardUrl,
+        mediaDomainUrl: "https://media.example.com/",
+        onChange: () => {},
+        onSubmit: () => {},
+        saving: false,
+        suggestedUrl: "https://media.feed.example.com/",
+      }),
+    );
+
+    expect(output).toContain(`href="${dashboardUrl}"`);
+    expect(output).toContain("Open the media bucket domain settings");
+    expect(output).toContain("both Worker and R2 billable usage");
+    expect(output).toContain("Do not use the Public Development URL");
+  });
 });
 
 describe("dashboard protection description", () => {

@@ -1,12 +1,25 @@
 import {ONBOARDING_TYPES} from "@/shared/Constants";
+import {r2BucketDomainsDashboardUrl} from "@/shared/CloudflareDashboard";
+import {
+  isLocalDevelopmentHostname,
+  isR2CustomDomainUrl,
+  suggestedR2CustomDomainUrl,
+} from "@/shared/StringUtils";
 import type {
   AdminProtectionStatus,
   OnboardingCheck,
   OnboardingResult,
 } from "@/types";
 
+interface OnboardingOptions {
+  accountId?: string;
+  publicBucketUrl?: string;
+  r2BucketName?: string;
+}
+
 export default class OnboardingChecker {
   private readonly adminProtection: AdminProtectionStatus;
+  private readonly options: OnboardingOptions;
   private readonly request: Request;
 
   constructor(
@@ -15,9 +28,11 @@ export default class OnboardingChecker {
       builtInLogin: false,
       cloudflareAccess: false,
     },
+    options: OnboardingOptions = {},
   ) {
     this.request = request;
     this.adminProtection = adminProtection;
+    this.options = options;
   }
 
   private initResult(ready = false, required = true): OnboardingCheck {
@@ -30,8 +45,19 @@ export default class OnboardingChecker {
   getResult(): OnboardingResult {
     const result: Record<number, OnboardingCheck> = {};
 
-    result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL] =
-      this.initResult(true, false);
+    const urlObj = new URL(this.request.url);
+    const mediaDomain = this.initResult(
+      isLocalDevelopmentHostname(urlObj.hostname) ||
+        isR2CustomDomainUrl(this.options.publicBucketUrl),
+      false,
+    );
+    mediaDomain.bucketName = this.options.r2BucketName;
+    mediaDomain.dashboardUrl = r2BucketDomainsDashboardUrl(
+      this.options.accountId,
+      this.options.r2BucketName,
+    ) ?? undefined;
+    mediaDomain.suggestedUrl = suggestedR2CustomDomainUrl(urlObj.hostname);
+    result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL] = mediaDomain;
 
     const protectedAdminDash = this.initResult(
       this.adminProtection.builtInLogin ||
@@ -43,7 +69,6 @@ export default class OnboardingChecker {
       protectedAdminDash;
 
     const customDomain = this.initResult(false, false);
-    const urlObj = new URL(this.request.url);
     if (!urlObj.host.endsWith("workers.dev")) {
       customDomain.ready = true;
     }

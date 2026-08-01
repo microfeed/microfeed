@@ -602,6 +602,7 @@ export async function generateWranglerConfig(
     .replaceAll("__PROJECT_ROOT__", relativeRoot)
     .replaceAll("__WORKER_NAME__", workerName(config))
     .replaceAll("__WORKERS_DEV__", String(workersDevEnabled(config)))
+    .replaceAll("__CLOUDFLARE_ACCOUNT_ID__", config.accountId ?? "")
     .replaceAll("__PROJECT_NAME__", config.projectName)
     .replaceAll("__ADMIN_AUTH_MODE__", effectiveAdminAuthMode)
     .replaceAll("__ADMIN_PATH__", config.adminPath)

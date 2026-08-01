@@ -34,6 +34,12 @@ export async function loadFeed(
   const onboarding = new OnboardingChecker(
     request,
     query?.adminProtection,
+    {
+      accountId: runtimeEnv.MICROFEED_CLOUDFLARE_ACCOUNT_ID,
+      publicBucketUrl:
+        content.settings?.webGlobalSettings?.publicBucketUrl,
+      r2BucketName: runtimeEnv.MICROFEED_R2_BUCKET_NAME,
+    },
   ).getResult() as OnboardingResult;
 
   return {content, database, onboarding};

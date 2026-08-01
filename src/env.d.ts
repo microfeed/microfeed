@@ -22,7 +22,9 @@ declare global {
     DEPLOYMENT_ENVIRONMENT?: "preview" | "production";
     MICROFEED_ADMIN_AUTH_MODE?: "built-in" | "none";
     MICROFEED_ADMIN_PATH?: string;
+    MICROFEED_CLOUDFLARE_ACCOUNT_ID?: string;
     MICROFEED_INSTANCE_ID?: string;
+    MICROFEED_R2_BUCKET_NAME?: string;
     MICROFEED_SETUP_ADMIN_EMAIL?: string;
     MICROFEED_SETUP_ADMIN_PASSWORD?: string;
     MICROFEED_SETUP_ADMIN_PASSWORD_CONFIRMATION?: string;
@@ -36,7 +38,9 @@ declare global {
       DEPLOYMENT_ENVIRONMENT?: "preview" | "production";
       MICROFEED_ADMIN_AUTH_MODE?: "built-in" | "none";
       MICROFEED_ADMIN_PATH?: string;
+      MICROFEED_CLOUDFLARE_ACCOUNT_ID?: string;
       MICROFEED_INSTANCE_ID?: string;
+      MICROFEED_R2_BUCKET_NAME?: string;
       MICROFEED_SETUP_ADMIN_EMAIL?: string;
       MICROFEED_SETUP_ADMIN_PASSWORD?: string;
       MICROFEED_SETUP_ADMIN_PASSWORD_CONFIRMATION?: string;

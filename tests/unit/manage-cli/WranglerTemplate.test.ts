@@ -44,10 +44,17 @@ describe("Wrangler configuration template", () => {
       version_metadata?: {
         binding?: string;
       };
+      vars?: Record<string, string>;
     };
 
     expect(config.observability?.enabled).toBe(false);
     expect(config.version_metadata?.binding).toBe("CF_VERSION_METADATA");
+    expect(config.vars?.MICROFEED_CLOUDFLARE_ACCOUNT_ID).toBe(
+      "__CLOUDFLARE_ACCOUNT_ID__",
+    );
+    expect(config.vars?.MICROFEED_R2_BUCKET_NAME).toBe(
+      "__R2_BUCKET_NAME__",
+    );
   });
 
   it("enables workers.dev until a custom domain is configured", () => {
