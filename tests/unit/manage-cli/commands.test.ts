@@ -102,6 +102,8 @@ describe("read-only Cloudflare account discovery", () => {
           stderr: "",
           stdout: [
             "│ Profile │ Bound Directories │",
+            "│ company │ - │",
+            "│ default │ - │",
             `│ personal │ ${process.cwd()} │`,
           ].join("\n"),
         };
@@ -111,16 +113,75 @@ describe("read-only Cloudflare account discovery", () => {
 
     await accountsCommand({json: true}, runner);
 
-    expect(write).toHaveBeenCalledWith(expect.stringContaining(
-      '"email": "cloudflare@example.com"',
-    ));
-    expect(write).toHaveBeenCalledWith(expect.stringContaining(
-      '"id": "account-b"',
-    ));
+    const output = String(write.mock.calls.at(-1)?.[0]);
+    expect(JSON.parse(output)).toMatchObject({
+      accounts: [{id: "account-a"}, {id: "account-b"}],
+      email: "cloudflare@example.com",
+      profile: "personal",
+      profiles: [
+        {active: false, name: "company"},
+        {active: false, name: "default"},
+        {active: true, name: "personal"},
+      ],
+    });
     const commands = runner.mock.calls.map(([, args]) => args[0]);
     expect(commands.every((command) =>
       command === "whoami" || command === "auth"
     )).toBe(true);
+  });
+
+  it("shows every stored profile and marks the active one", async () => {
+    const info = vi.spyOn(prompts.log, "info").mockImplementation(
+      () => undefined,
+    );
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "auth list") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: [
+            "│ Profile │ Bound Directories │",
+            `│ company │ ${process.cwd()} │`,
+            "│ default │ - │",
+            "│ personal │ - │",
+          ].join("\n"),
+        };
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-company", name: "Company"}],
+            authType: "OAuth Token",
+            email: "company@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({}, runner);
+
+    expect(info).toHaveBeenCalledWith(
+      "Wrangler profiles:\n" +
+        "  company — active for this repository\n" +
+        "  default\n" +
+        "  personal",
+    );
+    expect(info).toHaveBeenCalledWith(
+      "Cloudflare accounts available to company:",
+    );
   });
 
   it("forces browser OAuth with keyring storage when reauthorization is requested", async () => {

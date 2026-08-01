@@ -140,6 +140,10 @@ Authorize Cloudflare and list every account available to the active Wrangler
 login. This command never creates or changes a Worker, D1 database, R2 bucket,
 domain, or microfeed configuration.
 
+The output lists every locally stored Wrangler profile and marks the one active
+for this local repository. Accounts and the login email belong to that active
+profile; inactive profiles remain stored but are not queried.
+
 Use `--profile <name>` to create or select a named Wrangler OAuth login and
 bind it to this local Git copy of the repository. If the profile does not yet
 exist, the command opens Cloudflare authorization to create it. If it already
@@ -155,7 +159,7 @@ yarn manage accounts [--json] [--profile <name>] [--reauthorize]
 
 | Option | Meaning |
 | --- | --- |
-| `--json` | Print the login, active profile, and `{name, id}` accounts as JSON. |
+| `--json` | Print the login, active profile, all profiles with active markers, and `{name, id}` accounts as JSON. |
 | `--profile <name>` | Create or select a named Wrangler OAuth login and bind it to this local repository. |
 | `--reauthorize` | Force fresh browser authorization, for example when the desired account is missing. |
 

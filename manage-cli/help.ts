@@ -24,7 +24,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Checks the current Wrangler login and required permissions, opening browser authorization when needed.",
       "With --profile, creates or selects a named Wrangler login and binds it to this local repository without changing Cloudflare resources.",
-      "Returns the login identity, active profile, and every available Cloudflare account without changing account resources.",
+      "Lists every stored Wrangler profile, marks the one active for this repository, and returns every Cloudflare account available to that login.",
     ],
     examples: [
       "yarn manage accounts",

@@ -235,9 +235,11 @@ Run future `yarn manage` commands from this same `microfeed` folder.
 
 `yarn manage accounts` opens Cloudflare's sign-in page when needed and lists the
 accounts available to that login without creating or changing any Cloudflare
-resource. If several accounts are available, choose the one where you want the
-site to live. `yarn manage init` then asks for the site settings and explains
-the Cloudflare resources before creating them.
+resource. It also lists every Wrangler login profile stored on your computer
+and marks the one active for this local repository. If several accounts are
+available, choose the one where you want the site to live. `yarn manage init`
+then asks for the site settings and explains the Cloudflare resources before
+creating them.
 
 If you keep personal and company Cloudflare logins on the same computer, you
 can create or select a named Wrangler login for this local Git copy of the
