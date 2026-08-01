@@ -21,16 +21,16 @@ development and CI use Node.js 24 without pinning a patch release.
 ```console
 corepack enable
 yarn install --immutable
-yarn manage init --local --instance personal
-yarn dev --instance personal
+yarn manage init --local --instance my-podcast-custom-com
+yarn dev --instance my-podcast-custom-com
 ```
 
 Local instances use isolated D1 and R2 simulations and never access or copy
 production data. Create another instance by choosing another name:
 
 ```console
-yarn manage init --local --instance company
-yarn dev --instance company
+yarn manage init --local --instance jacks-photo-album-com
+yarn dev --instance jacks-photo-album-com
 ```
 
 The development URL is printed by Astro. Only one development server at a time
