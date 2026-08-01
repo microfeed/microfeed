@@ -102,6 +102,8 @@ describe("read-only Cloudflare account discovery", () => {
           stderr: "",
           stdout: [
             "│ Profile │ Bound Directories │",
+            "│ company │ - │",
+            "│ default │ - │",
             `│ personal │ ${process.cwd()} │`,
           ].join("\n"),
         };
@@ -111,16 +113,89 @@ describe("read-only Cloudflare account discovery", () => {
 
     await accountsCommand({json: true}, runner);
 
-    expect(write).toHaveBeenCalledWith(expect.stringContaining(
-      '"email": "cloudflare@example.com"',
-    ));
-    expect(write).toHaveBeenCalledWith(expect.stringContaining(
-      '"id": "account-b"',
-    ));
+    const output = String(write.mock.calls.at(-1)?.[0]);
+    expect(JSON.parse(output)).toMatchObject({
+      accounts: [{id: "account-a"}, {id: "account-b"}],
+      email: "cloudflare@example.com",
+      profile: "personal",
+      profiles: [
+        {active: false, name: "company"},
+        {active: false, name: "default"},
+        {active: true, name: "personal"},
+      ],
+    });
     const commands = runner.mock.calls.map(([, args]) => args[0]);
     expect(commands.every((command) =>
       command === "whoami" || command === "auth"
     )).toBe(true);
+  });
+
+  it("shows every stored profile and marks the active one", async () => {
+    const info = vi.spyOn(prompts.log, "info").mockImplementation(
+      () => undefined,
+    );
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "auth list") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: [
+            "│ Profile │ Bound Directories │",
+            `│ company │ ${process.cwd()} │`,
+            "│ default │ - │",
+            "│ personal │ - │",
+          ].join("\n"),
+        };
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-company", name: "Company"}],
+            authType: "OAuth Token",
+            email: "company@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({}, runner);
+
+    expect(info).toHaveBeenCalledWith(
+      "Saved Cloudflare logins (Wrangler profiles)\n" +
+        "A profile is a Cloudflare login saved on this computer. This " +
+        "local microfeed folder uses one profile at a time.\n\n" +
+        "  company — active for this local microfeed folder\n" +
+        "  personal — saved, not active\n" +
+        "  default — fallback login, not active",
+    );
+    expect(info).toHaveBeenCalledWith(
+      "Active Cloudflare login\n" +
+        "  Profile: company\n" +
+        "  Email: company@example.com",
+    );
+    expect(info).toHaveBeenCalledWith(
+      "Cloudflare account available through \"company\"\n" +
+        "A Cloudflare account is a workspace that owns sites, databases, " +
+        "and media storage.\n\n" +
+        "  Company — account-company",
+    );
+    expect(info).toHaveBeenCalledWith(
+      "Switch this local microfeed folder to another saved login\n" +
+        "  yarn manage accounts --profile personal",
+    );
   });
 
   it("forces browser OAuth with keyring storage when reauthorization is requested", async () => {
@@ -162,6 +237,126 @@ describe("read-only Cloudflare account discovery", () => {
     expect(runner.mock.calls.some(([, args]) =>
       args[0] === "login" && args.includes("--use-keyring")
     )).toBe(true);
+  });
+
+  it("creates and activates a separately named Cloudflare login", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command.startsWith("auth create company --scopes ")) {
+        return {exitCode: 0, stderr: "", stdout: "Authorized"};
+      }
+      if (command === `auth activate company ${process.cwd()}`) {
+        return {exitCode: 0, stderr: "", stdout: "Activated"};
+      }
+      if (command === "auth list") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: [
+            "│ Profile │ Bound Directories │",
+            `│ company │ ${process.cwd()} │`,
+          ].join("\n"),
+        };
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-company", name: "Company"}],
+            authType: "OAuth Token",
+            email: "company@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({
+      json: true,
+      profile: "company",
+      reauthorize: true,
+    }, runner);
+
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "auth" && args[1] === "create" && args[2] === "company"
+    )).toBe(true);
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "auth" && args[1] === "activate" &&
+      args[2] === "company"
+    )).toBe(true);
+    expect(runner.mock.calls.some(([, , options]) =>
+      options?.env?.CLOUDFLARE_AUTH_USE_KEYRING === "true"
+    )).toBe(true);
+  });
+
+  it("selects an existing named profile without replacing its login", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "auth list") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: [
+            "│ Profile │ Bound Directories │",
+            `│ company │ ${process.cwd()} │`,
+          ].join("\n"),
+        };
+      }
+      if (command === `auth activate company ${process.cwd()}`) {
+        return {exitCode: 0, stderr: "", stdout: "Activated"};
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-company", name: "Company"}],
+            authType: "OAuth Token",
+            email: "company@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({json: true, profile: "company"}, runner);
+
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "login" || (args[0] === "auth" && args[1] === "create")
+    )).toBe(false);
+  });
+
+  it("rejects missing, illegal, and reserved profile names before authorization", async () => {
+    for (const profile of [true, "company account", "default"]) {
+      const runner = vi.fn<CommandRunner>();
+
+      await expect(accountsCommand({profile}, runner)).rejects.toThrow(
+        /profile|Wrangler/iu,
+      );
+      expect(runner).not.toHaveBeenCalled();
+    }
   });
 });
 

@@ -53,6 +53,7 @@ import {
   pagesCollisionMessage,
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
+  validateWranglerProfileName,
 } from "./lib/cloudflare";
 import {
   openUrl,
@@ -317,8 +318,10 @@ function cloudflareAuthorizationMessage(): string {
     "workers_scripts:write, d1:write, pages:write, and zone:read. " +
     "workers_scripts:write is required to safely check and deploy the " +
     "selected site. pages:write is requested only because Wrangler does " +
-    "not expose a pages:read OAuth scope. `yarn manage accounts` only reads " +
-    "your identity and account list; it never changes Cloudflare resources.";
+    "not expose a pages:read OAuth scope. `yarn manage accounts` never " +
+    "changes Cloudflare account resources. With `--profile`, it may create " +
+    "local OAuth credentials and bind that Wrangler profile to this local " +
+    "repository.";
 }
 
 export async function accountsCommand(
@@ -332,6 +335,25 @@ export async function accountsCommand(
     runner,
   };
   const json = flagBoolean(flags, "json");
+  if (flags.profile === true) {
+    throw new Error(
+      "`--profile` requires a name, for example `--profile company`. " +
+        "No Cloudflare resources were changed.",
+    );
+  }
+  const requestedProfile = flagString(flags, "profile");
+  if (requestedProfile) {
+    const profileError = validateWranglerProfileName(requestedProfile);
+    if (profileError) {
+      throw new Error(
+        `Invalid Wrangler profile name \`${requestedProfile}\`. ` +
+          `${profileError} No Cloudflare resources were changed.`,
+      );
+    }
+  }
+  const reauthorizeCommand = requestedProfile
+    ? `yarn manage accounts --profile ${requestedProfile} --reauthorize`
+    : "yarn manage accounts --reauthorize";
   const explainAuthorization = () => {
     if (json) {
       process.stderr.write(`\nCloudflare authorization\n${
@@ -345,39 +367,67 @@ export async function accountsCommand(
     }
   };
 
+  const readIdentity = async (): Promise<{
+    identity: CloudflareIdentity;
+    scopesGranted: boolean;
+  }> => {
+    const identity = await context.cloudflare.identity();
+    return {
+      identity,
+      scopesGranted: identity.accounts.length > 0 &&
+        await context.cloudflare.hasRequiredScopes(),
+    };
+  };
+
   let identity: CloudflareIdentity;
   let scopesGranted: boolean;
-  if (flagBoolean(flags, "reauthorize")) {
+  if (requestedProfile) {
+    let authorizationPerformed = flagBoolean(flags, "reauthorize");
+    if (!authorizationPerformed) {
+      authorizationPerformed = !await context.cloudflare.profileExists(
+        requestedProfile,
+      );
+    }
+    if (authorizationPerformed) {
+      explainAuthorization();
+      await context.cloudflare.authorizeProfile(requestedProfile);
+    }
+    await context.cloudflare.activateProfile(requestedProfile);
+    ({identity, scopesGranted} = await readIdentity());
+    if (
+      !authorizationPerformed &&
+      (identity.accounts.length === 0 || !scopesGranted)
+    ) {
+      explainAuthorization();
+      await context.cloudflare.authorizeProfile(requestedProfile);
+      await context.cloudflare.activateProfile(requestedProfile);
+      ({identity, scopesGranted} = await readIdentity());
+    }
+  } else if (flagBoolean(flags, "reauthorize")) {
     explainAuthorization();
     await context.cloudflare.login();
-    identity = await context.cloudflare.identity();
-    scopesGranted = identity.accounts.length > 0 &&
-      await context.cloudflare.hasRequiredScopes();
+    ({identity, scopesGranted} = await readIdentity());
   } else {
-    identity = await context.cloudflare.identity();
-    scopesGranted = identity.accounts.length > 0 &&
-      await context.cloudflare.hasRequiredScopes();
+    ({identity, scopesGranted} = await readIdentity());
     if (identity.accounts.length === 0 || !scopesGranted) {
       explainAuthorization();
       await context.cloudflare.login();
-      identity = await context.cloudflare.identity();
-      scopesGranted = identity.accounts.length > 0 &&
-        await context.cloudflare.hasRequiredScopes();
+      ({identity, scopesGranted} = await readIdentity());
     }
   }
 
   if (identity.accounts.length === 0) {
     throw new Error(
       "Cloudflare did not return any accounts for this login. No " +
-        "Cloudflare resources were changed. Use `yarn manage accounts " +
-        "--reauthorize` to sign in with another Cloudflare user.",
+        "Cloudflare resources were changed. Use `" + reauthorizeCommand +
+        "` to sign in with another Cloudflare user.",
     );
   }
   if (!scopesGranted) {
     throw new Error(
       "Cloudflare authorization did not grant all permissions microfeed " +
-        "needs. No Cloudflare resources were changed. Run `yarn manage " +
-        "accounts --reauthorize` and approve every requested permission.",
+        "needs. No Cloudflare resources were changed. Run `" +
+        reauthorizeCommand + "` and approve every requested permission.",
     );
   }
 
@@ -385,19 +435,61 @@ export async function accountsCommand(
     process.stdout.write(`${JSON.stringify(identity, null, 2)}\n`);
     return;
   }
-  prompts.intro("Cloudflare accounts available to microfeed");
-  prompts.log.info(
-    `Login: ${identity.email ?? "not reported"}\n` +
-      `Wrangler profile: ${identity.profile ?? "default or not reported"}`,
+  const profiles = [...identity.profiles].sort((left, right) =>
+    Number(right.active) - Number(left.active) ||
+    Number(left.name === "default") - Number(right.name === "default") ||
+    left.name.localeCompare(right.name)
   );
-  for (const account of identity.accounts) {
-    prompts.log.info(`${account.name} — ${account.id}`);
+  const activeProfile = identity.profile ?? "the active profile";
+  const accountNoun = identity.accounts.length === 1
+    ? "Cloudflare account"
+    : "Cloudflare accounts";
+  prompts.intro("Cloudflare access for microfeed");
+  prompts.log.info(
+    "Saved Cloudflare logins (Wrangler profiles)\n" +
+      "A profile is a Cloudflare login saved on this computer. This local " +
+      "microfeed folder uses one profile at a time.\n\n" +
+      (profiles.length > 0
+        ? profiles.map(({active, name}) =>
+            `  ${name} — ${
+              active
+                ? "active for this local microfeed folder"
+                : name === "default"
+                  ? "fallback login, not active"
+                  : "saved, not active"
+            }`
+          ).join("\n")
+        : "  none reported"),
+  );
+  prompts.log.info(
+    "Active Cloudflare login\n" +
+      `  Profile: ${activeProfile}\n` +
+      `  Email: ${identity.email ?? "not reported"}`,
+  );
+  prompts.log.info(
+    `${accountNoun} available through "${activeProfile}"\n` +
+      "A Cloudflare account is a workspace that owns sites, databases, " +
+      "and media storage.\n\n" +
+      identity.accounts.map(({id, name}) => `  ${name} — ${id}`).join("\n"),
+  );
+  const switchableProfiles = profiles.filter(({active, name}) =>
+    !active && name !== "default"
+  );
+  if (switchableProfiles.length > 0) {
+    prompts.log.info(
+      "Switch this local microfeed folder to another saved login\n" +
+        switchableProfiles.map(({name}) =>
+          `  yarn manage accounts --profile ${name}`
+        ).join("\n"),
+    );
   }
   prompts.outro(
-    identity.accounts.length === 1
-      ? "One account is available; microfeed can use it automatically."
-      : "Choose one of these accounts when deploying. Account names may " +
-        "repeat, so the full ID is the reliable identifier.",
+    `The active "${activeProfile}" login can access ${
+      identity.accounts.length
+    } ${accountNoun}${
+      identity.accounts.length === 1 ? "" : ". Account names may repeat; " +
+        "use the full ID when choosing one"
+    }. Inactive login profiles were listed but not queried.`,
   );
 }
 

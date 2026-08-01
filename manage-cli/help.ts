@@ -20,23 +20,28 @@ const option = (
 
 export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
-    changes: "Read-only Cloudflare discovery; may update local OAuth credentials.",
+    changes: "Read-only Cloudflare discovery; may update local OAuth profiles and the repository binding.",
     details: [
       "Checks the current Wrangler login and required permissions, opening browser authorization when needed.",
-      "Returns the login identity, active profile, and every available Cloudflare account without changing account resources.",
+      "With --profile, creates or selects a named Wrangler login and binds it to this local repository without changing Cloudflare resources.",
+      "A profile is a Cloudflare login saved on this computer; an account is a Cloudflare workspace that owns sites and data.",
+      "Lists every stored profile, marks the active one, shows only that login's accounts, and prints commands for switching to other named profiles.",
     ],
     examples: [
       "yarn manage accounts",
       "yarn manage accounts --json",
+      "yarn manage accounts --profile company",
+      "yarn manage accounts --profile company --reauthorize",
       "yarn manage accounts --reauthorize",
     ],
     name: "accounts",
     options: [
       option("--json", "Print machine-readable identity and account data."),
+      option("--profile <name>", "Create or select a named Wrangler login for this repository."),
       option("--reauthorize", "Force a fresh browser authorization."),
     ],
     summary: "Authorize Cloudflare and list available accounts.",
-    usage: "yarn manage accounts [--json] [--reauthorize]",
+    usage: "yarn manage accounts [--json] [--profile <name>] [--reauthorize]",
   },
   {
     changes: "Creates or updates Cloudflare resources, or creates an isolated local sandbox with --local.",

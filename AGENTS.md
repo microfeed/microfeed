@@ -30,6 +30,8 @@
   non-Codex automation whose operator accepts command-history and process-list
   exposure.
 - Discover authorization and accounts first with `yarn manage accounts --json`.
+  When the user wants a separate named login, use `yarn manage accounts
+  --profile <name> --reauthorize`; do not replace another Wrangler profile.
   Let Wrangler open browser authorization when required. If one account is
   returned, use it; if several are returned, explain their names and ID
   suffixes in plain language and ask the user to choose. Pass the exact full

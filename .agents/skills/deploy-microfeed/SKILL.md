@@ -115,7 +115,8 @@ successful steps were undone.
 ## Choose the management command
 
 - Cloudflare authorization/account discovery: `yarn manage accounts --json`
-- Fresh authorization under another login: `yarn manage accounts --reauthorize`
+- Separate named Cloudflare login: `yarn manage accounts --profile <name>`
+- Fresh authorization for a named login: `yarn manage accounts --profile <name> --reauthorize`
 - Fresh Cloudflare installation: `yarn manage init`
 - Saved Cloudflare installation: `yarn manage deploy`
 - Existing compatible Worker not saved in this clone: `yarn manage connect`;
@@ -163,10 +164,16 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
    ```
 
    Explain that Wrangler may open Cloudflare in the browser and stores the
-   resulting OAuth credentials through its OS keyring support. If authorization
+   resulting OAuth credentials through its OS keyring support. Explain that a
+   profile is a saved Cloudflare login, while an account is a Cloudflare
+   workspace that owns sites and data. The output lists every stored profile,
+   marks the one active for this repository, shows only that login's accounts,
+   and prints commands for switching to other named profiles. If authorization
    is required, pause for the user to finish it, then resume the command. If no
-   usable account appears, offer `yarn manage accounts --reauthorize`; do not
-   work around OAuth with a token.
+   usable account appears, offer `yarn manage accounts --reauthorize`. If the
+   user wants to preserve the current login and add another, use
+   `yarn manage accounts --profile <name> --reauthorize` instead. Do not work
+   around OAuth with a token.
 6. When exactly one account is returned, use its full ID. When several are
    returned, show each plain-language account name and the last eight ID
    characters, then ask the user which one owns the site. Duplicate names are
