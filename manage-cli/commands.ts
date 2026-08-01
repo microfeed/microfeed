@@ -436,9 +436,18 @@ export async function accountsCommand(
     return;
   }
   prompts.intro("Cloudflare accounts available to microfeed");
+  prompts.log.info(`Login: ${identity.email ?? "not reported"}`);
   prompts.log.info(
-    `Login: ${identity.email ?? "not reported"}\n` +
-      `Wrangler profile: ${identity.profile ?? "default or not reported"}`,
+    "Wrangler profiles:\n" + (identity.profiles.length > 0
+      ? identity.profiles.map(({active, name}) =>
+          `  ${name}${active ? " — active for this repository" : ""}`
+        ).join("\n")
+      : "  none reported"),
+  );
+  prompts.log.info(
+    `Cloudflare accounts available to ${
+      identity.profile ?? "the active login"
+    }:`,
   );
   for (const account of identity.accounts) {
     prompts.log.info(`${account.name} — ${account.id}`);

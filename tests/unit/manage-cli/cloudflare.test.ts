@@ -1,3 +1,5 @@
+import nodePath from "node:path";
+
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {
@@ -215,7 +217,9 @@ describe("CloudflareClient", () => {
           "┌──────────┬───────────────────────────────────────┐",
           "│ Profile  │ Bound Directories                     │",
           "├──────────┼───────────────────────────────────────┤",
-          `│ personal │ ${repositoryRoot} │`,
+          `│ company  │ ${repositoryRoot} │`,
+          "│ default  │ -                                     │",
+          `│ personal │ ${nodePath.dirname(repositoryRoot)} │`,
           "└──────────┴───────────────────────────────────────┘",
         ].join("\n"));
       }
@@ -225,7 +229,12 @@ describe("CloudflareClient", () => {
     await expect(new CloudflareClient(runner).identity()).resolves.toEqual({
       accounts: [{id: "account-a", name: "Personal"}],
       email: "admin@example.com",
-      profile: "personal",
+      profile: "company",
+      profiles: [
+        {active: true, name: "company"},
+        {active: false, name: "default"},
+        {active: false, name: "personal"},
+      ],
     });
   });
 

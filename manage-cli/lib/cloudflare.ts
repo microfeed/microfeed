@@ -1,3 +1,5 @@
+import nodePath from "node:path";
+
 import {
   normalizeAdminAuthMode,
   type AdminAuthMode,
@@ -185,6 +187,12 @@ export interface CloudflareIdentity {
   accounts: Account[];
   email: string | null;
   profile: string | null;
+  profiles: WranglerProfileSummary[];
+}
+
+export interface WranglerProfileSummary {
+  active: boolean;
+  name: string;
 }
 
 const RESERVED_WRANGLER_PROFILE_NAMES = new Set(["default", "staging"]);
@@ -248,11 +256,30 @@ function profilesFromList(output: string): WranglerProfile[] {
   return profiles;
 }
 
-function activeProfileFromList(output: string): string | null {
-  const profiles = profilesFromList(output);
-  return profiles.find(({boundDirectories}) =>
-    boundDirectories.includes(repositoryRoot)
-  )?.name ?? (profiles.some(({name}) => name === "default")
+function bindingContainsRepository(binding: string): boolean {
+  const relative = nodePath.relative(
+    nodePath.resolve(binding),
+    repositoryRoot,
+  );
+  return relative === "" || (
+    relative !== ".." &&
+    !relative.startsWith(`..${nodePath.sep}`) &&
+    !nodePath.isAbsolute(relative)
+  );
+}
+
+function activeProfileFromProfiles(
+  profiles: WranglerProfile[],
+): string | null {
+  const activeBinding = profiles.flatMap(({boundDirectories, name}) =>
+    boundDirectories.split(",").flatMap((directory) => {
+      const binding = directory.trim();
+      return binding && binding !== "-" && bindingContainsRepository(binding)
+        ? [{binding: nodePath.resolve(binding), name}]
+        : [];
+    })
+  ).sort((left, right) => right.binding.length - left.binding.length)[0];
+  return activeBinding?.name ?? (profiles.some(({name}) => name === "default")
     ? "default"
     : null);
 }
@@ -388,19 +415,31 @@ export class CloudflareClient {
     return accountsFromWhoami(data);
   }
 
-  private async activeProfile(): Promise<string | null> {
+  private async profileState(): Promise<{
+    profile: string | null;
+    profiles: WranglerProfileSummary[];
+  }> {
     try {
       const result = await runWrangler(
         this.runner,
         ["auth", "list"],
         {allowFailure: true},
       );
-      return result.exitCode === 0
-        ? activeProfileFromList(result.stdout)
-        : null;
+      if (result.exitCode !== 0) {
+        return {profile: null, profiles: []};
+      }
+      const profiles = profilesFromList(result.stdout);
+      const profile = activeProfileFromProfiles(profiles);
+      return {
+        profile,
+        profiles: profiles.map(({name}) => ({
+          active: name === profile,
+          name,
+        })),
+      };
     } catch {
       // Auth profiles are experimental and may not exist in older Wrangler.
-      return null;
+      return {profile: null, profiles: []};
     }
   }
 
@@ -411,19 +450,20 @@ export class CloudflareClient {
       {allowFailure: true},
     );
     if (result.exitCode !== 0) {
-      return {accounts: [], email: null, profile: null};
+      return {accounts: [], email: null, profile: null, profiles: []};
     }
     const data = parseJsonOutput<Record<string, unknown>>(result.stdout);
     const email = typeof data.email === "string" && data.email
       ? data.email
       : null;
     const authType = typeof data.authType === "string" ? data.authType : "";
+    const profileState = /oauth/iu.test(authType)
+      ? await this.profileState()
+      : {profile: null, profiles: []};
     return {
       accounts: accountsFromWhoami(data),
       email,
-      profile: /oauth/iu.test(authType)
-        ? await this.activeProfile()
-        : null,
+      ...profileState,
     };
   }
 
