@@ -40,16 +40,37 @@ function CheckListItem({
   );
 }
 
+interface AdminProtectionDescriptionProps extends AdminProtectionStatus {
+  dashboardUrl?: string;
+}
+
+function CloudflareAccessLink({dashboardUrl}: {dashboardUrl?: string}) {
+  const label = "Cloudflare Zero Trust Access";
+  return dashboardUrl
+    ? (
+      <a
+        className="font-medium underline"
+        href={dashboardUrl}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        {label}
+      </a>
+    )
+    : label;
+}
+
 export function AdminProtectionDescription({
   builtInLogin,
   cloudflareAccess,
-}: AdminProtectionStatus) {
+  dashboardUrl,
+}: AdminProtectionDescriptionProps) {
   if (builtInLogin && cloudflareAccess) {
     return (
       <>
         Your dashboard is protected by the built-in email and password login.{" "}
-        Cloudflare Access authentication was also detected on this request,
-        providing a second gate.
+        <CloudflareAccessLink dashboardUrl={dashboardUrl} /> authentication was
+        also detected on this request, providing a second gate.
       </>
     );
   }
@@ -58,9 +79,9 @@ export function AdminProtectionDescription({
     return (
       <>
         Your dashboard is protected by the built-in email and password login.{" "}
-        Cloudflare Access was not detected on this request. To add it as an
-        optional second gate, run <code>yarn manage access</code> from your
-        deployment checkout.
+        <CloudflareAccessLink dashboardUrl={dashboardUrl} /> was not detected
+        on this request. To add it as an optional second gate, run{" "}
+        <code>yarn manage access</code> from your deployment checkout.
       </>
     );
   }
@@ -68,8 +89,9 @@ export function AdminProtectionDescription({
   if (cloudflareAccess) {
     return (
       <>
-        Cloudflare Access authentication was detected on this request. The
-        built-in email and password login is disabled.
+        <CloudflareAccessLink dashboardUrl={dashboardUrl} /> authentication was
+        detected on this request. The built-in email and password login is
+        disabled.
       </>
     );
   }
@@ -77,10 +99,50 @@ export function AdminProtectionDescription({
   return (
     <>
       No dashboard protection was detected. The built-in email and password login
-      is disabled, and Cloudflare Access authentication was not detected on
-      this request. Anyone who can reach the admin dashboard may be able to
-      change your content. Run <code>yarn manage auth setup</code> to add a
-      login or <code>yarn manage access</code> to configure Cloudflare Access.
+      is disabled, and{" "}
+      <CloudflareAccessLink dashboardUrl={dashboardUrl} /> authentication was
+      not detected on this request. Anyone who can reach the admin dashboard
+      may be able to change your content. Run{" "}
+      <code>yarn manage auth setup</code> to add a login or{" "}
+      <code>yarn manage access</code> to configure Cloudflare Access.
+    </>
+  );
+}
+
+interface SiteCustomDomainDescriptionProps {
+  dashboardUrl?: string;
+  workerName?: string;
+}
+
+export function SiteCustomDomainDescription({
+  dashboardUrl,
+  workerName,
+}: SiteCustomDomainDescriptionProps) {
+  return (
+    <>
+      {dashboardUrl
+        ? (
+          <>
+            <a
+              className="font-medium underline"
+              href={dashboardUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Open the {workerName ?? "Worker"} domain settings
+            </a>{" "}
+            in Cloudflare to review the hostname for this site.{" "}
+          </>
+        )
+        : (
+          <>
+            Open this installation&apos;s Worker in Cloudflare and go to its
+            domain settings to review the hostname for this site.{" "}
+          </>
+        )}
+      To configure or change it safely, run <code>yarn manage domain</code> from
+      your deployment checkout. The command updates the Worker configuration,
+      deploys, and verifies the domain and TLS.
     </>
   );
 }
@@ -291,15 +353,19 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
           onboardState={access}
           title="Dashboard protection"
         >
-          <AdminProtectionDescription {...adminProtection} />
+          <AdminProtectionDescription
+            {...adminProtection}
+            dashboardUrl={access.dashboardUrl}
+          />
         </CheckListItem>
         <CheckListItem
           onboardState={customDomain}
           title="Use a custom domain for this site"
         >
-          Run <code>yarn manage domain</code> from your deployment
-          checkout. The command updates the Worker configuration, deploys,
-          and verifies the domain and TLS.
+          <SiteCustomDomainDescription
+            dashboardUrl={customDomain.dashboardUrl}
+            workerName={customDomain.workerName}
+          />
         </CheckListItem>
         <CheckListItem
           onboardState={effectiveMediaDomain}

@@ -39,6 +39,7 @@ export async function loadFeed(
       publicBucketUrl:
         content.settings?.webGlobalSettings?.publicBucketUrl,
       r2BucketName: runtimeEnv.MICROFEED_R2_BUCKET_NAME,
+      workerName: runtimeEnv.MICROFEED_WORKER_NAME,
     },
   ).getResult() as OnboardingResult;
 

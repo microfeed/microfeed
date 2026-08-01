@@ -55,6 +55,7 @@ describe("Wrangler configuration template", () => {
     expect(config.vars?.MICROFEED_R2_BUCKET_NAME).toBe(
       "__R2_BUCKET_NAME__",
     );
+    expect(config.vars?.MICROFEED_WORKER_NAME).toBe("__WORKER_NAME__");
   });
 
   it("enables workers.dev until a custom domain is configured", () => {

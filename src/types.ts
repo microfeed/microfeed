@@ -69,6 +69,7 @@ export interface OnboardingCheck {
   ready: boolean;
   required: boolean;
   suggestedUrl?: string;
+  workerName?: string;
 }
 
 export interface OnboardingResult extends JsonObject {
