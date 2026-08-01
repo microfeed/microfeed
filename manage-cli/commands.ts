@@ -435,28 +435,61 @@ export async function accountsCommand(
     process.stdout.write(`${JSON.stringify(identity, null, 2)}\n`);
     return;
   }
-  prompts.intro("Cloudflare accounts available to microfeed");
-  prompts.log.info(`Login: ${identity.email ?? "not reported"}`);
+  const profiles = [...identity.profiles].sort((left, right) =>
+    Number(right.active) - Number(left.active) ||
+    Number(left.name === "default") - Number(right.name === "default") ||
+    left.name.localeCompare(right.name)
+  );
+  const activeProfile = identity.profile ?? "the active profile";
+  const accountNoun = identity.accounts.length === 1
+    ? "Cloudflare account"
+    : "Cloudflare accounts";
+  prompts.intro("Cloudflare access for microfeed");
   prompts.log.info(
-    "Wrangler profiles:\n" + (identity.profiles.length > 0
-      ? identity.profiles.map(({active, name}) =>
-          `  ${name}${active ? " — active for this repository" : ""}`
-        ).join("\n")
-      : "  none reported"),
+    "Saved Cloudflare logins (Wrangler profiles)\n" +
+      "A profile is a Cloudflare login saved on this computer. This local " +
+      "microfeed folder uses one profile at a time.\n\n" +
+      (profiles.length > 0
+        ? profiles.map(({active, name}) =>
+            `  ${name} — ${
+              active
+                ? "active for this local microfeed folder"
+                : name === "default"
+                  ? "fallback login, not active"
+                  : "saved, not active"
+            }`
+          ).join("\n")
+        : "  none reported"),
   );
   prompts.log.info(
-    `Cloudflare accounts available to ${
-      identity.profile ?? "the active login"
-    }:`,
+    "Active Cloudflare login\n" +
+      `  Profile: ${activeProfile}\n` +
+      `  Email: ${identity.email ?? "not reported"}`,
   );
-  for (const account of identity.accounts) {
-    prompts.log.info(`${account.name} — ${account.id}`);
+  prompts.log.info(
+    `${accountNoun} available through "${activeProfile}"\n` +
+      "A Cloudflare account is a workspace that owns sites, databases, " +
+      "and media storage.\n\n" +
+      identity.accounts.map(({id, name}) => `  ${name} — ${id}`).join("\n"),
+  );
+  const switchableProfiles = profiles.filter(({active, name}) =>
+    !active && name !== "default"
+  );
+  if (switchableProfiles.length > 0) {
+    prompts.log.info(
+      "Switch this local microfeed folder to another saved login\n" +
+        switchableProfiles.map(({name}) =>
+          `  yarn manage accounts --profile ${name}`
+        ).join("\n"),
+    );
   }
   prompts.outro(
-    identity.accounts.length === 1
-      ? "One account is available; microfeed can use it automatically."
-      : "Choose one of these accounts when deploying. Account names may " +
-        "repeat, so the full ID is the reliable identifier.",
+    `The active "${activeProfile}" login can access ${
+      identity.accounts.length
+    } ${accountNoun}${
+      identity.accounts.length === 1 ? "" : ". Account names may repeat; " +
+        "use the full ID when choosing one"
+    }. Inactive login profiles were listed but not queried.`,
   );
 }
 

@@ -174,13 +174,27 @@ describe("read-only Cloudflare account discovery", () => {
     await accountsCommand({}, runner);
 
     expect(info).toHaveBeenCalledWith(
-      "Wrangler profiles:\n" +
-        "  company — active for this repository\n" +
-        "  default\n" +
-        "  personal",
+      "Saved Cloudflare logins (Wrangler profiles)\n" +
+        "A profile is a Cloudflare login saved on this computer. This " +
+        "local microfeed folder uses one profile at a time.\n\n" +
+        "  company — active for this local microfeed folder\n" +
+        "  personal — saved, not active\n" +
+        "  default — fallback login, not active",
     );
     expect(info).toHaveBeenCalledWith(
-      "Cloudflare accounts available to company:",
+      "Active Cloudflare login\n" +
+        "  Profile: company\n" +
+        "  Email: company@example.com",
+    );
+    expect(info).toHaveBeenCalledWith(
+      "Cloudflare account available through \"company\"\n" +
+        "A Cloudflare account is a workspace that owns sites, databases, " +
+        "and media storage.\n\n" +
+        "  Company — account-company",
+    );
+    expect(info).toHaveBeenCalledWith(
+      "Switch this local microfeed folder to another saved login\n" +
+        "  yarn manage accounts --profile personal",
     );
   });
 

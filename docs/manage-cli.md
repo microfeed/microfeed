@@ -140,9 +140,17 @@ Authorize Cloudflare and list every account available to the active Wrangler
 login. This command never creates or changes a Worker, D1 database, R2 bucket,
 domain, or microfeed configuration.
 
-The output lists every locally stored Wrangler profile and marks the one active
-for this local repository. Accounts and the login email belong to that active
-profile; inactive profiles remain stored but are not queried.
+A Wrangler profile is a Cloudflare login saved on the local computer. A
+Cloudflare account is a workspace that owns sites, databases, media storage,
+and other Cloudflare resources. One login profile may have access to one or
+more Cloudflare accounts.
+
+The output lists every locally stored profile, marks the one active for this
+local repository, and prints an exact `yarn manage accounts --profile <name>`
+command for each other named profile. The displayed email and Cloudflare
+accounts belong only to the active profile; inactive profiles remain stored
+but are not queried. Wrangler's `default` profile is a fallback login rather
+than a named profile selected by this option.
 
 Use `--profile <name>` to create or select a named Wrangler OAuth login and
 bind it to this local Git copy of the repository. If the profile does not yet
