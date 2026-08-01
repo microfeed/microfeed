@@ -1,5 +1,9 @@
 import {ONBOARDING_TYPES} from "@/shared/Constants";
-import {r2BucketDomainsDashboardUrl} from "@/shared/CloudflareDashboard";
+import {
+  accessApplicationDashboardUrl,
+  r2BucketDomainsDashboardUrl,
+  workerDomainsDashboardUrl,
+} from "@/shared/CloudflareDashboard";
 import {
   isR2CustomDomainUrl,
   suggestedR2CustomDomainUrl,
@@ -14,6 +18,7 @@ interface OnboardingOptions {
   accountId?: string;
   publicBucketUrl?: string;
   r2BucketName?: string;
+  workerName?: string;
 }
 
 export default class OnboardingChecker {
@@ -63,6 +68,9 @@ export default class OnboardingChecker {
       false,
     );
     protectedAdminDash.adminProtection = this.adminProtection;
+    protectedAdminDash.dashboardUrl =
+      accessApplicationDashboardUrl(this.options.accountId) ??
+        undefined;
     result[ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD] =
       protectedAdminDash;
 
@@ -70,6 +78,11 @@ export default class OnboardingChecker {
     if (!urlObj.host.endsWith("workers.dev")) {
       customDomain.ready = true;
     }
+    customDomain.dashboardUrl = workerDomainsDashboardUrl(
+      this.options.accountId,
+      this.options.workerName,
+    ) ?? undefined;
+    customDomain.workerName = this.options.workerName;
     result[ONBOARDING_TYPES.CUSTOM_DOMAIN] = customDomain;
 
     const finalResult: OnboardingResult = {

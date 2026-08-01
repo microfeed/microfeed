@@ -10,6 +10,7 @@ import {
   normalizeAdminPath,
   validateAdminPath,
 } from "@/shared/AdminPath";
+import {accessApplicationDashboardUrl} from "@/shared/CloudflareDashboard";
 import type {Account, CommandRunner, MicrofeedConfig} from "./types";
 import {
   clearPasswordSetupSql,
@@ -1282,10 +1283,6 @@ export function deploymentOutcomeMessage(
   }
   return `${preview ? "Preview deployed" : "Deployed"} and verified ` +
     publicUrl;
-}
-
-export function accessApplicationDashboardUrl(accountId: string): string {
-  return `https://dash.cloudflare.com/${accountId}/one/access-controls/apps/self-hosted/add`;
 }
 
 export function workersAndPagesDashboardUrl(accountId: string): string {

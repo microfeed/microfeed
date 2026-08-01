@@ -1,7 +1,7 @@
 import {afterEach, describe, expect, it, vi} from "vitest";
 
+import {accessApplicationDashboardUrl} from "@/shared/CloudflareDashboard";
 import {
-  accessApplicationDashboardUrl,
   accountsCommand,
   accessSetupInstructions,
   adminAuthDisableNotice,

@@ -5,6 +5,7 @@ import {describe, expect, it} from "vitest";
 import {
   AdminProtectionDescription,
   MediaDeliveryDescription,
+  SiteCustomDomainDescription,
 } from "@/components/admin/home/AdminHomeApp/component/SetupChecklistApp";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {
@@ -16,7 +17,9 @@ import type {AdminProtectionStatus} from "@/types";
 
 const ACCESS_ASSERTION = "header.payload.signature";
 
-function description(status: AdminProtectionStatus): string {
+function description(
+  status: AdminProtectionStatus & {dashboardUrl?: string},
+): string {
   return renderToStaticMarkup(
     React.createElement(AdminProtectionDescription, status),
   );
@@ -166,19 +169,65 @@ describe("media delivery onboarding", () => {
   });
 });
 
+describe("Cloudflare onboarding links", () => {
+  it("links protection and site-domain checks to the exact deployment", () => {
+    const accountId = "0123456789abcdef0123456789abcdef";
+    const workerName = "demo-microfeed-org-worker";
+    const result = new OnboardingChecker(
+      new Request("https://demo.microfeed.org/admin/"),
+      {builtInLogin: true, cloudflareAccess: false},
+      {accountId, workerName},
+    ).getResult();
+
+    expect(result.result[
+      ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD
+    ]?.dashboardUrl).toBe(
+      `https://dash.cloudflare.com/${accountId}/` +
+        "one/access-controls/apps/self-hosted/add",
+    );
+    expect(result.result[ONBOARDING_TYPES.CUSTOM_DOMAIN]).toMatchObject({
+      dashboardUrl:
+        `https://dash.cloudflare.com/${accountId}/workers/services/view/` +
+        `${workerName}/production/domains`,
+      workerName,
+    });
+  });
+
+  it("renders the exact Worker domain settings link", () => {
+    const dashboardUrl =
+      "https://dash.cloudflare.com/account/workers/services/view/" +
+      "demo-worker/production/domains";
+    const output = renderToStaticMarkup(
+      React.createElement(SiteCustomDomainDescription, {
+        dashboardUrl,
+        workerName: "demo-worker",
+      }),
+    );
+
+    expect(output).toContain(`href="${dashboardUrl}"`);
+    expect(output).toContain("Open the demo-worker domain settings");
+    expect(output).toContain("yarn manage domain");
+  });
+});
+
 describe("dashboard protection description", () => {
   it("describes built-in login without claiming Access", () => {
+    const dashboardUrl =
+      "https://dash.cloudflare.com/account/" +
+      "one/access-controls/apps/self-hosted/add";
     const output = description({
       builtInLogin: true,
       cloudflareAccess: false,
+      dashboardUrl,
     });
 
     expect(output).toContain(
       "protected by the built-in email and password login",
     );
     expect(output).toContain(
-      "Cloudflare Access was not detected on this request",
+      "Cloudflare Zero Trust Access</a> was not detected on this request",
     );
+    expect(output).toContain(`href="${dashboardUrl}"`);
   });
 
   it("describes Access without claiming built-in login", () => {
@@ -188,7 +237,7 @@ describe("dashboard protection description", () => {
     });
 
     expect(output).toContain(
-      "Cloudflare Access authentication was detected on this request",
+      "Cloudflare Zero Trust Access authentication was detected on this request",
     );
     expect(output).toContain(
       "built-in email and password login is disabled",
@@ -205,7 +254,7 @@ describe("dashboard protection description", () => {
       "protected by the built-in email and password login",
     );
     expect(output).toContain(
-      "Cloudflare Access authentication was also detected on this request",
+      "Cloudflare Zero Trust Access authentication was also detected on this request",
     );
   });
 
