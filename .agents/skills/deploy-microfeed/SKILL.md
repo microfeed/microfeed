@@ -164,12 +164,14 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
    ```
 
    Explain that Wrangler may open Cloudflare in the browser and stores the
-   resulting OAuth credentials through its OS keyring support. The output lists
-   every stored profile and marks the one active for this repository; the
-   account list belongs to that active profile. If authorization is required,
-   pause for the user to finish it, then resume the command. If no usable
-   account appears, offer `yarn manage accounts --reauthorize`. If the user
-   wants to preserve the current login and add another, use
+   resulting OAuth credentials through its OS keyring support. Explain that a
+   profile is a saved Cloudflare login, while an account is a Cloudflare
+   workspace that owns sites and data. The output lists every stored profile,
+   marks the one active for this repository, shows only that login's accounts,
+   and prints commands for switching to other named profiles. If authorization
+   is required, pause for the user to finish it, then resume the command. If no
+   usable account appears, offer `yarn manage accounts --reauthorize`. If the
+   user wants to preserve the current login and add another, use
    `yarn manage accounts --profile <name> --reauthorize` instead. Do not work
    around OAuth with a token.
 6. When exactly one account is returned, use its full ID. When several are
