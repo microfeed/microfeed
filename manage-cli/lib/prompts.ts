@@ -113,38 +113,6 @@ export async function chooseAdminAuthSetup(): Promise<"built-in" | "none"> {
   }));
 }
 
-export type AuthAction =
-  | "change-email"
-  | "change-path"
-  | "disable"
-  | "reset-password"
-  | "setup";
-
-export function authActionOptions(
-  includeSetup = false,
-): Array<{label: string; value: AuthAction}> {
-  return [
-    ...(includeSetup
-      ? [{label: "Set up dashboard login", value: "setup" as const}]
-      : []),
-    {label: "Reset owner password", value: "reset-password"},
-    {label: "Change owner email", value: "change-email"},
-    {label: "Change dashboard path", value: "change-path"},
-    ...(!includeSetup
-      ? [{label: "Disable built-in login", value: "disable" as const}]
-      : []),
-  ];
-}
-
-export async function chooseAuthAction(
-  includeSetup = false,
-): Promise<AuthAction> {
-  return unwrap(await prompts.select({
-    message: "What would you like to change?",
-    options: authActionOptions(includeSetup),
-  }));
-}
-
 export async function chooseAccount(accounts: Account[]): Promise<Account> {
   if (accounts.length === 1) {
     return accounts[0]!;

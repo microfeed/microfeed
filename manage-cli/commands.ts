@@ -92,13 +92,13 @@ import {
   askText,
   chooseAccount,
   chooseAdminAuthSetup,
-  chooseAuthAction,
   chooseLocalInstance,
   choosePagesProject,
   prompts,
   type WaitActivity,
   withSpinner,
 } from "./lib/prompts";
+import {renderCliHelp} from "./help";
 import {
   applicationTablesFromSqlite,
   assertClassifiedTables,
@@ -1633,6 +1633,21 @@ export function initializationResourceReuse(input: {
   return input.resume ? input.previouslyReused : input.reuseApproved;
 }
 
+export async function updateAndReloadInitializationConfig(
+  expected: MicrofeedConfig,
+  update: () => Promise<unknown>,
+): Promise<MicrofeedConfig> {
+  await update();
+  const latest = await readConfig(false, expected.instanceName);
+  if (!latest || latest.instanceId !== expected.instanceId) {
+    throw new Error(
+      `Initialization state for \`${expected.instanceName}\` changed ` +
+        "unexpectedly. Stop and inspect the saved instance before retrying.",
+    );
+  }
+  return latest;
+}
+
 async function initializeProduction(context: CommandContext): Promise<void> {
   const saved = await readConfig(false, context.instanceName);
   if (saved && isLocalOnly(saved)) {
@@ -1783,7 +1798,7 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     reuseApproved: useExistingR2,
   });
 
-  const config: MicrofeedConfig = relatedSavedState && saved
+  let config: MicrofeedConfig = relatedSavedState && saved
     ? saved
     : {
         accountId: account.id,
@@ -1841,7 +1856,10 @@ async function initializeProduction(context: CommandContext): Promise<void> {
       );
     }
     if (await askConfirm("Configure a custom domain now?", true)) {
-      await domainCommand(context);
+      config = await updateAndReloadInitializationConfig(
+        config,
+        () => domainCommand(context),
+      );
     } else {
       prompts.note(
         "Your workers.dev address remains available. Add a custom domain " +
@@ -3361,10 +3379,80 @@ export async function destroyCommand(
   );
 }
 
+const AUTH_ACTION_LABELS: Record<string, string> = {
+  "change-email": "Change dashboard sign-in email",
+  "change-path": "Change dashboard path",
+  disable: "Disable built-in dashboard login",
+  "reset-password": "Reset dashboard password",
+  setup: "Set up dashboard login",
+};
+
+export function authTargetNotice(
+  config: MicrofeedConfig,
+  action: string,
+  local: boolean,
+  preview: boolean,
+): {message: string; title: string} {
+  const dashboardPath = adminBasePath(config.adminPath);
+  const lines = [
+    `Instance: ${config.instanceName}`,
+    `Target: ${
+      local
+        ? isLocalOnly(config)
+          ? "Local instance"
+          : "Local development sandbox"
+        : preview
+          ? "Cloudflare preview"
+          : "Cloudflare production"
+    }`,
+  ];
+  if (local) {
+    lines.push(`Dashboard path: ${dashboardPath}`);
+  } else {
+    lines.push(`Worker: ${workerName(config)}`);
+    const publicUrl = deploymentVerificationUrl(config);
+    lines.push(
+      publicUrl
+        ? `Dashboard: ${new URL(dashboardPath, publicUrl).href}`
+        : `Dashboard path: ${dashboardPath} (not deployed yet)`,
+    );
+  }
+  lines.push(`Action: ${AUTH_ACTION_LABELS[action] ?? action}`);
+  return {
+    message: lines.join("\n"),
+    title: "Dashboard login target",
+  };
+}
+
 export async function authCommand(
   flags: Flags,
   runner: CommandRunner = runCommand,
 ): Promise<void> {
+  const requestedAction = flagString(flags, "action");
+  if (!requestedAction) {
+    process.stdout.write(renderCliHelp("auth"));
+    return;
+  }
+  const supportedActions = new Set([
+    "change-email",
+    "change-path",
+    "disable",
+    "reset-password",
+    "setup",
+  ]);
+  if (!supportedActions.has(requestedAction)) {
+    throw new Error(`Unknown auth action: ${requestedAction}`);
+  }
+  if (
+    flags["admin-password"] !== undefined &&
+    requestedAction !== "setup" &&
+    requestedAction !== "reset-password"
+  ) {
+    throw new Error(
+      "`--admin-password` is supported only by `auth setup` and " +
+        "`auth reset-password`.",
+    );
+  }
   const context: CommandContext = {
     cloudflare: new CloudflareClient(runner),
     flags,
@@ -3394,34 +3482,8 @@ export async function authCommand(
     preview,
     context.instanceName,
   );
-  const requestedAction = flagString(flags, "action");
-  const action = requestedAction ??
-    (
-      local
-        ? "setup"
-        : await chooseAuthAction(adminAuthMode(config) === "none")
-    );
-  const supportedActions = new Set([
-    "change-email",
-    "change-path",
-    "disable",
-    "reset-password",
-    "setup",
-  ]);
-  if (!supportedActions.has(action)) {
-    throw new Error(`Unknown auth action: ${action}`);
-  }
-  if (
-    flags["admin-password"] !== undefined &&
-    action !== "setup" &&
-    action !== "reset-password"
-  ) {
-    throw new Error(
-      "`--admin-password` is supported only by `auth setup` and " +
-        "`auth reset-password`.",
-    );
-  }
   if (local) {
+    const action = requestedAction;
     if (flags["admin-password"] !== undefined) {
       throw new Error(
         "`--admin-password` is not supported for local instances. Run the " +
@@ -3437,6 +3499,9 @@ export async function authCommand(
         "requires a Cloudflare instance.",
       );
     }
+    prompts.intro("microfeed dashboard login");
+    const target = authTargetNotice(config, action, true, false);
+    prompts.note(target.message, target.title);
     await context.cloudflare.applyLocalMigrations(config);
     if (action === "setup") {
       const owner = await ensureAuthOwner(context, config, true);
@@ -3496,10 +3561,13 @@ export async function authCommand(
   prompts.intro(
     `microfeed ${preview ? "preview " : ""}dashboard login`,
   );
+  const target = authTargetNotice(config, requestedAction, false, preview);
+  prompts.note(target.message, target.title);
   const account = await authenticate(context, accountId);
   if (account.id !== accountId) {
     throw new Error("Logged in to the wrong Cloudflare account.");
   }
+  const action = requestedAction;
   if (action === "disable") {
     if (adminAuthMode(config) === "none") {
       prompts.outro("The built-in dashboard login is already disabled.");
@@ -3554,22 +3622,26 @@ export async function authCommand(
     return;
   }
   if (action === "setup") {
-    await redeployWithAdminAuthMode(
-      config,
-      "built-in",
-      {
-        deploy: async (nextConfig) => {
-          await deployConfiguredProject(context, nextConfig, false, true);
+    if (adminAuthMode(config) !== "built-in") {
+      await redeployWithAdminAuthMode(
+        config,
+        "built-in",
+        {
+          deploy: async (nextConfig) => {
+            await deployConfiguredProject(context, nextConfig, false, true);
+          },
+          generate: generateWranglerConfig,
+          write: writeConfig,
         },
-        generate: generateWranglerConfig,
-        write: writeConfig,
-      },
-    );
+      );
+    } else {
+      await context.cloudflare.applyMigrations(config);
+    }
     await finishInitialAdminSetup(context, config);
     prompts.outro(
       await context.cloudflare.authOwner(config)
         ? "Dashboard login is ready."
-        : "Deployment is ready; finish creating the password in your browser.",
+        : "Open the private link to create the dashboard password.",
     );
     return;
   }
@@ -4287,11 +4359,11 @@ async function remoteRestoreFingerprint(
 async function recordRemoteRestoreBaseline(
   context: CommandContext,
   config: MicrofeedConfig,
-  options: {allowReused?: boolean} = {},
 ): Promise<void> {
   if (
     config.restoreBaseline ||
-    (!options.allowReused && (config.d1.reuse || config.r2.reuse))
+    config.d1.reuse ||
+    config.r2.reuse
   ) {
     return;
   }
@@ -4375,6 +4447,22 @@ export function localSnapshotNextSteps(
   ].join("\n");
 }
 
+export function remoteSnapshotNextSteps(
+  instanceName: string,
+  needsLoginSetup: boolean,
+): string {
+  const completed = `Remote restore complete for ${instanceName}.`;
+  if (!needsLoginSetup) return completed;
+  return [
+    completed,
+    "",
+    "The snapshot did not contain an administrator login. Set it up now:",
+    "",
+    "yarn manage auth setup \\",
+    `  --instance ${instanceName}`,
+  ].join("\n");
+}
+
 export function remoteRestoreTargetReadinessError(
   config: MicrofeedConfig,
 ): string | null {
@@ -4419,6 +4507,7 @@ export function canRepairRemoteRestoreBaseline(
 }
 
 export function validateRemoteRestoreBaselineRepair(input: {
+  allowInitialPasswordSetup: boolean;
   applicationRowCounts: Record<string, number>;
   applicationTables: readonly string[];
   appliedMigrations: readonly string[];
@@ -4430,6 +4519,7 @@ export function validateRemoteRestoreBaselineRepair(input: {
   expectedInstanceId: string;
   expectedIndexes: readonly string[];
   expectedPublicOrigins: readonly string[];
+  initialPasswordSetupRows: readonly Record<string, unknown>[];
   installationInstanceIds: readonly string[];
   r2ObjectCount: number;
 }): void {
@@ -4486,7 +4576,10 @@ export function validateRemoteRestoreBaselineRepair(input: {
   }
   const nonemptyNonBootstrapTables = Object.entries(input.applicationRowCounts)
     .filter(([table, count]) =>
-      count !== 0 && table !== "channels" && table !== "settings"
+      count !== 0 &&
+      table !== "channels" &&
+      table !== "settings" &&
+      table !== "auth_password_setup"
     )
     .map(([table]) => table)
     .sort((left, right) => left.localeCompare(right));
@@ -4498,6 +4591,7 @@ export function validateRemoteRestoreBaselineRepair(input: {
     );
   }
   validateRemoteRestoreBootstrapRows(input);
+  validateRemoteRestoreInitialPasswordSetup(input);
   if (
     input.installationInstanceIds.length !== 1 ||
     input.installationInstanceIds[0] !== input.expectedInstanceId
@@ -4510,6 +4604,45 @@ export function validateRemoteRestoreBaselineRepair(input: {
     throw new Error(
       "The remote R2 bucket is not empty, so it cannot be repaired as a " +
         "fresh snapshot restore target.",
+    );
+  }
+}
+
+function validateRemoteRestoreInitialPasswordSetup(input: {
+  allowInitialPasswordSetup: boolean;
+  applicationRowCounts: Record<string, number>;
+  initialPasswordSetupRows: readonly Record<string, unknown>[];
+}): void {
+  const count = input.applicationRowCounts.auth_password_setup ?? 0;
+  if (count === 0 && input.initialPasswordSetupRows.length === 0) return;
+  const row = input.initialPasswordSetupRows[0];
+  const createdAt = typeof row?.createdAt === "string"
+    ? Date.parse(row.createdAt)
+    : Number.NaN;
+  const expiresAt = typeof row?.expiresAt === "string"
+    ? Date.parse(row.expiresAt)
+    : Number.NaN;
+  const setupWindow = expiresAt - createdAt;
+  if (
+    !input.allowInitialPasswordSetup ||
+    count !== 1 ||
+    input.initialPasswordSetupRows.length !== 1 ||
+    row?.id !== "owner" ||
+    row.purpose !== "initial" ||
+    row.userId !== null ||
+    typeof row.email !== "string" ||
+    validateOwnerEmail(row.email) !== undefined ||
+    row.email !== normalizeOwnerEmail(row.email) ||
+    typeof row.tokenHash !== "string" ||
+    !/^[0-9a-f]{64}$/u.test(row.tokenHash) ||
+    !Number.isFinite(createdAt) ||
+    !Number.isFinite(expiresAt) ||
+    setupWindow <= 0 ||
+    setupWindow > 31 * 60 * 1_000
+  ) {
+    throw new Error(
+      "The remote D1 password setup state is not the one-time initial login " +
+        "record created for a fresh instance.",
     );
   }
 }
@@ -4677,30 +4810,37 @@ async function assertFreshRemoteRestoreBaselineTarget(
     !targetSpecificTables.has(table)
   );
   const [appliedMigrations, currentMigrations, currentIndexes, expectedIndexes,
-    rowCounts, channels, settings, installations, objects] = await Promise.all([
-    migrationLedger(context.cloudflare, config),
-    repositoryMigrations(),
-    databaseIndexDefinitions(context.cloudflare, config, applicationTables),
-    repositoryIndexDefinitions(),
-    durableRowCounts(context.cloudflare, config, countedTables),
-    context.cloudflare.queryD1(
-      config,
-      "SELECT id, status, is_primary, data FROM channels ORDER BY id",
-    ),
-    context.cloudflare.queryD1(
-      config,
-      "SELECT category, data FROM settings ORDER BY category",
-    ),
-    context.cloudflare.queryD1(
-      config,
-      "SELECT instanceId FROM microfeed_installation ORDER BY id",
-    ),
-    context.cloudflare.listR2Objects(
-      cloudflareAccountId(config),
-      config.r2.name,
-    ),
-  ]);
+    rowCounts, channels, settings, passwordSetups, installations, objects] =
+    await Promise.all([
+      migrationLedger(context.cloudflare, config),
+      repositoryMigrations(),
+      databaseIndexDefinitions(context.cloudflare, config, applicationTables),
+      repositoryIndexDefinitions(),
+      durableRowCounts(context.cloudflare, config, countedTables),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT id, status, is_primary, data FROM channels ORDER BY id",
+      ),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT category, data FROM settings ORDER BY category",
+      ),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT id, purpose, email, userId, tokenHash, createdAt, expiresAt " +
+          "FROM auth_password_setup ORDER BY id",
+      ),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT instanceId FROM microfeed_installation ORDER BY id",
+      ),
+      context.cloudflare.listR2Objects(
+        cloudflareAccountId(config),
+        config.r2.name,
+      ),
+    ]);
   validateRemoteRestoreBaselineRepair({
+    allowInitialPasswordSetup: adminAuthMode(config) === "built-in",
     applicationRowCounts: rowCounts,
     applicationTables,
     appliedMigrations,
@@ -4722,6 +4862,7 @@ async function assertFreshRemoteRestoreBaselineTarget(
         return [];
       }
     }),
+    initialPasswordSetupRows: passwordSetups,
     installationInstanceIds: installations.flatMap(({instanceId}) =>
       typeof instanceId === "string" ? [instanceId] : []
     ),
@@ -4753,38 +4894,86 @@ export function remoteRestoreBaselineRepairNotice(
   };
 }
 
+async function assertFreshRemoteRestoreTarget(
+  context: CommandContext,
+  config: MicrofeedConfig,
+  activity: WaitActivity,
+): Promise<void> {
+  const accountId = cloudflareAccountId(config);
+  activity.update("Checking the exact D1 database identity");
+  const databases = await context.cloudflare.d1Databases(accountId);
+  const database = databases.find(({id}) => id === config.d1.id);
+  if (!database || database.name !== config.d1.name) {
+    throw new Error(
+      `D1 database \`${config.d1.name}\` (${config.d1.id}) was not found ` +
+        "with the saved identity.",
+    );
+  }
+
+  activity.update("Checking the deployed Worker installation identity");
+  const verificationUrl = deploymentVerificationUrl(config);
+  if (!verificationUrl) {
+    throw new Error("The initialized instance has no deployment URL.");
+  }
+  await verifyDeployment(config, verificationUrl, {runner: context.runner});
+
+  activity.update("Checking the D1 schema, migrations, and empty tables");
+  await assertFreshRemoteRestoreBaselineTarget(context, config);
+}
+
+async function saveVerifiedRemoteRestoreBaseline(
+  context: CommandContext,
+  config: MicrofeedConfig,
+  activity: WaitActivity,
+): Promise<void> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    activity.update("Recording the verified D1 and R2 state");
+    const fingerprint = await remoteRestoreFingerprint(
+      context.cloudflare,
+      config,
+    );
+    activity.update("Rechecking that the target stayed fresh");
+    await assertFreshRemoteRestoreBaselineTarget(context, config);
+    const recheckedFingerprint = await remoteRestoreFingerprint(
+      context.cloudflare,
+      config,
+    );
+    if (recheckedFingerprint === fingerprint) {
+      config.restoreBaseline = {
+        createdAt: new Date().toISOString(),
+        fingerprint,
+      };
+      await writeConfig(config);
+      return;
+    }
+  }
+  throw new Error(
+    "The remote target kept changing while its fresh state was being checked. " +
+      "Wait for other requests or deployments to finish, then retry.",
+  );
+}
+
+export async function reverifyRemoteRestoreTargetIfFingerprintChanged(input: {
+  currentFingerprint: string;
+  expectedFingerprint: string;
+  reverify: () => Promise<void>;
+}): Promise<boolean> {
+  if (input.currentFingerprint === input.expectedFingerprint) return false;
+  await input.reverify();
+  return true;
+}
+
 async function repairRemoteRestoreBaseline(
   context: CommandContext,
   config: MicrofeedConfig,
 ): Promise<void> {
-  const accountId = cloudflareAccountId(config);
   await withSpinner(
     {
       error: "Could not repair the remote restore safety fingerprint",
       start: "Proving that the initialized remote target is still empty",
       success: "Remote target is fresh and belongs to this instance",
     },
-    async (activity) => {
-      activity.update("Checking the exact D1 database identity");
-      const databases = await context.cloudflare.d1Databases(accountId);
-      const database = databases.find(({id}) => id === config.d1.id);
-      if (!database || database.name !== config.d1.name) {
-        throw new Error(
-          `D1 database \`${config.d1.name}\` (${config.d1.id}) was not found ` +
-            "with the saved identity.",
-        );
-      }
-
-      activity.update("Checking the deployed Worker installation identity");
-      const verificationUrl = deploymentVerificationUrl(config);
-      if (!verificationUrl) {
-        throw new Error("The initialized instance has no deployment URL.");
-      }
-      await verifyDeployment(config, verificationUrl, {runner: context.runner});
-
-      activity.update("Checking the D1 schema, migrations, and empty tables");
-      await assertFreshRemoteRestoreBaselineTarget(context, config);
-    },
+    (activity) => assertFreshRemoteRestoreTarget(context, config, activity),
   );
 
   const notice = remoteRestoreBaselineRepairNotice(config);
@@ -4796,15 +4985,7 @@ async function repairRemoteRestoreBaseline(
       success: "Fresh-target verification saved locally; continuing the dry run",
     },
     async (activity) => {
-      await recordRemoteRestoreBaseline(context, config, {allowReused: true});
-      activity.update("Rechecking the target after saving its fingerprint");
-      try {
-        await assertFreshRemoteRestoreBaselineTarget(context, config);
-      } catch (error) {
-        delete config.restoreBaseline;
-        await writeConfig(config);
-        throw error;
-      }
+      await saveVerifiedRemoteRestoreBaseline(context, config, activity);
     },
   );
 }
@@ -6012,7 +6193,7 @@ export function validateRestoreJournal(
 async function restoreSnapshotRemotely(
   context: CommandContext,
   archive: string,
-): Promise<void> {
+): Promise<{needsLoginSetup: boolean}> {
   const extractedDirectory = await mkdtemp(
     path.join(tmpdir(), "microfeed-snapshot-remote-"),
   );
@@ -6068,7 +6249,12 @@ async function restoreSnapshotRemotely(
       }
     }
     const restoreBaseline = config.restoreBaseline!;
-    const {archiveSha256, existingJournal, previousMediaMismatch} =
+    const {
+      archiveSha256,
+      existingJournal,
+      previousMediaMismatch,
+      targetFingerprintRefreshed,
+    } =
       await withSpinner(
       {
         error: "Remote restore target validation failed",
@@ -6078,6 +6264,7 @@ async function restoreSnapshotRemotely(
       async (activity) => {
         const archiveSha256 = await sha256File(archive);
         const existingJournal = await readRestoreJournal(config);
+        let targetFingerprintRefreshed = false;
         if (existingJournal) {
           validateRestoreJournal(existingJournal, config, archiveSha256);
         } else {
@@ -6086,11 +6273,26 @@ async function restoreSnapshotRemotely(
             context.cloudflare,
             config,
           );
-          if (currentFingerprint !== restoreBaseline.fingerprint) {
-            throw new Error(
-              "The remote target changed after initialization. Restore only to a fresh, unchanged target.",
-            );
-          }
+          targetFingerprintRefreshed =
+            await reverifyRemoteRestoreTargetIfFingerprintChanged({
+              currentFingerprint,
+              expectedFingerprint: restoreBaseline.fingerprint,
+              reverify: async () => {
+                activity.update(
+                  "The saved fingerprint changed; proving the target is still fresh",
+                );
+                await assertFreshRemoteRestoreTarget(
+                  context,
+                  config,
+                  activity,
+                );
+                await saveVerifiedRemoteRestoreBaseline(
+                  context,
+                  config,
+                  activity,
+                );
+              },
+            });
           activity.update("Verifying the remote R2 bucket is empty");
           const existingObjects = await context.cloudflare.listR2Objects(
             accountId,
@@ -6111,7 +6313,12 @@ async function restoreSnapshotRemotely(
             ),
           );
         }
-        return {archiveSha256, existingJournal, previousMediaMismatch};
+        return {
+          archiveSha256,
+          existingJournal,
+          previousMediaMismatch,
+          targetFingerprintRefreshed,
+        };
       },
     );
     prompts.note([
@@ -6123,6 +6330,9 @@ async function restoreSnapshotRemotely(
       `Pending migrations: ${pending.length}`,
       `R2 objects: ${manifest.media.objectCount}`,
       `Mode: ${existingJournal ? "resume from archived source state" : "fresh restore"}`,
+      ...(targetFingerprintRefreshed
+        ? ["Target check: saved fingerprint changed; full freshness checks passed"]
+        : []),
       ...(previousMediaMismatch === undefined
         ? []
         : [
@@ -6141,7 +6351,9 @@ async function restoreSnapshotRemotely(
       prompts.outro(
         `Dry run complete. Restore with \`--confirm ${config.instanceName}\`.`,
       );
-      return;
+      return {
+        needsLoginSetup: (manifest.database.rowCounts.auth_user ?? 0) === 0,
+      };
     }
     if (flagString(context.flags, "confirm") !== config.instanceName) {
       throw new Error(
@@ -6268,6 +6480,9 @@ async function restoreSnapshotRemotely(
           `\`--confirm ${config.instanceName}\`; it will restart from the archived schema and data.`,
       );
     }
+    return {
+      needsLoginSetup: (manifest.database.rowCounts.auth_user ?? 0) === 0,
+    };
   } finally {
     await rm(extractedDirectory, {force: true, recursive: true});
   }
@@ -6378,8 +6593,14 @@ export async function snapshotCommand(
   }
   await resolveCommandInstance(context);
   prompts.intro("Restore portable snapshot to Cloudflare");
-  await restoreSnapshotRemotely(context, resolvedArchive);
+  const restoreResult = await restoreSnapshotRemotely(
+    context,
+    resolvedArchive,
+  );
   if (!flagBoolean(flags, "dry-run")) {
-    prompts.outro(`Remote restore complete for ${context.instanceName}.`);
+    prompts.outro(remoteSnapshotNextSteps(
+      context.instanceName!,
+      restoreResult.needsLoginSetup,
+    ));
   }
 }

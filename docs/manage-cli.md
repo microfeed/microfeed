@@ -456,9 +456,8 @@ that state active.
 
 Remote restore supports production targets only. First initialize a new target
 whose D1 and R2 resources are not reused. Initialization records a fingerprint
-of the fresh database and empty bucket. Restore rejects the target if that
-fingerprint changed. Always run `--dry-run`; mutation rejects `--yes` and
-requires the exact `--confirm <name>` value.
+of the fresh database and empty bucket. Always run `--dry-run`; mutation rejects
+`--yes` and requires the exact `--confirm <name>` value.
 
 Archive validation and target readiness are separate dry-run stages. A message
 that the snapshot archive is valid confirms only the file and its migration
@@ -470,14 +469,25 @@ local safety record only after read-only checks prove all of the following:
 - The exact saved D1 database exists, has the current schema and migration
   ledger, and contains no content beyond the exact channel and settings rows
   that microfeed automatically creates on the first page request.
+- With built-in login, D1 may contain the exact one-time initial password setup
+  record created during initialization. Restore clears that record. Password
+  reset links and all other authentication activity are rejected.
 - The installation row belongs to this instance and the R2 bucket is empty.
 
-The repair automatically saves a fingerprint in the local instance
-configuration and continues the dry run; the later restore refuses to start if
-the target changes. It changes no Cloudflare data or D1/R2 ownership flags, and
-resources already marked reused remain protected from `yarn manage destroy`.
-The dry run never imports the snapshot. An incomplete initialization still must
-be finished before restore, while a nonempty or mismatched target is rejected.
+The same strict checks run automatically if the saved fingerprint changes. This
+can happen when the fresh Worker creates its exact automatic channel and
+settings defaults on the first page request. If those defaults are the only
+change, restore refreshes the local fingerprint and continues. The pending
+initial password link described above is also safe because restore clears all
+one-time authentication state. Any user-created content or identity, schema,
+migration, index, or R2 difference is rejected.
+
+A successful repair or refresh saves the fingerprint in the local instance
+configuration; the later restore refuses to start if the target changes again.
+It changes no Cloudflare data or D1/R2 ownership flags, and resources already
+marked reused remain protected from `yarn manage destroy`. The dry run never
+imports the snapshot. An incomplete initialization still must be finished
+before restore, while a nonempty or mismatched target is rejected.
 
 After an interrupted restore has finished uploading media, rerunning
 `--dry-run` also compares the current R2 inventory with the archive and reports
@@ -501,6 +511,11 @@ otherwise-disabled `workers.dev` address as a token-protected control endpoint.
 Every request without the one-time restore token receives HTTP 503, and the
 normal deployment disables that address again after a successful restore. This
 keeps restore control independent of custom-domain DNS and Access settings.
+
+If the snapshot contains no administrator account, successful local and remote
+restore completion prints the exact `yarn manage auth setup --instance <name>`
+command. Running it asks for the administrator email when needed and creates a
+private one-time browser link for choosing the first password.
 
 Snapshots include password hashes and possibly private media. They are
 unencrypted and created with owner-only (`0600`) permissions. Store and encrypt
@@ -649,7 +664,7 @@ sometimes redeploys the Worker.
 Manage the built-in administrator login and path.
 
 ```console
-yarn manage auth [setup|reset-password|change-email|change-path|disable] [options]
+yarn manage auth <setup|reset-password|change-email|change-path|disable> [options]
 ```
 
 | Action | Effect |
@@ -660,10 +675,21 @@ yarn manage auth [setup|reset-password|change-email|change-path|disable] [option
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
 | `disable` | Disable built-in protection after a high-visibility warning; may make the dashboard public. |
 
-Without an action, the remote command presents a menu. A saved local-only
-instance is detected automatically; its authentication command defaults to
-`setup` and also supports `change-email` and `reset-password`. Changing the
-dashboard path or disabling login remains remote-only.
+Without an action, `yarn manage auth` prints its subcommand usage, options, and
+examples. It does not select an instance, inspect authentication state, or
+change anything. Choose `setup`, `reset-password`, `change-email`,
+`change-path`, or `disable` explicitly.
+
+After an action is selected, the CLI shows a **Dashboard login target** summary
+before prompting or changing anything. It identifies the instance, whether the
+command targets local data, Cloudflare production, or Cloudflare preview, the
+dashboard location, and the selected action. Cloudflare targets also show the
+Worker name. Check this summary before entering an email or password.
+
+A saved local-only instance is detected automatically after an action is
+selected. It supports `setup`, `change-email`, and `reset-password`. Changing
+the dashboard path or disabling login remains remote-only. Remote `setup` does
+not redeploy when built-in login is already active.
 
 Target selection follows the saved instance type:
 

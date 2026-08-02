@@ -1,7 +1,6 @@
 import {describe, expect, it} from "vitest";
 
 import {
-  authActionOptions,
   pagesProjectOptions,
   visiblePagesProjects,
   withSpinner,
@@ -63,20 +62,6 @@ describe("long-running task spinner", () => {
       "message:Importing database",
       "error:Import failed",
     ]);
-  });
-});
-
-describe("admin auth action picker", () => {
-  it("offers disable while the built-in login is active", () => {
-    expect(authActionOptions().map(({value}) => value)).toContain("disable");
-    expect(authActionOptions().map(({value}) => value)).not.toContain("setup");
-  });
-
-  it("offers setup instead of disable when the login is inactive", () => {
-    expect(authActionOptions(true).map(({value}) => value)).toContain("setup");
-    expect(authActionOptions(true).map(({value}) => value)).not.toContain(
-      "disable",
-    );
   });
 });
 

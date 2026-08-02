@@ -40,6 +40,8 @@ import {
   maintenanceWorkerSource,
   remoteRestoreBaselineRepairNotice,
   remoteRestoreTargetReadinessError,
+  remoteSnapshotNextSteps,
+  reverifyRemoteRestoreTargetIfFingerprintChanged,
   restoreLocalMedia,
   restoredRemoteMediaMismatch,
   snapshotCreatedMessage,
@@ -695,6 +697,53 @@ describe("remote restore target readiness", () => {
         "refuse to start if this target changes",
     );
   });
+
+  it("fully reverifies a target when its saved fingerprint changed", async () => {
+    const reverify = vi.fn(async () => undefined);
+    await expect(reverifyRemoteRestoreTargetIfFingerprintChanged({
+      currentFingerprint: "after-first-page-bootstrap",
+      expectedFingerprint: "after-initialization",
+      reverify,
+    })).resolves.toBe(true);
+    expect(reverify).toHaveBeenCalledOnce();
+  });
+
+  it("uses a matching fingerprint without running the expensive recheck", async () => {
+    const reverify = vi.fn(async () => undefined);
+    await expect(reverifyRemoteRestoreTargetIfFingerprintChanged({
+      currentFingerprint: "unchanged",
+      expectedFingerprint: "unchanged",
+      reverify,
+    })).resolves.toBe(false);
+    expect(reverify).not.toHaveBeenCalled();
+  });
+
+  it("rejects fingerprint drift when the full freshness proof fails", async () => {
+    await expect(reverifyRemoteRestoreTargetIfFingerprintChanged({
+      currentFingerprint: "changed",
+      expectedFingerprint: "saved",
+      reverify: async () => {
+        throw new Error("D1 contains user-created content");
+      },
+    })).rejects.toThrow("D1 contains user-created content");
+  });
+});
+
+describe("remote snapshot next steps", () => {
+  it("prints the exact login setup command when the snapshot has no owner", () => {
+    expect(remoteSnapshotNextSteps("microfeed-copy1", true)).toBe(
+      "Remote restore complete for microfeed-copy1.\n\n" +
+        "The snapshot did not contain an administrator login. Set it up now:\n\n" +
+        "yarn manage auth setup \\\n" +
+        "  --instance microfeed-copy1",
+    );
+  });
+
+  it("does not request setup when the restored owner was preserved", () => {
+    expect(remoteSnapshotNextSteps("microfeed-copy1", false)).toBe(
+      "Remote restore complete for microfeed-copy1.",
+    );
+  });
 });
 
 describe("remote restore baseline repair", () => {
@@ -704,6 +753,7 @@ describe("remote restore baseline repair", () => {
     ...SNAPSHOT_TABLES.targetSpecific,
   ];
   const valid = {
+    allowInitialPasswordSetup: true,
     applicationRowCounts: Object.fromEntries(
       [...SNAPSHOT_TABLES.durable, ...SNAPSHOT_TABLES.ephemeral]
         .map((table) => [table, 0]),
@@ -718,6 +768,7 @@ describe("remote restore baseline repair", () => {
     expectedInstanceId: "target-instance-id",
     expectedIndexes: ["channels_status"],
     expectedPublicOrigins: ["https://copy.example.com"],
+    initialPasswordSetupRows: [],
     installationInstanceIds: ["target-instance-id"],
     r2ObjectCount: 0,
   };
@@ -794,6 +845,63 @@ describe("remote restore baseline repair", () => {
       bootstrapChannelRows,
       bootstrapSettingRows,
     })).not.toThrow();
+  });
+
+  const initialPasswordSetup = {
+    createdAt: "2026-08-02T20:00:00.000Z",
+    email: "owner@example.com",
+    expiresAt: "2026-08-02T20:30:00.000Z",
+    id: "owner",
+    purpose: "initial",
+    tokenHash: "a".repeat(64),
+    userId: null,
+  };
+
+  it("accepts the pending initial password link created during initialization", () => {
+    expect(() => validateRemoteRestoreBaselineRepair({
+      ...valid,
+      applicationRowCounts: {
+        ...valid.applicationRowCounts,
+        auth_password_setup: 1,
+      },
+      initialPasswordSetupRows: [initialPasswordSetup],
+    })).not.toThrow();
+  });
+
+  it.each([
+    {
+      change: {purpose: "reset"},
+      name: "a password reset link",
+    },
+    {
+      change: {tokenHash: "not-a-token-hash"},
+      name: "an invalid token hash",
+    },
+    {
+      change: {userId: "existing-owner"},
+      name: "an existing owner reference",
+    },
+  ])("rejects $name as fresh password setup state", ({change}) => {
+    expect(() => validateRemoteRestoreBaselineRepair({
+      ...valid,
+      applicationRowCounts: {
+        ...valid.applicationRowCounts,
+        auth_password_setup: 1,
+      },
+      initialPasswordSetupRows: [{...initialPasswordSetup, ...change}],
+    })).toThrow("not the one-time initial login record");
+  });
+
+  it("rejects initial password setup when built-in login is disabled", () => {
+    expect(() => validateRemoteRestoreBaselineRepair({
+      ...valid,
+      allowInitialPasswordSetup: false,
+      applicationRowCounts: {
+        ...valid.applicationRowCounts,
+        auth_password_setup: 1,
+      },
+      initialPasswordSetupRows: [initialPasswordSetup],
+    })).toThrow("not the one-time initial login record");
   });
 
   it("rejects a modified bootstrap setting", () => {
