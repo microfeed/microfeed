@@ -172,6 +172,16 @@ function validateConfig(
       )
     ) &&
     (
+      value.restoreBaseline === undefined ||
+      (
+        isRecord(value.restoreBaseline) &&
+        typeof value.restoreBaseline.createdAt === "string" &&
+        value.restoreBaseline.createdAt.length > 0 &&
+        typeof value.restoreBaseline.fingerprint === "string" &&
+        /^[a-f0-9]{64}$/u.test(value.restoreBaseline.fingerprint)
+      )
+    ) &&
+    (
       value.deploymentEnvironment === undefined ||
       value.deploymentEnvironment === "production" ||
       value.deploymentEnvironment === "preview"
@@ -216,6 +226,14 @@ function validateConfig(
       name: value.r2.name as string,
       reuse: value.r2.reuse as boolean,
     },
+    ...(isRecord(value.restoreBaseline)
+      ? {
+          restoreBaseline: {
+            createdAt: value.restoreBaseline.createdAt as string,
+            fingerprint: value.restoreBaseline.fingerprint as string,
+          },
+        }
+      : {}),
     ...(typeof value.workerName === "string"
       ? {workerName: value.workerName}
       : {}),

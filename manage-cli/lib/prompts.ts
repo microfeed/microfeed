@@ -5,6 +5,47 @@ import type {Account} from "../types";
 const MAX_VISIBLE_PAGES_PROJECTS = 5;
 const TYPE_PAGES_PROJECT = "__microfeed_type_pages_project__";
 
+export interface WaitActivity {
+  update(message: string): void;
+}
+
+export interface WaitActivityMessages {
+  error: string;
+  start: string;
+  success: string;
+}
+
+interface WaitSpinner {
+  error(message?: string): void;
+  message(message?: string): void;
+  start(message?: string): void;
+  stop(message?: string): void;
+}
+
+type WaitSpinnerFactory = () => WaitSpinner;
+
+export async function withSpinner<T>(
+  messages: WaitActivityMessages,
+  task: (activity: WaitActivity) => Promise<T>,
+  createSpinner: WaitSpinnerFactory = () =>
+    prompts.spinner({indicator: "timer"}),
+): Promise<T> {
+  const spinner = createSpinner();
+  spinner.start(messages.start);
+  try {
+    const result = await task({
+      update(message) {
+        spinner.message(message);
+      },
+    });
+    spinner.stop(messages.success);
+    return result;
+  } catch (error) {
+    spinner.error(messages.error);
+    throw error;
+  }
+}
+
 function unwrap<T>(value: T | symbol): T {
   if (prompts.isCancel(value)) {
     prompts.cancel("Operation cancelled. No Cloudflare resources were deleted.");
@@ -69,38 +110,6 @@ export async function chooseAdminAuthSetup(): Promise<"built-in" | "none"> {
   return unwrap(await prompts.select({
     message: "How should the admin dashboard be protected?",
     options: [...adminAuthSetupOptions],
-  }));
-}
-
-export type AuthAction =
-  | "change-email"
-  | "change-path"
-  | "disable"
-  | "reset-password"
-  | "setup";
-
-export function authActionOptions(
-  includeSetup = false,
-): Array<{label: string; value: AuthAction}> {
-  return [
-    ...(includeSetup
-      ? [{label: "Set up dashboard login", value: "setup" as const}]
-      : []),
-    {label: "Reset owner password", value: "reset-password"},
-    {label: "Change owner email", value: "change-email"},
-    {label: "Change dashboard path", value: "change-path"},
-    ...(!includeSetup
-      ? [{label: "Disable built-in login", value: "disable" as const}]
-      : []),
-  ];
-}
-
-export async function chooseAuthAction(
-  includeSetup = false,
-): Promise<AuthAction> {
-  return unwrap(await prompts.select({
-    message: "What would you like to change?",
-    options: authActionOptions(includeSetup),
   }));
 }
 

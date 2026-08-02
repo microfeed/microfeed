@@ -17,7 +17,13 @@ import type {
 
 const temporaryDirectories: string[] = [];
 
-async function freshModules() {
+async function freshModules(
+  options: {
+    confirmAnswers?: boolean[];
+    passwordAnswers?: string[];
+    selectAnswers?: string[];
+  } = {},
+) {
   const directory = await mkdtemp(
     path.join(tmpdir(), "microfeed-instance-test-"),
   );
@@ -27,6 +33,54 @@ async function freshModules() {
   // set to its deployment target. These tests exercise instance selection
   // themselves, so they must not inherit the outer management command.
   vi.stubEnv("MICROFEED_INSTANCE", "");
+  if (
+    options.confirmAnswers || options.passwordAnswers || options.selectAnswers
+  ) {
+    const confirmAnswers = [...(options.confirmAnswers ?? [])];
+    const passwordAnswers = [...(options.passwordAnswers ?? [])];
+    const selectAnswers = [...(options.selectAnswers ?? [])];
+    vi.doMock("@clack/prompts", async (importOriginal) => {
+      const actual = await importOriginal<typeof import("@clack/prompts")>();
+      return {
+        ...actual,
+        ...(options.confirmAnswers
+          ? {
+              confirm: vi.fn(async () => {
+                const answer = confirmAnswers.shift();
+                if (answer === undefined) {
+                  throw new Error("No test confirmation answer remains.");
+                }
+                return answer;
+              }),
+            }
+          : {}),
+        ...(options.passwordAnswers
+          ? {
+              password: vi.fn(async () => {
+                const answer = passwordAnswers.shift();
+                if (answer === undefined) {
+                  throw new Error("No test password answer remains.");
+                }
+                return answer;
+              }),
+            }
+          : {}),
+        ...(options.selectAnswers
+          ? {
+              select: vi.fn(async () => {
+                const answer = selectAnswers.shift();
+                if (answer === undefined) {
+                  throw new Error("No test selection answer remains.");
+                }
+                return answer;
+              }),
+            }
+          : {}),
+      };
+    });
+  } else {
+    vi.doUnmock("@clack/prompts");
+  }
   vi.resetModules();
   // Import commands first so its config and prompt dependencies populate
   // Vitest's module cache before the test requests those modules directly.
@@ -86,6 +140,30 @@ function configurableLocalOwnerRunner(
             }]
           : [],
       }]));
+    }
+    throw new Error(`Unexpected command: ${command}`);
+  });
+}
+
+function localAuthMutationRunner(sqlStatements: string[]): CommandRunner {
+  return vi.fn<CommandRunner>(async (_executable, args) => {
+    const command = args.join(" ");
+    if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
+      return commandResult("Migrations applied");
+    }
+    if (command.startsWith("d1 execute FEED_DB --local --command ")) {
+      return commandResult(JSON.stringify([{
+        results: [{
+          email: "owner@example.com",
+          id: "owner-id",
+          role: "admin",
+        }],
+      }]));
+    }
+    if (command.startsWith("d1 execute FEED_DB --local --file ")) {
+      const fileIndex = args.indexOf("--file");
+      sqlStatements.push(await readFile(args[fileIndex + 1]!, "utf8"));
+      return commandResult("SQL executed");
     }
     throw new Error(`Unexpected command: ${command}`);
   });
@@ -168,6 +246,9 @@ function completedRemoteRunner(input: {
     ) {
       return commandResult("Executed");
     }
+    if (command.startsWith("d1 migrations apply feed-db --remote ")) {
+      return commandResult("Migrations applied");
+    }
     throw new Error(`Unexpected command: ${command}`);
   });
 }
@@ -177,6 +258,7 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.doUnmock("@clack/prompts");
   vi.resetModules();
   await Promise.all(
     temporaryDirectories.splice(0).map((directory) =>
@@ -186,6 +268,52 @@ afterEach(async () => {
 });
 
 describe("first-class local instances", () => {
+  it("describes the exact dashboard login target before authentication changes", async () => {
+    const {commands, config} = await freshModules();
+    const remote = {
+      ...completedRemoteConfig(),
+      customDomain: "podcast.example.com",
+      workerName: "podcast-worker",
+    };
+
+    expect(
+      commands.authTargetNotice(remote, "setup", false, false),
+    ).toEqual({
+      message: [
+        "Instance: feed",
+        "Target: Cloudflare production",
+        "Worker: podcast-worker",
+        "Dashboard: https://podcast.example.com/admin/",
+        "Action: Set up dashboard login",
+      ].join("\n"),
+      title: "Dashboard login target",
+    });
+    expect(
+      commands.authTargetNotice(remote, "change-path", false, true).message,
+    ).toContain("Target: Cloudflare preview");
+
+    const localOnly = await config.ensureLocalOnlyConfig("restored-local");
+    expect(
+      commands.authTargetNotice(
+        localOnly,
+        "reset-password",
+        true,
+        false,
+      ),
+    ).toEqual({
+      message: [
+        "Instance: restored-local",
+        "Target: Local instance",
+        "Dashboard path: /admin/",
+        "Action: Reset dashboard password",
+      ].join("\n"),
+      title: "Dashboard login target",
+    });
+    expect(
+      commands.authTargetNotice(remote, "change-email", true, false).message,
+    ).toContain("Target: Local development sandbox");
+  });
+
   it("creates and isolates multiple named local instances", async () => {
     const {commands, config, prompts} = await freshModules();
     const runner = existingLocalOwnerRunner();
@@ -254,7 +382,7 @@ describe("first-class local instances", () => {
       .toBe(true);
   });
 
-  it("keeps auth setup compatibility and explains the local sandbox", async () => {
+  it("keeps explicit local auth compatibility and infers the active local instance", async () => {
     const {commands, config} = await freshModules();
     const runner = existingLocalOwnerRunner();
     const output = vi.spyOn(process.stdout, "write").mockImplementation(
@@ -268,13 +396,63 @@ describe("first-class local instances", () => {
         instanceName: "local",
       }),
     );
+    await expect(
+      commands.authCommand({
+        action: "setup",
+        instance: "local",
+        preview: true,
+      }, runner),
+    ).rejects.toThrow(
+      "Instance `local` is local only and has no preview environment.",
+    );
 
     await commands.devCommand({instance: "local"}, runner);
     const text = output.mock.calls.map(([value]) => String(value)).join("");
+    expect(text).toContain("Dashboard login target");
+    expect(text).toContain("Instance: local");
+    expect(text).toContain("Target: Local instance");
+    expect(text).toContain("Action: Set up dashboard login");
     expect(text).toContain(
       "Production D1 and R2 data will not be accessed or changed.",
     );
     expect(text).toContain("Instance type: Local only");
+  });
+
+  it("changes the local login email and resets its password safely", async () => {
+    const password = "a replacement private password";
+    const {commands, config} = await freshModules({
+      passwordAnswers: [password, password],
+    });
+    const sqlStatements: string[] = [];
+    const runner = localAuthMutationRunner(sqlStatements);
+    await config.ensureLocalOnlyConfig("restored-local");
+
+    await commands.authCommand({
+      action: "change-email",
+      instance: "restored-local",
+      "owner-email": " New-Owner@Example.com ",
+    }, runner);
+    await commands.authCommand({
+      action: "reset-password",
+      instance: "restored-local",
+    }, runner);
+
+    expect(sqlStatements).toHaveLength(2);
+    expect(sqlStatements[0]).toContain("new-owner@example.com");
+    expect(sqlStatements[0]).toContain('DELETE FROM "auth_session"');
+    expect(sqlStatements[1]).toContain('UPDATE "auth_account"');
+    expect(sqlStatements[1]).toContain('DELETE FROM "auth_session"');
+    expect(sqlStatements[1]).toContain('DELETE FROM "auth_password_setup"');
+    expect(sqlStatements[1]).not.toContain(password);
+    const fileCommands = (runner as ReturnType<typeof vi.fn>).mock.calls
+      .map(([, args]) => args.join(" "))
+      .filter((command) => command.includes("--file"));
+    expect(fileCommands).toHaveLength(2);
+    expect(fileCommands.every((command) =>
+      command.includes("instances/restored-local/local-state") &&
+      command.includes("--local") &&
+      !command.includes("--remote")
+    )).toBe(true);
   });
 
   it("can skip local login and enable it later for the same instance", async () => {
@@ -305,14 +483,13 @@ describe("first-class local instances", () => {
       .join("\n")
       .replaceAll(/\s+/gu, " ");
     expect(setupOutput).toContain(
-      "yarn manage auth setup --local --instance",
+      "yarn manage auth setup --instance",
     );
 
     ownerExists = true;
     await commands.authCommand({
       action: "setup",
       instance: "practice",
-      local: true,
     }, runner);
 
     const enabled = await config.readConfig(false, "practice");
@@ -361,6 +538,85 @@ describe("first-class local instances", () => {
 });
 
 describe("initialization lifecycle", () => {
+  it("reloads custom-domain state before recording the restore baseline", async () => {
+    const {commands, config} = await freshModules();
+    const initial = completedRemoteConfig();
+    await config.writeConfig(initial);
+
+    const latest = await commands.updateAndReloadInitializationConfig(
+      initial,
+      () => config.writeConfig({
+        ...initial,
+        completedSteps: [...initial.completedSteps, "custom-domain-verified"],
+        customDomain: "feed.example.com",
+      }),
+    );
+    const fingerprint = "f".repeat(64);
+    latest.restoreBaseline = {
+      createdAt: "2026-08-02T00:00:00.000Z",
+      fingerprint,
+    };
+    await config.writeConfig(latest);
+
+    await expect(config.readConfig(false, "feed")).resolves.toEqual(
+      expect.objectContaining({
+        completedSteps: expect.arrayContaining(["custom-domain-verified"]),
+        customDomain: "feed.example.com",
+        restoreBaseline: {
+          createdAt: "2026-08-02T00:00:00.000Z",
+          fingerprint,
+        },
+      }),
+    );
+  });
+
+  it("confirms public-dashboard risk before creating D1 or R2", async () => {
+    const {commands} = await freshModules({
+      confirmAnswers: [false],
+      selectAnswers: ["none"],
+    });
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "whoami --json") {
+        return commandResult(JSON.stringify({
+          accounts: [{id: "account-id", name: "Personal"}],
+          authType: "OAuth Token",
+          email: "cloudflare@example.com",
+          tokenPermissions: requiredScopes,
+        }));
+      }
+      if (command === "pages project list --json") {
+        return commandResult("[]");
+      }
+      if (command.startsWith("versions list --name fresh-target ")) {
+        return commandResult("", "No Worker found", 1);
+      }
+      if (command === "d1 list --json") {
+        return commandResult("[]");
+      }
+      if (command.startsWith("r2 bucket info fresh-target-media ")) {
+        return commandResult("", "Bucket not found", 1);
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await expect(commands.initCommand({
+      "account-id": "account-id",
+      "admin-path": "admin",
+      "d1-name": "fresh-target-db",
+      instance: "fresh-target",
+      "project-name": "fresh-target",
+      "r2-name": "fresh-target-media",
+    }, runner)).rejects.toThrow(
+      "Deployment cancelled. No authentication setting was changed.",
+    );
+
+    const commandsRun = runner.mock.calls.map(([, args]) => args.join(" "));
+    expect(commandsRun.some((command) =>
+      /(?:d1 create|r2 bucket create|deploy)/u.test(command)
+    )).toBe(false);
+  });
+
   it("stops a completed Cloudflare installation before deployment mutations", async () => {
     const {commands, config} = await freshModules();
     await config.writeConfig(completedRemoteConfig());
@@ -413,6 +669,31 @@ describe("initialization lifecycle", () => {
     expect(commandsRun.some((command) =>
       /(?:deploy|d1 create|r2 bucket create)/u.test(command)
     )).toBe(false);
+  });
+
+  it("prints auth subcommand usage without selecting or changing an instance", async () => {
+    const {commands} = await freshModules();
+    const runner = vi.fn<CommandRunner>();
+    const output = vi.spyOn(process.stdout, "write").mockImplementation(
+      () => true,
+    );
+
+    await commands.authCommand({}, runner);
+
+    const text = output.mock.calls.map(([value]) => String(value)).join("");
+    expect(text).toContain(
+      "yarn manage auth <setup|reset-password|change-email|change-path|disable>",
+    );
+    expect(text).toContain("yarn manage auth setup --instance personal");
+    expect(text).toContain("yarn manage auth reset-password --instance personal");
+    expect(text).toContain("yarn manage auth change-email --instance personal");
+    expect(text).toContain("yarn manage auth change-path --instance personal");
+    expect(text).toContain("yarn manage auth disable --instance personal");
+    expect(runner).not.toHaveBeenCalled();
+
+    await expect(commands.authCommand({action: "unknown"}, runner))
+      .rejects.toThrow("Unknown auth action: unknown");
+    expect(runner).not.toHaveBeenCalled();
   });
 });
 

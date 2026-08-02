@@ -136,7 +136,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
         headers: context.request.headers,
       });
       if (!authSession && !await hasAdminOwner(env.FEED_DB)) {
-        return adminDashboardLockedResponse();
+        return adminDashboardLockedResponse(
+          !wantsJson(context.request, pathname),
+        );
       }
       if (pathname === loginPath) {
         if (authSession) {

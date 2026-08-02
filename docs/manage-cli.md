@@ -20,6 +20,7 @@ you need the complete command and option contract. Run `yarn manage help
   - [`connect`](#yarn-manage-connect)
   - [`deploy`](#yarn-manage-deploy)
   - [`dev`](#yarn-manage-dev)
+  - [`snapshot`](#yarn-manage-snapshot)
   - [`status`](#yarn-manage-status)
   - [`destroy`](#yarn-manage-destroy)
   - [`migrate-pages`](#yarn-manage-migrate-pages)
@@ -73,6 +74,10 @@ use this `yarn manage` interface.
   command can resume safely.
 - Local development uses isolated D1 and R2 simulations. It does not copy or
   synchronize production data.
+- Snapshot restore validates every checksum and historical migration hash
+  before mutation. Remote restore requires an unchanged, newly initialized
+  target and exact instance-name confirmation, and leaves a resumable
+  maintenance journal if migration or data restoration fails.
 
 ## Command summary
 
@@ -83,6 +88,7 @@ use this `yarn manage` interface.
 | `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
 | `deploy` | Check, migrate, deploy, and verify | Updates Worker code and D1 migrations |
 | `dev` | Run a selected site locally | Starts a local server and changes local simulation data |
+| `snapshot` | Create, pull, or restore a portable backup | Read-only export, local state creation, or an exactly confirmed fresh remote replacement |
 | `status` | Verify resources and protection | Read-only Cloudflare and HTTP checks |
 | `destroy` | Inspect and remove a deployment | Permanent deletion unless data is preserved |
 | `migrate-pages` | Deploy a side-by-side Worker for Pages migration | Creates a Worker; preserves the Pages project and reused data |
@@ -185,6 +191,11 @@ Initialize or resume an installation. Production initialization can create a
 Worker, D1 database, R2 bucket, secrets, migrations, administrator password
 setup link, and
 optional custom domain. It performs collision checks before the first mutation.
+The authentication choice and any public-dashboard warning are confirmed before
+D1 or R2 resources are created. If initialization is interrupted later, retrying
+preserves whether each recorded resource was created for this site or explicitly
+reused. The fresh-target snapshot fingerprint is recorded after initialization,
+including optional custom-domain and login setup, has finished.
 
 ```console
 yarn manage init [--instance <name>] [--preview|--local] [options]
@@ -299,6 +310,216 @@ yarn manage dev [--instance <name>] [--preview]
 | --- | --- |
 | `--instance <name>` | Select the local sandbox. |
 | `--preview` | Use preview configuration with isolated local data. |
+
+## `yarn manage snapshot`
+
+**Purpose:** Create, download, validate, and restore migration-safe portable snapshots.
+
+**Changes:** Creates a read-only export, restores a new local instance, or
+replaces the data in one explicitly confirmed fresh Cloudflare target.
+
+The archive is one `.tar.gz` containing `manifest.json`, separate D1 schema and
+durable-data SQL exports, and every object in the production R2 bucket. The
+manifest records SHA-256 checksums, object metadata, table classifications, row
+counts, and the exact ordered D1 migration filenames and hashes.
+
+Long-running snapshot creation and restore steps keep an animated elapsed-time
+indicator visible. Its brief status message changes as D1, migrations, R2, and
+verification work advances, then ends with a green success or red failure mark.
+
+```console
+yarn manage snapshot <create|pull|restore> [options]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `create\|pull\|restore` | Select the snapshot action. |
+| `--instance <name>` | Select the source or restore target instance. |
+| `--output <file>` | Choose a new `.tar.gz` output path for `create` or `pull`; existing files are never overwritten. |
+| `--local-instance <name>` | Choose the new local instance created by `pull`. |
+| `--file <file>` | Read this portable archive for `restore`. |
+| `--local` | Restore into a new local-only instance. |
+| `--dry-run` | Validate and print a remote restore plan without changing the target. |
+| `--confirm <name>` | Approve remote replacement by exactly matching the fresh target instance. |
+
+### Common examples
+
+#### 1. Back up a production instance into one `.tar.gz` file
+
+```console
+yarn manage snapshot create \
+  --instance my-podcast-domain-com \
+  --output my-podcast-domain-com-backup.tar.gz
+```
+
+#### 2. Create a local instance directly from a production instance
+
+```console
+# No separate .tar.gz download is required first. This command creates a
+# temporary snapshot, restores it into the new local instance, then removes it.
+yarn manage snapshot pull \
+  --instance my-podcast-domain-com \
+  --local-instance my-podcast-production-copy
+```
+
+Add `--output my-podcast-domain-com-backup.tar.gz` if you also want to keep the
+downloaded snapshot.
+
+#### 3. Create a local instance from a `.tar.gz` file
+
+```console
+# The local instance name must be new.
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --local \
+  --instance my-podcast-archive-copy
+```
+
+If the snapshot has no administrator account, the completed restore prints the
+exact next step for creating the local dashboard login:
+
+```console
+yarn manage auth setup \
+  --instance my-podcast-archive-copy
+```
+
+#### 4. Create a remote instance from a `.tar.gz` file
+
+```console
+# First initialize a fresh remote target with new, nonreused D1 and R2 resources.
+yarn manage init --instance restored-podcast-domain-com
+
+# Validate the archive and target without changing Cloudflare data.
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance restored-podcast-domain-com \
+  --dry-run
+
+# Then restore by confirming the exact target instance name.
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance restored-podcast-domain-com \
+  --confirm restored-podcast-domain-com
+```
+
+#### 5. Create one remote instance from another remote instance
+
+```console
+# A local .tar.gz handoff is currently required. Download the source first.
+yarn manage snapshot create \
+  --instance my-podcast-domain-com \
+  --output my-podcast-domain-com-backup.tar.gz
+
+# Initialize a fresh target with new, nonreused D1 and R2 resources.
+yarn manage init --instance new-podcast-domain-com
+
+# Validate the archive and target, then perform the confirmed restore.
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance new-podcast-domain-com \
+  --dry-run
+
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance new-podcast-domain-com \
+  --confirm new-podcast-domain-com
+```
+
+### Migration safety
+
+Snapshot creation refuses a D1 migration ledger that is not an ordered prefix
+of this checkout's `migrations/` directory. It also refuses any application
+table absent from the explicit durable, ephemeral, target-specific, or internal
+classification. Released migration files and historical classifications are
+therefore immutable.
+
+Restore validates the complete archive before changing a target. Its migration
+list must be an exact filename-and-hash prefix of the current checkout:
+
+- An older snapshot restores its original schema and durable data, recreates
+  its `d1_migrations` ledger, and then applies only newer migrations.
+- A snapshot at the current head needs no forward migrations.
+- A newer, missing, reordered, edited, or divergent migration history is
+  rejected before mutation.
+
+Durable tables currently include channels, items, settings, users, and login
+accounts. Sessions, verification records, rate-limit state, and password
+setup/reset records are recreated empty. The target installation identity is
+rewritten, while the administrator email and password hash are preserved.
+`publicBucketUrl` is reset to `/media/`.
+
+### Restore safety and recovery
+
+Local restore requires a name that has never been initialized. It builds D1 and
+R2 state in a temporary persistence directory, verifies it, and only then makes
+that state active.
+
+Remote restore supports production targets only. First initialize a new target
+whose D1 and R2 resources are not reused. Initialization records a fingerprint
+of the fresh database and empty bucket. Always run `--dry-run`; mutation rejects
+`--yes` and requires the exact `--confirm <name>` value.
+
+Archive validation and target readiness are separate dry-run stages. A message
+that the snapshot archive is valid confirms only the file and its migration
+history; it does not approve the restore target. If a completed initialization
+is missing its fingerprint, an interactive `--dry-run` offers to repair the
+local safety record only after read-only checks prove all of the following:
+
+- The deployed Worker exposes this saved installation identity.
+- The exact saved D1 database exists, has the current schema and migration
+  ledger, and contains no content beyond the exact channel and settings rows
+  that microfeed automatically creates on the first page request.
+- With built-in login, D1 may contain the exact one-time initial password setup
+  record created during initialization. Restore clears that record. Password
+  reset links and all other authentication activity are rejected.
+- The installation row belongs to this instance and the R2 bucket is empty.
+
+The same strict checks run automatically if the saved fingerprint changes. This
+can happen when the fresh Worker creates its exact automatic channel and
+settings defaults on the first page request. If those defaults are the only
+change, restore refreshes the local fingerprint and continues. The pending
+initial password link described above is also safe because restore clears all
+one-time authentication state. Any user-created content or identity, schema,
+migration, index, or R2 difference is rejected.
+
+A successful repair or refresh saves the fingerprint in the local instance
+configuration; the later restore refuses to start if the target changes again.
+It changes no Cloudflare data or D1/R2 ownership flags, and resources already
+marked reused remain protected from `yarn manage destroy`. The dry run never
+imports the snapshot. An incomplete initialization still must be finished
+before restore, while a nonempty or mismatched target is rejected.
+
+After an interrupted restore has finished uploading media, rerunning
+`--dry-run` also compares the current R2 inventory with the archive and reports
+the exact missing or extra object, byte-size difference, or metadata difference.
+This diagnostic is read-only and avoids repeating the upload just to identify
+the previous verification failure.
+
+After confirmation, the Worker enters maintenance mode. The CLI reimports the
+archived schema/data and ledger in one D1 import, applies forward migrations,
+replaces R2 content using streaming multipart uploads, verifies migrations,
+tables, indexes, foreign keys, administrator data, row counts, installation
+identity, and R2 keys/sizes, and only then deploys the current Worker. If R2's
+inventory does not immediately reflect completed multipart uploads, verification
+keeps its spinner active and retries for up to one minute before reporting exact
+differences. A failure keeps maintenance mode and an owner-only resume journal.
+Rerunning the same archive and confirmation starts again from the archived
+schema and data before retrying migrations.
+
+While maintenance mode is active, the CLI temporarily enables the Worker's
+otherwise-disabled `workers.dev` address as a token-protected control endpoint.
+Every request without the one-time restore token receives HTTP 503, and the
+normal deployment disables that address again after a successful restore. This
+keeps restore control independent of custom-domain DNS and Access settings.
+
+If the snapshot contains no administrator account, successful local and remote
+restore completion prints the exact `yarn manage auth setup --instance <name>`
+command. Running it asks for the administrator email when needed and creates a
+private one-time browser link for choosing the first password.
+
+Snapshots include password hashes and possibly private media. They are
+unencrypted and created with owner-only (`0600`) permissions. Store and encrypt
+them according to your backup policy.
 
 ## `yarn manage status`
 
@@ -443,31 +664,69 @@ sometimes redeploys the Worker.
 Manage the built-in administrator login and path.
 
 ```console
-yarn manage auth [setup|reset-password|change-email|change-path|disable] [options]
+yarn manage auth <setup|reset-password|change-email|change-path|disable> [options]
 ```
 
 | Action | Effect |
 | --- | --- |
-| `setup` | Enable the built-in login and create a first-password browser link when needed. |
-| `reset-password` | Create a single-use reset link; existing password remains valid until completion. |
+| `setup` | Remotely, enable the built-in login and create a first-password browser link when needed; locally, securely prompt for the initial password. |
+| `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. |
 | `change-email` | Update the administrator email and revoke existing sessions. |
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
 | `disable` | Disable built-in protection after a high-visibility warning; may make the dashboard public. |
 
-Without an action, the remote command presents a menu. Local authentication
-defaults to `setup` and supports no other action.
+Without an action, `yarn manage auth` prints its subcommand usage, options, and
+examples. It does not select an instance, inspect authentication state, or
+change anything. Choose `setup`, `reset-password`, `change-email`,
+`change-path`, or `disable` explicitly.
+
+After an action is selected, the CLI shows a **Dashboard login target** summary
+before prompting or changing anything. It identifies the instance, whether the
+command targets local data, Cloudflare production, or Cloudflare preview, the
+dashboard location, and the selected action. Cloudflare targets also show the
+Worker name. Check this summary before entering an email or password.
+
+A saved local-only instance is detected automatically after an action is
+selected. It supports `setup`, `change-email`, and `reset-password`. Changing
+the dashboard path or disabling login remains remote-only. Remote `setup` does
+not redeploy when built-in login is already active.
+
+Target selection follows the saved instance type:
+
+- A local-only instance automatically uses its local data; `--local` is not
+  required.
+- A Cloudflare-connected instance targets Cloudflare by default. Add `--local`
+  only to target its separate local development sandbox.
+- `--preview` targets a Cloudflare preview and cannot be combined with a local
+  target.
+
+Snapshot restore still requires `--local` because it creates a brand-new local
+instance whose type cannot be inferred yet.
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the saved site. |
 | `--account-id <id>` | Confirm the exact saved account. |
 | `--preview` | Target the preview login. |
-| `--local` | Set up a local built-in login. |
+| `--local` | Use a Cloudflare-connected instance's separate local development sandbox; optional for local-only instances. |
 | `--owner-email <email>` | Supply the email for `setup` or `change-email`. |
 | `--admin-path <path>` | Set the new path for `change-path`. |
 | `--admin-password <value>` | Unsafe remote-only value for `setup` or `reset-password`. Never use from an agent. |
 | `--no-open` | Print a setup/reset link without opening it. |
 | `--yes` | Skip supported confirmations, including the `disable` warning. |
+
+Local examples:
+
+```console
+yarn manage auth change-email \
+  --instance microfeed-org-local \
+  --owner-email new-owner@example.com
+
+yarn manage auth reset-password \
+  --instance microfeed-org-local
+```
+
+Local password reset always uses hidden password and confirmation prompts.
 
 ## `yarn manage config`
 

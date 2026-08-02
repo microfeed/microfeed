@@ -677,4 +677,126 @@ describe("CloudflareClient", () => {
       "/client/v4/accounts/account-id/d1/database/database-id",
     );
   });
+
+  it("paginates R2 listings and preserves HTTP and custom metadata", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth token --json") {
+        return commandResult(JSON.stringify({
+          token: "oauth-token",
+          type: "oauth",
+        }));
+      }
+      throw new Error(`Unexpected command: ${args.join(" ")}`);
+    });
+    vi.stubGlobal("fetch", vi.fn(async (
+      input: URL | RequestInfo,
+    ) => {
+      const url = new URL(
+        input instanceof Request ? input.url : input.toString(),
+      );
+      if (!url.searchParams.has("cursor")) {
+        return Response.json({
+          result: [{
+            custom_metadata: {owner: "microfeed"},
+            etag: "etag-b",
+            http_metadata: {
+              cache_control: "public, max-age=60",
+              content_type: "image/jpeg",
+            },
+            key: "b.jpg",
+            last_modified: "2026-08-01T00:00:00.000Z",
+            size: 12,
+            storage_class: "Standard",
+            uploaded: "2026-08-01T00:00:00.000Z",
+          }],
+          result_info: {cursor: "next-page", is_truncated: true},
+          success: true,
+        });
+      }
+      expect(url.searchParams.get("cursor")).toBe("next-page");
+      return Response.json({
+        result: [{
+          customMetadata: {},
+          etag: "etag-a",
+          httpMetadata: {contentType: "text/plain"},
+          key: "a.txt",
+          size: 3,
+          storageClass: "InfrequentAccess",
+          uploaded: "2026-07-01T00:00:00.000Z",
+        }],
+        result_info: {is_truncated: false},
+        success: true,
+      });
+    }));
+
+    await expect(
+      new CloudflareClient(runner).listR2Objects("account-id", "feed-media"),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        httpMetadata: {contentType: "text/plain"},
+        key: "a.txt",
+        size: 3,
+      }),
+      expect.objectContaining({
+        customMetadata: {owner: "microfeed"},
+        httpMetadata: {
+          cacheControl: "public, max-age=60",
+          contentType: "image/jpeg",
+        },
+        key: "b.jpg",
+        size: 12,
+      }),
+    ]);
+  });
+
+  it("exports selected schema/data tables and executes restore SQL through Wrangler", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult(
+      JSON.stringify([{results: [{name: "channels"}]}]),
+    ));
+    const config: MicrofeedConfig = {
+      accountId: "account-id",
+      adminPath: "admin",
+      completedSteps: [],
+      customDomain: null,
+      d1: {id: "database-id", name: "feed-db", reuse: false},
+      deploymentUrl: "https://feed.example.workers.dev",
+      hosting: "cloudflare",
+      instanceId: "instance-id",
+      instanceName: "feed",
+      projectName: "feed",
+      r2: {name: "feed-media", reuse: false},
+    };
+    const cloudflare = new CloudflareClient(runner);
+
+    await cloudflare.exportD1(
+      config,
+      "/tmp/schema.sql",
+      ["channels", "d1_migrations"],
+      "schema",
+    );
+    await cloudflare.exportD1(
+      config,
+      "/tmp/data.sql",
+      ["channels", "d1_migrations"],
+      "data",
+    );
+    await cloudflare.executeSqlFile(config, "/tmp/restore.sql");
+    await expect(cloudflare.queryD1(
+      config,
+      "SELECT name FROM sqlite_schema",
+    )).resolves.toEqual([{name: "channels"}]);
+
+    const calls = runner.mock.calls.map((call) => call[1]);
+    expect(calls[0]).toEqual(expect.arrayContaining([
+      "d1", "export", "feed-db", "--remote", "--no-data",
+      "--table", "channels", "--table", "d1_migrations",
+    ]));
+    expect(calls[1]).toEqual(expect.arrayContaining([
+      "d1", "export", "feed-db", "--remote", "--no-schema",
+    ]));
+    expect(calls[2]).toEqual(expect.arrayContaining([
+      "d1", "execute", "feed-db", "--remote", "--file",
+      "/tmp/restore.sql", "--yes",
+    ]));
+  });
 });

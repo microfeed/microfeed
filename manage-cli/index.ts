@@ -15,6 +15,7 @@ import {
   migratePagesCommand,
   initCommand,
   statusCommand,
+  snapshotCommand,
   useInstanceCommand,
 } from "./commands";
 import {renderCliHelp} from "./help";
@@ -24,6 +25,9 @@ function parseArguments(argv: string[]): {command: string; flags: Flags} {
   const rest = [...argumentsAfterCommand];
   const flags: Flags = {};
   if (command === "auth" && rest[0] && !rest[0].startsWith("--")) {
+    flags.action = rest.shift()!;
+  }
+  if (command === "snapshot" && rest[0] && !rest[0].startsWith("--")) {
     flags.action = rest.shift()!;
   }
   if (command === "use" && rest[0] && !rest[0].startsWith("--")) {
@@ -107,6 +111,9 @@ async function main(): Promise<void> {
       break;
     case "status":
       await statusCommand(flags);
+      break;
+    case "snapshot":
+      await snapshotCommand(flags);
       break;
     case "destroy":
       await destroyCommand(flags);
