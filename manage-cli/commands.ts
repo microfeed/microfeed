@@ -1,9 +1,23 @@
+import {createReadStream, createWriteStream} from "node:fs";
 import {createHash, randomBytes, randomUUID} from "node:crypto";
-import {mkdtemp, rmdir, unlink, writeFile} from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rename,
+  rm,
+  rmdir,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
+import {Readable, Transform} from "node:stream";
+import {pipeline} from "node:stream/promises";
 
 import type {AdminAuthMode} from "@/shared/AdminAuth";
+import {Miniflare} from "miniflare";
 import {
   adminBasePath,
   adminUrl,
@@ -31,6 +45,7 @@ import {
   ensureLocalOnlyConfig,
   ensureWranglerConfig,
   generateWranglerConfig,
+  instanceDirectory,
   instanceSummaries,
   isLocalOnly,
   listLocalInstances,
@@ -58,6 +73,7 @@ import {
 } from "./lib/cloudflare";
 import {
   openUrl,
+  repositoryRoot,
   runCommand,
   runYarnScript,
 } from "./lib/process";
@@ -72,6 +88,24 @@ import {
   choosePagesProject,
   prompts,
 } from "./lib/prompts";
+import {
+  applicationTablesFromSqlite,
+  assertClassifiedTables,
+  buildRestoreFinalizationSql,
+  buildRestoreSql,
+  createSnapshotArchive,
+  extractSnapshotArchive,
+  repositoryMigrations,
+  type SnapshotManifest,
+  type SnapshotR2Object,
+  SNAPSHOT_FORMAT,
+  SNAPSHOT_TABLES,
+  SNAPSHOT_VERSION,
+  sha256File,
+  validateAppliedMigrationPrefix,
+  validateSnapshotMigrations,
+  writeSnapshotManifest,
+} from "./lib/snapshot";
 
 export type FlagValue = boolean | string;
 export type Flags = Record<string, FlagValue>;
@@ -1745,6 +1779,15 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   await writeConfig(config);
 
   await deployConfiguredProject(context, config, true, true);
+  try {
+    await recordRemoteRestoreBaseline(context, config);
+  } catch (error) {
+    config.completedSteps = config.completedSteps.filter(
+      (step) => step !== "deployment-verified",
+    );
+    await writeConfig(config);
+    throw error;
+  }
   prompts.log.success(`microfeed is live at ${config.deploymentUrl}`);
 
   if (!flagBoolean(context.flags, "yes")) {
@@ -4012,4 +4055,1282 @@ export async function devCommand(
     },
     interactive: true,
   });
+}
+
+function sqlIdentifier(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+async function databaseTableNames(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<string[]> {
+  const rows = await cloudflare.queryD1(
+    config,
+    "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name",
+    options,
+  );
+  return rows.flatMap(({name}) => typeof name === "string" ? [name] : []);
+}
+
+async function migrationLedger(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<string[]> {
+  const rows = await cloudflare.queryD1(
+    config,
+    "SELECT name FROM d1_migrations ORDER BY id",
+    options,
+  );
+  return rows.map(({name}) => {
+    if (typeof name !== "string" || !name) {
+      throw new Error("D1 returned an invalid migration ledger.");
+    }
+    return name;
+  });
+}
+
+async function durableRowCounts(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  tables: readonly string[],
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<Record<string, number>> {
+  const result: Record<string, number> = {};
+  for (const table of tables) {
+    const [row] = await cloudflare.queryD1(
+      config,
+      `SELECT COUNT(*) AS count FROM ${sqlIdentifier(table)}`,
+      options,
+    );
+    if (!row || !Number.isSafeInteger(row.count) || Number(row.count) < 0) {
+      throw new Error(`D1 returned an invalid row count for ${table}.`);
+    }
+    result[table] = Number(row.count);
+  }
+  return result;
+}
+
+async function remoteRestoreFingerprint(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+): Promise<string> {
+  const tableNames = await databaseTableNames(cloudflare, config);
+  const applicationTables = applicationTablesFromSqlite(tableNames);
+  assertClassifiedTables(applicationTables);
+  const rows: Record<string, Array<Record<string, unknown>>> = {};
+  for (const table of [
+    ...SNAPSHOT_TABLES.durable,
+    ...SNAPSHOT_TABLES.targetSpecific,
+  ].filter((table) => applicationTables.includes(table))) {
+    rows[table] = await cloudflare.queryD1(
+      config,
+      `SELECT * FROM ${sqlIdentifier(table)} ORDER BY rowid`,
+    );
+  }
+  const [migrations, objects] = await Promise.all([
+    migrationLedger(cloudflare, config),
+    cloudflare.listR2Objects(cloudflareAccountId(config), config.r2.name),
+  ]);
+  return createHash("sha256").update(JSON.stringify({
+    applicationTables,
+    migrations,
+    objects,
+    rows,
+  })).digest("hex");
+}
+
+async function recordRemoteRestoreBaseline(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<void> {
+  if (config.restoreBaseline || config.d1.reuse || config.r2.reuse) {
+    return;
+  }
+  const objects = await context.cloudflare.listR2Objects(
+    cloudflareAccountId(config),
+    config.r2.name,
+  );
+  if (objects.length > 0) {
+    throw new Error(
+      "The newly initialized R2 bucket is not empty, so it cannot be marked as a fresh snapshot restore target.",
+    );
+  }
+  config.restoreBaseline = {
+    createdAt: new Date().toISOString(),
+    fingerprint: await remoteRestoreFingerprint(context.cloudflare, config),
+  };
+  await writeConfig(config);
+}
+
+function snapshotOutputPath(flags: Flags, instanceName: string): string {
+  const requested = flagString(flags, "output");
+  if (requested) {
+    return path.resolve(requested);
+  }
+  const timestamp = new Date().toISOString().replaceAll(/[:.]/gu, "-");
+  return path.resolve(`microfeed-${instanceName}-${timestamp}.tar.gz`);
+}
+
+async function assertPathDoesNotExist(filename: string): Promise<void> {
+  try {
+    await stat(filename);
+    throw new Error(
+      `Refusing to overwrite existing snapshot file ${filename}. Choose another --output path.`,
+    );
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+}
+
+async function downloadSnapshotObject(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  object: Awaited<ReturnType<CloudflareClient["listR2Objects"]>>[number],
+  filename: string,
+): Promise<{sha256: string; size: number}> {
+  const response = await cloudflare.r2ObjectResponse(
+    cloudflareAccountId(config),
+    config.r2.name,
+    object.key,
+  );
+  if (!response.body) {
+    throw new Error(`Cloudflare returned no body for R2 object ${object.key}.`);
+  }
+  const hash = createHash("sha256");
+  let size = 0;
+  const checksum = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      hash.update(chunk);
+      size += chunk.length;
+      callback(null, chunk);
+    },
+  });
+  await pipeline(
+    Readable.fromWeb(response.body as never),
+    checksum,
+    createWriteStream(filename, {mode: 0o600}),
+  );
+  if (size !== object.size) {
+    throw new Error(
+      `R2 object ${object.key} changed size while the snapshot was being created. Retry after writes have stopped.`,
+    );
+  }
+  return {sha256: hash.digest("hex"), size};
+}
+
+async function createRemoteSnapshot(
+  context: CommandContext,
+  output: string,
+): Promise<string> {
+  await assertPathDoesNotExist(output);
+  const config = await ensureWranglerConfig(false, false, context.instanceName);
+  if (config.deploymentEnvironment === "preview") {
+    throw new Error("Preview environments cannot create portable snapshots.");
+  }
+  const accountId = cloudflareAccountId(config);
+  const account = await authenticate(context, accountId);
+  if (account.id !== accountId) {
+    throw new Error(`This installation belongs to Cloudflare account ${accountId}.`);
+  }
+  const temporaryDirectory = await mkdtemp(
+    path.join(tmpdir(), "microfeed-snapshot-create-"),
+  );
+  try {
+    const databaseDirectory = path.join(temporaryDirectory, "database");
+    const mediaDirectory = path.join(temporaryDirectory, "media");
+    await Promise.all([
+      mkdir(databaseDirectory, {recursive: true}),
+      mkdir(mediaDirectory, {recursive: true}),
+    ]);
+    const migrations = await repositoryMigrations();
+    const tableNames = await databaseTableNames(context.cloudflare, config);
+    const applicationTables = applicationTablesFromSqlite(tableNames);
+    assertClassifiedTables(applicationTables);
+    const ledgerBefore = await migrationLedger(context.cloudflare, config);
+    const appliedMigrations = validateAppliedMigrationPrefix(
+      ledgerBefore,
+      migrations,
+    );
+    const schemaPath = path.join(databaseDirectory, "schema.sql");
+    const dataPath = path.join(databaseDirectory, "data.sql");
+    await context.cloudflare.exportD1(
+      config,
+      schemaPath,
+      [...applicationTables, "d1_migrations"],
+      "schema",
+    );
+    const durableTables = SNAPSHOT_TABLES.durable.filter((table) =>
+      applicationTables.includes(table)
+    );
+    await context.cloudflare.exportD1(
+      config,
+      dataPath,
+      [...durableTables, "d1_migrations"],
+      "data",
+    );
+    const rowCounts = await durableRowCounts(
+      context.cloudflare,
+      config,
+      durableTables,
+    );
+    const listedObjects = await context.cloudflare.listR2Objects(
+      accountId,
+      config.r2.name,
+    );
+    const objects: SnapshotR2Object[] = [];
+    for (const [index, object] of listedObjects.entries()) {
+      const archivePath = `media/${String(index + 1).padStart(8, "0")}`;
+      const stored = await downloadSnapshotObject(
+        context.cloudflare,
+        config,
+        object,
+        path.join(temporaryDirectory, archivePath),
+      );
+      objects.push({
+        archivePath,
+        customMetadata: object.customMetadata,
+        etag: object.etag,
+        httpMetadata: object.httpMetadata,
+        key: object.key,
+        sha256: stored.sha256,
+        size: stored.size,
+        storageClass: object.storageClass,
+        uploaded: object.uploaded,
+      });
+    }
+    const [ledgerAfter, listedAfter] = await Promise.all([
+      migrationLedger(context.cloudflare, config),
+      context.cloudflare.listR2Objects(accountId, config.r2.name),
+    ]);
+    if (JSON.stringify(ledgerAfter) !== JSON.stringify(ledgerBefore)) {
+      throw new Error(
+        "The D1 migration ledger changed during export. The incomplete snapshot was discarded; retry after deployment finishes.",
+      );
+    }
+    if (JSON.stringify(listedAfter) !== JSON.stringify(listedObjects)) {
+      throw new Error(
+        "The R2 bucket changed during export. The incomplete snapshot was discarded; retry after media writes have stopped.",
+      );
+    }
+    const tables = Object.fromEntries(
+      (Object.keys(SNAPSHOT_TABLES) as Array<keyof typeof SNAPSHOT_TABLES>)
+        .map((category) => [
+          category,
+          SNAPSHOT_TABLES[category].filter((table) =>
+            tableNames.includes(table)
+          ),
+        ]),
+    ) as SnapshotManifest["database"]["tables"];
+    const manifest: SnapshotManifest = {
+      createdAt: new Date().toISOString(),
+      database: {
+        data: {path: "database/data.sql", sha256: await sha256File(dataPath)},
+        migrations: appliedMigrations,
+        rowCounts,
+        schema: {
+          path: "database/schema.sql",
+          sha256: await sha256File(schemaPath),
+        },
+        tables,
+      },
+      format: SNAPSHOT_FORMAT,
+      media: {
+        objectCount: objects.length,
+        objects,
+        totalBytes: objects.reduce((total, object) => total + object.size, 0),
+      },
+      source: {
+        databaseName: config.d1.name,
+        deploymentEnvironment: "production",
+        instanceName: config.instanceName,
+        projectName: config.projectName,
+        r2BucketName: config.r2.name,
+      },
+      version: SNAPSHOT_VERSION,
+    };
+    await writeSnapshotManifest(temporaryDirectory, manifest);
+    await createSnapshotArchive(temporaryDirectory, output);
+    return output;
+  } catch (error) {
+    await rm(output, {force: true});
+    throw error;
+  } finally {
+    await rm(temporaryDirectory, {force: true, recursive: true});
+  }
+}
+
+function assertSnapshotTableHistory(manifest: SnapshotManifest): void {
+  const currentCategories = new Map<string, keyof typeof SNAPSHOT_TABLES>();
+  for (const category of Object.keys(SNAPSHOT_TABLES) as Array<keyof typeof SNAPSHOT_TABLES>) {
+    for (const table of SNAPSHOT_TABLES[category]) {
+      currentCategories.set(table, category);
+    }
+  }
+  for (const category of Object.keys(manifest.database.tables) as Array<keyof typeof SNAPSHOT_TABLES>) {
+    for (const table of manifest.database.tables[category]) {
+      const current = currentCategories.get(table);
+      if (!current) {
+        throw new Error(
+          `Snapshot table ${table} is unknown to this checkout. Use a newer checkout.`,
+        );
+      }
+      if (current !== category) {
+        throw new Error(
+          `Snapshot table ${table} changed classification from ${category} to ${current}. Historical snapshot classifications are immutable.`,
+        );
+      }
+    }
+  }
+}
+
+function snapshotApplicationTables(manifest: SnapshotManifest): string[] {
+  return [
+    ...manifest.database.tables.durable,
+    ...manifest.database.tables.ephemeral,
+    ...manifest.database.tables.targetSpecific,
+  ];
+}
+
+async function expectedSchemaIndexes(): Promise<string[]> {
+  const migrations = await repositoryMigrations();
+  const names: string[] = [];
+  for (const migration of migrations) {
+    const sql = await readFile(path.join(repositoryRoot, "migrations", migration.filename), "utf8");
+    for (const match of sql.matchAll(
+      /CREATE\s+(?:UNIQUE\s+)?INDEX\s+IF\s+NOT\s+EXISTS\s+["`[]?([^"`\]\s]+)["`\]]?/giu,
+    )) {
+      names.push(match[1]!);
+    }
+  }
+  return names;
+}
+
+async function verifyImportedRowCounts(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  manifest: SnapshotManifest,
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<void> {
+  const durableTables = Object.keys(manifest.database.rowCounts);
+  const counts = await durableRowCounts(cloudflare, config, durableTables, options);
+  for (const table of durableTables) {
+    if (counts[table] !== manifest.database.rowCounts[table]) {
+      throw new Error(
+        `Imported D1 row count for ${table} is ${counts[table]}, expected ${manifest.database.rowCounts[table]}.`,
+      );
+    }
+  }
+}
+
+async function verifyRestoredDatabase(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  manifest: SnapshotManifest,
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<void> {
+  const currentMigrations = await repositoryMigrations();
+  const ledger = await migrationLedger(cloudflare, config, options);
+  if (JSON.stringify(ledger) !==
+      JSON.stringify(currentMigrations.map(({filename}) => filename))) {
+    throw new Error("Restored D1 migration ledger does not match the current checkout.");
+  }
+  const tableNames = await databaseTableNames(cloudflare, config, options);
+  const applications = applicationTablesFromSqlite(tableNames);
+  assertClassifiedTables(applications);
+  const expectedTables = [
+    ...SNAPSHOT_TABLES.durable,
+    ...SNAPSHOT_TABLES.ephemeral,
+    ...SNAPSHOT_TABLES.targetSpecific,
+  ];
+  const missingTables = expectedTables.filter((table) => !applications.includes(table));
+  if (missingTables.length > 0) {
+    throw new Error(`Restored D1 is missing tables: ${missingTables.join(", ")}.`);
+  }
+  const indexRows = await cloudflare.queryD1(
+    config,
+    "SELECT name FROM sqlite_schema WHERE type = 'index' ORDER BY name",
+    options,
+  );
+  const indexes = new Set(indexRows.flatMap(({name}) =>
+    typeof name === "string" ? [name] : []
+  ));
+  const missingIndexes = (await expectedSchemaIndexes()).filter((name) =>
+    !indexes.has(name)
+  );
+  if (missingIndexes.length > 0) {
+    throw new Error(`Restored D1 is missing indexes: ${missingIndexes.join(", ")}.`);
+  }
+  const foreignKeyFailures = await cloudflare.queryD1(
+    config,
+    "PRAGMA foreign_key_check",
+    options,
+  );
+  if (foreignKeyFailures.length > 0) {
+    throw new Error("Restored D1 failed foreign-key integrity checks.");
+  }
+  if ((manifest.database.rowCounts.auth_user ?? 0) > 0) {
+    const owners = await cloudflare.queryD1(
+      config,
+      "SELECT id, email FROM auth_user ORDER BY createdAt LIMIT 1",
+      options,
+    );
+    if (owners.length !== 1 || typeof owners[0]?.email !== "string") {
+      throw new Error("Restored D1 administrator record is missing.");
+    }
+  }
+  const [installation] = await cloudflare.queryD1(
+    config,
+    "SELECT instanceId FROM microfeed_installation WHERE id = 'installation'",
+    options,
+  );
+  if (installation?.instanceId !== config.instanceId) {
+    throw new Error("Restored D1 installation identity does not match its target.");
+  }
+}
+
+function r2PutOptions(object: SnapshotR2Object) {
+  return {
+    customMetadata: object.customMetadata,
+    httpMetadata: {
+      ...object.httpMetadata,
+      ...(object.httpMetadata.cacheExpiry
+        ? {cacheExpiry: new Date(object.httpMetadata.cacheExpiry)}
+        : {}),
+    },
+    ...(object.storageClass ? {storageClass: object.storageClass} : {}),
+  };
+}
+
+function normalizedR2Metadata(input: {
+  customMetadata?: Record<string, string>;
+  httpMetadata?: SnapshotR2Object["httpMetadata"] | {
+    cacheExpiry?: Date | string;
+    [key: string]: unknown;
+  };
+  storageClass?: string | null;
+}) {
+  const customMetadata = Object.fromEntries(
+    Object.entries(input.customMetadata ?? {})
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+  const rawHttpMetadata = input.httpMetadata ?? {};
+  const httpMetadata = Object.fromEntries(
+    Object.entries(rawHttpMetadata).flatMap(([key, value]) => {
+      if (value === undefined) {
+        return [];
+      }
+      if (key === "cacheExpiry") {
+        return [[key, new Date(value as Date | string).toISOString()]];
+      }
+      return [[key, value]];
+    }).sort(([left], [right]) => left.localeCompare(right)),
+  );
+  return {
+    customMetadata,
+    httpMetadata,
+    storageClass: input.storageClass || "Standard",
+  };
+}
+
+export async function restoreLocalMedia(
+  config: MicrofeedConfig,
+  snapshotDirectory: string,
+  persistTo: string,
+  objects: readonly SnapshotR2Object[],
+): Promise<void> {
+  const miniflare = new Miniflare({
+    defaultPersistRoot: path.join(persistTo, "v3"),
+    modules: true,
+    r2Buckets: {MEDIA_BUCKET: config.r2.name},
+    script: `export default {
+      async fetch(request, env) {
+        try {
+          const decode = (value) => new TextDecoder().decode(
+            Uint8Array.from(atob(value), (character) => character.charCodeAt(0)),
+          );
+          const encodedKey = request.headers.get("snapshot-key");
+          const encodedOptions = request.headers.get("snapshot-r2-options");
+          const key = encodedKey ? decode(encodedKey) : null;
+          const options = encodedOptions
+            ? JSON.parse(decode(encodedOptions))
+            : null;
+          if (!key || !options || !request.body) {
+            return new Response("Invalid local restore request", {status: 400});
+          }
+          if (typeof options.httpMetadata?.cacheExpiry === "string") {
+            options.httpMetadata.cacheExpiry = new Date(
+              options.httpMetadata.cacheExpiry,
+            );
+          }
+          await env.MEDIA_BUCKET.put(key, request.body, options);
+          return new Response(null, {status: 204});
+        } catch (error) {
+          return Response.json(
+            {error: error instanceof Error ? error.message : String(error)},
+            {status: 500},
+          );
+        }
+      },
+    };`,
+  });
+  try {
+    const bucket = await miniflare.getR2Bucket("MEDIA_BUCKET") as unknown as {
+      head: (key: string) => Promise<{
+        customMetadata?: Record<string, string>;
+        httpMetadata?: Record<string, unknown>;
+        size: number;
+        storageClass?: string;
+      } | null>;
+    };
+    for (const object of objects) {
+      const filename = path.join(
+        snapshotDirectory,
+        ...object.archivePath.split("/"),
+      );
+      const body = Readable.toWeb(createReadStream(filename));
+      const response = await miniflare.dispatchFetch("http://localhost/", {
+        body,
+        duplex: "half",
+        headers: {
+          "content-length": String(object.size),
+          "snapshot-key": Buffer.from(object.key, "utf8").toString("base64"),
+          "snapshot-r2-options": Buffer.from(
+            JSON.stringify(r2PutOptions(object)),
+            "utf8",
+          ).toString("base64"),
+        },
+        method: "PUT",
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Local R2 restore failed for ${object.key}: ${await response.text()}`,
+        );
+      }
+      const restored = await bucket.head(object.key);
+      if (!restored || restored.size !== object.size) {
+        throw new Error(`Local R2 verification failed for ${object.key}.`);
+      }
+      const actualMetadata = normalizedR2Metadata(restored);
+      const expectedMetadata = normalizedR2Metadata(object);
+      if (JSON.stringify(actualMetadata) !== JSON.stringify(expectedMetadata)) {
+        throw new Error(
+          `Local R2 metadata verification failed for ${object.key}: ` +
+            `expected ${JSON.stringify(expectedMetadata)}, received ` +
+            `${JSON.stringify(actualMetadata)}.`,
+        );
+      }
+    }
+  } finally {
+    await miniflare.dispose();
+  }
+}
+
+async function restoreSnapshotLocally(
+  archive: string,
+  targetInstance: string,
+  runner: CommandRunner,
+): Promise<void> {
+  const error = validateLocalInstanceName(targetInstance);
+  if (error) {
+    throw new Error(`Invalid instance name \`${targetInstance}\`. ${error}`);
+  }
+  const targetDirectory = instanceDirectory(targetInstance);
+  const targetAlreadyExists = await stat(targetDirectory)
+    .then(() => true)
+    .catch((statError: unknown) => {
+      if (statError instanceof Error && "code" in statError &&
+          statError.code === "ENOENT") {
+        return false;
+      }
+      throw statError;
+    });
+  if (targetAlreadyExists || await readConfig(false, targetInstance)) {
+    throw new Error(
+      `Local restore target \`${targetInstance}\` already exists. Choose a new instance name.`,
+    );
+  }
+  const extractedDirectory = await mkdtemp(
+    path.join(tmpdir(), "microfeed-snapshot-extract-"),
+  );
+  let createdConfig = false;
+  try {
+    const {manifest} = await extractSnapshotArchive(archive, extractedDirectory);
+    validateSnapshotMigrations(
+      manifest.database.migrations,
+      await repositoryMigrations(),
+    );
+    assertSnapshotTableHistory(manifest);
+    const config = await ensureLocalOnlyConfig(targetInstance);
+    createdConfig = true;
+    const temporaryPersistence = path.join(
+      instanceDirectory(targetInstance),
+      `.snapshot-restore-${randomUUID()}`,
+    );
+    await mkdir(temporaryPersistence, {recursive: true});
+    try {
+      const schemaSql = await readFile(
+        path.join(extractedDirectory, manifest.database.schema.path),
+        "utf8",
+      );
+      const dataSql = await readFile(
+        path.join(extractedDirectory, manifest.database.data.path),
+        "utf8",
+      );
+      const restoreSqlPath = path.join(extractedDirectory, "restore.sql");
+      await writeFile(restoreSqlPath, buildRestoreSql({
+        currentApplicationTables: [],
+        dataSql,
+        schemaSql,
+        snapshotApplicationTables: snapshotApplicationTables(manifest),
+      }), {encoding: "utf8", mode: 0o600});
+      await new CloudflareClient(runner).executeSqlFile(
+        config,
+        restoreSqlPath,
+        {local: true, persistTo: temporaryPersistence},
+      );
+      const cloudflare = new CloudflareClient(runner);
+      await verifyImportedRowCounts(cloudflare, config, manifest, {
+        local: true,
+        persistTo: temporaryPersistence,
+      });
+      await cloudflare.applyLocalMigrations(config, temporaryPersistence);
+      const finalizationSqlPath = path.join(
+        extractedDirectory,
+        "finalize.sql",
+      );
+      await writeFile(
+        finalizationSqlPath,
+        buildRestoreFinalizationSql(config.instanceId),
+        {encoding: "utf8", mode: 0o600},
+      );
+      await cloudflare.executeSqlFile(config, finalizationSqlPath, {
+        local: true,
+        persistTo: temporaryPersistence,
+      });
+      await restoreLocalMedia(
+        config,
+        extractedDirectory,
+        temporaryPersistence,
+        manifest.media.objects,
+      );
+      await verifyRestoredDatabase(cloudflare, config, manifest, {
+        local: true,
+        persistTo: temporaryPersistence,
+      });
+      const finalPersistence = localPersistencePath(config);
+      await rename(temporaryPersistence, finalPersistence);
+      markStep(config, "migrations-applied");
+      markStep(config, "snapshot-restored");
+      markStep(config, "initialization-complete");
+      await writeConfig(config);
+      await setActiveInstance(targetInstance);
+    } catch (restoreError) {
+      await rm(temporaryPersistence, {force: true, recursive: true});
+      throw restoreError;
+    }
+  } catch (restoreError) {
+    if (createdConfig) {
+      await removeSavedInstance(targetInstance);
+    }
+    throw restoreError;
+  } finally {
+    await rm(extractedDirectory, {force: true, recursive: true});
+  }
+}
+
+const SNAPSHOT_RESTORE_ENDPOINT = "/__microfeed_snapshot_restore/v1";
+
+export function maintenanceWorkerSource(): string {
+  return `
+function bytesFromHex(value) {
+  if (!/^[a-f0-9]{64}$/.test(value)) return null;
+  return Uint8Array.from(value.match(/../g), (byte) => Number.parseInt(byte, 16));
+}
+async function authorized(request, expectedHex) {
+  const header = request.headers.get("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const actual = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+  const expected = bytesFromHex(expectedHex);
+  if (!expected || actual.length !== expected.length) return false;
+  let difference = 0;
+  for (let index = 0; index < actual.length; index += 1) difference |= actual[index] ^ expected[index];
+  return difference === 0;
+}
+function validMetadata(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+function normalizedOptions(value) {
+  const options = {...value};
+  if (validMetadata(value.httpMetadata)) {
+    options.httpMetadata = {...value.httpMetadata};
+    if (typeof options.httpMetadata.cacheExpiry === "string") {
+      options.httpMetadata.cacheExpiry = new Date(options.httpMetadata.cacheExpiry);
+    }
+  }
+  return options;
+}
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname !== ${JSON.stringify(SNAPSHOT_RESTORE_ENDPOINT)} ||
+        !await authorized(request, env.SNAPSHOT_TOKEN_HASH)) {
+      return new Response("Snapshot restoration is in progress.", {
+        status: 503,
+        headers: {"cache-control": "no-store", "retry-after": "60"},
+      });
+    }
+    if (request.method === "GET") return Response.json({maintenance: true});
+    const action = url.searchParams.get("action");
+    try {
+      if (action === "create" && request.method === "POST") {
+        const input = await request.json();
+        if (typeof input.key !== "string" || !input.key || !validMetadata(input.options)) {
+          return new Response("Invalid multipart metadata.", {status: 400});
+        }
+        const upload = await env.MEDIA_BUCKET.createMultipartUpload(
+          input.key,
+          normalizedOptions(input.options),
+        );
+        return Response.json({uploadId: upload.uploadId});
+      }
+      if (action === "part" && request.method === "PUT") {
+        const key = url.searchParams.get("key");
+        const uploadId = url.searchParams.get("uploadId");
+        const partNumber = Number(url.searchParams.get("partNumber"));
+        if (!key || !uploadId || !Number.isInteger(partNumber) || partNumber < 1 || !request.body) {
+          return new Response("Invalid multipart part.", {status: 400});
+        }
+        const part = await env.MEDIA_BUCKET.resumeMultipartUpload(key, uploadId)
+          .uploadPart(partNumber, request.body);
+        return Response.json(part);
+      }
+      if (action === "complete" && request.method === "POST") {
+        const input = await request.json();
+        if (typeof input.key !== "string" || typeof input.uploadId !== "string" ||
+            !Array.isArray(input.parts)) {
+          return new Response("Invalid multipart completion.", {status: 400});
+        }
+        const object = await env.MEDIA_BUCKET.resumeMultipartUpload(input.key, input.uploadId)
+          .complete(input.parts);
+        return Response.json({etag: object.etag, size: object.size});
+      }
+      if (action === "abort" && request.method === "POST") {
+        const input = await request.json();
+        if (typeof input.key !== "string" || typeof input.uploadId !== "string") {
+          return new Response("Invalid multipart abort.", {status: 400});
+        }
+        await env.MEDIA_BUCKET.resumeMultipartUpload(input.key, input.uploadId)
+          .abort();
+        return Response.json({aborted: true});
+      }
+      if (action === "empty" && request.method === "PUT") {
+        const input = await request.json();
+        if (typeof input?.key !== "string" || !validMetadata(input.options)) {
+          return new Response("Invalid empty object metadata.", {status: 400});
+        }
+        const object = await env.MEDIA_BUCKET.put(
+          input.key,
+          new Uint8Array(),
+          normalizedOptions(input.options),
+        );
+        return Response.json({etag: object.etag, size: object.size});
+      }
+      return new Response("Unsupported snapshot action.", {status: 400});
+    } catch (error) {
+      return Response.json({error: error instanceof Error ? error.message : String(error)}, {status: 500});
+    }
+  },
+};\n`;
+}
+
+async function deployMaintenanceWorker(
+  context: CommandContext,
+  config: MicrofeedConfig,
+  temporaryDirectory: string,
+  token: string,
+): Promise<string> {
+  if (!config.deploymentUrl) {
+    throw new Error("The restore target has no deployment URL.");
+  }
+  const sourcePath = path.join(temporaryDirectory, "maintenance-worker.js");
+  const configPath = path.join(temporaryDirectory, "maintenance-wrangler.json");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  await writeFile(sourcePath, maintenanceWorkerSource(), {
+    encoding: "utf8",
+    mode: 0o600,
+  });
+  await writeFile(configPath, `${JSON.stringify({
+    account_id: cloudflareAccountId(config),
+    compatibility_date: "2026-07-29",
+    compatibility_flags: ["nodejs_compat"],
+    main: sourcePath,
+    name: workerName(config),
+    observability: {enabled: false},
+    r2_buckets: [{binding: "MEDIA_BUCKET", bucket_name: config.r2.name}],
+    routes: config.customDomain
+      ? [{custom_domain: true, pattern: config.customDomain}]
+      : [],
+    vars: {SNAPSHOT_TOKEN_HASH: tokenHash},
+    workers_dev: workersDevEnabled(config),
+  }, null, 2)}\n`, {encoding: "utf8", mode: 0o600});
+  await context.cloudflare.deployWithConfig(config, configPath);
+  return new URL(SNAPSHOT_RESTORE_ENDPOINT, config.deploymentUrl).href;
+}
+
+async function snapshotWorkerRequest(
+  endpoint: string,
+  token: string,
+  init: RequestInit,
+): Promise<Record<string, unknown>> {
+  const response = await fetch(endpoint, {
+    ...init,
+    headers: {authorization: `Bearer ${token}`, ...init.headers},
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(
+      `Snapshot maintenance Worker returned HTTP ${response.status}: ${body.trim() || "no detail"}`,
+    );
+  }
+  return body ? JSON.parse(body) as Record<string, unknown> : {};
+}
+
+async function waitForSnapshotWorker(
+  endpoint: string,
+  token: string,
+): Promise<void> {
+  let lastError: unknown;
+  for (const delay of [0, 1_000, 2_000, 4_000, 8_000]) {
+    if (delay > 0) {
+      await wait(delay);
+    }
+    try {
+      await snapshotWorkerRequest(endpoint, token, {method: "GET"});
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+export async function uploadRemoteObject(
+  endpoint: string,
+  token: string,
+  snapshotDirectory: string,
+  object: SnapshotR2Object,
+): Promise<void> {
+  const filename = path.join(snapshotDirectory, ...object.archivePath.split("/"));
+  const options = r2PutOptions(object);
+  if (object.size === 0) {
+    const url = new URL(endpoint);
+    url.searchParams.set("action", "empty");
+    await snapshotWorkerRequest(url.href, token, {
+      body: JSON.stringify({key: object.key, options}),
+      headers: {"content-type": "application/json"},
+      method: "PUT",
+    });
+    return;
+  }
+  const createUrl = new URL(endpoint);
+  createUrl.searchParams.set("action", "create");
+  const created = await snapshotWorkerRequest(createUrl.href, token, {
+    body: JSON.stringify({key: object.key, options}),
+    headers: {"content-type": "application/json"},
+    method: "POST",
+  });
+  const uploadId = created.uploadId;
+  if (typeof uploadId !== "string" || !uploadId) {
+    throw new Error(`Maintenance Worker did not create an upload for ${object.key}.`);
+  }
+  const minimumPartSize = 8 * 1024 * 1024;
+  const partSize = Math.max(
+    minimumPartSize,
+    Math.ceil(object.size / 9_999),
+  );
+  try {
+    const parts: Array<{etag: string; partNumber: number}> = [];
+    for (let start = 0, partNumber = 1; start < object.size;
+         start += partSize, partNumber += 1) {
+      const end = Math.min(start + partSize, object.size) - 1;
+      const partUrl = new URL(endpoint);
+      partUrl.searchParams.set("action", "part");
+      partUrl.searchParams.set("key", object.key);
+      partUrl.searchParams.set("uploadId", uploadId);
+      partUrl.searchParams.set("partNumber", String(partNumber));
+      const response = await snapshotWorkerRequest(partUrl.href, token, {
+        body: createReadStream(filename, {end, start}) as never,
+        headers: {"content-length": String(end - start + 1)},
+        method: "PUT",
+        // Node requires duplex for streamed fetch request bodies.
+        ...({duplex: "half"} as Record<string, unknown>),
+      });
+      if (typeof response.etag !== "string") {
+        throw new Error(`Maintenance Worker did not accept part ${partNumber} of ${object.key}.`);
+      }
+      parts.push({etag: response.etag, partNumber});
+    }
+    const completeUrl = new URL(endpoint);
+    completeUrl.searchParams.set("action", "complete");
+    await snapshotWorkerRequest(completeUrl.href, token, {
+      body: JSON.stringify({key: object.key, parts, uploadId}),
+      headers: {"content-type": "application/json"},
+      method: "POST",
+    });
+  } catch (error) {
+    const abortUrl = new URL(endpoint);
+    abortUrl.searchParams.set("action", "abort");
+    await snapshotWorkerRequest(abortUrl.href, token, {
+      body: JSON.stringify({key: object.key, uploadId}),
+      headers: {"content-type": "application/json"},
+      method: "POST",
+    }).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function verifyRestoredRemoteMedia(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  objects: readonly SnapshotR2Object[],
+): Promise<void> {
+  const restored = await cloudflare.listR2Objects(
+    cloudflareAccountId(config),
+    config.r2.name,
+  );
+  const expected = objects.map(({key, size}) => ({key, size}))
+    .map((value, index) => ({
+      ...value,
+      metadata: normalizedR2Metadata(objects[index]!),
+    }))
+    .sort((left, right) => left.key.localeCompare(right.key));
+  const actual = restored.map((object) => ({
+    key: object.key,
+    metadata: normalizedR2Metadata(object),
+    size: object.size,
+  }));
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      "Restored R2 object keys, sizes, or metadata do not match the snapshot.",
+    );
+  }
+}
+
+export interface SnapshotRestoreJournal {
+  accountId: string;
+  archiveSha256: string;
+  databaseId: string;
+  instanceId: string;
+  r2BucketName: string;
+  stage: string;
+  startedAt: string;
+}
+
+function restoreJournalPath(config: MicrofeedConfig): string {
+  return path.join(instanceDirectory(config.instanceName), "snapshot-restore.json");
+}
+
+async function readRestoreJournal(
+  config: MicrofeedConfig,
+): Promise<SnapshotRestoreJournal | null> {
+  try {
+    return JSON.parse(await readFile(restoreJournalPath(config), "utf8")) as
+      SnapshotRestoreJournal;
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function writeRestoreJournal(
+  config: MicrofeedConfig,
+  journal: SnapshotRestoreJournal,
+): Promise<void> {
+  await writeFile(
+    restoreJournalPath(config),
+    `${JSON.stringify(journal, null, 2)}\n`,
+    {encoding: "utf8", mode: 0o600},
+  );
+}
+
+export function validateRestoreJournal(
+  journal: SnapshotRestoreJournal,
+  config: MicrofeedConfig,
+  archiveSha256: string,
+): void {
+  if (
+    journal.archiveSha256 !== archiveSha256 ||
+    journal.accountId !== cloudflareAccountId(config) ||
+    journal.databaseId !== config.d1.id ||
+    journal.instanceId !== config.instanceId ||
+    journal.r2BucketName !== config.r2.name
+  ) {
+    throw new Error(
+      "A different snapshot restore is already in progress for this target. Resume it with the same archive before starting another restore.",
+    );
+  }
+}
+
+async function restoreSnapshotRemotely(
+  context: CommandContext,
+  archive: string,
+): Promise<void> {
+  const extractedDirectory = await mkdtemp(
+    path.join(tmpdir(), "microfeed-snapshot-remote-"),
+  );
+  try {
+    const {manifest} = await extractSnapshotArchive(archive, extractedDirectory);
+    const currentMigrations = await repositoryMigrations();
+    const {pending} = validateSnapshotMigrations(
+      manifest.database.migrations,
+      currentMigrations,
+    );
+    assertSnapshotTableHistory(manifest);
+    const config = await ensureWranglerConfig(false, false, context.instanceName);
+    if (config.d1.reuse || config.r2.reuse || !config.restoreBaseline) {
+      throw new Error(
+        "Remote restore requires a newly initialized target with nonreused D1 and R2 resources and a recorded initialization fingerprint.",
+      );
+    }
+    const accountId = cloudflareAccountId(config);
+    const account = await authenticate(context, accountId);
+    if (account.id !== accountId) {
+      throw new Error(`This installation belongs to Cloudflare account ${accountId}.`);
+    }
+    const archiveSha256 = await sha256File(archive);
+    const existingJournal = await readRestoreJournal(config);
+    if (existingJournal) {
+      validateRestoreJournal(existingJournal, config, archiveSha256);
+    } else {
+      const currentFingerprint = await remoteRestoreFingerprint(
+        context.cloudflare,
+        config,
+      );
+      if (currentFingerprint !== config.restoreBaseline.fingerprint) {
+        throw new Error(
+          "The remote target changed after initialization. Restore only to a fresh, unchanged target.",
+        );
+      }
+      const existingObjects = await context.cloudflare.listR2Objects(
+        accountId,
+        config.r2.name,
+      );
+      if (existingObjects.length > 0) {
+        throw new Error("The remote restore target's R2 bucket is not empty.");
+      }
+    }
+    prompts.note([
+      `Target instance: ${config.instanceName}`,
+      `D1 database: ${config.d1.name} (${config.d1.id})`,
+      `R2 bucket: ${config.r2.name}`,
+      `Snapshot source: ${manifest.source.instanceName}`,
+      `Snapshot migrations: ${manifest.database.migrations.length}`,
+      `Pending migrations: ${pending.length}`,
+      `R2 objects: ${manifest.media.objectCount}`,
+      `Mode: ${existingJournal ? "resume from archived source state" : "fresh restore"}`,
+    ].join("\n"), "Snapshot restore plan");
+    if (flagBoolean(context.flags, "dry-run")) {
+      prompts.outro(
+        `Dry run complete. Restore with \`--confirm ${config.instanceName}\`.`,
+      );
+      return;
+    }
+    if (flagBoolean(context.flags, "yes")) {
+      throw new Error("Remote snapshot restore does not support --yes.");
+    }
+    if (flagString(context.flags, "confirm") !== config.instanceName) {
+      throw new Error(
+        `Remote restore requires \`--confirm ${config.instanceName}\` after reviewing the dry run.`,
+      );
+    }
+    const journal: SnapshotRestoreJournal = existingJournal ?? {
+      accountId,
+      archiveSha256,
+      databaseId: config.d1.id,
+      instanceId: config.instanceId,
+      r2BucketName: config.r2.name,
+      stage: "validated",
+      startedAt: new Date().toISOString(),
+    };
+    await writeRestoreJournal(config, journal);
+    try {
+      const token = randomBytes(32).toString("base64url");
+      const endpoint = await deployMaintenanceWorker(
+        context,
+        config,
+        extractedDirectory,
+        token,
+      );
+      await waitForSnapshotWorker(endpoint, token);
+      journal.stage = "maintenance";
+      await writeRestoreJournal(config, journal);
+
+      const currentTables = applicationTablesFromSqlite(
+        await databaseTableNames(context.cloudflare, config),
+      );
+      const restoreSqlPath = path.join(extractedDirectory, "restore.sql");
+      await writeFile(restoreSqlPath, buildRestoreSql({
+        currentApplicationTables: currentTables,
+        dataSql: await readFile(
+          path.join(extractedDirectory, manifest.database.data.path),
+          "utf8",
+        ),
+        schemaSql: await readFile(
+          path.join(extractedDirectory, manifest.database.schema.path),
+          "utf8",
+        ),
+        snapshotApplicationTables: snapshotApplicationTables(manifest),
+      }), {encoding: "utf8", mode: 0o600});
+      await context.cloudflare.executeSqlFile(config, restoreSqlPath);
+      await verifyImportedRowCounts(context.cloudflare, config, manifest);
+      journal.stage = "database-imported";
+      await writeRestoreJournal(config, journal);
+      await context.cloudflare.applyMigrations(config);
+      const finalizationSqlPath = path.join(
+        extractedDirectory,
+        "finalize.sql",
+      );
+      await writeFile(
+        finalizationSqlPath,
+        buildRestoreFinalizationSql(config.instanceId),
+        {encoding: "utf8", mode: 0o600},
+      );
+      await context.cloudflare.executeSqlFile(config, finalizationSqlPath);
+      journal.stage = "migrations-applied";
+      await writeRestoreJournal(config, journal);
+
+      await context.cloudflare.emptyR2Bucket(accountId, config.r2.name);
+      for (const object of manifest.media.objects) {
+        await uploadRemoteObject(
+          endpoint,
+          token,
+          extractedDirectory,
+          object,
+        );
+      }
+      journal.stage = "media-restored";
+      await writeRestoreJournal(config, journal);
+      await verifyRestoredDatabase(context.cloudflare, config, manifest);
+      await verifyRestoredRemoteMedia(context.cloudflare, config, manifest.media.objects);
+      journal.stage = "verified";
+      await writeRestoreJournal(config, journal);
+
+      await deployConfiguredProject(context, config, false);
+      markStep(config, "snapshot-restored");
+      await writeConfig(config);
+      await unlink(restoreJournalPath(config));
+    } catch (error) {
+      throw new Error(
+        `${errorMessage(error)}\n\nThe target remains in maintenance mode. ` +
+          `Fix the cause and rerun the same command with the same archive and ` +
+          `\`--confirm ${config.instanceName}\`; it will restart from the archived schema and data.`,
+      );
+    }
+  } finally {
+    await rm(extractedDirectory, {force: true, recursive: true});
+  }
+}
+
+export async function snapshotCommand(
+  flags: Flags,
+  runner: CommandRunner = runCommand,
+): Promise<void> {
+  const action = flagString(flags, "action");
+  if (!action || !["create", "pull", "restore"].includes(action)) {
+    throw new Error(
+      "Snapshot action must be create, pull, or restore. Run `yarn manage help snapshot`.",
+    );
+  }
+  if (flagBoolean(flags, "preview")) {
+    throw new Error("Portable snapshots support production instances only.");
+  }
+  const context: CommandContext = {
+    cloudflare: new CloudflareClient(runner),
+    flags,
+    instanceName: undefined,
+    runner,
+  };
+  if (action === "create") {
+    if (flagBoolean(flags, "local")) {
+      throw new Error("Snapshot create exports a Cloudflare instance; remove --local.");
+    }
+    await resolveCommandInstance(context);
+    const output = snapshotOutputPath(flags, context.instanceName!);
+    prompts.intro("Create portable microfeed snapshot");
+    await createRemoteSnapshot(context, output);
+    prompts.outro(
+      `Snapshot created at ${output}. It contains sensitive data, is unencrypted, and is readable only by your user account.`,
+    );
+    return;
+  }
+  if (action === "pull") {
+    if (flagBoolean(flags, "local")) {
+      throw new Error("Snapshot pull already creates a local target; remove --local.");
+    }
+    await resolveCommandInstance(context);
+    const localInstance = flagString(flags, "local-instance");
+    if (!localInstance) {
+      throw new Error("Snapshot pull requires --local-instance <new-name>.");
+    }
+    const requestedOutput = flagString(flags, "output");
+    const temporaryDirectory = requestedOutput
+      ? null
+      : await mkdtemp(path.join(tmpdir(), "microfeed-snapshot-pull-"));
+    const output = requestedOutput
+      ? path.resolve(requestedOutput)
+      : path.join(temporaryDirectory!, "snapshot.tar.gz");
+    prompts.intro("Pull Cloudflare instance into a local snapshot");
+    try {
+      await createRemoteSnapshot(context, output);
+      await restoreSnapshotLocally(output, localInstance, runner);
+    } finally {
+      if (temporaryDirectory) {
+        await rm(temporaryDirectory, {force: true, recursive: true});
+      }
+    }
+    prompts.outro(
+      `Local instance ${localInstance} is ready. Run \`yarn dev --instance ${localInstance}\`.`,
+    );
+    return;
+  }
+  const archive = flagString(flags, "file");
+  if (!archive) {
+    throw new Error("Snapshot restore requires --file <backup.tar.gz>.");
+  }
+  const resolvedArchive = path.resolve(archive);
+  await stat(resolvedArchive).catch(() => {
+    throw new Error(`Snapshot file was not found: ${resolvedArchive}.`);
+  });
+  if (flagBoolean(flags, "local")) {
+    if (flagBoolean(flags, "dry-run") || flags.confirm !== undefined) {
+      throw new Error("--dry-run and --confirm apply only to remote snapshot restore.");
+    }
+    const targetInstance = flagString(flags, "instance");
+    if (!targetInstance) {
+      throw new Error("Local snapshot restore requires --instance <new-name>.");
+    }
+    prompts.intro("Restore portable snapshot locally");
+    await restoreSnapshotLocally(resolvedArchive, targetInstance, runner);
+    prompts.outro(
+      `Local restore complete. Run \`yarn dev --instance ${targetInstance}\`.`,
+    );
+    return;
+  }
+  if (flagBoolean(flags, "dry-run") && flags.confirm !== undefined) {
+    throw new Error("Use either --dry-run or --confirm for remote restore, not both.");
+  }
+  await resolveCommandInstance(context);
+  prompts.intro("Restore portable snapshot to Cloudflare");
+  await restoreSnapshotRemotely(context, resolvedArchive);
+  if (!flagBoolean(flags, "dry-run")) {
+    prompts.outro(`Remote restore complete for ${context.instanceName}.`);
+  }
 }

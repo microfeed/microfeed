@@ -29,6 +29,10 @@ export interface MicrofeedConfig {
     name: string;
     reuse: boolean;
   };
+  restoreBaseline?: {
+    createdAt: string;
+    fingerprint: string;
+  };
   workerName?: string;
 }
 

@@ -160,6 +160,23 @@ interface CloudflareApiEnvelope<T> {
   success?: boolean;
 }
 
+export interface R2ObjectListing {
+  customMetadata: Record<string, string>;
+  etag: string | null;
+  httpMetadata: {
+    cacheControl?: string;
+    cacheExpiry?: string;
+    contentDisposition?: string;
+    contentEncoding?: string;
+    contentLanguage?: string;
+    contentType?: string;
+  };
+  key: string;
+  size: number;
+  storageClass: string | null;
+  uploaded: string | null;
+}
+
 export interface WorkerDomain {
   hostname: string;
   id: string;
@@ -587,6 +604,31 @@ export class CloudflareClient {
     };
   }
 
+  private async apiRawRequest(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<Response> {
+    const credentials = await this.credentials();
+    const headers: Record<string, string> = credentials.type === "api_key"
+      ? {
+          "X-Auth-Email": credentials.email,
+          "X-Auth-Key": credentials.key,
+        }
+      : {Authorization: `Bearer ${credentials.token}`};
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4${path}`,
+      {...init, headers: {...headers, ...init.headers}},
+    );
+    if (!response.ok) {
+      const detail = (await response.text()).trim();
+      throw new Error(
+        detail ||
+          `Cloudflare API request failed for ${path} (HTTP ${response.status}).`,
+      );
+    }
+    return response;
+  }
+
   private async apiGet<T>(path: string): Promise<T> {
     return (await this.apiRequest<T>(path)).result;
   }
@@ -865,6 +907,105 @@ export class CloudflareClient {
     throw new Error(result.stderr.trim() || "Unable to check R2 bucket.");
   }
 
+  async listR2Objects(
+    accountId: string,
+    name: string,
+  ): Promise<R2ObjectListing[]> {
+    const bucketPath = `/accounts/${encodeURIComponent(accountId)}/r2/buckets/` +
+      `${encodeURIComponent(name)}/objects`;
+    const objects: R2ObjectListing[] = [];
+    let cursor: string | undefined;
+    do {
+      const query = new URLSearchParams();
+      if (cursor) {
+        query.set("cursor", cursor);
+      }
+      const response = await this.apiRequest<Array<Record<string, unknown>>>(
+        `${bucketPath}${query.size > 0 ? `?${query}` : ""}`,
+      );
+      for (const object of response.result) {
+        const key = object.key;
+        const size = object.size;
+        if (typeof key !== "string" || !Number.isSafeInteger(size) ||
+            Number(size) < 0) {
+          throw new Error("Cloudflare returned invalid R2 object metadata.");
+        }
+        const rawHttpMetadata = object.http_metadata ?? object.httpMetadata;
+        const rawCustomMetadata = object.custom_metadata ?? object.customMetadata;
+        const httpMetadata = rawHttpMetadata && typeof rawHttpMetadata === "object"
+          ? rawHttpMetadata as Record<string, unknown>
+          : {};
+        const customMetadata = rawCustomMetadata &&
+            typeof rawCustomMetadata === "object"
+          ? Object.fromEntries(Object.entries(rawCustomMetadata).flatMap(
+              ([metadataKey, metadataValue]) =>
+                typeof metadataValue === "string"
+                  ? [[metadataKey, metadataValue]]
+                  : [],
+            ))
+          : {};
+        const metadataValue = (camel: string, snake: string) => {
+          const value = httpMetadata[camel] ?? httpMetadata[snake];
+          return typeof value === "string" && value ? value : undefined;
+        };
+        objects.push({
+          customMetadata,
+          etag: typeof object.etag === "string" ? object.etag : null,
+          httpMetadata: {
+            ...(metadataValue("cacheControl", "cache_control")
+              ? {cacheControl: metadataValue("cacheControl", "cache_control")}
+              : {}),
+            ...(metadataValue("cacheExpiry", "cache_expiry")
+              ? {cacheExpiry: metadataValue("cacheExpiry", "cache_expiry")}
+              : {}),
+            ...(metadataValue("contentDisposition", "content_disposition")
+              ? {contentDisposition: metadataValue("contentDisposition", "content_disposition")}
+              : {}),
+            ...(metadataValue("contentEncoding", "content_encoding")
+              ? {contentEncoding: metadataValue("contentEncoding", "content_encoding")}
+              : {}),
+            ...(metadataValue("contentLanguage", "content_language")
+              ? {contentLanguage: metadataValue("contentLanguage", "content_language")}
+              : {}),
+            ...(metadataValue("contentType", "content_type")
+              ? {contentType: metadataValue("contentType", "content_type")}
+              : {}),
+          },
+          key,
+          size: Number(size),
+          storageClass: typeof object.storage_class === "string"
+            ? object.storage_class
+            : typeof object.storageClass === "string"
+              ? object.storageClass
+              : null,
+          uploaded: typeof object.last_modified === "string"
+            ? object.last_modified
+            : typeof object.uploaded === "string"
+              ? object.uploaded
+              : null,
+        });
+      }
+      const nextCursor = response.resultInfo?.cursor;
+      cursor = response.resultInfo?.is_truncated === true &&
+          typeof nextCursor === "string" && nextCursor
+        ? nextCursor
+        : undefined;
+    } while (cursor);
+    return objects.sort((left, right) => left.key.localeCompare(right.key));
+  }
+
+  async r2ObjectResponse(
+    accountId: string,
+    bucketName: string,
+    key: string,
+  ): Promise<Response> {
+    const encodedKey = encodeURIComponent(key).replaceAll("%2F", "/");
+    return this.apiRawRequest(
+      `/accounts/${encodeURIComponent(accountId)}/r2/buckets/` +
+        `${encodeURIComponent(bucketName)}/objects/${encodedKey}`,
+    );
+  }
+
   async deleteD1(accountId: string, databaseId: string): Promise<void> {
     await this.apiDelete(
       `/accounts/${encodeURIComponent(accountId)}/d1/database/` +
@@ -949,6 +1090,105 @@ export class CloudflareClient {
     );
   }
 
+  async queryD1(
+    config: MicrofeedConfig,
+    sql: string,
+    options: {local?: boolean; persistTo?: string} = {},
+  ): Promise<Array<Record<string, unknown>>> {
+    const local = options.local === true;
+    const result = await runWrangler(
+      this.runner,
+      [
+        "d1",
+        "execute",
+        local ? "FEED_DB" : config.d1.name,
+        local ? "--local" : "--remote",
+        "--command",
+        sql,
+        "--json",
+        "--config",
+        wranglerConfigPath(config),
+        ...(local
+          ? ["--persist-to", options.persistTo ?? localPersistencePath(config)]
+          : []),
+      ],
+      {
+        env: local
+          ? process.env
+          : accountEnvironment(cloudflareAccountId(config)),
+      },
+    );
+    const data = parseJsonOutput<unknown>(result.stdout);
+    const resultSets = Array.isArray(data) ? data : [data];
+    return resultSets.flatMap((resultSet) => {
+      if (!resultSet || typeof resultSet !== "object") {
+        return [];
+      }
+      const rows = (resultSet as {results?: unknown}).results;
+      return Array.isArray(rows)
+        ? rows.filter(
+            (row): row is Record<string, unknown> =>
+              Boolean(row) && typeof row === "object" && !Array.isArray(row),
+          )
+        : [];
+    });
+  }
+
+  async exportD1(
+    config: MicrofeedConfig,
+    output: string,
+    tables: readonly string[],
+    mode: "data" | "schema",
+  ): Promise<void> {
+    await runWrangler(
+      this.runner,
+      [
+        "d1",
+        "export",
+        config.d1.name,
+        "--remote",
+        "--output",
+        output,
+        "--skip-confirmation",
+        mode === "schema" ? "--no-data" : "--no-schema",
+        ...tables.flatMap((table) => ["--table", table]),
+        "--config",
+        wranglerConfigPath(config),
+      ],
+      {env: accountEnvironment(cloudflareAccountId(config))},
+    );
+  }
+
+  async executeSqlFile(
+    config: MicrofeedConfig,
+    filename: string,
+    options: {local?: boolean; persistTo?: string} = {},
+  ): Promise<void> {
+    const local = options.local === true;
+    await runWrangler(
+      this.runner,
+      [
+        "d1",
+        "execute",
+        local ? "FEED_DB" : config.d1.name,
+        local ? "--local" : "--remote",
+        "--file",
+        filename,
+        "--yes",
+        "--config",
+        wranglerConfigPath(config),
+        ...(local
+          ? ["--persist-to", options.persistTo ?? localPersistencePath(config)]
+          : []),
+      ],
+      {
+        env: local
+          ? process.env
+          : accountEnvironment(cloudflareAccountId(config)),
+      },
+    );
+  }
+
   async authOwner(
     config: MicrofeedConfig,
     local = false,
@@ -1023,27 +1263,7 @@ export class CloudflareClient {
     filename: string,
     local = false,
   ): Promise<void> {
-    await runWrangler(
-      this.runner,
-      [
-        "d1",
-        "execute",
-        local ? "FEED_DB" : config.d1.name,
-        local ? "--local" : "--remote",
-        "--file",
-        filename,
-        "--config",
-        wranglerConfigPath(config),
-        ...(local
-          ? ["--persist-to", localPersistencePath(config)]
-          : []),
-      ],
-      {
-        env: local
-          ? process.env
-          : accountEnvironment(cloudflareAccountId(config)),
-      },
-    );
+    await this.executeSqlFile(config, filename, {local});
   }
 
   async deploy(
@@ -1068,7 +1288,21 @@ export class CloudflareClient {
     return match?.[0] ?? null;
   }
 
-  async applyLocalMigrations(config: MicrofeedConfig): Promise<void> {
+  async deployWithConfig(
+    config: MicrofeedConfig,
+    configPath: string,
+  ): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["deploy", "--strict", "--config", configPath],
+      {env: accountEnvironment(cloudflareAccountId(config))},
+    );
+  }
+
+  async applyLocalMigrations(
+    config: MicrofeedConfig,
+    persistTo = localPersistencePath(config),
+  ): Promise<void> {
     await runWrangler(
       this.runner,
       [
@@ -1080,7 +1314,7 @@ export class CloudflareClient {
         "--config",
         wranglerConfigPath(config),
         "--persist-to",
-        localPersistencePath(config),
+        persistTo,
       ],
     );
   }

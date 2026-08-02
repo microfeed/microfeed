@@ -310,6 +310,7 @@ side effect, and safety check.
 | Create or resume a Cloudflare, preview, or local site | `yarn manage init` |
 | Connect an existing compatible microfeed Worker without changing it | `yarn manage connect` |
 | Deploy an update | `yarn manage deploy` |
+| Create, pull, or restore a whole-site backup | `yarn manage snapshot` |
 | Check deployment health and dashboard protection | `yarn manage status` |
 | List sites or select the default site | `yarn manage instances`, `yarn manage use` |
 | Add a custom domain | `yarn manage domain` |
@@ -776,34 +777,33 @@ It is always a good idea to carefully evaluate any service before using it to en
 <summary><b>How can I download or back up my microfeed data?</b></summary>
 
 microfeed stores metadata in Cloudflare D1 and media files in Cloudflare R2.
-microfeed does not yet provide a whole-site export command, so back up each
-service separately.
-
-<b>Export the D1 database</b>
-
-Use Wrangler's [`d1 export`
-command](https://developers.cloudflare.com/workers/wrangler/commands/d1/) to
-export the remote database as a SQL file:
+Create one portable, owner-readable archive containing the D1 schema and
+durable data, migration history, the entire R2 bucket, object metadata, and
+checksums:
 
 ```console
-wrangler d1 export <database-name> --remote --output ./microfeed-d1.sql
+yarn manage snapshot create --instance production --output backup.tar.gz
 ```
 
-<b>Export the R2 media bucket</b>
-
-Wrangler downloads R2 objects one at a time. For a complete bucket, follow
-Cloudflare's [R2 command-line
-guide](https://developers.cloudflare.com/r2/get-started/cli/) to configure
-`rclone` with R2's S3-compatible credentials, then copy the bucket to a local
-directory:
+You can also download a Cloudflare site and immediately create a new local copy
+with its real content:
 
 ```console
-rclone copy r2:<bucket-name> ./microfeed-r2-backup
+yarn manage snapshot pull \
+  --instance production \
+  --local-instance production-copy
 ```
 
-Here, `r2` is the example name of the configured rclone remote. A future
-`yarn manage` command may combine the D1 and R2 steps into a complete microfeed
-site export.
+Restore archives only with a checkout whose migration history exactly extends
+the snapshot's recorded history. Local restore requires a new local instance.
+Cloudflare restore requires a newly initialized site with nonreused, unchanged
+D1 and R2 resources, a successful dry run, and exact site-name confirmation.
+See the canonical [`snapshot` command reference](docs/manage-cli.md#yarn-manage-snapshot)
+for restore examples, migration rules, maintenance mode, and resume behavior.
+
+The archive contains administrator password hashes and possibly private media.
+It is unencrypted and created with owner-only file permissions, so store and
+encrypt it according to your backup policy.
 
 </details>
 

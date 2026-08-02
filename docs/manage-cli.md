@@ -20,6 +20,7 @@ you need the complete command and option contract. Run `yarn manage help
   - [`connect`](#yarn-manage-connect)
   - [`deploy`](#yarn-manage-deploy)
   - [`dev`](#yarn-manage-dev)
+  - [`snapshot`](#yarn-manage-snapshot)
   - [`status`](#yarn-manage-status)
   - [`destroy`](#yarn-manage-destroy)
   - [`migrate-pages`](#yarn-manage-migrate-pages)
@@ -73,6 +74,10 @@ use this `yarn manage` interface.
   command can resume safely.
 - Local development uses isolated D1 and R2 simulations. It does not copy or
   synchronize production data.
+- Snapshot restore validates every checksum and historical migration hash
+  before mutation. Remote restore requires an unchanged, newly initialized
+  target and exact instance-name confirmation, and leaves a resumable
+  maintenance journal if migration or data restoration fails.
 
 ## Command summary
 
@@ -83,6 +88,7 @@ use this `yarn manage` interface.
 | `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
 | `deploy` | Check, migrate, deploy, and verify | Updates Worker code and D1 migrations |
 | `dev` | Run a selected site locally | Starts a local server and changes local simulation data |
+| `snapshot` | Create, pull, or restore a portable backup | Read-only export, local state creation, or an exactly confirmed fresh remote replacement |
 | `status` | Verify resources and protection | Read-only Cloudflare and HTTP checks |
 | `destroy` | Inspect and remove a deployment | Permanent deletion unless data is preserved |
 | `migrate-pages` | Deploy a side-by-side Worker for Pages migration | Creates a Worker; preserves the Pages project and reused data |
@@ -299,6 +305,108 @@ yarn manage dev [--instance <name>] [--preview]
 | --- | --- |
 | `--instance <name>` | Select the local sandbox. |
 | `--preview` | Use preview configuration with isolated local data. |
+
+## `yarn manage snapshot`
+
+**Purpose:** Create, download, validate, and restore migration-safe portable snapshots.
+
+**Changes:** Creates a read-only export, restores a new local instance, or
+replaces the data in one explicitly confirmed fresh Cloudflare target.
+
+The archive is one `.tar.gz` containing `manifest.json`, separate D1 schema and
+durable-data SQL exports, and every object in the production R2 bucket. The
+manifest records SHA-256 checksums, object metadata, table classifications, row
+counts, and the exact ordered D1 migration filenames and hashes.
+
+```console
+yarn manage snapshot <create|pull|restore> [options]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `create\|pull\|restore` | Select the snapshot action. |
+| `--instance <name>` | Select the source or restore target instance. |
+| `--output <file>` | Choose a new `.tar.gz` output path for `create` or `pull`; existing files are never overwritten. |
+| `--local-instance <name>` | Choose the new local instance created by `pull`. |
+| `--file <file>` | Read this portable archive for `restore`. |
+| `--local` | Restore into a new local-only instance. |
+| `--dry-run` | Validate and print a remote restore plan without changing the target. |
+| `--confirm <name>` | Approve remote replacement by exactly matching the fresh target instance. |
+
+Examples:
+
+```console
+yarn manage snapshot create --instance production --output backup.tar.gz
+
+yarn manage snapshot pull \
+  --instance production \
+  --local-instance production-copy
+
+yarn manage snapshot restore \
+  --file backup.tar.gz \
+  --local \
+  --instance restored-local
+
+yarn manage init --instance restored-cloudflare
+
+yarn manage snapshot restore \
+  --file backup.tar.gz \
+  --instance restored-cloudflare \
+  --dry-run
+
+yarn manage snapshot restore \
+  --file backup.tar.gz \
+  --instance restored-cloudflare \
+  --confirm restored-cloudflare
+```
+
+### Migration safety
+
+Snapshot creation refuses a D1 migration ledger that is not an ordered prefix
+of this checkout's `migrations/` directory. It also refuses any application
+table absent from the explicit durable, ephemeral, target-specific, or internal
+classification. Released migration files and historical classifications are
+therefore immutable.
+
+Restore validates the complete archive before changing a target. Its migration
+list must be an exact filename-and-hash prefix of the current checkout:
+
+- An older snapshot restores its original schema and durable data, recreates
+  its `d1_migrations` ledger, and then applies only newer migrations.
+- A snapshot at the current head needs no forward migrations.
+- A newer, missing, reordered, edited, or divergent migration history is
+  rejected before mutation.
+
+Durable tables currently include channels, items, settings, users, and login
+accounts. Sessions, verification records, rate-limit state, and password
+setup/reset records are recreated empty. The target installation identity is
+rewritten, while the administrator email and password hash are preserved.
+`publicBucketUrl` is reset to `/media/`.
+
+### Restore safety and recovery
+
+Local restore requires a name that has never been initialized. It builds D1 and
+R2 state in a temporary persistence directory, verifies it, and only then makes
+that state active.
+
+Remote restore supports production targets only. First initialize a new target
+whose D1 and R2 resources are not reused. Initialization records a fingerprint
+of the fresh database and empty bucket. Restore rejects the target if that
+fingerprint changed. Always run `--dry-run`; mutation rejects `--yes` and
+requires the exact `--confirm <name>` value.
+
+After confirmation, the Worker enters maintenance mode. The CLI reimports the
+archived schema/data and ledger in one D1 import, applies forward migrations,
+replaces R2 content using streaming multipart uploads, verifies migrations,
+tables, indexes, foreign keys, administrator data, row counts, installation
+identity, and R2 keys/sizes, and only then deploys the current Worker. A failure
+keeps maintenance mode and an owner-only resume journal. Rerunning the same
+archive and confirmation starts again from the archived schema and data before
+retrying migrations.
+
+Snapshots include password hashes and possibly private media. They are
+unencrypted and created with owner-only (`0600`) permissions. Store and encrypt
+them according to your backup policy.
 
 ## `yarn manage status`
 

@@ -138,6 +138,34 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     usage: "yarn manage dev [--instance <name>] [--preview]",
   },
   {
+    changes: "Creates a read-only export, restores a new local instance, or replaces the data in one explicitly confirmed fresh Cloudflare target.",
+    details: [
+      "Actions: create packages D1 schema/data and the whole R2 bucket; pull creates that package and restores a new local instance; restore validates and imports one package.",
+      "Every archive records the exact applied migration filenames and SHA-256 hashes. Restore recreates that historical schema and ledger, then applies this checkout's newer migrations.",
+      "Remote restore requires a newly initialized target with nonreused, unchanged D1 and R2 resources. Run --dry-run before confirming the exact instance name.",
+      "Archives contain administrator credentials and private media, are unencrypted, and are created with owner-only file permissions.",
+    ],
+    examples: [
+      "yarn manage snapshot create --instance production --output backup.tar.gz",
+      "yarn manage snapshot pull --instance production --local-instance production-copy",
+      "yarn manage snapshot restore --file backup.tar.gz --local --instance restored-local",
+      "yarn manage snapshot restore --file backup.tar.gz --instance restored-cloudflare --dry-run",
+      "yarn manage snapshot restore --file backup.tar.gz --instance restored-cloudflare --confirm restored-cloudflare",
+    ],
+    name: "snapshot",
+    options: [
+      option("--instance <name>", "Select the source or restore target instance."),
+      option("--output <file>", "Choose a new .tar.gz output path for create or pull."),
+      option("--local-instance <name>", "Choose the new local instance created by pull."),
+      option("--file <file>", "Read this portable .tar.gz archive for restore."),
+      option("--local", "Restore into a new local-only instance."),
+      option("--dry-run", "Validate and print a remote restore plan without changing the target."),
+      option("--confirm <name>", "Approve a remote restore by exactly matching the fresh target instance."),
+    ],
+    summary: "Create, download, validate, and restore migration-safe portable snapshots.",
+    usage: "yarn manage snapshot <create|pull|restore> [options]",
+  },
+  {
     changes: "Read-only Cloudflare and public-site verification.",
     details: [
       "Checks the Worker, exact D1 identity, R2 bucket, public URL, administrator state, pending password link, and dashboard protection.",
