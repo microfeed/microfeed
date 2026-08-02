@@ -2,7 +2,9 @@ import {describe, expect, it} from "vitest";
 
 import {
   normalizeOwnerEmail,
+  ownerEmailUpdateSql,
   ownerInsertSql,
+  passwordResetSql,
   passwordSetupSql,
   validateOwnerPassword,
 } from "../../../manage-cli/lib/auth";
@@ -41,5 +43,22 @@ describe("Better Auth owner provisioning", () => {
     expect(sql).toContain("owner@example.com");
     expect(sql).toContain("ON CONFLICT");
     expect(sql).not.toContain(rawToken);
+  });
+
+  it("updates local credentials without retaining plaintext or sessions", async () => {
+    const owner = {
+      email: "owner@example.com",
+      id: "owner-id",
+      role: "admin",
+    };
+    const password = "a replacement private password";
+    const passwordSql = await passwordResetSql(owner, password);
+    const emailSql = ownerEmailUpdateSql(owner, " New-Owner@Example.com ");
+
+    expect(passwordSql).toContain('UPDATE "auth_account"');
+    expect(passwordSql).toContain('DELETE FROM "auth_session"');
+    expect(passwordSql).not.toContain(password);
+    expect(emailSql).toContain("new-owner@example.com");
+    expect(emailSql).toContain('DELETE FROM "auth_session"');
   });
 });

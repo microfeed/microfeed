@@ -318,6 +318,10 @@ durable-data SQL exports, and every object in the production R2 bucket. The
 manifest records SHA-256 checksums, object metadata, table classifications, row
 counts, and the exact ordered D1 migration filenames and hashes.
 
+Long-running snapshot creation and restore steps keep an animated elapsed-time
+indicator visible. Its brief status message changes as D1, migrations, R2, and
+verification work advances, then ends with a green success or red failure mark.
+
 ```console
 yarn manage snapshot <create|pull|restore> [options]
 ```
@@ -333,31 +337,87 @@ yarn manage snapshot <create|pull|restore> [options]
 | `--dry-run` | Validate and print a remote restore plan without changing the target. |
 | `--confirm <name>` | Approve remote replacement by exactly matching the fresh target instance. |
 
-Examples:
+### Common examples
+
+#### 1. Back up a production instance into one `.tar.gz` file
 
 ```console
-yarn manage snapshot create --instance production --output backup.tar.gz
+yarn manage snapshot create \
+  --instance my-podcast-domain-com \
+  --output my-podcast-domain-com-backup.tar.gz
+```
 
+#### 2. Create a local instance directly from a production instance
+
+```console
+# No separate .tar.gz download is required first. This command creates a
+# temporary snapshot, restores it into the new local instance, then removes it.
 yarn manage snapshot pull \
-  --instance production \
-  --local-instance production-copy
+  --instance my-podcast-domain-com \
+  --local-instance my-podcast-production-copy
+```
 
+Add `--output my-podcast-domain-com-backup.tar.gz` if you also want to keep the
+downloaded snapshot.
+
+#### 3. Create a local instance from a `.tar.gz` file
+
+```console
+# The local instance name must be new.
 yarn manage snapshot restore \
-  --file backup.tar.gz \
+  --file my-podcast-domain-com-backup.tar.gz \
   --local \
-  --instance restored-local
+  --instance my-podcast-archive-copy
+```
 
-yarn manage init --instance restored-cloudflare
+If the snapshot has no administrator account, the completed restore prints the
+exact next step for creating the local dashboard login:
 
+```console
+yarn manage auth setup \
+  --instance my-podcast-archive-copy
+```
+
+#### 4. Create a remote instance from a `.tar.gz` file
+
+```console
+# First initialize a fresh remote target with new, nonreused D1 and R2 resources.
+yarn manage init --instance restored-podcast-domain-com
+
+# Validate the archive and target without changing the remote instance.
 yarn manage snapshot restore \
-  --file backup.tar.gz \
-  --instance restored-cloudflare \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance restored-podcast-domain-com \
+  --dry-run
+
+# Then restore by confirming the exact target instance name.
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance restored-podcast-domain-com \
+  --confirm restored-podcast-domain-com
+```
+
+#### 5. Create one remote instance from another remote instance
+
+```console
+# A local .tar.gz handoff is currently required. Download the source first.
+yarn manage snapshot create \
+  --instance my-podcast-domain-com \
+  --output my-podcast-domain-com-backup.tar.gz
+
+# Initialize a fresh target with new, nonreused D1 and R2 resources.
+yarn manage init --instance new-podcast-domain-com
+
+# Validate the archive and target, then perform the confirmed restore.
+yarn manage snapshot restore \
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance new-podcast-domain-com \
   --dry-run
 
 yarn manage snapshot restore \
-  --file backup.tar.gz \
-  --instance restored-cloudflare \
-  --confirm restored-cloudflare
+  --file my-podcast-domain-com-backup.tar.gz \
+  --instance new-podcast-domain-com \
+  --confirm new-podcast-domain-com
 ```
 
 ### Migration safety
@@ -556,26 +616,53 @@ yarn manage auth [setup|reset-password|change-email|change-path|disable] [option
 
 | Action | Effect |
 | --- | --- |
-| `setup` | Enable the built-in login and create a first-password browser link when needed. |
-| `reset-password` | Create a single-use reset link; existing password remains valid until completion. |
+| `setup` | Remotely, enable the built-in login and create a first-password browser link when needed; locally, securely prompt for the initial password. |
+| `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. |
 | `change-email` | Update the administrator email and revoke existing sessions. |
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
 | `disable` | Disable built-in protection after a high-visibility warning; may make the dashboard public. |
 
-Without an action, the remote command presents a menu. Local authentication
-defaults to `setup` and supports no other action.
+Without an action, the remote command presents a menu. A saved local-only
+instance is detected automatically; its authentication command defaults to
+`setup` and also supports `change-email` and `reset-password`. Changing the
+dashboard path or disabling login remains remote-only.
+
+Target selection follows the saved instance type:
+
+- A local-only instance automatically uses its local data; `--local` is not
+  required.
+- A Cloudflare-connected instance targets Cloudflare by default. Add `--local`
+  only to target its separate local development sandbox.
+- `--preview` targets a Cloudflare preview and cannot be combined with a local
+  target.
+
+Snapshot restore still requires `--local` because it creates a brand-new local
+instance whose type cannot be inferred yet.
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the saved site. |
 | `--account-id <id>` | Confirm the exact saved account. |
 | `--preview` | Target the preview login. |
-| `--local` | Set up a local built-in login. |
+| `--local` | Use a Cloudflare-connected instance's separate local development sandbox; optional for local-only instances. |
 | `--owner-email <email>` | Supply the email for `setup` or `change-email`. |
 | `--admin-path <path>` | Set the new path for `change-path`. |
 | `--admin-password <value>` | Unsafe remote-only value for `setup` or `reset-password`. Never use from an agent. |
 | `--no-open` | Print a setup/reset link without opening it. |
 | `--yes` | Skip supported confirmations, including the `disable` warning. |
+
+Local examples:
+
+```console
+yarn manage auth change-email \
+  --instance microfeed-org-local \
+  --owner-email new-owner@example.com
+
+yarn manage auth reset-password \
+  --instance microfeed-org-local
+```
+
+Local password reset always uses hidden password and confirmation prompts.
 
 ## `yarn manage config`
 

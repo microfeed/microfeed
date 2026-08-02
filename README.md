@@ -351,7 +351,7 @@ and open the local microfeed admin dashboard directly. Add it later for a
 specific instance with:
 
 ```console
-yarn manage auth setup --local --instance my-podcast-custom-com
+yarn manage auth setup --instance my-podcast-custom-com
 ```
 
 For production, strongly protect `/admin/` with the built-in login,
@@ -638,10 +638,31 @@ If you skipped authentication during initialization, add the built-in login late
 yarn manage auth setup
 ```
 
-`yarn manage auth setup` creates a new first-password link when no administrator
-exists. `yarn manage auth reset-password` creates a one-time reset link for the
-existing administrator. Completing a reset signs out existing sessions; until
-then, the current password continues to work.
+For a Cloudflare instance, `yarn manage auth setup` creates a new first-password
+link when no administrator exists, and `yarn manage auth reset-password`
+creates a one-time reset link for the existing administrator. Completing a
+reset signs out existing sessions; until then, the current password continues
+to work.
+
+For a saved local-only instance, its name is enough: `yarn manage auth`
+automatically uses that instance's local data. Email changes and password
+resets update only that local instance:
+
+```console
+yarn manage auth change-email \
+  --instance microfeed-org-local \
+  --owner-email new-owner@example.com
+
+yarn manage auth reset-password \
+  --instance microfeed-org-local
+```
+
+The local password reset uses hidden password and confirmation prompts, hashes
+the replacement password, and signs out existing local sessions.
+
+For a Cloudflare-connected instance, auth commands target Cloudflare by
+default. Add `--local` only when you intentionally want that instance's
+separate local development sandbox.
 
 Remote automation can instead supply `--admin-password <value>` to production
 or preview initialization, `auth setup`, or `auth reset-password`. This is intentionally

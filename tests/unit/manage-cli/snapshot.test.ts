@@ -21,9 +21,11 @@ import {
   buildRestoreSql,
   createSnapshotArchive,
   extractSnapshotArchive,
+  migrationIndexDefinitions,
   repositoryMigrations,
   type SnapshotManifest,
   SNAPSHOT_FORMAT,
+  SNAPSHOT_TABLES,
   SNAPSHOT_VERSION,
   sha256File,
   validateAppliedMigrationPrefix,
@@ -32,8 +34,12 @@ import {
 } from "../../../manage-cli/lib/snapshot";
 import {repositoryRoot} from "../../../manage-cli/lib/process";
 import {
+  formatSnapshotBytes,
+  localSnapshotNextSteps,
   maintenanceWorkerSource,
   restoreLocalMedia,
+  snapshotCreatedMessage,
+  snapshotMediaProgressMessage,
   type SnapshotRestoreJournal,
   validateRestoreJournal,
   uploadRemoteObject,
@@ -102,9 +108,68 @@ describe("snapshot migration history", () => {
     expect(applicationTablesFromSqlite([
       "_cf_KV",
       "channels",
+      "d1_kv",
       "d1_migrations",
       "sqlite_sequence",
     ])).toEqual(["channels"]);
+    expect(SNAPSHOT_TABLES.internal).toContain("d1_kv");
+  });
+
+  it("extracts explicit index definitions without matching comments or data", () => {
+    expect(migrationIndexDefinitions(`
+      -- CREATE INDEX ignored_comment ON channels(status);
+      CREATE TABLE channels (id TEXT, status INTEGER, note TEXT);
+      INSERT INTO channels VALUES ('id', 1, 'CREATE INDEX ignored_data;');
+      CREATE UNIQUE INDEX IF NOT EXISTS "channel status"
+        ON channels(status);
+      /* CREATE INDEX ignored_block ON channels(note); */
+      CREATE INDEX [channel_note] ON channels(note);
+    `)).toEqual([
+      {
+        name: "channel status",
+        sql: "CREATE UNIQUE INDEX IF NOT EXISTS \"channel status\"\n" +
+          "        ON channels(status);",
+      },
+      {
+        name: "channel_note",
+        sql: "CREATE INDEX [channel_note] ON channels(note);",
+      },
+    ]);
+  });
+});
+
+describe("snapshot command progress", () => {
+  it("formats live media progress and the successful archive path", () => {
+    expect(formatSnapshotBytes(0)).toBe("0 B");
+    expect(formatSnapshotBytes(1536)).toBe("1.5 KiB");
+    expect(snapshotMediaProgressMessage({
+      downloadedBytes: 1536,
+      objectCount: 4,
+      objectNumber: 2,
+      totalBytes: 4 * 1024,
+    })).toBe("Downloading R2 media: object 2 of 4; 1.5 KiB of 4.0 KiB");
+    expect(snapshotMediaProgressMessage({
+      downloadedBytes: 0,
+      objectCount: 0,
+      objectNumber: 0,
+      totalBytes: 0,
+    })).toBe("R2 media bucket is empty; no objects to download");
+    expect(snapshotCreatedMessage("/tmp/microfeed-org.tar.gz")).toBe(
+      "✅ Snapshot created at /tmp/microfeed-org.tar.gz. It contains " +
+        "sensitive data, is unencrypted, and is readable only by your user account.",
+    );
+  });
+
+  it("prints the exact local login setup command only when it is needed", () => {
+    expect(localSnapshotNextSteps("microfeed-org-local", true)).toBe(
+      "Set up the local dashboard login:\n\n" +
+        "yarn manage auth setup \\\n" +
+        "  --instance microfeed-org-local\n\n" +
+        "Then run `yarn dev --instance microfeed-org-local` to start it.",
+    );
+    expect(localSnapshotNextSteps("microfeed-org-local", false)).toBe(
+      "Run `yarn dev --instance microfeed-org-local` to start it.",
+    );
   });
 });
 
@@ -165,10 +230,15 @@ function quoteSql(value: unknown): string {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-function snapshotSql(database: DatabaseSync): {data: string; schema: string} {
+function snapshotSql(
+  database: DatabaseSync,
+  includeIndexes = true,
+): {data: string; schema: string} {
   const schemaRows = database.prepare(
     "SELECT sql FROM sqlite_schema WHERE sql IS NOT NULL AND " +
-      "name NOT LIKE 'sqlite_%' ORDER BY type DESC, name",
+      "name NOT LIKE 'sqlite_%' " +
+      `${includeIndexes ? "" : "AND type <> 'index' "}` +
+      "ORDER BY type DESC, name",
   ).all() as Array<{sql: string}>;
   const tables = database.prepare(
     "SELECT name FROM sqlite_schema WHERE type = 'table' AND " +
@@ -215,12 +285,20 @@ describe("migration upgrades from historical snapshot positions", () => {
       createMigrationLedger(source);
       await applyMigrationRange(source, migrations, 0, position);
       insertRepresentativeData(source, position);
-      const exported = snapshotSql(source);
+      const exported = snapshotSql(source, false);
       const restored = new DatabaseSync(":memory:");
       restored.exec(exported.schema);
       restored.exec(
         `PRAGMA defer_foreign_keys=ON; BEGIN TRANSACTION;\n${exported.data}\nCOMMIT;`,
       );
+      const repairedIndexes: string[] = [];
+      for (const migration of migrations.slice(0, position)) {
+        repairedIndexes.push(...migrationIndexDefinitions(await readFile(
+          path.join(repositoryRoot, "migrations", migration.filename),
+          "utf8",
+        )).map(({sql}) => sql));
+      }
+      restored.exec(repairedIndexes.join("\n"));
       await applyMigrationRange(restored, migrations, position, migrations.length);
 
       for (const database of [normal, restored]) {
@@ -234,6 +312,18 @@ describe("migration upgrades from historical snapshot positions", () => {
         expect(database.prepare(
           "SELECT json_extract(data, '$.title') AS title FROM channels",
         ).get()).toEqual({title: "Saved channel"});
+        const indexes = database.prepare(
+          "SELECT name FROM sqlite_schema WHERE type = 'index' AND " +
+            "sql IS NOT NULL ORDER BY name",
+        ).all() as Array<{name: string}>;
+        expect(indexes.map(({name}) => name)).toEqual(
+          (await Promise.all(migrations.map(async (migration) =>
+            migrationIndexDefinitions(await readFile(
+              path.join(repositoryRoot, "migrations", migration.filename),
+              "utf8",
+            ))
+          ))).flat().map(({name}) => name).sort(),
+        );
         const tables = database.prepare(
           "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name",
         ).all() as Array<{name: string}>;

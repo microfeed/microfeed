@@ -31,7 +31,7 @@ export const SNAPSHOT_TABLES = {
     "auth_rate_limit",
     "auth_password_setup",
   ],
-  internal: ["_cf_KV"],
+  internal: ["_cf_KV", "d1_kv"],
   targetSpecific: ["microfeed_installation"],
 } as const;
 
@@ -40,6 +40,11 @@ export type SnapshotTableCategory = keyof typeof SNAPSHOT_TABLES;
 export interface SnapshotMigration {
   filename: string;
   sha256: string;
+}
+
+export interface SnapshotIndexDefinition {
+  name: string;
+  sql: string;
 }
 
 export interface SnapshotR2HttpMetadata {
@@ -418,6 +423,106 @@ export function validateSnapshotMigrations(
   return {pending: current.slice(snapshot.length)};
 }
 
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = "";
+  let quote: "'" | '"' | "`" | "]" | null = null;
+  let blockComment = false;
+  let lineComment = false;
+  for (let index = 0; index < sql.length; index += 1) {
+    const character = sql[index]!;
+    const next = sql[index + 1];
+    if (lineComment) {
+      if (character === "\n") {
+        lineComment = false;
+        current += character;
+      }
+      continue;
+    }
+    if (blockComment) {
+      if (character === "*" && next === "/") {
+        blockComment = false;
+        index += 1;
+      }
+      continue;
+    }
+    if (quote) {
+      current += character;
+      if (character === quote) {
+        if (next === quote && quote !== "]") {
+          current += next;
+          index += 1;
+        } else {
+          quote = null;
+        }
+      }
+      continue;
+    }
+    if (character === "-" && next === "-") {
+      lineComment = true;
+      index += 1;
+      continue;
+    }
+    if (character === "/" && next === "*") {
+      blockComment = true;
+      index += 1;
+      continue;
+    }
+    if (character === "'" || character === '"' || character === "`") {
+      quote = character;
+      current += character;
+      continue;
+    }
+    if (character === "[") {
+      quote = "]";
+      current += character;
+      continue;
+    }
+    if (character === ";") {
+      if (current.trim()) statements.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += character;
+  }
+  if (current.trim()) statements.push(current.trim());
+  return statements;
+}
+
+function indexName(statement: string): string | null {
+  const prefix = statement.match(
+    /^CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?/iu,
+  );
+  if (!prefix) return null;
+  const remaining = statement.slice(prefix[0].length);
+  const marker = remaining[0];
+  if (marker === '"' || marker === "`" || marker === "[") {
+    const closing = marker === "[" ? "]" : marker;
+    let name = "";
+    for (let index = 1; index < remaining.length; index += 1) {
+      const character = remaining[index]!;
+      if (character === closing) {
+        if (remaining[index + 1] === closing && marker !== "[") {
+          name += closing;
+          index += 1;
+          continue;
+        }
+        return name;
+      }
+      name += character;
+    }
+    return null;
+  }
+  return remaining.match(/^[^\s(]+/u)?.[0] ?? null;
+}
+
+export function migrationIndexDefinitions(sql: string): SnapshotIndexDefinition[] {
+  return splitSqlStatements(sql).flatMap((statement) => {
+    const name = indexName(statement);
+    return name ? [{name, sql: `${statement};`}] : [];
+  });
+}
+
 export function assertClassifiedTables(
   tables: readonly string[],
   classification: Record<SnapshotTableCategory, readonly string[]> =
@@ -442,10 +547,12 @@ export function assertClassifiedTables(
 }
 
 export function applicationTablesFromSqlite(tables: readonly string[]): string[] {
+  const internalTables = new Set<string>(SNAPSHOT_TABLES.internal);
   return tables.filter((table) =>
     table !== "d1_migrations" &&
     !table.startsWith("sqlite_") &&
-    !table.startsWith("_cf_")
+    !table.startsWith("_cf_") &&
+    !internalTables.has(table)
   ).sort((left, right) => left.localeCompare(right));
 }
 

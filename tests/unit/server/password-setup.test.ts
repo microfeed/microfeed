@@ -1,6 +1,9 @@
 import {describe, expect, it} from "vitest";
 
-import {adminDashboardLockedResponse} from "@/server/auth/admin-owner";
+import {
+  ADMIN_DASHBOARD_LOGIN_HELP_URL,
+  adminDashboardLockedResponse,
+} from "@/server/auth/admin-owner";
 import {isAdminPasswordSetupPath} from "@/server/auth/password-setup";
 
 describe("admin password setup routing", () => {
@@ -31,6 +34,26 @@ describe("admin password setup routing", () => {
     const response = adminDashboardLockedResponse();
 
     expect(response.status).toBe(403);
-    await expect(response.text()).resolves.toContain("locked");
+    expect(response.headers.get("content-type")).toBe(
+      "text/html; charset=utf-8",
+    );
+    const body = await response.text();
+    expect(body).toContain("The admin dashboard is locked");
+    expect(body).toContain(
+      `<a href="${ADMIN_DASHBOARD_LOGIN_HELP_URL}">` +
+        "Manage the dashboard login</a>",
+    );
+  });
+
+  it("keeps machine-oriented locked responses as plain text with the help URL", async () => {
+    const response = adminDashboardLockedResponse(false);
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("content-type")).toBe(
+      "text/plain; charset=utf-8",
+    );
+    const body = await response.text();
+    expect(body).toContain("The admin dashboard is locked");
+    expect(body).toContain(ADMIN_DASHBOARD_LOGIN_HELP_URL);
   });
 });

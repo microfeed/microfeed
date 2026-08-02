@@ -1,6 +1,7 @@
 import {createReadStream, createWriteStream} from "node:fs";
 import {createHash, randomBytes, randomUUID} from "node:crypto";
 import {
+  appendFile,
   mkdir,
   mkdtemp,
   readFile,
@@ -87,6 +88,8 @@ import {
   chooseLocalInstance,
   choosePagesProject,
   prompts,
+  type WaitActivity,
+  withSpinner,
 } from "./lib/prompts";
 import {
   applicationTablesFromSqlite,
@@ -95,8 +98,11 @@ import {
   buildRestoreSql,
   createSnapshotArchive,
   extractSnapshotArchive,
+  migrationIndexDefinitions,
   repositoryMigrations,
+  type SnapshotIndexDefinition,
   type SnapshotManifest,
+  type SnapshotMigration,
   type SnapshotR2Object,
   SNAPSHOT_FORMAT,
   SNAPSHOT_TABLES,
@@ -537,16 +543,24 @@ async function runChecks(
     MICROFEED_INSTANCE: config.instanceName,
     MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
   };
-  const spinner = prompts.spinner();
-  spinner.start("Generating Worker binding types");
-  await runYarnScript(runner, "types", {env});
-  spinner.message("Checking TypeScript and Astro");
-  await runYarnScript(runner, "typecheck", {env});
-  spinner.message("Running tests");
-  await runYarnScript(runner, "test", {env});
-  spinner.message("Building the Worker");
-  await runYarnScript(runner, "build", {env});
-  spinner.stop("Checks and build passed");
+  const execute = async (currentActivity: WaitActivity): Promise<void> => {
+    currentActivity.update("Generating Worker binding types");
+    await runYarnScript(runner, "types", {env});
+    currentActivity.update("Checking TypeScript and Astro");
+    await runYarnScript(runner, "typecheck", {env});
+    currentActivity.update("Running tests");
+    await runYarnScript(runner, "test", {env});
+    currentActivity.update("Building the Worker");
+    await runYarnScript(runner, "build", {env});
+  };
+  await withSpinner(
+    {
+      error: "Checks or build failed",
+      start: "Preparing checks and build",
+      success: "Checks and build passed",
+    },
+    execute,
+  );
 }
 
 async function withEphemeralSecretFile<T>(
@@ -903,7 +917,7 @@ function completedLocalInitializationMessage(
   return [
     `The local installation for \`${config.instanceName}\` is already initialized.`,
     `Use \`yarn manage dev --instance ${config.instanceName}\` to run it.`,
-    `Use \`yarn manage auth --local --instance ${config.instanceName}\` ` +
+    `Use \`yarn manage auth --instance ${config.instanceName}\` ` +
     "to manage the dashboard login.",
   ].join("\n");
 }
@@ -2019,7 +2033,7 @@ export function localAdminAuthSetupNotice(instanceName: string): {
       "Built-in email and password authentication is optional for local " +
       "development. Set it up now to try the production sign-in flow, " +
       "or add it later with " +
-      `\`yarn manage auth setup --local --instance ${instanceName}\`.\n\n` +
+      `\`yarn manage auth setup --instance ${instanceName}\`.\n\n` +
       "For production, we strongly recommend protecting `/admin/` with " +
       "the built-in login, Cloudflare Zero Trust Access, or both.",
     title: "Optional local dashboard login",
@@ -2064,7 +2078,7 @@ async function initializeLocal(context: CommandContext): Promise<void> {
   if (resumedWithoutBuiltInAuth) {
     prompts.log.info(
       "Built-in dashboard login remains disabled for this local instance. " +
-        `Add it with \`yarn manage auth setup --local --instance ${targetName}\`.`,
+        `Add it with \`yarn manage auth setup --instance ${targetName}\`.`,
     );
     await markLocalInitializationComplete(config);
     return;
@@ -2099,7 +2113,7 @@ async function initializeLocal(context: CommandContext): Promise<void> {
     prompts.note(
       "The local admin dashboard will open without a sign-in screen. Add " +
         "the built-in login later with " +
-        `\`yarn manage auth setup --local --instance ${targetName}\`.`,
+        `\`yarn manage auth setup --instance ${targetName}\`.`,
       "Built-in dashboard login skipped",
     );
     await markLocalInitializationComplete(config);
@@ -3317,9 +3331,24 @@ export async function authCommand(
     instanceName: undefined,
     runner,
   };
-  const local = flagBoolean(flags, "local");
+  const requestedLocal = flagBoolean(flags, "local");
   const preview = flagBoolean(flags, "preview");
-  await resolveCommandInstance(context, local);
+  await resolveCommandInstance(context, requestedLocal);
+  const savedConfig = context.instanceName
+    ? await readConfig(false, context.instanceName)
+    : null;
+  const inferredLocal = savedConfig !== null && isLocalOnly(savedConfig);
+  if (preview && inferredLocal) {
+    throw new Error(
+      `Instance \`${savedConfig.instanceName}\` is local only and has no ` +
+        "preview environment. Remove `--preview` or select a Cloudflare " +
+        "instance.",
+    );
+  }
+  if (preview && requestedLocal) {
+    throw new Error("`--local` and `--preview` cannot be used together.");
+  }
+  const local = requestedLocal || inferredLocal;
   const config = await ensureWranglerConfig(
     local,
     preview,
@@ -3356,24 +3385,69 @@ export async function authCommand(
     if (flags["admin-password"] !== undefined) {
       throw new Error(
         "`--admin-password` is not supported for local instances. Run the " +
-        "local password setup interactively so the password stays hidden.",
+        "local password setup or reset interactively so the password stays " +
+        "hidden.",
       );
     }
     validateUnsafeAdminPasswordFlag(flags);
-    if (action !== "setup") {
+    if (!["change-email", "reset-password", "setup"].includes(action)) {
       throw new Error(
-        "Local authentication supports `yarn manage auth setup --local`. " +
-        "Use the production or preview command for account changes.",
+        "Local authentication supports setup, change-email, and " +
+        "reset-password. Changing the dashboard path or disabling login " +
+        "requires a Cloudflare instance.",
       );
     }
     await context.cloudflare.applyLocalMigrations(config);
-    const owner = await ensureAuthOwner(context, config, true);
-    if (adminAuthMode(config) === "none") {
-      config.adminAuthMode = "built-in";
-      await writeConfig(config);
-      await generateWranglerConfig(config);
+    if (action === "setup") {
+      const owner = await ensureAuthOwner(context, config, true);
+      if (adminAuthMode(config) === "none") {
+        config.adminAuthMode = "built-in";
+        await writeConfig(config);
+        await generateWranglerConfig(config);
+      }
+      prompts.outro(`Local dashboard login ready for ${owner.email}.`);
+      return;
     }
-    prompts.outro(`Local dashboard login ready for ${owner.email}.`);
+    const owner = await context.cloudflare.authOwner(config, true);
+    if (!owner) {
+      throw new Error(
+        "No local dashboard login exists. Run " +
+          `\`yarn manage auth setup --instance ${config.instanceName}\` ` +
+          "first.",
+      );
+    }
+    if (action === "reset-password") {
+      const password = await promptForPassword(
+        "New dashboard login password",
+      );
+      await withEphemeralSqlFile(
+        `${await passwordResetSql(owner, password)}\n${
+          clearPasswordSetupSql()
+        }`,
+        (filename) =>
+          context.cloudflare.executeAuthSql(config, filename, true),
+      );
+      prompts.outro(
+        "Local dashboard password updated. Existing admin sessions were " +
+          "signed out.",
+      );
+      return;
+    }
+    const emailInput = flagString(flags, "owner-email") ??
+      await askText("New dashboard login email", owner.email);
+    const error = validateOwnerEmail(emailInput);
+    if (error) {
+      throw new Error(error);
+    }
+    await withEphemeralSqlFile(
+      ownerEmailUpdateSql(owner, emailInput),
+      (filename) => context.cloudflare.executeAuthSql(config, filename, true),
+    );
+    prompts.outro(
+      `Local dashboard login email changed to ${
+        normalizeOwnerEmail(emailInput)
+      }. Existing admin sessions were signed out.`,
+    );
     return;
   }
   validateUnsafeAdminPasswordFlag(flags);
@@ -4061,6 +4135,10 @@ function sqlIdentifier(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
+function sqlString(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
 async function databaseTableNames(
   cloudflare: CloudflareClient,
   config: MicrofeedConfig,
@@ -4072,6 +4150,30 @@ async function databaseTableNames(
     options,
   );
   return rows.flatMap(({name}) => typeof name === "string" ? [name] : []);
+}
+
+async function databaseIndexDefinitions(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  tables: readonly string[] | null = null,
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<SnapshotIndexDefinition[]> {
+  if (tables?.length === 0) return [];
+  const tableFilter = tables
+    ? ` AND tbl_name IN (${tables.map(sqlString).join(", ")})`
+    : "";
+  const rows = await cloudflare.queryD1(
+    config,
+    "SELECT name, sql FROM sqlite_schema WHERE type = 'index' " +
+      `AND sql IS NOT NULL${tableFilter} ORDER BY name`,
+    options,
+  );
+  return rows.map(({name, sql}) => {
+    if (typeof name !== "string" || !name || typeof sql !== "string" || !sql) {
+      throw new Error("D1 returned an invalid index definition.");
+    }
+    return {name, sql: `${sql.trim().replace(/;$/u, "")};`};
+  });
 }
 
 async function migrationLedger(
@@ -4174,6 +4276,61 @@ function snapshotOutputPath(flags: Flags, instanceName: string): string {
   return path.resolve(`microfeed-${instanceName}-${timestamp}.tar.gz`);
 }
 
+const SNAPSHOT_PROGRESS_REPORT_BYTES = 8 * 1024 * 1024;
+const SNAPSHOT_PROGRESS_REPORT_MS = 1_000;
+
+export function formatSnapshotBytes(bytes: number): string {
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  const displayed = unitIndex === 0
+    ? String(Math.round(value))
+    : value >= 10
+      ? value.toFixed(0)
+      : value.toFixed(1);
+  return `${displayed} ${units[unitIndex]}`;
+}
+
+export function snapshotMediaProgressMessage(input: {
+  downloadedBytes: number;
+  objectCount: number;
+  objectNumber: number;
+  totalBytes: number;
+}): string {
+  if (input.objectCount === 0) {
+    return "R2 media bucket is empty; no objects to download";
+  }
+  return `Downloading R2 media: object ${input.objectNumber} of ${input.objectCount}; ` +
+    `${formatSnapshotBytes(input.downloadedBytes)} of ${formatSnapshotBytes(input.totalBytes)}`;
+}
+
+export function snapshotCreatedMessage(output: string): string {
+  return `✅ Snapshot created at ${output}. It contains sensitive data, is ` +
+    "unencrypted, and is readable only by your user account.";
+}
+
+export function localSnapshotNextSteps(
+  instanceName: string,
+  needsLoginSetup: boolean,
+): string {
+  const startCommand = `yarn dev --instance ${instanceName}`;
+  if (!needsLoginSetup) {
+    return `Run \`${startCommand}\` to start it.`;
+  }
+  return [
+    "Set up the local dashboard login:",
+    "",
+    "yarn manage auth setup \\",
+    `  --instance ${instanceName}`,
+    "",
+    `Then run \`${startCommand}\` to start it.`,
+  ].join("\n");
+}
+
 async function assertPathDoesNotExist(filename: string): Promise<void> {
   try {
     await stat(filename);
@@ -4193,6 +4350,7 @@ async function downloadSnapshotObject(
   config: MicrofeedConfig,
   object: Awaited<ReturnType<CloudflareClient["listR2Objects"]>>[number],
   filename: string,
+  onBytes?: (bytes: number) => void,
 ): Promise<{sha256: string; size: number}> {
   const response = await cloudflare.r2ObjectResponse(
     cloudflareAccountId(config),
@@ -4208,6 +4366,7 @@ async function downloadSnapshotObject(
     transform(chunk: Buffer, _encoding, callback) {
       hash.update(chunk);
       size += chunk.length;
+      onBytes?.(chunk.length);
       callback(null, chunk);
     },
   });
@@ -4227,7 +4386,9 @@ async function downloadSnapshotObject(
 async function createRemoteSnapshot(
   context: CommandContext,
   output: string,
+  progress: (message: string) => void = () => undefined,
 ): Promise<string> {
+  progress("Checking the source instance and Cloudflare access");
   await assertPathDoesNotExist(output);
   const config = await ensureWranglerConfig(false, false, context.instanceName);
   if (config.deploymentEnvironment === "preview") {
@@ -4248,6 +4409,7 @@ async function createRemoteSnapshot(
       mkdir(databaseDirectory, {recursive: true}),
       mkdir(mediaDirectory, {recursive: true}),
     ]);
+    progress("Inspecting D1 schema and migration history");
     const migrations = await repositoryMigrations();
     const tableNames = await databaseTableNames(context.cloudflare, config);
     const applicationTables = applicationTablesFromSqlite(tableNames);
@@ -4259,39 +4421,107 @@ async function createRemoteSnapshot(
     );
     const schemaPath = path.join(databaseDirectory, "schema.sql");
     const dataPath = path.join(databaseDirectory, "data.sql");
+    progress("Exporting the D1 schema");
     await context.cloudflare.exportD1(
       config,
       schemaPath,
       [...applicationTables, "d1_migrations"],
       "schema",
     );
+    progress("Capturing explicit D1 indexes");
+    const indexDefinitions = await databaseIndexDefinitions(
+      context.cloudflare,
+      config,
+      applicationTables,
+    );
+    const exportedIndexNames = new Set(
+      migrationIndexDefinitions(await readFile(schemaPath, "utf8"))
+        .map(({name}) => name),
+    );
+    const missingIndexDefinitions = indexDefinitions.filter(
+      ({name}) => !exportedIndexNames.has(name),
+    );
+    if (missingIndexDefinitions.length > 0) {
+      await appendFile(
+        schemaPath,
+        `\n${missingIndexDefinitions.map(({sql}) => sql).join("\n")}\n`,
+        "utf8",
+      );
+    }
     const durableTables = SNAPSHOT_TABLES.durable.filter((table) =>
       applicationTables.includes(table)
     );
+    progress("Exporting durable D1 data and the migration ledger");
     await context.cloudflare.exportD1(
       config,
       dataPath,
       [...durableTables, "d1_migrations"],
       "data",
     );
+    progress("Counting durable D1 rows for restore verification");
     const rowCounts = await durableRowCounts(
       context.cloudflare,
       config,
       durableTables,
     );
+    progress("Listing R2 media objects");
     const listedObjects = await context.cloudflare.listR2Objects(
       accountId,
       config.r2.name,
     );
+    const totalMediaBytes = listedObjects.reduce(
+      (total, object) => total + object.size,
+      0,
+    );
+    let downloadedMediaBytes = 0;
+    let lastReportedBytes = 0;
+    let lastReportedAt = Date.now();
     const objects: SnapshotR2Object[] = [];
+    progress(snapshotMediaProgressMessage({
+      downloadedBytes: 0,
+      objectCount: listedObjects.length,
+      objectNumber: listedObjects.length > 0 ? 1 : 0,
+      totalBytes: totalMediaBytes,
+    }));
     for (const [index, object] of listedObjects.entries()) {
       const archivePath = `media/${String(index + 1).padStart(8, "0")}`;
+      progress(snapshotMediaProgressMessage({
+        downloadedBytes: downloadedMediaBytes,
+        objectCount: listedObjects.length,
+        objectNumber: index + 1,
+        totalBytes: totalMediaBytes,
+      }));
       const stored = await downloadSnapshotObject(
         context.cloudflare,
         config,
         object,
         path.join(temporaryDirectory, archivePath),
+        (bytes) => {
+          downloadedMediaBytes += bytes;
+          const now = Date.now();
+          if (
+            downloadedMediaBytes === totalMediaBytes ||
+            downloadedMediaBytes - lastReportedBytes >=
+              SNAPSHOT_PROGRESS_REPORT_BYTES ||
+            now - lastReportedAt >= SNAPSHOT_PROGRESS_REPORT_MS
+          ) {
+            progress(snapshotMediaProgressMessage({
+              downloadedBytes: downloadedMediaBytes,
+              objectCount: listedObjects.length,
+              objectNumber: index + 1,
+              totalBytes: totalMediaBytes,
+            }));
+            lastReportedBytes = downloadedMediaBytes;
+            lastReportedAt = now;
+          }
+        },
       );
+      progress(snapshotMediaProgressMessage({
+        downloadedBytes: downloadedMediaBytes,
+        objectCount: listedObjects.length,
+        objectNumber: index + 1,
+        totalBytes: totalMediaBytes,
+      }));
       objects.push({
         archivePath,
         customMetadata: object.customMetadata,
@@ -4304,6 +4534,7 @@ async function createRemoteSnapshot(
         uploaded: object.uploaded,
       });
     }
+    progress("Verifying D1 and R2 did not change during export");
     const [ledgerAfter, listedAfter] = await Promise.all([
       migrationLedger(context.cloudflare, config),
       context.cloudflare.listR2Objects(accountId, config.r2.name),
@@ -4327,6 +4558,7 @@ async function createRemoteSnapshot(
           ),
         ]),
     ) as SnapshotManifest["database"]["tables"];
+    progress("Writing the checksummed snapshot manifest");
     const manifest: SnapshotManifest = {
       createdAt: new Date().toISOString(),
       database: {
@@ -4355,6 +4587,7 @@ async function createRemoteSnapshot(
       version: SNAPSHOT_VERSION,
     };
     await writeSnapshotManifest(temporaryDirectory, manifest);
+    progress(`Compressing the snapshot into ${path.basename(output)}`);
     await createSnapshotArchive(temporaryDirectory, output);
     return output;
   } catch (error) {
@@ -4363,6 +4596,20 @@ async function createRemoteSnapshot(
   } finally {
     await rm(temporaryDirectory, {force: true, recursive: true});
   }
+}
+
+async function createRemoteSnapshotWithProgress(
+  context: CommandContext,
+  output: string,
+): Promise<string> {
+  return withSpinner(
+    {
+      error: "Snapshot creation failed",
+      start: "Preparing the portable snapshot",
+      success: "Snapshot data downloaded and packaged",
+    },
+    (activity) => createRemoteSnapshot(context, output, activity.update),
+  );
 }
 
 function assertSnapshotTableHistory(manifest: SnapshotManifest): void {
@@ -4397,18 +4644,42 @@ function snapshotApplicationTables(manifest: SnapshotManifest): string[] {
   ];
 }
 
-async function expectedSchemaIndexes(): Promise<string[]> {
-  const migrations = await repositoryMigrations();
-  const names: string[] = [];
-  for (const migration of migrations) {
+async function repositoryIndexDefinitions(
+  migrations?: readonly SnapshotMigration[],
+): Promise<SnapshotIndexDefinition[]> {
+  const selectedMigrations = migrations ?? await repositoryMigrations();
+  const definitions: SnapshotIndexDefinition[] = [];
+  for (const migration of selectedMigrations) {
     const sql = await readFile(path.join(repositoryRoot, "migrations", migration.filename), "utf8");
-    for (const match of sql.matchAll(
-      /CREATE\s+(?:UNIQUE\s+)?INDEX\s+IF\s+NOT\s+EXISTS\s+["`[]?([^"`\]\s]+)["`\]]?/giu,
-    )) {
-      names.push(match[1]!);
-    }
+    definitions.push(...migrationIndexDefinitions(sql));
   }
-  return names;
+  return definitions;
+}
+
+async function restoreSnapshotIndexes(
+  cloudflare: CloudflareClient,
+  config: MicrofeedConfig,
+  manifest: SnapshotManifest,
+  directory: string,
+  options: {local?: boolean; persistTo?: string} = {},
+): Promise<void> {
+  const expected = await repositoryIndexDefinitions(
+    manifest.database.migrations,
+  );
+  if (expected.length === 0) return;
+  const existing = new Set(
+    (await databaseIndexDefinitions(cloudflare, config, null, options))
+      .map(({name}) => name),
+  );
+  const missing = expected.filter(({name}) => !existing.has(name));
+  if (missing.length === 0) return;
+  const filename = path.join(directory, "restore-indexes.sql");
+  await writeFile(
+    filename,
+    `${missing.map(({sql}) => sql).join("\n")}\n`,
+    {encoding: "utf8", mode: 0o600},
+  );
+  await cloudflare.executeSqlFile(config, filename, options);
 }
 
 async function verifyImportedRowCounts(
@@ -4460,7 +4731,8 @@ async function verifyRestoredDatabase(
   const indexes = new Set(indexRows.flatMap(({name}) =>
     typeof name === "string" ? [name] : []
   ));
-  const missingIndexes = (await expectedSchemaIndexes()).filter((name) =>
+  const missingIndexes = (await repositoryIndexDefinitions()).map(({name}) => name)
+    .filter((name) =>
     !indexes.has(name)
   );
   if (missingIndexes.length > 0) {
@@ -4635,7 +4907,8 @@ async function restoreSnapshotLocally(
   archive: string,
   targetInstance: string,
   runner: CommandRunner,
-): Promise<void> {
+  progress: (message: string) => void = () => undefined,
+): Promise<{needsLoginSetup: boolean}> {
   const error = validateLocalInstanceName(targetInstance);
   if (error) {
     throw new Error(`Invalid instance name \`${targetInstance}\`. ${error}`);
@@ -4660,12 +4933,14 @@ async function restoreSnapshotLocally(
   );
   let createdConfig = false;
   try {
+    progress("Validating the snapshot archive and migration history");
     const {manifest} = await extractSnapshotArchive(archive, extractedDirectory);
     validateSnapshotMigrations(
       manifest.database.migrations,
       await repositoryMigrations(),
     );
     assertSnapshotTableHistory(manifest);
+    progress("Preparing the new local instance");
     const config = await ensureLocalOnlyConfig(targetInstance);
     createdConfig = true;
     const temporaryPersistence = path.join(
@@ -4689,16 +4964,27 @@ async function restoreSnapshotLocally(
         schemaSql,
         snapshotApplicationTables: snapshotApplicationTables(manifest),
       }), {encoding: "utf8", mode: 0o600});
+      progress("Importing the snapshot D1 schema and durable data");
       await new CloudflareClient(runner).executeSqlFile(
         config,
         restoreSqlPath,
         {local: true, persistTo: temporaryPersistence},
       );
       const cloudflare = new CloudflareClient(runner);
+      progress("Verifying imported D1 row counts");
       await verifyImportedRowCounts(cloudflare, config, manifest, {
         local: true,
         persistTo: temporaryPersistence,
       });
+      progress("Restoring historical D1 indexes");
+      await restoreSnapshotIndexes(
+        cloudflare,
+        config,
+        manifest,
+        extractedDirectory,
+        {local: true, persistTo: temporaryPersistence},
+      );
+      progress("Applying newer D1 migrations");
       await cloudflare.applyLocalMigrations(config, temporaryPersistence);
       const finalizationSqlPath = path.join(
         extractedDirectory,
@@ -4709,20 +4995,30 @@ async function restoreSnapshotLocally(
         buildRestoreFinalizationSql(config.instanceId),
         {encoding: "utf8", mode: 0o600},
       );
+      progress("Recreating local installation state");
       await cloudflare.executeSqlFile(config, finalizationSqlPath, {
         local: true,
         persistTo: temporaryPersistence,
       });
+      progress(
+        manifest.media.objectCount === 0
+          ? "The snapshot has no R2 media to restore"
+          : `Restoring ${manifest.media.objectCount} R2 media ${
+            manifest.media.objectCount === 1 ? "object" : "objects"
+          } locally`,
+      );
       await restoreLocalMedia(
         config,
         extractedDirectory,
         temporaryPersistence,
         manifest.media.objects,
       );
+      progress("Verifying the restored local D1 and R2 data");
       await verifyRestoredDatabase(cloudflare, config, manifest, {
         local: true,
         persistTo: temporaryPersistence,
       });
+      progress("Activating the restored local instance");
       const finalPersistence = localPersistencePath(config);
       await rename(temporaryPersistence, finalPersistence);
       markStep(config, "migrations-applied");
@@ -4730,6 +5026,9 @@ async function restoreSnapshotLocally(
       markStep(config, "initialization-complete");
       await writeConfig(config);
       await setActiveInstance(targetInstance);
+      return {
+        needsLoginSetup: (manifest.database.rowCounts.auth_user ?? 0) === 0,
+      };
     } catch (restoreError) {
       await rm(temporaryPersistence, {force: true, recursive: true});
       throw restoreError;
@@ -4742,6 +5041,27 @@ async function restoreSnapshotLocally(
   } finally {
     await rm(extractedDirectory, {force: true, recursive: true});
   }
+}
+
+async function restoreSnapshotLocallyWithProgress(
+  archive: string,
+  targetInstance: string,
+  runner: CommandRunner,
+): Promise<{needsLoginSetup: boolean}> {
+  return withSpinner(
+    {
+      error: "Local snapshot restore failed",
+      start: "Preparing the local snapshot restore",
+      success: "Snapshot data restored and verified locally",
+    },
+    (activity) =>
+      restoreSnapshotLocally(
+        archive,
+        targetInstance,
+        runner,
+        activity.update,
+      ),
+  );
 }
 
 const SNAPSHOT_RESTORE_ENDPOINT = "/__microfeed_snapshot_restore/v1";
@@ -5087,15 +5407,30 @@ async function restoreSnapshotRemotely(
     path.join(tmpdir(), "microfeed-snapshot-remote-"),
   );
   try {
-    const {manifest} = await extractSnapshotArchive(archive, extractedDirectory);
-    const currentMigrations = await repositoryMigrations();
-    const {pending} = validateSnapshotMigrations(
-      manifest.database.migrations,
-      currentMigrations,
+    const {manifest, pending} = await withSpinner(
+      {
+        error: "Snapshot archive validation failed",
+        start: "Validating the snapshot archive and checksums",
+        success: "Snapshot archive and migration history validated",
+      },
+      async (activity) => {
+        const {manifest} = await extractSnapshotArchive(
+          archive,
+          extractedDirectory,
+        );
+        activity.update("Comparing the snapshot and repository migrations");
+        const currentMigrations = await repositoryMigrations();
+        const {pending} = validateSnapshotMigrations(
+          manifest.database.migrations,
+          currentMigrations,
+        );
+        assertSnapshotTableHistory(manifest);
+        return {manifest, pending};
+      },
     );
-    assertSnapshotTableHistory(manifest);
     const config = await ensureWranglerConfig(false, false, context.instanceName);
-    if (config.d1.reuse || config.r2.reuse || !config.restoreBaseline) {
+    const restoreBaseline = config.restoreBaseline;
+    if (config.d1.reuse || config.r2.reuse || !restoreBaseline) {
       throw new Error(
         "Remote restore requires a newly initialized target with nonreused D1 and R2 resources and a recorded initialization fingerprint.",
       );
@@ -5105,28 +5440,40 @@ async function restoreSnapshotRemotely(
     if (account.id !== accountId) {
       throw new Error(`This installation belongs to Cloudflare account ${accountId}.`);
     }
-    const archiveSha256 = await sha256File(archive);
-    const existingJournal = await readRestoreJournal(config);
-    if (existingJournal) {
-      validateRestoreJournal(existingJournal, config, archiveSha256);
-    } else {
-      const currentFingerprint = await remoteRestoreFingerprint(
-        context.cloudflare,
-        config,
-      );
-      if (currentFingerprint !== config.restoreBaseline.fingerprint) {
-        throw new Error(
-          "The remote target changed after initialization. Restore only to a fresh, unchanged target.",
-        );
-      }
-      const existingObjects = await context.cloudflare.listR2Objects(
-        accountId,
-        config.r2.name,
-      );
-      if (existingObjects.length > 0) {
-        throw new Error("The remote restore target's R2 bucket is not empty.");
-      }
-    }
+    const {archiveSha256, existingJournal} = await withSpinner(
+      {
+        error: "Remote restore target validation failed",
+        start: "Checking the snapshot and fresh remote target",
+        success: "Fresh remote restore target validated",
+      },
+      async (activity) => {
+        const archiveSha256 = await sha256File(archive);
+        const existingJournal = await readRestoreJournal(config);
+        if (existingJournal) {
+          validateRestoreJournal(existingJournal, config, archiveSha256);
+        } else {
+          activity.update("Verifying the remote D1 initialization fingerprint");
+          const currentFingerprint = await remoteRestoreFingerprint(
+            context.cloudflare,
+            config,
+          );
+          if (currentFingerprint !== restoreBaseline.fingerprint) {
+            throw new Error(
+              "The remote target changed after initialization. Restore only to a fresh, unchanged target.",
+            );
+          }
+          activity.update("Verifying the remote R2 bucket is empty");
+          const existingObjects = await context.cloudflare.listR2Objects(
+            accountId,
+            config.r2.name,
+          );
+          if (existingObjects.length > 0) {
+            throw new Error("The remote restore target's R2 bucket is not empty.");
+          }
+        }
+        return {archiveSha256, existingJournal};
+      },
+    );
     prompts.note([
       `Target instance: ${config.instanceName}`,
       `D1 database: ${config.d1.name} (${config.d1.id})`,
@@ -5162,66 +5509,97 @@ async function restoreSnapshotRemotely(
     };
     await writeRestoreJournal(config, journal);
     try {
-      const token = randomBytes(32).toString("base64url");
-      const endpoint = await deployMaintenanceWorker(
-        context,
-        config,
-        extractedDirectory,
-        token,
-      );
-      await waitForSnapshotWorker(endpoint, token);
-      journal.stage = "maintenance";
-      await writeRestoreJournal(config, journal);
+      await withSpinner(
+        {
+          error: "Remote snapshot data restore failed",
+          start: "Putting the remote target into maintenance mode",
+          success: "Remote snapshot data restored and verified",
+        },
+        async (activity) => {
+          const token = randomBytes(32).toString("base64url");
+          const endpoint = await deployMaintenanceWorker(
+            context,
+            config,
+            extractedDirectory,
+            token,
+          );
+          activity.update("Waiting for the maintenance Worker to become ready");
+          await waitForSnapshotWorker(endpoint, token);
+          journal.stage = "maintenance";
+          await writeRestoreJournal(config, journal);
 
-      const currentTables = applicationTablesFromSqlite(
-        await databaseTableNames(context.cloudflare, config),
-      );
-      const restoreSqlPath = path.join(extractedDirectory, "restore.sql");
-      await writeFile(restoreSqlPath, buildRestoreSql({
-        currentApplicationTables: currentTables,
-        dataSql: await readFile(
-          path.join(extractedDirectory, manifest.database.data.path),
-          "utf8",
-        ),
-        schemaSql: await readFile(
-          path.join(extractedDirectory, manifest.database.schema.path),
-          "utf8",
-        ),
-        snapshotApplicationTables: snapshotApplicationTables(manifest),
-      }), {encoding: "utf8", mode: 0o600});
-      await context.cloudflare.executeSqlFile(config, restoreSqlPath);
-      await verifyImportedRowCounts(context.cloudflare, config, manifest);
-      journal.stage = "database-imported";
-      await writeRestoreJournal(config, journal);
-      await context.cloudflare.applyMigrations(config);
-      const finalizationSqlPath = path.join(
-        extractedDirectory,
-        "finalize.sql",
-      );
-      await writeFile(
-        finalizationSqlPath,
-        buildRestoreFinalizationSql(config.instanceId),
-        {encoding: "utf8", mode: 0o600},
-      );
-      await context.cloudflare.executeSqlFile(config, finalizationSqlPath);
-      journal.stage = "migrations-applied";
-      await writeRestoreJournal(config, journal);
+          activity.update("Importing the snapshot D1 schema and durable data");
+          const currentTables = applicationTablesFromSqlite(
+            await databaseTableNames(context.cloudflare, config),
+          );
+          const restoreSqlPath = path.join(extractedDirectory, "restore.sql");
+          await writeFile(restoreSqlPath, buildRestoreSql({
+            currentApplicationTables: currentTables,
+            dataSql: await readFile(
+              path.join(extractedDirectory, manifest.database.data.path),
+              "utf8",
+            ),
+            schemaSql: await readFile(
+              path.join(extractedDirectory, manifest.database.schema.path),
+              "utf8",
+            ),
+            snapshotApplicationTables: snapshotApplicationTables(manifest),
+          }), {encoding: "utf8", mode: 0o600});
+          await context.cloudflare.executeSqlFile(config, restoreSqlPath);
+          activity.update("Verifying imported D1 row counts and indexes");
+          await verifyImportedRowCounts(context.cloudflare, config, manifest);
+          await restoreSnapshotIndexes(
+            context.cloudflare,
+            config,
+            manifest,
+            extractedDirectory,
+          );
+          journal.stage = "database-imported";
+          await writeRestoreJournal(config, journal);
+          activity.update("Applying newer D1 migrations");
+          await context.cloudflare.applyMigrations(config);
+          const finalizationSqlPath = path.join(
+            extractedDirectory,
+            "finalize.sql",
+          );
+          await writeFile(
+            finalizationSqlPath,
+            buildRestoreFinalizationSql(config.instanceId),
+            {encoding: "utf8", mode: 0o600},
+          );
+          activity.update("Recreating target-specific installation state");
+          await context.cloudflare.executeSqlFile(config, finalizationSqlPath);
+          journal.stage = "migrations-applied";
+          await writeRestoreJournal(config, journal);
 
-      await context.cloudflare.emptyR2Bucket(accountId, config.r2.name);
-      for (const object of manifest.media.objects) {
-        await uploadRemoteObject(
-          endpoint,
-          token,
-          extractedDirectory,
-          object,
-        );
-      }
-      journal.stage = "media-restored";
-      await writeRestoreJournal(config, journal);
-      await verifyRestoredDatabase(context.cloudflare, config, manifest);
-      await verifyRestoredRemoteMedia(context.cloudflare, config, manifest.media.objects);
-      journal.stage = "verified";
-      await writeRestoreJournal(config, journal);
+          activity.update("Preparing the remote R2 media restore");
+          await context.cloudflare.emptyR2Bucket(accountId, config.r2.name);
+          for (const [index, object] of manifest.media.objects.entries()) {
+            activity.update(
+              `Restoring R2 media: object ${index + 1} of ${
+                manifest.media.objectCount
+              }`,
+            );
+            await uploadRemoteObject(
+              endpoint,
+              token,
+              extractedDirectory,
+              object,
+            );
+          }
+          journal.stage = "media-restored";
+          await writeRestoreJournal(config, journal);
+          activity.update("Verifying the restored remote D1 and R2 data");
+          await verifyRestoredDatabase(context.cloudflare, config, manifest);
+          await verifyRestoredRemoteMedia(
+            context.cloudflare,
+            config,
+            manifest.media.objects,
+          );
+          journal.stage = "verified";
+          await writeRestoreJournal(config, journal);
+        },
+      );
 
       await deployConfiguredProject(context, config, false);
       markStep(config, "snapshot-restored");
@@ -5265,10 +5643,8 @@ export async function snapshotCommand(
     await resolveCommandInstance(context);
     const output = snapshotOutputPath(flags, context.instanceName!);
     prompts.intro("Create portable microfeed snapshot");
-    await createRemoteSnapshot(context, output);
-    prompts.outro(
-      `Snapshot created at ${output}. It contains sensitive data, is unencrypted, and is readable only by your user account.`,
-    );
+    await createRemoteSnapshotWithProgress(context, output);
+    prompts.outro(snapshotCreatedMessage(output));
     return;
   }
   if (action === "pull") {
@@ -5288,16 +5664,25 @@ export async function snapshotCommand(
       ? path.resolve(requestedOutput)
       : path.join(temporaryDirectory!, "snapshot.tar.gz");
     prompts.intro("Pull Cloudflare instance into a local snapshot");
+    let restoreResult!: {needsLoginSetup: boolean};
     try {
-      await createRemoteSnapshot(context, output);
-      await restoreSnapshotLocally(output, localInstance, runner);
+      await createRemoteSnapshotWithProgress(context, output);
+      restoreResult = await restoreSnapshotLocallyWithProgress(
+        output,
+        localInstance,
+        runner,
+      );
     } finally {
       if (temporaryDirectory) {
         await rm(temporaryDirectory, {force: true, recursive: true});
       }
     }
     prompts.outro(
-      `Local instance ${localInstance} is ready. Run \`yarn dev --instance ${localInstance}\`.`,
+      `Local instance ${localInstance} is ready.\n\n` +
+        localSnapshotNextSteps(
+          localInstance,
+          restoreResult.needsLoginSetup,
+        ),
     );
     return;
   }
@@ -5318,9 +5703,17 @@ export async function snapshotCommand(
       throw new Error("Local snapshot restore requires --instance <new-name>.");
     }
     prompts.intro("Restore portable snapshot locally");
-    await restoreSnapshotLocally(resolvedArchive, targetInstance, runner);
+    const restoreResult = await restoreSnapshotLocallyWithProgress(
+      resolvedArchive,
+      targetInstance,
+      runner,
+    );
     prompts.outro(
-      `Local restore complete. Run \`yarn dev --instance ${targetInstance}\`.`,
+      "Local restore complete.\n\n" +
+        localSnapshotNextSteps(
+          targetInstance,
+          restoreResult.needsLoginSetup,
+        ),
     );
     return;
   }

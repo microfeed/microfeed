@@ -142,6 +142,8 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Actions: create packages D1 schema/data and the whole R2 bucket; pull creates that package and restores a new local instance; restore validates and imports one package.",
       "Every archive records the exact applied migration filenames and SHA-256 hashes. Restore recreates that historical schema and ledger, then applies this checkout's newer migrations.",
+      "Long-running create and restore phases show an animated elapsed-time indicator with brief D1, migration, R2, and verification updates.",
+      "When a restored local snapshot has no administrator account, completion prints the exact auth setup command for the new instance.",
       "Remote restore requires a newly initialized target with nonreused, unchanged D1 and R2 resources. Run --dry-run before confirming the exact instance name.",
       "Archives contain administrator credentials and private media, are unencrypted, and are created with owner-only file permissions.",
     ],
@@ -281,8 +283,9 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Updates administrator credentials, configuration, D1 rows, and sometimes redeploys the Worker.",
     details: [
-      "Actions: setup, reset-password, change-email, change-path, and disable. Without an action, the remote command presents a menu; local defaults to setup.",
-      "Browser password setup/reset is preferred. The raw --admin-password option is remote-only and intentionally unsafe.",
+      "Actions: setup, reset-password, change-email, change-path, and disable. Without an action, the remote command presents a menu; a saved local-only instance is detected automatically, defaults to setup, and also supports reset-password and change-email.",
+      "Cloudflare-connected instances target Cloudflare by default. Use --local only for their separate local development sandbox. Snapshot restore still needs --local because its target does not exist yet.",
+      "Remote password setup/reset uses a browser link; local setup/reset uses hidden password and confirmation prompts. The raw --admin-password option is remote-only and intentionally unsafe.",
     ],
     examples: [
       "yarn manage auth setup --instance personal --owner-email me@example.com",
@@ -290,13 +293,15 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "yarn manage auth change-email --instance personal --owner-email new@example.com",
       "yarn manage auth change-path --instance personal --admin-path dashboard",
       "yarn manage auth disable --instance personal",
+      "yarn manage auth change-email --instance restored-local --owner-email new-owner@example.com",
+      "yarn manage auth reset-password --instance restored-local",
     ],
     name: "auth",
     options: [
       option("--instance <name>", "Select the saved site."),
       option("--account-id <id>", "Confirm the exact saved Cloudflare account."),
       option("--preview", "Target the preview login."),
-      option("--local", "Set up a local built-in login; other actions are remote-only."),
+      option("--local", "Use a connected site's separate local development sandbox."),
       option("--owner-email <email>", "Supply the email for setup or change-email."),
       option("--admin-path <path>", "Set the new path for change-path."),
       option("--admin-password <value>", "Unsafe remote-only password for setup or reset-password."),

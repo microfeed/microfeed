@@ -17,7 +17,9 @@ import type {
 
 const temporaryDirectories: string[] = [];
 
-async function freshModules() {
+async function freshModules(
+  options: {passwordAnswers?: string[]} = {},
+) {
   const directory = await mkdtemp(
     path.join(tmpdir(), "microfeed-instance-test-"),
   );
@@ -27,6 +29,24 @@ async function freshModules() {
   // set to its deployment target. These tests exercise instance selection
   // themselves, so they must not inherit the outer management command.
   vi.stubEnv("MICROFEED_INSTANCE", "");
+  if (options.passwordAnswers) {
+    const passwordAnswers = [...options.passwordAnswers];
+    vi.doMock("@clack/prompts", async (importOriginal) => {
+      const actual = await importOriginal<typeof import("@clack/prompts")>();
+      return {
+        ...actual,
+        password: vi.fn(async () => {
+          const answer = passwordAnswers.shift();
+          if (answer === undefined) {
+            throw new Error("No test password answer remains.");
+          }
+          return answer;
+        }),
+      };
+    });
+  } else {
+    vi.doUnmock("@clack/prompts");
+  }
   vi.resetModules();
   // Import commands first so its config and prompt dependencies populate
   // Vitest's module cache before the test requests those modules directly.
@@ -86,6 +106,30 @@ function configurableLocalOwnerRunner(
             }]
           : [],
       }]));
+    }
+    throw new Error(`Unexpected command: ${command}`);
+  });
+}
+
+function localAuthMutationRunner(sqlStatements: string[]): CommandRunner {
+  return vi.fn<CommandRunner>(async (_executable, args) => {
+    const command = args.join(" ");
+    if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
+      return commandResult("Migrations applied");
+    }
+    if (command.startsWith("d1 execute FEED_DB --local --command ")) {
+      return commandResult(JSON.stringify([{
+        results: [{
+          email: "owner@example.com",
+          id: "owner-id",
+          role: "admin",
+        }],
+      }]));
+    }
+    if (command.startsWith("d1 execute FEED_DB --local --file ")) {
+      const fileIndex = args.indexOf("--file");
+      sqlStatements.push(await readFile(args[fileIndex + 1]!, "utf8"));
+      return commandResult("SQL executed");
     }
     throw new Error(`Unexpected command: ${command}`);
   });
@@ -177,6 +221,7 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.doUnmock("@clack/prompts");
   vi.resetModules();
   await Promise.all(
     temporaryDirectories.splice(0).map((directory) =>
@@ -254,7 +299,7 @@ describe("first-class local instances", () => {
       .toBe(true);
   });
 
-  it("keeps auth setup compatibility and explains the local sandbox", async () => {
+  it("keeps explicit local auth compatibility and infers the active local instance", async () => {
     const {commands, config} = await freshModules();
     const runner = existingLocalOwnerRunner();
     const output = vi.spyOn(process.stdout, "write").mockImplementation(
@@ -268,6 +313,12 @@ describe("first-class local instances", () => {
         instanceName: "local",
       }),
     );
+    await commands.authCommand({}, runner);
+    await expect(
+      commands.authCommand({instance: "local", preview: true}, runner),
+    ).rejects.toThrow(
+      "Instance `local` is local only and has no preview environment.",
+    );
 
     await commands.devCommand({instance: "local"}, runner);
     const text = output.mock.calls.map(([value]) => String(value)).join("");
@@ -275,6 +326,43 @@ describe("first-class local instances", () => {
       "Production D1 and R2 data will not be accessed or changed.",
     );
     expect(text).toContain("Instance type: Local only");
+  });
+
+  it("changes the local login email and resets its password safely", async () => {
+    const password = "a replacement private password";
+    const {commands, config} = await freshModules({
+      passwordAnswers: [password, password],
+    });
+    const sqlStatements: string[] = [];
+    const runner = localAuthMutationRunner(sqlStatements);
+    await config.ensureLocalOnlyConfig("restored-local");
+
+    await commands.authCommand({
+      action: "change-email",
+      instance: "restored-local",
+      "owner-email": " New-Owner@Example.com ",
+    }, runner);
+    await commands.authCommand({
+      action: "reset-password",
+      instance: "restored-local",
+    }, runner);
+
+    expect(sqlStatements).toHaveLength(2);
+    expect(sqlStatements[0]).toContain("new-owner@example.com");
+    expect(sqlStatements[0]).toContain('DELETE FROM "auth_session"');
+    expect(sqlStatements[1]).toContain('UPDATE "auth_account"');
+    expect(sqlStatements[1]).toContain('DELETE FROM "auth_session"');
+    expect(sqlStatements[1]).toContain('DELETE FROM "auth_password_setup"');
+    expect(sqlStatements[1]).not.toContain(password);
+    const fileCommands = (runner as ReturnType<typeof vi.fn>).mock.calls
+      .map(([, args]) => args.join(" "))
+      .filter((command) => command.includes("--file"));
+    expect(fileCommands).toHaveLength(2);
+    expect(fileCommands.every((command) =>
+      command.includes("instances/restored-local/local-state") &&
+      command.includes("--local") &&
+      !command.includes("--remote")
+    )).toBe(true);
   });
 
   it("can skip local login and enable it later for the same instance", async () => {
@@ -305,14 +393,13 @@ describe("first-class local instances", () => {
       .join("\n")
       .replaceAll(/\s+/gu, " ");
     expect(setupOutput).toContain(
-      "yarn manage auth setup --local --instance",
+      "yarn manage auth setup --instance",
     );
 
     ownerExists = true;
     await commands.authCommand({
       action: "setup",
       instance: "practice",
-      local: true,
     }, runner);
 
     const enabled = await config.readConfig(false, "practice");

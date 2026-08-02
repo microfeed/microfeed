@@ -720,7 +720,7 @@ describe("optional local admin authentication", () => {
       message:
         "Built-in email and password authentication is optional for local " +
         "development. Set it up now to try the production sign-in flow, " +
-        "or add it later with `yarn manage auth setup --local --instance " +
+        "or add it later with `yarn manage auth setup --instance " +
         "practice`.\n\nFor production, we strongly recommend protecting " +
         "`/admin/` with the built-in login, Cloudflare Zero Trust Access, " +
         "or both.",
