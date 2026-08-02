@@ -34,14 +34,22 @@ import {
 } from "../../../manage-cli/lib/snapshot";
 import {repositoryRoot} from "../../../manage-cli/lib/process";
 import {
+  canRepairRemoteRestoreBaseline,
   formatSnapshotBytes,
   localSnapshotNextSteps,
   maintenanceWorkerSource,
+  remoteRestoreBaselineRepairNotice,
+  remoteRestoreTargetReadinessError,
   restoreLocalMedia,
+  restoredRemoteMediaMismatch,
   snapshotCreatedMessage,
+  snapshotMaintenanceRouting,
   snapshotMediaProgressMessage,
   type SnapshotRestoreJournal,
+  snapshotWorkerErrorDetail,
+  validateRemoteRestoreBaselineRepair,
   validateRestoreJournal,
+  verifyRestoredRemoteMediaWithRetries,
   uploadRemoteObject,
 } from "../../../manage-cli/commands";
 import type {MicrofeedConfig} from "../../../manage-cli/types";
@@ -445,6 +453,38 @@ describe("remote restore resume journal", () => {
     expect(source).toContain("status: 503");
   });
 
+  it("temporarily enables a private workers.dev control endpoint", () => {
+    expect(snapshotMaintenanceRouting(config)).toEqual({
+      preview_urls: false,
+      routes: [],
+      workers_dev: true,
+    });
+    expect(snapshotMaintenanceRouting({
+      ...config,
+      customDomain: "copy.example.com",
+    })).toEqual({
+      preview_urls: false,
+      routes: [{
+        custom_domain: true,
+        pattern: "copy.example.com",
+      }],
+      workers_dev: true,
+    });
+  });
+
+  it("summarizes an HTML endpoint error instead of printing the whole page", () => {
+    expect(snapshotWorkerErrorDetail(
+      "<!doctype html><title>Page not found</title><body>large page</body>",
+      "text/html; charset=UTF-8",
+    )).toBe(
+      "Cloudflare returned an HTML page titled `Page not found` instead of " +
+        "the maintenance API.",
+    );
+    expect(snapshotWorkerErrorDetail("", "text/plain")).toBe(
+      "No error detail was returned.",
+    );
+  });
+
   it("aborts an incomplete remote multipart upload after a streamed part failure", async () => {
     const directory = await temporaryDirectory("microfeed-multipart-");
     await mkdir(path.join(directory, "media"));
@@ -494,6 +534,324 @@ describe("remote restore resume journal", () => {
       },
     )).rejects.toThrow("injected failure");
     expect(actions).toEqual(["create", "part", "abort"]);
+  });
+
+  it("reports exact restored R2 inventory differences", () => {
+    const object = {
+      archivePath: "media/00000001",
+      customMetadata: {},
+      etag: null,
+      httpMetadata: {
+        cacheControl: "no-cache",
+        contentType: "image/png",
+      },
+      key: "production/cover.png",
+      sha256: "0".repeat(64),
+      size: 12,
+      storageClass: "Standard",
+      uploaded: null,
+    };
+    expect(restoredRemoteMediaMismatch([object], [{
+      customMetadata: {},
+      httpMetadata: {contentType: "image/png"},
+      key: object.key,
+      size: 11,
+      storageClass: "Standard",
+    }, {
+      key: "unexpected.txt",
+      size: 1,
+    }])).toBe(
+      "Restored R2 verification found 3 differences (snapshot: 1 objects; " +
+        "restored: 2 objects):\n" +
+        "- \"production/cover.png\" has 11 bytes; expected 12\n" +
+        "- \"production/cover.png\" metadata is " +
+        '{"customMetadata":{},"httpMetadata":{"contentType":"image/png"},' +
+        '"storageClass":"Standard"}; expected ' +
+        '{"customMetadata":{},"httpMetadata":{"cacheControl":"no-cache",' +
+        '"contentType":"image/png"},"storageClass":"Standard"}\n' +
+        '- unexpected object "unexpected.txt"',
+    );
+    expect(restoredRemoteMediaMismatch([object], [{
+      customMetadata: {},
+      httpMetadata: object.httpMetadata,
+      key: object.key,
+      size: object.size,
+      storageClass: object.storageClass,
+    }])).toBeNull();
+  });
+
+  it("retries a transient restored R2 inventory mismatch", async () => {
+    const object = {
+      archivePath: "media/00000001",
+      customMetadata: {},
+      etag: null,
+      httpMetadata: {contentType: "image/png"},
+      key: "production/cover.png",
+      sha256: "0".repeat(64),
+      size: 12,
+      storageClass: "Standard",
+      uploaded: null,
+    };
+    const list = vi.fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([object]);
+    const pause = vi.fn(async () => undefined);
+    const onRetry = vi.fn();
+
+    await verifyRestoredRemoteMediaWithRetries({
+      expected: [object],
+      list,
+      onRetry,
+      pause,
+      retryDelays: [25],
+    });
+
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(pause).toHaveBeenCalledWith(25);
+    expect(onRetry).toHaveBeenCalledWith(
+      25,
+      expect.stringContaining('missing object "production/cover.png"'),
+    );
+  });
+
+  it("reports a restored R2 mismatch after every retry", async () => {
+    await expect(verifyRestoredRemoteMediaWithRetries({
+      expected: [],
+      list: async () => [{key: "unexpected.txt", size: 1}],
+      pause: async () => undefined,
+      retryDelays: [0, 0],
+    })).rejects.toThrow('unexpected object "unexpected.txt"');
+  });
+});
+
+describe("remote restore target readiness", () => {
+  const config: MicrofeedConfig = {
+    accountId: "account-id",
+    adminPath: "admin",
+    completedSteps: ["d1-ready", "r2-ready"],
+    customDomain: null,
+    d1: {id: "database-id", name: "restored-podcast-db", reuse: false},
+    deploymentUrl: null,
+    hosting: "cloudflare",
+    instanceId: "instance-id",
+    instanceName: "restored-podcast",
+    projectName: "restored-podcast",
+    r2: {name: "restored-podcast-media", reuse: false},
+  };
+
+  it("explains that a valid archive still needs a completed target", () => {
+    expect(remoteRestoreTargetReadinessError(config)).toBe(
+      "Snapshot archive validation passed, but instance `restored-podcast` " +
+        "is not ready for remote restore. Initialization did not finish " +
+        "successfully, so the CLI never recorded the fresh-target safety " +
+        "fingerprint for its D1 database and R2 bucket. Initialization must " +
+        "complete successfully before you retry remote restore. Remote " +
+        "restore did not start; no target data was changed.",
+    );
+  });
+
+  it("identifies reused resources and accepts a recorded fresh target", () => {
+    const resumedConfig: MicrofeedConfig = {
+      ...config,
+      completedSteps: [
+        "d1-ready",
+        "r2-ready",
+        "worker-deployed",
+        "deployment-verified",
+      ],
+      d1: {...config.d1, reuse: true},
+      r2: {...config.r2, reuse: true},
+    };
+    const resumedError = remoteRestoreTargetReadinessError(resumedConfig);
+    expect(resumedError).toContain(
+      "The CLI has no fresh-target safety fingerprint, so it cannot prove",
+    );
+    expect(resumedError).toContain(
+      "D1 database `restored-podcast-db` is marked as reused. " +
+        "R2 bucket `restored-podcast-media` is marked as reused.",
+    );
+    expect(resumedError).toContain(
+      "Run the restore with `--dry-run`. The CLI will automatically repair",
+    );
+    expect(canRepairRemoteRestoreBaseline(resumedConfig)).toBe(true);
+    expect(canRepairRemoteRestoreBaseline(config)).toBe(false);
+    expect(remoteRestoreTargetReadinessError({
+      ...resumedConfig,
+      restoreBaseline: {
+        createdAt: "2026-08-02T00:00:00.000Z",
+        fingerprint: "fingerprint",
+      },
+    })).toBeNull();
+  });
+
+  it("explains automatic local fingerprint repair without asking a question", () => {
+    const notice = remoteRestoreBaselineRepairNotice(config);
+    expect(notice.title).toBe("Fresh snapshot restore target verified");
+    expect(notice.message).toContain(
+      "Snapshot restore: not started\nCloudflare changes: none",
+    );
+    expect(notice.message).toContain(
+      "Local safety record: saving automatically so the later restore will " +
+        "refuse to start if this target changes",
+    );
+  });
+});
+
+describe("remote restore baseline repair", () => {
+  const applicationTables = [
+    ...SNAPSHOT_TABLES.durable,
+    ...SNAPSHOT_TABLES.ephemeral,
+    ...SNAPSHOT_TABLES.targetSpecific,
+  ];
+  const valid = {
+    applicationRowCounts: Object.fromEntries(
+      [...SNAPSHOT_TABLES.durable, ...SNAPSHOT_TABLES.ephemeral]
+        .map((table) => [table, 0]),
+    ),
+    applicationTables,
+    appliedMigrations: ["0001.sql", "0002.sql"],
+    bootstrapChannelRows: [],
+    bootstrapSettingRows: [],
+    bootstrapWorkerName: "restored-podcast",
+    currentIndexes: ["channels_status"],
+    currentMigrations: ["0001.sql", "0002.sql"],
+    expectedInstanceId: "target-instance-id",
+    expectedIndexes: ["channels_status"],
+    expectedPublicOrigins: ["https://copy.example.com"],
+    installationInstanceIds: ["target-instance-id"],
+    r2ObjectCount: 0,
+  };
+
+  it("accepts a current target with no application rows", () => {
+    expect(() => validateRemoteRestoreBaselineRepair(valid)).not.toThrow();
+  });
+
+  const bootstrapChannelRows = [{
+    data: JSON.stringify({
+      categories: [],
+      copyright: "©2026",
+      image: "/assets/default/channel-image.png",
+      "itunes:block": false,
+      "itunes:complete": false,
+      "itunes:explicit": false,
+      "itunes:type": "episodic",
+      language: "en-us",
+      link: "https://copy.example.com",
+    }),
+    id: "Abc_123-Xyz",
+    is_primary: 1,
+    status: 1,
+  }];
+  const bootstrapSettingRows = [
+    {category: "access", data: JSON.stringify({currentPolicy: "public"})},
+    {category: "analytics", data: JSON.stringify({})},
+    {category: "customCode", data: JSON.stringify({})},
+    {
+      category: "subscribeMethods",
+      data: JSON.stringify({methods: [
+        {
+          editable: false,
+          enabled: true,
+          id: "Rss_123-Abc",
+          image: "/assets/brands/subscribe/rss.png",
+          name: "RSS",
+          type: "rss",
+          url: "",
+        },
+        {
+          editable: false,
+          enabled: true,
+          id: "Json123-Abc",
+          image: "/assets/brands/subscribe/json.png",
+          name: "JSON",
+          type: "json",
+          url: "",
+        },
+      ]}),
+    },
+    {
+      category: "webGlobalSettings",
+      data: JSON.stringify({
+        favicon: {
+          contentType: "image/png",
+          url: "/assets/default/favicon.png",
+        },
+        itemsPerPage: 20,
+        itemsSortOrder: "newest_first",
+        publicBucketUrl: "/media/",
+      }),
+    },
+  ];
+
+  it("accepts the automatic channel and settings bootstrap rows", () => {
+    expect(() => validateRemoteRestoreBaselineRepair({
+      ...valid,
+      applicationRowCounts: {
+        ...valid.applicationRowCounts,
+        channels: 1,
+        settings: 5,
+      },
+      bootstrapChannelRows,
+      bootstrapSettingRows,
+    })).not.toThrow();
+  });
+
+  it("rejects a modified bootstrap setting", () => {
+    expect(() => validateRemoteRestoreBaselineRepair({
+      ...valid,
+      applicationRowCounts: {
+        ...valid.applicationRowCounts,
+        channels: 1,
+        settings: 5,
+      },
+      bootstrapChannelRows,
+      bootstrapSettingRows: bootstrapSettingRows.map((row) =>
+        row.category === "access"
+          ? {category: "access", data: JSON.stringify({currentPolicy: "offline"})}
+          : row
+      ),
+    })).toThrow("not the automatic bootstrap settings");
+  });
+
+  it.each([
+    {
+      change: {applicationTables: applicationTables.slice(1)},
+      message: "Missing tables",
+      name: "a missing application table",
+    },
+    {
+      change: {appliedMigrations: ["0001.sql"]},
+      message: "migration ledger is not at",
+      name: "a migration ledger behind the checkout",
+    },
+    {
+      change: {currentIndexes: []},
+      message: "indexes do not match",
+      name: "a missing index",
+    },
+    {
+      change: {
+        applicationRowCounts: {
+          ...valid.applicationRowCounts,
+          items: 1,
+        },
+      },
+      message: "contains application data in: items",
+      name: "application data",
+    },
+    {
+      change: {installationInstanceIds: ["another-instance"]},
+      message: "installation identity does not match",
+      name: "a different installation identity",
+    },
+    {
+      change: {r2ObjectCount: 1},
+      message: "R2 bucket is not empty",
+      name: "an R2 object",
+    },
+  ])("rejects $name", ({change, message}) => {
+    expect(() => validateRemoteRestoreBaselineRepair({...valid, ...change}))
+      .toThrow(message);
   });
 });
 
@@ -579,18 +937,21 @@ describe("snapshot archive validation", () => {
     );
   });
 
-  it("builds one transaction that restores source state and rewrites target identity", () => {
+  it("builds D1-managed imports that restore source state and rewrite target identity", () => {
     const sql = buildRestoreSql({
       currentApplicationTables: ["new_table"],
       dataSql: "BEGIN TRANSACTION;\nINSERT INTO settings VALUES ('webGlobalSettings', '{}', NULL, NULL);\nCOMMIT;",
       schemaSql: "BEGIN TRANSACTION;\nCREATE TABLE settings(category TEXT PRIMARY KEY, data TEXT, created_at TEXT, updated_at TEXT);\nCREATE TABLE microfeed_installation(id TEXT PRIMARY KEY, instanceId TEXT);\nCOMMIT;",
       snapshotApplicationTables: ["settings", "microfeed_installation"],
     });
-    expect(sql.match(/BEGIN TRANSACTION;/gu)).toHaveLength(1);
-    expect(sql.match(/COMMIT;/gu)).toHaveLength(1);
+    expect(sql).toContain("PRAGMA defer_foreign_keys=TRUE;");
+    expect(sql).not.toContain("BEGIN TRANSACTION;");
+    expect(sql).not.toContain("COMMIT;");
     expect(sql).toContain('DROP TABLE IF EXISTS "new_table"');
     expect(sql).not.toContain("target-instance");
     const finalization = buildRestoreFinalizationSql("target-instance");
+    expect(finalization).not.toContain("BEGIN TRANSACTION;");
+    expect(finalization).not.toContain("COMMIT;");
     expect(finalization).toContain("target-instance");
     expect(finalization).toContain("'$.publicBucketUrl', '/media/'");
     expect(finalization).toContain('DELETE FROM "auth_session"');

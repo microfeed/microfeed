@@ -191,6 +191,11 @@ Initialize or resume an installation. Production initialization can create a
 Worker, D1 database, R2 bucket, secrets, migrations, administrator password
 setup link, and
 optional custom domain. It performs collision checks before the first mutation.
+The authentication choice and any public-dashboard warning are confirmed before
+D1 or R2 resources are created. If initialization is interrupted later, retrying
+preserves whether each recorded resource was created for this site or explicitly
+reused. The fresh-target snapshot fingerprint is recorded after initialization,
+including optional custom-domain and login setup, has finished.
 
 ```console
 yarn manage init [--instance <name>] [--preview|--local] [options]
@@ -384,7 +389,7 @@ yarn manage auth setup \
 # First initialize a fresh remote target with new, nonreused D1 and R2 resources.
 yarn manage init --instance restored-podcast-domain-com
 
-# Validate the archive and target without changing the remote instance.
+# Validate the archive and target without changing Cloudflare data.
 yarn manage snapshot restore \
   --file my-podcast-domain-com-backup.tar.gz \
   --instance restored-podcast-domain-com \
@@ -455,14 +460,47 @@ of the fresh database and empty bucket. Restore rejects the target if that
 fingerprint changed. Always run `--dry-run`; mutation rejects `--yes` and
 requires the exact `--confirm <name>` value.
 
+Archive validation and target readiness are separate dry-run stages. A message
+that the snapshot archive is valid confirms only the file and its migration
+history; it does not approve the restore target. If a completed initialization
+is missing its fingerprint, an interactive `--dry-run` offers to repair the
+local safety record only after read-only checks prove all of the following:
+
+- The deployed Worker exposes this saved installation identity.
+- The exact saved D1 database exists, has the current schema and migration
+  ledger, and contains no content beyond the exact channel and settings rows
+  that microfeed automatically creates on the first page request.
+- The installation row belongs to this instance and the R2 bucket is empty.
+
+The repair automatically saves a fingerprint in the local instance
+configuration and continues the dry run; the later restore refuses to start if
+the target changes. It changes no Cloudflare data or D1/R2 ownership flags, and
+resources already marked reused remain protected from `yarn manage destroy`.
+The dry run never imports the snapshot. An incomplete initialization still must
+be finished before restore, while a nonempty or mismatched target is rejected.
+
+After an interrupted restore has finished uploading media, rerunning
+`--dry-run` also compares the current R2 inventory with the archive and reports
+the exact missing or extra object, byte-size difference, or metadata difference.
+This diagnostic is read-only and avoids repeating the upload just to identify
+the previous verification failure.
+
 After confirmation, the Worker enters maintenance mode. The CLI reimports the
 archived schema/data and ledger in one D1 import, applies forward migrations,
 replaces R2 content using streaming multipart uploads, verifies migrations,
 tables, indexes, foreign keys, administrator data, row counts, installation
-identity, and R2 keys/sizes, and only then deploys the current Worker. A failure
-keeps maintenance mode and an owner-only resume journal. Rerunning the same
-archive and confirmation starts again from the archived schema and data before
-retrying migrations.
+identity, and R2 keys/sizes, and only then deploys the current Worker. If R2's
+inventory does not immediately reflect completed multipart uploads, verification
+keeps its spinner active and retries for up to one minute before reporting exact
+differences. A failure keeps maintenance mode and an owner-only resume journal.
+Rerunning the same archive and confirmation starts again from the archived
+schema and data before retrying migrations.
+
+While maintenance mode is active, the CLI temporarily enables the Worker's
+otherwise-disabled `workers.dev` address as a token-protected control endpoint.
+Every request without the one-time restore token receives HTTP 503, and the
+normal deployment disables that address again after a successful restore. This
+keeps restore control independent of custom-domain DNS and Access settings.
 
 Snapshots include password hashes and possibly private media. They are
 unencrypted and created with owner-only (`0600`) permissions. Store and encrypt

@@ -18,7 +18,11 @@ import type {
 const temporaryDirectories: string[] = [];
 
 async function freshModules(
-  options: {passwordAnswers?: string[]} = {},
+  options: {
+    confirmAnswers?: boolean[];
+    passwordAnswers?: string[];
+    selectAnswers?: string[];
+  } = {},
 ) {
   const directory = await mkdtemp(
     path.join(tmpdir(), "microfeed-instance-test-"),
@@ -29,19 +33,49 @@ async function freshModules(
   // set to its deployment target. These tests exercise instance selection
   // themselves, so they must not inherit the outer management command.
   vi.stubEnv("MICROFEED_INSTANCE", "");
-  if (options.passwordAnswers) {
-    const passwordAnswers = [...options.passwordAnswers];
+  if (
+    options.confirmAnswers || options.passwordAnswers || options.selectAnswers
+  ) {
+    const confirmAnswers = [...(options.confirmAnswers ?? [])];
+    const passwordAnswers = [...(options.passwordAnswers ?? [])];
+    const selectAnswers = [...(options.selectAnswers ?? [])];
     vi.doMock("@clack/prompts", async (importOriginal) => {
       const actual = await importOriginal<typeof import("@clack/prompts")>();
       return {
         ...actual,
-        password: vi.fn(async () => {
-          const answer = passwordAnswers.shift();
-          if (answer === undefined) {
-            throw new Error("No test password answer remains.");
-          }
-          return answer;
-        }),
+        ...(options.confirmAnswers
+          ? {
+              confirm: vi.fn(async () => {
+                const answer = confirmAnswers.shift();
+                if (answer === undefined) {
+                  throw new Error("No test confirmation answer remains.");
+                }
+                return answer;
+              }),
+            }
+          : {}),
+        ...(options.passwordAnswers
+          ? {
+              password: vi.fn(async () => {
+                const answer = passwordAnswers.shift();
+                if (answer === undefined) {
+                  throw new Error("No test password answer remains.");
+                }
+                return answer;
+              }),
+            }
+          : {}),
+        ...(options.selectAnswers
+          ? {
+              select: vi.fn(async () => {
+                const answer = selectAnswers.shift();
+                if (answer === undefined) {
+                  throw new Error("No test selection answer remains.");
+                }
+                return answer;
+              }),
+            }
+          : {}),
       };
     });
   } else {
@@ -448,6 +482,53 @@ describe("first-class local instances", () => {
 });
 
 describe("initialization lifecycle", () => {
+  it("confirms public-dashboard risk before creating D1 or R2", async () => {
+    const {commands} = await freshModules({
+      confirmAnswers: [false],
+      selectAnswers: ["none"],
+    });
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "whoami --json") {
+        return commandResult(JSON.stringify({
+          accounts: [{id: "account-id", name: "Personal"}],
+          authType: "OAuth Token",
+          email: "cloudflare@example.com",
+          tokenPermissions: requiredScopes,
+        }));
+      }
+      if (command === "pages project list --json") {
+        return commandResult("[]");
+      }
+      if (command.startsWith("versions list --name fresh-target ")) {
+        return commandResult("", "No Worker found", 1);
+      }
+      if (command === "d1 list --json") {
+        return commandResult("[]");
+      }
+      if (command.startsWith("r2 bucket info fresh-target-media ")) {
+        return commandResult("", "Bucket not found", 1);
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await expect(commands.initCommand({
+      "account-id": "account-id",
+      "admin-path": "admin",
+      "d1-name": "fresh-target-db",
+      instance: "fresh-target",
+      "project-name": "fresh-target",
+      "r2-name": "fresh-target-media",
+    }, runner)).rejects.toThrow(
+      "Deployment cancelled. No authentication setting was changed.",
+    );
+
+    const commandsRun = runner.mock.calls.map(([, args]) => args.join(" "));
+    expect(commandsRun.some((command) =>
+      /(?:d1 create|r2 bucket create|deploy)/u.test(command)
+    )).toBe(false);
+  });
+
   it("stops a completed Cloudflare installation before deployment mutations", async () => {
     const {commands, config} = await freshModules();
     await config.writeConfig(completedRemoteConfig());

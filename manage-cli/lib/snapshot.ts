@@ -713,20 +713,18 @@ export function buildRestoreSql(input: {
     "d1_migrations",
   ])].sort((left, right) => right.localeCompare(left));
   return [
-    "PRAGMA foreign_keys=OFF;",
-    "BEGIN TRANSACTION;",
+    // D1 and Wrangler wrap SQL-file imports in a managed transaction. Explicit
+    // transaction statements are rejected by remote D1 imports.
+    "PRAGMA defer_foreign_keys=TRUE;",
     ...tablesToDrop.map((table) => `DROP TABLE IF EXISTS ${sqlIdentifier(table)};`),
     unwrapD1Export(input.schemaSql),
     unwrapD1Export(input.dataSql),
-    "COMMIT;",
-    "PRAGMA foreign_keys=ON;",
     "",
   ].join("\n");
 }
 
 export function buildRestoreFinalizationSql(instanceId: string): string {
   return [
-    "BEGIN TRANSACTION;",
     ...SNAPSHOT_TABLES.ephemeral.map((table) =>
       `DELETE FROM ${sqlIdentifier(table)};`
     ),
@@ -738,7 +736,6 @@ export function buildRestoreFinalizationSql(instanceId: string): string {
       `json_set(COALESCE(${sqlIdentifier("data")}, '{}'), ` +
       "'$.publicBucketUrl', '/media/') " +
       `WHERE ${sqlIdentifier("category")} = 'webGlobalSettings';`,
-    "COMMIT;",
     "",
   ].join("\n");
 }

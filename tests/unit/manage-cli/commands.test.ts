@@ -11,6 +11,7 @@ import {
   deploymentOutcomeMessage,
   deploymentVerificationUrl,
   initCommand,
+  initializationResourceReuse,
   localAdminAuthSetupNotice,
   redeployWithAdminAuthMode,
   siteNameGuidance,
@@ -63,6 +64,38 @@ describe("Cloudflare Worker name validation", () => {
           "numbers, and hyphens",
       );
     expect(runner).not.toHaveBeenCalled();
+  });
+});
+
+describe("initialization resource ownership", () => {
+  it("preserves ownership when an interrupted initialization resumes", () => {
+    expect(initializationResourceReuse({
+      exists: true,
+      previouslyReused: false,
+      resume: true,
+      reuseApproved: true,
+    })).toBe(false);
+    expect(initializationResourceReuse({
+      exists: true,
+      previouslyReused: true,
+      resume: true,
+      reuseApproved: true,
+    })).toBe(true);
+  });
+
+  it("records explicit reuse only for a newly selected existing resource", () => {
+    expect(initializationResourceReuse({
+      exists: true,
+      previouslyReused: false,
+      resume: false,
+      reuseApproved: true,
+    })).toBe(true);
+    expect(initializationResourceReuse({
+      exists: false,
+      previouslyReused: true,
+      resume: false,
+      reuseApproved: true,
+    })).toBe(false);
   });
 });
 

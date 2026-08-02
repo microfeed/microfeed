@@ -16,6 +16,7 @@ import {tmpdir} from "node:os";
 import path from "node:path";
 import {Readable, Transform} from "node:stream";
 import {pipeline} from "node:stream/promises";
+import {isDeepStrictEqual} from "node:util";
 
 import type {AdminAuthMode} from "@/shared/AdminAuth";
 import {Miniflare} from "miniflare";
@@ -25,6 +26,13 @@ import {
   normalizeAdminPath,
   validateAdminPath,
 } from "@/shared/AdminPath";
+import {
+  DEFAULT_ITEMS_PER_PAGE,
+  ITEMS_SORT_ORDERS,
+  PREDEFINED_SUBSCRIBE_METHODS,
+  SETTINGS_CATEGORIES,
+  STATUSES,
+} from "@/shared/Constants";
 import {accessApplicationDashboardUrl} from "@/shared/CloudflareDashboard";
 import type {Account, CommandRunner, MicrofeedConfig} from "./types";
 import {
@@ -1613,6 +1621,18 @@ async function explicitReuse(
   return askConfirm(`${resource} already exists. Reuse it?`, false);
 }
 
+export function initializationResourceReuse(input: {
+  exists: boolean;
+  previouslyReused: boolean;
+  resume: boolean;
+  reuseApproved: boolean;
+}): boolean {
+  if (!input.exists) {
+    return false;
+  }
+  return input.resume ? input.previouslyReused : input.reuseApproved;
+}
+
 async function initializeProduction(context: CommandContext): Promise<void> {
   const saved = await readConfig(false, context.instanceName);
   if (saved && isLocalOnly(saved)) {
@@ -1718,7 +1738,7 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     saved.completedSteps.includes("d1-ready") &&
     saved.d1.name === d1Name,
   );
-  const reuseD1 = existingD1
+  const useExistingD1 = existingD1
     ? await explicitReuse(
         context.flags,
         "reuse-d1",
@@ -1726,18 +1746,24 @@ async function initializeProduction(context: CommandContext): Promise<void> {
         d1Resumed,
       )
     : false;
-  if (existingD1 && !reuseD1) {
+  if (existingD1 && !useExistingD1) {
     throw new Error(
       "Initialization stopped before changing any Cloudflare resources.",
     );
   }
+  const reuseD1 = initializationResourceReuse({
+    exists: Boolean(existingD1),
+    previouslyReused: saved?.d1.reuse ?? false,
+    resume: d1Resumed,
+    reuseApproved: useExistingD1,
+  });
 
   const r2Resumed = Boolean(
     relatedSavedState &&
     saved.completedSteps.includes("r2-ready") &&
     saved.r2.name === r2Name,
   );
-  const reuseR2 = r2Exists
+  const useExistingR2 = r2Exists
     ? await explicitReuse(
         context.flags,
         "reuse-r2",
@@ -1745,11 +1771,17 @@ async function initializeProduction(context: CommandContext): Promise<void> {
         r2Resumed,
       )
     : false;
-  if (r2Exists && !reuseR2) {
+  if (r2Exists && !useExistingR2) {
     throw new Error(
       "Initialization stopped before changing any Cloudflare resources.",
     );
   }
+  const reuseR2 = initializationResourceReuse({
+    exists: r2Exists,
+    previouslyReused: saved?.r2.reuse ?? false,
+    resume: r2Resumed,
+    reuseApproved: useExistingR2,
+  });
 
   const config: MicrofeedConfig = relatedSavedState && saved
     ? saved
@@ -1775,6 +1807,7 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   config.r2.reuse = reuseR2;
   await setActiveInstance(context.instanceName);
   await writeConfig(config);
+  await configureAdminAuth(context, config);
 
   if (existingD1) {
     config.d1.id = existingD1.id;
@@ -1793,15 +1826,6 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   await writeConfig(config);
 
   await deployConfiguredProject(context, config, true, true);
-  try {
-    await recordRemoteRestoreBaseline(context, config);
-  } catch (error) {
-    config.completedSteps = config.completedSteps.filter(
-      (step) => step !== "deployment-verified",
-    );
-    await writeConfig(config);
-    throw error;
-  }
   prompts.log.success(`microfeed is live at ${config.deploymentUrl}`);
 
   if (!flagBoolean(context.flags, "yes")) {
@@ -1827,6 +1851,15 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     }
   }
   await finishInitialAdminSetup(context, config);
+  try {
+    await recordRemoteRestoreBaseline(context, config);
+  } catch (error) {
+    config.completedSteps = config.completedSteps.filter(
+      (step) => step !== "deployment-verified",
+    );
+    await writeConfig(config);
+    throw error;
+  }
 }
 
 async function initializePreview(context: CommandContext): Promise<void> {
@@ -1927,7 +1960,7 @@ async function initializePreview(context: CommandContext): Promise<void> {
     savedForWorker?.completedSteps.includes("d1-ready") &&
     savedForWorker.d1.name === d1Name,
   );
-  const reuseD1 = existingD1
+  const useExistingD1 = existingD1
     ? await explicitReuse(
         context.flags,
         "reuse-d1",
@@ -1935,11 +1968,17 @@ async function initializePreview(context: CommandContext): Promise<void> {
         d1Resumed,
       )
     : false;
-  if (existingD1 && !reuseD1) {
+  if (existingD1 && !useExistingD1) {
     throw new Error(
       "Preview initialization stopped before changing any Cloudflare resources.",
     );
   }
+  const reuseD1 = initializationResourceReuse({
+    exists: Boolean(existingD1),
+    previouslyReused: savedForWorker?.d1.reuse ?? false,
+    resume: d1Resumed,
+    reuseApproved: useExistingD1,
+  });
 
   const config: MicrofeedConfig = relatedSavedState && savedForWorker
     ? savedForWorker
@@ -1964,6 +2003,7 @@ async function initializePreview(context: CommandContext): Promise<void> {
   config.r2 = {name: production.r2.name, reuse: true};
   config.workerName = previewWorkerName;
   await writeConfig(config);
+  await configureAdminAuth(context, config);
 
   if (existingD1) {
     config.d1.id = existingD1.id;
@@ -4247,8 +4287,12 @@ async function remoteRestoreFingerprint(
 async function recordRemoteRestoreBaseline(
   context: CommandContext,
   config: MicrofeedConfig,
+  options: {allowReused?: boolean} = {},
 ): Promise<void> {
-  if (config.restoreBaseline || config.d1.reuse || config.r2.reuse) {
+  if (
+    config.restoreBaseline ||
+    (!options.allowReused && (config.d1.reuse || config.r2.reuse))
+  ) {
     return;
   }
   const objects = await context.cloudflare.listR2Objects(
@@ -4329,6 +4373,440 @@ export function localSnapshotNextSteps(
     "",
     `Then run \`${startCommand}\` to start it.`,
   ].join("\n");
+}
+
+export function remoteRestoreTargetReadinessError(
+  config: MicrofeedConfig,
+): string | null {
+  if (config.restoreBaseline) {
+    return null;
+  }
+  const reasons: string[] = [];
+  if (!config.restoreBaseline) {
+    reasons.push(hasCompletedCloudflareInitialization(config)
+      ? "The CLI has no fresh-target safety fingerprint, so it cannot prove " +
+        "that this instance's D1 database and R2 bucket are fresh and " +
+        "unchanged."
+      : "Initialization did not finish successfully, so the CLI never " +
+        "recorded the fresh-target safety fingerprint for its D1 database " +
+        "and R2 bucket.");
+  }
+  if (config.d1.reuse) {
+    reasons.push(
+      `D1 database \`${config.d1.name}\` is marked as reused.`,
+    );
+  }
+  if (config.r2.reuse) {
+    reasons.push(
+      `R2 bucket \`${config.r2.name}\` is marked as reused.`,
+    );
+  }
+  const recovery = hasCompletedCloudflareInitialization(config)
+    ? "Run the restore with `--dry-run`. The CLI will automatically repair " +
+      "the missing fingerprint only if the deployed Worker belongs to this " +
+      "instance, D1 contains no user-created content, and R2 is empty."
+    : "Initialization must complete successfully before you retry remote " +
+      "restore.";
+  return `Snapshot archive validation passed, but instance \`${config.instanceName}\` ` +
+    `is not ready for remote restore. ${reasons.join(" ")} ${recovery} ` +
+    "Remote restore did not start; no target data was changed.";
+}
+
+export function canRepairRemoteRestoreBaseline(
+  config: MicrofeedConfig,
+): boolean {
+  return !config.restoreBaseline && hasCompletedCloudflareInitialization(config);
+}
+
+export function validateRemoteRestoreBaselineRepair(input: {
+  applicationRowCounts: Record<string, number>;
+  applicationTables: readonly string[];
+  appliedMigrations: readonly string[];
+  bootstrapChannelRows: readonly Record<string, unknown>[];
+  bootstrapSettingRows: readonly Record<string, unknown>[];
+  bootstrapWorkerName: string;
+  currentIndexes: readonly string[];
+  currentMigrations: readonly string[];
+  expectedInstanceId: string;
+  expectedIndexes: readonly string[];
+  expectedPublicOrigins: readonly string[];
+  installationInstanceIds: readonly string[];
+  r2ObjectCount: number;
+}): void {
+  assertClassifiedTables(input.applicationTables);
+  const expectedTables = [
+    ...SNAPSHOT_TABLES.durable,
+    ...SNAPSHOT_TABLES.ephemeral,
+    ...SNAPSHOT_TABLES.targetSpecific,
+  ].sort((left, right) => left.localeCompare(right));
+  const expectedTableSet = new Set<string>(expectedTables);
+  const actualTables = [...input.applicationTables]
+    .sort((left, right) => left.localeCompare(right));
+  const missingTables = expectedTables.filter((table) =>
+    !actualTables.includes(table)
+  );
+  const unexpectedTables = actualTables.filter((table) =>
+    !expectedTableSet.has(table)
+  );
+  if (missingTables.length > 0 || unexpectedTables.length > 0) {
+    const problems = [
+      ...(missingTables.length > 0
+        ? [`Missing tables: ${missingTables.join(", ")}.`]
+        : []),
+      ...(unexpectedTables.length > 0
+        ? [`Unexpected tables: ${unexpectedTables.join(", ")}.`]
+        : []),
+    ];
+    throw new Error(
+      "The remote D1 schema is not the current freshly initialized schema. " +
+        problems.join(" "),
+    );
+  }
+  if (
+    input.appliedMigrations.length !== input.currentMigrations.length ||
+    input.appliedMigrations.some((migration, index) =>
+      migration !== input.currentMigrations[index]
+    )
+  ) {
+    throw new Error(
+      "The remote D1 migration ledger is not at this checkout's current head.",
+    );
+  }
+  const currentIndexes = [...input.currentIndexes]
+    .sort((left, right) => left.localeCompare(right));
+  const expectedIndexes = [...input.expectedIndexes]
+    .sort((left, right) => left.localeCompare(right));
+  if (
+    currentIndexes.length !== expectedIndexes.length ||
+    currentIndexes.some((index, position) => index !== expectedIndexes[position])
+  ) {
+    throw new Error(
+      "The remote D1 indexes do not match this checkout's current migrations.",
+    );
+  }
+  const nonemptyNonBootstrapTables = Object.entries(input.applicationRowCounts)
+    .filter(([table, count]) =>
+      count !== 0 && table !== "channels" && table !== "settings"
+    )
+    .map(([table]) => table)
+    .sort((left, right) => left.localeCompare(right));
+  if (nonemptyNonBootstrapTables.length > 0) {
+    throw new Error(
+      "The remote D1 database contains application data in: " +
+        `${nonemptyNonBootstrapTables.join(", ")}. It cannot be repaired as a fresh ` +
+        "snapshot restore target.",
+    );
+  }
+  validateRemoteRestoreBootstrapRows(input);
+  if (
+    input.installationInstanceIds.length !== 1 ||
+    input.installationInstanceIds[0] !== input.expectedInstanceId
+  ) {
+    throw new Error(
+      "The remote D1 installation identity does not match this instance.",
+    );
+  }
+  if (input.r2ObjectCount !== 0) {
+    throw new Error(
+      "The remote R2 bucket is not empty, so it cannot be repaired as a " +
+        "fresh snapshot restore target.",
+    );
+  }
+}
+
+function parsedJsonRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function targetBootstrapLink(
+  value: unknown,
+  expectedOrigins: readonly string[],
+  workerName: string,
+): boolean {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" || url.pathname !== "/" || url.search ||
+      url.hash
+    ) {
+      return false;
+    }
+    if (expectedOrigins.includes(url.origin)) return true;
+    return url.hostname.startsWith(`${workerName}.`) &&
+      url.hostname.endsWith(".workers.dev");
+  } catch {
+    return false;
+  }
+}
+
+function validBootstrapSubscribeMethod(
+  value: unknown,
+  expected: Record<string, unknown>,
+): boolean {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const actual = value as Record<string, unknown>;
+  if (
+    typeof actual.id !== "string" ||
+    !/^[A-Za-z0-9_-]{11}$/u.test(actual.id)
+  ) {
+    return false;
+  }
+  return isDeepStrictEqual(
+    {...actual, id: "<generated>"},
+    {...expected, editable: false, enabled: true, id: "<generated>"},
+  );
+}
+
+function validateRemoteRestoreBootstrapRows(input: {
+  applicationRowCounts: Record<string, number>;
+  bootstrapChannelRows: readonly Record<string, unknown>[];
+  bootstrapSettingRows: readonly Record<string, unknown>[];
+  bootstrapWorkerName: string;
+  expectedPublicOrigins: readonly string[];
+}): void {
+  const channelCount = input.applicationRowCounts.channels ?? 0;
+  const settingCount = input.applicationRowCounts.settings ?? 0;
+  if (channelCount === 0 && settingCount === 0) return;
+  if (
+    channelCount !== 1 || settingCount !== 5 ||
+    input.bootstrapChannelRows.length !== 1 ||
+    input.bootstrapSettingRows.length !== 5
+  ) {
+    throw new Error(
+      "The remote D1 channels and settings are not the automatic bootstrap " +
+        "rows of a fresh microfeed instance.",
+    );
+  }
+
+  const channelRow = input.bootstrapChannelRows[0]!;
+  const channel = parsedJsonRecord(channelRow.data);
+  if (!channel) {
+    throw new Error("The remote D1 bootstrap channel contains invalid data.");
+  }
+  const {copyright, link, ...channelRest} = channel;
+  if (
+    typeof channelRow.id !== "string" ||
+    !/^[A-Za-z0-9_-]{11}$/u.test(channelRow.id) ||
+    Number(channelRow.status) !== STATUSES.PUBLISHED ||
+    Number(channelRow.is_primary) !== 1 ||
+    typeof copyright !== "string" ||
+    !/^©\d{4}$/u.test(copyright) ||
+    !targetBootstrapLink(
+      link,
+      input.expectedPublicOrigins,
+      input.bootstrapWorkerName,
+    ) ||
+    !isDeepStrictEqual(channelRest, {
+      categories: [],
+      image: "/assets/default/channel-image.png",
+      "itunes:block": false,
+      "itunes:complete": false,
+      "itunes:explicit": false,
+      "itunes:type": "episodic",
+      language: "en-us",
+    })
+  ) {
+    throw new Error(
+      "The remote D1 channel is not the automatic bootstrap channel of this " +
+        "fresh microfeed instance.",
+    );
+  }
+
+  const settings = new Map<string, Record<string, unknown>>();
+  for (const row of input.bootstrapSettingRows) {
+    if (typeof row.category !== "string") continue;
+    const data = parsedJsonRecord(row.data);
+    if (data) settings.set(row.category, data);
+  }
+  const subscribeMethods = settings.get(SETTINGS_CATEGORIES.SUBSCRIBE_METHODS);
+  const methods = subscribeMethods?.methods;
+  if (
+    settings.size !== 5 || !Array.isArray(methods) || methods.length !== 2 ||
+    !validBootstrapSubscribeMethod(
+      methods[0],
+      PREDEFINED_SUBSCRIBE_METHODS.rss,
+    ) ||
+    !validBootstrapSubscribeMethod(
+      methods[1],
+      PREDEFINED_SUBSCRIBE_METHODS.json,
+    ) ||
+    !isDeepStrictEqual(
+      settings.get(SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS),
+      {
+        favicon: {
+          contentType: "image/png",
+          url: "/assets/default/favicon.png",
+        },
+        itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+        itemsSortOrder: ITEMS_SORT_ORDERS.NEWEST_FIRST,
+        publicBucketUrl: "/media/",
+      },
+    ) ||
+    !isDeepStrictEqual(settings.get(SETTINGS_CATEGORIES.ACCESS), {
+      currentPolicy: "public",
+    }) ||
+    !isDeepStrictEqual(settings.get(SETTINGS_CATEGORIES.ANALYTICS), {}) ||
+    !isDeepStrictEqual(settings.get(SETTINGS_CATEGORIES.CUSTOM_CODE), {})
+  ) {
+    throw new Error(
+      "The remote D1 settings are not the automatic bootstrap settings of " +
+        "a fresh microfeed instance.",
+    );
+  }
+}
+
+async function assertFreshRemoteRestoreBaselineTarget(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<void> {
+  const tableNames = await databaseTableNames(context.cloudflare, config);
+  const applicationTables = applicationTablesFromSqlite(tableNames);
+  const targetSpecificTables = new Set<string>(SNAPSHOT_TABLES.targetSpecific);
+  const countedTables = applicationTables.filter((table) =>
+    !targetSpecificTables.has(table)
+  );
+  const [appliedMigrations, currentMigrations, currentIndexes, expectedIndexes,
+    rowCounts, channels, settings, installations, objects] = await Promise.all([
+    migrationLedger(context.cloudflare, config),
+    repositoryMigrations(),
+    databaseIndexDefinitions(context.cloudflare, config, applicationTables),
+    repositoryIndexDefinitions(),
+    durableRowCounts(context.cloudflare, config, countedTables),
+    context.cloudflare.queryD1(
+      config,
+      "SELECT id, status, is_primary, data FROM channels ORDER BY id",
+    ),
+    context.cloudflare.queryD1(
+      config,
+      "SELECT category, data FROM settings ORDER BY category",
+    ),
+    context.cloudflare.queryD1(
+      config,
+      "SELECT instanceId FROM microfeed_installation ORDER BY id",
+    ),
+    context.cloudflare.listR2Objects(
+      cloudflareAccountId(config),
+      config.r2.name,
+    ),
+  ]);
+  validateRemoteRestoreBaselineRepair({
+    applicationRowCounts: rowCounts,
+    applicationTables,
+    appliedMigrations,
+    bootstrapChannelRows: channels,
+    bootstrapSettingRows: settings,
+    bootstrapWorkerName: workerName(config),
+    currentIndexes: currentIndexes.map(({name}) => name),
+    currentMigrations: currentMigrations.map(({filename}) => filename),
+    expectedIndexes: expectedIndexes.map(({name}) => name),
+    expectedInstanceId: config.instanceId,
+    expectedPublicOrigins: [
+      config.deploymentUrl,
+      deploymentVerificationUrl(config),
+    ].flatMap((value) => {
+      if (!value) return [];
+      try {
+        return [new URL(value).origin];
+      } catch {
+        return [];
+      }
+    }),
+    installationInstanceIds: installations.flatMap(({instanceId}) =>
+      typeof instanceId === "string" ? [instanceId] : []
+    ),
+    r2ObjectCount: objects.length,
+  });
+}
+
+export function remoteRestoreBaselineRepairNotice(
+  config: MicrofeedConfig,
+): {message: string; title: string} {
+  return {
+    message: [
+      `Instance: ${config.instanceName}`,
+      `D1 database: ${config.d1.name} (${config.d1.id})`,
+      `R2 bucket: ${config.r2.name}`,
+      "Worker identity: matches this saved instance",
+      "D1 content: automatic first-run defaults only; no user-created " +
+        "content found",
+      "R2 content: empty",
+      "Snapshot restore: not started",
+      "Cloudflare changes: none",
+      "Local safety record: saving automatically so the later restore will " +
+        "refuse to start if this target changes",
+      "",
+      "D1 and R2 ownership flags stay unchanged; resources already marked " +
+        "reused remain protected from `yarn manage destroy`.",
+    ].join("\n"),
+    title: "Fresh snapshot restore target verified",
+  };
+}
+
+async function repairRemoteRestoreBaseline(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<void> {
+  const accountId = cloudflareAccountId(config);
+  await withSpinner(
+    {
+      error: "Could not repair the remote restore safety fingerprint",
+      start: "Proving that the initialized remote target is still empty",
+      success: "Remote target is fresh and belongs to this instance",
+    },
+    async (activity) => {
+      activity.update("Checking the exact D1 database identity");
+      const databases = await context.cloudflare.d1Databases(accountId);
+      const database = databases.find(({id}) => id === config.d1.id);
+      if (!database || database.name !== config.d1.name) {
+        throw new Error(
+          `D1 database \`${config.d1.name}\` (${config.d1.id}) was not found ` +
+            "with the saved identity.",
+        );
+      }
+
+      activity.update("Checking the deployed Worker installation identity");
+      const verificationUrl = deploymentVerificationUrl(config);
+      if (!verificationUrl) {
+        throw new Error("The initialized instance has no deployment URL.");
+      }
+      await verifyDeployment(config, verificationUrl, {runner: context.runner});
+
+      activity.update("Checking the D1 schema, migrations, and empty tables");
+      await assertFreshRemoteRestoreBaselineTarget(context, config);
+    },
+  );
+
+  const notice = remoteRestoreBaselineRepairNotice(config);
+  prompts.note(notice.message, notice.title);
+  await withSpinner(
+    {
+      error: "Could not save the fresh-target verification",
+      start: "Saving the fresh-target verification locally",
+      success: "Fresh-target verification saved locally; continuing the dry run",
+    },
+    async (activity) => {
+      await recordRemoteRestoreBaseline(context, config, {allowReused: true});
+      activity.update("Rechecking the target after saving its fingerprint");
+      try {
+        await assertFreshRemoteRestoreBaselineTarget(context, config);
+      } catch (error) {
+        delete config.restoreBaseline;
+        await writeConfig(config);
+        throw error;
+      }
+    },
+  );
 }
 
 async function assertPathDoesNotExist(filename: string): Promise<void> {
@@ -4810,6 +5288,115 @@ function normalizedR2Metadata(input: {
   };
 }
 
+interface RestoredR2InventoryObject {
+  customMetadata?: Record<string, string>;
+  httpMetadata?: SnapshotR2Object["httpMetadata"] | {
+    cacheExpiry?: Date | string;
+    [key: string]: unknown;
+  };
+  key: string;
+  size: number;
+  storageClass?: string | null;
+}
+
+function snapshotValue(value: unknown): string {
+  const serialized = JSON.stringify(value);
+  return serialized.length <= 500
+    ? serialized
+    : `${serialized.slice(0, 500)}…`;
+}
+
+export function restoredRemoteMediaMismatch(
+  expectedObjects: readonly SnapshotR2Object[],
+  restoredObjects: readonly RestoredR2InventoryObject[],
+): string | null {
+  const expectedByKey = new Map(expectedObjects.map((object) => [
+    object.key,
+    object,
+  ]));
+  const restoredByKey = new Map(restoredObjects.map((object) => [
+    object.key,
+    object,
+  ]));
+  const differences: string[] = [];
+  for (const key of [...expectedByKey.keys()].sort()) {
+    const expected = expectedByKey.get(key)!;
+    const restored = restoredByKey.get(key);
+    if (!restored) {
+      differences.push(`missing object ${JSON.stringify(key)}`);
+      continue;
+    }
+    if (restored.size !== expected.size) {
+      differences.push(
+        `${JSON.stringify(key)} has ${restored.size} bytes; expected ` +
+          `${expected.size}`,
+      );
+    }
+    const expectedMetadata = normalizedR2Metadata(expected);
+    const restoredMetadata = normalizedR2Metadata(restored);
+    if (!isDeepStrictEqual(restoredMetadata, expectedMetadata)) {
+      differences.push(
+        `${JSON.stringify(key)} metadata is ` +
+          `${snapshotValue(restoredMetadata)}; expected ` +
+          snapshotValue(expectedMetadata),
+      );
+    }
+  }
+  for (const key of [...restoredByKey.keys()].sort()) {
+    if (!expectedByKey.has(key)) {
+      differences.push(`unexpected object ${JSON.stringify(key)}`);
+    }
+  }
+  if (differences.length === 0) {
+    return null;
+  }
+  const visible = differences.slice(0, 8);
+  const remaining = differences.length - visible.length;
+  return [
+    `Restored R2 verification found ${differences.length} difference${
+      differences.length === 1 ? "" : "s"
+    } (snapshot: ${expectedObjects.length} objects; restored: ` +
+      `${restoredObjects.length} objects):`,
+    ...visible.map((difference) => `- ${difference}`),
+    ...(remaining > 0 ? [`- …and ${remaining} more`] : []),
+  ].join("\n");
+}
+
+const REMOTE_MEDIA_VERIFICATION_DELAYS = [
+  1_000,
+  2_000,
+  4_000,
+  8_000,
+  15_000,
+  30_000,
+] as const;
+
+export async function verifyRestoredRemoteMediaWithRetries(input: {
+  expected: readonly SnapshotR2Object[];
+  list: () => Promise<readonly RestoredR2InventoryObject[]>;
+  onRetry?: (delay: number, mismatch: string) => void;
+  pause?: (milliseconds: number) => Promise<void>;
+  retryDelays?: readonly number[];
+}): Promise<void> {
+  const pause = input.pause ?? wait;
+  const retryDelays = input.retryDelays ?? REMOTE_MEDIA_VERIFICATION_DELAYS;
+  for (let attempt = 0; ; attempt += 1) {
+    const mismatch = restoredRemoteMediaMismatch(
+      input.expected,
+      await input.list(),
+    );
+    if (!mismatch) {
+      return;
+    }
+    const delay = retryDelays[attempt];
+    if (delay === undefined) {
+      throw new Error(mismatch);
+    }
+    input.onRetry?.(delay, mismatch);
+    await pause(delay);
+  }
+}
+
 export async function restoreLocalMedia(
   config: MicrofeedConfig,
   snapshotDirectory: string,
@@ -5169,6 +5756,39 @@ export default {
 };\n`;
 }
 
+export function snapshotMaintenanceRouting(config: MicrofeedConfig): {
+  preview_urls: false;
+  routes: Array<{custom_domain: true; pattern: string}>;
+  workers_dev: true;
+} {
+  return {
+    preview_urls: false,
+    routes: config.customDomain
+      ? [{custom_domain: true, pattern: config.customDomain}]
+      : [],
+    workers_dev: true,
+  };
+}
+
+export function snapshotWorkerErrorDetail(
+  body: string,
+  contentType: string | null,
+): string {
+  const normalized = body.trim().replaceAll(/\s+/gu, " ");
+  if (contentType?.toLowerCase().includes("text/html")) {
+    const title = body.match(/<title[^>]*>([^<]+)<\/title>/iu)?.[1]?.trim();
+    return title
+      ? `Cloudflare returned an HTML page titled \`${title}\` instead of ` +
+        "the maintenance API."
+      : "Cloudflare returned an HTML page instead of the maintenance API.";
+  }
+  if (!normalized) return "No error detail was returned.";
+  const maximumLength = 600;
+  return normalized.length <= maximumLength
+    ? normalized
+    : `${normalized.slice(0, maximumLength)}…`;
+}
+
 async function deployMaintenanceWorker(
   context: CommandContext,
   config: MicrofeedConfig,
@@ -5193,11 +5813,8 @@ async function deployMaintenanceWorker(
     name: workerName(config),
     observability: {enabled: false},
     r2_buckets: [{binding: "MEDIA_BUCKET", bucket_name: config.r2.name}],
-    routes: config.customDomain
-      ? [{custom_domain: true, pattern: config.customDomain}]
-      : [],
+    ...snapshotMaintenanceRouting(config),
     vars: {SNAPSHOT_TOKEN_HASH: tokenHash},
-    workers_dev: workersDevEnabled(config),
   }, null, 2)}\n`, {encoding: "utf8", mode: 0o600});
   await context.cloudflare.deployWithConfig(config, configPath);
   return new URL(SNAPSHOT_RESTORE_ENDPOINT, config.deploymentUrl).href;
@@ -5215,7 +5832,11 @@ async function snapshotWorkerRequest(
   const body = await response.text();
   if (!response.ok) {
     throw new Error(
-      `Snapshot maintenance Worker returned HTTP ${response.status}: ${body.trim() || "no detail"}`,
+      `Snapshot maintenance Worker at ${endpoint} returned HTTP ` +
+        `${response.status}. ${snapshotWorkerErrorDetail(
+          body,
+          response.headers.get("content-type"),
+        )}`,
     );
   }
   return body ? JSON.parse(body) as Record<string, unknown> : {};
@@ -5319,27 +5940,16 @@ async function verifyRestoredRemoteMedia(
   cloudflare: CloudflareClient,
   config: MicrofeedConfig,
   objects: readonly SnapshotR2Object[],
+  onRetry?: (delay: number) => void,
 ): Promise<void> {
-  const restored = await cloudflare.listR2Objects(
-    cloudflareAccountId(config),
-    config.r2.name,
-  );
-  const expected = objects.map(({key, size}) => ({key, size}))
-    .map((value, index) => ({
-      ...value,
-      metadata: normalizedR2Metadata(objects[index]!),
-    }))
-    .sort((left, right) => left.key.localeCompare(right.key));
-  const actual = restored.map((object) => ({
-    key: object.key,
-    metadata: normalizedR2Metadata(object),
-    size: object.size,
-  }));
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    throw new Error(
-      "Restored R2 object keys, sizes, or metadata do not match the snapshot.",
-    );
-  }
+  await verifyRestoredRemoteMediaWithRetries({
+    expected: objects,
+    list: () => cloudflare.listR2Objects(
+      cloudflareAccountId(config),
+      config.r2.name,
+    ),
+    onRetry: (delay) => onRetry?.(delay),
+  });
 }
 
 export interface SnapshotRestoreJournal {
@@ -5411,7 +6021,7 @@ async function restoreSnapshotRemotely(
       {
         error: "Snapshot archive validation failed",
         start: "Validating the snapshot archive and checksums",
-        success: "Snapshot archive and migration history validated",
+        success: "Snapshot archive is valid; checking the restore target next",
       },
       async (activity) => {
         const {manifest} = await extractSnapshotArchive(
@@ -5429,18 +6039,37 @@ async function restoreSnapshotRemotely(
       },
     );
     const config = await ensureWranglerConfig(false, false, context.instanceName);
-    const restoreBaseline = config.restoreBaseline;
-    if (config.d1.reuse || config.r2.reuse || !restoreBaseline) {
-      throw new Error(
-        "Remote restore requires a newly initialized target with nonreused D1 and R2 resources and a recorded initialization fingerprint.",
-      );
+    if (flagBoolean(context.flags, "yes")) {
+      throw new Error("Remote snapshot restore does not support --yes.");
     }
     const accountId = cloudflareAccountId(config);
+    let readinessError = remoteRestoreTargetReadinessError(config);
+    if (readinessError && !canRepairRemoteRestoreBaseline(config)) {
+      throw new Error(readinessError);
+    }
+    if (
+      readinessError &&
+      !flagBoolean(context.flags, "dry-run")
+    ) {
+      throw new Error(
+        `${readinessError} Run the restore with \`--dry-run\` first so the ` +
+          "CLI can perform and record the read-only freshness checks.",
+      );
+    }
     const account = await authenticate(context, accountId);
     if (account.id !== accountId) {
       throw new Error(`This installation belongs to Cloudflare account ${accountId}.`);
     }
-    const {archiveSha256, existingJournal} = await withSpinner(
+    if (readinessError) {
+      await repairRemoteRestoreBaseline(context, config);
+      readinessError = remoteRestoreTargetReadinessError(config);
+      if (readinessError) {
+        throw new Error(readinessError);
+      }
+    }
+    const restoreBaseline = config.restoreBaseline!;
+    const {archiveSha256, existingJournal, previousMediaMismatch} =
+      await withSpinner(
       {
         error: "Remote restore target validation failed",
         start: "Checking the snapshot and fresh remote target",
@@ -5471,7 +6100,18 @@ async function restoreSnapshotRemotely(
             throw new Error("The remote restore target's R2 bucket is not empty.");
           }
         }
-        return {archiveSha256, existingJournal};
+        let previousMediaMismatch: string | null | undefined;
+        if (existingJournal?.stage === "media-restored") {
+          activity.update("Checking media from the previous restore attempt");
+          previousMediaMismatch = restoredRemoteMediaMismatch(
+            manifest.media.objects,
+            await context.cloudflare.listR2Objects(
+              accountId,
+              config.r2.name,
+            ),
+          );
+        }
+        return {archiveSha256, existingJournal, previousMediaMismatch};
       },
     );
     prompts.note([
@@ -5483,15 +6123,25 @@ async function restoreSnapshotRemotely(
       `Pending migrations: ${pending.length}`,
       `R2 objects: ${manifest.media.objectCount}`,
       `Mode: ${existingJournal ? "resume from archived source state" : "fresh restore"}`,
+      ...(previousMediaMismatch === undefined
+        ? []
+        : [
+          `Previous media upload: ${previousMediaMismatch
+            ? "differences found; see details below"
+            : "matches the snapshot"}`,
+        ]),
     ].join("\n"), "Snapshot restore plan");
+    if (previousMediaMismatch) {
+      prompts.note(
+        previousMediaMismatch,
+        "Previous media restore differences",
+      );
+    }
     if (flagBoolean(context.flags, "dry-run")) {
       prompts.outro(
         `Dry run complete. Restore with \`--confirm ${config.instanceName}\`.`,
       );
       return;
-    }
-    if (flagBoolean(context.flags, "yes")) {
-      throw new Error("Remote snapshot restore does not support --yes.");
     }
     if (flagString(context.flags, "confirm") !== config.instanceName) {
       throw new Error(
@@ -5595,6 +6245,12 @@ async function restoreSnapshotRemotely(
             context.cloudflare,
             config,
             manifest.media.objects,
+            (delay) => activity.update(
+              "Waiting for Cloudflare's R2 inventory to reflect the " +
+                `completed uploads; checking again in ${
+                  Math.ceil(delay / 1_000)
+                }s`,
+            ),
           );
           journal.stage = "verified";
           await writeRestoreJournal(config, journal);
