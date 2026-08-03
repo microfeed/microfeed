@@ -57,6 +57,11 @@ describe("management CLI help and canonical reference", () => {
     expect(initHelp).toContain("my-domainname-com");
     expect(initHelp).toContain("newly created Cloudflare account");
     expect(initHelp).toContain("rerun the same init command");
+    expect(initHelp).toContain("points existing microfeed installations to connect");
+
+    const deployHelp = renderCliHelp("deploy");
+    expect(deployHelp).toContain("Use connect for an existing Cloudflare microfeed");
+    expect(deployHelp).toContain("init for a new installation");
   });
 
   it("keeps every command and option discoverable in the Markdown contract", async () => {

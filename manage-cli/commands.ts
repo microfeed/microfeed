@@ -1808,9 +1808,14 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     projectName,
   );
   if (workerExists && !relatedSavedState) {
+    const localInstanceName = context.instanceName ??
+      normalizeLocalInstanceName(projectName);
     throw new Error(
-      `A Worker named \`${projectName}\` already exists. microfeed will not ` +
-      "overwrite an unrelated Worker. Choose a different project name.",
+      `A Worker named \`${projectName}\` already exists, but this clone has ` +
+      "no saved state for it. microfeed will not overwrite it. If it is an " +
+      "existing microfeed installation, connect it with " +
+      `\`yarn manage connect --worker ${projectName} --instance ` +
+      `${localInstanceName}\`. Otherwise, choose a different project name.`,
     );
   }
 

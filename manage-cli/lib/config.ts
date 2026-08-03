@@ -692,12 +692,18 @@ export async function ensureWranglerConfig(
     const suffix = selectedInstance
       ? ` for instance \`${selectedInstance}\``
       : "";
+    const instanceOption = selectedInstance
+      ? ` --instance ${selectedInstance}`
+      : "";
     throw new Error(
       preview
         ? `No preview environment was found${suffix}. Run ` +
           "`yarn manage init --preview` first."
-        : `No saved microfeed configuration was found${suffix}. Run ` +
-          "`yarn manage init` first.",
+        : `No saved local microfeed configuration was found${suffix}. ` +
+          "To connect an existing Cloudflare microfeed under this local " +
+          `name, run \`yarn manage connect${instanceOption}\`. To create a ` +
+          "new Cloudflare installation, run " +
+          `\`yarn manage init${instanceOption}\`.`,
     );
   }
   if (config && !allowLocal && isLocalOnly(config)) {

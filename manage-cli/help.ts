@@ -52,6 +52,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "If Cloudflare returns its subscription-required R2 response, initialization completes in content-only mode and prints the account-specific activation and billing handoff.",
       "Preview initialization creates a separate Worker and D1 database while reusing production media storage.",
       "Authentication is confirmed before creating D1 or R2 resources, an interrupted retry preserves whether each saved resource is owned or reused, and the restore fingerprint is recorded after all initialization steps finish.",
+      "If the selected Worker already exists without saved local state, initialization stops without overwriting it and points existing microfeed installations to connect.",
       "A newly created Cloudflare account may need a few minutes to prepare workers.dev before its first Worker deploy; rerun the same init command to resume safely.",
       "Built-in authentication normally prints a private browser link for setting the first password.",
       "A completed installation stops with guidance to use deploy, status, domain, or auth instead.",
@@ -110,6 +111,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Updates a selected Cloudflare Worker, or prepares a local-only release with --local.",
     details: [
+      "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
       "Runs type checks, tests, and a build before deploying, then verifies the public site and protected admin route.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
