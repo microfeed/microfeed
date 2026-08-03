@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "private": true,
   "type": "module",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "packageManager": "yarn@4.18.0",
   "engines": {
     "node": ">=22.12.0"
