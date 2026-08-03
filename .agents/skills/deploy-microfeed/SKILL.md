@@ -217,7 +217,13 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
    completed by the user in Cloudflare; never attempt that consent yourself.
 9. If initialization is interrupted, rerun the identical command. Rely on the
    CLI's saved state and resource checks; do not bypass a collision or add a
-   reuse flag unless the user approves the exact resource.
+   reuse flag unless the user approves the exact resource. When Wrangler says
+   a `workers.dev` subdomain must be registered during a newly created
+   account's first Worker deployment, treat it as temporary account
+   preparation and do not relay Wrangler's onboarding link. For an
+   agent-driven run, wait about 60 seconds and rerun the identical init command
+   once. If it persists, relay the CLI's guidance so the user can wait a few
+   minutes before trying again.
 10. Honor the recorded web-address choice. If the user selected a custom web
     address, run:
 

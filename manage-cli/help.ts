@@ -52,6 +52,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "If Cloudflare returns its subscription-required R2 response, initialization completes in content-only mode and prints the account-specific activation and billing handoff.",
       "Preview initialization creates a separate Worker and D1 database while reusing production media storage.",
       "Authentication is confirmed before creating D1 or R2 resources, an interrupted retry preserves whether each saved resource is owned or reused, and the restore fingerprint is recorded after all initialization steps finish.",
+      "A newly created Cloudflare account may need a few minutes to prepare workers.dev before its first Worker deploy; rerun the same init command to resume safely.",
       "Built-in authentication normally prints a private browser link for setting the first password.",
       "A completed installation stops with guidance to use deploy, status, domain, or auth instead.",
     ],

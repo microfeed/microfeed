@@ -126,6 +126,25 @@ import {
 export type FlagValue = boolean | string;
 export type Flags = Record<string, FlagValue>;
 
+const WORKERS_DEV_REGISTRATION_ERROR =
+  /(?:need to register a workers\.dev subdomain|workers\/onboarding)/iu;
+
+export function workersDevInitializationError(
+  error: unknown,
+): Error | null {
+  const detail = error instanceof Error ? error.message : String(error);
+  if (!WORKERS_DEV_REGISTRATION_ERROR.test(detail)) {
+    return null;
+  }
+  return new Error(
+    "Cloudflare may still be preparing workers.dev for this account. This " +
+      "sometimes happens when a Cloudflare account is newly created or is " +
+      "deploying its first Worker. Wait a few minutes, then rerun the same " +
+      "`yarn manage init` command. microfeed saved the completed steps and " +
+      "will resume safely.",
+  );
+}
+
 interface CommandContext {
   cloudflare: CloudflareClient;
   flags: Flags;
@@ -2403,12 +2422,19 @@ export async function initCommand(
       ? "microfeed preview initialization"
       : "microfeed deployment initialization",
   );
-  if (local) {
-    await initializeLocal(context);
-  } else if (preview) {
-    await initializePreview(context);
-  } else {
-    await initializeProduction(context);
+  try {
+    if (local) {
+      await initializeLocal(context);
+    } else if (preview) {
+      await initializePreview(context);
+    } else {
+      await initializeProduction(context);
+    }
+  } catch (error) {
+    const workersDevError = local
+      ? null
+      : workersDevInitializationError(error);
+    throw workersDevError ?? error;
   }
   prompts.outro(
     local

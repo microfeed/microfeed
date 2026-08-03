@@ -17,6 +17,7 @@ import {
   siteNameGuidance,
   validateWorkerName,
   verifyDeployment,
+  workersDevInitializationError,
   workersAndPagesDashboardUrl,
 } from "../../../manage-cli/commands";
 import {prompts} from "../../../manage-cli/lib/prompts";
@@ -96,6 +97,28 @@ describe("initialization resource ownership", () => {
       resume: false,
       reuseApproved: true,
     })).toBe(false);
+  });
+});
+
+describe("new Cloudflare account initialization", () => {
+  it("replaces Wrangler's stale workers.dev onboarding error with retry guidance", () => {
+    const error = workersDevInitializationError(new Error(
+      "wrangler deploy failed: You need to register a workers.dev " +
+        "subdomain before publishing to workers.dev. Open " +
+        "https://dash.cloudflare.com/account-id/workers/onboarding",
+    ));
+
+    expect(error?.message).toContain("newly created");
+    expect(error?.message).toContain("Wait a few minutes");
+    expect(error?.message).toContain("`yarn manage init`");
+    expect(error?.message).toContain("resume safely");
+    expect(error?.message).not.toContain("workers/onboarding");
+  });
+
+  it("does not rewrite unrelated Wrangler deployment failures", () => {
+    expect(
+      workersDevInitializationError(new Error("Worker name already exists")),
+    ).toBeNull();
   });
 });
 
