@@ -29,6 +29,10 @@ export default defineConfig({
   }),
   integrations: [react()],
   output: "server",
+  prefetch: {
+    prefetchAll: false,
+    defaultStrategy: "hover",
+  },
   // microfeed does not use Astro sessions. Supplying a driver prevents the
   // adapter from automatically provisioning an otherwise unused KV namespace.
   session: {

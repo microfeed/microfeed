@@ -1,6 +1,6 @@
 import React from 'react';
 import Requests from '@/client/requests';
-import AdminNavApp from '@/components/admin/shared/AdminNavApp';
+import AdminPageApp from '@/components/admin/shared/AdminPageApp';
 import AdminImageUploaderApp from '@/components/admin/shared/AdminImageUploaderApp';
 import AdminInput from "@/components/admin/shared/AdminInput";
 import AdminRadio from "@/components/admin/shared/AdminRadio";
@@ -15,15 +15,14 @@ import AdminSelect from "@/components/admin/shared/AdminSelect";
 import {
   ITUNES_CATEGORIES_DICT,
   LANGUAGE_CODES_LIST,
-  NAV_ITEMS,
   ONBOARDING_TYPES,
 } from "@/shared/Constants";
 import ExplainText from "@/components/admin/shared/ExplainText";
 import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./FormExplainTexts";
 import {
   preventCloseWhenChanged,
-  readJsonScript,
 } from "@/client/BrowserUtils";
+import type {FeedContent, OnboardingResult} from "@/types";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -61,8 +60,15 @@ Object.keys(ITUNES_CATEGORIES_DICT).forEach((topLevel: any) => {
   });
 });
 
-export default class EditChannelApp extends React.Component<any, any> {
-  constructor(props: any) {
+interface Props {
+  feedContent: FeedContent;
+  onboardingResult: OnboardingResult;
+}
+
+export default class EditChannelApp extends React.Component<Props, any> {
+  private cleanupNavigationGuard?: () => void;
+
+  constructor(props: Props) {
     super(props);
 
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
@@ -70,13 +76,11 @@ export default class EditChannelApp extends React.Component<any, any> {
     this.onUpdateChannelMetaToFeed = this.onUpdateChannelMetaToFeed.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
 
-    const feed = readJsonScript<any>('feed-content');
-    const onboardingResult = readJsonScript('onboarding-result');
+    const feed = props.feedContent;
 
     const channel = feed.channel;
     this.state = {
       feed,
-      onboardingResult,
       channel,
       submitStatus: null,
       changed: false,
@@ -84,7 +88,11 @@ export default class EditChannelApp extends React.Component<any, any> {
   }
 
   componentDidMount() {
-    preventCloseWhenChanged(() => this.state.changed);
+    this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
+  }
+
+  componentWillUnmount() {
+    this.cleanupNavigationGuard?.();
   }
 
   onUpdateFeed(props: any, onSucceed: any) {
@@ -138,7 +146,8 @@ export default class EditChannelApp extends React.Component<any, any> {
   }
 
   render() {
-    const {submitStatus, channel, feed, onboardingResult, changed} = this.state;
+    const {submitStatus, channel, feed, changed} = this.state;
+    const {onboardingResult} = this.props;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const mediaStorage = onboardingResult.result[
@@ -150,8 +159,8 @@ export default class EditChannelApp extends React.Component<any, any> {
       webGlobalSettings.publicBucketUrl,
       window.location.hostname,
     );
-    return (<AdminNavApp currentPage={NAV_ITEMS.EDIT_CHANNEL} onboardingResult={onboardingResult}>
-      <form className="grid grid-cols-12 gap-4">
+    return (<AdminPageApp>
+      <form className="grid grid-cols-12 gap-4" onSubmit={this.onSubmit}>
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
             <div className="flex">
@@ -320,7 +329,6 @@ export default class EditChannelApp extends React.Component<any, any> {
               <button
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
-                onClick={this.onSubmit}
                 disabled={submitting || !changed}
               >
                 {submitting ? 'Updating...' : 'Update'}
@@ -330,6 +338,6 @@ export default class EditChannelApp extends React.Component<any, any> {
           </div>
         </div>
       </form>
-    </AdminNavApp>);
+    </AdminPageApp>);
   }
 }

@@ -1,5 +1,7 @@
 ---
-import AdminIsland from "@/components/admin/AdminIsland";
+import EditItemApp from "@/components/admin/items/EditItemApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 
 const {feedContent, onboardingResult} = Astro.locals;
@@ -8,6 +10,12 @@ if (!feedContent || !onboardingResult) {
 }
 ---
 
-<AdminShell title="New item | microfeed.org" {feedContent} {onboardingResult}>
-  <AdminIsland kind="item" client:load />
+<AdminShell
+  title="New item | microfeed.org"
+  activeNavItem={NAV_ITEMS.NEW_ITEM}
+  {onboardingResult}
+>
+  <EditItemApp client:only="react" {feedContent} {onboardingResult}>
+    <AdminPageFallback slot="fallback" kind="form" />
+  </EditItemApp>
 </AdminShell>

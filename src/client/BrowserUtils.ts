@@ -1,26 +1,25 @@
 /**
  * Put it in componentDidMount()
  */
-export function preventCloseWhenChanged(hasChanged: any) {
-  window.addEventListener('beforeunload', (e: any) => {
+export function preventCloseWhenChanged(hasChanged: () => boolean): () => void {
+  const onBeforeUnload = (e: BeforeUnloadEvent) => {
     if (hasChanged()) {
       e.preventDefault();
-      e.returnValue = '';
+      Reflect.set(e, 'returnValue', '');
       return;
     }
+  };
+  const onBeforePreparation = (event: Event) => {
+    if (hasChanged()) {
+      event.preventDefault();
+    }
+  };
 
-    delete e['returnValue'];
-  });
-}
+  window.addEventListener('beforeunload', onBeforeUnload);
+  document.addEventListener('astro:before-preparation', onBeforePreparation);
 
-export function readJsonScript<T = unknown>(id: string): T {
-  const element = document.getElementById(id);
-  if (!element) {
-    throw new Error(`JSON data element #${id} was not found.`);
-  }
-  const content = element.textContent;
-  if (!content) {
-    throw new Error(`JSON data element #${id} was empty.`);
-  }
-  return JSON.parse(content) as T;
+  return () => {
+    window.removeEventListener('beforeunload', onBeforeUnload);
+    document.removeEventListener('astro:before-preparation', onBeforePreparation);
+  };
 }

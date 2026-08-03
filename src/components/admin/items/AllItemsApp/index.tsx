@@ -1,5 +1,6 @@
 import React from 'react';
-import AdminNavApp from '@/components/admin/shared/AdminNavApp';
+import {navigate} from 'astro:transitions/client';
+import AdminPageApp from '@/components/admin/shared/AdminPageApp';
 import {
   ADMIN_URLS,
   secondsToHHMMSS,
@@ -13,7 +14,8 @@ import {
   STATUSES,
   ITEM_STATUSES_DICT,
   NAV_ITEMS,
-  NAV_ITEMS_DICT, ITEMS_SORT_ORDERS
+  NAV_ITEMS_DICT,
+  ITEMS_SORT_ORDERS,
 } from "@/shared/Constants";
 import {msToDatetimeLocalString} from '@/shared/TimeUtils';
 import {
@@ -26,7 +28,7 @@ import clsx from "clsx";
 import ExternalLink from "@/components/admin/shared/ExternalLink";
 import AdminRadio from "@/components/admin/shared/AdminRadio";
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
-import {readJsonScript} from "@/client/BrowserUtils";
+import type {FeedContent} from "@/types";
 
 const columnHelper = createColumnHelper<any>();
 const columns = [
@@ -81,7 +83,7 @@ function ItemListTable({data, feed}: any) {
           },
         ]}
         onChange={(e: any) => {
-          location.href = `?sort=${e.target.value}`;
+          void navigate(`?sort=${e.target.value}`);
         }}
       />
     </div>
@@ -124,17 +126,19 @@ function ItemListTable({data, feed}: any) {
   </div>);
 }
 
-export default class AllItemsApp extends React.Component<any, any> {
-  constructor(props: any) {
+interface Props {
+  feedContent: FeedContent;
+}
+
+export default class AllItemsApp extends React.Component<Props, any> {
+  constructor(props: Props) {
     super(props);
 
-    const feed = readJsonScript<any>('feed-content');
-    const onboardingResult = readJsonScript('onboarding-result');
+    const feed = props.feedContent;
 
     const items = feed.items || [];
     this.state = {
       feed,
-      onboardingResult,
       items,
     };
   }
@@ -143,7 +147,7 @@ export default class AllItemsApp extends React.Component<any, any> {
   }
 
   render() {
-    const {items, feed, onboardingResult} = this.state;
+    const {items, feed} = this.state;
     const {settings} = feed;
     const {webGlobalSettings} = settings;
     const publicBucketUrl = resolvePublicBucketUrl(
@@ -190,10 +194,7 @@ export default class AllItemsApp extends React.Component<any, any> {
       </div>
     }));
 
-    return (<AdminNavApp
-      currentPage={NAV_ITEMS.ALL_ITEMS}
-      onboardingResult={onboardingResult}
-    >
+    return (<AdminPageApp>
       <form className="lh-page-card grid grid-cols-1 gap-4">
         <div className="lh-page-title">
           {(NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS] as any).name}
@@ -207,6 +208,6 @@ export default class AllItemsApp extends React.Component<any, any> {
           </div>}
         </div>
       </form>
-    </AdminNavApp>);
+    </AdminPageApp>);
   }
 }

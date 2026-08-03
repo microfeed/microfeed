@@ -1,37 +1,36 @@
 ---
 import {env} from "cloudflare:workers";
 import "@fontsource-variable/geist";
+import {ClientRouter} from "astro:transitions";
 
+import AdminIcon from "@/components/admin/AdminIcon.astro";
+import AdminNavigation from "@/components/admin/AdminNavigation.astro";
 import {normalizeAdminPath} from "@/shared/AdminPath";
-import type {FeedContent, OnboardingResult} from "../types";
+import type {AdminNavItemId} from "@/shared/AdminNavigation";
+import {OUR_BRAND} from "@/shared/Constants";
+import type {OnboardingResult} from "@/types";
 import "@/styles/admin.css";
-import "../styles/interactive.css";
+import "@/styles/interactive.css";
+
+export interface AdminBreadcrumb {
+  childName: string;
+  name: string;
+  url: string;
+}
 
 interface Props {
-  feedContent: FeedContent;
-  itemId?: string;
+  activeNavItem: AdminNavItemId | null;
+  breadcrumb?: AdminBreadcrumb;
   onboardingResult: OnboardingResult;
-  themeTemplate?: Record<string, unknown>;
   title: string;
 }
 
-const {
-  feedContent,
-  itemId,
-  onboardingResult,
-  themeTemplate,
-  title,
-} = Astro.props;
+const {activeNavItem, breadcrumb, onboardingResult, title} = Astro.props;
 const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
-const safeJson = (value: unknown) =>
-  JSON.stringify(value)
-    .replaceAll("<", "\\u003c")
-    .replaceAll(">", "\\u003e")
-    .replaceAll("&", "\\u0026");
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:name="admin-root" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -41,14 +40,204 @@ const safeJson = (value: unknown) =>
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png" />
     <link rel="manifest" href="/assets/favicon/site.webmanifest" />
+    <ClientRouter fallback="swap" />
   </head>
   <body>
-    {itemId && <div id="lh-data-params" data-item-id={itemId}></div>}
-    <script is:inline id="feed-content" type="application/json" set:html={safeJson(feedContent)}></script>
-    <script is:inline id="onboarding-result" type="application/json" set:html={safeJson(onboardingResult)}></script>
-    {themeTemplate && (
-      <script is:inline id="theme-tmpl-json" type="application/json" set:html={safeJson(themeTemplate)}></script>
-    )}
-    <slot />
+    <div class="flex min-h-screen w-full flex-col">
+      <header class="hidden grid-cols-12 items-center gap-4 border-b bg-white drop-shadow-sm lg:grid">
+        <div class="col-span-2 px-4 py-4 xl:px-8">
+          <a href={OUR_BRAND.whatsnewWebsite} target="_blank" rel="noreferrer" class="hover:opacity-50">
+            <img src="/assets/brands/microfeed/horizontal-logo.png" class="w-full" alt="microfeed" />
+          </a>
+        </div>
+        <div class="col-span-10 flex items-center">
+          {
+            breadcrumb && (
+              <div class="py-6 pl-4 xl:pl-16">
+                <a href={breadcrumb.url}>
+                  <span class="lh-icon-arrow-left" /> {breadcrumb.name}
+                </a>
+                <span class="mx-2">/</span>
+                <span class="text-muted-color">{breadcrumb.childName}</span>
+              </div>
+            )
+          }
+          <div><slot name="toolbar" /></div>
+          <div class="flex-1 px-4 py-6 text-right xl:px-16">
+            <button
+              class="text-brand-dark hover:opacity-50 text-sm font-semibold"
+              type="button"
+              data-admin-logout
+            >
+              <span class="flex items-center justify-end">
+                <span class="mr-1"><AdminIcon name="logout" class="w-4" /></span>
+                <span>Logout</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <header class="flex items-center border-b bg-white px-4 py-3 drop-shadow-sm lg:hidden">
+        <button
+          type="button"
+          class="text-brand-dark rounded p-2 hover:opacity-60"
+          aria-label="Open admin navigation"
+          aria-controls="admin-mobile-navigation"
+          aria-expanded="false"
+          aria-haspopup="dialog"
+          data-admin-menu-open
+        >
+          <AdminIcon name="bars" class="w-6" />
+        </button>
+        <a href={OUR_BRAND.whatsnewWebsite} target="_blank" rel="noreferrer" class="mx-4 flex-1 hover:opacity-50">
+          <img src="/assets/brands/microfeed/horizontal-logo.png" class="h-8 w-auto" alt="microfeed" />
+        </a>
+        <button
+          class="text-brand-dark rounded p-2 hover:opacity-50"
+          type="button"
+          aria-label="Logout"
+          data-admin-logout
+        >
+          <AdminIcon name="logout" class="w-5" />
+        </button>
+      </header>
+
+      <div class="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-12">
+        <aside class="bg-brand-dark hidden lg:col-span-2 lg:block">
+          <AdminNavigation
+            {activeNavItem}
+            {adminPath}
+            {onboardingResult}
+          />
+        </aside>
+        <main class="w-full lg:col-span-10" id="admin-page-content">
+          <div class="px-4 py-8 xl:px-16">
+            <slot />
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <dialog
+      id="admin-mobile-navigation"
+      class="bg-brand-dark m-0 h-dvh max-h-dvh w-[min(20rem,85vw)] max-w-none p-0 text-white backdrop:bg-black/40 lg:hidden"
+      aria-label="Admin navigation"
+      data-admin-menu
+    >
+      <div class="flex min-h-dvh flex-col">
+        <div class="flex items-center justify-between border-b bg-white px-4 py-3">
+          <img src="/assets/brands/microfeed/horizontal-logo.png" class="h-8 w-auto" alt="microfeed" />
+          <button
+            type="button"
+            class="text-brand-dark rounded p-2 hover:opacity-60"
+            aria-label="Close admin navigation"
+            data-admin-menu-close
+          >
+            <AdminIcon name="close" class="w-6" />
+          </button>
+        </div>
+        <AdminNavigation
+          {activeNavItem}
+          {adminPath}
+          {onboardingResult}
+        />
+        <div class="mt-auto border-t border-white/20 p-4">
+          <button class="flex items-center py-3 text-white hover:text-brand-light" type="button" data-admin-logout>
+            <AdminIcon name="logout" class="mr-2 w-5" />
+            Logout
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      import {
+        adminUrl,
+        browserAdminPath,
+        isAdminPathname,
+      } from "@/shared/AdminPath";
+
+      const mobileMenu = () =>
+        document.querySelector<HTMLDialogElement>("[data-admin-menu]");
+      const mobileMenuButton = () =>
+        document.querySelector<HTMLButtonElement>("[data-admin-menu-open]");
+      const staysInProtectedAdmin = (destination: URL) => {
+        const configuredAdminPath = browserAdminPath();
+        const loginPath = adminUrl("login", configuredAdminPath);
+        const goesToLogin =
+          destination.pathname === loginPath.slice(0, -1) ||
+          destination.pathname.startsWith(loginPath);
+        return isAdminPathname(destination.pathname, configuredAdminPath) &&
+          !goesToLogin;
+      };
+
+      document.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        if (target.closest("[data-admin-menu-open]")) {
+          mobileMenu()?.showModal();
+          mobileMenuButton()?.setAttribute("aria-expanded", "true");
+          document.body.classList.add("overflow-hidden");
+          return;
+        }
+
+        if (target.closest("[data-admin-menu-close]")) {
+          mobileMenu()?.close();
+          return;
+        }
+
+        const logoutButton = target.closest<HTMLButtonElement>("[data-admin-logout]");
+        if (!logoutButton || logoutButton.disabled) return;
+
+        logoutButton.disabled = true;
+        try {
+          const {authClient} = await import("@/client/auth-client");
+          await authClient.signOut();
+          window.location.assign(adminUrl("login", browserAdminPath()));
+        } catch (error) {
+          logoutButton.disabled = false;
+          throw error;
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        const menu = mobileMenu();
+        if (menu && event.target === menu) menu.close();
+      });
+
+      document.addEventListener("close", (event) => {
+        if (event.target === mobileMenu()) {
+          mobileMenuButton()?.setAttribute("aria-expanded", "false");
+          document.body.classList.remove("overflow-hidden");
+        }
+      }, true);
+
+      document.addEventListener("keydown", (event) => {
+        const menu = mobileMenu();
+        if (event.key === "Escape" && menu?.open) {
+          event.preventDefault();
+          menu.close();
+        }
+      });
+
+      document.addEventListener("astro:before-preparation", (event) => {
+        mobileMenu()?.close();
+
+        if (!staysInProtectedAdmin(event.to)) {
+          event.preventDefault();
+          return;
+        }
+
+        const loadDestination = event.loader;
+        event.loader = async () => {
+          await loadDestination();
+          if (!staysInProtectedAdmin(event.to)) {
+            event.preventDefault();
+          }
+        };
+      });
+    </script>
   </body>
 </html>

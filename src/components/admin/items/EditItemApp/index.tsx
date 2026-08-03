@@ -1,6 +1,7 @@
 import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
-import AdminNavApp from '@/components/admin/shared/AdminNavApp';
+import {navigate} from 'astro:transitions/client';
+import AdminPageApp from '@/components/admin/shared/AdminPageApp';
 import AdminInput from "@/components/admin/shared/AdminInput";
 import Requests from "@/client/requests";
 import {
@@ -17,8 +18,6 @@ import AdminRadio from "@/components/admin/shared/AdminRadio";
 import {showToast} from "@/client/ToastUtils";
 import MediaManager from "./components/MediaManager";
 import {
-  NAV_ITEMS,
-  NAV_ITEMS_DICT,
   ONBOARDING_TYPES,
   STATUSES,
   ITEM_STATUSES_DICT,
@@ -32,9 +31,9 @@ import {
 } from "./FormExplainTexts";
 import {
   preventCloseWhenChanged,
-  readJsonScript,
 } from "@/client/BrowserUtils";
 import {getMediaFileFromUrl} from "@/shared/MediaFileUtils";
+import type {FeedContent, OnboardingResult} from "@/types";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -49,8 +48,16 @@ function initItem(itemId?: any) {
   });
 }
 
-export default class EditItemApp extends React.Component<any, any> {
-  constructor(props: any) {
+interface Props {
+  feedContent: FeedContent;
+  itemId?: string;
+  onboardingResult: OnboardingResult;
+}
+
+export default class EditItemApp extends React.Component<Props, any> {
+  private cleanupNavigationGuard?: () => void;
+
+  constructor(props: Props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
@@ -59,20 +66,16 @@ export default class EditItemApp extends React.Component<any, any> {
     this.onUpdateItemMeta = this.onUpdateItemMeta.bind(this);
     this.onUpdateItemToFeed = this.onUpdateItemToFeed.bind(this);
 
-    const $dataParams = document.getElementById('lh-data-params');
-    const onboardingResult = readJsonScript('onboarding-result');
-
-    const itemId = $dataParams ? $dataParams.getAttribute('data-item-id') : null;
+    const itemId = props.itemId;
     const action = itemId ? 'edit' : 'create';
-    const feed = readJsonScript<any>('feed-content');
-    if (!feed.items) {
-      feed.items = [];
-    }
+    const feed = {
+      ...props.feedContent,
+      items: props.feedContent.items ? [...props.feedContent.items] : [],
+    };
     const item = feed.item || initItem();
 
     this.state = {
       feed,
-      onboardingResult,
       item,
       submitStatus: null,
       itemId: itemId || randomShortUUID(),
@@ -84,7 +87,7 @@ export default class EditItemApp extends React.Component<any, any> {
   }
 
   componentDidMount() {
-    preventCloseWhenChanged(() => this.state.changed);
+    this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
 
     const {action, item} = this.state;
     if (action === 'create') {
@@ -105,6 +108,10 @@ export default class EditItemApp extends React.Component<any, any> {
         this.onUpdateItemMeta(attrDict);
       }
     }
+  }
+
+  componentWillUnmount() {
+    this.cleanupNavigationGuard?.();
   }
 
   onUpdateFeed(props: any, onSuccess: any) {
@@ -141,7 +148,7 @@ export default class EditItemApp extends React.Component<any, any> {
         showToast('Deleted!', 'success');
         this.setState({submitStatus: null, changed: false}, () => {
           setTimeout(() => {
-            location.href = ADMIN_URLS.allItems();
+            void navigate(ADMIN_URLS.allItems());
           }, 1000);
         });
       })
@@ -169,7 +176,7 @@ export default class EditItemApp extends React.Component<any, any> {
             showToast('Created!', 'success');
             if (itemId) {
               setTimeout(() => {
-                location.href = ADMIN_URLS.editItem(itemId);
+                void navigate(ADMIN_URLS.editItem(itemId));
               }, 1000);
             }
           }
@@ -186,7 +193,8 @@ export default class EditItemApp extends React.Component<any, any> {
   }
 
   render() {
-    const {submitStatus, itemId, item, action, feed, onboardingResult, changed} = this.state;
+    const {submitStatus, itemId, item, action, feed, changed} = this.state;
+    const {onboardingResult} = this.props;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
     const status = item.status || STATUSES.PUBLISHED;
@@ -203,24 +211,12 @@ export default class EditItemApp extends React.Component<any, any> {
 
     let buttonText = 'Create';
     let submittingButtonText = 'Creating...';
-    let currentPage = NAV_ITEMS.NEW_ITEM;
-    let upperLevel;
     if (action === 'edit') {
       buttonText = 'Update';
       submittingButtonText = 'Updating...';
-      currentPage = NAV_ITEMS.ALL_ITEMS;
-      upperLevel = {
-        name: (NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS] as any).name,
-        url: ADMIN_URLS.allItems(),
-        childName: `Item (id = ${itemId})`,
-      };
     }
-    return (<AdminNavApp
-      currentPage={currentPage}
-      upperLevel={upperLevel}
-      onboardingResult={onboardingResult}
-    >
-      <form className="grid grid-cols-12 gap-4">
+    return (<AdminPageApp>
+      <form className="grid grid-cols-12 gap-4" onSubmit={this.onSubmit}>
         <div className="col-span-9 grid grid-cols-1 gap-4">
           <div className="lh-page-card">
             <MediaManager
@@ -412,7 +408,6 @@ export default class EditItemApp extends React.Component<any, any> {
               <button
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
-                onClick={this.onSubmit}
                 disabled={submitting || !changed}
               >
                 {submitting ? submittingButtonText : buttonText}
@@ -445,6 +440,6 @@ export default class EditItemApp extends React.Component<any, any> {
           </div>
         </div>
       </form>
-    </AdminNavApp>);
+    </AdminPageApp>);
   }
 }

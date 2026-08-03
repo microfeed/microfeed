@@ -1,0 +1,20 @@
+---
+import AdminShell from "@/layouts/AdminShell.astro";
+
+const {onboardingResult} = Astro.locals;
+if (!onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+Astro.response.status = 404;
+---
+
+<AdminShell
+  title="Admin page not found | microfeed.org"
+  activeNavItem={null}
+  {onboardingResult}
+>
+  <section class="lh-page-card" aria-labelledby="not-found-title">
+    <h1 class="lh-page-title" id="not-found-title">Admin page not found</h1>
+    <p>The requested admin page does not exist.</p>
+  </section>
+</AdminShell>

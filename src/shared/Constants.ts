@@ -180,7 +180,7 @@ export const NAV_ITEMS = {
   NEW_ITEM: 'new_item',
   ALL_ITEMS: 'all_items',
   SETTINGS: 'settings',
-};
+} as const;
 
 export const NAV_ITEMS_DICT = {
   [NAV_ITEMS.ADMIN_HOME]: {

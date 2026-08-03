@@ -1,8 +1,10 @@
 ---
 import {env} from "cloudflare:workers";
 
-import {STATUSES} from "@/shared/Constants";
-import AdminIsland from "@/components/admin/AdminIsland";
+import {NAV_ITEMS, NAV_ITEMS_DICT, STATUSES} from "@/shared/Constants";
+import {adminUrl} from "@/shared/AdminPath";
+import EditItemApp from "@/components/admin/items/EditItemApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 import {loadFeed} from "@/server/feed/feed";
 
@@ -21,15 +23,31 @@ if (missing) {
 }
 ---
 
-{missing ? (
-  <h1>Not found</h1>
-) : (
-  <AdminShell
-    title={`Edit item (id = ${itemId}) | microfeed.org`}
-    feedContent={loaded.content}
-    onboardingResult={loaded.onboarding}
-    {itemId}
-  >
-    <AdminIsland kind="item" client:load />
-  </AdminShell>
-)}
+<AdminShell
+  title={missing ? "Item not found | microfeed.org" : `Edit item (id = ${itemId}) | microfeed.org`}
+  activeNavItem={NAV_ITEMS.ALL_ITEMS}
+  onboardingResult={loaded.onboarding}
+  breadcrumb={{
+    name: NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name,
+    url: adminUrl("items/list", Astro.params.adminPath),
+    childName: `Item (id = ${itemId})`,
+  }}
+>
+  {
+    missing ? (
+      <section class="lh-page-card" aria-labelledby="not-found-title">
+        <h1 class="lh-page-title" id="not-found-title">Item not found</h1>
+        <p>The requested item does not exist or has been deleted.</p>
+      </section>
+    ) : (
+      <EditItemApp
+        client:only="react"
+        feedContent={loaded.content}
+        onboardingResult={loaded.onboarding}
+        {itemId}
+      >
+        <AdminPageFallback slot="fallback" kind="form" />
+      </EditItemApp>
+    )
+  }
+</AdminShell>

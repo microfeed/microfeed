@@ -1,43 +1,78 @@
 ---
-import {CODE_TYPES} from "@/shared/Constants";
+import {CODE_TYPES, NAV_ITEMS} from "@/shared/Constants";
+import {adminUrl} from "@/shared/AdminPath";
 import Theme from "@/server/themes/Theme";
-import AdminIsland from "@/components/admin/AdminIsland";
+import CustomCodeEditorApp, {
+  type ThemeTemplate,
+} from "@/components/admin/code-editor/CustomCodeEditorApp";
+import CodeEditorRouteSelect from "@/components/admin/code-editor/CodeEditorRouteSelect";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 
 const {feedContent, feedDb, onboardingResult} = Astro.locals;
 if (!feedContent || !feedDb || !onboardingResult) {
   throw new Error("Admin feed context was not initialized.");
 }
+
 const themeName = Astro.url.searchParams.get("theme") || CODE_TYPES.SHARED;
 const invalidTheme = ![CODE_TYPES.SHARED, "custom"].includes(themeName);
 if (invalidTheme) {
   Astro.response.status = 404;
 }
-const theme = new Theme(
-  await feedDb.getPublicJsonData(feedContent),
-  feedContent.settings,
-  themeName,
-);
-const themeTemplate = {
-  themeName: theme.name(),
-  rssStylesheet: theme.getRssStylesheetTmpl(),
-  webItem: theme.getWebItemTmpl(),
-  webFeed: theme.getWebFeedTmpl(),
-  webBodyStart: theme.getWebBodyStartTmpl(),
-  webBodyEnd: theme.getWebBodyEndTmpl(),
-  webHeader: theme.getWebHeaderTmpl(),
-};
+
+let themeTemplate: ThemeTemplate | undefined;
+if (!invalidTheme) {
+  const theme = new Theme(
+    await feedDb.getPublicJsonData(feedContent),
+    feedContent.settings,
+    themeName,
+  );
+  themeTemplate = {
+    themeName: theme.name(),
+    rssStylesheet: theme.getRssStylesheetTmpl(),
+    webItem: theme.getWebItemTmpl(),
+    webFeed: theme.getWebFeedTmpl(),
+    webBodyStart: theme.getWebBodyStartTmpl(),
+    webBodyEnd: theme.getWebBodyEndTmpl(),
+    webHeader: theme.getWebHeaderTmpl(),
+  };
+}
+
+const requestedCodeType = Astro.url.searchParams.get("type") || CODE_TYPES.SHARED;
+const codeType = Object.values(CODE_TYPES).includes(requestedCodeType)
+  ? requestedCodeType
+  : CODE_TYPES.SHARED;
 ---
 
-{invalidTheme ? (
-  <h1>Not Found</h1>
-) : (
-  <AdminShell
-    title="Code Editor | microfeed.org"
-    {feedContent}
-    {onboardingResult}
-    {themeTemplate}
-  >
-    <AdminIsland kind="code-editor" client:load />
-  </AdminShell>
-)}
+<AdminShell
+  title={invalidTheme ? "Code editor not found | microfeed.org" : "Code Editor | microfeed.org"}
+  activeNavItem={NAV_ITEMS.SETTINGS}
+  {onboardingResult}
+  breadcrumb={{
+    name: "Settings",
+    url: adminUrl("settings", Astro.params.adminPath),
+    childName: "Code Editor",
+  }}
+>
+  {
+    !invalidTheme && (
+      <CodeEditorRouteSelect slot="toolbar" client:only="react" {codeType}>
+        <span slot="fallback" class="ml-4 text-sm text-muted-color" role="status">
+          Loading editor options…
+        </span>
+      </CodeEditorRouteSelect>
+    )
+  }
+  {
+    invalidTheme || !themeTemplate ? (
+      <section class="lh-page-card" aria-labelledby="not-found-title">
+        <h1 class="lh-page-title" id="not-found-title">Code editor not found</h1>
+        <p>The requested theme is not available.</p>
+      </section>
+    ) : (
+      <CustomCodeEditorApp client:only="react" {feedContent} {themeTemplate}>
+        <AdminPageFallback slot="fallback" kind="editor" />
+      </CustomCodeEditorApp>
+    )
+  }
+</AdminShell>
