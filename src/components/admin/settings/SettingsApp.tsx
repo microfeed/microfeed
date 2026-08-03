@@ -65,9 +65,10 @@ export default class SettingsApp extends React.Component<any, any> {
   render() {
     const {submitStatus, feed, submitForType, onboardingResult} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    const mediaStorageReady = onboardingResult.result[
+    const mediaStorage = onboardingResult.result[
       ONBOARDING_TYPES.MEDIA_STORAGE
-    ]?.ready !== false;
+    ];
+    const mediaStorageReady = mediaStorage?.ready !== false;
     return (<AdminNavApp
       currentPage={NAV_ITEMS.SETTINGS}
       onboardingResult={onboardingResult}
@@ -108,6 +109,7 @@ export default class SettingsApp extends React.Component<any, any> {
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
+              mediaStorage={mediaStorage}
               mediaStorageReady={mediaStorageReady}
               onSubmit={this.onSubmit}
               setChanged={this.setChanged}

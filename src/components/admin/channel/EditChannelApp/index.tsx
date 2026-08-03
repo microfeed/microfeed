@@ -141,9 +141,10 @@ export default class EditChannelApp extends React.Component<any, any> {
     const {submitStatus, channel, feed, onboardingResult, changed} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    const mediaStorageReady = onboardingResult.result[
+    const mediaStorage = onboardingResult.result[
       ONBOARDING_TYPES.MEDIA_STORAGE
-    ]?.ready !== false;
+    ];
+    const mediaStorageReady = mediaStorage?.ready !== false;
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = resolvePublicBucketUrl(
       webGlobalSettings.publicBucketUrl,
@@ -159,6 +160,7 @@ export default class EditChannelApp extends React.Component<any, any> {
                 <AdminImageUploaderApp
                   mediaType="channel"
                   feed={feed}
+                  mediaStorage={mediaStorage}
                   mediaStorageReady={mediaStorageReady}
                   publicBucketUrl={publicBucketUrl}
                   currentImageUrl={channel.image}

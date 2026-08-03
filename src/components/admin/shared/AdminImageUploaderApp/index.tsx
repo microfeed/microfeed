@@ -13,6 +13,7 @@ import FileUploader from "../AdminFileUploader";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
 import {showToast} from "@/client/ToastUtils";
+import MediaStorageUnavailableDialog from "../MediaStorageUnavailableDialog";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -61,6 +62,8 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     this.onFileUploadClick = this.onFileUploadClick.bind(this);
     this.onFileUpload = this.onFileUpload.bind(this);
     this.onFileUploadToR2 = this.onFileUploadToR2.bind(this);
+    this.showMediaStorageUnavailable =
+      this.showMediaStorageUnavailable.bind(this);
 
     const webGlobalSettings = props.feed.settings.webGlobalSettings || {};
     const publicBucketUrl = resolvePublicBucketUrl(
@@ -76,6 +79,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       publicBucketUrl,
 
       showModal: false,
+      showMediaStorageUnavailable: false,
       previewImageUrl: null,
       cropper: null,
       cdnFilename: null,
@@ -118,6 +122,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   onFileUploadClick(e: any) {
     e.preventDefault();
     if (this.props.mediaStorageReady === false) {
+      this.showMediaStorageUnavailable();
       return;
     }
     if (!this.inputFile) {
@@ -133,7 +138,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
 
   onFileUpload(file: any) {
     if (this.props.mediaStorageReady === false) {
-      showToast("Enable R2 media storage before uploading images.", "error");
+      this.showMediaStorageUnavailable();
       return;
     }
     const {mediaType} = this.state;
@@ -167,6 +172,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
 
   onFileUploadToR2() {
     if (this.props.mediaStorageReady === false) {
+      this.showMediaStorageUnavailable();
       return;
     }
     const {cropper, cdnFilename, previewImageUrl} = this.state;
@@ -215,8 +221,14 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }, 'image/png');
   }
 
+  showMediaStorageUnavailable() {
+    this.setState({showMediaStorageUnavailable: true});
+  }
+
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal, publicBucketUrl, previewImageUrl, imageWidth, imageHeight} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal,
+      showMediaStorageUnavailable, publicBucketUrl, previewImageUrl,
+      imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
@@ -228,16 +240,15 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
       "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
     return (<div className="lh-upload-wrapper">
-      {!mediaStorageReady && <div className="mb-3 rounded-sm border p-3 text-sm text-helper-color">
-        Image uploads are unavailable until R2 media storage is enabled.
-        Existing image URLs remain unchanged.
-      </div>}
       <FileUploader
         handleChange={this.onFileUpload}
         name="imageUploader"
         types={fileTypes}
         disabled={uploading || !mediaStorageReady}
-        classes="lh-upload-fileinput"
+        onDisabledClick={!uploading
+          ? this.showMediaStorageUnavailable
+          : undefined}
+        classes="lh-upload-fileinput lh-upload-fileinput-image"
       >
         <div className="lh-upload-image-size lh-upload-box">
           {absoluteImageUrl ? <PreviewImage url={absoluteImageUrl}/> :
@@ -247,6 +258,14 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       {absoluteImageUrl && <div className="text-sm flex justify-center mt-1">
         <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={absoluteImageUrl} />
       </div>}
+      <MediaStorageUnavailableDialog
+        dashboardUrl={this.props.mediaStorage?.dashboardUrl}
+        onOpenChange={(open) => this.setState({
+          showMediaStorageUnavailable: open,
+        })}
+        open={showMediaStorageUnavailable}
+        state={this.props.mediaStorage?.mediaStorageState}
+      />
       <AdminDialog
         isOpen={showModal}
         setIsOpen={(trueOrFalse: any) => this.setState({showModal: trueOrFalse})}

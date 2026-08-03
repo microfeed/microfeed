@@ -190,9 +190,10 @@ export default class EditItemApp extends React.Component<any, any> {
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
     const status = item.status || STATUSES.PUBLISHED;
-    const mediaStorageReady = onboardingResult.result[
+    const mediaStorage = onboardingResult.result[
       ONBOARDING_TYPES.MEDIA_STORAGE
-    ]?.ready !== false;
+    ];
+    const mediaStorageReady = mediaStorage?.ready !== false;
 
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = resolvePublicBucketUrl(
@@ -225,6 +226,7 @@ export default class EditItemApp extends React.Component<any, any> {
             <MediaManager
               labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.MEDIA_FILE]}/>}
               feed={feed}
+              mediaStorage={mediaStorage}
               mediaStorageReady={mediaStorageReady}
               initMediaFile={mediaFile || {}}
               onMediaFileUpdated={(newMediaFile: any) => {
@@ -244,6 +246,7 @@ export default class EditItemApp extends React.Component<any, any> {
                 <AdminImageUploaderApp
                   mediaType="item"
                   feed={feed}
+                  mediaStorage={mediaStorage}
                   mediaStorageReady={mediaStorageReady}
                   publicBucketUrl={publicBucketUrl}
                   currentImageUrl={item.image}
