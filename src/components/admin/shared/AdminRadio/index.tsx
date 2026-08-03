@@ -16,7 +16,7 @@ export default function AdminRadio(
               onChange(e);
             }}
             className="text-brand-light"
-            disabled={disabled}
+            disabled={disabled || b.disabled}
           />
           <div className={clsx('ml-1.5', b.checked ? '' : 'text-helper-color')}>{b.name}</div>
         </label>

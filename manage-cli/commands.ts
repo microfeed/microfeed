@@ -57,6 +57,7 @@ import {
   instanceDirectory,
   instanceSummaries,
   isLocalOnly,
+  isR2Ready,
   listLocalInstances,
   localPersistencePath,
   markStep,
@@ -78,6 +79,7 @@ import {
   pagesCollisionMessage,
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
+  R2NotEntitledError,
   validateWranglerProfileName,
 } from "./lib/cloudflare";
 import {
@@ -207,11 +209,16 @@ async function resolveCommandInstance(
 }
 
 function instanceTargetMessage(config: MicrofeedConfig): string {
+  const r2State = isR2Ready(config)
+    ? "ready"
+    : config.r2.setupMode === "disabled"
+      ? "disabled"
+      : "pending";
   return [
     `Instance: ${config.instanceName}`,
     `Worker: ${workerName(config)}`,
     `D1: ${config.d1.name}`,
-    `R2: ${config.r2.name}`,
+    `R2: ${config.r2.name} (${r2State})`,
     ...(config.customDomain ? [`Domain: ${config.customDomain}`] : []),
   ].join("\n");
 }
@@ -870,7 +877,6 @@ async function finishInitialAdminSetup(
 
 const COMPLETED_CLOUDFLARE_INIT_STEPS = [
   "d1-ready",
-  "r2-ready",
   "worker-deployed",
   "deployment-verified",
 ] as const;
@@ -1621,6 +1627,37 @@ async function explicitReuse(
   return askConfirm(`${resource} already exists. Reuse it?`, false);
 }
 
+function r2ActivationInstructions(
+  accountId: string,
+  instanceName: string,
+): string {
+  return [
+    `Cloudflare R2 is not enabled for account ${accountId}.`,
+    `Open ${r2OverviewDashboardUrl(accountId)}, activate R2, and complete ` +
+      "Cloudflare's billing setup if requested.",
+    "microfeed cannot accept billing terms or add a payment method for you.",
+    "After activation, run " +
+      `\`yarn manage deploy --enable-r2 --instance ${instanceName}\`.`,
+  ].join(" ");
+}
+
+async function r2BucketAvailability(
+  context: CommandContext,
+  accountId: string,
+  name: string,
+): Promise<"available" | "exists" | "not-entitled"> {
+  try {
+    return await context.cloudflare.r2BucketExists(accountId, name)
+      ? "exists"
+      : "available";
+  } catch (error) {
+    if (error instanceof R2NotEntitledError) {
+      return "not-entitled";
+    }
+    throw error;
+  }
+}
+
 export function initializationResourceReuse(input: {
   exists: boolean;
   previouslyReused: boolean;
@@ -1650,11 +1687,19 @@ export async function updateAndReloadInitializationConfig(
 
 async function initializeProduction(context: CommandContext): Promise<void> {
   const saved = await readConfig(false, context.instanceName);
+  const noR2Requested = flagBoolean(context.flags, "no-r2");
   if (saved && isLocalOnly(saved)) {
     throw new Error(
       `Instance \`${saved.instanceName}\` is local only. Keep using it with ` +
         `\`yarn dev --instance ${saved.instanceName}\`, or choose a new ` +
         "instance name for the Cloudflare deployment.",
+    );
+  }
+  if (saved && noR2Requested && isR2Ready(saved)) {
+    throw new Error(
+      `Instance \`${saved.instanceName}\` already has R2 bucket ` +
+        `\`${saved.r2.name}\` configured. \`--no-r2\` never removes an ` +
+        "existing media binding.",
     );
   }
   if (!saved && flagString(context.flags, "project-name") === undefined) {
@@ -1700,14 +1745,21 @@ async function initializeProduction(context: CommandContext): Promise<void> {
       ? saved.d1.name
       : `${projectName}-db`,
   );
-  const r2Name = await resourceName(
-    context.flags,
-    "r2-name",
-    "R2 bucket name",
-    saved?.projectName === projectName
-      ? saved.r2.name
-      : `${projectName}-media`,
-  );
+  const defaultR2Name = saved?.projectName === projectName
+    ? saved.r2.name
+    : `${projectName}-media`;
+  const r2Name = noR2Requested
+    ? flagString(context.flags, "r2-name") ?? defaultR2Name
+    : await resourceName(
+        context.flags,
+        "r2-name",
+        "R2 bucket name",
+        defaultR2Name,
+      );
+  const r2NameError = validateR2Name(r2Name);
+  if (r2NameError) {
+    throw new Error(`Invalid R2 bucket name \`${r2Name}\`. ${r2NameError}`);
+  }
   const adminPath = await configuredAdminPath(
     context.flags,
     saved?.projectName === projectName ? saved.adminPath : "admin",
@@ -1743,10 +1795,17 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     );
   }
 
-  const [databases, r2Exists] = await Promise.all([
+  const skipR2Setup = noR2Requested || saved?.r2.setupMode === "disabled";
+  const [databases, r2Availability] = await Promise.all([
     context.cloudflare.d1Databases(account.id),
-    context.cloudflare.r2BucketExists(account.id, r2Name),
+    saved?.completedSteps.includes("r2-ready")
+      ? Promise.resolve("exists" as const)
+      : skipR2Setup
+      ? Promise.resolve("skipped" as const)
+      : r2BucketAvailability(context, account.id, r2Name),
   ]);
+  const r2Exists = r2Availability === "exists";
+  let r2Pending = r2Availability === "not-entitled";
   const existingD1 = databases.find(({name}) => name === d1Name);
   const d1Resumed = Boolean(
     relatedSavedState &&
@@ -1774,6 +1833,8 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   });
 
   const r2Resumed = Boolean(
+    !skipR2Setup &&
+    !r2Pending &&
     relatedSavedState &&
     saved.completedSteps.includes("r2-ready") &&
     saved.r2.name === r2Name,
@@ -1812,7 +1873,11 @@ async function initializeProduction(context: CommandContext): Promise<void> {
         instanceName: context.instanceName ??
           normalizeLocalInstanceName(projectName),
         projectName,
-        r2: {name: r2Name, reuse: reuseR2},
+        r2: {
+          name: r2Name,
+          reuse: reuseR2,
+          setupMode: skipR2Setup ? "disabled" : "automatic",
+        },
       };
   context.instanceName = config.instanceName;
   config.adminPath = adminPath;
@@ -1820,6 +1885,7 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   config.d1.reuse = reuseD1;
   config.r2.name = r2Name;
   config.r2.reuse = reuseR2;
+  config.r2.setupMode = skipR2Setup ? "disabled" : "automatic";
   await setActiveInstance(context.instanceName);
   await writeConfig(config);
   await configureAdminAuth(context, config);
@@ -1833,14 +1899,37 @@ async function initializeProduction(context: CommandContext): Promise<void> {
   markStep(config, "d1-ready");
   await writeConfig(config);
 
-  if (!r2Exists) {
+  if (!skipR2Setup && !r2Pending && !r2Exists) {
     prompts.log.step(`Creating R2 bucket ${r2Name}`);
-    await context.cloudflare.createR2(account.id, r2Name);
+    try {
+      await context.cloudflare.createR2(account.id, r2Name);
+    } catch (error) {
+      if (error instanceof R2NotEntitledError) {
+        r2Pending = true;
+      } else {
+        throw error;
+      }
+    }
   }
-  markStep(config, "r2-ready");
-  await writeConfig(config);
+  if (!skipR2Setup && !r2Pending) {
+    markStep(config, "r2-ready");
+    await writeConfig(config);
+  } else if (r2Pending) {
+    prompts.note(
+      r2ActivationInstructions(account.id, config.instanceName),
+      "Media uploads will be enabled later",
+    );
+  } else {
+    prompts.log.info(
+      "R2 media storage was disabled. Text publishing and external media " +
+        "URLs remain available.",
+    );
+  }
 
   await deployConfiguredProject(context, config, true, true);
+  if (isR2Ready(config)) {
+    await verifyR2Deployment(context, config);
+  }
   prompts.log.success(`microfeed is live at ${config.deploymentUrl}`);
 
   if (!flagBoolean(context.flags, "yes")) {
@@ -1869,14 +1958,16 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     }
   }
   await finishInitialAdminSetup(context, config);
-  try {
-    await recordRemoteRestoreBaseline(context, config);
-  } catch (error) {
-    config.completedSteps = config.completedSteps.filter(
-      (step) => step !== "deployment-verified",
-    );
-    await writeConfig(config);
-    throw error;
+  if (isR2Ready(config)) {
+    try {
+      await recordRemoteRestoreBaseline(context, config);
+    } catch (error) {
+      config.completedSteps = config.completedSteps.filter(
+        (step) => step !== "deployment-verified",
+      );
+      await writeConfig(config);
+      throw error;
+    }
   }
 }
 
@@ -1893,6 +1984,13 @@ async function initializePreview(context: CommandContext): Promise<void> {
       `Instance \`${production.instanceName}\` is local only and cannot ` +
         "have a Cloudflare preview environment. Select a managed Cloudflare " +
         "instance first.",
+    );
+  }
+  if (!isR2Ready(production)) {
+    throw new Error(
+      `Preview initialization requires production R2 media storage. Run ` +
+        `\`yarn manage deploy --enable-r2 --instance ${production.instanceName}\` ` +
+        "first, then retry `yarn manage init --preview`.",
     );
   }
   const productionAccountId = cloudflareAccountId(production);
@@ -2012,13 +2110,21 @@ async function initializePreview(context: CommandContext): Promise<void> {
         instanceId: randomUUID(),
         instanceName: production.instanceName,
         projectName: production.projectName,
-        r2: {name: production.r2.name, reuse: true},
+        r2: {
+          name: production.r2.name,
+          reuse: true,
+          setupMode: "automatic",
+        },
         workerName: previewWorkerName,
       };
   config.adminPath = adminPath;
   config.d1.name = d1Name;
   config.d1.reuse = reuseD1;
-  config.r2 = {name: production.r2.name, reuse: true};
+  config.r2 = {
+    name: production.r2.name,
+    reuse: true,
+    setupMode: "automatic",
+  };
   config.workerName = previewWorkerName;
   await writeConfig(config);
   await configureAdminAuth(context, config);
@@ -2102,17 +2208,51 @@ async function initializeLocal(context: CommandContext): Promise<void> {
   const targetName = await localInitInstanceName(context.flags);
   context.instanceName = targetName;
   const existingConfig = await readConfig(false, targetName);
+  const noR2Requested = flagBoolean(context.flags, "no-r2");
+  if (existingConfig && noR2Requested && isR2Ready(existingConfig)) {
+    throw new Error(
+      `Instance \`${targetName}\` already has simulated R2 storage ` +
+        "configured. `--no-r2` never removes an existing media binding.",
+    );
+  }
   if (existingConfig?.completedSteps.includes("initialization-complete")) {
     throw new Error(completedLocalInitializationMessage(existingConfig));
   }
   const config = await ensureLocalOnlyConfig(targetName);
+  const requestedR2Name = flagString(context.flags, "r2-name");
+  if (requestedR2Name) {
+    const error = validateR2Name(requestedR2Name);
+    if (error) {
+      throw new Error(
+        `Invalid R2 bucket name \`${requestedR2Name}\`. ${error}`,
+      );
+    }
+    if (existingConfig && requestedR2Name !== config.r2.name) {
+      throw new Error(
+        `Instance \`${targetName}\` already uses media name ` +
+          `\`${config.r2.name}\`. Choose another instance name to use ` +
+          `\`${requestedR2Name}\`.`,
+      );
+    }
+    config.r2.name = requestedR2Name;
+  }
+  if (!existingConfig && noR2Requested) {
+    config.r2.setupMode = "disabled";
+    config.completedSteps = config.completedSteps.filter(
+      (step) => step !== "r2-ready",
+    );
+    await writeConfig(config);
+    await generateWranglerConfig(config);
+  }
   await setActiveInstance(targetName);
   prompts.note(
     [
       `Instance: ${targetName}`,
       "Type: Local only",
       `D1: ${config.d1.name} (local simulation)`,
-      `R2: ${config.r2.name} (local simulation)`,
+      `R2: ${config.r2.name} (${isR2Ready(config)
+        ? "local simulation"
+        : "disabled"})`,
       "Cloudflare resources: none",
     ].join("\n"),
     "Local initialization target",
@@ -2200,6 +2340,7 @@ export async function initCommand(
   };
   const preview = flagBoolean(flags, "preview");
   const local = flagBoolean(flags, "local");
+  const noR2 = flagBoolean(flags, "no-r2");
   const suppliedProjectName = flagString(flags, "project-name");
   if (!local && suppliedProjectName !== undefined) {
     const error = validateWorkerName(suppliedProjectName);
@@ -2215,6 +2356,18 @@ export async function initCommand(
     throw new Error(
       "`--local` and `--preview` cannot be used together. Local instances " +
         "already use isolated development data.",
+    );
+  }
+  if (noR2 && preview) {
+    throw new Error(
+      "`--no-r2` and `--preview` cannot be used together. Preview " +
+        "environments require production media storage.",
+    );
+  }
+  if (noR2 && flagBoolean(flags, "reuse-r2")) {
+    throw new Error(
+      "`--no-r2` and `--reuse-r2` cannot be used together because no R2 " +
+        "bucket is inspected or bound.",
     );
   }
   const suppliedEmail = flagString(flags, "owner-email");
@@ -2269,6 +2422,180 @@ export async function initCommand(
   );
 }
 
+export async function prepareR2ForDeployment(
+  context: CommandContext,
+  config: MicrofeedConfig,
+  explicitlyEnabled: boolean,
+): Promise<boolean> {
+  if (isR2Ready(config)) {
+    return false;
+  }
+  if (config.r2.setupMode === "disabled" && !explicitlyEnabled) {
+    return false;
+  }
+
+  const accountId = cloudflareAccountId(config);
+  const availability = await r2BucketAvailability(
+    context,
+    accountId,
+    config.r2.name,
+  );
+  if (availability === "not-entitled") {
+    const instructions = r2ActivationInstructions(
+      accountId,
+      config.instanceName,
+    );
+    if (explicitlyEnabled) {
+      throw new Error(instructions);
+    }
+    prompts.note(instructions, "Media storage is still pending");
+    return false;
+  }
+
+  if (!explicitlyEnabled) {
+    const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) &&
+      !flagBoolean(context.flags, "yes");
+    if (!interactive) {
+      prompts.note(
+        "R2 is now available. This non-interactive deployment will stay " +
+          "content-only. Enable media uploads deterministically with " +
+          `\`yarn manage deploy --enable-r2 --instance ${config.instanceName}\`.`,
+        "Optional media storage available",
+      );
+      return false;
+    }
+    if (!await askConfirm("Add R2 media storage now?", true)) {
+      config.r2.setupMode = "disabled";
+      await writeConfig(config);
+      await generateWranglerConfig(config);
+      prompts.log.info(
+        "R2 media storage was disabled for future deployments. Enable it " +
+          `later with \`yarn manage deploy --enable-r2 --instance ${config.instanceName}\`.`,
+      );
+      return false;
+    }
+  }
+
+  const bucketExists = availability === "exists";
+  const reuseR2 = bucketExists
+    ? await explicitReuse(
+        context.flags,
+        "reuse-r2",
+        `R2 bucket \`${config.r2.name}\``,
+        false,
+      )
+    : false;
+  if (bucketExists && !reuseR2) {
+    throw new Error(
+      "R2 setup stopped before the Worker binding changed. The existing " +
+        "bucket was not reused.",
+    );
+  }
+  if (!bucketExists) {
+    prompts.log.step(`Creating R2 bucket ${config.r2.name}`);
+    try {
+      await context.cloudflare.createR2(accountId, config.r2.name);
+    } catch (error) {
+      if (error instanceof R2NotEntitledError) {
+        throw new Error(
+          r2ActivationInstructions(accountId, config.instanceName),
+        );
+      }
+      throw new Error(
+        `R2 bucket \`${config.r2.name}\` and its saved binding could not be ` +
+          "verified. The binding was not removed. Restore this account's R2 " +
+          `permissions, then rerun status. ${errorMessage(error)}`,
+      );
+    }
+  }
+  config.r2.reuse = reuseR2;
+  config.r2.setupMode = "automatic";
+  markStep(config, "r2-ready");
+  markStep(config, "r2-enable-pending");
+  await writeConfig(config);
+  await generateWranglerConfig(config);
+  prompts.log.success(`R2 media storage ${config.r2.name}: ready to bind`);
+  return true;
+}
+
+export async function verifyR2Deployment(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<void> {
+  try {
+    const [bucketExists, bindings] = await Promise.all([
+      context.cloudflare.r2BucketExists(
+        cloudflareAccountId(config),
+        config.r2.name,
+      ),
+      context.cloudflare.workerBindings(
+        cloudflareAccountId(config),
+        workerName(config),
+      ),
+    ]);
+    const bindingExists = bindings.some(
+      ({bucket_name: bucketName, name, type}) =>
+        name === "MEDIA_BUCKET" &&
+        type === "r2_bucket" &&
+        bucketName === config.r2.name,
+    );
+    if (!bucketExists || !bindingExists) {
+      throw new Error(
+        `Cloudflare did not report the exact R2 bucket \`${config.r2.name}\` ` +
+          "and MEDIA_BUCKET Worker binding after deployment.",
+      );
+    }
+  } catch (error) {
+    const accountId = cloudflareAccountId(config);
+    if (error instanceof R2NotEntitledError) {
+      throw new Error(
+        "The Worker deployment completed, but Cloudflare no longer allows " +
+          "this account to verify its R2 binding. The saved bucket and " +
+          `binding were not removed. ${r2ActivationInstructions(
+            accountId,
+            config.instanceName,
+          )}`,
+      );
+    }
+    throw new Error(
+      "The Worker deployment completed, but its R2 bucket and binding could " +
+        "not be verified. The saved bucket and binding were not removed. " +
+        `Restore R2 permissions, then rerun deployment. ${errorMessage(error)}`,
+    );
+  }
+  config.completedSteps = config.completedSteps.filter(
+    (step) => step !== "r2-enable-pending",
+  );
+  await writeConfig(config);
+  prompts.log.success(
+    `R2 ${config.r2.name}: exact bucket and MEDIA_BUCKET binding verified`,
+  );
+}
+
+async function tryRecordDeferredR2RestoreBaseline(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<void> {
+  if (config.restoreBaseline || config.d1.reuse || config.r2.reuse) {
+    return;
+  }
+  try {
+    await assertFreshRemoteRestoreBaselineTarget(context, config);
+    await saveVerifiedRemoteRestoreBaseline(context, config, {
+      update: () => undefined,
+    });
+    prompts.log.success(
+      "Fresh snapshot-restore baseline recorded after enabling R2.",
+    );
+  } catch (error) {
+    prompts.log.warn(
+      "R2 was enabled successfully, but this installation is no longer a " +
+        "bootstrap-only empty snapshot target, so no restore baseline was " +
+        `recorded. ${errorMessage(error)}`,
+    );
+  }
+}
+
 export async function deployCommand(
   flags: Flags,
   runner: CommandRunner = runCommand,
@@ -2280,15 +2607,60 @@ export async function deployCommand(
     runner,
   };
   const preview = flagBoolean(flags, "preview");
+  const local = flagBoolean(flags, "local");
+  const enableR2 = flagBoolean(flags, "enable-r2");
+  if (preview && local) {
+    throw new Error("`--preview` and `--local` cannot be used together.");
+  }
+  if (preview && enableR2) {
+    throw new Error(
+      "`--enable-r2` targets production media storage and cannot be used " +
+        "with `--preview`.",
+    );
+  }
+  if (local && flagBoolean(flags, "reuse-r2")) {
+    throw new Error(
+      "`--reuse-r2` applies only to Cloudflare buckets, not local " +
+        "simulated storage.",
+    );
+  }
   prompts.intro(
-    preview ? "microfeed preview deployment" : "microfeed deployment",
+    local
+      ? "microfeed local deployment preparation"
+      : preview
+      ? "microfeed preview deployment"
+      : "microfeed deployment",
   );
   await resolveCommandInstance(context);
   const config = await ensureWranglerConfig(
-    false,
+    local,
     preview,
     context.instanceName,
   );
+  if (local) {
+    if (!isLocalOnly(config)) {
+      throw new Error(
+        `Instance \`${config.instanceName}\` is managed on Cloudflare. ` +
+          "`deploy --local` is limited to instances created with " +
+          "`init --local`.",
+      );
+    }
+    if (enableR2 && !isR2Ready(config)) {
+      config.r2.setupMode = "automatic";
+      markStep(config, "r2-ready");
+      await writeConfig(config);
+    }
+    await generateWranglerConfig(config);
+    await context.cloudflare.applyLocalMigrations(config);
+    markStep(config, "migrations-applied");
+    await writeConfig(config);
+    await runChecks(context.runner, config);
+    prompts.outro(
+      `Local instance \`${config.instanceName}\` is migrated, checked, and ` +
+        "built. Existing local data was preserved; no server was started.",
+    );
+    return;
+  }
   const accountId = cloudflareAccountId(config);
   prompts.note(instanceTargetMessage(config), "Deployment target");
   const account = await authenticate(context, accountId);
@@ -2302,7 +2674,33 @@ export async function deployCommand(
   if (pages.includes(targetWorkerName)) {
     throw new Error(pagesCollisionMessage(targetWorkerName));
   }
-  await deployConfiguredProject(context, config, false);
+  const enabledR2Now = await prepareR2ForDeployment(
+    context,
+    config,
+    enableR2,
+  );
+  const r2EnablePending = enabledR2Now ||
+    config.completedSteps.includes("r2-enable-pending");
+  try {
+    await deployConfiguredProject(context, config, false);
+  } catch (error) {
+    const detail = errorMessage(error);
+    if (
+      isR2Ready(config) &&
+      /(?:\br2\b|media_bucket|10042|notentitled)/iu.test(detail)
+    ) {
+      throw new Error(
+        `${detail}\n\nThe saved R2 bucket and MEDIA_BUCKET binding were not ` +
+          "removed. Restore this account's R2 billing and permissions, then " +
+          `rerun \`yarn manage deploy --instance ${config.instanceName}\`.`,
+      );
+    }
+    throw error;
+  }
+  if (r2EnablePending) {
+    await verifyR2Deployment(context, config);
+    await tryRecordDeferredR2RestoreBaseline(context, config);
+  }
   prompts.outro(deploymentOutcomeMessage(config, preview));
 }
 
@@ -2426,7 +2824,7 @@ export async function migratePagesCommand(
     instanceName: context.instanceName,
     pagesProjectName: pagesName,
     projectName: workerName,
-    r2: {name: r2Name, reuse: true},
+    r2: {name: r2Name, reuse: true, setupMode: "automatic"},
   };
   context.instanceName = config.instanceName;
   await setActiveInstance(context.instanceName);
@@ -2746,14 +3144,54 @@ export async function statusCommand(
   if (account.id !== accountId) {
     throw new Error("Logged in to the wrong Cloudflare account.");
   }
-  const [worker, databases, r2] = await Promise.all([
+  const [worker, databases] = await Promise.all([
     context.cloudflare.workerExists(accountId, targetWorkerName),
     context.cloudflare.d1Databases(accountId),
-    context.cloudflare.r2BucketExists(accountId, config.r2.name),
   ]);
-  const d1 = databases.some(
+  const bindings = worker
+    ? await context.cloudflare.workerBindings(accountId, targetWorkerName)
+    : [];
+  const d1Resource = databases.some(
     ({id, name}) => id === config.d1.id && name === config.d1.name,
   );
+  const d1Binding = bindings.some((binding) =>
+    binding.name === "FEED_DB" &&
+    binding.type === "d1" &&
+    (binding.database_id === config.d1.id || binding.id === config.d1.id)
+  );
+  const d1 = d1Resource && d1Binding;
+  let r2 = false;
+  if (isR2Ready(config)) {
+    try {
+      const r2Resource = await context.cloudflare.r2BucketExists(
+        accountId,
+        config.r2.name,
+      );
+      const r2Binding = bindings.some(
+        ({bucket_name: name, name: binding, type}) =>
+          binding === "MEDIA_BUCKET" &&
+          type === "r2_bucket" &&
+          name === config.r2.name,
+      );
+      r2 = r2Resource && r2Binding;
+    } catch (error) {
+      if (error instanceof R2NotEntitledError) {
+        throw new Error(
+          "This installation already has an R2 binding, but Cloudflare no " +
+            "longer allows the account to verify it. The binding was not " +
+            `removed. ${r2ActivationInstructions(
+              accountId,
+              config.instanceName,
+            )}`,
+        );
+      }
+      throw new Error(
+        "This installation already has an R2 binding, but Cloudflare could " +
+          "not verify it. The binding was not removed. Restore this " +
+          `account's R2 permissions, then rerun status. ${errorMessage(error)}`,
+      );
+    }
+  }
   if (worker) {
     prompts.log.success(`Worker ${targetWorkerName}: found`);
   } else {
@@ -2764,10 +3202,20 @@ export async function statusCommand(
   } else {
     prompts.log.error(`D1 ${config.d1.name}: missing`);
   }
-  if (r2) {
-    prompts.log.success(`R2 ${config.r2.name}: bound resource found`);
-  } else {
+  if (isR2Ready(config) && r2) {
+    prompts.log.success(
+      `R2 ${config.r2.name}: exact bucket and MEDIA_BUCKET binding found`,
+    );
+  } else if (isR2Ready(config)) {
     prompts.log.error(`R2 ${config.r2.name}: missing`);
+  } else if (config.r2.setupMode === "disabled") {
+    prompts.log.info(
+      `R2 ${config.r2.name}: disabled by user; content-only deployment healthy`,
+    );
+  } else {
+    prompts.log.warn(
+      `R2 ${config.r2.name}: subscription pending; content-only deployment healthy`,
+    );
   }
   const builtInAuthEnabled = adminAuthMode(config) === "built-in";
   const [owner, passwordSetup] = d1 && builtInAuthEnabled
@@ -2876,7 +3324,7 @@ export async function statusCommand(
       );
     }
   }
-  if (!worker || !d1 || !r2) {
+  if (!worker || !d1 || (isR2Ready(config) && !r2)) {
     throw new Error("One or more required Cloudflare resources are missing.");
   }
   if (builtInAuthEnabled && !owner) {
@@ -2940,7 +3388,9 @@ async function inspectDestroyTarget(
   const [workerExists, databases, r2Exists, domains] = await Promise.all([
     context.cloudflare.workerExists(accountId, targetWorkerName),
     context.cloudflare.d1Databases(accountId),
-    context.cloudflare.r2BucketExists(accountId, config.r2.name),
+    isR2Ready(config)
+      ? context.cloudflare.r2BucketExists(accountId, config.r2.name)
+      : Promise.resolve(false),
     context.cloudflare.workerDomains(accountId, targetWorkerName),
   ]);
 
@@ -3010,7 +3460,9 @@ async function inspectDestroyTarget(
       discovered.instanceId !== config.instanceId ||
       discovered.d1.id !== config.d1.id ||
       discovered.d1.name !== config.d1.name ||
-      discovered.r2Name !== config.r2.name
+      discovered.r2Name !== config.r2.name ||
+      discovered.r2Ready !== isR2Ready(config) ||
+      discovered.r2SetupMode !== config.r2.setupMode
     ) {
       throw new Error(
         `Worker \`${targetWorkerName}\` no longer matches this saved ` +
@@ -3037,13 +3489,15 @@ function destroyResourcePlan(
       : inspection.d1Exists
         ? "DELETE permanently"
         : "Already absent";
-  const r2Action = config.r2.reuse
-    ? "PRESERVE (shared/reused resource)"
-    : keepData
-      ? "PRESERVE (--keep-data)"
-      : inspection.r2Exists
-        ? "EMPTY and DELETE permanently"
-        : "Already absent";
+  const r2Action = !isR2Ready(config)
+    ? `Not configured (${config.r2.setupMode})`
+    : config.r2.reuse
+      ? "PRESERVE (shared/reused resource)"
+      : keepData
+        ? "PRESERVE (--keep-data)"
+        : inspection.r2Exists
+          ? "EMPTY and DELETE permanently"
+          : "Already absent";
   const publicUrl = config.customDomain
     ? `https://${config.customDomain}`
     : config.deploymentUrl ?? "not recorded";
@@ -3754,13 +4208,19 @@ function connectedInstanceLines(
     ...(isLocalOnly(config)
       ? [
           `    D1: ${config.d1.name} (local simulation)`,
-          `    R2: ${config.r2.name} (local simulation)`,
+          `    R2: ${config.r2.name} (${isR2Ready(config)
+            ? "local simulation"
+            : "disabled"})`,
           `    URL: ${config.deploymentUrl ?? "http://localhost:4321"}`,
         ]
       : [
           `    Worker: ${workerName(config)}`,
           `    D1: ${config.d1.name}`,
-          `    R2: ${config.r2.name}`,
+          `    R2: ${config.r2.name} (${isR2Ready(config)
+            ? "ready"
+            : config.r2.setupMode === "disabled"
+              ? "disabled"
+              : "subscription pending"})`,
           `    URL: ${
             config.customDomain
               ? `https://${config.customDomain}`
@@ -3781,7 +4241,11 @@ function availableInstanceLines(
     `◇ ${worker.workerName}`,
     "    Type: Cloudflare — available to connect",
     `    D1: ${worker.d1.name}`,
-    `    R2: ${worker.r2Name}`,
+    `    R2: ${worker.r2Name} (${worker.r2Ready
+      ? "ready"
+      : worker.r2SetupMode === "disabled"
+        ? "disabled"
+        : "subscription pending"})`,
     `    URL: ${url}`,
     "    Connect: " +
       `yarn manage connect --account-id ${worker.accountId} ` +
@@ -4129,7 +4593,7 @@ export async function connectCommand(
     adminPath: selectedWorker.adminPath,
     completedSteps: [
       "d1-ready",
-      "r2-ready",
+      ...(selectedWorker.r2Ready ? ["r2-ready"] : []),
       "worker-deployed",
       "deployment-verified",
       ...(secretNames.has("BETTER_AUTH_SECRET")
@@ -4150,7 +4614,11 @@ export async function connectCommand(
     instanceId: identity.instanceId,
     instanceName: requestedInstanceName,
     projectName: selectedWorker.projectName,
-    r2: {name: selectedWorker.r2Name, reuse: true},
+    r2: {
+      name: selectedWorker.r2Name,
+      reuse: selectedWorker.r2Ready,
+      setupMode: selectedWorker.r2SetupMode,
+    },
     workerName: selectedWorker.workerName,
   };
   await generateWranglerConfig(config);
@@ -4466,10 +4934,17 @@ export function remoteSnapshotNextSteps(
 export function remoteRestoreTargetReadinessError(
   config: MicrofeedConfig,
 ): string | null {
-  if (config.restoreBaseline) {
+  if (config.restoreBaseline && isR2Ready(config)) {
     return null;
   }
   const reasons: string[] = [];
+  if (!isR2Ready(config)) {
+    reasons.push(
+      "R2 media storage is not ready. Enable it with " +
+        `\`yarn manage deploy --enable-r2 --instance ${config.instanceName}\` ` +
+        "before restoring a snapshot.",
+    );
+  }
   if (!config.restoreBaseline) {
     reasons.push(hasCompletedCloudflareInitialization(config)
       ? "The CLI has no fresh-target safety fingerprint, so it cannot prove " +
@@ -4503,7 +4978,9 @@ export function remoteRestoreTargetReadinessError(
 export function canRepairRemoteRestoreBaseline(
   config: MicrofeedConfig,
 ): boolean {
-  return !config.restoreBaseline && hasCompletedCloudflareInitialization(config);
+  return !config.restoreBaseline &&
+    isR2Ready(config) &&
+    hasCompletedCloudflareInitialization(config);
 }
 
 export function validateRemoteRestoreBaselineRepair(input: {
@@ -5052,6 +5529,13 @@ async function createRemoteSnapshot(
   const config = await ensureWranglerConfig(false, false, context.instanceName);
   if (config.deploymentEnvironment === "preview") {
     throw new Error("Preview environments cannot create portable snapshots.");
+  }
+  if (!isR2Ready(config)) {
+    throw new Error(
+      `Portable snapshots require R2 media storage. Run ` +
+        `\`yarn manage deploy --enable-r2 --instance ${config.instanceName}\` ` +
+        "before creating or pulling a snapshot.",
+    );
   }
   const accountId = cloudflareAccountId(config);
   const account = await authenticate(context, accountId);

@@ -101,7 +101,9 @@ Use these checks, adapting labels without exposing secrets:
 - Cloudflare sign-in is authorized
 - Cloudflare account is selected
 - Site choices are confirmed
-- Site, content database, and media storage are deployed
+- Site and content database are deployed
+- Media storage is ready, explicitly disabled, or clearly marked as pending
+  Cloudflare activation
 - Public site is verified
 - Administrator password is created and protected login is active
 - Web address choice is complete: custom address verified, or free Cloudflare
@@ -119,6 +121,8 @@ successful steps were undone.
 - Fresh authorization for a named login: `yarn manage accounts --profile <name> --reauthorize`
 - Fresh Cloudflare installation: `yarn manage init`
 - Saved Cloudflare installation: `yarn manage deploy`
+- Explicitly enable deferred media storage: `yarn manage deploy --enable-r2`
+- Prepare an `init --local` instance without starting it: `yarn manage deploy --local`
 - Existing compatible Worker not saved in this clone: `yarn manage connect`;
   connecting is read-only, so ask again before a later deployment
 - Diagnostics only: `yarn manage status`
@@ -126,6 +130,11 @@ successful steps were undone.
 - Production custom domain: `yarn manage domain`
 - Administrator login or dashboard-path changes: `yarn manage auth`
 - Isolated preview after production exists: `yarn manage init --preview`
+
+Use `init --no-r2` only when the user explicitly wants a content-only or test
+installation. It works for Cloudflare and local initialization, saves the
+future bucket name, and must not be combined with preview or reuse approval.
+Preview and Cloudflare snapshot operations require production R2 to be ready.
 
 Use `--instance <name>` whenever more than one saved instance exists or the
 user named a target. Do not deploy a local-only instance to Cloudflare.
@@ -181,7 +190,7 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
    never begin initialization before this choice is resolved.
 7. Summarize the selected site and the services Cloudflare will create in
    plain language: the hosted application (Worker), content database (D1),
-   media storage (R2), protected dashboard path and administrator login, and
+   optional media storage (R2), protected dashboard path and administrator login, and
    optional custom web address. Show the exact technical resource names in
    parentheses for an auditable approval. Obtain approval for the browser
    Cloudflare sign-in and exact Cloudflare changes before starting the
@@ -200,6 +209,12 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
    `--admin-password`. If `--yes` is inappropriate because the user asked for
    interactive customization, still supply `--account-id` and every answer
    already known.
+
+   Add `--no-r2` only after the user deliberately opts out. If Cloudflare
+   instead returns `10042` / `NotEntitled`, accept the CLI's verified
+   content-only completion. Relay its account-specific R2 dashboard link and
+   explain that activation and any payment method or billing consent must be
+   completed by the user in Cloudflare; never attempt that consent yourself.
 9. If initialization is interrupted, rerun the identical command. Rely on the
    CLI's saved state and resource checks; do not bypass a collision or add a
    reuse flag unless the user approves the exact resource.
@@ -233,7 +248,7 @@ user named a target. Do not deploy a local-only instance to Cloudflare.
     is missing, run `yarn manage auth setup` with the same instance and account
     ID to rotate it.
 13. Report the verified public URL, dashboard URL, site name, Worker, D1
-    database, R2 bucket, authentication mode, and custom domain status. Include
+    database, R2 bucket and setup state, authentication mode, and custom domain status. Include
     the completed readiness checklist. Warn and stop if the status command says
     the admin dashboard is public.
 
@@ -245,6 +260,20 @@ full account ID is still available, then run `yarn manage deploy --instance
 <instance> --account-id <account-id>` and `yarn manage status --instance
 <instance> --account-id <account-id>`. Use `--preview` consistently when the
 user selected the isolated preview environment.
+
+If `instances` or `status` reports automatic pending media, a non-interactive
+agent deployment leaves it content-only and prints the deterministic enable
+command. Ask whether the user wants to activate media storage. After the user
+has enabled R2 and accepted any Cloudflare billing terms in the dashboard, run
+`yarn manage deploy --enable-r2 --instance <instance> --account-id
+<account-id>`. A same-named bucket still needs approval for that exact reuse;
+add `--reuse-r2` only after receiving it. If media is recorded as disabled,
+ordinary deploys stay quiet and the same explicit enable command is the opt-in.
+
+For a local-only instance, use `yarn manage deploy --local --instance
+<instance>` to apply local migrations and run checks/build without starting a
+server. Add `--enable-r2` only when the user wants to permanently add the
+simulated local media binding.
 
 Treat an authentication, permission, name-collision, Pages-domain, or
 verification failure as actionable. Preserve the CLI's error, explain the next

@@ -412,6 +412,7 @@ describe("deployment verification URL", () => {
     r2: {
       name: "microfeed-media",
       reuse: false,
+      setupMode: "automatic",
     },
   };
 
@@ -461,6 +462,7 @@ describe("deployment verification retries", () => {
     r2: {
       name: "microfeed-media",
       reuse: false,
+      setupMode: "automatic",
     },
   };
 
@@ -716,7 +718,7 @@ describe("built-in admin authentication disable", () => {
       instanceId: "instance-id",
       instanceName: "feed",
       projectName: "feed",
-      r2: {name: "feed-media", reuse: false},
+      r2: {name: "feed-media", reuse: false, setupMode: "automatic"},
     };
     const previous = structuredClone(config);
     const writes: MicrofeedConfig[] = [];

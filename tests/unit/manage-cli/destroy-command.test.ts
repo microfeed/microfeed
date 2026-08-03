@@ -46,7 +46,7 @@ function savedConfig(
     accountId: "account-id",
     adminAuthMode: "built-in",
     adminPath: "admin",
-    completedSteps: [],
+    completedSteps: ["r2-ready"],
     customDomain: "feed.example.com",
     d1: {id: "database-id", name: "feed-db", reuse: false},
     deploymentUrl: "https://feed.example.workers.dev",
@@ -54,7 +54,7 @@ function savedConfig(
     instanceId: "instance-id",
     instanceName: "feed",
     projectName: "feed",
-    r2: {name: "feed-media", reuse: false},
+    r2: {name: "feed-media", reuse: false, setupMode: "automatic"},
     ...overrides,
   };
 }
@@ -306,7 +306,7 @@ describe("guarded Cloudflare destroy", () => {
     const {commands, config} = await freshModules();
     await config.writeConfig(savedConfig({
       d1: {id: "database-id", name: "feed-db", reuse: true},
-      r2: {name: "feed-media", reuse: true},
+      r2: {name: "feed-media", reuse: true, setupMode: "automatic"},
     }));
     const state: CloudflareState = {
       d1: true,
@@ -391,7 +391,7 @@ describe("guarded Cloudflare destroy", () => {
       deploymentEnvironment: "preview",
       deploymentUrl: "https://feed-preview.example.workers.dev",
       projectName: "feed",
-      r2: {name: "feed-media", reuse: true},
+      r2: {name: "feed-media", reuse: true, setupMode: "automatic"},
       workerName: "feed-preview",
     }));
     const runner = vi.fn<CommandRunner>();
@@ -459,6 +459,7 @@ describe("guarded Cloudflare destroy", () => {
     const {commands, config} = await freshModules();
     await config.writeConfig(savedConfig({
       completedSteps: [
+        "r2-ready",
         "destroy-worker-deleted",
         "destroy-domains-detached",
         "destroy-d1-deleted",

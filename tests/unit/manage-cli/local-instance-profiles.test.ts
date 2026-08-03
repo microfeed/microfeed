@@ -31,6 +31,7 @@ function config(
     r2: {
       name: `${instanceName}-media`,
       reuse: false,
+      setupMode: "automatic",
     },
   };
 }

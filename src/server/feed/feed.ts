@@ -2,6 +2,7 @@ import OnboardingChecker from "@/server/feed/OnboardingUtils";
 import {STATUSES} from "@/shared/Constants";
 import FeedCrudManager from "@/server/feed/FeedCrudManager";
 import FeedDb, {getFetchItemsParams} from "@/server/feed/FeedDb";
+import {mediaBucket} from "@/server/media/storage";
 import type {
   AdminProtectionStatus,
   FeedContent,
@@ -39,6 +40,8 @@ export async function loadFeed(
       publicBucketUrl:
         content.settings?.webGlobalSettings?.publicBucketUrl,
       r2BucketName: runtimeEnv.MICROFEED_R2_BUCKET_NAME,
+      r2Ready: Boolean(mediaBucket(runtimeEnv)),
+      r2SetupMode: runtimeEnv.MICROFEED_R2_SETUP_MODE,
       workerName: runtimeEnv.MICROFEED_WORKER_NAME,
     },
   ).getResult() as OnboardingResult;

@@ -2,6 +2,7 @@ import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {
   accessApplicationDashboardUrl,
   r2BucketDomainsDashboardUrl,
+  r2OverviewDashboardUrl,
   workerDomainsDashboardUrl,
 } from "@/shared/CloudflareDashboard";
 import {
@@ -18,6 +19,8 @@ interface OnboardingOptions {
   accountId?: string;
   publicBucketUrl?: string;
   r2BucketName?: string;
+  r2Ready?: boolean;
+  r2SetupMode?: "automatic" | "disabled";
   workerName?: string;
 }
 
@@ -50,8 +53,10 @@ export default class OnboardingChecker {
     const result: Record<number, OnboardingCheck> = {};
 
     const urlObj = new URL(this.request.url);
+    const r2Ready = this.options.r2Ready !== false;
     const mediaDomain = this.initResult(
-      isR2CustomDomainUrl(this.options.publicBucketUrl),
+      !r2Ready ||
+        isR2CustomDomainUrl(this.options.publicBucketUrl),
       false,
     );
     mediaDomain.bucketName = this.options.r2BucketName;
@@ -61,6 +66,18 @@ export default class OnboardingChecker {
     ) ?? undefined;
     mediaDomain.suggestedUrl = suggestedR2CustomDomainUrl(urlObj.hostname);
     result[ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL] = mediaDomain;
+
+    const mediaStorage = this.initResult(r2Ready, false);
+    mediaStorage.bucketName = this.options.r2BucketName;
+    mediaStorage.dashboardUrl = r2OverviewDashboardUrl(
+      this.options.accountId,
+    ) ?? undefined;
+    mediaStorage.mediaStorageState = r2Ready
+      ? "ready"
+      : this.options.r2SetupMode === "disabled"
+        ? "disabled"
+        : "pending";
+    result[ONBOARDING_TYPES.MEDIA_STORAGE] = mediaStorage;
 
     const protectedAdminDash = this.initResult(
       this.adminProtection.builtInLogin ||

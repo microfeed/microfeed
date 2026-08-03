@@ -6,6 +6,7 @@ export interface Account {
 }
 
 export type InstanceHosting = "cloudflare" | "local";
+export type R2SetupMode = "automatic" | "disabled";
 
 export interface MicrofeedConfig {
   accountId: string | null;
@@ -28,6 +29,7 @@ export interface MicrofeedConfig {
   r2: {
     name: string;
     reuse: boolean;
+    setupMode: R2SetupMode;
   };
   restoreBaseline?: {
     createdAt: string;

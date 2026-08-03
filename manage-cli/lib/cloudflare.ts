@@ -5,7 +5,12 @@ import {
   type AdminAuthMode,
 } from "@/shared/AdminAuth";
 import {normalizeAdminPath} from "@/shared/AdminPath";
-import type {Account, CommandRunner, MicrofeedConfig} from "../types";
+import type {
+  Account,
+  CommandRunner,
+  MicrofeedConfig,
+  R2SetupMode,
+} from "../types";
 import type {AuthOwner, AuthPasswordSetup} from "./auth";
 import {
   builtWranglerConfigPath,
@@ -143,7 +148,7 @@ interface ApiKeyCredentials {
 
 type CloudflareCredentials = ApiKeyCredentials | ApiTokenCredentials;
 
-interface WorkerBinding extends Record<string, unknown> {
+export interface WorkerBinding extends Record<string, unknown> {
   name?: string;
   type?: string;
 }
@@ -196,8 +201,28 @@ export interface DiscoveredMicrofeedWorker {
   instanceId: string | null;
   projectName: string;
   r2Name: string;
+  r2Ready: boolean;
+  r2SetupMode: R2SetupMode;
   workerName: string;
   workersDevUrl: string | null;
+}
+
+export class R2NotEntitledError extends Error {
+  readonly accountId: string;
+
+  constructor(accountId: string) {
+    super(`Cloudflare R2 is not enabled for account ${accountId}.`);
+    this.name = "R2NotEntitledError";
+    this.accountId = accountId;
+  }
+}
+
+function isR2NotEntitledResult(result: {
+  stderr: string;
+  stdout: string;
+}): boolean {
+  const detail = `${result.stdout}\n${result.stderr}`.toLowerCase();
+  return detail.includes("10042") || detail.includes("notentitled");
 }
 
 export interface CloudflareIdentity {
@@ -637,7 +662,7 @@ export class CloudflareClient {
     await this.apiRequest<unknown>(path, {method: "DELETE"});
   }
 
-  private async workerSettings(
+  async workerBindings(
     accountId: string,
     workerName: string,
   ): Promise<WorkerBinding[]> {
@@ -739,7 +764,7 @@ export class CloudflareClient {
       scripts.flatMap(({id}) => typeof id === "string" ? [id] : [])
         .map(async (workerName) => {
           try {
-            const bindings = await this.workerSettings(account.id, workerName);
+            const bindings = await this.workerBindings(account.id, workerName);
             const d1 = bindings.find(
               ({name, type}) => name === "FEED_DB" && type === "d1",
             );
@@ -755,9 +780,6 @@ export class CloudflareClient {
               ? r2.bucket_name
               : null;
             const d1Name = d1Id ? d1Names.get(d1Id) : undefined;
-            if (!d1Id || !d1Name || !r2Name) {
-              return null;
-            }
             const variables = new Map(
               bindings.flatMap((binding) =>
                 binding.type === "plain_text" &&
@@ -767,6 +789,15 @@ export class CloudflareClient {
                   : []
               ),
             );
+            const savedR2Name = variables.get("MICROFEED_R2_BUCKET_NAME");
+            const effectiveR2Name = r2Name ?? savedR2Name ?? null;
+            if (!d1Id || !d1Name || !effectiveR2Name) {
+              return null;
+            }
+            const r2SetupMode = r2Name === null &&
+                variables.get("MICROFEED_R2_SETUP_MODE") === "disabled"
+              ? "disabled"
+              : "automatic";
             const subdomain = workersDevSubdomain
               ? await this.apiGet<{enabled?: unknown}>(
                   `${accountPath}/scripts/${encodeURIComponent(workerName)}` +
@@ -788,7 +819,9 @@ export class CloudflareClient {
               instanceId: variables.get("MICROFEED_INSTANCE_ID") ?? null,
               projectName: variables.get("CLOUDFLARE_PROJECT_NAME") ??
                 workerName,
-              r2Name,
+              r2Name: effectiveR2Name,
+              r2Ready: r2Name !== null,
+              r2SetupMode,
               workerName,
               workersDevUrl:
                 subdomain.enabled === true && workersDevSubdomain
@@ -899,6 +932,9 @@ export class CloudflareClient {
     );
     if (result.exitCode === 0) {
       return true;
+    }
+    if (isR2NotEntitledResult(result)) {
+      throw new R2NotEntitledError(accountId);
     }
     const detail = `${result.stdout}\n${result.stderr}`.toLowerCase();
     if (detail.includes("not found") || detail.includes("does not exist")) {
@@ -1066,10 +1102,20 @@ export class CloudflareClient {
   }
 
   async createR2(accountId: string, name: string): Promise<void> {
-    await runWrangler(
+    const result = await runWrangler(
       this.runner,
       ["r2", "bucket", "create", name, "--no-update-config"],
-      {env: accountEnvironment(accountId)},
+      {allowFailure: true, env: accountEnvironment(accountId)},
+    );
+    if (result.exitCode === 0) {
+      return;
+    }
+    if (isR2NotEntitledResult(result)) {
+      throw new R2NotEntitledError(accountId);
+    }
+    throw new Error(
+      result.stderr.trim() || result.stdout.trim() ||
+        "Unable to create R2 bucket.",
     );
   }
 

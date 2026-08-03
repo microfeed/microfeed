@@ -5,6 +5,7 @@ import {describe, expect, it} from "vitest";
 import {
   AdminProtectionDescription,
   MediaDeliveryDescription,
+  MediaStorageDescription,
   SiteCustomDomainDescription,
 } from "@/components/admin/home/AdminHomeApp/component/SetupChecklistApp";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
@@ -92,6 +93,44 @@ describe("dashboard protection detection", () => {
 });
 
 describe("media delivery onboarding", () => {
+  it.each([
+    {setupMode: "automatic" as const, state: "pending" as const},
+    {setupMode: "disabled" as const, state: "disabled" as const},
+  ])("distinguishes $state content-only media storage", ({setupMode, state}) => {
+    const result = new OnboardingChecker(
+      new Request("https://feed.example.com/admin/"),
+      {builtInLogin: true, cloudflareAccess: false},
+      {
+        accountId: "account-id",
+        publicBucketUrl: "/media/",
+        r2BucketName: "future-media",
+        r2Ready: false,
+        r2SetupMode: setupMode,
+      },
+    ).getResult();
+
+    expect(result.result[ONBOARDING_TYPES.MEDIA_STORAGE]).toMatchObject({
+      bucketName: "future-media",
+      dashboardUrl: "https://dash.cloudflare.com/account-id/r2/overview",
+      mediaStorageState: state,
+      ready: false,
+    });
+    expect(result.result[
+      ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
+    ]?.ready).toBe(true);
+    expect(result.allOk).toBe(false);
+
+    const output = renderToStaticMarkup(
+      React.createElement(MediaStorageDescription, {
+        state,
+      }),
+    );
+    expect(output).toContain("yarn manage deploy --enable-r2");
+    expect(output).toContain(
+      state === "pending" ? "subscription is pending" : "uploads are disabled",
+    );
+  });
+
   it("links to the exact managed bucket and suggests a media hostname", () => {
     const result = new OnboardingChecker(
       new Request("https://feed.example.com/admin/"),

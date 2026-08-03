@@ -117,6 +117,9 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
 
   onFileUploadClick(e: any) {
     e.preventDefault();
+    if (this.props.mediaStorageReady === false) {
+      return;
+    }
     if (!this.inputFile) {
       return;
     }
@@ -129,6 +132,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   }
 
   onFileUpload(file: any) {
+    if (this.props.mediaStorageReady === false) {
+      showToast("Enable R2 media storage before uploading images.", "error");
+      return;
+    }
     const {mediaType} = this.state;
     if (!file) {
       return;
@@ -159,6 +166,9 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   }
 
   onFileUploadToR2() {
+    if (this.props.mediaStorageReady === false) {
+      return;
+    }
     const {cropper, cdnFilename, previewImageUrl} = this.state;
     if (!cropper) {
       return;
@@ -210,6 +220,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
+    const mediaStorageReady = this.props.mediaStorageReady !== false;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
     const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
       imageWidth < 1400 || imageHeight < 1400;
@@ -217,11 +228,15 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
       "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
     return (<div className="lh-upload-wrapper">
+      {!mediaStorageReady && <div className="mb-3 rounded-sm border p-3 text-sm text-helper-color">
+        Image uploads are unavailable until R2 media storage is enabled.
+        Existing image URLs remain unchanged.
+      </div>}
       <FileUploader
         handleChange={this.onFileUpload}
         name="imageUploader"
         types={fileTypes}
-        disabled={uploading}
+        disabled={uploading || !mediaStorageReady}
         classes="lh-upload-fileinput"
       >
         <div className="lh-upload-image-size lh-upload-box">
@@ -270,7 +285,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           <button
             className="lh-btn lh-btn-brand-dark"
             onClick={this.onFileUploadToR2}
-            disabled={uploading}
+            disabled={uploading || !mediaStorageReady}
           >
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>

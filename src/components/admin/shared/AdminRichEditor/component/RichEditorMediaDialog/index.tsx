@@ -38,15 +38,21 @@ function FromUrl({url, onChange, onInsert}: any) {
   </form>);
 }
 
-function UploadNewFile({uploading, onFileUpload, mediaType, progressText}: any) {
+function UploadNewFile(
+  {uploading, onFileUpload, mediaType, progressText, mediaStorageReady}: any,
+) {
   const {fileTypes} = (mediaType === 'image' ? ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.IMAGE] :
     ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.VIDEO] as any);
   return (<div className="lh-upload-wrapper">
+    {!mediaStorageReady && <div className="mb-3 rounded-sm border p-3 text-sm text-helper-color">
+      File uploads are unavailable until R2 media storage is enabled. Use
+      <strong> From URL</strong> instead.
+    </div>}
     <FileUploader
       handleChange={onFileUpload}
       name="audioUploader"
       types={fileTypes}
-      disabled={uploading}
+      disabled={uploading || !mediaStorageReady}
       classes="lh-upload-fileinput"
     >
       <div className="w-full h-24 lh-upload-box p-4 flex items-center justify-center">
@@ -73,7 +79,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
 
     this.state = {
       url: null,
-      mode: 'upload',
+      mode: props.extra?.mediaStorageReady === false ? 'url' : 'upload',
 
       uploadStatus: null,
       progressText: null,
@@ -81,6 +87,10 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
   }
 
   onFileUpload(file: any) {
+    if (this.props.extra?.mediaStorageReady === false) {
+      showToast("Enable R2 media storage before uploading files.", "error");
+      return;
+    }
     const {mediaType, setIsOpen} = this.props;
     this.setState({uploadStatus: UPLOAD_STATUS__START});
     const {name} = file;
@@ -147,6 +157,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
       mediaType,
     } = this.props;
     const {mode, url, uploadStatus, progressText} = this.state;
+    const mediaStorageReady = this.props.extra?.mediaStorageReady !== false;
     const disabledClose = false;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (
@@ -165,6 +176,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
                 'name': 'Upload a new file',
                 'value': 'upload',
                 'checked': mode === 'upload',
+                'disabled': !mediaStorageReady,
               },
               {
                 'name': 'From URL',
@@ -182,6 +194,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
           {mode === 'upload' ?
             <UploadNewFile
               mediaType={mediaType}
+              mediaStorageReady={mediaStorageReady}
               uploading={uploading}
               progressText={progressText}
               onFileUpload={this.onFileUpload}

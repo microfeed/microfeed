@@ -59,8 +59,8 @@ use this `yarn manage` interface.
 
 - `yarn manage` is the only supported CLI interface for microfeed Cloudflare
   mutations. Do not replace it with improvised Wrangler or REST commands.
-- Initialization validates the selected account and checks Worker, Pages, D1, and R2
-  name collisions before creating resources.
+- Initialization validates the selected account and checks Worker, Pages, D1,
+  and, unless `--no-r2` is used, R2 name collisions before creating resources.
 - Existing D1 or R2 resources require explicit reuse approval. Resources
   recorded as reused are never deleted by `destroy`.
 - Saved Cloudflare deployments retain their exact account ID. Later commands
@@ -72,8 +72,8 @@ use this `yarn manage` interface.
 - `destroy` requires a read-only plan and an exact site-name confirmation. It
   rejects `--yes`, verifies resource identity, and records progress so the same
   command can resume safely.
-- Local development uses isolated D1 and R2 simulations. It does not copy or
-  synchronize production data.
+- Local development uses isolated D1 and optional R2 simulations. It does not
+  copy or synchronize production data.
 - Snapshot restore validates every checksum and historical migration hash
   before mutation. Remote restore requires an unchanged, newly initialized
   target and exact instance-name confirmation, and leaves a resumable
@@ -86,7 +86,7 @@ use this `yarn manage` interface.
 | `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local OAuth profiles and the repository binding |
 | `init` | Initialize production, preview, or local installation | Creates or updates Cloudflare resources, or local-only state |
 | `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
-| `deploy` | Check, migrate, deploy, and verify | Updates Worker code and D1 migrations |
+| `deploy` | Check, migrate, deploy, verify, or prepare a local release | Updates Worker code and D1 migrations, or only local state with `--local` |
 | `dev` | Run a selected site locally | Starts a local server and changes local simulation data |
 | `snapshot` | Create, pull, or restore a portable backup | Read-only export, local state creation, or an exactly confirmed fresh remote replacement |
 | `status` | Verify resources and protection | Read-only Cloudflare and HTTP checks |
@@ -122,8 +122,9 @@ microfeed site/Worker name, which should be globally distinctive.
 ### Production, preview, and local data
 
 - No environment flag means the production Cloudflare installation.
-- `--preview` selects the isolated preview Worker and D1 database. Preview
-  shares the production R2 bucket as a preserved resource.
+- `--preview` selects the isolated preview Worker and D1 database. Preview is
+  available only after production R2 is ready and shares that bucket as a
+  preserved resource.
 - `--local` is supported only where documented. Local state is stored under
   the selected instance and never accesses production D1 or R2 data.
 
@@ -132,6 +133,11 @@ microfeed site/Worker name, which should be globally distinctive.
 `--yes` skips only prompts supported by a command. It does not bypass account,
 identity, collision, reuse, password, or deletion safeguards. `destroy`
 deliberately rejects it.
+
+When R2 becomes available for an automatic pending installation, interactive
+`deploy` asks whether to add it and defaults to yes. A decline records the
+durable disabled choice. A non-interactive terminal continues content-only,
+keeps the automatic state, and prints the exact `deploy --enable-r2` command.
 
 ## Command reference
 
@@ -188,7 +194,7 @@ callback fail before resource creation.
 local sandbox with `--local`.
 
 Initialize or resume an installation. Production initialization can create a
-Worker, D1 database, R2 bucket, secrets, migrations, administrator password
+Worker, D1 database, optional R2 bucket, secrets, migrations, administrator password
 setup link, and
 optional custom domain. It performs collision checks before the first mutation.
 The authentication choice and any public-dashboard warning are confirmed before
@@ -215,6 +221,7 @@ yarn manage init [--instance <name>] [--preview|--local] [options]
 | `--no-open` | Print the private password page without opening a browser. |
 | `--reuse-d1` | Explicitly reuse a same-named existing D1 database. |
 | `--reuse-r2` | Explicitly reuse a same-named existing production R2 bucket. |
+| `--no-r2` | Skip every R2 discovery and creation step, omit `MEDIA_BUCKET`, and save the validated future bucket name. Cannot be combined with `--reuse-r2` or `--preview`. |
 | `--preview` | Create or resume preview after production exists. |
 | `--local` | Create or resume a local-only site. Cannot be combined with `--preview`. |
 | `--yes` | Accept supported non-secret remote defaults. It never approves collisions implicitly. |
@@ -225,7 +232,21 @@ Examples:
 yarn manage init
 yarn manage init --preview
 yarn manage init --local
+yarn manage init --no-r2 --r2-name future-media
 ```
+
+`--no-r2` works for both Cloudflare and local-only initialization. It creates a
+content-only instance where D1 publishing and external URLs continue to work.
+It never detaches an already configured bucket. Enable the saved bucket later
+with `yarn manage deploy --enable-r2`.
+
+Without `--no-r2`, only Cloudflare's documented R2 subscription-required
+response (`10042`, `NotEntitled`) is safely deferrable. The Worker is deployed
+and verified without `MEDIA_BUCKET`, the saved setup mode remains automatic,
+and the CLI prints the exact account's R2 dashboard link. R2 activation and any
+payment-method or billing consent stay in Cloudflare's dashboard; microfeed
+never performs those actions. Permission, authentication, and unknown R2
+failures remain fatal.
 
 Choose a globally unique, distinctive site name. If you plan to use a custom
 address, replace its dots with hyphens; for `my.domainname.com`, use
@@ -257,9 +278,10 @@ later management.
 **Changes:** Reads Cloudflare and writes local connection state; does not change
 Cloudflare.
 
-Discover an existing compatible microfeed Worker, verify its public identity,
-and save it in this clone. Cloudflare is not changed. The connected D1 and R2
-resources are marked reused and therefore preserved by later destruction.
+Discover an existing compatible microfeed Worker, including a content-only
+Worker identified by its D1 binding and saved R2 variables, verify its public
+identity, and save it in this clone. Cloudflare is not changed. Connected D1
+and any ready R2 resource are marked reused and preserved by later destruction.
 
 ```console
 yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
@@ -276,13 +298,16 @@ yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
 
 **Purpose:** Check, migrate, deploy, and verify a saved installation.
 
-**Changes:** Updates the selected Cloudflare Worker and applies D1 migrations.
+**Changes:** Updates a selected Cloudflare Worker, or prepares a local-only
+release with `--local`.
 
-Regenerate configuration, apply remote D1 migrations, run checks and tests,
-build, deploy the Worker, and verify the public site and dashboard protection.
+Regenerate configuration, apply D1 migrations, run checks and tests, and build.
+Cloudflare mode then deploys and verifies the Worker. `--local` preserves local
+data, performs the same preparation against local D1, and does not deploy or
+start a server.
 
 ```console
-yarn manage deploy [--instance <name>] [--preview]
+yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
 ```
 
 | Option | Meaning |
@@ -290,6 +315,25 @@ yarn manage deploy [--instance <name>] [--preview]
 | `--instance <name>` | Select the saved site. |
 | `--account-id <id>` | Confirm the exact saved account. |
 | `--preview` | Deploy preview instead of production. |
+| `--local` | Prepare an instance created with `init --local`; cannot target a Cloudflare-managed instance or be combined with `--preview`. |
+| `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
+| `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
+| `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
+
+An ordinary deployment does not probe or prompt when media storage is already
+ready or explicitly disabled. For automatic pending setup, `NotEntitled`
+continues content-only with an activation reminder. When R2 is available, an
+interactive deployment offers to add it; declining records disabled so future
+deployments stay quiet. Non-interactive deployment prints the deterministic
+enable command and leaves the automatic pending state unchanged.
+
+Explicit enablement fails with the account-specific dashboard and billing
+instructions if R2 is still unavailable. After successful creation or approved
+reuse, the generated Worker configuration contains the exact `MEDIA_BUCKET`
+binding, and deployment verifies both the bucket and Worker binding before
+completing. A later failure remains resumable. The CLI records a fresh remote
+restore baseline only when D1 is still bootstrap-only and the new bucket is
+empty; failing that eligibility check does not undo working R2 setup.
 
 ## `yarn manage dev`
 
@@ -521,14 +565,22 @@ Snapshots include password hashes and possibly private media. They are
 unencrypted and created with owner-only (`0600`) permissions. Store and encrypt
 them according to your backup policy.
 
+Cloudflare snapshot create, pull, and remote restore require a ready production
+R2 bucket and binding. Run `yarn manage deploy --enable-r2` first for a
+content-only installation. Preview initialization is blocked by the same
+production-R2 requirement.
+
 ## `yarn manage status`
 
 **Purpose:** Verify Cloudflare resources, the public site, and dashboard protection.
 
 **Changes:** Read-only Cloudflare and public-site verification.
 
-Read and verify the exact Worker, D1 identity, R2 bucket, public URL,
-administrator state, pending password setup, and anonymous dashboard protection.
+Read and verify the exact Worker and D1 binding, public URL, administrator
+state, pending password setup, and anonymous dashboard protection. When R2 is
+ready, also verify both the exact bucket and the Worker's `MEDIA_BUCKET`
+binding. A verified content-only Worker is healthy and reports media as either
+subscription-pending or user-disabled.
 
 ```console
 yarn manage status [--instance <name>] [--preview]
@@ -758,7 +810,8 @@ change Cloudflare.
 
 List local-only sites, Cloudflare sites managed by this clone, and compatible
 Cloudflare Workers available to connect. Output is grouped by account and
-includes ready-to-run `connect` commands. No Cloudflare resources are changed.
+includes each media-storage state and ready-to-run `connect` commands. No
+Cloudflare resources are changed.
 
 ```console
 yarn manage instances [--account-id <id>]

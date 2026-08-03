@@ -302,6 +302,8 @@ paths:
                 $ref: '#/components/schemas/PresignedUrlResponseJson'
         401:
           $ref: '#/components/responses/Unauthorized'
+        503:
+          $ref: '#/components/responses/MediaStorageUnavailable'
         5XX:
           $ref: '#/components/responses/ServerError'
 components:
@@ -1058,6 +1060,22 @@ components:
             Please note that the url is not valid until the file is uploaded via the presigned url.
             You can use *media_url* to update a channel's *icon*, or an item's *image* / *attachment.url*.
   responses:
+    MediaStorageUnavailable:
+      description: R2 media storage is pending or disabled for this instance.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - code
+              - error
+            properties:
+              code:
+                type: string
+                enum:
+                  - media_storage_unavailable
+              error:
+                type: string
     Unauthorized:
       description: Invalid api key.
     ServerError:

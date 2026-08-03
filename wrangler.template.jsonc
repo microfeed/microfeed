@@ -26,12 +26,7 @@
       "migrations_dir": "__PROJECT_ROOT__/migrations"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "MEDIA_BUCKET",
-      "bucket_name": "__R2_BUCKET_NAME__"
-    }
-  ],
+  __R2_BINDING__
   "vars": {
     "CLOUDFLARE_PROJECT_NAME": "__PROJECT_NAME__",
     "DEPLOYMENT_ENVIRONMENT": "__DEPLOYMENT_ENVIRONMENT__",
@@ -40,6 +35,7 @@
     "MICROFEED_CLOUDFLARE_ACCOUNT_ID": "__CLOUDFLARE_ACCOUNT_ID__",
     "MICROFEED_INSTANCE_ID": "__INSTANCE_ID__",
     "MICROFEED_R2_BUCKET_NAME": "__R2_BUCKET_NAME__",
+    "MICROFEED_R2_SETUP_MODE": "__R2_SETUP_MODE__",
     "MICROFEED_WORKER_NAME": "__WORKER_NAME__"
   },
   "routes": __ROUTES__

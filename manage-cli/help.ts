@@ -47,7 +47,9 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     changes: "Creates or updates Cloudflare resources, or creates an isolated local sandbox with --local.",
     details: [
       "Choose a globally unique site name; for a custom address such as my.domainname.com, use my-domainname-com.",
-      "Production initialization creates or reuses a Worker, D1 database, R2 bucket, secrets, migrations, and optional custom domain.",
+      "Production initialization creates or reuses a Worker, D1 database, optional R2 bucket, secrets, migrations, and optional custom domain.",
+      "Use --no-r2 to create a content-only Cloudflare or local instance without probing or binding R2; the validated bucket name is saved for a later deploy --enable-r2.",
+      "If Cloudflare returns its subscription-required R2 response, initialization completes in content-only mode and prints the account-specific activation and billing handoff.",
       "Preview initialization creates a separate Worker and D1 database while reusing production media storage.",
       "Authentication is confirmed before creating D1 or R2 resources, an interrupted retry preserves whether each saved resource is owned or reused, and the restore fingerprint is recorded after all initialization steps finish.",
       "Built-in authentication normally prints a private browser link for setting the first password.",
@@ -57,6 +59,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "yarn manage init",
       "yarn manage init --preview",
       "yarn manage init --local",
+      "yarn manage init --no-r2 --r2-name future-media",
     ],
     name: "init",
     options: [
@@ -75,6 +78,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--no-open", "Print a browser password link without opening it automatically."),
       option("--reuse-d1", "Explicitly approve reuse of a same-named existing D1 database."),
       option("--reuse-r2", "Explicitly approve reuse of a same-named existing production R2 bucket."),
+      option("--no-r2", "Skip R2 discovery and setup while preserving the intended bucket name."),
       option("--preview", "Create or resume the isolated preview environment."),
       option("--local", "Create or resume a local-only development instance."),
       option("--yes", "Accept non-secret remote defaults; local first-password setup remains interactive."),
@@ -85,8 +89,8 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Reads Cloudflare and writes local connection state; does not change Cloudflare.",
     details: [
-      "Discovers compatible existing microfeed Workers, verifies public installation identity, and saves the selected deployment in this clone.",
-      "Connected D1 and R2 resources are recorded as reused so later destruction will preserve them.",
+      "Discovers compatible existing microfeed Workers, including content-only Workers identified by D1 and saved R2 variables, verifies public installation identity, and saves the selected deployment in this clone.",
+      "Connected D1 and any ready R2 resource are recorded as reused so later destruction will preserve them.",
     ],
     examples: [
       "yarn manage connect",
@@ -103,22 +107,31 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     usage: "yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]",
   },
   {
-    changes: "Updates the selected Cloudflare Worker and applies D1 migrations.",
+    changes: "Updates a selected Cloudflare Worker, or prepares a local-only release with --local.",
     details: [
       "Runs type checks, tests, and a build before deploying, then verifies the public site and protected admin route.",
+      "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
+      "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
+      "--local is limited to init --local instances. It regenerates configuration, applies local D1 migrations, runs checks and a build, preserves local data, and does not start a server.",
     ],
     examples: [
       "yarn manage deploy --instance personal",
       "yarn manage deploy --preview --instance personal",
+      "yarn manage deploy --enable-r2 --instance personal",
+      "yarn manage deploy --local --enable-r2 --instance local-test",
     ],
     name: "deploy",
     options: [
       option("--instance <name>", "Select the saved site."),
       option("--account-id <id>", "Confirm the exact saved Cloudflare account."),
       option("--preview", "Deploy the saved preview environment."),
+      option("--local", "Prepare an init --local instance without starting its server."),
+      option("--enable-r2", "Permanently enable the saved Cloudflare or simulated local R2 binding."),
+      option("--reuse-r2", "Explicitly approve a same-named existing bucket during R2 enablement."),
+      option("--yes", "Run non-interactively; pending R2 remains content-only unless --enable-r2 is passed."),
     ],
     summary: "Check, migrate, deploy, and verify a saved installation.",
-    usage: "yarn manage deploy [--instance <name>] [--preview]",
+    usage: "yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]",
   },
   {
     changes: "Starts a local server and changes only isolated local D1/R2 simulation data.",
@@ -141,7 +154,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Creates a read-only export, restores a new local instance, or replaces the data in one explicitly confirmed fresh Cloudflare target.",
     details: [
-      "Actions: create packages D1 schema/data and the whole R2 bucket; pull creates that package and restores a new local instance; restore validates and imports one package.",
+      "Actions: create packages D1 schema/data and the whole R2 bucket; pull creates that package and restores a new local instance; restore validates and imports one package. Cloudflare snapshot operations require ready R2 media storage.",
       "Every archive records the exact applied migration filenames and SHA-256 hashes. Restore recreates that historical schema and ledger, then applies this checkout's newer migrations.",
       "Long-running create and restore phases show an animated elapsed-time indicator with brief D1, migration, R2, and verification updates.",
       "Archive validation and target readiness are separate checks. A valid archive is not restorable until fresh-target validation also succeeds.",
@@ -179,7 +192,8 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Read-only Cloudflare and public-site verification.",
     details: [
-      "Checks the Worker, exact D1 identity, R2 bucket, public URL, administrator state, pending password link, and dashboard protection.",
+      "Checks the Worker, exact D1 binding, ready R2 bucket and binding, public URL, administrator state, pending password link, and dashboard protection.",
+      "A verified content-only Worker is healthy; status reports media storage as subscription-pending or user-disabled instead of treating it as a missing required resource.",
       "Returns an actionable failure when a required resource or protection check is missing.",
     ],
     examples: [
@@ -344,7 +358,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Reads local saved state and available Cloudflare Workers; does not change Cloudflare.",
     details: [
-      "Groups local-only, connected, and discoverable Cloudflare installations by account and prints a ready-to-run connect command for unmanaged matches.",
+      "Groups local-only, connected, and discoverable Cloudflare installations by account, shows each R2 setup state, and prints a ready-to-run connect command for unmanaged matches.",
       "Cloudflare discovery is skipped with guidance when Wrangler is not signed in.",
     ],
     examples: [
