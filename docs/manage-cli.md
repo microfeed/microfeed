@@ -270,6 +270,11 @@ project with the same name. Explicit invalid names are rejected before
 Cloudflare authorization. D1 database and R2 bucket names are validated
 separately before resource creation.
 
+If a same-named Worker exists but this clone has no saved state for it, `init`
+stops without overwriting it. Use the exact `yarn manage connect --worker
+<name> --instance <name>` command printed by the error when that Worker is an
+existing microfeed installation. Otherwise, choose a different project name.
+
 If resource provisioning or the first-password handoff is incomplete, `init`
 resumes only the unfinished work and preserves every recorded resource. When
 the installation and dashboard login are already ready, it stops without
@@ -324,6 +329,11 @@ yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
 | `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
 | `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
 | `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
+
+`deploy` only operates on instances with configuration saved in this clone. If
+the microfeed already exists on Cloudflare, run `yarn manage connect --instance
+<name>` first and select its Worker. If it does not exist yet, run `yarn manage
+init --instance <name>` instead.
 
 An ordinary deployment does not probe or prompt when media storage is already
 ready or explicitly disabled. For automatic pending setup, `NotEntitled`

@@ -536,6 +536,22 @@ describe("first-class local instances", () => {
     expect(runner).not.toHaveBeenCalled();
   });
 
+  it("distinguishes connecting from initializing when deploy has no local state", async () => {
+    const {commands} = await freshModules();
+    const runner = vi.fn<CommandRunner>();
+
+    await expect(
+      commands.deployCommand({instance: "existing-feed"}, runner),
+    ).rejects.toThrow(
+      "No saved local microfeed configuration was found for instance " +
+        "`existing-feed`. To connect an existing Cloudflare microfeed " +
+        "under this local name, run `yarn manage connect --instance " +
+        "existing-feed`. To create a new Cloudflare installation, run " +
+        "`yarn manage init --instance existing-feed`.",
+    );
+    expect(runner).not.toHaveBeenCalled();
+  });
+
   it("creates a content-only local instance and enables simulated R2 later", async () => {
     const {commands, config} = await freshModules();
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
@@ -621,6 +637,50 @@ describe("first-class local instances", () => {
 });
 
 describe("initialization lifecycle", () => {
+  it("points an existing same-named Worker to connect", async () => {
+    const {commands} = await freshModules();
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "whoami --json") {
+        return commandResult(JSON.stringify({
+          accounts: [{id: "account-id", name: "Personal"}],
+          authType: "OAuth Token",
+          email: "cloudflare@example.com",
+          tokenPermissions: requiredScopes,
+        }));
+      }
+      if (command === "pages project list --json") {
+        return commandResult("[]");
+      }
+      if (
+        command === "versions list --name existing-feed --json"
+      ) {
+        return commandResult("[]");
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await expect(commands.initCommand({
+      "account-id": "account-id",
+      "admin-path": "admin",
+      "d1-name": "existing-feed-db",
+      instance: "local-feed",
+      "project-name": "existing-feed",
+      "r2-name": "existing-feed-media",
+      yes: true,
+    }, runner)).rejects.toThrow(
+      "A Worker named `existing-feed` already exists, but this clone has " +
+        "no saved state for it. microfeed will not overwrite it. If it is " +
+        "an existing microfeed installation, connect it with " +
+        "`yarn manage connect --worker existing-feed --instance " +
+        "local-feed`. Otherwise, choose a different project name.",
+    );
+    const commandsRun = runner.mock.calls.map(([, args]) => args.join(" "));
+    expect(commandsRun.some((command) =>
+      /(?:d1 create|r2 bucket create|deploy)/u.test(command)
+    )).toBe(false);
+  });
+
   it("defers, explicitly enables, and collision-guards Cloudflare R2", async () => {
     const {commands, config} = await freshModules();
     const {CloudflareClient} = await import(
