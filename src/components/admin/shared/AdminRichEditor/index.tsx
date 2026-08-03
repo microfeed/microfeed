@@ -1,8 +1,9 @@
 import React from "react";
 import '@enzedonline/quill-blot-formatter2/dist/css/quill-blot-formatter2.css';
 import 'quill/dist/quill.snow.css';
+import {formatHtmlForEditing} from "@/client/HtmlUtils";
 import AdminRadio from "../AdminRadio";
-import AdminTextarea from "../AdminTextarea";
+import AdminHtmlEditor from "../AdminHtmlEditor";
 import RichEditorQuill from "./component/RichEditorQuill";
 
 export default class AdminRichEditor extends React.Component<any, any> {
@@ -10,13 +11,27 @@ export default class AdminRichEditor extends React.Component<any, any> {
     super(props);
     this.state = {
       mode: 'rich',
+      htmlSource: formatHtmlForEditing(props.value || ""),
 
       isOpenImage: false,
     };
+    this.onHtmlChange = this.onHtmlChange.bind(this);
+    this.onRichChange = this.onRichChange.bind(this);
   }
+
+  onHtmlChange(value: string) {
+    this.setState({htmlSource: value});
+    this.props.onChange(value);
+  }
+
+  onRichChange(value: string) {
+    this.setState({htmlSource: formatHtmlForEditing(value)});
+    this.props.onChange(value);
+  }
+
   render() {
-    const {mode} = this.state;
-    const {label, value, onChange, extra, labelComponent} = this.props;
+    const {htmlSource, mode} = this.state;
+    const {label, value, extra, labelComponent} = this.props;
     return (
       <div>
         {label && <div className="lh-page-subtitle">
@@ -36,9 +51,9 @@ export default class AdminRichEditor extends React.Component<any, any> {
         </div>
         {mode === 'rich' ? <RichEditorQuill
           value={value}
-          onChange={onChange}
+          onChange={this.onRichChange}
           extra={extra}
-        /> : <AdminTextarea value={value} minRows={8} maxRows={20} onChange={(e: any) => onChange(e.target.value)} />}
+        /> : <AdminHtmlEditor value={htmlSource} onChange={this.onHtmlChange} />}
       </div>
     );
   }
