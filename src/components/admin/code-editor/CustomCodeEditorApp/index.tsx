@@ -1,5 +1,7 @@
 import React from 'react';
-import AdminNavApp from '@/components/admin/shared/AdminNavApp';
+import {navigate} from 'astro:transitions/client';
+import AdminPageApp from '@/components/admin/shared/AdminPageApp';
+import CodeEditorRouteSelect from '@/components/admin/code-editor/CodeEditorRouteSelect';
 import {ADMIN_URLS, PUBLIC_URLS, escapeHtml} from "@/shared/StringUtils";
 import {showToast} from "@/client/ToastUtils";
 import Requests from "@/client/requests";
@@ -10,24 +12,10 @@ import {
   CODE_TYPES, CODE_FILES,
   SETTINGS_CATEGORIES,
 } from "@/shared/Constants";
-import AdminSelect from "@/components/admin/shared/AdminSelect";
-import {readJsonScript} from "@/client/BrowserUtils";
+import {preventCloseWhenChanged} from "@/client/BrowserUtils";
+import type {FeedContent} from "@/types";
 
 const SUBMIT_STATUS__START = 1;
-
-const CODE_TYPE_SELECTOR_OPTIONS = [
-  {
-    label: 'Shared html code',
-    value: CODE_TYPES.SHARED,
-  },
-  {
-    label: 'Theme: custom',
-    value: CODE_TYPES.THEMES,
-    theme: 'custom',
-  },
-];
-const CODE_TYPE_SELECTOR_OPTIONS_DICT = Object.assign({}, ...CODE_TYPE_SELECTOR_OPTIONS.map(
-  (x: any) => ({[x.value]: x})));
 
 function TabButton({name, onClick, selected}: any) {
   return (<a
@@ -139,16 +127,15 @@ function getFirstItemUrl(feed: any) {
 function updateUrlParams(codeType: any, codeFile: any, theme: any = '', push: any = true) {
   if ('URLSearchParams' in window) {
     const searchParams = new URLSearchParams(window.location.search);
-    searchParams.set('type', codeType);
+    if (codeType !== CODE_TYPES.SHARED || searchParams.has('type')) {
+      searchParams.set('type', codeType);
+    }
     if (codeType === CODE_TYPES.THEMES) {
       searchParams.set('theme', theme);
     }
-    const newRelativePathQuery = `${window.location.pathname}?${searchParams.toString()}${codeFile ? `#${codeFile}` : ''}`;
-    if (push) {
-      history.pushState(null, '', newRelativePathQuery);
-    } else {
-      history.replaceState(null, '', newRelativePathQuery);
-    }
+    const queryString = searchParams.toString();
+    const newRelativePathQuery = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${codeFile ? `#${codeFile}` : ''}`;
+    void navigate(newRelativePathQuery, {history: push ? 'push' : 'replace'});
   }
 }
 
@@ -174,17 +161,38 @@ function chooseFileType(codeType: any, url: any = null) {
   return codeFile;
 }
 
-export default class CustomCodeEditorApp extends React.Component<any, any> {
-  constructor(props: any) {
+export interface ThemeTemplate {
+  rssStylesheet: string;
+  themeName: string;
+  webBodyEnd: string;
+  webBodyStart: string;
+  webFeed: string;
+  webHeader: string;
+  webItem: string;
+}
+
+interface Props {
+  feedContent: FeedContent;
+  themeTemplate: ThemeTemplate;
+}
+
+export default class CustomCodeEditorApp extends React.Component<Props, any> {
+  private cleanupNavigationGuard?: () => void;
+  private readonly onHashChange = (event: HashChangeEvent) => {
+    const {codeType} = this.state;
+    const newCodeFile = chooseFileType(codeType, event.newURL);
+    this.setState({codeFile: newCodeFile});
+  };
+
+  constructor(props: Props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
     this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.setState = this.setState.bind(this);
 
-    const themeTmplJson = readJsonScript<any>('theme-tmpl-json');
-    const feed = readJsonScript<any>('feed-content');
-    const onboardingResult = readJsonScript('onboarding-result');
+    const themeTmplJson = props.themeTemplate;
+    const feed = props.feedContent;
 
     const {
       themeName,
@@ -198,8 +206,6 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
 
     const codeType = chooseCodeType();
     const codeFile = chooseFileType(codeType);
-
-    updateUrlParams(codeType, codeFile, themeName, false);
 
     this.state = {
       codeType,
@@ -215,16 +221,20 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
       webHeader,
 
       feed,
-      onboardingResult,
+      changed: false,
     };
   }
 
   componentDidMount() {
-    window.addEventListener('hashchange', (event: any) => {
-      const {codeType} = this.state;
-      const newCodeFile = chooseFileType(codeType, event.newURL);
-      this.setState({codeFile: newCodeFile});
-    });
+    this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
+    window.addEventListener('hashchange', this.onHashChange);
+    const {codeType, codeFile, themeName} = this.state;
+    updateUrlParams(codeType, codeFile, themeName, false);
+  }
+
+  componentWillUnmount() {
+    this.cleanupNavigationGuard?.();
+    window.removeEventListener('hashchange', this.onHashChange);
   }
 
   onUpdateFeed(themeTmpls: any, onSucceed: any) {
@@ -279,7 +289,7 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
       Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {
         [SETTINGS_CATEGORIES.CUSTOM_CODE]: this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]}})
         .then(() => {
-          this.setState({submitStatus: null}, () => {
+          this.setState({submitStatus: null, changed: false}, () => {
             showToast('Updated!', 'success');
           });
         }).catch((error: any) => {
@@ -295,7 +305,7 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
   }
 
   render() {
-    const {codeFile, submitStatus, feed, codeType, themeName, onboardingResult, changed} = this.state;
+    const {codeFile, submitStatus, feed, codeType, themeName, changed} = this.state;
     const code = this.state[codeFile];
     const codeBundle = CODE_FILES_DICT[codeFile];
     const language = (codeBundle as any).language;
@@ -303,22 +313,10 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
     const description = (codeBundle as any).description;
 
     const submitting = submitStatus === SUBMIT_STATUS__START;
-    return (<AdminNavApp
-      currentPage="settings"
-      onboardingResult={onboardingResult}
-      upperLevel={{name: 'Settings', url: ADMIN_URLS.settings(), childName: 'Code Editor'}}
-      AccessoryComponent={<div className="ml-4">
-        <AdminSelect
-          value={CODE_TYPE_SELECTOR_OPTIONS_DICT[codeType]}
-          options={CODE_TYPE_SELECTOR_OPTIONS}
-          onChange={(selected: any) => {
-            location.href = `${ADMIN_URLS.codeEditorSettings()}?type=${selected.value}${selected.theme ? `&theme=${selected.theme}` : ''}`;
-          }}
-        />
-      </div>}
-    >
+    return (<AdminPageApp>
+      <CodeEditorRouteSelect className="mb-4 lg:hidden" codeType={codeType} />
       <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} />
-      <form className="grid grid-cols-12 gap-4">
+      <form className="grid grid-cols-12 gap-4" onSubmit={this.onSubmit}>
         <div className="col-span-9 lh-page-card">
           <div className="text-xs text-muted-color mb-4">{description}</div>
           <AdminCodeEditor
@@ -333,7 +331,6 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
               <button
                 type="submit"
                 className="lh-btn lh-btn-brand-dark lh-btn-lg"
-                onClick={this.onSubmit}
                 disabled={submitting || !changed}
               >
                 {submitting ? 'Updating...' : 'Update'}
@@ -356,6 +353,6 @@ export default class CustomCodeEditorApp extends React.Component<any, any> {
           </div>
         </div>
       </form>
-    </AdminNavApp>);
+    </AdminPageApp>);
   }
 }

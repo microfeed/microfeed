@@ -85,7 +85,7 @@ function MediaUploader(
       File uploads are unavailable until R2 media storage is enabled. You can
       still choose <strong>external URL</strong> above.
     </div>}
-    <details className="lh-upload-wrapper" open={!fileNotExist}>
+    <details className="lh-upload-wrapper w-full" open={!fileNotExist}>
       <summary className="m-page-summary mt-4 text-sm">
         {headerTitle}
       </summary>

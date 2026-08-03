@@ -43,7 +43,7 @@ function UploadNewFile(
 ) {
   const {fileTypes} = (mediaType === 'image' ? ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.IMAGE] :
     ENCLOSURE_CATEGORIES_DICT[ENCLOSURE_CATEGORIES.VIDEO] as any);
-  return (<div className="lh-upload-wrapper">
+  return (<div className="lh-upload-wrapper w-full">
     {!mediaStorageReady && <div className="mb-3 rounded-sm border p-3 text-sm text-helper-color">
       File uploads are unavailable until R2 media storage is enabled. Use
       <strong> From URL</strong> instead.

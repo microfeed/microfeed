@@ -1,5 +1,5 @@
 import React from 'react';
-import AdminNavApp from '@/components/admin/shared/AdminNavApp';
+import AdminPageApp from '@/components/admin/shared/AdminPageApp';
 import TrackingSettingsApp from "./TrackingSettingsApp";
 import AccessSettingsApp from "./AccessSettingsApp";
 import SubscribeSettingsApp from "./SubscribeSettingsApp";
@@ -8,35 +8,42 @@ import WebGlobalSettingsApp from "./WebGlobalSettingsApp";
 import Requests from "@/client/requests";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 import {showToast} from "@/client/ToastUtils";
-import {NAV_ITEMS, ONBOARDING_TYPES} from "@/shared/Constants";
+import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {
   preventCloseWhenChanged,
-  readJsonScript,
 } from "@/client/BrowserUtils";
 import ApiSettingsApp from "./ApiSettingsApp";
+import type {FeedContent, OnboardingResult} from "@/types";
 
 const SUBMIT_STATUS__START = 1;
 
-export default class SettingsApp extends React.Component<any, any> {
-  constructor(props: any) {
+interface Props {
+  feedContent: FeedContent;
+  onboardingResult: OnboardingResult;
+}
+
+export default class SettingsApp extends React.Component<Props, any> {
+  private cleanupNavigationGuard?: () => void;
+
+  constructor(props: Props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
     this.setChanged = this.setChanged.bind(this);
 
-    const feed = readJsonScript<any>('feed-content');
-    const onboardingResult = readJsonScript('onboarding-result');
-
     this.state = {
-      feed,
-      onboardingResult,
+      feed: props.feedContent,
       submitStatus: null,
       changed: false,
     }
   }
 
   componentDidMount() {
-    preventCloseWhenChanged(() => this.state.changed);
+    this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
+  }
+
+  componentWillUnmount() {
+    this.cleanupNavigationGuard?.();
   }
 
   setChanged() {
@@ -63,16 +70,14 @@ export default class SettingsApp extends React.Component<any, any> {
   }
 
   render() {
-    const {submitStatus, feed, submitForType, onboardingResult} = this.state;
+    const {submitStatus, feed, submitForType} = this.state;
+    const {onboardingResult} = this.props;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const mediaStorage = onboardingResult.result[
       ONBOARDING_TYPES.MEDIA_STORAGE
     ];
     const mediaStorageReady = mediaStorage?.ready !== false;
-    return (<AdminNavApp
-      currentPage={NAV_ITEMS.SETTINGS}
-      onboardingResult={onboardingResult}
-    >
+    return (<AdminPageApp>
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1 h-full">
@@ -135,6 +140,6 @@ export default class SettingsApp extends React.Component<any, any> {
           </div>
         </div>
       </div>
-    </AdminNavApp>);
+    </AdminPageApp>);
   }
 }

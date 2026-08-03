@@ -1,0 +1,69 @@
+---
+import clsx from "clsx";
+
+import AdminIcon from "@/components/admin/AdminIcon.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {
+  getAdminNavigationItems,
+  type AdminNavItemId,
+} from "@/shared/AdminNavigation";
+import type {OnboardingResult} from "@/types";
+
+interface Props {
+  activeNavItem: AdminNavItemId | null;
+  adminPath: string;
+  onboardingResult: OnboardingResult;
+}
+
+type AdminIconName =
+  | "home"
+  | "list"
+  | "pencil"
+  | "plus"
+  | "settings";
+
+const {activeNavItem, adminPath, onboardingResult} = Astro.props;
+const items = getAdminNavigationItems(adminPath, activeNavItem, onboardingResult);
+const icons: Record<AdminNavItemId, AdminIconName> = {
+  [NAV_ITEMS.ADMIN_HOME]: "home",
+  [NAV_ITEMS.EDIT_CHANNEL]: "pencil",
+  [NAV_ITEMS.NEW_ITEM]: "plus",
+  [NAV_ITEMS.ALL_ITEMS]: "list",
+  [NAV_ITEMS.SETTINGS]: "settings",
+};
+---
+
+<nav class="py-8" aria-label="Admin navigation">
+  {
+    items.map((item) => {
+      const icon = icons[item.id];
+      const classes = clsx(
+        "text-white py-4 px-4 xl:px-8 flex items-center",
+        item.disabled
+          ? "text-muted-color cursor-not-allowed hover:text-muted-color"
+          : "hover:text-brand-light",
+        item.active &&
+          "font-semibold bg-brand-light hover:text-white hover:opacity-80",
+      );
+
+      return item.disabled ? (
+        <span class={classes} aria-disabled="true" data-admin-nav-item>
+          <span class="mr-2"><AdminIcon name={icon} class="w-3 xl:w-5" /></span>
+          <span class="text-sm xl:text-xl">{item.name}</span>
+        </span>
+      ) : (
+        <a
+          href={item.url}
+          aria-current={item.active ? "page" : undefined}
+          data-admin-nav-item
+          data-astro-prefetch="hover"
+        >
+          <span class={classes}>
+            <span class="mr-2"><AdminIcon name={icon} class="w-3 xl:w-5" /></span>
+            <span class="text-sm xl:text-xl">{item.name}</span>
+          </span>
+        </a>
+      );
+    })
+  }
+</nav>
