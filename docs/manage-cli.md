@@ -256,6 +256,11 @@ preselect a generic site name.
 Rerun the identical command after interruption. Saved progress prevents
 duplicate creation and unrelated-resource overwrite.
 
+On a newly created Cloudflare account, its first Worker deployment may report
+that `workers.dev` is not ready while Cloudflare finishes preparing the
+account. Wait a few minutes, then rerun the same `yarn manage init` command.
+The saved initialization resumes without duplicating completed work.
+
 microfeed enables the free `workers.dev` address, so Worker names are checked
 against its Cloudflare naming rules: 1–63 ASCII letters, numbers, or hyphens,
 with no leading or trailing hyphen. A one-character Worker name is valid.
