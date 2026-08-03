@@ -21,7 +21,7 @@ describe("Wrangler configuration template", () => {
     instanceId: "instance-id",
     instanceName: "feed",
     projectName: "feed",
-    r2: {name: "feed-media", reuse: false},
+    r2: {name: "feed-media", reuse: false, setupMode: "automatic"},
   };
 
   it("disables persisted Workers Logs by default", async () => {
@@ -36,6 +36,8 @@ describe("Wrangler configuration template", () => {
           "__REQUIRED_SECRETS__",
           '["UPLOAD_SIGNING_KEY","BETTER_AUTH_SECRET"]',
         )
+        .replace("__R2_BINDING__", '"r2_buckets": [],')
+        .replace("__R2_SETUP_MODE__", "automatic")
         .replace("__ROUTES__", "[]"),
     ) as {
       observability?: {
@@ -55,6 +57,7 @@ describe("Wrangler configuration template", () => {
     expect(config.vars?.MICROFEED_R2_BUCKET_NAME).toBe(
       "__R2_BUCKET_NAME__",
     );
+    expect(config.vars?.MICROFEED_R2_SETUP_MODE).toBe("automatic");
     expect(config.vars?.MICROFEED_WORKER_NAME).toBe("__WORKER_NAME__");
   });
 

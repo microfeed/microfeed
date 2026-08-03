@@ -10,6 +10,7 @@ import {
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
   pagesProjectDomainsDashboardUrl,
+  R2NotEntitledError,
   validateWranglerProfileName,
 } from "../../../manage-cli/lib/cloudflare";
 import type {
@@ -260,7 +261,11 @@ describe("CloudflareClient", () => {
       instanceId: "instance-id",
       instanceName: "feed",
       projectName: "feed",
-      r2: {name: "feed-media", reuse: false},
+      r2: {
+        name: "feed-media",
+        reuse: false,
+        setupMode: "automatic" as const,
+      },
     };
 
     await expect(
@@ -365,6 +370,8 @@ describe("CloudflareClient", () => {
       instanceId: "instance-id",
       projectName: "feed",
       r2Name: "feed-media",
+      r2Ready: true,
+      r2SetupMode: "automatic",
       workerName: "feed-worker",
       workersDevUrl:
         "https://feed-worker.example-account.workers.dev",
@@ -373,6 +380,74 @@ describe("CloudflareClient", () => {
       expect.stringContaining("/accounts/account-id/workers/scripts"),
       {headers: {Authorization: "Bearer oauth-token"}},
     );
+  });
+
+  it("discovers a content-only Worker from D1 and saved R2 variables", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "auth token --json") {
+        return commandResult(JSON.stringify({
+          token: "oauth-token",
+          type: "oauth",
+        }));
+      }
+      if (command === "d1 list --json") {
+        return commandResult(JSON.stringify([
+          {name: "feed-db", uuid: "database-id"},
+        ]));
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const apiResult = (result: unknown) =>
+      Response.json({errors: [], result, success: true});
+    vi.stubGlobal("fetch", vi.fn(async (input: URL | RequestInfo) => {
+      const pathname = new URL(
+        input instanceof Request ? input.url : input.toString(),
+      ).pathname;
+      if (pathname.endsWith("/workers/scripts")) {
+        return apiResult([{id: "content-worker"}]);
+      }
+      if (pathname.endsWith("/workers/domains")) {
+        return apiResult([]);
+      }
+      if (pathname.endsWith("/workers/subdomain")) {
+        return apiResult({subdomain: "example-account"});
+      }
+      if (pathname.endsWith("/content-worker/settings")) {
+        return apiResult({bindings: [
+          {database_id: "database-id", name: "FEED_DB", type: "d1"},
+          {
+            name: "MICROFEED_R2_BUCKET_NAME",
+            text: "future-media",
+            type: "plain_text",
+          },
+          {
+            name: "MICROFEED_R2_SETUP_MODE",
+            text: "disabled",
+            type: "plain_text",
+          },
+        ]});
+      }
+      if (pathname.endsWith("/content-worker/subdomain")) {
+        return apiResult({enabled: true});
+      }
+      throw new Error(`Unexpected API request: ${pathname}`);
+    }));
+
+    await expect(
+      new CloudflareClient(runner).discoverMicrofeedWorkers({
+        id: "account-id",
+        name: "Personal",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        d1: {id: "database-id", name: "feed-db"},
+        r2Name: "future-media",
+        r2Ready: false,
+        r2SetupMode: "disabled",
+        workerName: "content-worker",
+      }),
+    ]);
   });
 
   it("parses Pages, D1, and missing R2 resources from Wrangler output", async () => {
@@ -422,6 +497,28 @@ describe("CloudflareClient", () => {
     await expect(
       cloudflare.r2BucketExists("account-id", "missing"),
     ).resolves.toBe(false);
+  });
+
+  it("classifies only Cloudflare's R2 subscription response as deferrable", async () => {
+    const notEntitledRunner = vi.fn<CommandRunner>().mockResolvedValue(
+      commandResult("", "[code: 10042] NotEntitled", 1),
+    );
+    await expect(
+      new CloudflareClient(notEntitledRunner).r2BucketExists(
+        "account-id",
+        "future-media",
+      ),
+    ).rejects.toBeInstanceOf(R2NotEntitledError);
+
+    const permissionRunner = vi.fn<CommandRunner>().mockResolvedValue(
+      commandResult("", "Authentication error [code: 10000]", 1),
+    );
+    await expect(
+      new CloudflareClient(permissionRunner).r2BucketExists(
+        "account-id",
+        "future-media",
+      ),
+    ).rejects.toThrow("Authentication error");
   });
 
   it("keeps compatibility with raw Pages API response fields", async () => {
@@ -514,7 +611,11 @@ describe("CloudflareClient", () => {
       instanceId: "installation-id",
       instanceName: "art-of-war",
       projectName: "art-of-war",
-      r2: {name: "art-of-war-media", reuse: false},
+      r2: {
+        name: "art-of-war-media",
+        reuse: false,
+        setupMode: "automatic",
+      },
     };
     const cloudflare = new CloudflareClient(runner);
 
@@ -764,7 +865,7 @@ describe("CloudflareClient", () => {
       instanceId: "instance-id",
       instanceName: "feed",
       projectName: "feed",
-      r2: {name: "feed-media", reuse: false},
+      r2: {name: "feed-media", reuse: false, setupMode: "automatic"},
     };
     const cloudflare = new CloudflareClient(runner);
 

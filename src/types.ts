@@ -66,6 +66,7 @@ export interface OnboardingCheck {
   adminProtection?: AdminProtectionStatus;
   bucketName?: string;
   dashboardUrl?: string;
+  mediaStorageState?: "disabled" | "pending" | "ready";
   ready: boolean;
   required: boolean;
   suggestedUrl?: string;

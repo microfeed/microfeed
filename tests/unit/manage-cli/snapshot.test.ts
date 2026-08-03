@@ -415,7 +415,7 @@ describe("remote restore resume journal", () => {
     instanceId: "instance-id",
     instanceName: "target",
     projectName: "target",
-    r2: {name: "target-media", reuse: false},
+    r2: {name: "target-media", reuse: false, setupMode: "automatic"},
   };
   const journal: SnapshotRestoreJournal = {
     accountId: "account-id",
@@ -638,7 +638,11 @@ describe("remote restore target readiness", () => {
     instanceId: "instance-id",
     instanceName: "restored-podcast",
     projectName: "restored-podcast",
-    r2: {name: "restored-podcast-media", reuse: false},
+    r2: {
+      name: "restored-podcast-media",
+      reuse: false,
+      setupMode: "automatic",
+    },
   };
 
   it("explains that a valid archive still needs a completed target", () => {
@@ -1130,7 +1134,7 @@ describe("snapshot archive validation", () => {
       instanceId: "local-instance",
       instanceName: "local-restore",
       projectName: "local-restore",
-      r2: {name: "local-media", reuse: false},
+      r2: {name: "local-media", reuse: false, setupMode: "automatic"},
     };
     await restoreLocalMedia(config, directory, persistence, [{
       archivePath: "media/00000001",

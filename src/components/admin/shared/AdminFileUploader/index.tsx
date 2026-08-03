@@ -2,6 +2,7 @@ import {
   type ChangeEvent,
   type DragEvent,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
   useId,
   useRef,
@@ -13,6 +14,7 @@ interface AdminFileUploaderProps {
   disabled?: boolean;
   handleChange: (file: File) => void;
   name: string;
+  onDisabledClick?: () => void;
   types?: string[];
 }
 
@@ -33,6 +35,7 @@ export default function AdminFileUploader({
   disabled = false,
   handleChange,
   name,
+  onDisabledClick,
   types = [],
 }: AdminFileUploaderProps) {
   const generatedId = useId().replaceAll(":", "");
@@ -54,13 +57,28 @@ export default function AdminFileUploader({
 
   const onDrop = (event: DragEvent<HTMLLabelElement>) => {
     event.preventDefault();
+    if (disabled) {
+      onDisabledClick?.();
+      return;
+    }
     selectFile(event.dataTransfer.files?.[0]);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLLabelElement>) => {
-    if (!disabled && (event.key === "Enter" || event.key === " ")) {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      inputRef.current?.click();
+      if (disabled) {
+        onDisabledClick?.();
+      } else {
+        inputRef.current?.click();
+      }
+    }
+  };
+
+  const onClick = (event: MouseEvent<HTMLLabelElement>) => {
+    if (disabled) {
+      event.preventDefault();
+      onDisabledClick?.();
     }
   };
 
@@ -69,11 +87,12 @@ export default function AdminFileUploader({
       aria-disabled={disabled}
       className={`${classes}${disabled ? " is-disabled" : ""}`}
       htmlFor={inputId}
+      onClick={onClick}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
       onKeyDown={onKeyDown}
       role="button"
-      tabIndex={disabled ? -1 : 0}
+      tabIndex={disabled && !onDisabledClick ? -1 : 0}
     >
       <input
         accept={accept || undefined}

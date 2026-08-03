@@ -35,6 +35,15 @@ export function r2BucketDomainsDashboardUrl(
     "settings#domains";
 }
 
+export function r2OverviewDashboardUrl(
+  accountId: string | undefined,
+): string | null {
+  const normalizedAccountId = normalizedDashboardIdentifier(accountId);
+  return normalizedAccountId
+    ? `https://dash.cloudflare.com/${normalizedAccountId}/r2/overview`
+    : null;
+}
+
 export function workerDomainsDashboardUrl(
   accountId: string | undefined,
   workerName: string | undefined,

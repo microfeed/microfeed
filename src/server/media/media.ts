@@ -1,4 +1,8 @@
 import {normalizeObjectKey} from "./uploads";
+import {
+  mediaBucket,
+  mediaStorageUnavailableResponse,
+} from "./storage";
 
 function objectHeaders(object: R2Object): Headers {
   const headers = new Headers();
@@ -101,13 +105,17 @@ export async function getMediaResponse(
   runtimeEnv: Env,
   rawKey: string | undefined,
 ): Promise<Response> {
+  const bucket = mediaBucket(runtimeEnv);
+  if (!bucket) {
+    return mediaStorageUnavailableResponse();
+  }
   const key = rawKey ? normalizeObjectKey(rawKey) : null;
   if (!key) {
     return new Response("Not Found", {status: 404});
   }
 
   if (request.method === "HEAD") {
-    const object = await runtimeEnv.MEDIA_BUCKET.head(key);
+    const object = await bucket.head(key);
     if (!object) {
       return new Response(null, {status: 404});
     }
@@ -136,7 +144,7 @@ export async function getMediaResponse(
 
   const requestedRange = request.headers.get("range");
   if (requestedRange) {
-    const metadata = await runtimeEnv.MEDIA_BUCKET.head(key);
+    const metadata = await bucket.head(key);
     if (!metadata) {
       return new Response("Not Found", {status: 404});
     }
@@ -148,7 +156,7 @@ export async function getMediaResponse(
   }
 
   try {
-    const object = await runtimeEnv.MEDIA_BUCKET.get(key, {
+    const object = await bucket.get(key, {
       onlyIf: request.headers,
       range: request.headers,
     });

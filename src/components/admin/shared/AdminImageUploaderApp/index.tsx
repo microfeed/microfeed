@@ -13,6 +13,7 @@ import FileUploader from "../AdminFileUploader";
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import ExternalLink from "../ExternalLink";
 import {showToast} from "@/client/ToastUtils";
+import MediaStorageUnavailableDialog from "../MediaStorageUnavailableDialog";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -61,6 +62,8 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     this.onFileUploadClick = this.onFileUploadClick.bind(this);
     this.onFileUpload = this.onFileUpload.bind(this);
     this.onFileUploadToR2 = this.onFileUploadToR2.bind(this);
+    this.showMediaStorageUnavailable =
+      this.showMediaStorageUnavailable.bind(this);
 
     const webGlobalSettings = props.feed.settings.webGlobalSettings || {};
     const publicBucketUrl = resolvePublicBucketUrl(
@@ -76,6 +79,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       publicBucketUrl,
 
       showModal: false,
+      showMediaStorageUnavailable: false,
       previewImageUrl: null,
       cropper: null,
       cdnFilename: null,
@@ -117,6 +121,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
 
   onFileUploadClick(e: any) {
     e.preventDefault();
+    if (this.props.mediaStorageReady === false) {
+      this.showMediaStorageUnavailable();
+      return;
+    }
     if (!this.inputFile) {
       return;
     }
@@ -129,6 +137,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   }
 
   onFileUpload(file: any) {
+    if (this.props.mediaStorageReady === false) {
+      this.showMediaStorageUnavailable();
+      return;
+    }
     const {mediaType} = this.state;
     if (!file) {
       return;
@@ -159,6 +171,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   }
 
   onFileUploadToR2() {
+    if (this.props.mediaStorageReady === false) {
+      this.showMediaStorageUnavailable();
+      return;
+    }
     const {cropper, cdnFilename, previewImageUrl} = this.state;
     if (!cropper) {
       return;
@@ -205,11 +221,18 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }, 'image/png');
   }
 
+  showMediaStorageUnavailable() {
+    this.setState({showMediaStorageUnavailable: true});
+  }
+
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal, publicBucketUrl, previewImageUrl, imageWidth, imageHeight} = this.state;
+    const {uploadStatus, currentImageUrl, progressText, showModal,
+      showMediaStorageUnavailable, publicBucketUrl, previewImageUrl,
+      imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
+    const mediaStorageReady = this.props.mediaStorageReady !== false;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
     const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
       imageWidth < 1400 || imageHeight < 1400;
@@ -221,8 +244,11 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
         handleChange={this.onFileUpload}
         name="imageUploader"
         types={fileTypes}
-        disabled={uploading}
-        classes="lh-upload-fileinput"
+        disabled={uploading || !mediaStorageReady}
+        onDisabledClick={!uploading
+          ? this.showMediaStorageUnavailable
+          : undefined}
+        classes="lh-upload-fileinput lh-upload-fileinput-image"
       >
         <div className="lh-upload-image-size lh-upload-box">
           {absoluteImageUrl ? <PreviewImage url={absoluteImageUrl}/> :
@@ -232,6 +258,14 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       {absoluteImageUrl && <div className="text-sm flex justify-center mt-1">
         <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={absoluteImageUrl} />
       </div>}
+      <MediaStorageUnavailableDialog
+        dashboardUrl={this.props.mediaStorage?.dashboardUrl}
+        onOpenChange={(open) => this.setState({
+          showMediaStorageUnavailable: open,
+        })}
+        open={showMediaStorageUnavailable}
+        state={this.props.mediaStorage?.mediaStorageState}
+      />
       <AdminDialog
         isOpen={showModal}
         setIsOpen={(trueOrFalse: any) => this.setState({showModal: trueOrFalse})}
@@ -270,7 +304,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           <button
             className="lh-btn lh-btn-brand-dark"
             onClick={this.onFileUploadToR2}
-            disabled={uploading}
+            disabled={uploading || !mediaStorageReady}
           >
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
           </button>

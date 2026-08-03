@@ -9,13 +9,18 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import {isDeepStrictEqual} from "node:util";
 
 import {
   type AdminAuthMode,
   normalizeAdminAuthMode,
 } from "@/shared/AdminAuth";
 import {normalizeAdminPath} from "@/shared/AdminPath";
-import type {InstanceHosting, MicrofeedConfig} from "../types";
+import type {
+  InstanceHosting,
+  MicrofeedConfig,
+  R2SetupMode,
+} from "../types";
 import {repositoryRoot} from "./process";
 
 export const stateDirectory = process.env.MICROFEED_STATE_DIRECTORY
@@ -112,6 +117,12 @@ function normalizedHosting(value: Record<string, unknown>): InstanceHosting {
   return value.accountId === "local" ? "local" : "cloudflare";
 }
 
+function normalizedR2SetupMode(
+  value: Record<string, unknown>,
+): R2SetupMode {
+  return value.setupMode === "disabled" ? "disabled" : "automatic";
+}
+
 function validateConfig(
   value: unknown,
   source = ".microfeed configuration",
@@ -133,6 +144,18 @@ function validateConfig(
     : typeof accountId === "string" &&
       accountId.length > 0 &&
       accountId !== "local";
+  const normalizedCompletedSteps = (
+    Array.isArray(value.completedSteps) ? value.completedSteps : []
+  ).filter(
+    (step): step is string => typeof step === "string",
+  );
+  if (
+    hosting === "local" &&
+    value.r2.setupMode === undefined &&
+    !normalizedCompletedSteps.includes("r2-ready")
+  ) {
+    normalizedCompletedSteps.push("r2-ready");
+  }
   const valid = [
     value.instanceId,
     value.projectName,
@@ -200,7 +223,7 @@ function validateConfig(
     adminPath: normalizeAdminPath(
       typeof value.adminPath === "string" ? value.adminPath : undefined,
     ),
-    completedSteps: value.completedSteps as string[],
+    completedSteps: normalizedCompletedSteps,
     customDomain: value.customDomain as string | null,
     ...(value.deploymentEnvironment
       ? {
@@ -225,6 +248,7 @@ function validateConfig(
     r2: {
       name: value.r2.name as string,
       reuse: value.r2.reuse as boolean,
+      setupMode: normalizedR2SetupMode(value.r2),
     },
     ...(isRecord(value.restoreBaseline)
       ? {
@@ -411,7 +435,12 @@ export async function readConfig(
         rawConfig.hosting !== config.hosting ||
         rawConfig.instanceName !== selectedInstance ||
         "localInstance" in rawConfig ||
-        rawConfig.accountId !== config.accountId
+        rawConfig.accountId !== config.accountId ||
+        (
+          isRecord(rawConfig.r2) &&
+          rawConfig.r2.setupMode !== config.r2.setupMode
+        ) ||
+        !isDeepStrictEqual(rawConfig.completedSteps, config.completedSteps)
       )
     ) {
       await writeJsonFile(targetPath, config);
@@ -510,7 +539,7 @@ export function localConfig(instanceName = "local"): MicrofeedConfig {
     accountId: null,
     adminAuthMode: "built-in",
     adminPath: "admin",
-    completedSteps: [],
+    completedSteps: ["r2-ready"],
     customDomain: null,
     d1: {
       id: "00000000-0000-0000-0000-000000000000",
@@ -525,12 +554,17 @@ export function localConfig(instanceName = "local"): MicrofeedConfig {
     r2: {
       name: `${resourcePrefix}-media`,
       reuse: false,
+      setupMode: "automatic",
     },
   };
 }
 
 export function isLocalOnly(config: MicrofeedConfig): boolean {
   return config.hosting === "local";
+}
+
+export function isR2Ready(config: MicrofeedConfig): boolean {
+  return config.completedSteps.includes("r2-ready");
 }
 
 export function cloudflareAccountId(config: MicrofeedConfig): string {
@@ -616,6 +650,11 @@ export async function generateWranglerConfig(
         {custom_domain: true, pattern: config.customDomain},
       ], null, 2)
     : "[]";
+  const r2Binding = config.completedSteps.includes("r2-ready")
+    ? `"r2_buckets": ${JSON.stringify([
+        {binding: "MEDIA_BUCKET", bucket_name: config.r2.name},
+      ], null, 2)},`
+    : "";
   const rendered = template
     .replaceAll("__PROJECT_ROOT__", relativeRoot)
     .replaceAll("__WORKER_NAME__", workerName(config))
@@ -627,12 +666,14 @@ export async function generateWranglerConfig(
     .replaceAll("__D1_DATABASE_NAME__", config.d1.name)
     .replaceAll("__D1_DATABASE_ID__", config.d1.id)
     .replaceAll("__R2_BUCKET_NAME__", config.r2.name)
+    .replaceAll("__R2_SETUP_MODE__", config.r2.setupMode)
     .replaceAll(
       "__DEPLOYMENT_ENVIRONMENT__",
       deploymentEnvironment(config),
     )
     .replaceAll("__INSTANCE_ID__", config.instanceId)
     .replace("__REQUIRED_SECRETS__", JSON.stringify(secrets))
+    .replace("__R2_BINDING__", r2Binding)
     .replace("__ROUTES__", routes);
   await mkdir(path.dirname(targetPath), {recursive: true});
   const temporaryPath = `${targetPath}.tmp`;

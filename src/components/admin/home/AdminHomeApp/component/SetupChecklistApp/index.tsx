@@ -256,6 +256,55 @@ export function MediaDeliveryDescription({
   );
 }
 
+export function MediaStorageDescription({
+  bucketName,
+  dashboardUrl,
+  state,
+}: {
+  bucketName?: string;
+  dashboardUrl?: string;
+  state: "disabled" | "pending" | "ready";
+}) {
+  if (state === "ready") {
+    return (
+      <>
+        R2 media uploads are enabled with bucket{" "}
+        <code>{bucketName ?? "configured for this instance"}</code>.
+      </>
+    );
+  }
+  if (state === "disabled") {
+    return (
+      <>
+        Media uploads are disabled for this instance. Text publishing and
+        external URLs continue to work. To opt in later, run{" "}
+        <code>yarn manage deploy --enable-r2</code> from the deployment
+        checkout.
+      </>
+    );
+  }
+  return (
+    <>
+      This installation is running without media uploads while its Cloudflare
+      R2 subscription is pending.{" "}
+      {dashboardUrl
+        ? (
+          <a
+            className="font-medium underline"
+            href={dashboardUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Activate R2 in Cloudflare
+          </a>
+        )
+        : "Activate R2 in the Cloudflare dashboard"}
+      , complete billing setup if Cloudflare requests it, then run{" "}
+      <code>yarn manage deploy --enable-r2</code>.
+    </>
+  );
+}
+
 export default function SetupChecklistApp({feed, onboardingResult}: any) {
   const access = onboardingResult.result[
     ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD
@@ -266,6 +315,9 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
   const mediaDomain = onboardingResult.result[
     ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
   ];
+  const mediaStorage = onboardingResult.result[
+    ONBOARDING_TYPES.MEDIA_STORAGE
+  ] ?? {mediaStorageState: "ready", ready: true};
   const currentMediaUrl = normalizeR2CustomDomainUrl(
     feed.settings?.webGlobalSettings?.publicBucketUrl,
   );
@@ -368,6 +420,16 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
           />
         </CheckListItem>
         <CheckListItem
+          onboardState={mediaStorage}
+          title="Enable media storage"
+        >
+          <MediaStorageDescription
+            bucketName={mediaStorage.bucketName}
+            dashboardUrl={mediaStorage.dashboardUrl}
+            state={mediaStorage.mediaStorageState ?? "ready"}
+          />
+        </CheckListItem>
+        {mediaStorage.ready && <CheckListItem
           onboardState={effectiveMediaDomain}
           title="Use a custom domain for media files"
         >
@@ -385,7 +447,7 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
             saving={saving}
             suggestedUrl={mediaDomain.suggestedUrl}
           />
-        </CheckListItem>
+        </CheckListItem>}
       </div>
     </div>
   );

@@ -193,8 +193,20 @@ a {
   @apply relative block;
 }
 
-.lh-upload-fileinput:focus-within {
-  @apply outline outline-2 outline-black;
+.lh-upload-fileinput-image {
+  @apply inline-block w-auto max-w-full;
+}
+
+.lh-upload-wrapper {
+  @apply inline-flex max-w-full flex-col;
+}
+
+.lh-upload-fileinput:focus-visible {
+  @apply outline-none;
+}
+
+.lh-upload-fileinput:focus-visible .lh-upload-box {
+  @apply ring-2 ring-brand-light ring-offset-2;
 }
 
 .lh-upload-fileinput > input[type="file"] {
@@ -203,6 +215,10 @@ a {
 
 .lh-upload-wrapper .lh-upload-fileinput.is-disabled {
   @apply border-0 cursor-not-allowed;
+}
+
+.lh-upload-wrapper .lh-upload-fileinput.is-disabled .lh-upload-box {
+  @apply cursor-not-allowed opacity-60;
 }
 
 /*

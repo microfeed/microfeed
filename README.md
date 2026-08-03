@@ -279,6 +279,29 @@ immediately invalidates the previous one. If initialization is interrupted,
 run the same command again to continue; microfeed never deletes existing
 resources during a retry.
 
+R2 media storage is optional. If Cloudflare asks you to activate an R2
+subscription or add a payment method, that consent stays in the Cloudflare
+dashboard. microfeed cannot enable billing for you. The installer can still
+finish a content-only deployment when Cloudflare returns its documented
+subscription-required response; text publishing and existing external URL
+features keep working. You can also opt out deliberately for production or
+local testing:
+
+```console
+yarn manage init --no-r2
+```
+
+The intended bucket name is saved without probing R2. After activating R2, or
+whenever you decide to opt in, add media uploads with:
+
+```console
+yarn manage deploy --enable-r2
+```
+
+An ordinary interactive deployment offers this upgrade once R2 becomes
+available for an automatically pending installation. Declining is remembered;
+explicitly disabled installations stay quiet until the enable command is run.
+
 New installations upload to and serve media through the Worker, so you do not
 need to configure public R2 access, CORS, an R2 custom domain, or S3
 credentials.
@@ -310,6 +333,9 @@ side effect, and safety check.
 | Create or resume a Cloudflare, preview, or local site | `yarn manage init` |
 | Connect an existing compatible microfeed Worker without changing it | `yarn manage connect` |
 | Deploy an update | `yarn manage deploy` |
+| Create a content-only site without R2 | `yarn manage init --no-r2` |
+| Enable the saved R2 bucket later | `yarn manage deploy --enable-r2` |
+| Prepare a local-only release without starting the server | `yarn manage deploy --local` |
 | Create, pull, or restore a whole-site backup | `yarn manage snapshot` |
 | Check deployment health and dashboard protection | `yarn manage status` |
 | List sites or select the default site | `yarn manage instances`, `yarn manage use` |
@@ -330,8 +356,8 @@ globally distinctive site name without an interactive prompt.
 One local Git copy of this repository can keep any number of independent
 microfeed instances. An instance can be:
 
-* **Local only:** Runs on your computer with simulated D1 and R2 resources and
-  has no Cloudflare deployment.
+* **Local only:** Runs on your computer with simulated D1 and optional R2
+  resources and has no Cloudflare deployment.
 * **Cloudflare — managed here:** Has saved configuration in this local Git copy
   and can be deployed or administered from it.
 * **Cloudflare — available to connect:** Is an existing compatible Worker in
@@ -724,7 +750,8 @@ to deploy the one you want to update.
 
 Once initialization is complete, your microfeed instance is ready to use.
 From the microfeed admin dashboard, you can create, edit, or delete posts;
-upload audio, video, images, and other media files; and customize your site.
+upload audio, video, images, and other media files when R2 is enabled; use
+external URLs in content-only mode; and customize your site.
 
 You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
 

@@ -8,6 +8,10 @@ import {
 } from "@/shared/StringUtils";
 import {jsonResponse} from "../../../../server/http";
 import {createSignedUpload} from "@/server/media/uploads";
+import {
+  mediaBucket,
+  mediaStorageUnavailableResponse,
+} from "@/server/media/storage";
 
 interface PresignedUrlPayload {
   category?: string;
@@ -20,6 +24,9 @@ interface PresignedUrlPayload {
 const categories = ["image", "audio", "video", "document"];
 
 export const POST: APIRoute = async ({locals, request}) => {
+  if (!mediaBucket(env)) {
+    return mediaStorageUnavailableResponse();
+  }
   const input = await request.json() as PresignedUrlPayload | null;
   if (!input) {
     return jsonResponse({

@@ -197,7 +197,7 @@ function completedRemoteConfig(): MicrofeedConfig {
     instanceId: "installation-id",
     instanceName: "feed",
     projectName: "feed",
-    r2: {name: "feed-media", reuse: false},
+    r2: {name: "feed-media", reuse: false, setupMode: "automatic"},
   };
 }
 
@@ -535,9 +535,298 @@ describe("first-class local instances", () => {
     ).rejects.toThrow("is local only and has no Cloudflare deployment");
     expect(runner).not.toHaveBeenCalled();
   });
+
+  it("creates a content-only local instance and enables simulated R2 later", async () => {
+    const {commands, config} = await freshModules();
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
+        return commandResult("Migrations applied");
+      }
+      if (command.startsWith("d1 execute FEED_DB --local --command ")) {
+        return commandResult(JSON.stringify([{results: []}]));
+      }
+      if (["types", "typecheck", "test", "build"].includes(args[0]!)) {
+        return commandResult();
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await commands.initCommand({
+      "admin-auth": "none",
+      instance: "content-only",
+      local: true,
+      "no-r2": true,
+      "r2-name": "future-media",
+      yes: true,
+    }, runner);
+    const disabled = await config.readConfig(false, "content-only");
+    expect(disabled?.r2).toEqual({
+      name: "future-media",
+      reuse: false,
+      setupMode: "disabled",
+    });
+    expect(disabled?.completedSteps).not.toContain("r2-ready");
+    const disabledWrangler = await readFile(
+      config.wranglerConfigPath(disabled!),
+      "utf8",
+    );
+    expect(disabledWrangler).not.toContain('"r2_buckets"');
+    expect(() => JSON.parse(disabledWrangler)).not.toThrow();
+    expect(disabledWrangler).toContain(
+      '"MICROFEED_R2_SETUP_MODE": "disabled"',
+    );
+
+    const preservedFile = path.join(
+      config.localPersistencePath(disabled!),
+      "preserved.txt",
+    );
+    await mkdir(path.dirname(preservedFile), {recursive: true});
+    await writeFile(preservedFile, "keep me", "utf8");
+    await commands.deployCommand({
+      "enable-r2": true,
+      instance: "content-only",
+      local: true,
+    }, runner);
+
+    const enabled = await config.readConfig(false, "content-only");
+    expect(enabled?.r2.setupMode).toBe("automatic");
+    expect(enabled?.completedSteps).toContain("r2-ready");
+    await expect(readFile(preservedFile, "utf8")).resolves.toBe("keep me");
+    await expect(
+      readFile(config.wranglerConfigPath(enabled!), "utf8"),
+    ).resolves.toContain('"binding": "MEDIA_BUCKET"');
+  });
+
+  it("rejects incompatible no-R2 flags and never detaches ready local R2", async () => {
+    const {commands, config} = await freshModules();
+    const runner = vi.fn<CommandRunner>();
+
+    await expect(commands.initCommand({
+      "no-r2": true,
+      preview: true,
+    }, runner)).rejects.toThrow("cannot be used together");
+    await expect(commands.initCommand({
+      "no-r2": true,
+      "reuse-r2": true,
+    }, runner)).rejects.toThrow("cannot be used together");
+    await config.ensureLocalOnlyConfig("ready-local");
+    await expect(commands.initCommand({
+      instance: "ready-local",
+      local: true,
+      "no-r2": true,
+    }, runner)).rejects.toThrow("never removes an existing media binding");
+    expect(runner).not.toHaveBeenCalled();
+  });
 });
 
 describe("initialization lifecycle", () => {
+  it("defers, explicitly enables, and collision-guards Cloudflare R2", async () => {
+    const {commands, config} = await freshModules();
+    const {CloudflareClient} = await import(
+      "../../../manage-cli/lib/cloudflare"
+    );
+    const pending = {
+      ...completedRemoteConfig(),
+      completedSteps: completedRemoteConfig().completedSteps.filter(
+        (step) => step !== "r2-ready",
+      ),
+      r2: {
+        name: "feed-media",
+        reuse: false,
+        setupMode: "automatic" as const,
+      },
+    };
+    await config.writeConfig(pending);
+
+    const notEntitledRunner = vi.fn<CommandRunner>().mockResolvedValue(
+      commandResult("", "[code: 10042] NotEntitled", 1),
+    );
+    const notEntitledContext = {
+      cloudflare: new CloudflareClient(notEntitledRunner),
+      flags: {"enable-r2": true},
+      instanceName: "feed",
+      runner: notEntitledRunner,
+    };
+    await expect(
+      commands.prepareR2ForDeployment(notEntitledContext, pending, true),
+    ).rejects.toThrow(
+      "https://dash.cloudflare.com/account-id/r2/overview",
+    );
+    expect(pending.completedSteps).not.toContain("r2-ready");
+
+    const createRunner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "r2 bucket info feed-media --json") {
+        return commandResult("", "Bucket not found", 1);
+      }
+      if (command ===
+        "r2 bucket create feed-media --no-update-config") {
+        return commandResult("Created");
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const createContext = {
+      cloudflare: new CloudflareClient(createRunner),
+      flags: {"enable-r2": true},
+      instanceName: "feed",
+      runner: createRunner,
+    };
+    await expect(
+      commands.prepareR2ForDeployment(createContext, pending, true),
+    ).resolves.toBe(true);
+    expect(pending.completedSteps).toContain("r2-ready");
+    expect(pending.completedSteps).toContain("r2-enable-pending");
+    expect(pending.r2.setupMode).toBe("automatic");
+    await expect(
+      readFile(config.wranglerConfigPath(pending), "utf8"),
+    ).resolves.toContain('"binding": "MEDIA_BUCKET"');
+
+    const verificationContext = {
+      ...createContext,
+      cloudflare: {
+        r2BucketExists: vi.fn().mockResolvedValue(true),
+        workerBindings: vi.fn().mockResolvedValue([]),
+      },
+    };
+    await expect(
+      commands.verifyR2Deployment(
+        verificationContext as never,
+        pending,
+      ),
+    ).rejects.toThrow("could not be verified");
+    expect(pending.completedSteps).toContain("r2-enable-pending");
+    verificationContext.cloudflare.workerBindings.mockResolvedValue([{
+      bucket_name: "feed-media",
+      name: "MEDIA_BUCKET",
+      type: "r2_bucket",
+    }]);
+    await expect(
+      commands.verifyR2Deployment(
+        verificationContext as never,
+        pending,
+      ),
+    ).resolves.toBeUndefined();
+    expect(pending.completedSteps).not.toContain("r2-enable-pending");
+
+    const collision = {
+      ...pending,
+      completedSteps: pending.completedSteps.filter(
+        (step) => step !== "r2-ready",
+      ),
+      r2: {...pending.r2, reuse: false},
+    };
+    const collisionRunner = vi.fn<CommandRunner>().mockResolvedValue(
+      commandResult(JSON.stringify({name: "feed-media"})),
+    );
+    await expect(commands.prepareR2ForDeployment({
+      cloudflare: new CloudflareClient(collisionRunner),
+      flags: {"enable-r2": true, yes: true},
+      instanceName: "feed",
+      runner: collisionRunner,
+    }, collision, true)).rejects.toThrow("Pass --reuse-r2");
+    await expect(commands.prepareR2ForDeployment({
+      cloudflare: new CloudflareClient(collisionRunner),
+      flags: {"enable-r2": true, "reuse-r2": true},
+      instanceName: "feed",
+      runner: collisionRunner,
+    }, collision, true)).resolves.toBe(true);
+    expect(collision.r2.reuse).toBe(true);
+  });
+
+  it("suppresses disabled R2 and keeps automatic non-interactive setup pending", async () => {
+    const {commands} = await freshModules();
+    const {CloudflareClient} = await import(
+      "../../../manage-cli/lib/cloudflare"
+    );
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(
+      commandResult("", "Bucket not found", 1),
+    );
+    const disabled: MicrofeedConfig = {
+      ...completedRemoteConfig(),
+      completedSteps: ["d1-ready", "worker-deployed", "deployment-verified"],
+      r2: {
+        name: "feed-media",
+        reuse: false,
+        setupMode: "disabled",
+      },
+    };
+    const context = {
+      cloudflare: new CloudflareClient(runner),
+      flags: {yes: true},
+      instanceName: "feed",
+      runner,
+    };
+    await expect(
+      commands.prepareR2ForDeployment(context, disabled, false),
+    ).resolves.toBe(false);
+    expect(runner).not.toHaveBeenCalled();
+
+    disabled.r2.setupMode = "automatic";
+    await expect(
+      commands.prepareR2ForDeployment(context, disabled, false),
+    ).resolves.toBe(false);
+    expect(disabled.r2.setupMode).toBe("automatic");
+    expect(disabled.completedSteps).not.toContain("r2-ready");
+  });
+
+  it("remembers an interactive decline when automatic R2 becomes available", async () => {
+    const {commands} = await freshModules({confirmAnswers: [false]});
+    const {CloudflareClient} = await import(
+      "../../../manage-cli/lib/cloudflare"
+    );
+    const stdinDescriptor = Object.getOwnPropertyDescriptor(
+      process.stdin,
+      "isTTY",
+    );
+    const stdoutDescriptor = Object.getOwnPropertyDescriptor(
+      process.stdout,
+      "isTTY",
+    );
+    Object.defineProperty(process.stdin, "isTTY", {
+      configurable: true,
+      value: true,
+    });
+    Object.defineProperty(process.stdout, "isTTY", {
+      configurable: true,
+      value: true,
+    });
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(
+      commandResult("", "Bucket not found", 1),
+    );
+    const pending: MicrofeedConfig = {
+      ...completedRemoteConfig(),
+      completedSteps: ["d1-ready", "worker-deployed", "deployment-verified"],
+      r2: {
+        name: "feed-media",
+        reuse: false,
+        setupMode: "automatic",
+      },
+    };
+
+    try {
+      await expect(commands.prepareR2ForDeployment({
+        cloudflare: new CloudflareClient(runner),
+        flags: {},
+        instanceName: "feed",
+        runner,
+      }, pending, false)).resolves.toBe(false);
+      expect(pending.r2.setupMode).toBe("disabled");
+      expect(pending.completedSteps).not.toContain("r2-ready");
+    } finally {
+      if (stdinDescriptor) {
+        Object.defineProperty(process.stdin, "isTTY", stdinDescriptor);
+      } else {
+        Reflect.deleteProperty(process.stdin, "isTTY");
+      }
+      if (stdoutDescriptor) {
+        Object.defineProperty(process.stdout, "isTTY", stdoutDescriptor);
+      } else {
+        Reflect.deleteProperty(process.stdout, "isTTY");
+      }
+    }
+  });
+
   it("reloads custom-domain state before recording the restore baseline", async () => {
     const {commands, config} = await freshModules();
     const initial = completedRemoteConfig();
@@ -742,6 +1031,10 @@ describe("saved configuration migration", () => {
     expect(persisted.hosting).toBe("local");
     expect(persisted.instanceName).toBe("legacy");
     expect(persisted.accountId).toBeNull();
+    expect((persisted.r2 as Record<string, unknown>).setupMode).toBe(
+      "automatic",
+    );
+    expect(persisted.completedSteps).toContain("r2-ready");
     expect(persisted).not.toHaveProperty("localInstance");
   });
 });

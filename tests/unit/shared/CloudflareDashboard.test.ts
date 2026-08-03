@@ -4,6 +4,7 @@ import {
   accessApplicationDashboardUrl,
   CLOUDFLARE_ACCESS_SELF_HOSTED_APPLICATION_PATH,
   r2BucketDomainsDashboardUrl,
+  r2OverviewDashboardUrl,
   workerDomainsDashboardUrl,
 } from "@/shared/CloudflareDashboard";
 
@@ -41,6 +42,13 @@ describe("account dashboard links", () => {
 });
 
 describe("R2 dashboard links", () => {
+  it("targets the account-specific R2 activation overview", () => {
+    expect(r2OverviewDashboardUrl("account/id")).toBe(
+      "https://dash.cloudflare.com/account%2Fid/r2/overview",
+    );
+    expect(r2OverviewDashboardUrl(undefined)).toBeNull();
+  });
+
   it("targets the custom-domain settings for the exact managed bucket", () => {
     expect(r2BucketDomainsDashboardUrl(
       "0123456789abcdef0123456789abcdef",

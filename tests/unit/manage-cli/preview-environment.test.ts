@@ -18,7 +18,7 @@ const productionConfig: MicrofeedConfig = {
   instanceId: "production-instance",
   instanceName: "feed",
   projectName: "feed",
-  r2: {name: "feed-media", reuse: false},
+  r2: {name: "feed-media", reuse: false, setupMode: "automatic"},
 };
 
 describe("preview environment isolation", () => {

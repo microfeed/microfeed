@@ -8,7 +8,7 @@ import WebGlobalSettingsApp from "./WebGlobalSettingsApp";
 import Requests from "@/client/requests";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 import {showToast} from "@/client/ToastUtils";
-import {NAV_ITEMS} from "@/shared/Constants";
+import {NAV_ITEMS, ONBOARDING_TYPES} from "@/shared/Constants";
 import {
   preventCloseWhenChanged,
   readJsonScript,
@@ -65,6 +65,10 @@ export default class SettingsApp extends React.Component<any, any> {
   render() {
     const {submitStatus, feed, submitForType, onboardingResult} = this.state;
     const submitting = submitStatus === SUBMIT_STATUS__START;
+    const mediaStorage = onboardingResult.result[
+      ONBOARDING_TYPES.MEDIA_STORAGE
+    ];
+    const mediaStorageReady = mediaStorage?.ready !== false;
     return (<AdminNavApp
       currentPage={NAV_ITEMS.SETTINGS}
       onboardingResult={onboardingResult}
@@ -105,6 +109,8 @@ export default class SettingsApp extends React.Component<any, any> {
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
+              mediaStorage={mediaStorage}
+              mediaStorageReady={mediaStorageReady}
               onSubmit={this.onSubmit}
               setChanged={this.setChanged}
             />

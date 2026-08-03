@@ -12,7 +12,12 @@ import {showToast} from "@/client/ToastUtils";
 import {AdminSideQuickLinks} from "@/components/admin/shared/AdminSideQuickLinks";
 import AdminRichEditor from "@/components/admin/shared/AdminRichEditor";
 import AdminSelect from "@/components/admin/shared/AdminSelect";
-import {LANGUAGE_CODES_LIST, ITUNES_CATEGORIES_DICT, NAV_ITEMS} from "@/shared/Constants";
+import {
+  ITUNES_CATEGORIES_DICT,
+  LANGUAGE_CODES_LIST,
+  NAV_ITEMS,
+  ONBOARDING_TYPES,
+} from "@/shared/Constants";
 import ExplainText from "@/components/admin/shared/ExplainText";
 import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./FormExplainTexts";
 import {
@@ -136,6 +141,10 @@ export default class EditChannelApp extends React.Component<any, any> {
     const {submitStatus, channel, feed, onboardingResult, changed} = this.state;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
+    const mediaStorage = onboardingResult.result[
+      ONBOARDING_TYPES.MEDIA_STORAGE
+    ];
+    const mediaStorageReady = mediaStorage?.ready !== false;
     const webGlobalSettings = feed.settings.webGlobalSettings || {};
     const publicBucketUrl = resolvePublicBucketUrl(
       webGlobalSettings.publicBucketUrl,
@@ -151,6 +160,8 @@ export default class EditChannelApp extends React.Component<any, any> {
                 <AdminImageUploaderApp
                   mediaType="channel"
                   feed={feed}
+                  mediaStorage={mediaStorage}
+                  mediaStorageReady={mediaStorageReady}
                   publicBucketUrl={publicBucketUrl}
                   currentImageUrl={channel.image}
                   onImageUploaded={(cdnUrl: any) => this.onUpdateChannelMeta('image', cdnUrl)}
@@ -210,6 +221,7 @@ export default class EditChannelApp extends React.Component<any, any> {
                 extra={{
                   publicBucketUrl,
                   folderName: `channels/${channel.id}`,
+                  mediaStorageReady,
                 }}
               />
             </div>

@@ -2,6 +2,10 @@ import {env} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
 import {jsonResponse} from "../../server/http";
+import {
+  mediaBucket,
+  mediaStorageUnavailableResponse,
+} from "@/server/media/storage";
 import {normalizeObjectKey, verifySignedUpload} from "@/server/media/uploads";
 
 const corsHeaders = {
@@ -11,6 +15,10 @@ const corsHeaders = {
 };
 
 export const PUT: APIRoute = async ({params, request, url}) => {
+  const bucket = mediaBucket(env);
+  if (!bucket) {
+    return mediaStorageUnavailableResponse(corsHeaders);
+  }
   const objectKey = params.key ? normalizeObjectKey(params.key) : null;
   const contentType = url.searchParams.get("content-type") ?? "";
   const sizeValue = url.searchParams.get("size") ?? "";
@@ -40,7 +48,7 @@ export const PUT: APIRoute = async ({params, request, url}) => {
     piping = request.body.pipeTo(fixedLength.writable);
     body = fixedLength.readable;
   }
-  const put = env.MEDIA_BUCKET.put(objectKey, body, {
+  const put = bucket.put(objectKey, body, {
     httpMetadata: contentType ? {contentType} : request.headers,
   });
   const [object] = await Promise.all([put, piping]);

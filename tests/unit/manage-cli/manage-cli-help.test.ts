@@ -55,6 +55,8 @@ describe("management CLI help and canonical reference", () => {
     expect(initHelp).toContain("globally unique site name");
     expect(initHelp).toContain("my.domainname.com");
     expect(initHelp).toContain("my-domainname-com");
+    expect(initHelp).toContain("newly created Cloudflare account");
+    expect(initHelp).toContain("rerun the same init command");
   });
 
   it("keeps every command and option discoverable in the Markdown contract", async () => {

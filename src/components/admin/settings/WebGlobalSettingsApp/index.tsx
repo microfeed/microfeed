@@ -180,6 +180,8 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
           <div className="flex">
             <AdminImageUploaderApp
               feed={feed}
+              mediaStorage={this.props.mediaStorage}
+              mediaStorageReady={this.props.mediaStorageReady}
               mediaType="favicon"
               publicBucketUrl={publicBucketUrl}
               currentImageUrl={favicon.url}

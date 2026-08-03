@@ -20,6 +20,7 @@ import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
 import {getPublicBaseUrl} from "@/client/ClientUrlUtils";
 import {showToast} from "@/client/ToastUtils";
 import {getMediaFileFromUrl} from "@/shared/MediaFileUtils";
+import MediaStorageUnavailableDialog from "@/components/admin/shared/MediaStorageUnavailableDialog";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -63,7 +64,8 @@ function PreviewCurrentMediaFile({url, contentType, category, durationSecond, si
 
 function MediaUploader(
   {url, category, contentType, sizeByte, durationSecond, setRef, uploading, progressText,
-    onFileUpload, updateDuration, publicBucketUrl}: any) {
+    onFileUpload, onMediaStorageUnavailable, updateDuration, publicBucketUrl,
+    mediaStorageReady}: any) {
   const {fileTypes} = (ENCLOSURE_CATEGORIES_DICT[category] as any);
   const fileNotExist = !!url;
   const headerTitle = fileNotExist ? `Upload a new ${category} file to replace this one` :
@@ -79,6 +81,10 @@ function MediaUploader(
       updateDuration={updateDuration}
     />}
     {url && <div className="border-t pt-2 mb-2"/>}
+    {!mediaStorageReady && <div className="mb-3 rounded-sm border p-3 text-sm text-helper-color">
+      File uploads are unavailable until R2 media storage is enabled. You can
+      still choose <strong>external URL</strong> above.
+    </div>}
     <details className="lh-upload-wrapper" open={!fileNotExist}>
       <summary className="m-page-summary mt-4 text-sm">
         {headerTitle}
@@ -87,7 +93,10 @@ function MediaUploader(
         handleChange={onFileUpload}
         name="audioUploader"
         types={fileTypes}
-        disabled={uploading}
+        disabled={uploading || !mediaStorageReady}
+        onDisabledClick={!uploading
+          ? onMediaStorageUnavailable
+          : undefined}
         classes="lh-upload-fileinput"
       >
         <div className="w-full h-24 lh-upload-box mt-2 p-4 flex items-center justify-center">
@@ -136,6 +145,8 @@ export default class MediaManager extends React.Component<any, any> {
     super(props);
 
     this.onFileUpload = this.onFileUpload.bind(this);
+    this.showMediaStorageUnavailable =
+      this.showMediaStorageUnavailable.bind(this);
     this.setState = this.setState.bind(this);
 
     const {initMediaFile} = props;
@@ -147,6 +158,7 @@ export default class MediaManager extends React.Component<any, any> {
       ...mediaFileFromUrl,
     };
     let {url, category, contentType, sizeByte, durationSecond} = mediaFile || {};
+    const mediaStorageReady = props.mediaStorageReady !== false;
 
     const webGlobalSettings = props.feed.settings.webGlobalSettings || {};
     const publicBucketUrl = resolvePublicBucketUrl(
@@ -167,17 +179,26 @@ export default class MediaManager extends React.Component<any, any> {
       publicBucketUrl,
 
       url,
-      category: category || ENCLOSURE_CATEGORIES.AUDIO,
+      category: category || (
+        mediaStorageReady
+          ? ENCLOSURE_CATEGORIES.AUDIO
+          : ENCLOSURE_CATEGORIES.EXTERNAL_URL
+      ),
       contentType,
       sizeByte,
       durationSecond: durationSecond || 0,
 
       uploadStatus: null,
       progressText: '0.00%',
+      showMediaStorageUnavailable: false,
     };
   }
 
   onFileUpload(file: any) {
+    if (this.props.mediaStorageReady === false) {
+      this.showMediaStorageUnavailable();
+      return;
+    }
     const {category} = this.state;
     this.setState({uploadStatus: UPLOAD_STATUS__START});
     const {name, size, type} = file;
@@ -231,12 +252,18 @@ export default class MediaManager extends React.Component<any, any> {
     });
   }
 
+  showMediaStorageUnavailable() {
+    this.setState({showMediaStorageUnavailable: true});
+  }
+
   render() {
     const {
       category, url, contentType, sizeByte, durationSecond,
       uploadStatus, progressText, publicBucketUrl,
+      showMediaStorageUnavailable,
     } = this.state;
     const {label, labelComponent} = this.props;
+    const mediaStorageReady = this.props.mediaStorageReady !== false;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (<div>
       {label && <h2 className="lh-page-title">
@@ -251,6 +278,12 @@ export default class MediaManager extends React.Component<any, any> {
             name: (ENCLOSURE_CATEGORIES_DICT[cat] as any).name,
             value: cat,
             checked: cat === category,
+            disabled: !mediaStorageReady &&
+              cat !== ENCLOSURE_CATEGORIES.EXTERNAL_URL,
+            onDisabledClick: !mediaStorageReady &&
+                cat !== ENCLOSURE_CATEGORIES.EXTERNAL_URL
+              ? this.showMediaStorageUnavailable
+              : undefined,
           }))}
           disabled={uploading}
           onChange={(e: any) => {
@@ -286,6 +319,7 @@ export default class MediaManager extends React.Component<any, any> {
           }}
         /> : <MediaUploader
           publicBucketUrl={publicBucketUrl}
+          mediaStorageReady={mediaStorageReady}
           url={url}
           category={category}
           contentType={contentType}
@@ -316,8 +350,17 @@ export default class MediaManager extends React.Component<any, any> {
           uploading={uploading}
           progressText={progressText}
           onFileUpload={this.onFileUpload}
+          onMediaStorageUnavailable={this.showMediaStorageUnavailable}
         />}
       </div>
+      <MediaStorageUnavailableDialog
+        dashboardUrl={this.props.mediaStorage?.dashboardUrl}
+        onOpenChange={(open) => this.setState({
+          showMediaStorageUnavailable: open,
+        })}
+        open={showMediaStorageUnavailable}
+        state={this.props.mediaStorage?.mediaStorageState}
+      />
     </div>);
   }
 }
