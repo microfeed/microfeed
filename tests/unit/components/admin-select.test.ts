@@ -27,7 +27,13 @@ describe("AdminSelect", () => {
     expect(output).toContain('aria-label="Category"');
     expect(output).toContain('data-slot="admin-select-input-container"');
     expect(output).toContain('data-slot="admin-select-value"');
-    expect(output).toContain("ml-1");
+    expect(output).toContain("group/admin-select-input");
+    expect(output).toContain("group-focus-within/admin-select-input:pl-4");
+    expect(output).toContain("caret-transparent");
+    expect(output).toContain("focus:caret-black");
+    expect(output).toContain("focus:ring-0");
+    expect(output).toContain("focus:shadow-none");
+    expect(output).not.toContain("ml-1");
     expect(output).toContain("rounded-[4px]");
     expect(output).toContain("border-black");
     expect(output).toContain("focus-within:border-[#2684ff]");
@@ -77,6 +83,9 @@ describe("AdminSelect", () => {
     expect(output).toContain('aria-label="Open Categories"');
     expect(output).toContain("rounded-[2px]");
     expect(output).toContain("bg-[#e6e6e6]");
+    expect(output).not.toContain("focus:caret-black");
+    expect(output).not.toContain("focus:ring-0");
+    expect(output).not.toContain("focus:shadow-none");
   });
 
   it("only gives the empty state layout when no options match", () => {

@@ -56,6 +56,8 @@ const ADMIN_SELECT_INDICATORS_CLASS =
   "my-2 flex shrink-0 self-stretch items-center border-l border-[#cccccc] px-0.5";
 const ADMIN_SELECT_TRIGGER_CLASS =
   "size-8 rounded-none px-0 focus-visible:ring-0";
+const ADMIN_SINGLE_SELECT_INPUT_CLASS =
+  "focus:border-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none";
 
 const optionText = <Option extends AdminSelectOption>(option: Option) =>
   option.textValue ?? (typeof option.label === "string" ? option.label : option.value);
@@ -200,7 +202,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
           <ComboboxInputGroup ref={anchorRef} className={ADMIN_SELECT_CONTROL_CLASS}>
             <div
               data-slot="admin-select-input-container"
-              className="relative ml-1 flex min-h-9 min-w-0 flex-1 items-stretch"
+              className="group/admin-select-input relative flex min-h-9 min-w-0 flex-1 items-stretch"
             >
               {props.value && (
                 <ComboboxValue>
@@ -208,7 +210,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
                     <div
                       data-slot="admin-select-value"
                       className={singleInputValue === ""
-                        ? "pointer-events-none flex min-w-0 flex-1 items-center overflow-hidden px-2.5 py-1 text-sm"
+                        ? "pointer-events-none flex min-w-0 flex-1 items-center overflow-hidden px-2.5 py-1 text-sm group-focus-within/admin-select-input:pl-4"
                         : "invisible flex min-w-0 flex-1 items-center overflow-hidden px-2.5 py-1 text-sm"
                       }
                     >
@@ -220,8 +222,8 @@ export default function AdminSelect<Option extends AdminSelectOption>(
               <ComboboxInput
                 aria-label={accessibleLabel}
                 className={props.value
-                  ? `absolute inset-0 h-full w-full px-2.5 py-1 text-sm ${singleInputValue === "" ? "caret-transparent text-transparent" : "text-black"}`
-                  : "h-9 w-full px-2.5 py-1 text-sm"
+                  ? `absolute inset-0 h-full w-full px-2.5 py-1 text-sm ${ADMIN_SINGLE_SELECT_INPUT_CLASS} ${singleInputValue === "" ? "caret-transparent text-transparent focus:caret-black" : "text-black"}`
+                  : `h-9 w-full px-2.5 py-1 text-sm ${ADMIN_SINGLE_SELECT_INPUT_CLASS}`
                 }
                 placeholder={props.value
                   ? ""
