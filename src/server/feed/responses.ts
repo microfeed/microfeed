@@ -6,11 +6,15 @@ import {STATUSES} from "@/shared/Constants";
 import FeedPublicRssBuilder from "@/server/feed/FeedPublicRssBuilder";
 import Theme from "@/server/themes/Theme";
 import type {FeedContent} from "@/types";
-import {loadPublishedFeed, shouldHidePublicFeed} from "./feed";
+import {
+  isPublicFeedOffline,
+  loadPublishedFeed,
+  shouldHidePublicWeb,
+} from "./feed";
 import {jsonResponse} from "@/server/http";
 
 function feedUnavailable(content: FeedContent): Response | null {
-  if (shouldHidePublicFeed(content)) {
+  if (isPublicFeedOffline(content)) {
     return new Response("Not Found", {status: 404, statusText: "Not Found"});
   }
   return null;
@@ -136,9 +140,8 @@ export async function sitemapResponse(request: Request): Promise<Response> {
   const loaded = await loadPublishedFeed(env, request, {
     limit: -1,
   });
-  const unavailable = feedUnavailable(loaded.content);
-  if (unavailable) {
-    return unavailable;
+  if (shouldHidePublicWeb(loaded.content)) {
+    return new Response("Not Found", {status: 404, statusText: "Not Found"});
   }
   const redirect = onboardingRedirect(request, loaded.onboarding.requiredOk);
   if (redirect) {

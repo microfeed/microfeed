@@ -1,5 +1,5 @@
 import OnboardingChecker from "@/server/feed/OnboardingUtils";
-import {STATUSES} from "@/shared/Constants";
+import {CHANNEL_STATUSES, STATUSES} from "@/shared/Constants";
 import FeedCrudManager from "@/server/feed/FeedCrudManager";
 import FeedDb, {getFetchItemsParams} from "@/server/feed/FeedDb";
 import {mediaBucket} from "@/server/media/storage";
@@ -89,6 +89,12 @@ export function createFeedCrud(
   return new FeedCrudManager(content, database, request);
 }
 
-export function shouldHidePublicFeed(content: FeedContent): boolean {
-  return content.settings?.access?.currentPolicy === "offline";
+export function isPublicFeedOffline(content: FeedContent): boolean {
+  return content.settings?.access?.currentPolicy === CHANNEL_STATUSES.OFFLINE;
+}
+
+export function shouldHidePublicWeb(content: FeedContent): boolean {
+  const currentPolicy = content.settings?.access?.currentPolicy;
+  return currentPolicy === CHANNEL_STATUSES.HEADLESS ||
+    currentPolicy === CHANNEL_STATUSES.OFFLINE;
 }

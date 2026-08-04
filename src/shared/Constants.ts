@@ -203,14 +203,19 @@ export const NAV_ITEMS_DICT = {
 
 export const CHANNEL_STATUSES = {
   PUBLIC: 'public',
+  HEADLESS: 'headless',
   OFFLINE: 'offline',
   PASSCODE: 'passcode',
-};
+} as const;
 
 export const CHANNEL_STATUSES_DICT = {
   [CHANNEL_STATUSES.PUBLIC]: {
     name: 'Public',
     description: 'Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed.',
+  },
+  [CHANNEL_STATUSES.HEADLESS]: {
+    name: 'Headless',
+    description: 'Keep RSS, JSON Feed, APIs, and media available, but return 404 for the website home page, item pages, and sitemap.xml.',
   },
   [CHANNEL_STATUSES.OFFLINE]: {
     name: 'Offline',

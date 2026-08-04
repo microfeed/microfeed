@@ -1,8 +1,10 @@
 export type JsonObject = Record<string, unknown>;
 
+export type AccessPolicy = "public" | "headless" | "passcode" | "offline";
+
 export interface FeedSettings {
   access?: {
-    currentPolicy?: "public" | "passcode" | "offline";
+    currentPolicy?: AccessPolicy;
   };
   apiSettings?: {
     apps?: Array<{
