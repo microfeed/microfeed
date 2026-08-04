@@ -1,5 +1,5 @@
 import {useState} from "react";
-import { ArrowRightCircleIcon, ArrowUpCircleIcon } from '@heroicons/react/24/outline'
+import {CircleArrowRightIcon, CircleArrowUpIcon} from "lucide-react";
 import clsx from "clsx";
 import AdminDialog from "../AdminDialog";
 import ExternalLink from "../ExternalLink";
@@ -7,7 +7,7 @@ import {PUBLIC_URLS} from "@/shared/StringUtils";
 
 export default function ExplainText({bundle, customClass}: any) {
   const [isOpen, setIsOpen] = useState(false);
-  const Icon = isOpen ? ArrowUpCircleIcon : ArrowRightCircleIcon;
+  const Icon = isOpen ? CircleArrowUpIcon : CircleArrowRightIcon;
   return (
     <div className="flex">
       <a
@@ -24,8 +24,8 @@ export default function ExplainText({bundle, customClass}: any) {
         </div>
       </a>
       <AdminDialog
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
+        open={isOpen}
+        onOpenChange={setIsOpen}
         title={bundle.modalTitle || bundle.linkName}
       >
         <div className="py-2">

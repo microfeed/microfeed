@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import {Trash2Icon} from "lucide-react";
 import {navigate} from 'astro:transitions/client';
 import AdminPageApp from '@/components/admin/shared/AdminPageApp';
 import AdminInput from "@/components/admin/shared/AdminInput";
@@ -14,7 +14,7 @@ import AdminImageUploaderApp from "@/components/admin/shared/AdminImageUploaderA
 import AdminDatetimePicker from '@/components/admin/shared/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "@/shared/TimeUtils";
 import {getPublicBaseUrl} from "@/client/ClientUrlUtils";
-import AdminRadio from "@/components/admin/shared/AdminRadio";
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {showToast} from "@/client/ToastUtils";
 import MediaManager from "./components/MediaManager";
 import {
@@ -276,27 +276,25 @@ export default class EditItemApp extends React.Component<Props, any> {
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-2 mt-4">
-                  <AdminRadio
+                  <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.STATUS]}/>}
-                    groupName="item-status"
-                    buttons={[
+                    name="item-status"
+                    value={String(status)}
+                    options={[
                       {
-                        name: (ITEM_STATUSES_DICT[STATUSES.PUBLISHED] as any).name,
-                        value: STATUSES.PUBLISHED,
-                        checked: status === STATUSES.PUBLISHED,
+                        label: (ITEM_STATUSES_DICT[STATUSES.PUBLISHED] as any).name,
+                        value: String(STATUSES.PUBLISHED),
                       },
                       {
-                        name: (ITEM_STATUSES_DICT[STATUSES.UNLISTED] as any).name,
-                        value: STATUSES.UNLISTED,
-                        checked: status === STATUSES.UNLISTED,
+                        label: (ITEM_STATUSES_DICT[STATUSES.UNLISTED] as any).name,
+                        value: String(STATUSES.UNLISTED),
                       },
                       {
-                        name: (ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED] as any).name,
-                        value: STATUSES.UNPUBLISHED,
-                        checked: status === STATUSES.UNPUBLISHED,
+                        label: (ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED] as any).name,
+                        value: String(STATUSES.UNPUBLISHED),
                       }]}
-                    onChange={(e: any) => {
-                      this.onUpdateItemMeta({'status': parseInt(e.target.value, 10)})
+                    onValueChange={(value) => {
+                      this.onUpdateItemMeta({'status': parseInt(value, 10)})
                     }}
                   />
                   <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: (ITEM_STATUSES_DICT[status] as any).description}} />
@@ -321,18 +319,18 @@ export default class EditItemApp extends React.Component<Props, any> {
               <summary className="m-page-summary">Podcast-specific fields</summary>
               <div className="grid grid-cols-1 gap-8">
                 <div className="grid grid-cols-3 gap-4 mt-4">
-                  <AdminRadio
+                  <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
-                    groupName="lh-explicit"
-                    buttons={[{
-                      'name': 'yes',
-                      'checked': item['itunes:explicit'],
+                    name="lh-explicit"
+                    value={item['itunes:explicit'] ? 'yes' : 'no'}
+                    options={[{
+                      label: 'yes',
+                      value: 'yes',
                     }, {
-                      'name': 'no',
-                      'checked': !item['itunes:explicit'],
+                      label: 'no',
+                      value: 'no',
                     }]}
-                    value={item['itunes:explicit']}
-                    onChange={(e: any) => this.onUpdateItemMeta({'itunes:explicit': e.target.value === 'yes'})}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:explicit': value === 'yes'})}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
@@ -351,22 +349,22 @@ export default class EditItemApp extends React.Component<Props, any> {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <AdminRadio
+                  <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
-                    groupName="feed-itunes-episodetype"
-                    buttons={[{
-                      'name': 'full',
-                      'checked': item['itunes:episodeType'] === 'full',
+                    name="feed-itunes-episodetype"
+                    value={item['itunes:episodeType']}
+                    options={[{
+                      label: 'full',
+                      value: 'full',
                     }, {
-                      'name': 'trailer',
-                      'checked': item['itunes:episodeType'] === 'trailer',
+                      label: 'trailer',
+                      value: 'trailer',
                     }, {
-                      'name': 'bonus',
-                      'checked': item['itunes:episodeType'] === 'bonus',
+                      label: 'bonus',
+                      value: 'bonus',
                     },
                     ]}
-                    value={item['itunes:episodeType']}
-                    onChange={(e: any) => this.onUpdateItemMeta({'itunes:episodeType': e.target.value})}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:episodeType': value})}
                   />
                   <AdminInput
                     type="number"
@@ -384,18 +382,18 @@ export default class EditItemApp extends React.Component<Props, any> {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <AdminRadio
+                  <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_BLOCK]}/>}
-                    groupName="feed-itunes-block"
-                    buttons={[{
-                      'name': 'Yes',
-                      'checked': item['itunes:block'],
+                    name="feed-itunes-block"
+                    value={item['itunes:block'] ? 'yes' : 'no'}
+                    options={[{
+                      label: 'Yes',
+                      value: 'yes',
                     }, {
-                      'name': 'No',
-                      'checked': !item['itunes:block'],
+                      label: 'No',
+                      value: 'no',
                     }]}
-                    value={item['itunes:block']}
-                    onChange={(e: any) => this.onUpdateItemMeta({'itunes:block': e.target.value === 'Yes'})}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:block': value === 'yes'})}
                   />
                 </div>
               </div>
@@ -431,7 +429,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                     }
                   }
                 }><div className="flex items-center text-red-500 text-sm hover:text-brand-light">
-                  <TrashIcon className="w-4" />
+                  <Trash2Icon className="w-4" />
                   <div className="ml-1">Delete this item</div>
                   </div>
                 </a>

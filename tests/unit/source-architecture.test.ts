@@ -10,6 +10,12 @@ const legacyRoots = [
   ["client", "src"].join("-"),
   ["common", "src"].join("-"),
 ];
+const legacyUiPackages = [
+  ["@", "headlessui", "react"].join("/"),
+  ["@", "heroicons", "react"].join("/"),
+];
+const lucidePackage = ["lucide", "react"].join("-");
+const lucideDynamicImport = [lucidePackage, "dynamic"].join("/");
 
 async function sourceFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, {withFileTypes: true});
@@ -110,5 +116,30 @@ describe("source architecture", () => {
         ),
       ),
     ).resolves.toBeUndefined();
+  });
+
+  it("standardizes UI primitives and icons", async () => {
+    const sourceContents = await contentsUnder(
+      path.join(repositoryRoot, "src"),
+    );
+    const manifestContents = await readFile(
+      path.join(repositoryRoot, "package.json"),
+      "utf8",
+    );
+    const componentConfig = JSON.parse(await readFile(
+      path.join(repositoryRoot, "components.json"),
+      "utf8",
+    ));
+
+    for (const packageName of legacyUiPackages) {
+      expect(sourceContents).not.toContain(packageName);
+      expect(manifestContents).not.toContain(packageName);
+    }
+    expect(sourceContents).not.toContain(lucideDynamicImport);
+    expect(sourceContents).not.toMatch(new RegExp(
+      `import\\s+\\*\\s+as\\s+\\w+\\s+from\\s+["']${lucidePackage}["']`,
+      "u",
+    ));
+    expect(componentConfig.iconLibrary).toBe("lucide");
   });
 });

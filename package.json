@@ -26,8 +26,6 @@
     "@clack/prompts": "^1.7.0",
     "@enzedonline/quill-blot-formatter2": "^3.2.0",
     "@fontsource-variable/geist": "^5.3.0",
-    "@headlessui/react": "^1.7.4",
-    "@heroicons/react": "^2.0.13",
     "@tanstack/react-table": "^8.5.28",
     "@uiw/react-textarea-code-editor": "^2.1.9",
     "axios": "^1.19.0",

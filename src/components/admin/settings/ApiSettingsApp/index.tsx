@@ -77,8 +77,9 @@ export default class ApiSettingsApp extends React.Component<any, any> {
         <div className="">
           <AdminSwitch
             label="API Enabled"
-            customLabelClass={clsx('', apiBundle.enabled ? 'text-black' : 'text-muted-color')}
-            enabled={apiBundle.enabled} setEnabled={(checked: any) => this.setApiEnabled(checked)}
+            labelClassName={clsx('', apiBundle.enabled ? 'text-black' : 'text-muted-color')}
+            checked={apiBundle.enabled}
+            onCheckedChange={(checked) => this.setApiEnabled(checked)}
           />
           <div className="text-muted-color text-xs mt-2">
             You can use the API to manage contents of your feed, e.g., create, update, and delete items.

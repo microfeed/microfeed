@@ -2,7 +2,12 @@ import React from 'react';
 import clsx from "clsx";
 import SettingsBase from "../SettingsBase";
 import {PUBLIC_URLS, randomShortUUID} from "@/shared/StringUtils";
-import { PlusCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CirclePlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import AdminInput from "@/components/admin/shared/AdminInput";
 import AdminSwitch from "@/components/admin/shared/AdminSwitch";
 import ExternalLink from "@/components/admin/shared/ExternalLink";
@@ -87,8 +92,9 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
         <div className="">
           <AdminSwitch
             label="Visible"
-            customLabelClass={clsx('text-xs', enabled ? 'text-black' : 'text-muted-color')}
-            enabled={enabled} setEnabled={(checked: any) => updateMethodByAttr(id, 'enabled', checked)}
+            labelClassName={clsx('text-xs', enabled ? 'text-black' : 'text-muted-color')}
+            checked={enabled}
+            onCheckedChange={(checked) => updateMethodByAttr(id, 'enabled', checked)}
           />
         </div>
         <div className="ml-4">
@@ -101,7 +107,7 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
                 updateMethodByAttr(id, 'deleted', true);
               }}>
               <div className="flex items-center">
-                <div className="mr-1"><TrashIcon className="w-4"/></div>
+                <div className="mr-1"><Trash2Icon className="w-4"/></div>
                 <div>Delete</div>
               </div>
             </a></div> : <div className="text-xs text-muted-color">
@@ -129,8 +135,8 @@ function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}: any) 
         setIsOpenNewMethod(true);
       }}
     >
-      <div className="flex items-center justify-center">
-        <div className="w-4 mr-1"><PlusCircleIcon/></div>
+      <div className="flex items-center justify-center gap-1.5">
+        <CirclePlusIcon aria-hidden="true" className="size-4 shrink-0" />
         <div>Add new subscribe method</div>
       </div>
     </a>

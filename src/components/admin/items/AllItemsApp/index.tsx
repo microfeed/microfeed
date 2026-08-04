@@ -26,7 +26,7 @@ import {
 } from '@tanstack/react-table';
 import clsx from "clsx";
 import ExternalLink from "@/components/admin/shared/ExternalLink";
-import AdminRadio from "@/components/admin/shared/AdminRadio";
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import type {FeedContent} from "@/types";
 
@@ -60,7 +60,6 @@ function ItemListTable({data, feed}: any) {
   if (feed.items_prev_cursor) {
     prevUrl = `?prev_cursor=${feed.items_prev_cursor}&sort=${feed.items_sort_order}`;
   }
-  const newestFirst = feed.items_sort_order === ITEMS_SORT_ORDERS.NEWEST_FIRST;
   const table = useReactTable({
     data,
     columns,
@@ -68,22 +67,22 @@ function ItemListTable({data, feed}: any) {
   });
   return (<div>
     <div className="mb-4">
-      <AdminRadio
-        groupName="sort-order"
-        buttons={[
+      <AdminRadioGroup
+        ariaLabel="Sort order"
+        name="sort-order"
+        value={feed.items_sort_order}
+        options={[
           {
-            name: 'Newest first',
+            label: 'Newest first',
             value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
-            checked: newestFirst,
           },
           {
-            name: 'Oldest first',
+            label: 'Oldest first',
             value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
-            checked: !newestFirst,
           },
         ]}
-        onChange={(e: any) => {
-          void navigate(`?sort=${e.target.value}`);
+        onValueChange={(value) => {
+          void navigate(`?sort=${value}`);
         }}
       />
     </div>

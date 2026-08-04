@@ -13,10 +13,10 @@ import {
   ENCLOSURE_CATEGORIES_DICT,
   SUPPORTED_ENCLOSURE_CATEGORIES
 } from "@/shared/Constants";
-import AdminRadio from "@/components/admin/shared/AdminRadio";
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import AdminInput from "@/components/admin/shared/AdminInput";
 import FileUploader from "@/components/admin/shared/AdminFileUploader";
-import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
+import {CloudUploadIcon} from "lucide-react";
 import {getPublicBaseUrl} from "@/client/ClientUrlUtils";
 import {showToast} from "@/client/ToastUtils";
 import {getMediaFileFromUrl} from "@/shared/MediaFileUtils";
@@ -105,7 +105,7 @@ function MediaUploader(
             <div className="text-sm">{progressText}</div>
           </div> : <div className="text-brand-light">
             <div className="flex items-center">
-              <div className="mr-1"><CloudArrowUpIcon className="w-8"/></div>
+              <div className="mr-1"><CloudUploadIcon className="w-8"/></div>
               <div className="font-semibold">Click or drag here to upload {category}</div>
             </div>
             <div className="text-sm">{fileTypes.join(', ')}</div>
@@ -271,13 +271,14 @@ export default class MediaManager extends React.Component<any, any> {
       </h2>}
       {labelComponent}
       <div className="flex">
-        <AdminRadio
-          groupName="category"
-          customClass="font-semibold"
-          buttons={SUPPORTED_ENCLOSURE_CATEGORIES.map((cat: any) => ({
-            name: (ENCLOSURE_CATEGORIES_DICT[cat] as any).name,
+        <AdminRadioGroup
+          ariaLabel="Media category"
+          name="category"
+          className="font-semibold"
+          value={category}
+          options={SUPPORTED_ENCLOSURE_CATEGORIES.map((cat: any) => ({
+            label: (ENCLOSURE_CATEGORIES_DICT[cat] as any).name,
             value: cat,
-            checked: cat === category,
             disabled: !mediaStorageReady &&
               cat !== ENCLOSURE_CATEGORIES.EXTERNAL_URL,
             onDisabledClick: !mediaStorageReady &&
@@ -286,16 +287,16 @@ export default class MediaManager extends React.Component<any, any> {
               : undefined,
           }))}
           disabled={uploading}
-          onChange={(e: any) => {
+          onValueChange={(nextCategory) => {
             if (url) {
               const {name} = (ENCLOSURE_CATEGORIES_DICT[category] as any);
-              const newName = (ENCLOSURE_CATEGORIES_DICT[e.target.value] as any).name;
+              const newName = (ENCLOSURE_CATEGORIES_DICT[nextCategory] as any).name;
               const ok = confirm(`To switch to ${newName}, you should discard ${name} first. This will delete existing ${name}. Do you want to proceed?`);
               if (!ok) {
                 return;
               }
             }
-            this.setState({category: e.target.value, ...this.initState});
+            this.setState({category: nextCategory, ...this.initState});
           }}
         />
       </div>

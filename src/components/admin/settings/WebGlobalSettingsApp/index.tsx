@@ -8,7 +8,7 @@ import {
   ITEMS_SORT_ORDERS,
   MAX_ITEMS_PER_PAGE,
 } from "@/shared/Constants";
-import AdminRadio from "@/components/admin/shared/AdminRadio";
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {showToast} from "@/client/ToastUtils";
 import ExplainText from "@/components/admin/shared/ExplainText";
 import {CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS} from "../FormExplainTexts";
@@ -154,23 +154,21 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
               />
             </div>
             <div className="col-span-1">
-              <AdminRadio
-                customLabelClass="m-input-label-small"
+              <AdminRadioGroup
                 labelComponent={<ExplainText
                   bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.ITEMS_SORT_ORDER]}
                   customClass="m-input-label-small"
                 />}
-                groupName="items-sort-order"
-                buttons={[{
-                  name: 'Newest first',
+                name="items-sort-order"
+                value={itemsSortOrder}
+                options={[{
+                  label: 'Newest first',
                   value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
-                  checked: itemsSortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST,
                 }, {
-                  name: 'Oldest first',
+                  label: 'Oldest first',
                   value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
-                  checked: itemsSortOrder === ITEMS_SORT_ORDERS.OLDEST_FIRST,
                 }]}
-                onChange={(e: any) => this.setState({itemsSortOrder: e.target.value}, () => setChanged())}
+                onValueChange={(value) => this.setState({itemsSortOrder: value}, () => setChanged())}
               />
             </div>
           </div>

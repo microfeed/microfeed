@@ -3,7 +3,7 @@ import Requests from '@/client/requests';
 import AdminPageApp from '@/components/admin/shared/AdminPageApp';
 import AdminImageUploaderApp from '@/components/admin/shared/AdminImageUploaderApp';
 import AdminInput from "@/components/admin/shared/AdminInput";
-import AdminRadio from "@/components/admin/shared/AdminRadio";
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {
   ADMIN_URLS,
   resolvePublicBucketUrl,
@@ -240,18 +240,18 @@ export default class EditChannelApp extends React.Component<Props, any> {
             </summary>
             <div className="mt-8 grid grid-cols-1 gap-8">
               <div className="grid grid-cols-3 gap-4">
-                <AdminRadio
+                <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
-                  groupName="lh-explicit"
-                  buttons={[{
-                    'name': 'yes',
-                    'checked': channel['itunes:explicit'],
+                  name="lh-explicit"
+                  value={channel['itunes:explicit'] ? 'yes' : 'no'}
+                  options={[{
+                    label: 'yes',
+                    value: 'yes',
                   }, {
-                    'name': 'no',
-                    'checked': !channel['itunes:explicit'],
+                    label: 'no',
+                    value: 'no',
                   }]}
-                  value={channel['itunes:explicit']}
-                  onChange={(e: any) => this.onUpdateChannelMeta('itunes:explicit', e.target.value === 'yes')}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:explicit', value === 'yes')}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
@@ -265,18 +265,18 @@ export default class EditChannelApp extends React.Component<Props, any> {
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <AdminRadio
+                <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TYPE]}/>}
-                  groupName="feed-itunes-type"
-                  buttons={[{
-                    'name': 'episodic',
-                    'checked': channel['itunes:type'] === 'episodic',
-                  }, {
-                    'name': 'serial',
-                    'checked': channel['itunes:type'] === 'serial',
-                  }]}
+                  name="feed-itunes-type"
                   value={channel['itunes:type']}
-                  onChange={(e: any) => this.onUpdateChannelMeta('itunes:type', e.target.value)}
+                  options={[{
+                    label: 'episodic',
+                    value: 'episodic',
+                  }, {
+                    label: 'serial',
+                    value: 'serial',
+                  }]}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:type', value)}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EMAIL]}/>}
@@ -292,31 +292,31 @@ export default class EditChannelApp extends React.Component<Props, any> {
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <AdminRadio
+                <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
-                  groupName="feed-itunes-block"
-                  buttons={[{
-                    'name': 'yes',
-                    'checked': channel['itunes:block'],
+                  name="feed-itunes-block"
+                  value={channel['itunes:block'] ? 'yes' : 'no'}
+                  options={[{
+                    label: 'yes',
+                    value: 'yes',
                   }, {
-                    'name': 'no',
-                    'checked': !channel['itunes:block'],
+                    label: 'no',
+                    value: 'no',
                   }]}
-                  value={channel['itunes:block']}
-                  onChange={(e: any) => this.onUpdateChannelMeta('itunes:block', e.target.value === 'yes')}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:block', value === 'yes')}
                 />
-                <AdminRadio
+                <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_COMPLETE]}/>}
-                  groupName="feed-itunes-complete"
-                  buttons={[{
-                    'name': 'yes',
-                    'checked': channel['itunes:complete'],
+                  name="feed-itunes-complete"
+                  value={channel['itunes:complete'] ? 'yes' : 'no'}
+                  options={[{
+                    label: 'yes',
+                    value: 'yes',
                   }, {
-                    'name': 'no',
-                    'checked': !channel['itunes:complete'],
+                    label: 'no',
+                    value: 'no',
                   }]}
-                  value={channel['itunes:complete']}
-                  onChange={(e: any) => this.onUpdateChannelMeta('itunes:complete', e.target.value === 'yes')}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:complete', value === 'yes')}
                 />
               </div>
             </div>
