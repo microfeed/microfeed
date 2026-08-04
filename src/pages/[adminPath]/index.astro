@@ -11,9 +11,11 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  title="Admin | microfeed.org"
   activeNavItem={NAV_ITEMS.ADMIN_HOME}
+  documentTitle="Admin | microfeed.org"
+  {feedContent}
   {onboardingResult}
+  pageTitle="Home"
 >
   <AdminHomeApp client:only="react" {feedContent} {onboardingResult}>
     <AdminPageFallback slot="fallback" kind="home" />

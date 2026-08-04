@@ -4,6 +4,7 @@ import {PREDEFINED_SUBSCRIBE_METHODS} from '@/shared/Constants';
 import AdminInput from "@/components/admin/shared/AdminInput";
 import {randomShortUUID} from "@/shared/StringUtils";
 import AdminSelect from "@/components/admin/shared/AdminSelect";
+import {Button} from "@/components/ui/button";
 
 const METHODS_OPTIONS = Object.keys(PREDEFINED_SUBSCRIBE_METHODS).map((key: any) => {
   const m = (PREDEFINED_SUBSCRIBE_METHODS as any)[key];
@@ -81,8 +82,7 @@ export default class NewSubscribeDialog extends React.Component<any, any> {
           </div>
         </div>}
         <div className="pt-8 flex justify-center">
-          <button
-            className="lh-btn lh-btn-brand-dark"
+          <Button
             disabled={!method}
             onClick={(e: any) => {
               e.preventDefault();
@@ -97,7 +97,7 @@ export default class NewSubscribeDialog extends React.Component<any, any> {
             }}
           >
             Add new subscribe method
-          </button>
+          </Button>
         </div>
       </form>
     </AdminDialog>);

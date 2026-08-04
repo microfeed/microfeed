@@ -31,7 +31,7 @@ export default function AdminSwitch({
         disabled={disabled}
         onCheckedChange={onCheckedChange}
         className={cn(
-          "data-checked:bg-brand-light data-unchecked:bg-gray-200",
+          "data-checked:bg-brand-light data-unchecked:bg-muted-foreground/35",
           className,
         )}
       />

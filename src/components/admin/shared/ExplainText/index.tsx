@@ -12,7 +12,7 @@ export default function ExplainText({bundle, customClass}: any) {
     <div className="flex">
       <a
         href="#"
-        className={clsx(customClass || 'lh-page-subtitle')}
+        className={clsx(customClass || 'mb-2 font-semibold text-foreground')}
         onClick={(e: any) => {
           e.preventDefault();
           setIsOpen(true);

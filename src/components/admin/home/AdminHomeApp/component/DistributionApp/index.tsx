@@ -56,26 +56,26 @@ export default class DistributionApp extends React.Component<any, any> {
   }
 
   render() {
-    return (<div className="lh-page-card">
-      <div className="lh-page-title">
+    return (<div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+      <div className="mb-4 text-lg font-semibold tracking-tight">
         Distribution
       </div>
       <div className="grid grid-cols-1 gap-8 mt-8">
         {DISTRIBUTION_BUNDLE.map((bundle: any) => (<div
           key={`b-${bundle.label}`}
-          className="grid grid-cols-12 gap-4"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-12"
         >
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <ExternalLink url={bundle.url} text={bundle.label} />
           </div>
-          <div className="col-span-10">
-            <div className="select-all bg-gray-200 py-2 px-4 rounded-sm">
+          <div className="min-w-0 sm:col-span-10">
+            <div className="select-all break-all rounded-[10px] bg-muted px-4 py-2 font-mono text-xs">
               {bundle.url}
             </div>
-            <div className="mt-2 text-helper-color text-sm">
+            <div className="mt-2 text-sm text-muted-foreground">
               <details>
                 <summary className="hover:cursor-pointer hover:opacity-50">{bundle.summary}</summary>
-                <div className="mt-4 bg-gray-100 px-2 py-1 rounded-sm">
+                <div className="mt-4 rounded-[10px] bg-muted/70 px-3 py-2">
                   {bundle.details}
                 </div>
               </details>

@@ -16,6 +16,7 @@ export interface AdminRadioOption {
 }
 
 interface AdminRadioGroupProps {
+  alignment?: "center" | "start";
   ariaLabel?: string;
   className?: string;
   disabled?: boolean;
@@ -30,6 +31,7 @@ interface AdminRadioGroupProps {
 }
 
 export default function AdminRadioGroup({
+  alignment = "center",
   ariaLabel,
   className,
   disabled = false,
@@ -51,7 +53,7 @@ export default function AdminRadioGroup({
       {hasVisibleLabel && (
         <div id={labelId}>
           {label && (
-            <div className={cn(labelClassName || "lh-page-subtitle")}>
+            <div className={cn(labelClassName || "mb-2 text-sm font-semibold text-foreground")}>
               {label}
             </div>
           )}
@@ -93,7 +95,7 @@ export default function AdminRadioGroup({
               aria-disabled={optionDisabled || undefined}
               disabled={optionDisabled && !guidedDisabled}
               className={cn(
-                "mt-1",
+                alignment === "start" && "mt-1",
                 guidedDisabled && "cursor-not-allowed opacity-60",
               )}
             />
@@ -106,7 +108,8 @@ export default function AdminRadioGroup({
                 htmlFor={optionId}
                 data-disabled={optionDisabled || undefined}
                 className={cn(
-                  "items-start gap-4 rounded-sm border p-3 has-[[data-slot=radio-group-item][data-checked]]:border-brand-light",
+                  "gap-4 rounded-[14px] border bg-card p-4 has-[[data-slot=radio-group-item][data-checked]]:border-brand-light has-[[data-slot=radio-group-item][data-checked]]:ring-1 has-[[data-slot=radio-group-item][data-checked]]:ring-brand-light/20",
+                  alignment === "start" ? "items-start" : "items-center",
                   optionDisabled
                     ? "cursor-not-allowed opacity-60"
                     : "cursor-pointer",
@@ -116,7 +119,7 @@ export default function AdminRadioGroup({
                 <span className="flex min-w-0 flex-col gap-1">
                   <span className="text-sm font-semibold">{option.label}</span>
                   {option.description && (
-                    <span className="text-xs font-normal text-muted-color">
+                    <span className="text-xs font-normal text-muted-foreground">
                       {option.description}
                     </span>
                   )}
@@ -131,11 +134,12 @@ export default function AdminRadioGroup({
               htmlFor={optionId}
               data-disabled={optionDisabled || undefined}
               className={cn(
-                "items-start gap-1.5",
+                "gap-1.5",
+                alignment === "start" ? "items-start" : "items-center",
                 optionDisabled
                   ? "cursor-not-allowed opacity-60"
                   : "cursor-pointer",
-                option.value === value ? "" : "text-helper-color",
+                option.value === value ? "" : "text-muted-foreground",
               )}
             >
               {radio}

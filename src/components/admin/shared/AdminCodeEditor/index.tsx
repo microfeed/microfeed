@@ -20,7 +20,7 @@ export default function AdminCodeEditor({
   onChange,
   placeholder = "Please enter code here",
 }: Props) {
-  return (<label className="">
+  return (<label className="block overflow-hidden rounded-[10px] border bg-muted/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30">
     <CodeEditor
       aria-label={ariaLabel}
       value={code}
@@ -28,12 +28,13 @@ export default function AdminCodeEditor({
       placeholder={placeholder}
       onChange={onChange}
       spellCheck={false}
+      className="admin-code-editor"
       style={{
         maxHeight,
         minHeight,
         overflow: 'auto',
         fontSize: 12,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "transparent",
         fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
       }}
     />

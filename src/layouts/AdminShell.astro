@@ -3,30 +3,102 @@ import {env} from "cloudflare:workers";
 import "@fontsource-variable/geist";
 import {ClientRouter} from "astro:transitions";
 
-import AdminIcon from "@/components/admin/AdminIcon.astro";
-import AdminNavigation from "@/components/admin/AdminNavigation.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminThemeScript from "@/components/admin/AdminThemeScript.astro";
+import AdminTopBar from "@/components/admin/AdminTopBar.astro";
+import {Toaster} from "@/components/ui/sonner";
+import {adminChannelSummary} from "@/components/admin/admin-shell-types";
+import type {
+  AdminBreadcrumb,
+  AdminDeploymentSummary,
+  AdminIdentitySummary,
+  AdminSidebarData,
+} from "@/components/admin/admin-shell-types";
+import {cloudflareAccessIdentity} from "@/server/auth/admin-protection";
 import {normalizeAdminPath} from "@/shared/AdminPath";
-import type {AdminNavItemId} from "@/shared/AdminNavigation";
-import {OUR_BRAND} from "@/shared/Constants";
-import type {OnboardingResult} from "@/types";
+import {
+  getAdminNavigationItems,
+  type AdminNavItemId,
+} from "@/shared/AdminNavigation";
+import {
+  PUBLIC_URLS,
+  resolvePublicBucketUrl,
+  urlJoinWithRelative,
+} from "@/shared/StringUtils";
+import type {FeedContent, OnboardingResult} from "@/types";
 import "@/styles/admin.css";
 import "@/styles/interactive.css";
 
-export interface AdminBreadcrumb {
-  childName: string;
-  name: string;
-  url: string;
-}
+export type {AdminBreadcrumb};
 
 interface Props {
   activeNavItem: AdminNavItemId | null;
   breadcrumb?: AdminBreadcrumb;
+  documentTitle?: string;
+  feedContent: FeedContent;
   onboardingResult: OnboardingResult;
-  title: string;
+  pageTitle: string;
 }
 
-const {activeNavItem, breadcrumb, onboardingResult, title} = Astro.props;
+const {
+  activeNavItem,
+  breadcrumb,
+  documentTitle,
+  feedContent,
+  onboardingResult,
+  pageTitle,
+} = Astro.props;
 const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
+const accessIdentity = cloudflareAccessIdentity(Astro.request);
+const identity: AdminIdentitySummary = {
+  builtInEmail: Astro.locals.authUser?.email,
+  cloudflareAccessDetected: accessIdentity.detected,
+  cloudflareAccessEmail: accessIdentity.email,
+};
+const protectedDashboard = Boolean(
+  identity.builtInEmail || identity.cloudflareAccessDetected,
+);
+const versionTag = env.CF_VERSION_METADATA.tag?.trim().toLowerCase();
+const productionWorkerName = protectedDashboard &&
+    env.DEPLOYMENT_ENVIRONMENT === "production" &&
+    env.MICROFEED_CLOUDFLARE_ACCOUNT_ID?.trim() &&
+    env.MICROFEED_WORKER_NAME?.trim()
+  ? env.MICROFEED_WORKER_NAME.trim()
+  : undefined;
+const deployment: AdminDeploymentSummary = {
+  deployedAt: env.CF_VERSION_METADATA.timestamp,
+  protected: protectedDashboard,
+  productionWorkerName,
+  sourceCommit: protectedDashboard && versionTag && /^[0-9a-f]{40}$/u.test(versionTag)
+    ? versionTag
+    : undefined,
+};
+
+const channel = feedContent.channel ?? {};
+const channelImage = typeof channel.image === "string" && channel.image.trim()
+  ? channel.image.trim()
+  : undefined;
+const publicBucketUrl = resolvePublicBucketUrl(
+  feedContent.settings?.webGlobalSettings?.publicBucketUrl,
+  Astro.url.hostname,
+);
+const channelImageUrl = channelImage
+  ? urlJoinWithRelative(publicBucketUrl, channelImage, Astro.url.origin) ?? undefined
+  : undefined;
+const sidebar: AdminSidebarData = {
+  channel: adminChannelSummary(channel.title, channelImageUrl),
+  deployment,
+  items: getAdminNavigationItems(
+    adminPath,
+    activeNavItem,
+    onboardingResult,
+  ),
+  publicLinks: {
+    json: PUBLIC_URLS.jsonFeed(Astro.url.origin),
+    rss: PUBLIC_URLS.rssFeed(Astro.url.origin),
+    website: PUBLIC_URLS.webFeed(Astro.url.origin),
+  },
+};
 ---
 
 <!doctype html>
@@ -35,121 +107,48 @@ const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="microfeed-admin-path" content={adminPath} />
-    <title>{title}</title>
+    <title>{documentTitle ?? `${pageTitle} | microfeed.org`}</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png" />
     <link rel="manifest" href="/assets/favicon/site.webmanifest" />
+    <AdminThemeScript />
     <ClientRouter fallback="swap" />
   </head>
   <body>
-    <div class="flex min-h-screen w-full flex-col">
-      <header class="hidden grid-cols-12 items-center gap-4 border-b bg-white drop-shadow-sm lg:grid">
-        <div class="col-span-2 px-4 py-4 xl:px-8">
-          <a href={OUR_BRAND.whatsnewWebsite} target="_blank" rel="noreferrer" class="hover:opacity-50">
-            <img src="/assets/brands/microfeed/horizontal-logo.png" class="w-full" alt="microfeed" />
-          </a>
-        </div>
-        <div class="col-span-10 flex items-center">
-          {
-            breadcrumb && (
-              <div class="py-6 pl-4 xl:pl-16">
-                <a href={breadcrumb.url}>
-                  <span class="lh-icon-arrow-left" /> {breadcrumb.name}
-                </a>
-                <span class="mx-2">/</span>
-                <span class="text-muted-color">{breadcrumb.childName}</span>
-              </div>
-            )
-          }
-          <div><slot name="toolbar" /></div>
-          <div class="flex-1 px-4 py-6 text-right xl:px-16">
-            <button
-              class="text-brand-dark hover:opacity-50 text-sm font-semibold"
-              type="button"
-              data-admin-logout
-            >
-              <span class="flex items-center justify-end">
-                <span class="mr-1"><AdminIcon name="logout" class="w-4" /></span>
-                <span>Logout</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <header class="flex items-center border-b bg-white px-4 py-3 drop-shadow-sm lg:hidden">
-        <button
-          type="button"
-          class="text-brand-dark rounded p-2 hover:opacity-60"
-          aria-label="Open admin navigation"
-          aria-controls="admin-mobile-navigation"
-          aria-expanded="false"
-          aria-haspopup="dialog"
-          data-admin-menu-open
+    <div class="min-h-svh bg-admin-canvas lg:flex lg:gap-3">
+      <aside class="sticky top-0 hidden h-svh w-[17rem] shrink-0 overflow-hidden bg-sidebar lg:block">
+        <AdminSidebar client:load data={sidebar} />
+      </aside>
+      <section class="min-h-svh min-w-0 flex-1 bg-background lg:mt-3 lg:h-[calc(100svh-0.75rem)] lg:min-h-0 lg:overflow-hidden lg:rounded-tl-[var(--radius-shell)] lg:border lg:border-r-0 lg:border-b-0 lg:shadow-xs">
+        <AdminTopBar
+          {adminPath}
+          {breadcrumb}
+          {identity}
+          {pageTitle}
+          {sidebar}
         >
-          <AdminIcon name="bars" class="w-6" />
-        </button>
-        <a href={OUR_BRAND.whatsnewWebsite} target="_blank" rel="noreferrer" class="mx-4 flex-1 hover:opacity-50">
-          <img src="/assets/brands/microfeed/horizontal-logo.png" class="h-8 w-auto" alt="microfeed" />
-        </a>
-        <button
-          class="text-brand-dark rounded p-2 hover:opacity-50"
-          type="button"
-          aria-label="Logout"
-          data-admin-logout
+          <div slot="toolbar"><slot name="toolbar" /></div>
+        </AdminTopBar>
+        <main
+          class="min-h-0 w-full lg:max-h-[calc(100svh-4.75rem)] lg:overflow-y-auto"
+          id="admin-page-content"
         >
-          <AdminIcon name="logout" class="w-5" />
-        </button>
-      </header>
-
-      <div class="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-12">
-        <aside class="bg-brand-dark hidden lg:col-span-2 lg:block">
-          <AdminNavigation
-            {activeNavItem}
-            {adminPath}
-            {onboardingResult}
-          />
-        </aside>
-        <main class="w-full lg:col-span-10" id="admin-page-content">
-          <div class="px-4 py-8 xl:px-16">
+          <div class="mx-auto w-full max-w-[90rem] p-4 sm:p-6 xl:p-8">
             <slot />
           </div>
         </main>
-      </div>
+      </section>
     </div>
 
-    <dialog
-      id="admin-mobile-navigation"
-      class="bg-brand-dark m-0 h-dvh max-h-dvh w-[min(20rem,85vw)] max-w-none p-0 text-white backdrop:bg-black/40 lg:hidden"
-      aria-label="Admin navigation"
-      data-admin-menu
-    >
-      <div class="flex min-h-dvh flex-col">
-        <div class="flex items-center justify-between border-b bg-white px-4 py-3">
-          <img src="/assets/brands/microfeed/horizontal-logo.png" class="h-8 w-auto" alt="microfeed" />
-          <button
-            type="button"
-            class="text-brand-dark rounded p-2 hover:opacity-60"
-            aria-label="Close admin navigation"
-            data-admin-menu-close
-          >
-            <AdminIcon name="close" class="w-6" />
-          </button>
-        </div>
-        <AdminNavigation
-          {activeNavItem}
-          {adminPath}
-          {onboardingResult}
-        />
-        <div class="mt-auto border-t border-white/20 p-4">
-          <button class="flex items-center py-3 text-white hover:text-brand-light" type="button" data-admin-logout>
-            <AdminIcon name="logout" class="mr-2 w-5" />
-            Logout
-          </button>
-        </div>
-      </div>
-    </dialog>
+    <Toaster
+      client:load
+      closeButton
+      offset={{top: 80, right: 24}}
+      position="top-right"
+      richColors
+      transition:persist="admin-toaster"
+    />
 
     <script>
       import {
@@ -158,10 +157,6 @@ const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
         isAdminPathname,
       } from "@/shared/AdminPath";
 
-      const mobileMenu = () =>
-        document.querySelector<HTMLDialogElement>("[data-admin-menu]");
-      const mobileMenuButton = () =>
-        document.querySelector<HTMLButtonElement>("[data-admin-menu-open]");
       const staysInProtectedAdmin = (destination: URL) => {
         const configuredAdminPath = browserAdminPath();
         const loginPath = adminUrl("login", configuredAdminPath);
@@ -172,59 +167,7 @@ const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
           !goesToLogin;
       };
 
-      document.addEventListener("click", async (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-
-        if (target.closest("[data-admin-menu-open]")) {
-          mobileMenu()?.showModal();
-          mobileMenuButton()?.setAttribute("aria-expanded", "true");
-          document.body.classList.add("overflow-hidden");
-          return;
-        }
-
-        if (target.closest("[data-admin-menu-close]")) {
-          mobileMenu()?.close();
-          return;
-        }
-
-        const logoutButton = target.closest<HTMLButtonElement>("[data-admin-logout]");
-        if (!logoutButton || logoutButton.disabled) return;
-
-        logoutButton.disabled = true;
-        try {
-          const {authClient} = await import("@/client/auth-client");
-          await authClient.signOut();
-          window.location.assign(adminUrl("login", browserAdminPath()));
-        } catch (error) {
-          logoutButton.disabled = false;
-          throw error;
-        }
-      });
-
-      document.addEventListener("click", (event) => {
-        const menu = mobileMenu();
-        if (menu && event.target === menu) menu.close();
-      });
-
-      document.addEventListener("close", (event) => {
-        if (event.target === mobileMenu()) {
-          mobileMenuButton()?.setAttribute("aria-expanded", "false");
-          document.body.classList.remove("overflow-hidden");
-        }
-      }, true);
-
-      document.addEventListener("keydown", (event) => {
-        const menu = mobileMenu();
-        if (event.key === "Escape" && menu?.open) {
-          event.preventDefault();
-          menu.close();
-        }
-      });
-
       document.addEventListener("astro:before-preparation", (event) => {
-        mobileMenu()?.close();
-
         if (!staysInProtectedAdmin(event.to)) {
           event.preventDefault();
           return;

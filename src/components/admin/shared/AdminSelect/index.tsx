@@ -51,9 +51,9 @@ export type AdminSelectProps<Option extends AdminSelectOption> =
   | MultipleProps<Option>;
 
 const ADMIN_SELECT_CONTROL_CLASS =
-  "min-h-[38px] rounded-[4px] border-black bg-white focus-within:border-[#2684ff] focus-within:ring-1 focus-within:ring-[#2684ff] dark:bg-white";
+  "min-h-10 rounded-[10px] border-input bg-background text-foreground shadow-xs focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30";
 const ADMIN_SELECT_INDICATORS_CLASS =
-  "my-2 flex shrink-0 self-stretch items-center border-l border-[#cccccc] px-0.5";
+  "my-2 flex shrink-0 self-stretch items-center border-l border-border px-0.5";
 const ADMIN_SELECT_TRIGGER_CLASS =
   "size-8 rounded-none px-0 focus-visible:ring-0";
 const ADMIN_SINGLE_SELECT_INPUT_CLASS =
@@ -104,7 +104,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
             key={option.value}
             value={option}
             disabled={isOptionDisabled(option)}
-            className="min-h-9 rounded-none px-3 py-2 text-sm text-black data-highlighted:bg-[#deebff] data-highlighted:text-black data-selected:bg-[#2684ff] data-selected:text-white [&_[data-slot=combobox-item-indicator]]:hidden"
+            className="min-h-9 rounded-lg px-3 py-2 text-sm text-popover-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-selected:bg-brand-light data-selected:text-brand-dark [&_[data-slot=combobox-item-indicator]]:hidden"
           >
             {option.label}
           </ComboboxItem>
@@ -115,7 +115,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
 
   return (
     <div className="w-full">
-      {label && <div className="lh-page-subtitle">{label}</div>}
+      {label && <div className="mb-2 text-sm font-semibold text-foreground">{label}</div>}
       {labelComponent}
       {props.multiple ? (
         <Combobox
@@ -133,12 +133,12 @@ export default function AdminSelect<Option extends AdminSelectOption>(
                       <ComboboxChip
                         key={option.value}
                         aria-label={optionText(option)}
-                        className="h-auto min-h-6 gap-0 rounded-[2px] bg-[#e6e6e6] pr-1 pl-2 text-sm font-normal"
+                        className="h-auto min-h-6 gap-0 rounded-md bg-muted pr-1 pl-2 text-sm font-normal text-foreground"
                       >
                         {option.label}
                         <ComboboxChipRemove
                           aria-label={`Remove ${optionText(option)}`}
-                          className="text-black hover:bg-[#ffbdad] hover:text-[#de350b] focus-visible:ring-1 focus-visible:ring-[#2684ff]"
+                          className="text-foreground hover:bg-destructive/15 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring"
                         />
                       </ComboboxChip>
                     ))}
@@ -157,7 +157,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
                 <ComboboxClear
                   aria-label={`Clear ${accessibleLabel}`}
                   disabled={disabled}
-                  className="size-8 rounded-none hover:bg-transparent hover:text-[#de350b] focus-visible:ring-0"
+                  className="size-8 rounded-none hover:bg-transparent hover:text-destructive focus-visible:ring-0"
                 />
               )}
               <ComboboxTrigger
@@ -171,7 +171,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
             anchor={anchorRef}
             aria-label={accessibleLabel}
             sideOffset={8}
-            className="rounded-[4px] bg-white text-black shadow-md ring-1 ring-black/15"
+            className="rounded-[14px] border bg-popover text-popover-foreground shadow-md"
           >
             {optionList}
           </ComboboxContent>
@@ -222,7 +222,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
               <ComboboxInput
                 aria-label={accessibleLabel}
                 className={props.value
-                  ? `absolute inset-0 h-full w-full px-2.5 py-1 text-sm ${ADMIN_SINGLE_SELECT_INPUT_CLASS} ${singleInputValue === "" ? "caret-transparent text-transparent focus:caret-black" : "text-black"}`
+                  ? `absolute inset-0 h-full w-full px-2.5 py-1 text-sm ${ADMIN_SINGLE_SELECT_INPUT_CLASS} ${singleInputValue === "" ? "caret-transparent text-transparent focus:caret-foreground" : "text-foreground"}`
                   : `h-9 w-full px-2.5 py-1 text-sm ${ADMIN_SINGLE_SELECT_INPUT_CLASS}`
                 }
                 placeholder={props.value
@@ -244,7 +244,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
             anchor={anchorRef}
             aria-label={accessibleLabel}
             sideOffset={8}
-            className="rounded-[4px] bg-white text-black shadow-md ring-1 ring-black/15"
+            className="rounded-[14px] border bg-popover text-popover-foreground shadow-md"
           >
             {optionList}
           </ComboboxContent>

@@ -79,8 +79,8 @@ export default class SettingsApp extends React.Component<Props, any> {
     const mediaStorageReady = mediaStorage?.ready !== false;
     return (<AdminPageApp>
       <div className="grid grid-cols-1 gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-1 h-full">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="h-full">
             <TrackingSettingsApp
               submitting={submitting}
               submitForType={submitForType}
@@ -89,7 +89,7 @@ export default class SettingsApp extends React.Component<Props, any> {
               setChanged={this.setChanged}
             />
           </div>
-          <div className="col-span-1 h-full">
+          <div className="h-full">
             <AccessSettingsApp
               submitting={submitting}
               submitForType={submitForType}
@@ -99,8 +99,8 @@ export default class SettingsApp extends React.Component<Props, any> {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-1 h-full">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="h-full">
             <SubscribeSettingsApp
               submitting={submitting}
               submitForType={submitForType}
@@ -109,7 +109,7 @@ export default class SettingsApp extends React.Component<Props, any> {
               setChanged={this.setChanged}
             />
           </div>
-          <div className="col-span-1 h-full">
+          <div className="h-full">
             <WebGlobalSettingsApp
               submitting={submitting}
               submitForType={submitForType}
@@ -121,15 +121,15 @@ export default class SettingsApp extends React.Component<Props, any> {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-1 h-full">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="h-full">
             <CustomCodeSettingsApp
               submitting={submitting}
               submitForType={submitForType}
               feed={feed}
             />
           </div>
-          <div className="col-span-1 h-full">
+          <div className="h-full">
             <ApiSettingsApp
               submitting={submitting}
               submitForType={submitForType}

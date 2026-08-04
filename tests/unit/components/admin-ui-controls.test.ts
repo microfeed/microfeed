@@ -3,10 +3,47 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 
 import AdminDialog from "@/components/admin/shared/AdminDialog";
+import ExternalLink from "@/components/admin/shared/ExternalLink";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import AdminSwitch from "@/components/admin/shared/AdminSwitch";
+import SettingsBase from "@/components/admin/settings/SettingsBase";
+import {Input} from "@/components/ui/input";
 
 describe("admin UI controls", () => {
+  it("forwards refs through the shared input primitive", () => {
+    expect((Input as unknown as {$$typeof: symbol}).$$typeof).toBe(
+      Symbol.for("react.forward_ref"),
+    );
+  });
+
+  it("vertically centers external-link text and icon", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(ExternalLink, {
+        text: "Public page",
+        url: "https://feed.example.com/items/example/",
+      }),
+    );
+
+    expect(output).toContain("flex items-center");
+    expect(output).toContain("Public page");
+  });
+
+  it("places settings actions at the right edge of the card header", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(SettingsBase, {
+        currentType: "access",
+        onSubmit: vi.fn(),
+        submitForType: null,
+        submitting: false,
+        title: "Access control",
+      }, "Settings content"),
+    );
+
+    expect(output).toContain('data-slot="card-action"');
+    expect(output).toContain("justify-self-end");
+    expect(output).toContain(">Update</button>");
+  });
+
   it("renders a controlled dialog with a visible title and standard dismissal", () => {
     const onOpenChange = vi.fn();
     const dialog = AdminDialog({
@@ -65,6 +102,7 @@ describe("admin UI controls", () => {
   it("renders controlled card options with descriptions", () => {
     const output = renderToStaticMarkup(
       React.createElement(AdminRadioGroup, {
+        alignment: "start",
         ariaLabel: "Access policy",
         name: "access-policy",
         onValueChange: vi.fn(),
@@ -88,15 +126,33 @@ describe("admin UI controls", () => {
     expect(output).toContain('data-slot="radio-group"');
     expect(output).toContain('aria-label="Access policy"');
     expect(output).toContain('data-checked=""');
-    expect(output).toContain("border-black");
+    expect(output).toContain("border-foreground");
     expect(output).toContain("data-checked:border-brand-light");
     expect(output).toContain("data-checked:bg-brand-light");
     expect(output).toContain("focus-visible:ring-2");
     expect(output).toContain("focus-visible:ring-offset-2");
+    expect(output).toContain("items-start");
     expect(output).toContain("mt-1");
     expect(output).toContain("size-1.5");
     expect(output).toContain("Everyone can access the site.");
     expect(output).toContain("Public pages return 404.");
+  });
+
+  it("centers radios with their labels by default", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminRadioGroup, {
+        name: "description-editor",
+        onValueChange: vi.fn(),
+        options: [
+          {label: "visual editor", value: "visual"},
+          {label: "html source", value: "html"},
+        ],
+        value: "visual",
+      }),
+    );
+
+    expect(output).toContain("gap-1.5 items-center");
+    expect(output).not.toContain("mt-1");
   });
 
   it("distinguishes guided unavailable options from native disabled options", () => {
@@ -127,7 +183,7 @@ describe("admin UI controls", () => {
     );
 
     expect(guidedOutput).toContain('aria-disabled="true"');
-    expect(guidedOutput).toContain("items-start");
+    expect(guidedOutput).toContain("items-center");
     expect(guidedOutput).not.toContain('disabled=""');
     expect(disabledOutput).toContain('disabled=""');
   });

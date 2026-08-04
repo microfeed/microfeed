@@ -13,6 +13,7 @@ import {
 } from "@/shared/StringUtils";
 import Requests from "@/client/requests";
 import {showToast} from "@/client/ToastUtils";
+import {Button} from "@/components/ui/button";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -31,9 +32,9 @@ function FromUrl({url, onChange, onInsert}: any) {
       />
     </div>
     <div className="py-4 flex justify-center">
-      <button type="submit" className="lh-btn lh-btn-brand-dark" disabled={disabled} onClick={onInsert}>
+      <Button type="submit" disabled={disabled} onClick={onInsert}>
         Insert
-      </button>
+      </Button>
     </div>
   </form>);
 }

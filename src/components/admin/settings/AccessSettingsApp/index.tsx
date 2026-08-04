@@ -48,6 +48,7 @@ export default class AccessSettingsApp extends React.Component<any, any> {
       }}
     >
       <AdminRadioGroup
+        alignment="start"
         ariaLabel="Access policy"
         name="access-policy"
         value={access.currentPolicy}

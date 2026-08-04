@@ -5,7 +5,6 @@ import CodeEditorRouteSelect from '@/components/admin/code-editor/CodeEditorRout
 import {ADMIN_URLS, PUBLIC_URLS, escapeHtml} from "@/shared/StringUtils";
 import {showToast} from "@/client/ToastUtils";
 import Requests from "@/client/requests";
-import clsx from "clsx";
 import ExternalLink from "@/components/admin/shared/ExternalLink";
 import AdminCodeEditor from "@/components/admin/shared/AdminCodeEditor";
 import {
@@ -14,22 +13,17 @@ import {
 } from "@/shared/Constants";
 import {preventCloseWhenChanged} from "@/client/BrowserUtils";
 import type {FeedContent} from "@/types";
+import {Button} from "@/components/ui/button";
 
 const SUBMIT_STATUS__START = 1;
 
 function TabButton({name, onClick, selected}: any) {
-  return (<a
-    href="#"
-    onClick={(e: any) => {
-      e.preventDefault();
-      onClick();
-    }}
-  >
-    <span
-      className={clsx('py-2 px-3', selected ?
-        'bg-helper-color text-white hover:text-white' : '')}
-    >{name}</span>
-  </a>);
+  return (<Button
+    type="button"
+    size="sm"
+    variant={selected ? "default" : "ghost"}
+    onClick={onClick}
+  >{name}</Button>);
 }
 
 const CODE_FILES_DICT = {
@@ -102,7 +96,7 @@ const CODE_BUNDLE = {
 
 function CodeTabs({codeFile, codeType, themeName, setState}: any) {
   const codeFiles = CODE_BUNDLE[codeType];
-  return (<div className="lh-page-card mb-4">
+  return (<div className="mb-4 flex flex-wrap gap-1 rounded-[14px] border bg-card p-3 text-card-foreground shadow-xs">
     {(codeFiles as any).map((cf: any) => (<TabButton
       key={`tab-${cf}`}
       name={(CODE_FILES_DICT[cf] as any).name}
@@ -316,33 +310,34 @@ export default class CustomCodeEditorApp extends React.Component<Props, any> {
     return (<AdminPageApp>
       <CodeEditorRouteSelect className="mb-4 lg:hidden" codeType={codeType} />
       <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} />
-      <form className="grid grid-cols-12 gap-4" onSubmit={this.onSubmit}>
-        <div className="col-span-9 lh-page-card">
-          <div className="text-xs text-muted-color mb-4">{description}</div>
+      <form className="grid grid-cols-1 gap-4 xl:grid-cols-12" onSubmit={this.onSubmit}>
+        <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs xl:col-span-9">
+          <div className="mb-4 text-xs text-muted-foreground">{description}</div>
           <AdminCodeEditor
             code={code}
             language={language}
             onChange={(e: any) => this.setState({[codeFile]: e.target.value, changed: true})}
           />
         </div>
-        <div className="col-span-3">
-          <div className="sticky top-8">
-            <div className="text-center lh-page-card">
-              <button
+        <div className="xl:col-span-3">
+          <div className="grid gap-4 xl:sticky xl:top-20">
+            <div className="rounded-[14px] border bg-card p-5 text-center text-card-foreground shadow-xs">
+              <Button
                 type="submit"
-                className="lh-btn lh-btn-brand-dark lh-btn-lg"
+                className="w-full"
+                size="lg"
                 disabled={submitting || !changed}
               >
                 {submitting ? 'Updating...' : 'Update'}
-              </button>
+              </Button>
             </div>
-            <div className="lh-page-card mt-4 flex flex-col items-center">
+            <div className="flex flex-col items-center rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
               <ExternalLink url={viewUrl} text="View live page"/>
-              <div className="text-muted-color text-xs">{viewUrl}</div>
+              <div className="break-all text-center text-xs text-muted-foreground">{viewUrl}</div>
             </div>
-            <div className="lh-page-card mt-4">
-              <div className="lh-page-subtitle">Pro-tips:</div>
-              <ul className="text-helper-text text-xs">
+            <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+              <div className="mb-2 text-sm font-semibold">Pro-tips:</div>
+              <ul className="text-xs text-muted-foreground">
                 <li className="mb-2">You can use variables from the <a href={PUBLIC_URLS.jsonFeed()}> json feed</a>.</li>
                 <li className="mb-2">The template system is <a href="https://mustache.github.io/">mustache</a>.</li>
                 <li className="mb-2">See the OpenAPI spec for the json feed: <a href={PUBLIC_URLS.jsonFeedOpenApiYaml()}>

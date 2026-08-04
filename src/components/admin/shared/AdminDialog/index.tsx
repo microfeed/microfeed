@@ -38,7 +38,7 @@ export default function AdminDialog({
         showCloseButton={!closeDisabled}
       >
         <DialogHeader className="border-b pb-2 pr-8">
-          <DialogTitle className="text-helper-color">{title}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         {children}
       </DialogContent>

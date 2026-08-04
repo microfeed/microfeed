@@ -45,9 +45,11 @@ const codeType = Object.values(CODE_TYPES).includes(requestedCodeType)
 ---
 
 <AdminShell
-  title={invalidTheme ? "Code editor not found | microfeed.org" : "Code Editor | microfeed.org"}
   activeNavItem={NAV_ITEMS.SETTINGS}
+  documentTitle={invalidTheme ? "Code editor not found | microfeed.org" : "Code Editor | microfeed.org"}
+  {feedContent}
   {onboardingResult}
+  pageTitle={invalidTheme ? "Code editor not found" : "Code editor"}
   breadcrumb={{
     name: "Settings",
     url: adminUrl("settings", Astro.params.adminPath),
@@ -65,8 +67,8 @@ const codeType = Object.values(CODE_TYPES).includes(requestedCodeType)
   }
   {
     invalidTheme || !themeTemplate ? (
-      <section class="lh-page-card" aria-labelledby="not-found-title">
-        <h1 class="lh-page-title" id="not-found-title">Code editor not found</h1>
+      <section class="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs" aria-labelledby="not-found-title">
+        <h1 class="mb-4 text-lg font-semibold tracking-tight" id="not-found-title">Code editor not found</h1>
         <p>The requested theme is not available.</p>
       </section>
     ) : (

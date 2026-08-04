@@ -11,9 +11,11 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  title="All items | microfeed.org"
   activeNavItem={NAV_ITEMS.ALL_ITEMS}
+  documentTitle="All items | microfeed.org"
+  {feedContent}
   {onboardingResult}
+  pageTitle="All items"
 >
   <AllItemsApp client:only="react" {feedContent}>
     <AdminPageFallback slot="fallback" kind="list" />

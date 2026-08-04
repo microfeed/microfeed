@@ -113,6 +113,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
       "Runs type checks, tests, and a build before deploying, then verifies the public site and protected admin route.",
+      "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
       "--local is limited to init --local instances. It regenerates configuration, applies local D1 migrations, runs checks and a build, preserves local data, and does not start a server.",

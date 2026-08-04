@@ -34,6 +34,18 @@ import {
 } from "@/client/BrowserUtils";
 import {getMediaFileFromUrl} from "@/shared/MediaFileUtils";
 import type {FeedContent, OnboardingResult} from "@/types";
+import {Button} from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -165,7 +177,16 @@ export default class EditItemApp extends React.Component<Props, any> {
 
   onSubmit(e: any) {
     e.preventDefault();
-    const {item, itemId, action} = this.state;
+    const {item, itemId, action, changed} = this.state;
+    if (!changed) {
+      showToast(
+        action === 'edit'
+          ? 'No changes to save.'
+          : 'Add some item details before creating it.',
+        'info',
+      );
+      return;
+    }
     this.setState({submitStatus: SUBMIT_STATUS__START});
     Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
       .then(() => {
@@ -193,7 +214,7 @@ export default class EditItemApp extends React.Component<Props, any> {
   }
 
   render() {
-    const {submitStatus, itemId, item, action, feed, changed} = this.state;
+    const {submitStatus, itemId, item, action, feed} = this.state;
     const {onboardingResult} = this.props;
     const submitting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
@@ -216,9 +237,9 @@ export default class EditItemApp extends React.Component<Props, any> {
       submittingButtonText = 'Updating...';
     }
     return (<AdminPageApp>
-      <form className="grid grid-cols-12 gap-4" onSubmit={this.onSubmit}>
-        <div className="col-span-9 grid grid-cols-1 gap-4">
-          <div className="lh-page-card">
+      <form className="grid grid-cols-1 gap-4 xl:grid-cols-12" onSubmit={this.onSubmit}>
+        <div className="grid grid-cols-1 gap-4 xl:col-span-9">
+          <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <MediaManager
               labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.MEDIA_FILE]}/>}
               feed={feed}
@@ -235,7 +256,7 @@ export default class EditItemApp extends React.Component<Props, any> {
               }}
             />
           </div>
-          <div className="lh-page-card">
+          <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <div className="flex">
               <div>
                 <ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IMAGE]}/>
@@ -261,7 +282,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                     this.onUpdateItemMeta(attrDict);
                   }}
                 />
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <AdminDatetimePicker
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
                     value={item.pubDateMs}
@@ -314,11 +335,11 @@ export default class EditItemApp extends React.Component<Props, any> {
               />
             </div>
           </div>
-          <div className="lh-page-card">
+          <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <details>
               <summary className="m-page-summary">Podcast-specific fields</summary>
               <div className="grid grid-cols-1 gap-8">
-                <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
                     name="lh-explicit"
@@ -348,7 +369,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                     onChange={(e: any) => this.onUpdateItemMeta({'itunes:title': e.target.value})}
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
                     name="feed-itunes-episodetype"
@@ -381,7 +402,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                     onChange={(e: any) => this.onUpdateItemMeta({'itunes:episode': e.target.value})}
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <AdminRadioGroup
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_BLOCK]}/>}
                     name="feed-itunes-block"
@@ -400,16 +421,17 @@ export default class EditItemApp extends React.Component<Props, any> {
             </details>
           </div>
         </div>
-        <div className="col-span-3">
-          <div className="sticky top-8">
-            <div className="lh-page-card text-center">
-              <button
+        <div className="xl:col-span-3">
+          <div className="grid gap-4 xl:sticky xl:top-0">
+            <div className="rounded-[14px] border bg-card p-5 text-center text-card-foreground shadow-xs">
+              <Button
                 type="submit"
-                className="lh-btn lh-btn-brand-dark lh-btn-lg"
-                disabled={submitting || !changed}
+                className="w-full"
+                size="lg"
+                disabled={submitting}
               >
                 {submitting ? submittingButtonText : buttonText}
-              </button>
+              </Button>
             </div>
             {action === 'edit' && <div>
               <AdminSideQuickLinks
@@ -418,21 +440,27 @@ export default class EditItemApp extends React.Component<Props, any> {
                   <SideQuickLink url={PUBLIC_URLS.jsonItem(itemId)} text="json item"/>
                 </div>}
               />
-              <div className="lh-page-card mt-4 flex justify-center">
-                <a
-                  href="#"
-                  onClick={(e: any) => {
-                    e.preventDefault();
-                    const ok = confirm('Are you going to permanently delete this item?');
-                    if (ok) {
-                      this.onDelete();
-                    }
-                  }
-                }><div className="flex items-center text-red-500 text-sm hover:text-brand-light">
-                  <Trash2Icon className="w-4" />
-                  <div className="ml-1">Delete this item</div>
-                  </div>
-                </a>
+              <div className="mt-4 flex justify-center rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+                <AlertDialog>
+                  <AlertDialogTrigger render={<Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}>
+                    <Trash2Icon aria-hidden="true" className="size-4" />
+                    Delete this item
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this item?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently removes the item from your dashboard and public feeds. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction type="button" variant="destructive" onClick={this.onDelete}>
+                        Delete item
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>}
           </div>
