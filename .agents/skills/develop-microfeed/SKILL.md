@@ -9,6 +9,24 @@ Follow the repository's [agent rules](../../../AGENTS.md) and human-facing
 [contribution guide](../../../CONTRIBUTING.md). Keep the change focused and
 leave the repository in a reviewable state.
 
+## Design principles
+
+- **Keep Cloudflare Free sufficient.** Keep every feature required for initial
+  deployment or normal core use available on Cloudflare Free. Before
+  implementation, verify the current official Cloudflare documentation for
+  service availability and every limit the design exercises. Evaluate
+  worst-case Worker CPU time and relevant request, storage, operation, payload,
+  and other quotas; do not copy changing numeric limits into this skill.
+  Redesign an essential path that does not fit. Permit paid-only capabilities
+  only as optional enhancements with complete free-account behavior.
+- **Design for people, with or without an agent.** Assume no technical fluency
+  across the product interface, `yarn manage`, documentation, and agent
+  guidance. Use familiar, task-oriented vocabulary first; introduce technical
+  terms only when necessary and explain them where they appear. Keep deployment
+  on one `yarn manage` workflow that works directly or through an agent, and
+  make its choices, effects, progress, and recovery steps clear. Do not depend
+  on an agent-only deployment path.
+
 ## Prepare the work
 
 1. Confirm the repository root contains `package.json`, `yarn.lock`, `src/`,
