@@ -2,7 +2,7 @@ import React from "react";
 import '@enzedonline/quill-blot-formatter2/dist/css/quill-blot-formatter2.css';
 import 'quill/dist/quill.snow.css';
 import {formatHtmlForEditing} from "@/client/HtmlUtils";
-import AdminRadio from "../AdminRadio";
+import AdminRadioGroup from "../AdminRadioGroup";
 import AdminHtmlEditor from "../AdminHtmlEditor";
 import RichEditorQuill from "./component/RichEditorQuill";
 
@@ -39,14 +39,16 @@ export default class AdminRichEditor extends React.Component<any, any> {
         </div>}
         {labelComponent}
         <div className="mb-4 max-h-20">
-          <AdminRadio
-            customClass="text-sm text-helper-color"
-            groupName="richOrHtml"
-            buttons={[
-              {value: 'rich', name: 'visual editor', checked: mode === 'rich'},
-              {value: 'html', name: 'html source', checked: mode !== 'rich'},
+          <AdminRadioGroup
+            ariaLabel="Editor mode"
+            className="text-sm text-helper-color"
+            name="richOrHtml"
+            value={mode}
+            options={[
+              {value: 'rich', label: 'visual editor'},
+              {value: 'html', label: 'html source'},
             ]}
-            onChange={(e: any) => this.setState({mode: e.target.value})}
+            onValueChange={(value) => this.setState({mode: value})}
           />
         </div>
         {mode === 'rich' ? <RichEditorQuill

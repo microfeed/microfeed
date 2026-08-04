@@ -239,10 +239,6 @@ a {
   content: "←";
 }
 
-.lh-icon-x-mark:before {
-  content: "×";
-}
-
 /*
   Make Quill styling happy
  */

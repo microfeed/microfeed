@@ -3,7 +3,7 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 
 import AdminFileUploader from "@/components/admin/shared/AdminFileUploader";
-import AdminRadio from "@/components/admin/shared/AdminRadio";
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {MediaStorageSetupInstructions} from "@/components/admin/shared/MediaStorageUnavailableDialog";
 
 describe("media storage unavailable guidance", () => {
@@ -36,16 +36,16 @@ describe("media storage unavailable guidance", () => {
   it("keeps disabled upload controls discoverable for modal guidance", () => {
     const onDisabledClick = vi.fn();
     const radio = renderToStaticMarkup(
-      React.createElement(AdminRadio, {
-        buttons: [{
-          checked: false,
+      React.createElement(AdminRadioGroup, {
+        options: [{
           disabled: true,
-          name: "audio",
+          label: "audio",
           onDisabledClick,
           value: "audio",
         }],
-        groupName: "category",
-        onChange: vi.fn(),
+        name: "category",
+        onValueChange: vi.fn(),
+        value: "externalUrl",
       }),
     );
     const uploader = renderToStaticMarkup(

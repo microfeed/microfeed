@@ -1,4 +1,4 @@
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import {ExternalLinkIcon} from "lucide-react";
 import clsx from "clsx";
 
 export default function ExternalLink({url, text, linkClass, iconClass}: any) {
@@ -9,7 +9,7 @@ export default function ExternalLink({url, text, linkClass, iconClass}: any) {
           {text}
         </div>
         <div className="ml-1 inline items-center flex">
-          <ArrowTopRightOnSquareIcon className={clsx(iconClass || 'w-4', 'inline')}/>
+          <ExternalLinkIcon className={clsx(iconClass || 'w-4', 'inline')}/>
         </div>
       </div>
     </a>

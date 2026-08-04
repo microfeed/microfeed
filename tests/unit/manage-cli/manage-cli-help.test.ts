@@ -96,6 +96,31 @@ describe("management CLI help and canonical reference", () => {
     expect(skill).toContain("../../../docs/manage-cli.md");
   });
 
+  it("keeps the README dashboard login guidance action-oriented", async () => {
+    const readme = await repositoryFile("README.md");
+    const start = readme.indexOf("#### Manage the dashboard login");
+    const end = readme.indexOf("\n#### ", start + 1);
+    const section = readme.slice(start, end < 0 ? undefined : end);
+    const authCommand = CLI_COMMANDS.find(({name}) => name === "auth");
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(authCommand).toBeDefined();
+    expect(section).toContain(authCommand!.usage);
+    expect(section).toContain(
+      "Running `yarn manage auth` without an action only prints",
+    );
+    expect(section).toContain("It does not select an instance");
+    for (const action of [
+      "setup",
+      "reset-password",
+      "change-email",
+      "change-path",
+      "disable",
+    ]) {
+      expect(section).toContain(`| \`${action}\` |`);
+    }
+  });
+
   it("rejects help for an unknown command", () => {
     expect(() => renderCliHelp("unknown")).toThrow(
       "Unknown management command: unknown",

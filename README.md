@@ -341,7 +341,7 @@ side effect, and safety check.
 | List sites or select the default site | `yarn manage instances`, `yarn manage use` |
 | Add a custom domain | `yarn manage domain` |
 | Add optional Cloudflare Access protection to the dashboard | `yarn manage access` |
-| Set up or change the administrator login and dashboard address | `yarn manage auth` |
+| Set up or change the administrator login and dashboard address | `yarn manage auth <action>` |
 | Create and inspect an isolated preview deployment | `yarn manage init --preview`, `yarn manage deploy --preview`, `yarn manage status --preview` |
 | Migrate an older Cloudflare Pages installation | `yarn manage migrate-pages` |
 | Safely plan and remove a deployment | `yarn manage destroy` |
@@ -651,17 +651,34 @@ token.
 #### Manage the dashboard login
 
 The microfeed admin dashboard is where you create and edit posts, upload media
-files, and customize your site. To change its administrator email, reset its
-password, or move it to a different address, run:
+files, and customize your site. Dashboard login changes require an explicit
+action:
 
 ```console
-yarn manage auth
+yarn manage auth <setup|reset-password|change-email|change-path|disable> [options]
 ```
 
-If you skipped authentication during initialization, add the built-in login later with:
+Running `yarn manage auth` without an action only prints the available actions,
+options, and examples. It does not select an instance, inspect authentication
+state, or change anything.
+
+Use the action that matches the change you want to make:
+
+| Action | What it does |
+| --- | --- |
+| `setup` | Add or restore the built-in dashboard login. |
+| `reset-password` | Create a one-time remote reset link or securely replace a local password. |
+| `change-email` | Change the administrator email and sign out existing sessions. |
+| `change-path` | Move a Cloudflare dashboard to a new path and redeploy the Worker. |
+| `disable` | Disable the built-in login for a Cloudflare deployment after a warning. |
+
+For example, if you skipped authentication during initialization, add the
+built-in login later with:
 
 ```console
-yarn manage auth setup
+yarn manage auth setup \
+  --instance my-podcast-custom-com \
+  --owner-email me@example.com
 ```
 
 For a Cloudflare instance, `yarn manage auth setup` creates a new first-password
@@ -670,9 +687,11 @@ creates a one-time reset link for the existing administrator. Completing a
 reset signs out existing sessions; until then, the current password continues
 to work.
 
-For a saved local-only instance, its name is enough: `yarn manage auth`
-automatically uses that instance's local data. Email changes and password
-resets update only that local instance:
+After you choose an action, the CLI shows the selected instance, target
+environment, dashboard location, and operation before prompting or changing
+anything. A saved local-only instance automatically uses its local data; its
+name is enough. Email changes and password resets update only that local
+instance:
 
 ```console
 yarn manage auth change-email \
@@ -688,7 +707,17 @@ the replacement password, and signs out existing local sessions.
 
 For a Cloudflare-connected instance, auth commands target Cloudflare by
 default. Add `--local` only when you intentionally want that instance's
-separate local development sandbox.
+separate local development sandbox. Use `--preview` to target its preview
+deployment. Changing the dashboard path and disabling the login are
+Cloudflare-only actions.
+
+To move the dashboard to a new path:
+
+```console
+yarn manage auth change-path \
+  --instance my-podcast-custom-com \
+  --admin-path dashboard
+```
 
 Remote automation can instead supply `--admin-password <value>` to production
 or preview initialization, `auth setup`, or `auth reset-password`. This is intentionally
@@ -700,7 +729,7 @@ Codex never uses this option, and local instances reject it.
 To disable the built-in login:
 
 ```console
-yarn manage auth disable
+yarn manage auth disable --instance my-podcast-custom-com
 ```
 
 The command first checks whether Cloudflare Access protects the dashboard. It

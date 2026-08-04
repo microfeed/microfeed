@@ -2,9 +2,9 @@ import React from "react";
 import Quill from "quill";
 import FileUploader from "../../../AdminFileUploader";
 import AdminDialog from "../../../AdminDialog";
-import AdminRadio from "../../../AdminRadio";
+import AdminRadioGroup from "../../../AdminRadioGroup";
 import AdminInput from "../../../AdminInput";
-import {CloudArrowUpIcon} from "@heroicons/react/24/outline";
+import {CloudUploadIcon} from "lucide-react";
 import {ENCLOSURE_CATEGORIES_DICT, ENCLOSURE_CATEGORIES} from "@/shared/Constants";
 import {
   randomHex,
@@ -61,7 +61,7 @@ function UploadNewFile(
           <div className="text-sm">{progressText}</div>
         </div> : <div className="text-brand-light">
           <div className="flex items-center">
-            <div className="mr-1"><CloudArrowUpIcon className="w-8"/></div>
+            <div className="mr-1"><CloudUploadIcon className="w-8"/></div>
             <div className="font-semibold">Click or drag here to upload {mediaType}</div>
           </div>
           <div className="text-sm">{fileTypes.join(', ')}</div>
@@ -158,36 +158,33 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
     } = this.props;
     const {mode, url, uploadStatus, progressText} = this.state;
     const mediaStorageReady = this.props.extra?.mediaStorageReady !== false;
-    const disabledClose = false;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (
       <AdminDialog
         title={`Insert ${mediaType}`}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        disabledClose={disabledClose}
+        open={isOpen}
+        onOpenChange={setIsOpen}
       >
         <div className="pt-4 pb-8">
-          <AdminRadio
-            groupName="media-insert"
-            customClass="text-sm font-semibold"
-            buttons={[
+          <AdminRadioGroup
+            ariaLabel="Media source"
+            name="media-insert"
+            className="text-sm font-semibold"
+            value={mode}
+            options={[
               {
-                'name': 'Upload a new file',
-                'value': 'upload',
-                'checked': mode === 'upload',
-                'disabled': !mediaStorageReady,
+                label: 'Upload a new file',
+                value: 'upload',
+                disabled: !mediaStorageReady,
               },
               {
-                'name': 'From URL',
-                'value': 'url',
-                'checked': mode === 'url',
+                label: 'From URL',
+                value: 'url',
               },
             ]}
-            onChange={(e: any) => {
-              this.setState({mode: e.target.value});
+            onValueChange={(value) => {
+              this.setState({mode: value});
             }}
-            disabled={false}
           />
         </div>
         <div>

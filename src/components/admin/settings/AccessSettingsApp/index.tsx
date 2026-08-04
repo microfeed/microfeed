@@ -1,33 +1,7 @@
 import React from 'react';
-import { RadioGroup } from '@headlessui/react'
-import clsx from "clsx";
-import { CheckIcon } from '@heroicons/react/20/solid'
+import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import SettingsBase from '../SettingsBase';
 import {SETTINGS_CATEGORIES} from "@/shared/Constants";
-
-function AccessOption({value, header, description}: any) {
-  return (<RadioGroup.Option value={value}>
-    {({checked}: any) => (
-      <div className={clsx('border p-2 hover:cursor-pointer rounded-sm',
-        checked ? 'border-brand-light' : '')}>
-        <div className="flex">
-          <div className="flex-none mr-4">
-            <CheckIcon className={clsx(checked ? 'bg-brand-light border-white' : '',
-              'w-6 border rounded-full text-white')} />
-          </div>
-          <div>
-            <div className={clsx('text-sm font-semibold')}>
-              {header}
-            </div>
-            <div className={clsx('text-xs', 'text-muted-color')}>
-              {description}
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-  </RadioGroup.Option>);
-}
 
 export default class AccessSettingsApp extends React.Component<any, any> {
   constructor(props: any) {
@@ -73,28 +47,25 @@ export default class AccessSettingsApp extends React.Component<any, any> {
         });
       }}
     >
-      <RadioGroup
+      <AdminRadioGroup
+        ariaLabel="Access policy"
+        name="access-policy"
         value={access.currentPolicy}
-        onChange={(value: any) => this.onUpdateAccess({currentPolicy: value})}
-      >
-        <div className="grid grid-cols-1 gap-4">
-          <AccessOption
-            value="public"
-            header="Public"
-            description="Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed."
-          />
-          {/*<AccessOption*/}
-          {/*  value="passcode"*/}
-          {/*  header="Passcode"*/}
-          {/*  description="something2 something"*/}
-          {/*/>*/}
-          <AccessOption
-            value="offline"
-            header="Offline"
-            description="Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed."
-          />
-        </div>
-      </RadioGroup>
+        onValueChange={(value) => this.onUpdateAccess({currentPolicy: value})}
+        variant="cards"
+        options={[
+          {
+            value: "public",
+            label: "Public",
+            description: "Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed.",
+          },
+          {
+            value: "offline",
+            label: "Offline",
+            description: "Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed.",
+          },
+        ]}
+      />
     </SettingsBase>);
   }
 }

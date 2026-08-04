@@ -1,4 +1,4 @@
-import {ArrowRightCircleIcon, CheckCircleIcon} from "@heroicons/react/20/solid";
+import {CircleArrowRightIcon, CircleCheckIcon} from "lucide-react";
 import React, {useState} from "react";
 
 import {showToast} from "@/client/ToastUtils";
@@ -27,8 +27,8 @@ function CheckListItem({
     <div className="flex">
       <div className="mr-4">
         {onboardState.ready
-          ? <CheckCircleIcon className="w-6 text-green-500" />
-          : <ArrowRightCircleIcon className="w-6 text-muted-color" />}
+          ? <CircleCheckIcon className="w-6 text-green-500" />
+          : <CircleArrowRightIcon className="w-6 text-muted-color" />}
       </div>
       <details className="w-full" open={!onboardState.ready}>
         <summary className="cursor-pointer mb-4 font-semibold hover:opacity-50">

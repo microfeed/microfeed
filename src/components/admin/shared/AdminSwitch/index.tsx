@@ -1,24 +1,51 @@
-import clsx from "clsx";
-import { Switch } from '@headlessui/react'
+import {useId, type ReactNode} from "react";
 
-export default function AdminSwitch(
-  { label, enabled, setEnabled, customClass = '', customLabelClass = '' }: any) {
-  return (<div className="flex items-center">
-    <div className="">
+import {Label} from "@/components/ui/label";
+import {Switch} from "@/components/ui/switch";
+import {cn} from "@/lib/utils";
+
+interface AdminSwitchProps {
+  checked: boolean;
+  className?: string;
+  disabled?: boolean;
+  label?: ReactNode;
+  labelClassName?: string;
+  onCheckedChange: (checked: boolean) => void;
+}
+
+export default function AdminSwitch({
+  checked,
+  className,
+  disabled = false,
+  label,
+  labelClassName,
+  onCheckedChange,
+}: AdminSwitchProps) {
+  const id = useId();
+
+  return (
+    <div className="flex items-center gap-1.5">
       <Switch
-        checked={enabled}
-        onChange={setEnabled}
-        className={clsx('relative inline-flex h-6 w-11 items-center rounded-full',
-          enabled ? 'bg-brand-light' : 'bg-gray-200', customClass)}
-      >
-        {label && <span className="sr-only">{label}</span>}
-        <span
-          className={`${
-            enabled ? 'translate-x-6' : 'translate-x-1'
-          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-        />
-      </Switch>
+        id={id}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+        className={cn(
+          "data-checked:bg-brand-light data-unchecked:bg-gray-200",
+          className,
+        )}
+      />
+      {label && (
+        <Label
+          htmlFor={id}
+          className={cn(
+            disabled ? "cursor-not-allowed" : "cursor-pointer",
+            labelClassName,
+          )}
+        >
+          {label}
+        </Label>
+      )}
     </div>
-    {label && <div className={clsx('flex-none ml-1', customLabelClass)}>{label}</div>}
-  </div>);
+  );
 }

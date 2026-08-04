@@ -10,7 +10,7 @@ import {
 } from '@/shared/StringUtils';
 import AdminDialog from "../AdminDialog";
 import FileUploader from "../AdminFileUploader";
-import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
+import {CloudUploadIcon} from "lucide-react";
 import ExternalLink from "../ExternalLink";
 import {showToast} from "@/client/ToastUtils";
 import MediaStorageUnavailableDialog from "../MediaStorageUnavailableDialog";
@@ -20,7 +20,7 @@ const UPLOAD_STATUS__START = 1;
 function EmptyImage({fileTypes}: any) {
   return (<div className="text-brand-light text-sm flex flex-col justify-center items-center h-full">
     <div className="mb-2">
-      <CloudArrowUpIcon className="w-8" />
+      <CloudUploadIcon className="w-8" />
     </div>
     <div className="font-semibold">
       Click or drag here to upload image
@@ -267,9 +267,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
         state={this.props.mediaStorage?.mediaStorageState}
       />
       <AdminDialog
-        isOpen={showModal}
-        setIsOpen={(trueOrFalse: any) => this.setState({showModal: trueOrFalse})}
-        disabledClose={uploading}
+        title="Crop image"
+        open={showModal}
+        onOpenChange={(open) => this.setState({showModal: open})}
+        closeDisabled={uploading}
       >
         {previewImageUrl && <div>
           <img

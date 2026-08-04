@@ -1,5 +1,5 @@
 import {type FormEvent, useState} from "react";
-import {LoaderCircle} from "lucide-react";
+import {LoaderCircleIcon} from "lucide-react";
 
 import {authClient} from "@/client/auth-client";
 import {Button} from "@/components/ui/button";
@@ -171,7 +171,7 @@ export default function AdminPasswordSetupApp({email, purpose}: Props) {
                   type="submit"
                 >
                   {submitting && (
-                    <LoaderCircle
+                    <LoaderCircleIcon
                       aria-hidden="true"
                       className="animate-spin"
                       data-icon="inline-start"

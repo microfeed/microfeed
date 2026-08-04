@@ -1,5 +1,5 @@
 import {type FormEvent, useState} from "react";
-import {LoaderCircle} from "lucide-react";
+import {LoaderCircleIcon} from "lucide-react";
 
 import {
   adminBasePath,
@@ -138,7 +138,7 @@ export default function AdminLoginApp() {
                   type="submit"
                 >
                   {submitting && (
-                    <LoaderCircle
+                    <LoaderCircleIcon
                       aria-hidden="true"
                       className="animate-spin"
                       data-icon="inline-start"

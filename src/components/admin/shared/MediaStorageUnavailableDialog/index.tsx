@@ -1,4 +1,4 @@
-import {CloudUpload} from "lucide-react";
+import {CloudUploadIcon} from "lucide-react";
 
 import {Button, buttonVariants} from "@/components/ui/button";
 import {
@@ -68,7 +68,7 @@ export default function MediaStorageUnavailableDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="pr-8">
           <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <CloudUpload aria-hidden="true" className="size-5" />
+            <CloudUploadIcon aria-hidden="true" className="size-5" />
           </div>
           <DialogTitle>File uploads require R2</DialogTitle>
           <DialogDescription>
