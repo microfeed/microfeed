@@ -9,6 +9,7 @@ import {
   normalizeAdminPath,
 } from "@/shared/AdminPath";
 import {SETTINGS_CATEGORIES, STATUSES} from "@/shared/Constants";
+import {itemQueryForStatusFilter} from "@/shared/ItemList";
 import {
   canonicalPathname,
   resolvePublicBucketUrl,
@@ -194,9 +195,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const editingExistingItem = isExistingItemEditorPath(pathname, adminPath);
     if (!editingExistingItem) {
       let query;
-      if (
-        pathname.startsWith(adminUrl("feed/json", adminPath)) ||
-        pathname.startsWith(adminUrl("items/list", adminPath))
+      if (pathname.startsWith(adminUrl("items/list", adminPath))) {
+        query = itemQueryForStatusFilter(
+          context.url.searchParams.get("status"),
+        );
+      } else if (
+        pathname.startsWith(adminUrl("feed/json", adminPath))
       ) {
         query = {"status__!=": STATUSES.DELETED};
       } else if (

@@ -1,205 +1,459 @@
-import React from 'react';
-import {navigate} from 'astro:transitions/client';
-import AdminPageApp from '@/components/admin/shared/AdminPageApp';
-import {
-  ADMIN_URLS,
-  secondsToHHMMSS,
-  PUBLIC_URLS,
-  resolvePublicBucketUrl,
-  urlJoinWithRelative
-} from "@/shared/StringUtils";
-import {
-  ENCLOSURE_CATEGORIES,
-  ENCLOSURE_CATEGORIES_DICT,
-  STATUSES,
-  ITEM_STATUSES_DICT,
-  ITEMS_SORT_ORDERS,
-} from "@/shared/Constants";
-import {msToDatetimeLocalString} from '@/shared/TimeUtils';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table';
-import clsx from "clsx";
-import ExternalLink from "@/components/admin/shared/ExternalLink";
-import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
+} from "@tanstack/react-table";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ExternalLinkIcon,
+  PencilIcon,
+} from "lucide-react";
+
+import AdminPageApp from "@/components/admin/shared/AdminPageApp";
+import {buttonVariants} from "@/components/ui/button";
+import {cn} from "@/lib/utils";
+import {
+  ENCLOSURE_CATEGORIES,
+  ENCLOSURE_CATEGORIES_DICT,
+  ITEM_STATUSES_DICT,
+  ITEMS_SORT_ORDERS,
+  STATUSES,
+} from "@/shared/Constants";
+import {
+  buildItemsListUrl,
+  ITEM_STATUS_FILTERS,
+  type ItemStatusFilter,
+  normalizeItemStatusFilter,
+  normalizeItemsSortOrder,
+} from "@/shared/ItemList";
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
-import type {FeedContent} from "@/types";
+import {
+  ADMIN_URLS,
+  PUBLIC_URLS,
+  resolvePublicBucketUrl,
+  secondsToHHMMSS,
+  urlJoinWithRelative,
+} from "@/shared/StringUtils";
+import type {FeedContent, FeedItem} from "@/types";
 
-const columnHelper = createColumnHelper<any>();
-const columns = [
-  columnHelper.accessor('title', {
-    header: 'Title',
-    cell: (info: any) => info.getValue(),
-  }),
-  columnHelper.accessor('status', {
-    header: 'Status',
-    cell: (info: any) => <div className={clsx('text-center font-semibold', info.getValue() === STATUSES.PUBLISHED ? 'text-brand-light' : '')}>
-      {(ITEM_STATUSES_DICT[info.getValue()] as any).name}</div>,
-  }),
-  columnHelper.accessor('pubDateMs', {
-    header: 'Published date',
-    cell: (info: any) => <div className="text-center">{msToDatetimeLocalString(info.getValue())}</div>,
-  }),
-  columnHelper.accessor('mediaFile', {
-    header: 'Media file',
-    cell: (info: any) => info.getValue(),
-  }),
-];
+interface MediaFile {
+  category?: string;
+  durationSecond?: number;
+  url?: string;
+}
 
-function ItemListTable({data, feed}: any) {
-  let nextUrl;
-  let prevUrl;
-  if (feed.items_next_cursor) {
-    nextUrl = `?next_cursor=${feed.items_next_cursor}&sort=${feed.items_sort_order}`;
-  }
-  if (feed.items_prev_cursor) {
-    prevUrl = `?prev_cursor=${feed.items_prev_cursor}&sort=${feed.items_sort_order}`;
-  }
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-  return (<div>
-    <div className="mb-4">
-      <AdminRadioGroup
-        ariaLabel="Sort order"
-        name="sort-order"
-        value={feed.items_sort_order}
-        options={[
-          {
-            label: 'Newest first',
-            value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
-          },
-          {
-            label: 'Oldest first',
-            value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
-          },
-        ]}
-        onValueChange={(value) => {
-          void navigate(`?sort=${value}`);
-        }}
-      />
-    </div>
-    <div className="overflow-x-auto rounded-[10px] border">
-    <table className="min-w-[48rem] border-collapse text-sm text-muted-foreground w-full">
-      <thead>
-      {table.getHeaderGroups().map((headerGroup: any) => (
-        <tr key={headerGroup.id}>
-          {headerGroup.headers.map((header: any) => (
-            <th
-              key={header.id}
-              className={clsx('border border-border bg-muted px-4 py-2 text-xs font-semibold uppercase tracking-wide text-foreground')}
-            >
-              {flexRender(header.column.columnDef.header, header.getContext())}
-            </th>
-          ))}
-        </tr>
-      ))}
-      </thead>
-      <tbody>
-      {table.getRowModel().rows.map((row: any) => (
-        <tr key={`item-${row.id}`}>
-          {row.getVisibleCells().map((cell: any) => (
-            <td key={cell.id} className={clsx("border border-border px-4 py-3 break-all",
-              cell.column.id === 'title' ? 'max-w-md' : '')}>
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </td>
-          ))}
-        </tr>)
-      )}
-      </tbody>
-    </table>
-    </div>
-    <div className="mt-8 flex justify-center">
-      {prevUrl && <div className="mx-2">
-        <a href={prevUrl}><span className="lh-icon-arrow-left" /> Prev</a>
-      </div>}
-      {nextUrl && <div className="mx-2">
-        <a href={nextUrl}>Next <span className="lh-icon-arrow-right" /></a>
-      </div>}
-    </div>
-  </div>);
+interface ItemTableRow {
+  id: string;
+  imageUrl?: string;
+  mediaFile?: MediaFile;
+  pubDateMs?: number;
+  publicBucketUrl: string;
+  status: number;
+  title: string;
 }
 
 interface Props {
   feedContent: FeedContent;
 }
 
-export default class AllItemsApp extends React.Component<Props, any> {
-  constructor(props: Props) {
-    super(props);
+const FILTER_LABELS: Record<ItemStatusFilter, string> = {
+  all: "All items",
+  published: "Published",
+  unlisted: "Unlisted",
+  unpublished: "Unpublished",
+};
 
-    const feed = props.feedContent;
+const STATUS_CLASSES: Record<number, string> = {
+  [STATUSES.PUBLISHED]:
+    "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+  [STATUSES.UNLISTED]:
+    "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  [STATUSES.UNPUBLISHED]:
+    "bg-rose-500/12 text-rose-700 dark:text-rose-300",
+};
 
-    const items = feed.items || [];
-    this.state = {
-      feed,
-      items,
-    };
+const columnHelper = createColumnHelper<ItemTableRow>();
+
+function currentStatusFilter(): ItemStatusFilter {
+  if (typeof window === "undefined") {
+    return "all";
+  }
+  return normalizeItemStatusFilter(
+    new URLSearchParams(window.location.search).get("status"),
+  );
+}
+
+function statusName(status: number): string {
+  const name = ITEM_STATUSES_DICT[
+    status as keyof typeof ITEM_STATUSES_DICT
+  ]?.name ?? "unknown";
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+}
+
+function formatPublishedAt(value: number | undefined): string {
+  if (!Number.isFinite(value)) {
+    return "—";
   }
 
-  componentDidMount() {
-  }
+  return new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value as number));
+}
 
-  render() {
-    const {items, feed} = this.state;
-    const {settings} = feed;
-    const {webGlobalSettings} = settings;
-    const publicBucketUrl = resolvePublicBucketUrl(
-      webGlobalSettings.publicBucketUrl,
-      window.location.hostname,
-    );
-    const data = items.map((item: any) => ({
-      status: item.status || STATUSES.PUBLISHED,
-      pubDateMs: item.pubDateMs,
-      title: <div>
-        <div className="line-clamp-2 text-lg">
-          <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title || 'untitled'}</a>
-        </div>
-        <div className="mt-2 flex items-center">
-          <div className="text-muted-foreground text-sm flex-1">
-            id: {item.id}
-          </div>
-          <ExternalLink
-            linkClass="text-xs text-helper-color
-            hover:text-brand-light"
-            url={PUBLIC_URLS.webItem(item.id, item.title)}
-            text="Public page"
-          />
-          <div className="ml-4 flex-none">
-            <a
-              href={ADMIN_URLS.editItem(item.id)}
-            ><span className="block text-xs text-helper-color hover:text-brand-light">
-              Edit this item <span className="lh-icon-arrow-right"/></span></a>
-          </div>
-        </div>
-      </div>,
-      mediaFile: <div className="flex flex-col items-center">
-        {isValidMediaFile(item.mediaFile) ? <div>
-          <ExternalLink
-            url={item.mediaFile.category === ENCLOSURE_CATEGORIES.EXTERNAL_URL ? item.mediaFile.url:
-              urlJoinWithRelative(publicBucketUrl, item.mediaFile.url)}
-            text={(ENCLOSURE_CATEGORIES_DICT[item.mediaFile.category] as any).name}
-          />
-          {[ENCLOSURE_CATEGORIES.AUDIO, ENCLOSURE_CATEGORIES.VIDEO].includes(item.mediaFile.category) &&
-            <div className="text-xs mt-1">
-              {secondsToHHMMSS(item.mediaFile.durationSecond)}
-            </div>}
-        </div> : <div>-</div>}
+function ItemThumbnail({imageUrl}: {imageUrl?: string}) {
+  return (
+    <div
+      className="relative size-12 shrink-0 overflow-hidden rounded-[10px] border bg-muted"
+      data-item-image={imageUrl ? "image" : "placeholder"}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-br from-brand-light/25 via-muted to-brand-dark/15"
+      >
+        <span className="absolute -right-2 -top-2 size-8 rounded-full bg-brand-light/25" />
+        <span className="absolute -bottom-3 -left-2 size-10 rotate-12 rounded-[10px] bg-background/70" />
       </div>
-    }));
+      {imageUrl && (
+        <img
+          alt=""
+          className="relative size-full object-cover"
+          decoding="async"
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+          src={imageUrl}
+        />
+      )}
+    </div>
+  );
+}
 
-    return (<AdminPageApp>
-      {data.length > 0 ? <ItemListTable data={data} feed={feed} /> : <div>
-        <div className="mb-8">
-          No items yet.
-        </div>
-        <a href={ADMIN_URLS.newItem()}>Add a new item now <span className="lh-icon-arrow-right" /></a>
-      </div>}
-    </AdminPageApp>);
+function MediaCell({row}: {row: ItemTableRow}) {
+  const {mediaFile, publicBucketUrl} = row;
+  if (!isValidMediaFile(mediaFile)) {
+    return <span aria-label="No media">—</span>;
   }
+
+  const category = mediaFile?.category ?? "";
+  const details = ENCLOSURE_CATEGORIES_DICT[
+    category as keyof typeof ENCLOSURE_CATEGORIES_DICT
+  ];
+  const mediaUrl = category === ENCLOSURE_CATEGORIES.EXTERNAL_URL
+    ? mediaFile?.url ?? ""
+    : urlJoinWithRelative(publicBucketUrl, mediaFile?.url ?? "") ?? "";
+  const mediaName = details?.name ?? "media";
+  const displayName = `${mediaName.charAt(0).toUpperCase()}${mediaName.slice(1)}`;
+  const showsDuration = [
+    ENCLOSURE_CATEGORIES.AUDIO,
+    ENCLOSURE_CATEGORIES.VIDEO,
+  ].includes(category);
+
+  return (
+    <div>
+      <a
+        className="inline-flex items-center gap-1.5"
+        href={mediaUrl}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        {displayName}
+        <ExternalLinkIcon aria-hidden="true" className="size-3.5" />
+      </a>
+      {showsDuration && (
+        <div className="mt-1 text-xs text-muted-foreground">
+          {secondsToHHMMSS(mediaFile?.durationSecond)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function tableRows(items: FeedItem[], publicBucketUrl: string): ItemTableRow[] {
+  return items.map((item) => {
+    const image = String(item.image ?? "").trim();
+    return {
+      id: String(item.id ?? ""),
+      imageUrl: image
+        ? urlJoinWithRelative(publicBucketUrl, image) ?? undefined
+        : undefined,
+      mediaFile: item.mediaFile as MediaFile | undefined,
+      pubDateMs: typeof item.pubDateMs === "number"
+        ? item.pubDateMs
+        : Number(item.pubDateMs),
+      publicBucketUrl,
+      status: typeof item.status === "number" ? item.status : STATUSES.PUBLISHED,
+      title: String(item.title ?? "").trim() || "Untitled",
+    };
+  });
+}
+
+function ItemStatusFilters({
+  activeFilter,
+  sortOrder,
+}: {
+  activeFilter: ItemStatusFilter;
+  sortOrder: string;
+}) {
+  return (
+    <nav
+      aria-label="Filter items by status"
+      className="mb-5 grid grid-cols-2 gap-2 md:grid-cols-4"
+    >
+      {ITEM_STATUS_FILTERS.map((statusFilter) => {
+        const active = statusFilter === activeFilter;
+        return (
+          <a
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              buttonVariants({size: "lg", variant: "outline"}),
+              "w-full text-sm sm:text-base",
+              active &&
+                "border-brand-light bg-brand-light/10 text-brand-dark ring-1 ring-brand-light/20 hover:bg-brand-light/15 dark:text-brand-light",
+            )}
+            href={buildItemsListUrl({sortOrder, statusFilter})}
+            key={statusFilter}
+          >
+            {FILTER_LABELS[statusFilter]}
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
+function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) {
+  const activeFilter = currentStatusFilter();
+  const sortOrder = normalizeItemsSortOrder(feed.items_sort_order);
+  const newestFirst = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST;
+  const nextSortOrder = newestFirst
+    ? ITEMS_SORT_ORDERS.OLDEST_FIRST
+    : ITEMS_SORT_ORDERS.NEWEST_FIRST;
+  const sortUrl = buildItemsListUrl({
+    sortOrder: nextSortOrder,
+    statusFilter: activeFilter,
+  });
+  const nextUrl = feed.items_next_cursor === undefined
+    ? undefined
+    : buildItemsListUrl({
+        nextCursor: feed.items_next_cursor,
+        sortOrder,
+        statusFilter: activeFilter,
+      });
+  const prevUrl = feed.items_prev_cursor === undefined
+    ? undefined
+    : buildItemsListUrl({
+        prevCursor: feed.items_prev_cursor,
+        sortOrder,
+        statusFilter: activeFilter,
+      });
+
+  const columns = [
+    columnHelper.accessor("title", {
+      header: "Title",
+      cell: ({row}) => {
+        const item = row.original;
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <ItemThumbnail imageUrl={item.imageUrl} />
+            <div className="min-w-0 flex-1">
+              <a
+                className="block max-w-full truncate text-base font-semibold text-foreground"
+                href={ADMIN_URLS.editItem(item.id)}
+                title={item.title}
+              >
+                {item.title}
+              </a>
+              <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs">
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 font-semibold",
+                    STATUS_CLASSES[item.status] ?? "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {statusName(item.status)}
+                </span>
+                <a
+                  className="inline-flex min-w-0 items-center gap-1 !text-muted-foreground hover:!text-brand-light"
+                  href={PUBLIC_URLS.webItem(item.id, item.title)}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <span className="truncate">Public page</span>
+                  <ExternalLinkIcon aria-hidden="true" className="size-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("pubDateMs", {
+      header: () => (
+        <a
+          aria-label={`Published at, sorted ${newestFirst ? "descending" : "ascending"}. Sort ${newestFirst ? "ascending" : "descending"}.`}
+          className="inline-flex items-center gap-1.5"
+          href={sortUrl}
+        >
+          Published at
+          {newestFirst
+            ? <ArrowDownIcon aria-hidden="true" className="size-4" />
+            : <ArrowUpIcon aria-hidden="true" className="size-4" />}
+        </a>
+      ),
+      cell: (info) => formatPublishedAt(info.getValue()),
+    }),
+    columnHelper.accessor("mediaFile", {
+      header: "Media",
+      cell: ({row}) => <MediaCell row={row.original} />,
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "Actions",
+      cell: ({row}) => {
+        const item = row.original;
+        return (
+          <div className="flex flex-wrap gap-2">
+            <a
+              className={cn(
+                buttonVariants({size: "sm"}),
+                "!text-white hover:!text-white",
+              )}
+              href={ADMIN_URLS.editItem(item.id)}
+            >
+              <PencilIcon aria-hidden="true" />
+              Edit this item
+            </a>
+          </div>
+        );
+      },
+    }),
+  ];
+
+  const table = useReactTable({
+    columns,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  return (
+    <div>
+      <ItemStatusFilters activeFilter={activeFilter} sortOrder={sortOrder} />
+      <div className="overflow-x-auto rounded-[14px] border bg-card">
+        <table className="w-full min-w-[64rem] table-fixed border-collapse text-sm">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    aria-sort={header.column.id === "pubDateMs"
+                      ? newestFirst ? "descending" : "ascending"
+                      : undefined}
+                    className={cn(
+                      "border-b bg-muted/45 px-5 py-3 text-left text-sm font-semibold text-muted-foreground",
+                      header.column.id === "title" && "w-[44%]",
+                      header.column.id === "pubDateMs" && "w-[20%] whitespace-nowrap",
+                      header.column.id === "mediaFile" && "w-[14%]",
+                      header.column.id === "actions" && "w-[22%]",
+                    )}
+                    key={header.id}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td className="px-5 py-12 text-center" colSpan={4}>
+                  <div className="font-medium text-foreground">
+                    No {activeFilter === "all" ? "" : `${activeFilter} `}items yet.
+                  </div>
+                  <a
+                    className={cn(
+                      buttonVariants({size: "sm"}),
+                      "mt-4 !text-white hover:!text-white",
+                    )}
+                    href={ADMIN_URLS.newItem()}
+                  >
+                    Add a new item
+                  </a>
+                </td>
+              </tr>
+            ) : table.getRowModel().rows.map((row) => (
+              <tr className="border-b last:border-b-0" key={row.original.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    className={cn(
+                      "px-5 py-4 align-middle text-foreground",
+                      cell.column.id === "pubDateMs" && "whitespace-nowrap",
+                    )}
+                    key={cell.id}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {(prevUrl || nextUrl) && (
+        <nav
+          aria-label="Items pagination"
+          className="mt-6 flex items-center justify-center gap-2"
+        >
+          {prevUrl && (
+            <a
+              className={buttonVariants({size: "sm", variant: "outline"})}
+              href={prevUrl}
+            >
+              <ChevronLeftIcon aria-hidden="true" />
+              Previous
+            </a>
+          )}
+          {nextUrl && (
+            <a
+              className={buttonVariants({size: "sm", variant: "outline"})}
+              href={nextUrl}
+            >
+              Next
+              <ChevronRightIcon aria-hidden="true" />
+            </a>
+          )}
+        </nav>
+      )}
+    </div>
+  );
+}
+
+export default function AllItemsApp({feedContent}: Props) {
+  const feed = feedContent;
+  const items = feed.items ?? [];
+  const publicBucketUrl = resolvePublicBucketUrl(
+    feed.settings?.webGlobalSettings?.publicBucketUrl,
+    window.location.hostname,
+  );
+  const data = tableRows(items, publicBucketUrl);
+
+  return (
+    <AdminPageApp>
+      <ItemListTable data={data} feed={feed} />
+    </AdminPageApp>
+  );
 }
