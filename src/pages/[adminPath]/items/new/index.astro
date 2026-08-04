@@ -11,9 +11,11 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  title="New item | microfeed.org"
   activeNavItem={NAV_ITEMS.NEW_ITEM}
+  documentTitle="New item | microfeed.org"
+  {feedContent}
   {onboardingResult}
+  pageTitle="Add new item"
 >
   <EditItemApp client:only="react" {feedContent} {onboardingResult}>
     <AdminPageFallback slot="fallback" kind="form" />

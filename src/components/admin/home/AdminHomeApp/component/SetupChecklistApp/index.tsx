@@ -387,10 +387,10 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
   }
 
   return (
-    <div className="lh-page-card">
-      <div className="lh-page-title">Setup checklist</div>
+    <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+      <div className="mb-4 text-lg font-semibold tracking-tight">Setup checklist</div>
       {effectiveAllOk && (
-        <div className="text-helper-color border border-green-700 bg-green-100 text-green-700 rounded-sm p-2">
+        <div className="rounded-[10px] border border-green-700/40 bg-green-500/10 p-3 text-green-700 dark:text-green-300">
           <i>You are all set!</i>
           <div className="mt-2">
             Start publishing at{" "}

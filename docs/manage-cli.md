@@ -312,7 +312,9 @@ yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
 release with `--local`.
 
 Regenerate configuration, apply D1 migrations, run checks and tests, and build.
-Cloudflare mode then deploys and verifies the Worker. `--local` preserves local
+Cloudflare mode then tags the Worker version with the current Git commit,
+deploys it, and verifies the Worker. The protected dashboard uses that version
+metadata to identify the deployed source release. `--local` preserves local
 data, performs the same preparation against local D1, and does not deploy or
 start a server.
 

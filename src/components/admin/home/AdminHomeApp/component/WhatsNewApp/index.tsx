@@ -30,8 +30,8 @@ export default class WhatsNewApp extends React.Component<any, any> {
   render() {
     const {items, fetchStatus} = this.state;
     const fetching = fetchStatus === FETCH_STATUS__START;
-    return (<div className="lh-page-card">
-      <div className="lh-page-title">
+    return (<div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+      <div className="mb-4 text-lg font-semibold tracking-tight">
         What's new from <a href={`https://${OUR_BRAND.domain}`}>{OUR_BRAND.domain}</a>?
       </div>
       <div>

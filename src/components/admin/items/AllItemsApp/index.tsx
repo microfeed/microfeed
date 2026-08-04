@@ -13,8 +13,6 @@ import {
   ENCLOSURE_CATEGORIES_DICT,
   STATUSES,
   ITEM_STATUSES_DICT,
-  NAV_ITEMS,
-  NAV_ITEMS_DICT,
   ITEMS_SORT_ORDERS,
 } from "@/shared/Constants";
 import {msToDatetimeLocalString} from '@/shared/TimeUtils';
@@ -86,14 +84,15 @@ function ItemListTable({data, feed}: any) {
         }}
       />
     </div>
-    <table className="border-collapse text-helper-color text-sm w-full">
+    <div className="overflow-x-auto rounded-[10px] border">
+    <table className="min-w-[48rem] border-collapse text-sm text-muted-foreground w-full">
       <thead>
       {table.getHeaderGroups().map((headerGroup: any) => (
         <tr key={headerGroup.id}>
           {headerGroup.headers.map((header: any) => (
             <th
               key={header.id}
-              className={clsx('uppercase border border-slate-300 bg-brand-dark text-white py-2 px-4')}
+              className={clsx('border border-border bg-muted px-4 py-2 text-xs font-semibold uppercase tracking-wide text-foreground')}
             >
               {flexRender(header.column.columnDef.header, header.getContext())}
             </th>
@@ -105,7 +104,7 @@ function ItemListTable({data, feed}: any) {
       {table.getRowModel().rows.map((row: any) => (
         <tr key={`item-${row.id}`}>
           {row.getVisibleCells().map((cell: any) => (
-            <td key={cell.id} className={clsx("border border-slate-300 py-2 px-4 break-all",
+            <td key={cell.id} className={clsx("border border-border px-4 py-3 break-all",
               cell.column.id === 'title' ? 'max-w-md' : '')}>
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </td>
@@ -114,6 +113,7 @@ function ItemListTable({data, feed}: any) {
       )}
       </tbody>
     </table>
+    </div>
     <div className="mt-8 flex justify-center">
       {prevUrl && <div className="mx-2">
         <a href={prevUrl}><span className="lh-icon-arrow-left" /> Prev</a>
@@ -161,7 +161,7 @@ export default class AllItemsApp extends React.Component<Props, any> {
           <a className="block" href={ADMIN_URLS.editItem(item.id)}>{item.title || 'untitled'}</a>
         </div>
         <div className="mt-2 flex items-center">
-          <div className="text-muted-color text-sm flex-1">
+          <div className="text-muted-foreground text-sm flex-1">
             id: {item.id}
           </div>
           <ExternalLink
@@ -194,19 +194,12 @@ export default class AllItemsApp extends React.Component<Props, any> {
     }));
 
     return (<AdminPageApp>
-      <form className="lh-page-card grid grid-cols-1 gap-4">
-        <div className="lh-page-title">
-          {(NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS] as any).name}
+      {data.length > 0 ? <ItemListTable data={data} feed={feed} /> : <div>
+        <div className="mb-8">
+          No items yet.
         </div>
-        <div>
-          {data.length > 0 ? <ItemListTable data={data} feed={feed} /> : <div>
-            <div className="mb-8">
-              No items yet.
-            </div>
-            <a href={ADMIN_URLS.newItem()}>Add a new item now <span className="lh-icon-arrow-right" /></a>
-          </div>}
-        </div>
-      </form>
+        <a href={ADMIN_URLS.newItem()}>Add a new item now <span className="lh-icon-arrow-right" /></a>
+      </div>}
     </AdminPageApp>);
   }
 }

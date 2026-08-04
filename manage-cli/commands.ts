@@ -84,6 +84,7 @@ import {
 } from "./lib/cloudflare";
 import {
   openUrl,
+  repositoryCommitSha,
   repositoryRoot,
   runCommand,
   runYarnScript,
@@ -1556,6 +1557,7 @@ async function deployConfiguredProject(
   includeNewSigningSecret: boolean,
   initializeAdmin = false,
 ): Promise<MicrofeedConfig> {
+  const sourceCommitSha = await repositoryCommitSha(context.runner);
   await configureAdminAuth(context, config);
   await generateWranglerConfig(config);
   if (initializeAdmin) {
@@ -1578,9 +1580,13 @@ async function deployConfiguredProject(
     ? await withEphemeralSecretFile(
         needsAuthSecret,
         needsUploadSigningSecret,
-        (filename) => context.cloudflare.deploy(config, filename),
+        (filename) => context.cloudflare.deploy(
+          config,
+          filename,
+          sourceCommitSha,
+        ),
       )
-    : await context.cloudflare.deploy(config);
+    : await context.cloudflare.deploy(config, undefined, sourceCommitSha);
   config.deploymentUrl = deploymentUrl ?? config.deploymentUrl;
   if (needsAuthSecret) {
     markStep(config, "better-auth-secret-created");

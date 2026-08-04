@@ -116,6 +116,153 @@ describe("source architecture", () => {
         ),
       ),
     ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repositoryRoot,
+          "public",
+          "assets",
+          "brands",
+          "microfeed",
+          "horizontal-logo.png",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repositoryRoot,
+          "public",
+          "assets",
+          "brands",
+          "microfeed",
+          "horizontal-logo-dark.png",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  it("preserves the nested admin code editor route", async () => {
+    const route = path.join(
+      repositoryRoot,
+      "src",
+      "pages",
+      "[adminPath]",
+      "settings",
+      "code-editor",
+      "index.astro",
+    );
+
+    await expect(access(route)).resolves.toBeUndefined();
+    await expect(readFile(route, "utf8")).resolves.toContain(
+      "<CustomCodeEditorApp",
+    );
+  });
+
+  it("keeps the items list free of a redundant page card", async () => {
+    const itemsList = await readFile(
+      path.join(
+        repositoryRoot,
+        "src",
+        "components",
+        "admin",
+        "items",
+        "AllItemsApp",
+        "index.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(itemsList).not.toContain('@/components/ui/card');
+    expect(itemsList).not.toContain("NAV_ITEMS_DICT");
+    expect(itemsList).toContain("<ItemListTable data={data} feed={feed} />");
+  });
+
+  it("keeps the admin sidebar aligned with the darker shell canvas", async () => {
+    const adminStyles = await readFile(
+      path.join(repositoryRoot, "src", "styles", "admin.css"),
+      "utf8",
+    );
+    const adminShell = await readFile(
+      path.join(repositoryRoot, "src", "layouts", "AdminShell.astro"),
+      "utf8",
+    );
+
+    expect(adminStyles).toMatch(
+      /:root \{[\s\S]*?--admin-canvas: #f5f7fa;[\s\S]*?--sidebar: #f5f7fa;/u,
+    );
+    expect(adminStyles).toMatch(
+      /\.dark \{[\s\S]*?--admin-canvas: #171721;[\s\S]*?--sidebar: #171721;/u,
+    );
+    expect(adminShell).toContain("flex-1 bg-background");
+  });
+
+  it("keeps edit action rails top-aligned and the toaster in the shell", async () => {
+    const [channelEditor, itemEditor, adminPageApp, adminShell, sonner] = await Promise.all([
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "channel", "EditChannelApp", "index.tsx"),
+        "utf8",
+      ),
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "items", "EditItemApp", "index.tsx"),
+        "utf8",
+      ),
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "shared", "AdminPageApp", "index.tsx"),
+        "utf8",
+      ),
+      readFile(path.join(repositoryRoot, "src", "layouts", "AdminShell.astro"), "utf8"),
+      readFile(path.join(repositoryRoot, "src", "components", "ui", "sonner.tsx"), "utf8"),
+    ]);
+
+    expect(channelEditor).toContain("xl:sticky xl:top-0");
+    expect(itemEditor).toContain("xl:sticky xl:top-0");
+    expect(channelEditor).toContain("showToast('No changes to save.', 'info')");
+    expect(itemEditor).toContain("'Add some item details before creating it.'");
+    expect(channelEditor).not.toContain("submitting || !changed");
+    expect(itemEditor).not.toContain("submitting || !changed");
+    expect(adminPageApp).not.toContain("<Toaster");
+    expect(adminShell).toContain('transition:persist="admin-toaster"');
+    expect(adminShell).toContain('position="top-right"');
+    expect(sonner).toContain('import "sonner/dist/styles.css"');
+  });
+
+  it("centers desktop page titles and leads with mobile navigation", async () => {
+    const [topBar, headerActions, mobileNavigation] = await Promise.all([
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "AdminTopBar.astro"),
+        "utf8",
+      ),
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "AdminHeaderActions.tsx"),
+        "utf8",
+      ),
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "AdminMobileNavigation.tsx"),
+        "utf8",
+      ),
+    ]);
+
+    expect(topBar).toContain(
+      "lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]",
+    );
+    expect(topBar).toContain("truncate text-center text-lg");
+    expect(topBar.indexOf("<AdminMobileNavigation")).toBeLessThan(
+      topBar.indexOf("lg:hidden\">{pageTitle}"),
+    );
+    expect(headerActions).not.toContain("MenuIcon");
+    expect(mobileNavigation).toContain('aria-label="Open admin navigation"');
+  });
+
+  it("targets only authenticated Cloudflare production Workers in update prompts", async () => {
+    const adminShell = await readFile(
+      path.join(repositoryRoot, "src", "layouts", "AdminShell.astro"),
+      "utf8",
+    );
+
+    expect(adminShell).toContain('env.DEPLOYMENT_ENVIRONMENT === "production"');
+    expect(adminShell).toContain("env.MICROFEED_CLOUDFLARE_ACCOUNT_ID?.trim()");
+    expect(adminShell).toContain("protectedDashboard &&");
   });
 
   it("standardizes UI primitives and icons", async () => {
@@ -135,6 +282,10 @@ describe("source architecture", () => {
       expect(sourceContents).not.toContain(packageName);
       expect(manifestContents).not.toContain(packageName);
     }
+    expect(sourceContents).not.toContain(["react", "toastify"].join("-"));
+    expect(manifestContents).not.toContain(["react", "toastify"].join("-"));
+    expect(sourceContents).not.toContain(["lh", "btn"].join("-"));
+    expect(sourceContents).not.toContain(["lh", "page", "card"].join("-"));
     expect(sourceContents).not.toContain(lucideDynamicImport);
     expect(sourceContents).not.toMatch(new RegExp(
       `import\\s+\\*\\s+as\\s+\\w+\\s+from\\s+["']${lucidePackage}["']`,

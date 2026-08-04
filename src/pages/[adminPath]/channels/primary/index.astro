@@ -11,9 +11,11 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  title="Edit channel | microfeed.org"
   activeNavItem={NAV_ITEMS.EDIT_CHANNEL}
+  documentTitle="Edit channel | microfeed.org"
+  {feedContent}
   {onboardingResult}
+  pageTitle="Edit channel"
 >
   <EditChannelApp client:only="react" {feedContent} {onboardingResult}>
     <AdminPageFallback slot="fallback" kind="form" />

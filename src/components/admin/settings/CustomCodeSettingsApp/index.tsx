@@ -37,7 +37,7 @@ export default class CustomCodeSettingsApp extends React.Component<any, any> {
       </div>
 
       <div className="mt-8">
-        <div className="lh-page-subtitle">Themes</div>
+        <div className="mb-2 font-semibold text-foreground">Themes</div>
         <NavBlock
           url={`${ADMIN_URLS.codeEditorSettings()}?type=${CODE_TYPES.THEMES}&theme=custom`}
           text="Edit web and rss styling"

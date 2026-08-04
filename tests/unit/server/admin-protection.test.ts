@@ -12,11 +12,17 @@ import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {
   adminProtectionStatus,
   cloudflareAccessDetected,
+  cloudflareAccessIdentity,
 } from "@/server/auth/admin-protection";
 import OnboardingChecker from "@/server/feed/OnboardingUtils";
 import type {AdminProtectionStatus} from "@/types";
 
 const ACCESS_ASSERTION = "header.payload.signature";
+
+function accessAssertion(claims: Record<string, unknown>): string {
+  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+  return `header.${payload}.signature`;
+}
 
 function description(
   status: AdminProtectionStatus & {dashboardUrl?: string},
@@ -27,6 +33,36 @@ function description(
 }
 
 describe("dashboard protection detection", () => {
+  it("reads an application-token email for display without using it for authorization", () => {
+    const request = new Request("https://feed.example.com/admin/", {
+      headers: {
+        "cf-access-jwt-assertion": accessAssertion({
+          email: " owner@example.com ",
+          type: "app",
+        }),
+      },
+    });
+
+    expect(cloudflareAccessIdentity(request)).toEqual({
+      detected: true,
+      email: "owner@example.com",
+    });
+  });
+
+  it.each([
+    "malformed",
+    accessAssertion({type: "service-token"}),
+    accessAssertion({email: 42, type: "app"}),
+  ])("does not display untrusted or unavailable email claims", (assertion) => {
+    const identity = cloudflareAccessIdentity(new Request(
+      "https://feed.example.com/admin/",
+      {headers: {"cf-access-jwt-assertion": assertion}},
+    ));
+
+    expect(identity.email).toBeUndefined();
+    expect(identity.detected).toBe(assertion !== "malformed");
+  });
+
   it("uses the Access assertion header instead of trusting cookies", () => {
     const cookieOnly = new Request("https://feed.example.com/admin/", {
       headers: {

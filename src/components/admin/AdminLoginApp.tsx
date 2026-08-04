@@ -63,17 +63,19 @@ export default function AdminLoginApp() {
   }
 
   return (
-    <main className="flex min-h-svh bg-[#fafafa] px-5 py-12 text-foreground">
+    <main className="flex min-h-svh bg-admin-canvas px-5 py-12 text-foreground">
       <div className="mx-auto flex w-full max-w-lg flex-col justify-center">
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 flex items-center justify-center gap-3">
           <img
-            alt="microfeed"
-            className="h-11 w-auto"
-            src="/assets/brands/microfeed/horizontal-logo.png"
+            alt=""
+            aria-hidden="true"
+            className="size-11"
+            src="/assets/favicon/android-chrome-192x192.png"
           />
+          <span className="text-2xl font-bold tracking-tight">microfeed</span>
         </div>
 
-        <Card className="gap-0 overflow-visible rounded-2xl py-0 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-black/10">
+        <Card className="gap-0 overflow-visible py-0">
           <CardHeader className="gap-0 px-7 pt-7 pb-6 sm:px-9 sm:pt-9">
             <CardTitle>
               <h1 className="text-2xl leading-tight font-semibold tracking-[-0.025em] sm:text-[1.75rem]">
@@ -93,7 +95,7 @@ export default function AdminLoginApp() {
                     aria-invalid={Boolean(error)}
                     autoComplete="username"
                     autoFocus
-                    className="h-11 rounded-xl bg-white px-3 text-base shadow-none md:text-base"
+                    className="h-11 px-3 text-base md:text-base"
                     id="microfeed-login-email"
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
@@ -110,7 +112,7 @@ export default function AdminLoginApp() {
                   <Input
                     aria-invalid={Boolean(error)}
                     autoComplete="current-password"
-                    className="h-11 rounded-xl bg-white px-3 text-base shadow-none md:text-base"
+                    className="h-11 px-3 text-base md:text-base"
                     id="microfeed-login-password"
                     maxLength={128}
                     minLength={12}
@@ -132,7 +134,7 @@ export default function AdminLoginApp() {
                 )}
 
                 <Button
-                  className="h-11 w-full rounded-xl bg-[#2563eb] text-base font-medium text-white shadow-sm hover:bg-[#1d4ed8]"
+                  className="h-11 w-full text-base font-medium"
                   disabled={submitting}
                   size="lg"
                   type="submit"

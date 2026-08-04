@@ -24,9 +24,11 @@ if (missing) {
 ---
 
 <AdminShell
-  title={missing ? "Item not found | microfeed.org" : `Edit item (id = ${itemId}) | microfeed.org`}
   activeNavItem={NAV_ITEMS.ALL_ITEMS}
+  documentTitle={missing ? "Item not found | microfeed.org" : `Edit item (id = ${itemId}) | microfeed.org`}
+  feedContent={loaded.content}
   onboardingResult={loaded.onboarding}
+  pageTitle={missing ? "Item not found" : "Edit item"}
   breadcrumb={{
     name: NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name,
     url: adminUrl("items/list", Astro.params.adminPath),
@@ -35,8 +37,8 @@ if (missing) {
 >
   {
     missing ? (
-      <section class="lh-page-card" aria-labelledby="not-found-title">
-        <h1 class="lh-page-title" id="not-found-title">Item not found</h1>
+      <section class="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs" aria-labelledby="not-found-title">
+        <h1 class="mb-4 text-lg font-semibold tracking-tight" id="not-found-title">Item not found</h1>
         <p>The requested item does not exist or has been deleted.</p>
       </section>
     ) : (

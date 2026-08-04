@@ -5,6 +5,7 @@ import clsx from "clsx";
 import {randomHex, randomShortUUID} from "@/shared/StringUtils";
 import AdminInput from "@/components/admin/shared/AdminInput";
 import {SETTINGS_CATEGORIES} from "@/shared/Constants";
+import {Button} from "@/components/ui/button";
 
 export default class ApiSettingsApp extends React.Component<any, any> {
   constructor(props: any) {
@@ -77,7 +78,7 @@ export default class ApiSettingsApp extends React.Component<any, any> {
         <div className="">
           <AdminSwitch
             label="API Enabled"
-            labelClassName={clsx('', apiBundle.enabled ? 'text-black' : 'text-muted-color')}
+            labelClassName={clsx('', apiBundle.enabled ? 'text-foreground' : 'text-muted-foreground')}
             checked={apiBundle.enabled}
             onCheckedChange={(checked) => this.setApiEnabled(checked)}
           />
@@ -101,10 +102,11 @@ export default class ApiSettingsApp extends React.Component<any, any> {
             />
           </div>
           <div className="flex-none">
-            <button
+            <Button
               type="button"
               disabled={!apiBundle.enabled}
-              className="lh-btn lh-btn-secondary lh-btn-sm"
+              size="sm"
+              variant="outline"
               onClick={(e: any) => {
                 e.preventDefault();
                 const ok = confirm('Are you sure you want to reset the API key?');
@@ -114,7 +116,7 @@ export default class ApiSettingsApp extends React.Component<any, any> {
               }}
             >
               Reset
-            </button>
+            </Button>
           </div>
         </div>
         <div className="text-xs mt-8">

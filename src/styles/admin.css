@@ -38,22 +38,24 @@
     -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial,
     Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol,
     Noto Color Emoji;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --color-brand-light: #19b7fa;
   --color-brand-dark: #2c2b3d;
+  --color-admin-canvas: var(--admin-canvas);
 
-  --color-muted-color: #8e8e8e;
-  --color-title-color: rgba(0, 0, 0, 0.95);
-  --color-body-color: rgba(0, 0, 0, 0.8);
-  --color-helper-color: rgba(0, 0, 0, 0.6);
-  --color-bggray-color: rgba(0, 0, 0, 0.03);
-  --color-bdgray-color: rgba(0, 0, 0, 0.1);
-  --color-bgsecondary-color: rgba(0, 0, 0, 0.05);
-  --color-fgsecondary-color: rgba(0, 0, 0, 0.95);
-  --color-white-overlap: rgba(255, 255, 255, 0.9);
+  --color-muted-color: var(--muted-foreground);
+  --color-title-color: var(--foreground);
+  --color-body-color: var(--foreground);
+  --color-helper-color: var(--muted-foreground);
+  --color-bggray-color: var(--muted);
+  --color-bdgray-color: var(--border);
+  --color-bgsecondary-color: var(--secondary);
+  --color-fgsecondary-color: var(--secondary-foreground);
+  --color-white-overlap: var(--popover);
   --color-warning-color: #a88c0b;
-  --color-dark-deep: rgba(230, 230, 230);
-  --color-dark-light: rgba(240, 240, 240);
+  --color-dark-deep: var(--background);
+  --color-dark-light: var(--card);
 
   --width-88: 22rem;
   --width-avatar-xs: 1.2rem;
@@ -124,58 +126,20 @@
 }
 
 body {
-  @apply bg-bgsecondary-color;
+  @apply bg-admin-canvas text-foreground;
 }
 
 a {
-  @apply text-black hover:text-brand-light font-semibold;
+  @apply text-foreground hover:text-brand-light font-medium;
 }
 
 .m-code {
-  @apply p-4 block bg-gray-100 rounded-md mt-2 text-xs text-red-500 select-all break-all;
-}
-
-/*
-   Buttons
- */
-.lh-btn {
-  @apply text-white font-semibold py-2 px-4 min-w-max inline-block rounded-sm;
-  @apply disabled:opacity-50;
-}
-
-.lh-btn-secondary {
-  @apply bg-bgsecondary-color text-fgsecondary-color border border-bdgray-color text-sm hover:border-brand-light hover:text-muted-color
-}
-
-.lh-btn-brand-dark {
-  @apply bg-brand-dark text-white text-sm border border-brand-dark hover:bg-brand-light hover:border-brand-light;
-}
-
-.lh-btn-sm {
-  @apply text-sm py-1 px-2 rounded-xs;
-}
-
-.lh-btn-lg {
-  @apply text-lg py-3 px-5 rounded-md;
-}
-
-/*
-  Cards
- */
-.lh-page-card {
-  @apply border-t border-b lg:border p-4 bg-white hover:shadow-sm dark:bg-dark-light rounded-md;
-}
-
-.lh-page-title {
-  @apply text-lg font-bold text-gray-500 mb-4;
-}
-
-.lh-page-subtitle {
-  @apply font-semibold text-gray-500 mb-2 hover:opacity-50;
+  @apply mt-2 block break-all rounded-[10px] bg-muted p-4 text-xs text-destructive select-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .m-page-summary {
-  @apply cursor-pointer font-semibold text-gray-500 hover:opacity-50;
+  @apply cursor-pointer font-semibold text-foreground hover:text-brand-light;
 }
 
 /*
@@ -310,72 +274,142 @@ a {
   ---break---
 */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --admin-canvas: #f5f7fa;
+  --background: #ffffff;
+  --foreground: #2c2b3d;
+  --card: #ffffff;
+  --card-foreground: #2c2b3d;
+  --popover: #ffffff;
+  --popover-foreground: #2c2b3d;
+  --primary: #2c2b3d;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2f6;
+  --secondary-foreground: #2c2b3d;
+  --muted: #f1f4f7;
+  --muted-foreground: #667085;
+  --accent: rgb(25 183 250 / 12%);
+  --accent-foreground: #2c2b3d;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #dde2ea;
+  --input: #cfd6e1;
+  --ring: #19b7fa;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius-card: 0.875rem;
+  --radius-shell: 1.25rem;
+  --sidebar: #f5f7fa;
+  --sidebar-foreground: #2c2b3d;
+  --sidebar-primary: #2c2b3d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef4f8;
+  --sidebar-accent-foreground: #2c2b3d;
+  --sidebar-border: #dde2ea;
+  --sidebar-ring: #19b7fa;
 }
 /*
   ---break---
 */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --admin-canvas: #171721;
+  --background: #20202d;
+  --foreground: #f5f7fa;
+  --card: #2c2b3d;
+  --card-foreground: #f5f7fa;
+  --popover: #2c2b3d;
+  --popover-foreground: #f5f7fa;
+  --primary: #19b7fa;
+  --primary-foreground: #20202d;
+  --secondary: #343445;
+  --secondary-foreground: #f5f7fa;
+  --muted: #343445;
+  --muted-foreground: #a7adba;
+  --accent: rgb(25 183 250 / 16%);
+  --accent-foreground: #f5f7fa;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: rgb(255 255 255 / 12%);
+  --input: rgb(255 255 255 / 18%);
+  --ring: #19b7fa;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #171721;
+  --sidebar-foreground: #f5f7fa;
+  --sidebar-primary: #19b7fa;
+  --sidebar-primary-foreground: #20202d;
+  --sidebar-accent: #343445;
+  --sidebar-accent-foreground: #f5f7fa;
+  --sidebar-border: rgb(255 255 255 / 12%);
+  --sidebar-ring: #19b7fa;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+.ql-snow,
+.ql-container.ql-snow {
+  border-color: var(--border);
+}
+
+.ql-toolbar.ql-snow,
+.ql-container.ql-snow {
+  background: var(--card);
+}
+
+.ql-editor.ql-blank::before {
+  color: var(--muted-foreground);
+}
+
+.ql-snow .ql-tooltip {
+  background: var(--popover);
+  border-color: var(--border);
+  color: var(--popover-foreground);
+}
+
+.ql-snow .ql-tooltip input[type="text"] {
+  background: var(--background);
+  border-color: var(--input);
+  color: var(--foreground);
+}
+
+.dark .ql-toolbar .ql-stroke {
+  stroke: var(--foreground);
+}
+
+.dark .ql-toolbar .ql-fill,
+.dark .ql-toolbar .ql-stroke.ql-fill {
+  fill: var(--foreground);
+}
+
+.dark .ql-toolbar .ql-picker,
+.dark .ql-editor {
+  color: var(--foreground);
+}
+
+.dark .ql-toolbar .ql-picker-options {
+  background: var(--popover);
+  border-color: var(--border);
+}
+
+.ql-snow.ql-toolbar button:hover,
+.ql-snow.ql-toolbar button:focus,
+.ql-snow.ql-toolbar button.ql-active,
+.ql-snow .ql-toolbar button:hover,
+.ql-snow .ql-toolbar button:focus,
+.ql-snow .ql-toolbar button.ql-active,
+.ql-snow a {
+  color: var(--ring);
 }

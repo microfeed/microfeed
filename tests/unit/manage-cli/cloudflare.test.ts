@@ -620,7 +620,8 @@ describe("CloudflareClient", () => {
     const cloudflare = new CloudflareClient(runner);
 
     await cloudflare.applyMigrations(config);
-    await cloudflare.deploy(config);
+    const sourceCommit = "0123456789abcdef0123456789abcdef01234567";
+    await cloudflare.deploy(config, undefined, sourceCommit);
 
     const migrationArgs = runner.mock.calls[0]?.[1] ?? [];
     const deployArgs = runner.mock.calls[1]?.[1] ?? [];
@@ -632,6 +633,8 @@ describe("CloudflareClient", () => {
     expect(deployArgs.join(" ")).toContain(
       "dist/server/wrangler.json",
     );
+    expect(deployArgs).toContain("--tag");
+    expect(deployArgs).toContain(sourceCommit);
   });
 
   it("reads existing secret names for a Worker without their values", async () => {

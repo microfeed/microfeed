@@ -96,7 +96,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
     >
       <div className="grid grid-cols-1 gap-4">
         <details open>
-          <summary className="lh-page-subtitle cursor-pointer">R2 public bucket url</summary>
+          <summary className="mb-2 cursor-pointer font-semibold text-foreground">R2 public bucket url</summary>
           <AdminInput
             type="text"
             customClass="text-xs"
@@ -128,9 +128,9 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
           </p>
         </details>
         <details open>
-          <summary className="lh-page-subtitle cursor-pointer">Items settings</summary>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-1">
+          <summary className="mb-2 cursor-pointer font-semibold text-foreground">Items settings</summary>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
               <AdminInput
                 label="Items per page"
                 type="number"
@@ -153,7 +153,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
                 }}
               />
             </div>
-            <div className="col-span-1">
+            <div>
               <AdminRadioGroup
                 labelComponent={<ExplainText
                   bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.ITEMS_SORT_ORDER]}
@@ -174,7 +174,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
           </div>
         </details>
         <details>
-          <summary className="lh-page-subtitle cursor-pointer">Favicon</summary>
+          <summary className="mb-2 cursor-pointer font-semibold text-foreground">Favicon</summary>
           <div className="flex">
             <AdminImageUploaderApp
               feed={feed}

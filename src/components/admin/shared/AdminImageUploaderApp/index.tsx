@@ -14,6 +14,7 @@ import {CloudUploadIcon} from "lucide-react";
 import ExternalLink from "../ExternalLink";
 import {showToast} from "@/client/ToastUtils";
 import MediaStorageUnavailableDialog from "../MediaStorageUnavailableDialog";
+import {Button} from "@/components/ui/button";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -302,13 +303,12 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           />
         </div>}
         <div className="mt-4 flex justify-center">
-          <button
-            className="lh-btn lh-btn-brand-dark"
+          <Button
             onClick={this.onFileUploadToR2}
             disabled={uploading || !mediaStorageReady}
           >
             {uploading ? `Uploading... ${progressText}` : 'Upload'}
-          </button>
+          </Button>
         </div>
         {imageWidth > 0 && imageHeight > 0 && <div className={clsx("mt-2 text-xs text-center", imageSizeNotOkay ? 'text-red-500' : 'text-green-500')}>
           {imageSizeNotOkay ? <div>{imageSizeNotOkayMsg}</div> :

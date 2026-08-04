@@ -18,6 +18,7 @@ import {
   SETTINGS_CONTROLS,
   CONTROLS_TEXTS_DICT
 } from "../FormExplainTexts";
+import {Button} from "@/components/ui/button";
 
 function initMethodsDict() {
   return {
@@ -44,29 +45,37 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
     }
   }
 
-  return (<div className={clsx('flex py-4 border-b')}>
+  return (<div className={clsx('flex flex-wrap items-start gap-y-3 border-b py-4 sm:flex-nowrap')}>
     <div className="flex-none mr-2 flex items-center justify-start">
-      <button
-        className={firstIndex ? 'text-muted-color' : 'hover:opacity-50'}
+      <Button
+        aria-label={`Move ${name} up`}
+        className={firstIndex ? 'text-muted-foreground' : ''}
         disabled={firstIndex}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
         onClick={(e: any) => moveCard(e, index, index - 1)}
       >
         <ArrowUpIcon className="w-4" />
-      </button>
-      <button
-        className={clsx(lastIndex ? 'text-muted-color' : 'hover:opacity-50')}
+      </Button>
+      <Button
+        aria-label={`Move ${name} down`}
+        className={lastIndex ? 'text-muted-foreground' : ''}
         disabled={lastIndex}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
         onClick={(e: any) => moveCard(e, index, index + 1)}
       >
         <ArrowDownIcon className="w-4" />
-      </button>
+      </Button>
     </div>
     <div className="flex-none mr-4 flex items-center justify-end">
       <img src={image} className={clsx('w-14', enabled ? '' : 'opacity-50')} alt={name} />
     </div>
-    <div className="flex-1">
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-4">
+    <div className="min-w-0 flex-[1_1_18rem]">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-12">
+        <div className="md:col-span-4">
           <AdminInput
             value={name}
             disabled={!editable || !enabled}
@@ -74,7 +83,7 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
             customClass="text-xs p-1"
           />
         </div>
-        <div className="col-span-8">
+        <div className="md:col-span-8">
           <div className="flex-1 flex items-center">
             <AdminInput
               value={url}
@@ -92,25 +101,23 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
         <div className="">
           <AdminSwitch
             label="Visible"
-            labelClassName={clsx('text-xs', enabled ? 'text-black' : 'text-muted-color')}
+            labelClassName={clsx('text-xs', enabled ? 'text-foreground' : 'text-muted-foreground')}
             checked={enabled}
             onCheckedChange={(checked) => updateMethodByAttr(id, 'enabled', checked)}
           />
         </div>
         <div className="ml-4">
           {editable && <div>
-            {!deleted ? <div><a
-              href="#"
-              className="text-red-500 text-xs"
-              onClick={(e: any) => {
-                e.preventDefault();
+            {!deleted ? <div><Button
+              type="button"
+              className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+              variant="ghost"
+              onClick={() => {
                 updateMethodByAttr(id, 'deleted', true);
               }}>
-              <div className="flex items-center">
-                <div className="mr-1"><Trash2Icon className="w-4"/></div>
-                <div>Delete</div>
-              </div>
-            </a></div> : <div className="text-xs text-muted-color">
+              <Trash2Icon className="w-4"/>
+              Delete
+            </Button></div> : <div className="text-xs text-muted-color">
               <i>Click "Update" to sync up and actually delete it. Or <a
                 href="#"
                 className="text-brand-light text-xs"
@@ -128,18 +135,17 @@ function MethodRow({method, updateMethodByAttr, index, firstIndex, lastIndex, mo
 
 function AddNewMethod({isOpenNewMethod, setIsOpenNewMethod, addNewMethod}: any) {
   return (<div>
-    <a
-      href="#"
-      onClick={(e: any) => {
-        e.preventDefault();
+    <Button
+      className="mx-auto"
+      type="button"
+      variant="ghost"
+      onClick={() => {
         setIsOpenNewMethod(true);
       }}
     >
-      <div className="flex items-center justify-center gap-1.5">
-        <CirclePlusIcon aria-hidden="true" className="size-4 shrink-0" />
-        <div>Add new subscribe method</div>
-      </div>
-    </a>
+      <CirclePlusIcon aria-hidden="true" className="size-4 shrink-0" />
+      <span>Add new subscribe method</span>
+    </Button>
     <div className="mt-1 text-xs text-muted-color text-center">e.g., Apple Podcasts, Spotify, Listen Notes...</div>
     <NewSubscribeDialog
       isOpen={isOpenNewMethod}

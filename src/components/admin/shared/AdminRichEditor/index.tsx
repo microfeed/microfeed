@@ -34,7 +34,7 @@ export default class AdminRichEditor extends React.Component<any, any> {
     const {label, value, extra, labelComponent} = this.props;
     return (
       <div>
-        {label && <div className="lh-page-subtitle">
+        {label && <div className="mb-2 font-semibold text-foreground">
           {label}
         </div>}
         {labelComponent}

@@ -23,6 +23,7 @@ import {
   preventCloseWhenChanged,
 } from "@/client/BrowserUtils";
 import type {FeedContent, OnboardingResult} from "@/types";
+import {Button} from "@/components/ui/button";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -124,6 +125,10 @@ export default class EditChannelApp extends React.Component<Props, any> {
 
   onSubmit(e: any) {
     e.preventDefault();
+    if (!this.state.changed) {
+      showToast('No changes to save.', 'info');
+      return;
+    }
     this.onUpdateChannelMetaToFeed(() => {
       const {feed} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
@@ -147,7 +152,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
   }
 
   render() {
-    const {submitStatus, channel, feed, changed} = this.state;
+    const {submitStatus, channel, feed} = this.state;
     const {onboardingResult} = this.props;
     const categories = channel.categories || [];
     const submitting = submitStatus === SUBMIT_STATUS__START;
@@ -161,10 +166,10 @@ export default class EditChannelApp extends React.Component<Props, any> {
       window.location.hostname,
     );
     return (<AdminPageApp>
-      <form className="grid grid-cols-12 gap-4" onSubmit={this.onSubmit}>
-        <div className="col-span-9 grid grid-cols-1 gap-4">
-          <div className="lh-page-card">
-            <div className="flex">
+      <form className="grid grid-cols-1 gap-4 xl:grid-cols-12" onSubmit={this.onSubmit}>
+        <div className="grid grid-cols-1 gap-4 xl:col-span-9">
+          <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+            <div className="flex flex-col gap-5 md:flex-row">
               <div className="flex-none">
                 <ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.IMAGE]}/>
                 <AdminImageUploaderApp
@@ -177,13 +182,13 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   onImageUploaded={(cdnUrl: any) => this.onUpdateChannelMeta('image', cdnUrl)}
                 />
               </div>
-              <div className="flex-1 ml-8 grid grid-cols-1 gap-3">
+              <div className="grid flex-1 grid-cols-1 gap-3">
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.TITLE]}/>}
                   value={channel.title}
                   onChange={(e: any) => this.onUpdateChannelMeta('title', e.target.value)}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.PUBLISHER]}/>}
                     value={channel.publisher}
@@ -195,7 +200,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     onChange={(e: any) => this.onUpdateChannelMeta('link', e.target.value)}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <AdminSelect
                     value={categories.map((c: any) => ((CATEGORIES_DICT as any)[c]))}
                     ariaLabel="Categories"
@@ -234,12 +239,12 @@ export default class EditChannelApp extends React.Component<Props, any> {
               />
             </div>
           </div>
-          <details className="lh-page-card">
+          <details className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <summary className="m-page-summary">
               Podcast-specific fields
             </summary>
             <div className="mt-8 grid grid-cols-1 gap-8">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
                   name="lh-explicit"
@@ -264,7 +269,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   onChange={(e: any) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TYPE]}/>}
                   name="feed-itunes-type"
@@ -291,7 +296,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   onChange={(e: any) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
                   name="feed-itunes-block"
@@ -322,16 +327,17 @@ export default class EditChannelApp extends React.Component<Props, any> {
             </div>
           </details>
         </div>
-        <div className="col-span-3">
-          <div className="sticky top-8">
-            <div className="text-center lh-page-card">
-              <button
+        <div className="xl:col-span-3">
+          <div className="grid gap-4 xl:sticky xl:top-0">
+            <div className="rounded-[14px] border bg-card p-5 text-center text-card-foreground shadow-xs">
+              <Button
                 type="submit"
-                className="lh-btn lh-btn-brand-dark lh-btn-lg"
-                disabled={submitting || !changed}
+                className="w-full"
+                size="lg"
+                disabled={submitting}
               >
                 {submitting ? 'Updating...' : 'Update'}
-              </button>
+              </Button>
             </div>
             <AdminSideQuickLinks />
           </div>

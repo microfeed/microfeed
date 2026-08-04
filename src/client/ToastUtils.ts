@@ -1,14 +1,14 @@
-import {toast} from 'react-toastify';
+import {toast} from "sonner";
 
-export function showToast(message: any, type: any, autoClose: any = 800) {
-  (toast as any)[type](message, {
-    position: "top-center",
-    autoClose,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    theme: "colored",
-  });
+type ToastType = "error" | "info" | "success" | "warning";
+
+const DEFAULT_TOAST_DURATION: Record<ToastType, number> = {
+  error: 6000,
+  info: 4000,
+  success: 3000,
+  warning: 5000,
+};
+
+export function showToast(message: string, type: ToastType, duration?: number) {
+  toast[type](message, {duration: duration ?? DEFAULT_TOAST_DURATION[type]});
 }

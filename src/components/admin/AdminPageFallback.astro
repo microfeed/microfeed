@@ -24,20 +24,20 @@ const rowCounts = {
   aria-live="polite"
 >
   <span class="sr-only">{label}</span>
-  <div class="h-8 w-48 rounded bg-gray-200"></div>
+  <div class="h-8 w-48 animate-pulse rounded-[10px] bg-muted"></div>
   <div class="mt-8 grid gap-6" aria-hidden="true">
     {
       Array.from({length: rowCounts[kind]}).map((_, index) => (
         <div
           class:list={[
-            "rounded border border-gray-200 bg-white p-5",
+            "rounded-[14px] border bg-card p-5",
             kind === "home" && index < 2 ? "min-h-36" : "min-h-20",
             kind === "editor" && index === 1 ? "min-h-72" : "",
           ]}
         >
-          <div class="h-4 w-1/3 rounded bg-gray-200"></div>
-          <div class="mt-4 h-3 w-full rounded bg-gray-100"></div>
-          <div class="mt-2 h-3 w-4/5 rounded bg-gray-100"></div>
+          <div class="h-4 w-1/3 animate-pulse rounded bg-muted"></div>
+          <div class="mt-4 h-3 w-full animate-pulse rounded bg-muted/70"></div>
+          <div class="mt-2 h-3 w-4/5 animate-pulse rounded bg-muted/70"></div>
         </div>
       ))
     }

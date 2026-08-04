@@ -8,8 +8,8 @@ export function SideQuickLink({url, text}: any) {
 }
 
 export function AdminSideQuickLinks({AdditionalLinksDiv}: any) {
-  return (<div className="lh-page-card mt-4 px-4">
-    <div className="lh-page-subtitle">Public access</div>
+  return (<div className="mt-4 rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+    <div className="mb-2 text-sm font-semibold text-foreground">Public access</div>
     <div className="grid grid-cols-1 gap-2">
       {AdditionalLinksDiv}
       <div className="flex flex-wrap gap-y-2">

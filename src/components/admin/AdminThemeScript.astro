@@ -1,0 +1,35 @@
+<script is:inline>
+  (() => {
+    const storageKey = "microfeed-admin-theme";
+    const eventName = "microfeed:admin-theme-change";
+    const allowed = new Set(["system", "light", "dark"]);
+    const preference = () => {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        return allowed.has(stored) ? stored : "light";
+      } catch {
+        return "light";
+      }
+    };
+    const apply = () => {
+      const selected = preference();
+      const dark = selected === "dark" ||
+        (selected === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.dataset.adminTheme = selected;
+      document.documentElement.dataset.colorMode = dark ? "dark" : "light";
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    };
+
+    apply();
+    if (!window.__microfeedAdminThemeReady) {
+      window.__microfeedAdminThemeReady = true;
+      matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (preference() === "system") apply();
+      });
+      window.addEventListener("storage", apply);
+      window.addEventListener(eventName, apply);
+      document.addEventListener("astro:after-swap", apply);
+    }
+  })();
+</script>

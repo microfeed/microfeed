@@ -90,6 +90,25 @@ export function runYarnScript(
   });
 }
 
+const FULL_GIT_SHA = /^[0-9a-f]{40}$/u;
+
+export async function repositoryCommitSha(
+  runner: CommandRunner,
+): Promise<string> {
+  const result = await runner(
+    "git",
+    ["rev-parse", "--verify", "HEAD"],
+    {cwd: repositoryRoot},
+  );
+  const sha = result.stdout.trim().toLowerCase();
+  if (!FULL_GIT_SHA.test(sha)) {
+    throw new Error(
+      "Unable to determine the current Git commit for this deployment.",
+    );
+  }
+  return sha;
+}
+
 export function openUrl(
   runner: CommandRunner,
   url: string,

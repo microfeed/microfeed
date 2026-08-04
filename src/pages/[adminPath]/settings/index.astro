@@ -11,9 +11,11 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  title="Settings | microfeed.org"
   activeNavItem={NAV_ITEMS.SETTINGS}
+  documentTitle="Settings | microfeed.org"
+  {feedContent}
   {onboardingResult}
+  pageTitle="Settings"
 >
   <SettingsApp client:only="react" {feedContent} {onboardingResult}>
     <AdminPageFallback slot="fallback" kind="settings" />

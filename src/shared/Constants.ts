@@ -131,6 +131,7 @@ export const PREDEFINED_SUBSCRIBE_METHODS = {
 export const OUR_BRAND = {
   domain: 'microfeed.org',
   brandName: 'microfeed',
+  githubRepository: 'https://github.com/microfeed/microfeed',
   whatsnewEndpoint: 'https://www.microfeed.org/json/',
   whatsnewWebsite: 'https://www.microfeed.org',
   exampleCdnUrl: 'https://media-cdn.microfeed.org',

@@ -1315,6 +1315,7 @@ export class CloudflareClient {
   async deploy(
     config: MicrofeedConfig,
     secretsFile?: string,
+    versionTag?: string,
   ): Promise<string | null> {
     const args = [
       "deploy",
@@ -1324,6 +1325,9 @@ export class CloudflareClient {
     ];
     if (secretsFile) {
       args.push("--secrets-file", secretsFile);
+    }
+    if (versionTag) {
+      args.push("--tag", versionTag);
     }
     const result = await runWrangler(this.runner, args, {
       env: accountEnvironment(cloudflareAccountId(config)),

@@ -26,24 +26,24 @@ const UPLOAD_STATUS__START = 1;
 
 function PreviewCurrentMediaFile({url, contentType, category, durationSecond, sizeByte, setRef, updateDuration}: any) {
   return (<div className="mb-8">
-      <div className="lh-page-subtitle">Current {category}</div>
-      <div className="grid grid-cols-2 gap-4">
-        {category === ENCLOSURE_CATEGORIES.AUDIO && <div className="col-span-1">
+      <div className="mb-2 text-sm font-semibold text-foreground">Current {category}</div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {category === ENCLOSURE_CATEGORIES.AUDIO && <div>
           <audio controls preload="metadata" ref={setRef} onLoadedMetadata={updateDuration}>
             <source src={url} type={contentType}/>
             Your browser does not support the audio element.
           </audio>
         </div>}
-        {category === ENCLOSURE_CATEGORIES.VIDEO && <div className="col-span-1">
+        {category === ENCLOSURE_CATEGORIES.VIDEO && <div>
           <video width="80%" preload="metadata" controls ref={setRef} onLoadedMetadata={updateDuration}>
             <source src={url} type={contentType} />
             Your browser does not support the video tag.
           </video>
         </div>}
-        {category === ENCLOSURE_CATEGORIES.IMAGE && <div className="col-span-1">
+        {category === ENCLOSURE_CATEGORIES.IMAGE && <div>
           <img src={url} alt={contentType} width="80%" />
         </div>}
-        <div className="col-span-1 text-sm">
+        <div className="text-sm">
           <div className="mb-1">
             <span className="text-helper-color">Content type:</span> {contentType}
           </div>
@@ -266,7 +266,7 @@ export default class MediaManager extends React.Component<any, any> {
     const mediaStorageReady = this.props.mediaStorageReady !== false;
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     return (<div>
-      {label && <h2 className="lh-page-title">
+      {label && <h2 className="mb-4 text-lg font-semibold tracking-tight">
         {label}
       </h2>}
       {labelComponent}
