@@ -24,13 +24,23 @@ const {adminPath, breadcrumb, identity, pageTitle, sidebar} = Astro.props;
     <h1 class="truncate text-base font-semibold tracking-tight lg:hidden">{pageTitle}</h1>
     {
       breadcrumb && (
-        <div class="hidden min-w-0 items-center gap-1.5 text-xs text-muted-foreground lg:flex">
-          <a class="font-medium text-muted-foreground hover:text-foreground" href={breadcrumb.url}>
-            {breadcrumb.name}
+        breadcrumb.kind === "back" ? (
+          <a
+            class="hidden min-w-0 items-center gap-1.5 text-sm font-medium !text-muted-foreground hover:!text-foreground lg:inline-flex"
+            href={breadcrumb.url}
+          >
+            <span aria-hidden="true" class="text-base leading-none">←</span>
+            <span class="truncate">{breadcrumb.name}</span>
           </a>
-          <span aria-hidden="true">/</span>
-          <span class="truncate">{breadcrumb.childName}</span>
-        </div>
+        ) : (
+          <div class="hidden min-w-0 items-center gap-1.5 text-xs text-muted-foreground lg:flex">
+            <a class="font-medium text-muted-foreground hover:text-foreground" href={breadcrumb.url}>
+              {breadcrumb.name}
+            </a>
+            <span aria-hidden="true">/</span>
+            <span class="truncate">{breadcrumb.childName}</span>
+          </div>
+        )
       )
     }
   </div>

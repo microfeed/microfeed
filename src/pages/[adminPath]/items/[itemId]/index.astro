@@ -30,9 +30,9 @@ if (missing) {
   onboardingResult={loaded.onboarding}
   pageTitle={missing ? "Item not found" : "Edit item"}
   breadcrumb={{
+    kind: "back",
     name: NAV_ITEMS_DICT[NAV_ITEMS.ALL_ITEMS].name,
     url: adminUrl("items/list", Astro.params.adminPath),
-    childName: `Item (id = ${itemId})`,
   }}
 >
   {

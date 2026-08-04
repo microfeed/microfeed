@@ -254,6 +254,32 @@ describe("source architecture", () => {
     expect(mobileNavigation).toContain('aria-label="Open admin navigation"');
   });
 
+  it("uses a single back link instead of a breadcrumb trail for item editing", async () => {
+    const [topBar, itemEditorRoute] = await Promise.all([
+      readFile(
+        path.join(repositoryRoot, "src", "components", "admin", "AdminTopBar.astro"),
+        "utf8",
+      ),
+      readFile(
+        path.join(
+          repositoryRoot,
+          "src",
+          "pages",
+          "[adminPath]",
+          "items",
+          "[itemId]",
+          "index.astro",
+        ),
+        "utf8",
+      ),
+    ]);
+
+    expect(topBar).toContain('breadcrumb.kind === "back"');
+    expect(topBar).toContain('aria-hidden="true" class="text-base leading-none">←</span>');
+    expect(itemEditorRoute).toContain('kind: "back"');
+    expect(itemEditorRoute).not.toContain("childName:");
+  });
+
   it("targets only authenticated Cloudflare production Workers in update prompts", async () => {
     const adminShell = await readFile(
       path.join(repositoryRoot, "src", "layouts", "AdminShell.astro"),

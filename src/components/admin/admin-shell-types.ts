@@ -1,7 +1,8 @@
 import type {AdminNavigationItem} from "@/shared/AdminNavigation";
 
 export interface AdminBreadcrumb {
-  childName: string;
+  childName?: string;
+  kind?: "back";
   name: string;
   url: string;
 }
