@@ -30,6 +30,7 @@ export default function CodeEditorRouteSelect({
   return (
     <div className={className}>
       <AdminSelect
+        ariaLabel="Code editor route"
         value={selected}
         options={options}
         onChange={(option: (typeof options)[number]) => {

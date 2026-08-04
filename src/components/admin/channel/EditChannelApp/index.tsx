@@ -32,6 +32,7 @@ LANGUAGE_CODES_LIST.forEach((lc: any) => {
   (LANGUAGE_CODES_DICT as any)[lc.code] = {
     code: lc.code,
     value: `${lc.name} ${lc.code}`,
+    textValue: `${lc.name} ${lc.code}`,
     label: <div>
       <div>{lc.name}</div>
       <div className="text-muted-color text-sm">{lc.code}</div>
@@ -197,20 +198,18 @@ export default class EditChannelApp extends React.Component<Props, any> {
                 <div className="grid grid-cols-2 gap-4">
                   <AdminSelect
                     value={categories.map((c: any) => ((CATEGORIES_DICT as any)[c]))}
+                    ariaLabel="Categories"
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.CATEGORIES]}/>}
                     options={CATEGORIES_SELECT_OPTIONS}
                     onChange={(selectedOptions: any) => {
                       this.onUpdateChannelMeta('categories', [...selectedOptions.map((o: any) => o.value)]);
                     }}
-                    extraParams={{
-                      isMulti: true,
-                      isOptionDisabled: () => {
-                        return categories.length >= 3;
-                      },
-                    }}
+                    multiple
+                    isOptionDisabled={() => categories.length >= 3}
                   />
                   <AdminSelect
                     value={(LANGUAGE_CODES_DICT as any)[channel.language]}
+                    ariaLabel="Language"
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.LANGUAGE]}/>}
                     options={LANGUAGE_CODES_SELECT_OPTIONS}
                     onChange={(selected: any) => {

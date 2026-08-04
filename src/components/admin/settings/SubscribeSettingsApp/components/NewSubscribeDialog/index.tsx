@@ -9,8 +9,9 @@ const METHODS_OPTIONS = Object.keys(PREDEFINED_SUBSCRIBE_METHODS).map((key: any)
   const m = (PREDEFINED_SUBSCRIBE_METHODS as any)[key];
   return {
     value: key,
+    textValue: m.name,
     label: <div className="flex items-center">
-      <div className="flex-none mr-2"><img src={m.image} className="w-4"/></div>
+      <div className="flex-none mr-2"><img alt="" src={m.image} className="w-4"/></div>
       <div>{m.name}</div>
     </div>,
   };
@@ -49,6 +50,7 @@ export default class NewSubscribeDialog extends React.Component<any, any> {
         <div>
           <AdminSelect
             label="Please choose a subscribe method:"
+            value={METHODS_OPTIONS.find((option) => option.value === selectedMethod) ?? null}
             options={METHODS_OPTIONS}
             onChange={({value}: any) => {
               const m = (PREDEFINED_SUBSCRIBE_METHODS as any)[value];
