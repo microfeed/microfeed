@@ -1,5 +1,5 @@
 import {CircleArrowRightIcon, CircleCheckIcon} from "lucide-react";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 
 import {showToast} from "@/client/ToastUtils";
 import Requests from "@/client/requests";
@@ -16,7 +16,18 @@ import {
   ADMIN_URLS,
   normalizeR2CustomDomainUrl,
 } from "@/shared/StringUtils";
-import type {AdminProtectionStatus} from "@/types";
+import type {
+  AdminProtectionStatus,
+  FeedContent,
+  OnboardingCheck,
+  OnboardingResult,
+} from "@/types";
+
+function CloudflareValue({children}: {children: React.ReactNode}) {
+  return (
+    <code className="font-semibold text-cloudflare-orange">{children}</code>
+  );
+}
 
 function CheckListItem({
   children,
@@ -34,7 +45,7 @@ function CheckListItem({
         <summary className="cursor-pointer mb-4 font-semibold hover:opacity-50">
           {title}
         </summary>
-        <div className="mb-8 text-helper-color">{children}</div>
+        <div className="mb-8 text-sm text-helper-color">{children}</div>
       </details>
     </div>
   );
@@ -81,7 +92,8 @@ export function AdminProtectionDescription({
         Your dashboard is protected by the built-in email and password login.{" "}
         <CloudflareAccessLink dashboardUrl={dashboardUrl} /> was not detected
         on this request. To add it as an optional second gate, run{" "}
-        <code>yarn manage access</code> from your deployment checkout.
+        <CloudflareValue>yarn manage access</CloudflareValue> from your
+        deployment checkout.
       </>
     );
   }
@@ -103,8 +115,9 @@ export function AdminProtectionDescription({
       <CloudflareAccessLink dashboardUrl={dashboardUrl} /> authentication was
       not detected on this request. Anyone who can reach the admin dashboard
       may be able to change your content. Run{" "}
-      <code>yarn manage auth setup</code> to add a login or{" "}
-      <code>yarn manage access</code> to configure Cloudflare Access.
+      <CloudflareValue>yarn manage auth setup</CloudflareValue> to add a login
+      or <CloudflareValue>yarn manage access</CloudflareValue> to configure
+      Cloudflare Access.
     </>
   );
 }
@@ -129,7 +142,11 @@ export function SiteCustomDomainDescription({
               rel="noopener noreferrer"
               target="_blank"
             >
-              Open the {workerName ?? "Worker"} domain settings
+              Open the{" "}
+              {workerName
+                ? <CloudflareValue>{workerName}</CloudflareValue>
+                : "Worker"}{" "}
+              domain settings
             </a>{" "}
             in Cloudflare to review the hostname for this site.{" "}
           </>
@@ -140,9 +157,10 @@ export function SiteCustomDomainDescription({
             domain settings to review the hostname for this site.{" "}
           </>
         )}
-      To configure or change it safely, run <code>yarn manage domain</code> from
-      your deployment checkout. The command updates the Worker configuration,
-      deploys, and verifies the domain and TLS.
+      To configure or change it safely, run{" "}
+      <CloudflareValue>yarn manage domain</CloudflareValue> from your deployment
+      checkout. The command updates the Worker configuration, deploys, and
+      verifies the domain and TLS.
     </>
   );
 }
@@ -171,9 +189,13 @@ export function MediaDeliveryDescription({
   suggestedUrl,
 }: MediaDeliveryDescriptionProps) {
   const suggestion = suggestedUrl ?? "https://media.example.com/";
+  const normalizedSuggestion = normalizeR2CustomDomainUrl(suggestion);
+  const suggestedHostname = normalizedSuggestion
+    ? new URL(normalizedSuggestion).hostname
+    : "media.example.com";
 
   return (
-    <div className="space-y-4 text-sm">
+    <div className="space-y-4">
       {configured
         ? (
           <p>
@@ -184,7 +206,7 @@ export function MediaDeliveryDescription({
         : (
           <p>
             Uploaded images, audio, video, and documents are currently served
-            through the microfeed Worker. This works, but uncached requests can
+            through the Cloudflare Worker. This works, but uncached requests can
             be slower and can count toward both Worker and R2 billable usage.
           </p>
         )}
@@ -203,7 +225,11 @@ export function MediaDeliveryDescription({
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                Open the {bucketName ?? "R2"} bucket domain settings
+                Open the{" "}
+                {bucketName
+                  ? <CloudflareValue>{bucketName}</CloudflareValue>
+                  : "R2"}{" "}
+                bucket domain settings
               </a>
             )
             : (
@@ -215,15 +241,15 @@ export function MediaDeliveryDescription({
         </li>
         <li>
           Under <strong>Custom Domains</strong>, connect a separate hostname
-          such as <code>{suggestion}</code>, then wait for its status to become
-          Active.
+          such as <CloudflareValue>{suggestedHostname}</CloudflareValue>, then
+          wait for its status to become Active.
         </li>
         <li>Copy that hostname into the field below and save it.</li>
       </ol>
       <p>
-        Do not use the Public Development URL ending in <code>r2.dev</code>.
-        Cloudflare rate-limits that URL and does not provide production edge
-        caching on it.
+        Do not use the Public Development URL ending in{" "}
+        <CloudflareValue>r2.dev</CloudflareValue>. Cloudflare rate-limits that
+        URL and does not provide production edge caching on it.
       </p>
       <form className="space-y-3" onSubmit={onSubmit}>
         <Field data-invalid={Boolean(error)}>
@@ -269,7 +295,9 @@ export function MediaStorageDescription({
     return (
       <>
         R2 media uploads are enabled with bucket{" "}
-        <code>{bucketName ?? "configured for this instance"}</code>.
+        {bucketName
+          ? <CloudflareValue>{bucketName}</CloudflareValue>
+          : "configured for this instance"}.
       </>
     );
   }
@@ -278,8 +306,8 @@ export function MediaStorageDescription({
       <>
         Media uploads are disabled for this instance. Text publishing and
         external URLs continue to work. To opt in later, run{" "}
-        <code>yarn manage deploy --enable-r2</code> from the deployment
-        checkout.
+        <CloudflareValue>yarn manage deploy --enable-r2</CloudflareValue> from
+        the deployment checkout.
       </>
     );
   }
@@ -300,24 +328,34 @@ export function MediaStorageDescription({
         )
         : "Activate R2 in the Cloudflare dashboard"}
       , complete billing setup if Cloudflare requests it, then run{" "}
-      <code>yarn manage deploy --enable-r2</code>.
+      <CloudflareValue>yarn manage deploy --enable-r2</CloudflareValue>.
     </>
   );
 }
 
-export default function SetupChecklistApp({feed, onboardingResult}: any) {
-  const access = onboardingResult.result[
+interface SetupChecklistProps {
+  feed: FeedContent;
+  onboardingResult: OnboardingResult;
+  onCompletionChange?: (complete: boolean) => void;
+}
+
+export default function SetupChecklistApp({
+  feed,
+  onboardingResult,
+  onCompletionChange,
+}: SetupChecklistProps) {
+  const access: OnboardingCheck = onboardingResult.result[
     ONBOARDING_TYPES.PROTECTED_ADMIN_DASHBOARD
-  ];
-  const customDomain = onboardingResult.result[
+  ] ?? {ready: false, required: false};
+  const customDomain: OnboardingCheck = onboardingResult.result[
     ONBOARDING_TYPES.CUSTOM_DOMAIN
-  ];
-  const mediaDomain = onboardingResult.result[
+  ] ?? {ready: false, required: false};
+  const mediaDomain: OnboardingCheck = onboardingResult.result[
     ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
-  ];
-  const mediaStorage = onboardingResult.result[
+  ] ?? {ready: false, required: false};
+  const mediaStorage: OnboardingCheck = onboardingResult.result[
     ONBOARDING_TYPES.MEDIA_STORAGE
-  ] ?? {mediaStorageState: "ready", ready: true};
+  ] ?? {mediaStorageState: "ready", ready: true, required: false};
   const currentMediaUrl = normalizeR2CustomDomainUrl(
     feed.settings?.webGlobalSettings?.publicBucketUrl,
   );
@@ -332,7 +370,7 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
     ready: mediaDomain.ready || mediaDomainSaved,
   };
   const effectiveAllOk = Object.entries(onboardingResult.result).every(
-    ([type, check]: [string, any]) =>
+    ([type, check]) =>
       Number(type) === ONBOARDING_TYPES.VALID_PUBLIC_BUCKET_URL
         ? effectiveMediaDomain.ready
         : check.ready,
@@ -341,6 +379,10 @@ export default function SetupChecklistApp({feed, onboardingResult}: any) {
     builtInLogin: false,
     cloudflareAccess: false,
   };
+
+  useEffect(() => {
+    onCompletionChange?.(effectiveAllOk);
+  }, [effectiveAllOk, onCompletionChange]);
 
   async function saveMediaDomain(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

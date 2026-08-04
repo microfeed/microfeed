@@ -30,8 +30,10 @@ describe("admin password setup routing", () => {
     );
   });
 
-  it("locks the normal dashboard with HTTP 403 before an owner exists", async () => {
-    const response = adminDashboardLockedResponse();
+  it("locks the remote dashboard with actionable setup guidance", async () => {
+    const response = adminDashboardLockedResponse(true, {
+      instanceName: "production-feed",
+    });
 
     expect(response.status).toBe(403);
     expect(response.headers.get("content-type")).toBe(
@@ -40,20 +42,50 @@ describe("admin password setup routing", () => {
     const body = await response.text();
     expect(body).toContain("The admin dashboard is locked");
     expect(body).toContain(
-      `<a href="${ADMIN_DASHBOARD_LOGIN_HELP_URL}">` +
+      "<pre><code>yarn manage auth setup --instance " +
+        "production-feed</code></pre>",
+    );
+    expect(body).not.toContain("yarn manage auth disable");
+    expect(body).toContain(
+      `To learn more about dashboard login: <a href="${ADMIN_DASHBOARD_LOGIN_HELP_URL}">` +
         "Manage the dashboard login</a>",
     );
   });
 
-  it("keeps machine-oriented locked responses as plain text with the help URL", async () => {
-    const response = adminDashboardLockedResponse(false);
+  it("adds a copyable disable command for a local-only instance", async () => {
+    const response = adminDashboardLockedResponse(true, {
+      instanceName: "local",
+      local: true,
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("content-type")).toBe(
+      "text/html; charset=utf-8",
+    );
+    const body = await response.text();
+    expect(body).toContain("The admin dashboard is locked");
+    expect(body).toContain(
+      "<pre><code>yarn manage auth setup --instance local</code></pre>",
+    );
+    expect(body).toContain(
+      "<pre><code>yarn manage auth disable --instance local</code></pre>",
+    );
+    expect(body).toContain(ADMIN_DASHBOARD_LOGIN_HELP_URL);
+  });
+
+  it("keeps machine-oriented locked responses as actionable plain text", async () => {
+    const response = adminDashboardLockedResponse(false, {
+      instanceName: "local",
+      local: true,
+    });
 
     expect(response.status).toBe(403);
     expect(response.headers.get("content-type")).toBe(
       "text/plain; charset=utf-8",
     );
     const body = await response.text();
-    expect(body).toContain("The admin dashboard is locked");
+    expect(body).toContain("yarn manage auth setup --instance local");
+    expect(body).toContain("yarn manage auth disable --instance local");
     expect(body).toContain(ADMIN_DASHBOARD_LOGIN_HELP_URL);
   });
 });

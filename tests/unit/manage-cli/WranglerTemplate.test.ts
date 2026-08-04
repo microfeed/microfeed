@@ -54,6 +54,7 @@ describe("Wrangler configuration template", () => {
     expect(config.vars?.MICROFEED_CLOUDFLARE_ACCOUNT_ID).toBe(
       "__CLOUDFLARE_ACCOUNT_ID__",
     );
+    expect(config.vars?.MICROFEED_INSTANCE_NAME).toBe("__INSTANCE_NAME__");
     expect(config.vars?.MICROFEED_R2_BUCKET_NAME).toBe(
       "__R2_BUCKET_NAME__",
     );

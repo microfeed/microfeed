@@ -728,7 +728,8 @@ yarn manage access [--instance <name>] [--preview] [--open]
 **Purpose:** Set up or change the built-in dashboard login and path.
 
 **Changes:** Updates administrator credentials, configuration, D1 rows, and
-sometimes redeploys the Worker.
+sometimes redeploys the Worker. Local-only disable changes only saved
+configuration and its generated Wrangler file.
 
 Manage the built-in administrator login and path.
 
@@ -742,7 +743,7 @@ yarn manage auth <setup|reset-password|change-email|change-path|disable> [option
 | `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. |
 | `change-email` | Update the administrator email and revoke existing sessions. |
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
-| `disable` | Disable built-in protection after a high-visibility warning; may make the dashboard public. |
+| `disable` | Disable built-in protection after a high-visibility warning. Locally, the development dashboard opens without login; remotely, the dashboard may become public. |
 
 Without an action, `yarn manage auth` prints its subcommand usage, options, and
 examples. It does not select an instance, inspect authentication state, or
@@ -756,9 +757,13 @@ dashboard location, and the selected action. Cloudflare targets also show the
 Worker name. Check this summary before entering an email or password.
 
 A saved local-only instance is detected automatically after an action is
-selected. It supports `setup`, `change-email`, and `reset-password`. Changing
-the dashboard path or disabling login remains remote-only. Remote `setup` does
-not redeploy when built-in login is already active.
+selected. It supports `setup`, `change-email`, `reset-password`, and `disable`.
+Local disable keeps the existing account, credentials, D1 data, and R2 data,
+then regenerates the instance configuration; restart its development server if
+it is running. Changing the dashboard path remains remote-only. A
+Cloudflare-connected site's local sandbox cannot override the saved production
+authentication mode. Remote `setup` does not redeploy when built-in login is
+already active.
 
 Target selection follows the saved instance type:
 
@@ -793,9 +798,14 @@ yarn manage auth change-email \
 
 yarn manage auth reset-password \
   --instance microfeed-org-local
+
+yarn manage auth disable \
+  --instance microfeed-org-local
 ```
 
 Local password reset always uses hidden password and confirmation prompts.
+Local disable shows a warning unless `--yes` is supplied and does not query or
+modify the simulated D1 or R2 data.
 
 ## `yarn manage config`
 

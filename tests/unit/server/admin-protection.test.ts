@@ -2,7 +2,7 @@ import React from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
 
-import {
+import SetupChecklistApp, {
   AdminProtectionDescription,
   MediaDeliveryDescription,
   MediaStorageDescription,
@@ -129,6 +129,32 @@ describe("dashboard protection detection", () => {
 });
 
 describe("media delivery onboarding", () => {
+  it("uses compact text for every checklist detail", () => {
+    const onboardingResult = new OnboardingChecker(
+      new Request("https://feed.example.com/admin/"),
+      {builtInLogin: true, cloudflareAccess: false},
+      {
+        publicBucketUrl: "https://media.example.com/",
+        r2BucketName: "microfeed-example-media",
+        workerName: "microfeed-example-worker",
+      },
+    ).getResult();
+    const output = renderToStaticMarkup(
+      React.createElement(SetupChecklistApp, {
+        feed: {
+          settings: {
+            webGlobalSettings: {
+              publicBucketUrl: "https://media.example.com/",
+            },
+          },
+        },
+        onboardingResult,
+      }),
+    );
+
+    expect(output.match(/mb-8 text-sm text-helper-color/gu)).toHaveLength(4);
+  });
+
   it.each([
     {setupMode: "automatic" as const, state: "pending" as const},
     {setupMode: "disabled" as const, state: "disabled" as const},
@@ -238,7 +264,17 @@ describe("media delivery onboarding", () => {
     );
 
     expect(output).toContain(`href="${dashboardUrl}"`);
-    expect(output).toContain("Open the media bucket domain settings");
+    expect(output).toContain(
+      'Open the <code class="font-semibold text-cloudflare-orange">' +
+        "media</code> bucket domain settings",
+    );
+    expect(output).toContain(
+      'such as <code class="font-semibold text-cloudflare-orange">' +
+        "media.feed.example.com</code>",
+    );
+    expect(output).not.toContain(
+      "such as <code>https://media.feed.example.com/</code>",
+    );
     expect(output).toContain("both Worker and R2 billable usage");
     expect(output).toContain("Do not use the Public Development URL");
   });
@@ -280,8 +316,14 @@ describe("Cloudflare onboarding links", () => {
     );
 
     expect(output).toContain(`href="${dashboardUrl}"`);
-    expect(output).toContain("Open the demo-worker domain settings");
-    expect(output).toContain("yarn manage domain");
+    expect(output).toContain(
+      'Open the <code class="font-semibold text-cloudflare-orange">' +
+        "demo-worker</code> domain settings",
+    );
+    expect(output).toContain(
+      '<code class="font-semibold text-cloudflare-orange">' +
+        "yarn manage domain</code>",
+    );
   });
 });
 

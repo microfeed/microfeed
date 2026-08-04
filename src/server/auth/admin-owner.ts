@@ -1,3 +1,5 @@
+import {escapeHtml} from "@/shared/StringUtils";
+
 export interface AdminOwner {
   email: string;
   id: string;
@@ -8,6 +10,23 @@ export const ADMIN_DASHBOARD_LOGIN_HELP_URL =
 
 const ADMIN_DASHBOARD_LOCKED_MESSAGE =
   "The admin dashboard is locked until its owner creates a password.";
+
+interface AdminDashboardLockedOptions {
+  instanceName?: string;
+  local?: boolean;
+}
+
+function dashboardAuthCommand(
+  action: "disable" | "setup",
+  instanceName?: string,
+): string {
+  const normalizedInstanceName = instanceName?.trim();
+  const instanceOption = normalizedInstanceName &&
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(normalizedInstanceName)
+    ? ` --instance ${normalizedInstanceName}`
+    : "";
+  return `yarn manage auth ${action}${instanceOption}`;
+}
 
 export async function adminOwner(
   database: D1Database,
@@ -26,7 +45,12 @@ export async function hasAdminOwner(
 
 export function adminDashboardLockedResponse(
   html = true,
+  options: AdminDashboardLockedOptions = {},
 ): Response {
+  const setupCommand = dashboardAuthCommand("setup", options.instanceName);
+  const disableCommand = options.local
+    ? dashboardAuthCommand("disable", options.instanceName)
+    : undefined;
   const body = html
     ? `<!doctype html>
 <html lang="en">
@@ -39,13 +63,25 @@ export function adminDashboardLockedResponse(
     <main>
       <h1>Admin dashboard locked</h1>
       <p>${ADMIN_DASHBOARD_LOCKED_MESSAGE}</p>
-      <p><a href="${ADMIN_DASHBOARD_LOGIN_HELP_URL}">Manage the dashboard login</a></p>
+      <p>Set up the administrator email and password by running this command from your microfeed checkout:</p>
+      <pre><code>${escapeHtml(setupCommand)}</code></pre>
+      ${disableCommand
+        ? `<p>For this local instance, you can instead disable dashboard authentication:</p>
+      <pre><code>${escapeHtml(disableCommand)}</code></pre>
+      `
+        : ""}<p>To learn more about dashboard login: <a href="${ADMIN_DASHBOARD_LOGIN_HELP_URL}">Manage the dashboard login</a></p>
     </main>
   </body>
 </html>
 `
     : `${ADMIN_DASHBOARD_LOCKED_MESSAGE}\n\n` +
-      `Manage the dashboard login: ${ADMIN_DASHBOARD_LOGIN_HELP_URL}\n`;
+      "Set up the administrator email and password:\n" +
+      `${setupCommand}\n` +
+      (disableCommand
+        ? "\nFor this local instance, you can instead disable dashboard " +
+          `authentication:\n${disableCommand}\n`
+        : "") +
+      `\nTo learn more about dashboard login: ${ADMIN_DASHBOARD_LOGIN_HELP_URL}\n`;
   return new Response(body, {
     headers: {
       "content-type": html

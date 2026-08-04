@@ -24,6 +24,7 @@ declare global {
     MICROFEED_ADMIN_PATH?: string;
     MICROFEED_CLOUDFLARE_ACCOUNT_ID?: string;
     MICROFEED_INSTANCE_ID?: string;
+    MICROFEED_INSTANCE_NAME?: string;
     MICROFEED_R2_BUCKET_NAME?: string;
     MICROFEED_R2_SETUP_MODE?: "automatic" | "disabled";
     MICROFEED_WORKER_NAME?: string;
@@ -42,6 +43,7 @@ declare global {
       MICROFEED_ADMIN_PATH?: string;
       MICROFEED_CLOUDFLARE_ACCOUNT_ID?: string;
       MICROFEED_INSTANCE_ID?: string;
+      MICROFEED_INSTANCE_NAME?: string;
       MICROFEED_R2_BUCKET_NAME?: string;
       MICROFEED_R2_SETUP_MODE?: "automatic" | "disabled";
       MICROFEED_WORKER_NAME?: string;

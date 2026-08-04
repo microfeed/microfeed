@@ -40,7 +40,7 @@ export default class WhatsNewApp extends React.Component<any, any> {
         </div> : <div className="grid grid-cols-1 gap-4">
           {items.map((item: any) => (<div key={`item-${item.id}`}>
             <div>
-              <a href={item._microfeed.web_url} target="_blank" rel="noopener noreferrer">{item.title}</a>
+              <a className="font-normal" href={item._microfeed.web_url} target="_blank" rel="noopener noreferrer">{item.title}</a>
             </div>
             <div className="text-xs text-muted-color mt-1">
               {item._microfeed.date_published_short}
