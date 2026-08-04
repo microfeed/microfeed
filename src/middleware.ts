@@ -10,6 +10,7 @@ import {
 } from "@/shared/AdminPath";
 import {SETTINGS_CATEGORIES, STATUSES} from "@/shared/Constants";
 import {itemQueryForStatusFilter} from "@/shared/ItemList";
+import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import {
   canonicalPathname,
   resolvePublicBucketUrl,
@@ -195,10 +196,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const editingExistingItem = isExistingItemEditorPath(pathname, adminPath);
     if (!editingExistingItem) {
       let query;
+      let itemsOrder;
+      let itemsSort;
       if (pathname.startsWith(adminUrl("items/list", adminPath))) {
         query = itemQueryForStatusFilter(
           context.url.searchParams.get("status"),
         );
+        itemsOrder = ITEM_ORDERS.DESC;
+        itemsSort = ITEM_SORTS.UPDATED_AT;
       } else if (
         pathname.startsWith(adminUrl("feed/json", adminPath))
       ) {
@@ -213,6 +218,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
         context.request,
         {
           adminProtection: protection,
+          itemsOrder,
+          itemsSort,
           ...(query
             ? {
                 limit: pathname.startsWith(

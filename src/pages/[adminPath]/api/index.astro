@@ -1,6 +1,6 @@
 ---
-import SettingsApp from "@/components/admin/settings/SettingsApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import ApiSettingsApp from "@/components/admin/settings/ApiSettingsApp";
 import {NAV_ITEMS} from "@/shared/Constants";
 import AdminShell from "../../../layouts/AdminShell.astro";
 
@@ -11,14 +11,15 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  activeNavItem={NAV_ITEMS.SETTINGS}
-  documentTitle="Settings | microfeed.org"
+  activeNavItem={NAV_ITEMS.API}
+  documentTitle="API | microfeed.org"
   {feedContent}
   {onboardingResult}
-  pageTitle="Settings"
-  settingsNavigation
+  pageTitle="API"
 >
-  <SettingsApp client:only="react" {feedContent} {onboardingResult}>
-    <AdminPageFallback slot="fallback" kind="settings" />
-  </SettingsApp>
+  <div class="mx-auto max-w-5xl">
+    <ApiSettingsApp client:only="react" feed={feedContent}>
+      <AdminPageFallback slot="fallback" kind="settings" />
+    </ApiSettingsApp>
+  </div>
 </AdminShell>

@@ -12,10 +12,10 @@ export const CONTROLS_TEXTS_DICT = {
     json: '{ "_microfeed": { "subscribe_methods": [{"name": "RSS", "type": "rss", "url": "https://www.microfeed.org/rss/"}] } }',
   },
   [SETTINGS_CONTROLS.ITEMS_SORT_ORDER]: {
-    linkName: 'Sort order',
-    modalTitle: 'Items sort order',
-    text: "Sort order of items in the feed: Newest first, or Oldest first?",
+    linkName: 'Sort by',
+    modalTitle: 'Items sorting',
+    text: "Choose which item timestamp controls the feed order.",
     rss: null,
-    json: '{ "_microfeed": { "items_sort_order": "newest_first" }',
+    json: '{ "_microfeed": { "items_sort": "published_at", "items_order": "desc" } }',
   },
 };

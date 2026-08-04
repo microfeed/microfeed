@@ -2,6 +2,7 @@ import {XMLBuilder} from "fast-xml-parser";
 import {PUBLIC_URLS, secondsToHHMMSS} from "@/shared/StringUtils";
 import {msToUtcString} from "@/shared/TimeUtils";
 import {OUR_BRAND} from "@/shared/Constants";
+import {buildItemPaginationUrl} from "@/shared/ItemPagination";
 
 export default class FeedPublicRssBuilder {
   [member: string]: any;
@@ -102,19 +103,39 @@ export default class FeedPublicRssBuilder {
     if (this.jsonData.home_page_url) {
       linksTags.push(this.jsonData.home_page_url);
     }
-    if (this.jsonData._microfeed.items_next_cursor) {
-      const {items_next_cursor, items_sort_order} = this.jsonData._microfeed;
+    if (this.jsonData._microfeed.items_next_cursor !== undefined) {
+      const {
+        items_next_cursor,
+        items_order,
+        items_sort,
+        items_sort_order,
+      } = this.jsonData._microfeed;
       linksTags.push({
         '@_rel': 'next',
-        '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?next_cursor=${items_next_cursor}&sort=${items_sort_order}`,
+        '@_href': buildItemPaginationUrl(PUBLIC_URLS.rssFeed(this.baseUrl), {
+          legacySort: items_sort_order,
+          nextCursor: items_next_cursor,
+          order: items_order,
+          sort: items_sort,
+        }),
         '@_type': 'application/rss+xml',
       });
     }
-    if (this.jsonData._microfeed.items_prev_cursor) {
-      const {items_prev_cursor, items_sort_order} = this.jsonData._microfeed;
+    if (this.jsonData._microfeed.items_prev_cursor !== undefined) {
+      const {
+        items_order,
+        items_prev_cursor,
+        items_sort,
+        items_sort_order,
+      } = this.jsonData._microfeed;
       linksTags.push({
         '@_rel': 'prev',
-        '@_href': `${PUBLIC_URLS.rssFeed(this.baseUrl)}?prev_cursor=${items_prev_cursor}&sort=${items_sort_order}`,
+        '@_href': buildItemPaginationUrl(PUBLIC_URLS.rssFeed(this.baseUrl), {
+          legacySort: items_sort_order,
+          order: items_order,
+          prevCursor: items_prev_cursor,
+          sort: items_sort,
+        }),
         '@_type': 'application/rss+xml',
       });
     }

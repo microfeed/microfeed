@@ -26,7 +26,7 @@ tags:
       Endpoints to do CRUD operations on the microfeed instance, e.g.,
       create a new item, update an existing item, delete an item, upload media files...
       You need to use your microfeed instance's API key to access these endpoints.
-      You can find your microfeed instance's API key at the API section of {{baseUrl}}{{adminBasePath}}settings/.
+      You can find your microfeed instance's API key at {{baseUrl}}{{adminBasePath}}api/.
 paths:
   /json:
     get:
@@ -41,24 +41,10 @@ paths:
         {{adminBasePath}}settings/code-editor/?type=themes&theme=custom#webFeed
       operationId: fetchFeedJson
       parameters:
-        - name: next_cursor
-          in: query
-          description: |
-            Offset for items, for pagination. You'll use **next_cursor** from response for this parameter.
-          required: false
-          schema:
-            type: integer
-            example: 1672707197212
-        - name: sort
-          in: query
-          description: |
-            How do you want to sort these items?
-          required: false
-          schema:
-            type: string
-            example: newest_first
-            default: newest_first
-            enum: [ "newest_first", "oldest_first" ]
+        - $ref: '#/components/parameters/itemsNextCursorParam'
+        - $ref: '#/components/parameters/itemsPrevCursorParam'
+        - $ref: '#/components/parameters/itemsSortParam'
+        - $ref: '#/components/parameters/itemsOrderParam'
       responses:
         200:
           description: Success response.
@@ -67,8 +53,9 @@ paths:
               operationId: fetchFeedJson
               parameters:
                 next_cursor: $response.body#/_microfeed/items_next_cursor
-                sort: $response.body#/_microfeed/items_sort_order
-              description: Pagination through items.
+                sort: $response.body#/_microfeed/items_sort
+                order: $response.body#/_microfeed/items_order
+              description: Canonical pagination through items. Legacy clients can follow next_url.
           content:
             application/json:
               schema:
@@ -240,6 +227,10 @@ paths:
       operationId: apiFetchFeed
       parameters:
       - $ref: '#/components/parameters/apiKeyParam'
+      - $ref: '#/components/parameters/itemsNextCursorParam'
+      - $ref: '#/components/parameters/itemsPrevCursorParam'
+      - $ref: '#/components/parameters/itemsSortParam'
+      - $ref: '#/components/parameters/itemsOrderParam'
       responses:
         200:
           description: Success response.
@@ -248,8 +239,9 @@ paths:
               operationId: apiFetchFeed
               parameters:
                 next_cursor: $response.body#/_microfeed/items_next_cursor
-                sort: $response.body#/_microfeed/items_sort_order
-              description: Pagination through items.
+                sort: $response.body#/_microfeed/items_sort
+                order: $response.body#/_microfeed/items_order
+              description: Canonical pagination through items. Legacy clients can follow next_url.
           content:
             application/json:
               schema:
@@ -316,7 +308,7 @@ components:
       explode: false
       schema:
         type: string
-      description: "Get API Key on {{baseUrl}}{{adminBasePath}}settings/"
+      description: "Get API Key on {{baseUrl}}{{adminBasePath}}api/"
     itemIdParam:
       name: id
       in: path
@@ -327,6 +319,58 @@ components:
       schema:
         type: string
       example: GOwipulXxh9
+    itemsNextCursorParam:
+      name: next_cursor
+      in: query
+      description: |
+        Fetch the page after this cursor. Canonical cursors are unpadded Base64URL-encoded
+        JSON tuples in the form `[timestampMs, itemId]`. Explicit legacy sort values use
+        numeric published timestamps. If next_cursor and prev_cursor are both supplied,
+        next_cursor takes precedence. Malformed or mode-incompatible cursors are ignored.
+      required: false
+      schema:
+        type: string
+      example: WzE2NzI3MDcxOTcyMTIsIml0ZW0tYSJd
+    itemsPrevCursorParam:
+      name: prev_cursor
+      in: query
+      description: |
+        Fetch the page before this cursor. It uses the same canonical or legacy encoding
+        as next_cursor.
+      required: false
+      schema:
+        type: string
+      example: WzE2NzI3MDcxOTcyMTIsIml0ZW0tYSJd
+    itemsSortParam:
+      name: sort
+      in: query
+      description: |
+        Timestamp used to sort items. `published_at`, `created_at`, and `updated_at` use
+        deterministic canonical pagination. Deprecated `newest_first` and `oldest_first`
+        values preserve numeric published-timestamp cursors for backward compatibility.
+      required: false
+      schema:
+        type: string
+        default: published_at
+        enum:
+          - published_at
+          - created_at
+          - updated_at
+          - newest_first
+          - oldest_first
+      example: published_at
+    itemsOrderParam:
+      name: order
+      in: query
+      description: |
+        Canonical sort direction. Defaults to descending and is ignored when sort is the
+        deprecated newest_first or oldest_first value.
+      required: false
+      schema:
+        type: string
+        default: desc
+        enum: [ "asc", "desc" ]
+      example: desc
   schemas:
     FeedJson:
       type: object
@@ -369,7 +413,7 @@ components:
           description: |
             The URL of a feed that provides the next n items, where n is defined in {{adminBasePath}}settings/.
             This allows for pagination.
-          example: https://my-website.com/json/?next_cursor=1672707197212&sort=newest_first
+          example: "https://my-website.com/json/?next_cursor=WzE2NzI3MDcxOTcyMTIsIml0ZW0tYSJd&sort=published_at&order=desc"
         icon:
           type: string
           description: |
@@ -398,7 +442,9 @@ components:
           type: array
           description: |
             The first n items in the feed.
-            The sort order is determined by _microfeed.items_sort_order.
+            Canonical sorting is described by _microfeed.items_sort and
+            _microfeed.items_order. Explicit legacy requests instead expose the
+            deprecated _microfeed.items_sort_order field.
             Please follow the next_url field to see next page of items.
           items:
             $ref: "#/components/schemas/ItemJson"
@@ -584,20 +630,48 @@ components:
             - episodic
             - serial
           default: episodic
+        items_sort:
+          type: string
+          description: The timestamp key used by canonical pagination.
+          enum:
+            - published_at
+            - created_at
+            - updated_at
+          default: published_at
+        items_order:
+          type: string
+          description: The direction used by canonical pagination.
+          enum:
+            - asc
+            - desc
+          default: desc
         items_sort_order:
-          type: string,
+          type: string
+          deprecated: true
           description: |
-            The sort order of items.
+            Legacy published timestamp sorting. This field is returned only when the
+            request explicitly uses sort=newest_first or sort=oldest_first.
           enum:
             - newest_first
             - oldest_first
-          default: newest_first
         items_next_cursor:
-          type: string
+          oneOf:
+            - type: string
+            - type: integer
           description: |
-            This data field is for pagination through items.
-            You can pass a next_cursor=[items_next_cursor] query string to feed_url to fetch next page of items.
-          example: 1672705853661
+            Cursor for the next page. Canonical responses use an unpadded Base64URL JSON
+            tuple `[timestampMs, itemId]`; explicit legacy responses use a numeric timestamp.
+        items_prev_cursor:
+          oneOf:
+            - type: string
+            - type: integer
+          description: Cursor for the previous page, using the active pagination mode.
+        next_url:
+          type: string
+          description: Fully escaped URL for the next page, including the active mode.
+        prev_url:
+          type: string
+          description: Fully escaped URL for the previous page, including the active mode.
         "itunes:block":
           type: boolean
           description: |

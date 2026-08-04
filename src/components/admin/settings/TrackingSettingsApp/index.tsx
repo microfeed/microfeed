@@ -1,5 +1,6 @@
 import React from 'react';
 import AdminTextarea from "@/components/admin/shared/AdminTextarea";
+import {Button} from "@/components/ui/button";
 import {buildAudioUrlWithTracking} from "@/shared/StringUtils";
 import SettingsBase from '../SettingsBase';
 import {SETTINGS_CATEGORIES} from "@/shared/Constants";
@@ -17,25 +18,23 @@ export default class TrackingSettingsApp extends React.Component<any, any> {
     }
     this.state = {
       trackingUrls,
+      savedTrackingUrls: trackingUrls,
       currentType,
     };
   }
 
   render() {
-    const {trackingUrls, currentType} = this.state;
+    const {trackingUrls, savedTrackingUrls, currentType} = this.state;
     const {submitting, submitForType, setChanged} = this.props;
     const urls = trackingUrls.trim() !== '' ? trackingUrls.trim().split(/\n/) : [];
+    const changed = trackingUrls !== savedTrackingUrls;
+    const submittingForThis = submitForType === currentType;
     const exampleAudio = 'https://example.com/audio.mp3';
     return (<SettingsBase
       title="Tracking urls"
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
-      onSubmit={(e: any) => {
-        this.props.onSubmit(e, currentType, {
-          urls,
-        });
-      }}
     >
       <div>
         <AdminTextarea
@@ -53,6 +52,23 @@ export default class TrackingSettingsApp extends React.Component<any, any> {
           Example: if an audio url is {exampleAudio}, then the final url in the rss feed will be:
         </div>
         <b>{buildAudioUrlWithTracking(exampleAudio, urls)}</b>
+      </div>}
+      {changed && <div className="mt-5 flex justify-end">
+        <Button
+          disabled={submittingForThis || submitting}
+          type="button"
+          onClick={(e: any) => {
+            const submittedTrackingUrls = trackingUrls;
+            void Promise.resolve(this.props.onSubmit(e, currentType, {urls}))
+              .then((updated) => {
+                if (updated) {
+                  this.setState({savedTrackingUrls: submittedTrackingUrls});
+                }
+              });
+          }}
+        >
+          {submittingForThis ? 'Updating...' : 'Update'}
+        </Button>
       </div>}
     </SettingsBase>);
   }

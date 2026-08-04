@@ -1,53 +1,45 @@
 import {randomShortUUID} from "@/shared/StringUtils";
 import {
   STATUSES, PREDEFINED_SUBSCRIBE_METHODS,
-  SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE,
+  SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE,
 } from '@/shared/Constants';
 import {msToRFC3339, rfc3399ToMs} from "@/shared/TimeUtils";
+import {
+  encodeItemCursor,
+  ITEM_ORDERS,
+  ITEM_SORTS,
+  type ItemOrder,
+  type ItemSort,
+  resolveItemPagination,
+  resolveItemPaginationSettings,
+  type ResolvedItemPagination,
+} from "@/shared/ItemPagination";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
 
 /**
  * support url query parameters:
- * - next_cursor: pub_date in milliseconds
- * - prev_cursor: pub_date in milliseconds
- * - sort: "oldest_first", or "newest_first" (default).
+ * Canonical pagination uses sort=created_at|updated_at|published_at,
+ * order=asc|desc, and Base64URL [timestamp, item ID] cursors. Explicit legacy
+ * sort=newest_first|oldest_first requests keep numeric published timestamps.
  *
  * if next_cursor and prev_cursor co-exist, we choose next_cursor and ignore prev_cursor
  *
- * Example: /json/?next_cursor=1669249854169&sort=oldest_first
+ * Example: /json/?sort=published_at&order=desc
  */
 export function getFetchItemsParams(
   request: Request,
   queryKwargs: Record<string, any> = {},
   limit: number | null = null,
+  defaultSort?: ItemSort,
+  defaultOrder?: ItemOrder,
 ) {
-  const fetchItems = {
+  return {
+    defaultOrder,
+    defaultSort,
     queryKwargs,
-    fromUrl: {},
     limit,
+    searchParams: new URL(request.url).searchParams,
   };
-
-  const { searchParams } = new URL(request.url)
-  const nextCursor = searchParams.get('next_cursor');
-  const prevCursor = searchParams.get('prev_cursor');
-  const sortOrder = searchParams.get('sort');
-  if (sortOrder) {
-    (fetchItems.fromUrl as any).sortOrder = sortOrder;
-  }
-  if (nextCursor) {
-    try {
-      (fetchItems.fromUrl as any).nextCursor = parseInt(nextCursor, 10);
-    } catch (error) {
-      console.log(error);
-    }
-  } else if (prevCursor) {
-    try {
-      (fetchItems.fromUrl as any).prevCursor = parseInt(prevCursor, 10);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  return fetchItems;
 }
 
 function getSettingJson(settingObj: any) {
@@ -67,9 +59,11 @@ function getChannelJson(channelObj: any) {
 
 function getItemJson(itemObj: any) {
   return {
+    createdAtMs: rfc3399ToMs(itemObj.created_at),
     id: itemObj.id,
     status: itemObj.status,
     pubDateMs: rfc3399ToMs(itemObj.pub_date),
+    updatedAtMs: rfc3399ToMs(itemObj.updated_at),
     ...JSON.parse(itemObj.data)
   };
 }
@@ -124,9 +118,10 @@ export default class FeedDb {
   }
 
   getUpsertSql(table: any, primaryKey: any, queryKwargs: any, keyValuePairs: any) {
+    const timestamp = (new Date()).toISOString();
     let updateSql = 'UPDATE SET';
     const setList = ['updated_at = ?'];
-    const updateBindList = [(new Date()).toISOString()];
+    const updateBindList = [timestamp];
     Object.keys(keyValuePairs).forEach((key: any) => {
       setList.push(`${key} = ?`);
       updateBindList.push(keyValuePairs[key]);
@@ -134,7 +129,12 @@ export default class FeedDb {
     updateSql = `${updateSql} ${setList.join(', ')}`;
 
     let insertSql = `INSERT INTO ${table}`;
-    const insertKeyValuePairs = {...queryKwargs, ...keyValuePairs};
+    const insertKeyValuePairs = {
+      created_at: timestamp,
+      updated_at: timestamp,
+      ...queryKwargs,
+      ...keyValuePairs,
+    };
     const colList = Object.keys(insertKeyValuePairs)
     const insertBindList = Object.values(insertKeyValuePairs);
     const placeholderList = insertBindList.map(() => '?');
@@ -158,7 +158,8 @@ export default class FeedDb {
           'url': '/assets/default/favicon.png',
           'contentType': 'image/png',
         },
-        'itemsSortOrder': ITEMS_SORT_ORDERS.NEWEST_FIRST,
+        'itemsOrder': ITEM_ORDERS.DESC,
+        'itemsSort': ITEM_SORTS.PUBLISHED_AT,
         'itemsPerPage': DEFAULT_ITEMS_PER_PAGE,
       },
       [SETTINGS_CATEGORIES.ACCESS]: {
@@ -223,7 +224,10 @@ export default class FeedDb {
    *      }
    *   ]
    */
-  async _getContent(things: any, sortOrder?: any, fromUrl?: any) {
+  async _getContent(
+    things: any,
+    pagination?: ResolvedItemPagination,
+  ) {
     const batchStatements: any[] = [];
     things.forEach((thing: any) => {
       let sql = `SELECT * FROM ${thing.table}`;
@@ -248,6 +252,16 @@ export default class FeedDb {
       }
       if (whereList.length > 0) {
         sql = `${sql} WHERE ${whereList.join(' AND ')}`;
+      }
+      if (thing.cursor) {
+        const cursorClause = `(${thing.cursor.column} ${thing.cursor.timestampOp} ? OR (` +
+          `${thing.cursor.column} == ? AND id ${thing.cursor.idOp} ?))`;
+        sql = `${sql}${whereList.length > 0 ? " AND" : " WHERE"} ${cursorClause}`;
+        bindList.push(
+          thing.cursor.timestamp,
+          thing.cursor.timestamp,
+          thing.cursor.id,
+        );
       }
       if (thing.orderBy && thing.orderBy.length > 0) {
         sql = `${sql} ORDER BY ${thing.orderBy.join(',')}`
@@ -277,26 +291,46 @@ export default class FeedDb {
           }
         });
       } else if (thing.table === 'items') {
-        let nextCursor;
-        let prevCursor: any;
-        (contentJson as any)['items'] = response.results.map((result: any) => getItemJson(result));
-        if (sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST) {
-          (contentJson as any)['items'].sort((a: any, b: any) => (b.pubDateMs - a.pubDateMs));
-        } else {
-          (contentJson as any)['items'].sort((a: any, b: any) => (a.pubDateMs - b.pubDateMs));
+        const hasLookahead = thing.pageLimit !== undefined &&
+          response.results.length > thing.pageLimit;
+        const pageResults = hasLookahead
+          ? response.results.slice(0, thing.pageLimit)
+          : response.results;
+        (contentJson as any)['items'] = pageResults.map((result: any) => getItemJson(result));
+        if (pagination?.prevCursor !== undefined) {
+          (contentJson as any)['items'].reverse();
         }
-        (contentJson as any)['items'].forEach((itemJson: any) => {
-          nextCursor = itemJson.pubDateMs;
-          if (!prevCursor) {
-            prevCursor = itemJson.pubDateMs;
-          }
-        });
 
-        if (thing.limit <= (contentJson as any)['items'].length) {
-          (contentJson as any)['items_next_cursor'] = nextCursor;
+        const hasItems = (contentJson as any)['items'].length > 0;
+        const requestedNextPage = pagination?.nextCursor !== undefined;
+        const requestedPreviousPage = pagination?.prevCursor !== undefined;
+        const hasNextPage = hasItems && (
+          requestedPreviousPage ||
+          (!requestedPreviousPage && hasLookahead)
+        );
+        const hasPreviousPage = hasItems && (
+          requestedNextPage ||
+          (requestedPreviousPage && hasLookahead)
+        );
+        const firstItem = (contentJson as any)['items'][0];
+        const lastItem = (contentJson as any)['items'].at(-1);
+        const cursorForItem = (item: any) => pagination?.mode === "legacy"
+          ? item?.pubDateMs
+          : encodeItemCursor(
+            item?.[pagination?.timestampKey ?? "pubDateMs"],
+            item?.id,
+          );
+        if (hasNextPage) {
+          (contentJson as any)['items_next_cursor'] = cursorForItem(lastItem);
         }
-        if (fromUrl.nextCursor || fromUrl.prevCursor) {
-          (contentJson as any)['items_prev_cursor'] = prevCursor;
+        if (hasPreviousPage) {
+          (contentJson as any)['items_prev_cursor'] = cursorForItem(firstItem);
+        }
+        if (pagination?.mode === "legacy") {
+          (contentJson as any)['items_sort_order'] = pagination.legacySort;
+        } else if (pagination) {
+          (contentJson as any)['items_sort'] = pagination.sort;
+          (contentJson as any)['items_order'] = pagination.order;
         }
       }
     }
@@ -328,30 +362,55 @@ export default class FeedDb {
     if (fetchItems) {
       const webGlobalSettings = (contentJson as any).settings.webGlobalSettings || {};
 
-      const fromUrl = fetchItems.fromUrl || {};
-      const queryKwargs = fetchItems.queryKwargs || {};
-      const sortOrder = fromUrl.sortOrder || webGlobalSettings.itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
-      const {nextCursor, prevCursor} = fromUrl;
-
-      let orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ?
-        ['pub_date desc', 'id'] : ['pub_date', 'id'];
-      if (nextCursor) {
-        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__<' : 'pub_date__>';
+      const savedPagination = resolveItemPaginationSettings(webGlobalSettings);
+      const pagination = resolveItemPagination(
+        fetchItems.searchParams ?? new URLSearchParams(),
+        {
+          order: fetchItems.defaultOrder ?? savedPagination.itemsOrder,
+          sort: fetchItems.defaultSort ?? savedPagination.itemsSort,
+        },
+      );
+      const queryKwargs = {...(fetchItems.queryKwargs || {})};
+      const requestedCursor = pagination.nextCursor ?? pagination.prevCursor;
+      const previousPage = pagination.prevCursor !== undefined;
+      const displayDescending = pagination.order === ITEM_ORDERS.DESC;
+      const queryDescending = previousPage
+        ? !displayDescending
+        : displayDescending;
+      const queryDirection = queryDescending ? "desc" : "asc";
+      const cursorDirection = previousPage
+        ? displayDescending ? ">" : "<"
+        : displayDescending ? "<" : ">";
+      const orderBy = pagination.mode === "legacy"
+        ? [
+            `${pagination.column} ${queryDirection}`,
+            `id ${previousPage ? "desc" : "asc"}`,
+          ]
+        : [
+            `${pagination.column} ${queryDirection}`,
+            `id ${queryDirection}`,
+          ];
+      let cursor;
+      if (requestedCursor !== undefined) {
         try {
-          queryKwargs[queryParam] = msToRFC3339(nextCursor);
-        } catch (error) {
-          console.log(error);
-        }
-      } else if (prevCursor) {
-        orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? ['pub_date', 'id'] : ['pub_date desc', 'id'];
-        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__>' : 'pub_date__<';
-        try {
-          queryKwargs[queryParam] = msToRFC3339(prevCursor);
+          if (pagination.mode === "legacy" && typeof requestedCursor === "number") {
+            queryKwargs[`${pagination.column}__${cursorDirection}`] =
+              msToRFC3339(requestedCursor);
+          } else if (typeof requestedCursor === "object") {
+            cursor = {
+              column: pagination.column,
+              id: requestedCursor.id,
+              idOp: cursorDirection,
+              timestamp: msToRFC3339(requestedCursor.timestamp),
+              timestampOp: cursorDirection,
+            };
+          }
         } catch (error) {
           console.log(error);
         }
       }
       const fetchItemsParams = {
+        cursor,
         limit: fetchItems.limit || webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
         orderBy,
         queryKwargs,
@@ -362,12 +421,17 @@ export default class FeedDb {
       } else if (fetchItemsParams.limit > MAX_ITEMS_PER_PAGE) {
         fetchItemsParams.limit = MAX_ITEMS_PER_PAGE;
       }
-      things = [{
-        table: 'items',
-        ...fetchItemsParams,
-      }];
-      itemJson = await this._getContent(things, sortOrder, fromUrl);
-      (itemJson as any)['items_sort_order'] = sortOrder;
+      const pageLimit = fetchItemsParams.limit;
+      const queryLimit = pageLimit === undefined ? undefined : pageLimit + 1;
+      itemJson = await this._getContent(
+        [{
+          table: 'items',
+          ...fetchItemsParams,
+          limit: queryLimit,
+          pageLimit,
+        }],
+        pagination,
+      );
     }
 
     return {...contentJson, ...itemJson};
@@ -413,7 +477,7 @@ export default class FeedDb {
   }
 
   async _putItemToContent(item: any) {
-    const {id, pubDateMs, status, ...data} = item;
+    const {createdAtMs: _createdAtMs, id, pubDateMs, status, updatedAtMs: _updatedAtMs, ...data} = item;
     const keyValuePairs = {
       status,
       'pub_date': msToRFC3339(pubDateMs),

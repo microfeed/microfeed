@@ -9,9 +9,12 @@ import type {
   OnboardingResult,
   PublicFeed,
 } from "@/types";
+import type {ItemOrder, ItemSort} from "@/shared/ItemPagination";
 
 export interface FeedQuery {
   adminProtection?: AdminProtectionStatus;
+  itemsOrder?: ItemOrder;
+  itemsSort?: ItemSort;
   limit?: number;
   queryKwargs?: Record<string, unknown>;
 }
@@ -29,7 +32,13 @@ export async function loadFeed(
 ): Promise<LoadedFeed> {
   const database = new FeedDb(runtimeEnv, request);
   const fetchItems = query
-    ? getFetchItemsParams(request, query.queryKwargs ?? {}, query.limit)
+    ? getFetchItemsParams(
+        request,
+        query.queryKwargs ?? {},
+        query.limit,
+        query.itemsSort,
+        query.itemsOrder,
+      )
     : null;
   const content = await database.getContent(fetchItems) as FeedContent;
   const onboarding = new OnboardingChecker(

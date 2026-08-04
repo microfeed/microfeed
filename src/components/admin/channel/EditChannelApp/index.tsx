@@ -328,7 +328,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
           </details>
         </div>
         <div className="xl:col-span-3">
-          <div className="grid gap-4 xl:sticky xl:top-0">
+          <div className="grid gap-4 xl:sticky xl:top-4">
             <div className="rounded-[14px] border bg-card p-5 text-center text-card-foreground shadow-xs">
               <Button
                 type="submit"

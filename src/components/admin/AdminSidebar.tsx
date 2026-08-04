@@ -1,4 +1,5 @@
 import {
+  Code2Icon,
   Globe2Icon,
   HomeIcon,
   ListIcon,
@@ -14,6 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {buttonVariants} from "@/components/ui/button";
+import {cn} from "@/lib/utils";
 import {NAV_ITEMS} from "@/shared/Constants";
 import type {AdminNavItemId} from "@/shared/AdminNavigation";
 import AdminAboutDialog from "./AdminAboutDialog";
@@ -28,8 +31,8 @@ interface Props {
 const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.ADMIN_HOME]: HomeIcon,
   [NAV_ITEMS.EDIT_CHANNEL]: PencilIcon,
-  [NAV_ITEMS.NEW_ITEM]: PlusIcon,
   [NAV_ITEMS.ALL_ITEMS]: ListIcon,
+  [NAV_ITEMS.API]: Code2Icon,
   [NAV_ITEMS.SETTINGS]: SettingsIcon,
 };
 
@@ -77,6 +80,34 @@ export default function AdminSidebar({data, onNavigate}: Props) {
             />
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="px-3 pb-2">
+        {data.newItem.disabled ? (
+          <span
+            aria-disabled="true"
+            className={cn(
+              buttonVariants({size: "lg"}),
+              "w-full cursor-not-allowed !text-white opacity-45",
+            )}
+          >
+            <PlusIcon aria-hidden="true" />
+            Add new item
+          </span>
+        ) : (
+          <a
+            className={cn(
+              buttonVariants({size: "lg"}),
+              "w-full !text-white hover:!text-white",
+            )}
+            data-astro-prefetch="hover"
+            href={data.newItem.url}
+            onClick={onNavigate}
+          >
+            <PlusIcon aria-hidden="true" />
+            Add new item
+          </a>
+        )}
       </div>
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3" aria-label="Admin navigation">

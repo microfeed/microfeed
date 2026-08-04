@@ -21,38 +21,32 @@ export default class AccessSettingsApp extends React.Component<any, any> {
     };
   }
 
-  onUpdateAccess(props: any) {
-    this.setState((prevState: any) => ({
-      access: {
-        ...prevState.access,
-        ...props,
-      },
-    }), () => {
+  onUpdateAccess(currentPolicy: string) {
+    const access = {...this.state.access, currentPolicy};
+    this.setState({access}, () => {
       this.props.setChanged();
+      void this.props.onSubmit(
+        {preventDefault() {}},
+        this.state.currentType,
+        access,
+      );
     });
   }
 
   render() {
     const {currentType, access} = this.state;
-    const {submitting, submitForType} = this.props;
+    const {submitting} = this.props;
     return (<SettingsBase
       title="Access control"
-      submitting={submitting}
-      submitForType={submitForType}
       currentType={currentType}
-      onSubmit={(e: any) => {
-        e.preventDefault();
-        this.props.onSubmit(e, currentType, {
-          ...access,
-        });
-      }}
     >
       <AdminRadioGroup
         alignment="start"
         ariaLabel="Access policy"
+        disabled={submitting}
         name="access-policy"
         value={access.currentPolicy}
-        onValueChange={(value) => this.onUpdateAccess({currentPolicy: value})}
+        onValueChange={(value) => this.onUpdateAccess(value)}
         variant="cards"
         options={[
           {

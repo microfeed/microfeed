@@ -1,4 +1,11 @@
-import {ITEMS_SORT_ORDERS, STATUSES} from "./Constants";
+import {STATUSES} from "./Constants";
+import {
+  applyItemPaginationParams,
+  ITEM_ORDERS,
+  ITEM_SORTS,
+  type ItemOrder,
+  type ItemSort,
+} from "./ItemPagination";
 
 export const ITEM_STATUS_FILTERS = [
   "all",
@@ -8,7 +15,6 @@ export const ITEM_STATUS_FILTERS = [
 ] as const;
 
 export type ItemStatusFilter = typeof ITEM_STATUS_FILTERS[number];
-export type ItemsSortOrder = typeof ITEMS_SORT_ORDERS[keyof typeof ITEMS_SORT_ORDERS];
 
 const ITEM_STATUS_BY_FILTER = {
   published: STATUSES.PUBLISHED,
@@ -23,12 +29,6 @@ export function normalizeItemStatusFilter(value: unknown): ItemStatusFilter {
     : "all";
 }
 
-export function normalizeItemsSortOrder(value: unknown): ItemsSortOrder {
-  return value === ITEMS_SORT_ORDERS.OLDEST_FIRST
-    ? ITEMS_SORT_ORDERS.OLDEST_FIRST
-    : ITEMS_SORT_ORDERS.NEWEST_FIRST;
-}
-
 export function itemQueryForStatusFilter(
   value: unknown,
 ): Record<string, number> {
@@ -41,16 +41,18 @@ export function itemQueryForStatusFilter(
 }
 
 interface ItemsListUrlOptions {
-  nextCursor?: number;
-  prevCursor?: number;
-  sortOrder?: unknown;
+  nextCursor?: number | string;
+  order?: ItemOrder;
+  prevCursor?: number | string;
+  sort?: ItemSort;
   statusFilter?: unknown;
 }
 
 export function buildItemsListUrl({
   nextCursor,
+  order = ITEM_ORDERS.DESC,
   prevCursor,
-  sortOrder,
+  sort = ITEM_SORTS.UPDATED_AT,
   statusFilter,
 }: ItemsListUrlOptions = {}): string {
   const searchParams = new URLSearchParams();
@@ -59,12 +61,12 @@ export function buildItemsListUrl({
   if (normalizedStatus !== "all") {
     searchParams.set("status", normalizedStatus);
   }
-  if (Number.isFinite(nextCursor)) {
-    searchParams.set("next_cursor", String(nextCursor));
-  } else if (Number.isFinite(prevCursor)) {
-    searchParams.set("prev_cursor", String(prevCursor));
-  }
-  searchParams.set("sort", normalizeItemsSortOrder(sortOrder));
+  applyItemPaginationParams(searchParams, {
+    nextCursor,
+    order,
+    prevCursor,
+    sort,
+  });
 
   return `?${searchParams.toString()}`;
 }

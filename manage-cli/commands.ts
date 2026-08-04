@@ -33,6 +33,7 @@ import {
   SETTINGS_CATEGORIES,
   STATUSES,
 } from "@/shared/Constants";
+import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import {accessApplicationDashboardUrl} from "@/shared/CloudflareDashboard";
 import type {Account, CommandRunner, MicrofeedConfig} from "./types";
 import {
@@ -5352,6 +5353,25 @@ function validateRemoteRestoreBootstrapRows(input: {
   }
   const subscribeMethods = settings.get(SETTINGS_CATEGORIES.SUBSCRIBE_METHODS);
   const methods = subscribeMethods?.methods;
+  const webGlobalSettings = settings.get(
+    SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS,
+  );
+  const sharedWebGlobalSettings = {
+    favicon: {
+      contentType: "image/png",
+      url: "/assets/default/favicon.png",
+    },
+    itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+    publicBucketUrl: "/media/",
+  };
+  const validWebGlobalSettings = isDeepStrictEqual(webGlobalSettings, {
+    ...sharedWebGlobalSettings,
+    itemsOrder: ITEM_ORDERS.DESC,
+    itemsSort: ITEM_SORTS.PUBLISHED_AT,
+  }) || isDeepStrictEqual(webGlobalSettings, {
+    ...sharedWebGlobalSettings,
+    itemsSortOrder: ITEMS_SORT_ORDERS.NEWEST_FIRST,
+  });
   if (
     settings.size !== 5 || !Array.isArray(methods) || methods.length !== 2 ||
     !validBootstrapSubscribeMethod(
@@ -5362,18 +5382,7 @@ function validateRemoteRestoreBootstrapRows(input: {
       methods[1],
       PREDEFINED_SUBSCRIBE_METHODS.json,
     ) ||
-    !isDeepStrictEqual(
-      settings.get(SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS),
-      {
-        favicon: {
-          contentType: "image/png",
-          url: "/assets/default/favicon.png",
-        },
-        itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
-        itemsSortOrder: ITEMS_SORT_ORDERS.NEWEST_FIRST,
-        publicBucketUrl: "/media/",
-      },
-    ) ||
+    !validWebGlobalSettings ||
     !isDeepStrictEqual(settings.get(SETTINGS_CATEGORIES.ACCESS), {
       currentPolicy: "public",
     }) ||

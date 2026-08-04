@@ -851,6 +851,37 @@ describe("remote restore baseline repair", () => {
     })).not.toThrow();
   });
 
+  it("accepts the canonical automatic settings bootstrap rows", () => {
+    const canonicalBootstrapRows = bootstrapSettingRows.map((row) =>
+      row.category === "webGlobalSettings"
+        ? {
+            ...row,
+            data: JSON.stringify({
+              favicon: {
+                contentType: "image/png",
+                url: "/assets/default/favicon.png",
+              },
+              itemsOrder: "desc",
+              itemsPerPage: 20,
+              itemsSort: "published_at",
+              publicBucketUrl: "/media/",
+            }),
+          }
+        : row
+    );
+
+    expect(() => validateRemoteRestoreBaselineRepair({
+      ...valid,
+      applicationRowCounts: {
+        ...valid.applicationRowCounts,
+        channels: 1,
+        settings: 5,
+      },
+      bootstrapChannelRows,
+      bootstrapSettingRows: canonicalBootstrapRows,
+    })).not.toThrow();
+  });
+
   const initialPasswordSetup = {
     createdAt: "2026-08-02T20:00:00.000Z",
     email: "owner@example.com",
