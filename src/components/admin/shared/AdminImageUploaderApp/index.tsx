@@ -8,13 +8,37 @@ import {
   resolvePublicBucketUrl,
   urlJoinWithRelative,
 } from '@/shared/StringUtils';
+import type {ImageMetadataTarget} from "@/types";
 import AdminDialog from "../AdminDialog";
 import FileUploader from "../AdminFileUploader";
-import {CloudUploadIcon} from "lucide-react";
-import ExternalLink from "../ExternalLink";
+import {
+  CloudUploadIcon,
+  ExternalLinkIcon,
+  PencilIcon,
+  RefreshCwIcon,
+  Trash2Icon,
+} from "lucide-react";
 import {showToast} from "@/client/ToastUtils";
 import MediaStorageUnavailableDialog from "../MediaStorageUnavailableDialog";
 import {Button} from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import AdminImagePreviewDialog from "../AdminImagePreviewDialog";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -32,16 +56,15 @@ function EmptyImage({fileTypes}: any) {
   </div>);
 }
 
-function PreviewImage({url}: any) {
-  return (<div className="relative flex justify-center">
+function PreviewImage({url}: {url: string}) {
+  return (<div className="relative flex h-full w-full justify-center overflow-hidden rounded-md">
     <img
+      alt="Uploaded image"
       src={url}
-      className={clsx('lh-upload-image-size object-cover', 'gradient-mask-b-20')}
+      className="h-full w-full object-cover"
     />
-    <div className="absolute bottom-4 text-sm font-normal text-brand-light">
-      <em>
-        Click or drag here to change image
-      </em>
+    <div className="absolute right-2 bottom-2 flex size-10 items-center justify-center rounded-lg border bg-background text-foreground shadow-md">
+      <PencilIcon aria-hidden="true" className="size-5" />
     </div>
   </div>);
 }
@@ -57,12 +80,15 @@ function isInvalidImage(): string | null {
 }
 
 export default class AdminImageUploaderApp extends React.Component<any, any> {
+  private inputFile: HTMLInputElement | null = null;
+
   constructor(props: any) {
     super(props);
 
     this.onFileUploadClick = this.onFileUploadClick.bind(this);
     this.onFileUpload = this.onFileUpload.bind(this);
     this.onFileUploadToR2 = this.onFileUploadToR2.bind(this);
+    this.onDeleteImage = this.onDeleteImage.bind(this);
     this.showMediaStorageUnavailable =
       this.showMediaStorageUnavailable.bind(this);
 
@@ -80,7 +106,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       publicBucketUrl,
 
       showModal: false,
+      showDeleteConfirm: false,
+      showPreview: false,
       showMediaStorageUnavailable: false,
+      deleting: false,
       previewImageUrl: null,
       cropper: null,
       cdnFilename: null,
@@ -98,6 +127,12 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   }
 
   componentDidUpdate(previousProps: any) {
+    if (
+      previousProps.currentImageUrl !== this.props.currentImageUrl &&
+      this.props.currentImageUrl !== this.state.currentImageUrl
+    ) {
+      this.setState({currentImageUrl: this.props.currentImageUrl || null});
+    }
     if (
       previousProps.publicBucketUrl !== this.props.publicBucketUrl &&
       this.props.publicBucketUrl !== this.state.publicBucketUrl
@@ -120,8 +155,8 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }
   }
 
-  onFileUploadClick(e: any) {
-    e.preventDefault();
+  onFileUploadClick(e?: {preventDefault?: () => void}) {
+    e?.preventDefault?.();
     if (this.props.mediaStorageReady === false) {
       this.showMediaStorageUnavailable();
       return;
@@ -135,6 +170,35 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }
 
     this.inputFile.click();
+  }
+
+  async onDeleteImage() {
+    const {currentImageUrl, deleting} = this.state;
+    if (!currentImageUrl || deleting) {
+      return;
+    }
+    this.setState({deleting: true});
+    try {
+      await Requests.deleteImage(
+        currentImageUrl,
+        this.props.imageMetadataTarget as ImageMetadataTarget | undefined,
+      );
+      await this.props.onImageDeleted?.();
+      this.setState({
+        currentImageUrl: null,
+        deleting: false,
+        showDeleteConfirm: false,
+        showPreview: false,
+      }, () => showToast('Image deleted.', 'success'));
+    } catch (error: any) {
+      this.setState({deleting: false}, () => {
+        if (!error.response) {
+          showToast('Network error. Please refresh the page and try again.', 'error');
+        } else {
+          showToast('Failed to delete this image. Please try again.', 'error');
+        }
+      });
+    }
   }
 
   onFileUpload(file: any) {
@@ -194,7 +258,12 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           progressText: `${Number(percentage * 100.0).toFixed(2)}%`,
         });
       }, (cdnUrl: any) => {
-        this.props.onImageUploaded(cdnUrl, blob.type || 'image/png');
+        const replacedImageUrl = this.state.currentImageUrl;
+        this.props.onImageUploaded(
+          cdnUrl,
+          blob.type || 'image/png',
+          replacedImageUrl,
+        );
         cropper.destroy();
         if (previewImageUrl) {
           URL.revokeObjectURL(previewImageUrl);
@@ -227,7 +296,9 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
   }
 
   render() {
-    const {uploadStatus, currentImageUrl, progressText, showModal,
+    const {uploadStatus, currentImageUrl, deleting, progressText, showModal,
+      showDeleteConfirm,
+      showPreview,
       showMediaStorageUnavailable, publicBucketUrl, previewImageUrl,
       imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
@@ -241,7 +312,91 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
       "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
     return (<div className="lh-upload-wrapper">
-      <FileUploader
+      {absoluteImageUrl ? <>
+        <input
+          accept=".png,.jpg,.jpeg"
+          className="hidden"
+          disabled={uploading || !mediaStorageReady}
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = '';
+            if (file) {
+              this.onFileUpload(file);
+            }
+          }}
+          ref={(element) => {
+            this.inputFile = element;
+          }}
+          type="file"
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={(
+              <button
+                aria-label="Manage uploaded image"
+                className="lh-upload-image-size relative overflow-hidden rounded-md border-2 border-dashed border-brand-light outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2"
+                disabled={uploading || deleting}
+                type="button"
+              />
+            )}
+          >
+            <PreviewImage url={absoluteImageUrl} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={this.onFileUploadClick}>
+              <RefreshCwIcon aria-hidden="true" />
+              Replace
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => this.setState({showPreview: true})}>
+              <ExternalLinkIcon aria-hidden="true" />
+              Preview
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={deleting}
+              onClick={() => this.setState({showDeleteConfirm: true})}
+              variant="destructive"
+            >
+              <Trash2Icon aria-hidden="true" />
+              {deleting ? 'Deleting...' : 'Delete'}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <AdminImagePreviewDialog
+          imageUrl={absoluteImageUrl}
+          onOpenChange={(open) => this.setState({showPreview: open})}
+          open={showPreview}
+        />
+        <AlertDialog
+          onOpenChange={(open) => {
+            if (!deleting) {
+              this.setState({showDeleteConfirm: open});
+            }
+          }}
+          open={showDeleteConfirm}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this image?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the image from this page and requests permanent
+                deletion of its uploaded file. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleting}
+                onClick={this.onDeleteImage}
+                type="button"
+                variant="destructive"
+              >
+                {deleting ? 'Deleting...' : 'Delete image'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </> : <FileUploader
         handleChange={this.onFileUpload}
         name="imageUploader"
         types={fileTypes}
@@ -252,13 +407,9 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
         classes="lh-upload-fileinput lh-upload-fileinput-image"
       >
         <div className="lh-upload-image-size lh-upload-box">
-          {absoluteImageUrl ? <PreviewImage url={absoluteImageUrl}/> :
-            <EmptyImage fileTypes={fileTypes} />}
+          <EmptyImage fileTypes={fileTypes} />
         </div>
-      </FileUploader>
-      {absoluteImageUrl && <div className="text-sm flex justify-center mt-1">
-        <ExternalLink linkClass="text-helper-color text-xs" text="preview image" url={absoluteImageUrl} />
-      </div>}
+      </FileUploader>}
       <MediaStorageUnavailableDialog
         dashboardUrl={this.props.mediaStorage?.dashboardUrl}
         onOpenChange={(open) => this.setState({

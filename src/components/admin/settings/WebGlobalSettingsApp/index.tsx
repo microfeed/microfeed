@@ -24,6 +24,7 @@ import {
   normalizePublicBucketUrl,
   resolvePublicBucketUrl,
 } from "@/shared/StringUtils";
+import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
 
 export default class WebGlobalSettingsApp extends React.Component<any, any> {
   constructor(props: any) {
@@ -62,6 +63,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
       itemsPerPage,
       itemsOrder,
       itemsSort,
+      replacedImageUrls: [],
     };
   }
 
@@ -75,6 +77,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
       itemsPerPage,
       itemsOrder,
       itemsSort,
+      replacedImageUrls,
     } = this.state;
     const {submitting, submitForType, setChanged} = this.props;
     return (<SettingsBase
@@ -82,7 +85,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}
-      onSubmit={(e: any) => {
+      onSubmit={async (e: any) => {
         const normalizedPublicBucketUrl =
           normalizePublicBucketUrl(publicBucketUrl);
         if (
@@ -97,13 +100,16 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
           );
           return;
         }
-        this.props.onSubmit(e, currentType, {
+        const saved = await this.props.onSubmit(e, currentType, {
           favicon,
           publicBucketUrl: normalizedPublicBucketUrl,
           itemsOrder,
           itemsSort,
           itemsPerPage,
-        });
+        }, replacedImageUrls);
+        if (saved) {
+          this.setState({replacedImageUrls: []});
+        }
       }}
     >
       <div className="grid grid-cols-1 gap-4">
@@ -212,6 +218,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
               mediaType="favicon"
               publicBucketUrl={publicBucketUrl}
               currentImageUrl={favicon.url}
+              imageMetadataTarget={{type: 'favicon'}}
               imageSizeNotOkayFunc={(width: any, height: any) => {
                 return (width > 256 && height > 256) || (width < 48 && height < 48);
               }}
@@ -225,12 +232,21 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
                 }
                 return '';
               }}
-              onImageUploaded={(cdnUrl: any, contentType: any) => this.setState({
+              onImageUploaded={(
+                cdnUrl: any,
+                contentType: any,
+                replacedImageUrl: unknown,
+              ) => this.setState((prevState: any) => ({
                 favicon: {
                   url: cdnUrl,
                   contentType,
                 },
-              }, () => setChanged())}
+                replacedImageUrls: queueReplacedImageUrl(
+                  prevState.replacedImageUrls,
+                  replacedImageUrl,
+                ),
+              }), () => setChanged())}
+              onImageDeleted={() => this.setState({favicon: {}})}
             />
           </div>
         </details>

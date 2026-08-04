@@ -7,6 +7,8 @@ import {
   OPTIONS as uploadOptions,
   PUT as uploadMedia,
 } from "../../src/pages/media-upload/[...key]";
+import {deleteAdminImage} from "../../src/pages/[adminPath]/ajax/r2-ops";
+import {updateAdminFeed} from "../../src/pages/[adminPath]/ajax/feed";
 import {getMediaResponse} from "@/server/media/media";
 import {
   createSignedUpload,
@@ -134,6 +136,177 @@ describe("signed Worker uploads", () => {
     const preflight = await uploadOptions({} as any);
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("access-control-allow-origin")).toBe("*");
+  });
+});
+
+describe("replacement image cleanup", () => {
+  it("deletes the prior image only after item metadata saves", async () => {
+    const suffix = crypto.randomUUID();
+    const itemId = `replacement-${suffix}`;
+    const oldKey = `production/images/${suffix}-old.png`;
+    const newKey = `production/images/${suffix}-new.png`;
+    await env.MEDIA_BUCKET.put(oldKey, "old");
+    const scheduled: Promise<unknown>[] = [];
+
+    const response = await updateAdminFeed(
+      new Request("https://feed.example.com/admin/ajax/feed/", {
+        body: JSON.stringify({
+          deleteImageUrls: [oldKey],
+          item: {
+            id: itemId,
+            image: newKey,
+            pubDateMs: Date.now(),
+            status: 1,
+            title: "Replacement image",
+          },
+        }),
+        headers: {"content-type": "application/json"},
+        method: "POST",
+      }),
+      env,
+      (promise) => scheduled.push(promise),
+    );
+
+    expect(response.status).toBe(200);
+    expect(scheduled).toHaveLength(1);
+    const storedItem = await env.FEED_DB.prepare(
+      "SELECT json_extract(data, '$.image') AS image_url FROM items " +
+        "WHERE id = ? LIMIT 1",
+    ).bind(itemId).first<{image_url: string}>();
+    expect(storedItem?.image_url).toBe(newKey);
+    await Promise.all(scheduled);
+    expect(await env.MEDIA_BUCKET.head(oldKey)).toBeNull();
+  });
+
+  it("does not schedule cleanup when metadata cannot be saved", async () => {
+    const oldKey = `production/images/${crypto.randomUUID()}-old.png`;
+    await env.MEDIA_BUCKET.put(oldKey, "old");
+    const scheduled: Promise<unknown>[] = [];
+
+    await expect(updateAdminFeed(
+      new Request("https://feed.example.com/admin/ajax/feed/", {
+        body: JSON.stringify({
+          deleteImageUrls: [oldKey],
+          item: {id: "invalid-item", status: 1},
+        }),
+        headers: {"content-type": "application/json"},
+        method: "POST",
+      }),
+      env,
+      (promise) => scheduled.push(promise),
+    )).rejects.toThrow();
+
+    expect(scheduled).toHaveLength(0);
+    expect(await env.MEDIA_BUCKET.head(oldKey)).not.toBeNull();
+  });
+});
+
+describe("admin image deletion", () => {
+  async function deleteImage(input: unknown) {
+    const scheduled: Promise<unknown>[] = [];
+    const response = await deleteAdminImage(
+      new Request("https://feed.example.com/admin/ajax/r2-ops/", {
+        body: JSON.stringify(input),
+        method: "DELETE",
+      }),
+      env,
+      (promise) => scheduled.push(promise),
+    );
+    return {
+      response,
+      waitForDeletion: () => Promise.all(scheduled),
+    };
+  }
+
+  it("removes saved metadata before deleting channel, item, and favicon objects", async () => {
+    const request = new Request("https://feed.example.com/admin/");
+    const database = new FeedDb(env, request);
+    await database.getContent();
+    const content = await database.getContent();
+    const channelKey = "production/images/channel-delete.png";
+    const itemKey = "production/images/item-delete.png";
+    const faviconKey = "production/images/favicon-delete.png";
+    await Promise.all([
+      env.MEDIA_BUCKET.put(channelKey, "channel"),
+      env.MEDIA_BUCKET.put(itemKey, "item"),
+      env.MEDIA_BUCKET.put(faviconKey, "favicon"),
+    ]);
+    await database.putContent({
+      channel: {...content.channel, image: channelKey},
+      item: {
+        id: "delete-image-item",
+        image: itemKey,
+        pubDateMs: Date.now(),
+        status: 1,
+        title: "Delete this image",
+      },
+      settings: {
+        webGlobalSettings: {
+          ...content.settings.webGlobalSettings,
+          favicon: {contentType: "image/png", url: faviconKey},
+        },
+      },
+    });
+
+    const channelDeletion = await deleteImage({
+      imageUrl: channelKey,
+      target: {type: "channel"},
+    });
+    expect(channelDeletion.response.status).toBe(200);
+    expect((await database.getContent()).channel.image).toBeUndefined();
+    await channelDeletion.waitForDeletion();
+    expect(await env.MEDIA_BUCKET.head(channelKey)).toBeNull();
+
+    const itemDeletion = await deleteImage({
+      imageUrl: itemKey,
+      target: {id: "delete-image-item", type: "item"},
+    });
+    expect(itemDeletion.response.status).toBe(200);
+    const itemRow = await env.FEED_DB.prepare(
+      "SELECT data FROM items WHERE id = ?",
+    ).bind("delete-image-item").first<{data: string}>();
+    expect(JSON.parse(itemRow?.data ?? "{}").image).toBeUndefined();
+    await itemDeletion.waitForDeletion();
+    expect(await env.MEDIA_BUCKET.head(itemKey)).toBeNull();
+
+    const faviconDeletion = await deleteImage({
+      imageUrl: faviconKey,
+      target: {type: "favicon"},
+    });
+    expect(faviconDeletion.response.status).toBe(200);
+    expect(
+      (await database.getContent()).settings.webGlobalSettings.favicon,
+    ).toBeUndefined();
+    await faviconDeletion.waitForDeletion();
+    expect(await env.MEDIA_BUCKET.head(faviconKey)).toBeNull();
+  });
+
+  it("deletes an unsaved new-item upload without creating item metadata", async () => {
+    const key = "development/images/unsaved-item.png";
+    await env.MEDIA_BUCKET.put(key, "item");
+    const countBefore = await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM items",
+    ).first<{count: number}>();
+
+    const deletion = await deleteImage({imageUrl: key});
+    expect(deletion.response.status).toBe(200);
+    const count = await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM items",
+    ).first<{count: number}>();
+    expect(count?.count).toBe(countBefore?.count);
+    await deletion.waitForDeletion();
+    expect(await env.MEDIA_BUCKET.head(key)).toBeNull();
+  });
+
+  it("rejects malformed image deletion requests", async () => {
+    const deletion = await deleteImage({
+      imageUrl: "production/images/item.png",
+      target: {type: "item"},
+    });
+    expect(deletion.response.status).toBe(400);
+    await expect(deletion.response.json()).resolves.toMatchObject({
+      error: "Invalid image deletion request.",
+    });
   });
 });
 

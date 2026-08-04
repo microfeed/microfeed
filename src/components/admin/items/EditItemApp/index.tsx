@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -95,6 +96,7 @@ export default class EditItemApp extends React.Component<Props, any> {
 
       userChangedLink: false,
       changed: false,
+      replacedImageUrls: [],
     };
   }
 
@@ -177,7 +179,13 @@ export default class EditItemApp extends React.Component<Props, any> {
 
   onSubmit(e: any) {
     e.preventDefault();
-    const {item, itemId, action, changed} = this.state;
+    const {
+      item,
+      itemId,
+      action,
+      changed,
+      replacedImageUrls,
+    } = this.state;
     if (!changed) {
       showToast(
         action === 'edit'
@@ -188,9 +196,16 @@ export default class EditItemApp extends React.Component<Props, any> {
       return;
     }
     this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {id: itemId, ...item}})
+    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
+      deleteImageUrls: replacedImageUrls,
+      item: {id: itemId, ...item},
+    })
       .then(() => {
-        this.setState({submitStatus: null, changed: false}, () => {
+        this.setState({
+          submitStatus: null,
+          changed: false,
+          replacedImageUrls: [],
+        }, () => {
           if (action === 'edit') {
             showToast('Updated!', 'success');
           } else {
@@ -267,7 +282,33 @@ export default class EditItemApp extends React.Component<Props, any> {
                   mediaStorageReady={mediaStorageReady}
                   publicBucketUrl={publicBucketUrl}
                   currentImageUrl={item.image}
-                  onImageUploaded={(cdnUrl: any) => this.onUpdateItemMeta({'image': cdnUrl})}
+                  imageMetadataTarget={action === 'edit'
+                    ? {id: itemId, type: 'item'}
+                    : undefined}
+                  onImageDeleted={() => {
+                    if (action === 'edit') {
+                      this.setState((prevState: any) => ({
+                        item: {
+                          ...prevState.item,
+                          image: undefined,
+                        },
+                      }));
+                    } else {
+                      this.onUpdateItemMeta({image: undefined});
+                    }
+                  }}
+                  onImageUploaded={(
+                    cdnUrl: any,
+                    _contentType: any,
+                    replacedImageUrl: unknown,
+                  ) => this.setState((prevState: any) => ({
+                    changed: true,
+                    item: {...prevState.item, image: cdnUrl},
+                    replacedImageUrls: queueReplacedImageUrl(
+                      prevState.replacedImageUrls,
+                      replacedImageUrl,
+                    ),
+                  }))}
                 />
               </div>
               <div className="ml-8 flex-1">

@@ -15,6 +15,7 @@ import {
   type ResolvedItemPagination,
 } from "@/shared/ItemPagination";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
+import type {ImageMetadataTarget} from "@/types";
 
 /**
  * support url query parameters:
@@ -465,7 +466,8 @@ export default class FeedDb {
           data: JSON.stringify(settings[category]),
         }).run();
     } catch (error) {
-      console.log('Failed to upsert', error);
+      console.error('Failed to upsert setting', error);
+      throw error;
     }
     console.log('Done', res);
   }
@@ -488,7 +490,8 @@ export default class FeedDb {
       res = await this.getUpsertSql(
         'items', 'id', {id}, {...keyValuePairs}).run();
     } catch (error) {
-      console.log('Failed to upsert', error);
+      console.error('Failed to upsert item', error);
+      throw error;
     }
     console.log('Done!', res);
   }
@@ -506,6 +509,58 @@ export default class FeedDb {
     if (item) {
       await this._putItemToContent(item);
     }
+  }
+
+  async removeImageMetadata(
+    target: ImageMetadataTarget,
+  ): Promise<string | null> {
+    const timestamp = new Date().toISOString();
+    let select;
+    let update;
+    if (target.type === "channel") {
+      if (target.id) {
+        select = this.FEED_DB.prepare(
+          "SELECT json_extract(data, '$.image') AS image_url " +
+            "FROM channels WHERE id = ? LIMIT 1",
+        ).bind(target.id);
+        update = this.FEED_DB.prepare(
+          "UPDATE channels SET updated_at = ?, " +
+            "data = json_remove(data, '$.image') WHERE id = ?",
+        ).bind(timestamp, target.id);
+      } else {
+        select = this.FEED_DB.prepare(
+          "SELECT json_extract(data, '$.image') AS image_url " +
+            "FROM channels WHERE is_primary = 1 LIMIT 1",
+        );
+        update = this.FEED_DB.prepare(
+          "UPDATE channels SET updated_at = ?, " +
+            "data = json_remove(data, '$.image') WHERE is_primary = 1",
+        ).bind(timestamp);
+      }
+    } else if (target.type === "item") {
+      select = this.FEED_DB.prepare(
+        "SELECT json_extract(data, '$.image') AS image_url " +
+          "FROM items WHERE id = ? LIMIT 1",
+      ).bind(target.id);
+      update = this.FEED_DB.prepare(
+        "UPDATE items SET updated_at = ?, " +
+          "data = json_remove(data, '$.image') WHERE id = ?",
+      ).bind(timestamp, target.id);
+    } else {
+      const category = SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS;
+      select = this.FEED_DB.prepare(
+        "SELECT json_extract(data, '$.favicon.url') AS image_url " +
+          "FROM settings WHERE category = ? LIMIT 1",
+      ).bind(category);
+      update = this.FEED_DB.prepare(
+        "UPDATE settings SET updated_at = ?, " +
+          "data = json_remove(data, '$.favicon') WHERE category = ?",
+      ).bind(timestamp, category);
+    }
+
+    const [selected] = await this.FEED_DB.batch([select, update]);
+    const imageUrl = selected.results[0]?.image_url;
+    return typeof imageUrl === "string" ? imageUrl : null;
   }
 
   async getPublicJsonData(

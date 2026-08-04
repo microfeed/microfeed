@@ -5,7 +5,7 @@ function isR2Bucket(value: unknown): value is R2Bucket {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return ["get", "head", "put"].every(
+  return ["delete", "get", "head", "put"].every(
     (method) => typeof Reflect.get(value, method) === "function",
   );
 }
