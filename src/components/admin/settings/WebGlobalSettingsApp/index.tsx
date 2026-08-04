@@ -5,9 +5,15 @@ import AdminInput from "@/components/admin/shared/AdminInput";
 import {
   SETTINGS_CATEGORIES,
   DEFAULT_ITEMS_PER_PAGE,
-  ITEMS_SORT_ORDERS,
   MAX_ITEMS_PER_PAGE,
 } from "@/shared/Constants";
+import {
+  ITEM_ORDERS,
+  ITEM_SORTS,
+  type ItemOrder,
+  type ItemSort,
+  resolveItemPaginationSettings,
+} from "@/shared/ItemPagination";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {showToast} from "@/client/ToastUtils";
 import ExplainText from "@/components/admin/shared/ExplainText";
@@ -29,11 +35,14 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
     let favicon = '';
     let publicBucketUrl = '';
     let itemsPerPage = DEFAULT_ITEMS_PER_PAGE;
-    let itemsSortOrder = ITEMS_SORT_ORDERS.NEWEST_FIRST;
+    let itemsOrder: ItemOrder = ITEM_ORDERS.DESC;
+    let itemsSort: ItemSort = ITEM_SORTS.PUBLISHED_AT;
     if (feed.settings && feed.settings[currentType]) {
       favicon = feed.settings[currentType].favicon || {};
       publicBucketUrl = feed.settings[currentType].publicBucketUrl || '/media/';
-      itemsSortOrder = feed.settings[currentType].itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
+      ({itemsOrder, itemsSort} = resolveItemPaginationSettings(
+        feed.settings[currentType],
+      ));
       itemsPerPage = feed.settings[currentType].itemsPerPage || DEFAULT_ITEMS_PER_PAGE;
     }
     const isLocalDevelopment = isLocalDevelopmentHostname(
@@ -51,7 +60,8 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
       isLocalDevelopment,
       publicBucketUrl,
       itemsPerPage,
-      itemsSortOrder,
+      itemsOrder,
+      itemsSort,
     };
   }
 
@@ -63,7 +73,8 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
       isLocalDevelopment,
       publicBucketUrl,
       itemsPerPage,
-      itemsSortOrder,
+      itemsOrder,
+      itemsSort,
     } = this.state;
     const {submitting, submitForType, setChanged} = this.props;
     return (<SettingsBase
@@ -89,7 +100,8 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
         this.props.onSubmit(e, currentType, {
           favicon,
           publicBucketUrl: normalizedPublicBucketUrl,
-          itemsSortOrder,
+          itemsOrder,
+          itemsSort,
           itemsPerPage,
         });
       }}
@@ -129,7 +141,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
         </details>
         <details open>
           <summary className="mb-2 cursor-pointer font-semibold text-foreground">Items settings</summary>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <AdminInput
                 label="Items per page"
@@ -153,22 +165,39 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
                 }}
               />
             </div>
-            <div>
+            <div className="contents">
               <AdminRadioGroup
                 labelComponent={<ExplainText
                   bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.ITEMS_SORT_ORDER]}
                   customClass="m-input-label-small"
                 />}
-                name="items-sort-order"
-                value={itemsSortOrder}
+                name="items-sort"
+                value={itemsSort}
+                options={[{
+                  label: 'Published at',
+                  value: ITEM_SORTS.PUBLISHED_AT,
+                }, {
+                  label: 'Created at',
+                  value: ITEM_SORTS.CREATED_AT,
+                }, {
+                  label: 'Updated at',
+                  value: ITEM_SORTS.UPDATED_AT,
+                }]}
+                onValueChange={(value) => this.setState({itemsSort: value}, () => setChanged())}
+              />
+              <AdminRadioGroup
+                label="Order"
+                labelClassName="m-input-label-small"
+                name="items-order"
+                value={itemsOrder}
                 options={[{
                   label: 'Newest first',
-                  value: ITEMS_SORT_ORDERS.NEWEST_FIRST,
+                  value: ITEM_ORDERS.DESC,
                 }, {
                   label: 'Oldest first',
-                  value: ITEMS_SORT_ORDERS.OLDEST_FIRST,
+                  value: ITEM_ORDERS.ASC,
                 }]}
-                onValueChange={(value) => this.setState({itemsSortOrder: value}, () => setChanged())}
+                onValueChange={(value) => this.setState({itemsOrder: value}, () => setChanged())}
               />
             </div>
           </div>

@@ -10,6 +10,7 @@ import {humanizeMs, msToRFC3339} from "@/shared/TimeUtils";
 import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "@/shared/Constants";
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {MICROFEED_VERSION} from "@/shared/Version";
+import {buildItemPaginationUrl} from "@/shared/ItemPagination";
 
 export default class FeedPublicJsonBuilder {
   [member: string]: any;
@@ -65,9 +66,16 @@ export default class FeedPublicJsonBuilder {
 
     (publicContent as any)['feed_url'] = PUBLIC_URLS.jsonFeed(this.baseUrl);
 
-    if (this.content.items_next_cursor && !this.forOneItem) {
-      (publicContent as any)['next_url'] = `${(publicContent as any)['feed_url']}?next_cursor=${this.content.items_next_cursor}&` +
-        `sort=${this.content.items_sort_order}`;
+    if (this.content.items_next_cursor !== undefined && !this.forOneItem) {
+      (publicContent as any)['next_url'] = buildItemPaginationUrl(
+        (publicContent as any)['feed_url'],
+        {
+          legacySort: this.content.items_sort_order,
+          nextCursor: this.content.items_next_cursor,
+          order: this.content.items_order,
+          sort: this.content.items_sort,
+        },
+      );
     }
 
     (publicContent as any)['description'] = channel.description || '';
@@ -175,15 +183,35 @@ export default class FeedPublicJsonBuilder {
     if (channel['itunes:email']) {
       (microfeedExtra as any)['itunes:email'] = channel['itunes:email'];
     }
-    (microfeedExtra as any)['items_sort_order'] = this.content.items_sort_order;
-    if (this.content.items_next_cursor && !this.forOneItem) {
-      (microfeedExtra as any)['items_next_cursor'] = this.content.items_next_cursor;
-      (microfeedExtra as any)['next_url'] = publicContent['next_url'];
+    if (this.content.items_sort_order) {
+      (microfeedExtra as any)['items_sort_order'] = this.content.items_sort_order;
+    } else {
+      (microfeedExtra as any)['items_sort'] = this.content.items_sort;
+      (microfeedExtra as any)['items_order'] = this.content.items_order;
     }
-    if (this.content.items_prev_cursor && !this.forOneItem) {
+    if (this.content.items_next_cursor !== undefined && !this.forOneItem) {
+      (microfeedExtra as any)['items_next_cursor'] = this.content.items_next_cursor;
+      (microfeedExtra as any)['next_url'] = buildItemPaginationUrl(
+        this.request.url,
+        {
+          legacySort: this.content.items_sort_order,
+          nextCursor: this.content.items_next_cursor,
+          order: this.content.items_order,
+          sort: this.content.items_sort,
+        },
+      );
+    }
+    if (this.content.items_prev_cursor !== undefined && !this.forOneItem) {
       (microfeedExtra as any)['items_prev_cursor'] = this.content.items_prev_cursor;
-      (microfeedExtra as any)['prev_url'] = `${publicContent['feed_url']}?prev_cursor=${this.content.items_prev_cursor}&` +
-        `sort=${this.content.items_sort_order}`;
+      (microfeedExtra as any)['prev_url'] = buildItemPaginationUrl(
+        publicContent['feed_url'],
+        {
+          legacySort: this.content.items_sort_order,
+          order: this.content.items_order,
+          prevCursor: this.content.items_prev_cursor,
+          sort: this.content.items_sort,
+        },
+      );
     }
     return microfeedExtra;
   }

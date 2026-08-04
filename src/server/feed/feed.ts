@@ -9,10 +9,12 @@ import type {
   OnboardingResult,
   PublicFeed,
 } from "@/types";
+import type {ItemOrder, ItemSort} from "@/shared/ItemPagination";
 
 export interface FeedQuery {
   adminProtection?: AdminProtectionStatus;
-  itemsSortOrder?: string;
+  itemsOrder?: ItemOrder;
+  itemsSort?: ItemSort;
   limit?: number;
   queryKwargs?: Record<string, unknown>;
 }
@@ -34,7 +36,8 @@ export async function loadFeed(
         request,
         query.queryKwargs ?? {},
         query.limit,
-        query.itemsSortOrder,
+        query.itemsSort,
+        query.itemsOrder,
       )
     : null;
   const content = await database.getContent(fetchItems) as FeedContent;

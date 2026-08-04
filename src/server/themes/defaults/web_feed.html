@@ -72,19 +72,19 @@
     </div>
 
     <div class="flex justify-center mt-4">
-      {{#_microfeed.items_prev_cursor}}
+      {{#_microfeed.prev_url}}
       <div class="px-2">
-        <a href="?prev_cursor={{_microfeed.items_prev_cursor}}&sort={{_microfeed.items_sort_order}}"><span
+        <a href="{{_microfeed.prev_url}}"><span
           class="icon-arrow-left"> Prev</span></a>
       </div>
-      {{/_microfeed.items_prev_cursor}}
+      {{/_microfeed.prev_url}}
 
-      {{#_microfeed.items_next_cursor}}
+      {{#_microfeed.next_url}}
       <div class="px-2">
-        <a href="?next_cursor={{_microfeed.items_next_cursor}}&sort={{_microfeed.items_sort_order}}">Next <span
+        <a href="{{_microfeed.next_url}}">Next <span
           class="icon-arrow-right"></span></a>
       </div>
-      {{/_microfeed.items_next_cursor}}
+      {{/_microfeed.next_url}}
     </div>
   </section>
 </main>

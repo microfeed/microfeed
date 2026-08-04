@@ -32,6 +32,7 @@ export interface FeedSettings {
 }
 
 export interface FeedItem extends JsonObject {
+  createdAtMs?: number;
   id?: string;
   pubDateMs?: number;
   status?: number;
@@ -44,7 +45,9 @@ export interface FeedContent extends JsonObject {
   item?: FeedItem;
   items?: FeedItem[];
   items_next_cursor?: number | string;
+  items_order?: "asc" | "desc";
   items_prev_cursor?: number | string;
+  items_sort?: "created_at" | "published_at" | "updated_at";
   items_sort_order?: string;
   settings?: FeedSettings;
 }

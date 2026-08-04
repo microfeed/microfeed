@@ -40,6 +40,54 @@ async function contentsUnder(directory: string): Promise<string> {
 }
 
 describe("source architecture", () => {
+  it("points OpenAPI key guidance to the standalone admin API page", async () => {
+    const openApi = await readFile(
+      path.join(repositoryRoot, "src", "server", "openapi", "openapi.yaml"),
+      "utf8",
+    );
+
+    expect(openApi).toContain(
+      "API key at {{baseUrl}}{{adminBasePath}}api/.",
+    );
+    expect(openApi).toContain(
+      'Get API Key on {{baseUrl}}{{adminBasePath}}api/',
+    );
+    expect(openApi).not.toContain(
+      'Get API Key on {{baseUrl}}{{adminBasePath}}settings/',
+    );
+    expect(openApi).toContain("- published_at");
+    expect(openApi).toContain("- created_at");
+    expect(openApi).toContain("- updated_at");
+    expect(openApi).toContain("name: order");
+    expect(openApi).toContain("name: prev_cursor");
+    expect(openApi).toContain("unpadded Base64URL");
+    expect(openApi).toContain("deprecated: true");
+    expect(openApi).not.toContain("updated_desc");
+    expect(openApi).not.toContain("updated_asc");
+  });
+
+  it("saves only canonical public feed sorting settings", async () => {
+    const settingsSource = await readFile(
+      path.join(
+        repositoryRoot,
+        "src",
+        "components",
+        "admin",
+        "settings",
+        "WebGlobalSettingsApp",
+        "index.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(settingsSource).toContain("itemsOrder,");
+    expect(settingsSource).toContain("itemsSort,");
+    expect(settingsSource).not.toContain("itemsSortOrder");
+    expect(settingsSource).toContain("Published at");
+    expect(settingsSource).toContain("Created at");
+    expect(settingsSource).toContain("Updated at");
+  });
+
   it("has no legacy source roots or references", async () => {
     for (const directory of legacyRoots) {
       await expect(

@@ -4,11 +4,12 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 import AllItemsApp from "@/components/admin/items/AllItemsApp";
 import {STATUSES} from "@/shared/Constants";
-import {ITEM_LIST_SORT_ORDERS} from "@/shared/ItemList";
+import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import type {FeedItem} from "@/types";
 
 const ITEMS: FeedItem[] = [
   {
+    createdAtMs: Date.UTC(2026, 7, 4, 16, 0),
     id: "item-123",
     image: "images/item-123.png",
     mediaFile: {
@@ -22,6 +23,7 @@ const ITEMS: FeedItem[] = [
     updatedAtMs: Date.UTC(2026, 7, 4, 18, 0),
   },
   {
+    createdAtMs: Date.UTC(2026, 7, 3, 16, 0),
     id: "item-very-long",
     pubDateMs: Date.UTC(2026, 7, 3, 17, 0),
     status: STATUSES.PUBLISHED,
@@ -31,7 +33,7 @@ const ITEMS: FeedItem[] = [
 ];
 
 function renderItemsList(
-  search = "?status=published&sort=updated_desc",
+  search = "?status=published&sort=updated_at&order=desc",
   items: FeedItem[] = ITEMS,
 ) {
   vi.stubGlobal("window", {
@@ -45,8 +47,9 @@ function renderItemsList(
     React.createElement(AllItemsApp, {
       feedContent: {
         items,
-        items_next_cursor: 123,
-        items_sort_order: ITEM_LIST_SORT_ORDERS.UPDATED_DESC,
+        items_next_cursor: "cursor_value",
+        items_order: ITEM_ORDERS.DESC,
+        items_sort: ITEM_SORTS.UPDATED_AT,
         settings: {
           webGlobalSettings: {
             publicBucketUrl: "https://media.example.com/",
@@ -60,7 +63,7 @@ function renderItemsList(
 afterEach(() => vi.unstubAllGlobals());
 
 describe("admin items list", () => {
-  it("renders the requested filters and five-column layout", () => {
+  it("renders the requested filters and six-column layout", () => {
     const output = renderItemsList();
 
     expect(output.indexOf(">All items</a>")).toBeLessThan(
@@ -72,16 +75,19 @@ describe("admin items list", () => {
     expect(output.indexOf(">Unlisted</a>")).toBeLessThan(
       output.indexOf(">Unpublished</a>"),
     );
-    expect(output.match(/<th\b/gu)).toHaveLength(5);
+    expect(output.match(/<th\b/gu)).toHaveLength(6);
     expect(output).toContain(">Title</th>");
     expect(output).toContain("Published at");
+    expect(output).toContain("Created at");
     expect(output).toContain("Updated at");
     expect(output).toContain(">Media</th>");
     expect(output).toContain(">Actions</th>");
   });
 
   it("keeps the active filter visibly selected in dark mode", () => {
-    const output = renderItemsList("?status=unlisted&sort=updated_desc");
+    const output = renderItemsList(
+      "?status=unlisted&sort=updated_at&order=desc",
+    );
 
     expect(output).toMatch(
       /aria-current="page"[^>]+dark:bg-brand-light\/20[^>]+>Unlisted<\/a>/u,
@@ -113,19 +119,22 @@ describe("admin items list", () => {
 
     expect(output).toContain('aria-sort="descending"');
     expect(output).toContain(
-      "?status=published&amp;sort=updated_asc",
+      "?status=published&amp;sort=updated_at&amp;order=asc",
     );
     expect(output).toContain(
-      "?status=published&amp;sort=newest_first",
+      "?status=published&amp;sort=published_at&amp;order=desc",
     );
     expect(output).toContain(
-      "?status=published&amp;next_cursor=123&amp;sort=updated_desc",
+      "?status=published&amp;sort=created_at&amp;order=desc",
+    );
+    expect(output).toContain(
+      "?status=published&amp;next_cursor=cursor_value&amp;sort=updated_at&amp;order=desc",
     );
   });
 
   it("keeps the empty-state create action text white", () => {
     const output = renderItemsList(
-      "?status=unlisted&sort=updated_desc",
+      "?status=unlisted&sort=updated_at&order=desc",
       [],
     );
 

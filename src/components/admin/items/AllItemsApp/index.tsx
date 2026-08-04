@@ -24,12 +24,17 @@ import {
 } from "@/shared/Constants";
 import {
   buildItemsListUrl,
-  ITEM_LIST_SORT_ORDERS,
   ITEM_STATUS_FILTERS,
   type ItemStatusFilter,
-  itemListSortDefinition,
   normalizeItemStatusFilter,
 } from "@/shared/ItemList";
+import {
+  ITEM_ORDERS,
+  ITEM_SORTS,
+  type ItemOrder,
+  type ItemSort,
+  itemSortDefinition,
+} from "@/shared/ItemPagination";
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {
   ADMIN_URLS,
@@ -47,6 +52,7 @@ interface MediaFile {
 }
 
 interface ItemTableRow {
+  createdAtMs?: number;
   id: string;
   imageUrl?: string;
   mediaFile?: MediaFile;
@@ -182,6 +188,9 @@ function tableRows(items: FeedItem[], publicBucketUrl: string): ItemTableRow[] {
   return items.map((item) => {
     const image = String(item.image ?? "").trim();
     return {
+      createdAtMs: typeof item.createdAtMs === "number"
+        ? item.createdAtMs
+        : Number(item.createdAtMs),
       id: String(item.id ?? ""),
       imageUrl: image
         ? urlJoinWithRelative(publicBucketUrl, image) ?? undefined
@@ -202,10 +211,12 @@ function tableRows(items: FeedItem[], publicBucketUrl: string): ItemTableRow[] {
 
 function ItemStatusFilters({
   activeFilter,
-  sortOrder,
+  order,
+  sort,
 }: {
   activeFilter: ItemStatusFilter;
-  sortOrder: string;
+  order: ItemOrder;
+  sort: ItemSort;
 }) {
   return (
     <nav
@@ -223,7 +234,7 @@ function ItemStatusFilters({
               active &&
                 "border-brand-light bg-brand-light/10 text-brand-dark ring-1 ring-brand-light/20 hover:bg-brand-light/15 dark:border-brand-light dark:bg-brand-light/20 dark:text-white dark:ring-brand-light/50 dark:hover:bg-brand-light/25",
             )}
-            href={buildItemsListUrl({sortOrder, statusFilter})}
+            href={buildItemsListUrl({order, sort, statusFilter})}
             key={statusFilter}
           >
             {FILTER_LABELS[statusFilter]}
@@ -236,53 +247,49 @@ function ItemStatusFilters({
 
 function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) {
   const activeFilter = currentStatusFilter();
-  const sort = itemListSortDefinition(feed.items_sort_order);
-  const sortOrder = sort.order;
+  const sort = itemSortDefinition(feed.items_sort ?? ITEM_SORTS.UPDATED_AT);
+  const order = feed.items_order ?? ITEM_ORDERS.DESC;
   const nextUrl = feed.items_next_cursor === undefined
     ? undefined
     : buildItemsListUrl({
         nextCursor: feed.items_next_cursor,
-        sortOrder,
+        order,
+        sort: sort.sort,
         statusFilter: activeFilter,
       });
   const prevUrl = feed.items_prev_cursor === undefined
     ? undefined
     : buildItemsListUrl({
         prevCursor: feed.items_prev_cursor,
-        sortOrder,
+        order,
+        sort: sort.sort,
         statusFilter: activeFilter,
       });
 
   const sortableHeader = (
-    field: "published" | "updated",
+    field: ItemSort,
     label: string,
   ) => {
-    const active = field === "updated"
-      ? sort.column === "updated_at"
-      : sort.column === "pub_date";
-    const descendingOrder = field === "updated"
-      ? ITEM_LIST_SORT_ORDERS.UPDATED_DESC
-      : ITEM_LIST_SORT_ORDERS.PUBLISHED_DESC;
-    const ascendingOrder = field === "updated"
-      ? ITEM_LIST_SORT_ORDERS.UPDATED_ASC
-      : ITEM_LIST_SORT_ORDERS.PUBLISHED_ASC;
-    const nextSortOrder = active && sort.descending
-      ? ascendingOrder
-      : descendingOrder;
+    const active = field === sort.sort;
+    const descending = order === ITEM_ORDERS.DESC;
+    const nextOrder = active && descending
+      ? ITEM_ORDERS.ASC
+      : ITEM_ORDERS.DESC;
     const sortUrl = buildItemsListUrl({
-      sortOrder: nextSortOrder,
+      order: nextOrder,
+      sort: field,
       statusFilter: activeFilter,
     });
     return (
       <a
         aria-label={active
-          ? `${label}, sorted ${sort.descending ? "descending" : "ascending"}. Sort ${sort.descending ? "ascending" : "descending"}.`
+          ? `${label}, sorted ${descending ? "descending" : "ascending"}. Sort ${descending ? "ascending" : "descending"}.`
           : `${label}. Sort descending.`}
         className="inline-flex items-center gap-1.5"
         href={sortUrl}
       >
         {label}
-        {active && (sort.descending
+        {active && (descending
           ? <ArrowDownIcon aria-hidden="true" className="size-4" />
           : <ArrowUpIcon aria-hidden="true" className="size-4" />)}
       </a>
@@ -330,11 +337,15 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
       },
     }),
     columnHelper.accessor("pubDateMs", {
-      header: () => sortableHeader("published", "Published at"),
+      header: () => sortableHeader(ITEM_SORTS.PUBLISHED_AT, "Published at"),
+      cell: (info) => formatPublishedAt(info.getValue()),
+    }),
+    columnHelper.accessor("createdAtMs", {
+      header: () => sortableHeader(ITEM_SORTS.CREATED_AT, "Created at"),
       cell: (info) => formatPublishedAt(info.getValue()),
     }),
     columnHelper.accessor("updatedAtMs", {
-      header: () => sortableHeader("updated", "Updated at"),
+      header: () => sortableHeader(ITEM_SORTS.UPDATED_AT, "Updated at"),
       cell: (info) => formatPublishedAt(info.getValue()),
     }),
     columnHelper.accessor("mediaFile", {
@@ -372,7 +383,7 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
 
   return (
     <div>
-      <ItemStatusFilters activeFilter={activeFilter} sortOrder={sortOrder} />
+      <ItemStatusFilters activeFilter={activeFilter} order={order} sort={sort.sort} />
       <div className="overflow-x-auto rounded-[14px] border bg-card">
         <table className="w-full min-w-[64rem] table-fixed border-collapse text-sm">
           <thead>
@@ -381,16 +392,18 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
                 {headerGroup.headers.map((header) => (
                   <th
                     aria-sort={
-                      (header.column.id === "pubDateMs" && sort.column === "pub_date") ||
-                        (header.column.id === "updatedAtMs" && sort.column === "updated_at")
-                        ? sort.descending ? "descending" : "ascending"
+                      (header.column.id === "pubDateMs" && sort.sort === ITEM_SORTS.PUBLISHED_AT) ||
+                        (header.column.id === "createdAtMs" && sort.sort === ITEM_SORTS.CREATED_AT) ||
+                        (header.column.id === "updatedAtMs" && sort.sort === ITEM_SORTS.UPDATED_AT)
+                        ? order === ITEM_ORDERS.DESC ? "descending" : "ascending"
                         : undefined
                     }
                     className={cn(
                       "border-b bg-muted/45 px-5 py-3 text-left text-sm font-semibold text-muted-foreground",
-                      header.column.id === "title" && "w-[36%]",
-                      header.column.id === "pubDateMs" && "w-[16%] whitespace-nowrap",
-                      header.column.id === "updatedAtMs" && "w-[16%] whitespace-nowrap",
+                      header.column.id === "title" && "w-[29%]",
+                      header.column.id === "pubDateMs" && "w-[13%] whitespace-nowrap",
+                      header.column.id === "createdAtMs" && "w-[13%] whitespace-nowrap",
+                      header.column.id === "updatedAtMs" && "w-[13%] whitespace-nowrap",
                       header.column.id === "mediaFile" && "w-[12%]",
                       header.column.id === "actions" && "w-[20%]",
                     )}
@@ -410,7 +423,7 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td className="px-5 py-12 text-center" colSpan={5}>
+                <td className="px-5 py-12 text-center" colSpan={6}>
                   <div className="font-medium text-foreground">
                     No {activeFilter === "all" ? "" : `${activeFilter} `}items yet.
                   </div>
@@ -431,7 +444,7 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
                   <td
                     className={cn(
                       "px-5 py-4 align-middle text-foreground",
-                      ["pubDateMs", "updatedAtMs"].includes(cell.column.id) &&
+                      ["createdAtMs", "pubDateMs", "updatedAtMs"].includes(cell.column.id) &&
                         "whitespace-nowrap",
                     )}
                     key={cell.id}
