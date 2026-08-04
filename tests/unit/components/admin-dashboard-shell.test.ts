@@ -8,9 +8,7 @@ import {
   adminUpdatePrompt,
 } from "@/components/admin/AdminAboutDialog";
 import AdminMobileNavigation from "@/components/admin/AdminMobileNavigation";
-import AdminSidebar, {
-  adminSidebarPublicItems,
-} from "@/components/admin/AdminSidebar";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import {
   adminLogoutDestination,
   displayedAdminIdentities,
@@ -19,7 +17,7 @@ import {
   adminChannelSummary,
   type AdminSidebarData,
 } from "@/components/admin/admin-shell-types";
-import {OUR_BRAND} from "@/shared/Constants";
+import {NAV_ITEMS, OUR_BRAND} from "@/shared/Constants";
 
 const COMMIT = "0123456789abcdef0123456789abcdef01234567";
 
@@ -31,7 +29,13 @@ function sidebarData(): AdminSidebarData {
       protected: true,
       sourceCommit: COMMIT,
     },
-    items: [],
+    items: [{
+      active: true,
+      disabled: false,
+      id: NAV_ITEMS.ADMIN_HOME,
+      name: "Home",
+      url: "/admin/",
+    }],
     publicLinks: {
       json: "https://feed.example.com/json/",
       rss: "https://feed.example.com/rss/",
@@ -58,15 +62,21 @@ describe("admin dashboard shell models", () => {
       "/assets/brands/microfeed/horizontal-logo-dark.png",
     );
     expect(output).toContain('alt="microfeed by Listen Notes"');
+    expect(output).toContain(
+      "gap-3 rounded-xl px-3 py-2 text-base font-medium",
+    );
   });
 
-  it("uses the current instance origin for all public channel links", () => {
-    const links = adminSidebarPublicItems(sidebarData());
-    expect(links.map(({label, url}) => ({label, url}))).toEqual([
-      {label: "Public website", url: "https://feed.example.com/"},
-      {label: "Public RSS", url: "https://feed.example.com/rss/"},
-      {label: "Public JSON", url: "https://feed.example.com/json/"},
-    ]);
+  it("opens public access from the channel button instead of a dropdown", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminSidebar, {data: sidebarData()}),
+    );
+
+    expect(output).toContain(
+      'aria-label="Open public access links for Untitled channel"',
+    );
+    expect(output).toContain('data-slot="dialog-trigger"');
+    expect(output).not.toContain('data-slot="dropdown-menu-trigger"');
   });
 
   it("provides an accessible mobile navigation trigger", () => {

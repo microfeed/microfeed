@@ -1,38 +1,28 @@
 import {
-  ChevronDownIcon,
-  ExternalLinkIcon,
-  FileJsonIcon,
   Globe2Icon,
   HomeIcon,
   ListIcon,
   PencilIcon,
   PlusIcon,
-  RadioIcon,
   SettingsIcon,
 } from "lucide-react";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {NAV_ITEMS} from "@/shared/Constants";
 import type {AdminNavItemId} from "@/shared/AdminNavigation";
 import AdminAboutDialog from "./AdminAboutDialog";
+import AdminPublicAccess from "./shared/AdminPublicAccess";
 import type {AdminSidebarData} from "./admin-shell-types";
 
 interface Props {
   data: AdminSidebarData;
   onNavigate?: () => void;
-}
-
-export function adminSidebarPublicItems(data: AdminSidebarData) {
-  return [
-    {icon: Globe2Icon, label: "Public website", url: data.publicLinks.website},
-    {icon: RadioIcon, label: "Public RSS", url: data.publicLinks.rss},
-    {icon: FileJsonIcon, label: "Public JSON", url: data.publicLinks.json},
-  ];
 }
 
 const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
@@ -44,15 +34,14 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
 };
 
 export default function AdminSidebar({data, onNavigate}: Props) {
-  const publicItems = adminSidebarPublicItems(data);
-
   return (
     <div className="flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground">
       <div className="p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger
+        <Dialog>
+          <DialogTrigger
             render={
               <button
+                aria-label={`Open public access links for ${data.channel.title}`}
                 className="group flex min-h-16 w-full items-center gap-3 rounded-[var(--radius-card)] border border-sidebar-border bg-sidebar px-3 py-2.5 text-left shadow-xs outline-none transition hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-sidebar-ring/40"
                 type="button"
               />
@@ -73,23 +62,21 @@ export default function AdminSidebar({data, onNavigate}: Props) {
             <span className="line-clamp-2 min-w-0 flex-1 text-sm leading-5 font-semibold">
               {data.channel.title}
             </span>
-            <ChevronDownIcon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-transform group-data-popup-open:rotate-180" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            {publicItems.map(({icon: Icon, label, url}) => (
-              <DropdownMenuItem
-                key={label}
-                render={
-                  <a href={url} rel="noopener noreferrer" target="_blank" />
-                }
-              >
-                <Icon aria-hidden="true" />
-                <span className="flex-1">{label}</span>
-                <ExternalLinkIcon aria-hidden="true" className="text-muted-foreground" />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Globe2Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+          </DialogTrigger>
+          <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-0 sm:max-w-3xl">
+            <DialogTitle className="sr-only">
+              Public access for {data.channel.title}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Copy or open this channel's public web, RSS, and JSON feed addresses.
+            </DialogDescription>
+            <AdminPublicAccess
+              className="border-0 shadow-none"
+              links={data.publicLinks}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3" aria-label="Admin navigation">
@@ -97,7 +84,7 @@ export default function AdminSidebar({data, onNavigate}: Props) {
           {data.items.map((item) => {
             const Icon = navigationIcons[item.id];
             const classes = [
-              "relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium outline-none transition-colors",
+              "relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-base font-medium outline-none transition-colors",
               item.active
                 ? "bg-brand-light/12 text-brand-dark before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-brand-light dark:text-brand-light"
                 : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

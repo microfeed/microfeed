@@ -502,6 +502,74 @@ describe("first-class local instances", () => {
     ).resolves.toContain('"MICROFEED_ADMIN_AUTH_MODE": "built-in"');
   });
 
+  it("disables an existing local-only login without changing local data", async () => {
+    const {commands, config, prompts} = await freshModules({
+      confirmAnswers: [true],
+    });
+    const runner = vi.fn<CommandRunner>();
+    const initial = await config.ensureLocalOnlyConfig("practice");
+    const localDataDirectory = config.localPersistencePath(initial);
+    const sentinelPath = path.join(localDataDirectory, "keep.txt");
+    await mkdir(localDataDirectory, {recursive: true});
+    await writeFile(sentinelPath, "preserved", "utf8");
+    const note = vi.spyOn(prompts, "note").mockImplementation(
+      () => undefined,
+    );
+    const outro = vi.spyOn(prompts, "outro").mockImplementation(
+      () => undefined,
+    );
+
+    await commands.authCommand({
+      action: "disable",
+      instance: "practice",
+    }, runner);
+
+    const disabled = await config.readConfig(false, "practice");
+    expect(disabled).toEqual(expect.objectContaining({
+      adminAuthMode: "none",
+      d1: initial.d1,
+      r2: initial.r2,
+    }));
+    await expect(readFile(sentinelPath, "utf8")).resolves.toBe("preserved");
+    await expect(
+      readFile(config.wranglerConfigPath(disabled!), "utf8"),
+    ).resolves.toContain('"MICROFEED_ADMIN_AUTH_MODE": "none"');
+    expect(runner).not.toHaveBeenCalled();
+    expect(note).toHaveBeenCalledWith(
+      expect.stringContaining("Anyone who can reach the local development server"),
+      "Local dashboard login will be disabled",
+    );
+    expect(outro).toHaveBeenCalledWith(
+      "Built-in login disabled for this local instance. Restart " +
+        "`yarn dev --instance practice` if it is running.",
+    );
+
+    await commands.authCommand({
+      action: "disable",
+      instance: "practice",
+    }, runner);
+    expect(outro).toHaveBeenLastCalledWith(
+      "The built-in dashboard login is already disabled.",
+    );
+  });
+
+  it("does not let a local sandbox override Cloudflare authentication", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig(completedRemoteConfig());
+
+    await expect(commands.authCommand({
+      action: "disable",
+      instance: "feed",
+      local: true,
+      yes: true,
+    }, vi.fn<CommandRunner>())).rejects.toThrow(
+      "local sandbox cannot override the saved production authentication mode",
+    );
+    await expect(config.readConfig(false, "feed")).resolves.toEqual(
+      expect.objectContaining({adminAuthMode: "built-in"}),
+    );
+  });
+
   it("shows saved local instances while signed out of Cloudflare", async () => {
     const {commands, prompts} = await freshModules();
     const localRunner = existingLocalOwnerRunner();

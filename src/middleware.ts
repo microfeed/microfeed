@@ -138,6 +138,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
       if (!authSession && !await hasAdminOwner(env.FEED_DB)) {
         return adminDashboardLockedResponse(
           !wantsJson(context.request, pathname),
+          {
+            instanceName: env.MICROFEED_INSTANCE_NAME,
+            local: !env.MICROFEED_CLOUDFLARE_ACCOUNT_ID?.trim(),
+          },
         );
       }
       if (pathname === loginPath) {

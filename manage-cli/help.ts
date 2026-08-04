@@ -314,7 +314,8 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Choose an explicit action: setup, reset-password, change-email, change-path, or disable.",
       "Before prompting or changing anything, each action shows the selected instance, target environment, dashboard location, and operation. Cloudflare targets also show the Worker name.",
       "Cloudflare-connected instances target Cloudflare by default. Use --local only for their separate local development sandbox. Snapshot restore still needs --local because its target does not exist yet.",
-      "Remote password setup/reset uses a browser link; local setup/reset uses hidden password and confirmation prompts. Setup does not redeploy when built-in login is already active. The raw --admin-password option is remote-only and intentionally unsafe.",
+      "Remote password setup/reset uses a browser link; local setup/reset uses hidden password and confirmation prompts. A local-only instance can disable its login without changing local D1 or R2 data; restart its dev server afterward. A connected site's local sandbox cannot override the saved production authentication mode.",
+      "Setup does not redeploy when built-in login is already active. The raw --admin-password option is remote-only and intentionally unsafe.",
     ],
     examples: [
       "yarn manage auth setup --instance personal --owner-email me@example.com",
@@ -324,6 +325,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "yarn manage auth disable --instance personal",
       "yarn manage auth change-email --instance restored-local --owner-email new-owner@example.com",
       "yarn manage auth reset-password --instance restored-local",
+      "yarn manage auth disable --instance restored-local",
     ],
     name: "auth",
     options: [

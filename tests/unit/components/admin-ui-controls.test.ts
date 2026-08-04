@@ -2,7 +2,11 @@ import React from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 
+import AdminCopyableUrl from "@/components/admin/shared/AdminCopyableUrl";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
+import AdminPublicAccess, {
+  publicAccessItems,
+} from "@/components/admin/shared/AdminPublicAccess";
 import ExternalLink from "@/components/admin/shared/ExternalLink";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import AdminSwitch from "@/components/admin/shared/AdminSwitch";
@@ -10,6 +14,49 @@ import SettingsBase from "@/components/admin/settings/SettingsBase";
 import {Input} from "@/components/ui/input";
 
 describe("admin UI controls", () => {
+  it("orders and labels the public access feeds", () => {
+    const links = {
+      json: "https://feed.example.com/json/",
+      rss: "https://feed.example.com/rss/",
+      website: "https://feed.example.com/",
+    };
+    const items = publicAccessItems(links);
+
+    expect(items.map(({label, url}) => ({label, url}))).toEqual([
+      {label: "web feed", url: "https://feed.example.com/"},
+      {label: "rss feed", url: "https://feed.example.com/rss/"},
+      {label: "json feed", url: "https://feed.example.com/json/"},
+    ]);
+
+    const output = renderToStaticMarkup(
+      React.createElement(AdminPublicAccess, {links}),
+    );
+    expect(output).toContain(">Public access</h2>");
+    expect(output).toContain("lucide-globe");
+    expect(output).toContain("lucide-rss");
+    expect(output).toContain("lucide-braces");
+    expect(output).toContain('aria-label="web feed address controls"');
+    expect(output).toContain('aria-label="rss feed address controls"');
+    expect(output).toContain('aria-label="json feed address controls"');
+  });
+
+  it("renders a disabled URL input with copy and open controls", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminCopyableUrl, {
+        label: "web feed",
+        url: "https://feed.example.com/",
+      }),
+    );
+
+    expect(output).toContain('aria-label="web feed address"');
+    expect(output).toContain('disabled=""');
+    expect(output).toContain('value="https://feed.example.com/"');
+    expect(output).toContain('aria-label="Copy web feed address"');
+    expect(output).toContain('aria-label="Open web feed in a new tab"');
+    expect(output).toContain('href="https://feed.example.com/"');
+    expect(output).toContain('target="_blank"');
+  });
+
   it("forwards refs through the shared input primitive", () => {
     expect((Input as unknown as {$$typeof: symbol}).$$typeof).toBe(
       Symbol.for("react.forward_ref"),

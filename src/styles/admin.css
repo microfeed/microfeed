@@ -42,6 +42,7 @@
 
   --color-brand-light: #19b7fa;
   --color-brand-dark: #2c2b3d;
+  --color-cloudflare-orange: #f38020;
   --color-admin-canvas: var(--admin-canvas);
 
   --color-muted-color: var(--muted-foreground);

@@ -14,6 +14,9 @@
 - Before publishing, run `git diff --check` and `yarn check`, commit only the
   scoped files with a concise imperative title, and open a draft pull request
   against `microfeed/microfeed` when GitHub authentication is available.
+- After editing and testing, stop every development server you started before
+  handing work back. Confirm each process has exited so a human operator can
+  run `yarn dev` without a port conflict; never stop a server you did not start.
 
 ## Cloudflare deployment
 

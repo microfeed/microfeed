@@ -1437,6 +1437,22 @@ export function adminAuthDisableNotice(
   };
 }
 
+export function localAdminAuthDisableNotice(
+  adminUrl: string,
+  instanceName: string,
+): AdminAuthDisableNotice {
+  return {
+    confirmation: "Disable the built-in login for this local instance?",
+    message:
+      `The local dashboard at ${adminUrl} will open without a sign-in ` +
+      "screen. Anyone who can reach the local development server can " +
+      "create, edit, or delete content. The existing account and " +
+      "credentials will be kept, so you can restore the built-in login " +
+      `later with \`yarn manage auth setup --instance ${instanceName}\`.`,
+    title: "Local dashboard login will be disabled",
+  };
+}
+
 export function adminProtectionNotice(
   protection: AdminProtection,
   builtInAuthEnabled: boolean,
@@ -1619,11 +1635,27 @@ export async function redeployWithAdminAuthMode(
     write: (config: MicrofeedConfig) => Promise<void>;
   },
 ): Promise<void> {
+  await updateAdminAuthMode(config, nextMode, {
+    apply: operations.deploy,
+    generate: operations.generate,
+    write: operations.write,
+  });
+}
+
+async function updateAdminAuthMode(
+  config: MicrofeedConfig,
+  nextMode: AdminAuthMode,
+  operations: {
+    apply: (config: MicrofeedConfig) => Promise<void>;
+    generate: (config: MicrofeedConfig) => Promise<void>;
+    write: (config: MicrofeedConfig) => Promise<void>;
+  },
+): Promise<void> {
   const previous = structuredClone(config);
   config.adminAuthMode = nextMode;
   await operations.write(config);
   try {
-    await operations.deploy(config);
+    await operations.apply(config);
   } catch (error) {
     for (const key of Object.keys(config)) {
       Reflect.deleteProperty(config, key);
@@ -3983,16 +4015,58 @@ export async function authCommand(
       );
     }
     validateUnsafeAdminPasswordFlag(flags);
-    if (!["change-email", "reset-password", "setup"].includes(action)) {
+    if (
+      !["change-email", "disable", "reset-password", "setup"].includes(
+        action,
+      )
+    ) {
       throw new Error(
-        "Local authentication supports setup, change-email, and " +
-        "reset-password. Changing the dashboard path or disabling login " +
-        "requires a Cloudflare instance.",
+        "Local authentication supports setup, change-email, reset-password, " +
+        "and disabling login for local-only instances. Changing the " +
+        "dashboard path requires a Cloudflare instance.",
       );
     }
     prompts.intro("microfeed dashboard login");
     const target = authTargetNotice(config, action, true, false);
     prompts.note(target.message, target.title);
+    if (action === "disable") {
+      if (!isLocalOnly(config)) {
+        throw new Error(
+          "A Cloudflare-connected site's local sandbox cannot override the " +
+          "saved production authentication mode. Run the command without " +
+          "`--local` to update Cloudflare, or use a local-only instance.",
+        );
+      }
+      if (adminAuthMode(config) === "none") {
+        prompts.outro("The built-in dashboard login is already disabled.");
+        return;
+      }
+      const adminDashboardUrl = new URL(
+        adminBasePath(config.adminPath),
+        config.deploymentUrl ?? "http://localhost:4321",
+      ).href;
+      const notice = localAdminAuthDisableNotice(
+        adminDashboardUrl,
+        config.instanceName,
+      );
+      prompts.note(notice.message, notice.title);
+      if (
+        !flagBoolean(flags, "yes") &&
+        !await askConfirm(notice.confirmation, false)
+      ) {
+        throw new Error("Built-in authentication was not changed.");
+      }
+      await updateAdminAuthMode(config, "none", {
+        apply: generateWranglerConfig,
+        generate: generateWranglerConfig,
+        write: writeConfig,
+      });
+      prompts.outro(
+        "Built-in login disabled for this local instance. Restart " +
+        `\`yarn dev --instance ${config.instanceName}\` if it is running.`,
+      );
+      return;
+    }
     await context.cloudflare.applyLocalMigrations(config);
     if (action === "setup") {
       const owner = await ensureAuthOwner(context, config, true);

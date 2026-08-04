@@ -672,6 +672,7 @@ export async function generateWranglerConfig(
       deploymentEnvironment(config),
     )
     .replaceAll("__INSTANCE_ID__", config.instanceId)
+    .replaceAll("__INSTANCE_NAME__", config.instanceName)
     .replace("__REQUIRED_SECRETS__", JSON.stringify(secrets))
     .replace("__R2_BINDING__", r2Binding)
     .replace("__ROUTES__", routes);

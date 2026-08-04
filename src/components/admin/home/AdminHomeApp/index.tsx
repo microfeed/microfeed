@@ -1,4 +1,4 @@
-import React from 'react';
+import {useState} from "react";
 import type {FeedContent, OnboardingResult} from "@/types";
 import AdminPageApp from "@/components/admin/shared/AdminPageApp";
 import WhatsNewApp from "./component/WhatsNewApp";
@@ -10,28 +10,33 @@ interface Props {
   onboardingResult: OnboardingResult;
 }
 
-export default class AdminHomeApp extends React.Component<Props, any> {
-  constructor(props: Props) {
-    super(props);
+export default function AdminHomeApp({feedContent, onboardingResult}: Props) {
+  const [checklistComplete, setChecklistComplete] = useState(
+    onboardingResult.allOk,
+  );
+  const checklistSection = (
+    <div key="setup-checklist">
+      <SetupChecklistApp
+        feed={feedContent}
+        onboardingResult={onboardingResult}
+        onCompletionChange={setChecklistComplete}
+      />
+    </div>
+  );
+  const publicAccessSection = (
+    <div key="public-access">
+      <DistributionApp />
+    </div>
+  );
+  const primarySections = checklistComplete
+    ? [publicAccessSection, checklistSection]
+    : [checklistSection, publicAccessSection];
 
-    this.state = {
-      feed: props.feedContent,
-      onboardingResult: props.onboardingResult,
-    };
-  }
-
-  render() {
-    const {feed, onboardingResult} = this.state;
-
-    return (<AdminPageApp>
+  return (
+    <AdminPageApp>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="grid grid-cols-1 gap-4 xl:col-span-8">
-          <div>
-            <SetupChecklistApp feed={feed} onboardingResult={onboardingResult} />
-          </div>
-          <div>
-            <DistributionApp />
-          </div>
+          {primarySections}
         </div>
         <div className="grid grid-cols-1 gap-4 xl:col-span-4">
           <div>
@@ -39,6 +44,6 @@ export default class AdminHomeApp extends React.Component<Props, any> {
           </div>
         </div>
       </div>
-    </AdminPageApp>);
-  }
+    </AdminPageApp>
+  );
 }

@@ -670,7 +670,7 @@ Use the action that matches the change you want to make:
 | `reset-password` | Create a one-time remote reset link or securely replace a local password. |
 | `change-email` | Change the administrator email and sign out existing sessions. |
 | `change-path` | Move a Cloudflare dashboard to a new path and redeploy the Worker. |
-| `disable` | Disable the built-in login for a Cloudflare deployment after a warning. |
+| `disable` | Disable the built-in login for a local-only instance or Cloudflare deployment after a warning. |
 
 For example, if you skipped authentication during initialization, add the
 built-in login later with:
@@ -700,16 +700,21 @@ yarn manage auth change-email \
 
 yarn manage auth reset-password \
   --instance microfeed-org-local
+
+yarn manage auth disable \
+  --instance microfeed-org-local
 ```
 
 The local password reset uses hidden password and confirmation prompts, hashes
-the replacement password, and signs out existing local sessions.
+the replacement password, and signs out existing local sessions. Local disable
+keeps the account, credentials, and local D1/R2 data; restart the development
+server afterward.
 
 For a Cloudflare-connected instance, auth commands target Cloudflare by
 default. Add `--local` only when you intentionally want that instance's
 separate local development sandbox. Use `--preview` to target its preview
-deployment. Changing the dashboard path and disabling the login are
-Cloudflare-only actions.
+deployment. A connected site's local sandbox cannot override the saved
+production authentication mode. Changing the dashboard path is Cloudflare-only.
 
 To move the dashboard to a new path:
 

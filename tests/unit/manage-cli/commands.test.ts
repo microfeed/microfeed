@@ -12,6 +12,7 @@ import {
   deploymentVerificationUrl,
   initCommand,
   initializationResourceReuse,
+  localAdminAuthDisableNotice,
   localAdminAuthSetupNotice,
   redeployWithAdminAuthMode,
   siteNameGuidance,
@@ -699,6 +700,23 @@ describe("dashboard protection notices", () => {
 
 describe("built-in admin authentication disable", () => {
   const adminUrl = "https://feed.example.com/admin/";
+
+  it("warns without describing a local dashboard as internet-public", () => {
+    expect(localAdminAuthDisableNotice(
+      "http://localhost:4321/admin/",
+      "practice",
+    )).toEqual({
+      confirmation: "Disable the built-in login for this local instance?",
+      message:
+        "The local dashboard at http://localhost:4321/admin/ will open " +
+        "without a sign-in screen. Anyone who can reach the local " +
+        "development server can create, edit, or delete content. The " +
+        "existing account and credentials will be kept, so you can restore " +
+        "the built-in login later with `yarn manage auth setup --instance " +
+        "practice`.",
+      title: "Local dashboard login will be disabled",
+    });
+  });
 
   it("explains when Cloudflare Access will remain as the admin gate", () => {
     expect(adminAuthDisableNotice("access", adminUrl)).toEqual({
