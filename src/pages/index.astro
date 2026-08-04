@@ -4,10 +4,10 @@ import {env} from "cloudflare:workers";
 import {CODE_TYPES} from "@/shared/Constants";
 import Theme from "@/server/themes/Theme";
 import PublicLayout from "../layouts/PublicLayout.astro";
-import {loadPublishedFeed, shouldHidePublicFeed} from "@/server/feed/feed";
+import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 
 const loaded = await loadPublishedFeed(env, Astro.request);
-const unavailable = shouldHidePublicFeed(loaded.content);
+const unavailable = shouldHidePublicWeb(loaded.content);
 if (!unavailable && !loaded.onboarding.requiredOk) {
   return Astro.redirect(
     new URL(`/${env.MICROFEED_ADMIN_PATH || "admin"}/`, Astro.url),

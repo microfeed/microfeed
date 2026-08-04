@@ -1,7 +1,12 @@
 import React from 'react';
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import SettingsBase from '../SettingsBase';
-import {SETTINGS_CATEGORIES} from "@/shared/Constants";
+import {
+  CHANNEL_STATUSES,
+  CHANNEL_STATUSES_DICT,
+  SETTINGS_CATEGORIES,
+} from "@/shared/Constants";
+import type {AccessPolicy} from "@/types";
 
 export default class AccessSettingsApp extends React.Component<any, any> {
   constructor(props: any) {
@@ -21,7 +26,7 @@ export default class AccessSettingsApp extends React.Component<any, any> {
     };
   }
 
-  onUpdateAccess(currentPolicy: string) {
+  onUpdateAccess(currentPolicy: AccessPolicy) {
     const access = {...this.state.access, currentPolicy};
     this.setState({access}, () => {
       this.props.setChanged();
@@ -46,18 +51,23 @@ export default class AccessSettingsApp extends React.Component<any, any> {
         disabled={submitting}
         name="access-policy"
         value={access.currentPolicy}
-        onValueChange={(value) => this.onUpdateAccess(value)}
+        onValueChange={(value) => this.onUpdateAccess(value as AccessPolicy)}
         variant="cards"
         options={[
           {
-            value: "public",
-            label: "Public",
-            description: "Make the entire site publicly accessible, including all non-Admin web pages, rss feed and json feed.",
+            value: CHANNEL_STATUSES.PUBLIC,
+            label: CHANNEL_STATUSES_DICT[CHANNEL_STATUSES.PUBLIC].name,
+            description: CHANNEL_STATUSES_DICT[CHANNEL_STATUSES.PUBLIC].description,
           },
           {
-            value: "offline",
-            label: "Offline",
-            description: "Make the entire site offline. All non-Admin web pages, rss feed and json feed will be 404-ed.",
+            value: CHANNEL_STATUSES.HEADLESS,
+            label: CHANNEL_STATUSES_DICT[CHANNEL_STATUSES.HEADLESS].name,
+            description: CHANNEL_STATUSES_DICT[CHANNEL_STATUSES.HEADLESS].description,
+          },
+          {
+            value: CHANNEL_STATUSES.OFFLINE,
+            label: CHANNEL_STATUSES_DICT[CHANNEL_STATUSES.OFFLINE].name,
+            description: CHANNEL_STATUSES_DICT[CHANNEL_STATUSES.OFFLINE].description,
           },
         ]}
       />

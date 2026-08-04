@@ -15,7 +15,11 @@ import {
   UPLOAD_TTL_SECONDS,
   verifySignedUpload,
 } from "@/server/media/uploads";
-import {jsonFeedResponse} from "@/server/feed/responses";
+import {
+  jsonFeedResponse,
+  rssFeedResponse,
+  sitemapResponse,
+} from "@/server/feed/responses";
 
 describe("signed Worker uploads", () => {
   it("signs a 15-minute upload and rejects expiry or tampering", async () => {
@@ -433,15 +437,85 @@ describe("R2 media responses", () => {
     expect(rows?.count).toBe(1);
   });
 
-  it("preserves offline access rules for public feed routes", async () => {
-    const request = new Request("https://feed.example.com/json/");
+  it("keeps feeds and their web-link metadata available in headless mode", async () => {
+    const origin = "https://feed.example.com";
+    const itemId = "Headless001";
+    const request = new Request(`${origin}/json/`);
     const database = new FeedDb(env, request);
-    const content = await database.getContent();
-    content.settings.access.currentPolicy = "offline";
-    await database.putContent(content);
-    const response = await jsonFeedResponse(
-      request,
-    );
-    expect(response.status).toBe(404);
+    await database.getContent();
+    await database.putContent({
+      item: {
+        id: itemId,
+        pubDateMs: Date.now(),
+        status: 1,
+        title: "Headless item",
+      },
+      settings: {access: {currentPolicy: "headless"}},
+    });
+
+    try {
+      const jsonResponse = await jsonFeedResponse(request);
+      expect(jsonResponse.status).toBe(200);
+      const json = await jsonResponse.json() as {
+        home_page_url?: string;
+        items: Array<{id?: string; _microfeed?: {web_url?: string}}>;
+      };
+      const item = json.items.find(({id}) => id === itemId);
+      expect(json.home_page_url).toBe(origin);
+      expect(item?._microfeed?.web_url).toContain(`/i/headless-item-${itemId}/`);
+
+      const rssResponse = await rssFeedResponse(
+        new Request(`${origin}/rss/`),
+      );
+      expect(rssResponse.status).toBe(200);
+      const rss = await rssResponse.text();
+      expect(rss).toContain(`${origin}/`);
+      expect(rss).toContain(`/i/headless-item-${itemId}/`);
+
+      const itemJsonResponse = await jsonFeedResponse(
+        new Request(`${origin}/i/${itemId}/json/`),
+        true,
+        itemId,
+      );
+      expect(itemJsonResponse.status).toBe(200);
+      const itemRssResponse = await rssFeedResponse(
+        new Request(`${origin}/i/${itemId}/rss/`),
+        itemId,
+      );
+      expect(itemRssResponse.status).toBe(200);
+
+      const sitemap = await sitemapResponse(
+        new Request(`${origin}/sitemap.xml`),
+      );
+      expect(sitemap.status).toBe(404);
+    } finally {
+      await database.putContent({
+        settings: {access: {currentPolicy: "public"}},
+      });
+    }
+  });
+
+  it("preserves offline access rules for public routes", async () => {
+    const origin = "https://feed.example.com";
+    const request = new Request(`${origin}/json/`);
+    const database = new FeedDb(env, request);
+    await database.getContent();
+    await database.putContent({
+      settings: {access: {currentPolicy: "offline"}},
+    });
+
+    try {
+      expect((await jsonFeedResponse(request)).status).toBe(404);
+      expect((await rssFeedResponse(
+        new Request(`${origin}/rss/`),
+      )).status).toBe(404);
+      expect((await sitemapResponse(
+        new Request(`${origin}/sitemap.xml`),
+      )).status).toBe(404);
+    } finally {
+      await database.putContent({
+        settings: {access: {currentPolicy: "public"}},
+      });
+    }
   });
 });

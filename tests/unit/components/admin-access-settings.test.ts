@@ -34,12 +34,15 @@ function installSynchronousSetState(app: AccessSettingsApp) {
 }
 
 describe("access control settings", () => {
-  it("omits the manual Update action", () => {
+  it("shows Public, Headless, and Offline without a manual Update action", () => {
     const output = renderToStaticMarkup(
       React.createElement(AccessSettingsApp, props()),
     );
 
     expect(output).toContain("Access control");
+    expect(output.indexOf("Public")).toBeLessThan(output.indexOf("Headless"));
+    expect(output.indexOf("Headless")).toBeLessThan(output.indexOf("Offline"));
+    expect(output).toContain("Keep RSS, JSON Feed, APIs, and media available");
     expect(output).not.toContain('data-slot="card-action"');
     expect(output).not.toContain(">Update</button>");
   });
@@ -54,15 +57,15 @@ describe("access control settings", () => {
     const app = new AccessSettingsApp(settingsProps);
     installSynchronousSetState(app);
 
-    app.onUpdateAccess("offline");
+    app.onUpdateAccess("headless");
     await Promise.resolve();
 
-    expect(app.state.access.currentPolicy).toBe("offline");
+    expect(app.state.access.currentPolicy).toBe("headless");
     expect(settingsProps.setChanged).toHaveBeenCalledOnce();
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({preventDefault: expect.any(Function)}),
       SETTINGS_CATEGORIES.ACCESS,
-      {currentPolicy: "offline"},
+      {currentPolicy: "headless"},
     );
   });
 
