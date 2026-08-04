@@ -12,6 +12,7 @@ import type {
 
 export interface FeedQuery {
   adminProtection?: AdminProtectionStatus;
+  itemsSortOrder?: string;
   limit?: number;
   queryKwargs?: Record<string, unknown>;
 }
@@ -29,7 +30,12 @@ export async function loadFeed(
 ): Promise<LoadedFeed> {
   const database = new FeedDb(runtimeEnv, request);
   const fetchItems = query
-    ? getFetchItemsParams(request, query.queryKwargs ?? {}, query.limit)
+    ? getFetchItemsParams(
+        request,
+        query.queryKwargs ?? {},
+        query.limit,
+        query.itemsSortOrder,
+      )
     : null;
   const content = await database.getContent(fetchItems) as FeedContent;
   const onboarding = new OnboardingChecker(

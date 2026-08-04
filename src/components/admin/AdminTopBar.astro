@@ -4,6 +4,7 @@ import AdminMobileNavigation from "@/components/admin/AdminMobileNavigation";
 import type {
   AdminBreadcrumb,
   AdminIdentitySummary,
+  AdminSettingsSidebarData,
   AdminSidebarData,
 } from "@/components/admin/admin-shell-types";
 
@@ -12,15 +13,23 @@ interface Props {
   breadcrumb?: AdminBreadcrumb;
   identity: AdminIdentitySummary;
   pageTitle: string;
+  settingsSidebar?: AdminSettingsSidebarData;
   sidebar: AdminSidebarData;
 }
 
-const {adminPath, breadcrumb, identity, pageTitle, sidebar} = Astro.props;
+const {
+  adminPath,
+  breadcrumb,
+  identity,
+  pageTitle,
+  settingsSidebar,
+  sidebar,
+} = Astro.props;
 ---
 
-<header class="sticky top-0 z-40 flex min-h-14 items-center gap-2 border-b bg-background/95 px-4 supports-backdrop-filter:backdrop-blur-md lg:grid lg:min-h-16 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-3 lg:px-6">
+<header class="sticky top-0 z-40 flex min-h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 supports-backdrop-filter:backdrop-blur-md lg:grid lg:min-h-16 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-3 lg:px-6">
   <div class="flex min-w-0 flex-1 items-center gap-2 lg:flex-initial">
-    <AdminMobileNavigation client:load {sidebar} />
+    <AdminMobileNavigation client:load {settingsSidebar} {sidebar} />
     <h1 class="truncate text-base font-semibold tracking-tight lg:hidden">{pageTitle}</h1>
     {
       breadcrumb && (

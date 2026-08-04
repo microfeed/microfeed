@@ -1,7 +1,6 @@
 ---
 import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
-import {NAV_ITEMS} from "@/shared/Constants";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 
 const {feedContent, onboardingResult} = Astro.locals;
@@ -11,7 +10,7 @@ if (!feedContent || !onboardingResult) {
 ---
 
 <AdminShell
-  activeNavItem={NAV_ITEMS.NEW_ITEM}
+  activeNavItem={null}
   documentTitle="New item | microfeed.org"
   {feedContent}
   {onboardingResult}

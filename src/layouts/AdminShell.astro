@@ -4,6 +4,7 @@ import "@fontsource-variable/geist";
 import {ClientRouter} from "astro:transitions";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminSettingsSidebar from "@/components/admin/settings/AdminSettingsSidebar";
 import AdminThemeScript from "@/components/admin/AdminThemeScript.astro";
 import AdminTopBar from "@/components/admin/AdminTopBar.astro";
 import {Toaster} from "@/components/ui/sonner";
@@ -12,14 +13,16 @@ import type {
   AdminBreadcrumb,
   AdminDeploymentSummary,
   AdminIdentitySummary,
+  AdminSettingsSidebarData,
   AdminSidebarData,
 } from "@/components/admin/admin-shell-types";
 import {cloudflareAccessIdentity} from "@/server/auth/admin-protection";
-import {normalizeAdminPath} from "@/shared/AdminPath";
+import {adminUrl, normalizeAdminPath} from "@/shared/AdminPath";
 import {
   getAdminNavigationItems,
   type AdminNavItemId,
 } from "@/shared/AdminNavigation";
+import type {AdminSettingsSection} from "@/shared/AdminSettingsNavigation";
 import {
   PUBLIC_URLS,
   resolvePublicBucketUrl,
@@ -38,6 +41,8 @@ interface Props {
   feedContent: FeedContent;
   onboardingResult: OnboardingResult;
   pageTitle: string;
+  settingsActiveSection?: AdminSettingsSection["id"];
+  settingsNavigation?: boolean;
 }
 
 const {
@@ -47,6 +52,8 @@ const {
   feedContent,
   onboardingResult,
   pageTitle,
+  settingsActiveSection,
+  settingsNavigation = false,
 } = Astro.props;
 const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
 const accessIdentity = cloudflareAccessIdentity(Astro.request);
@@ -93,16 +100,33 @@ const sidebar: AdminSidebarData = {
     activeNavItem,
     onboardingResult,
   ),
+  newItem: {
+    disabled: !onboardingResult.requiredOk,
+    url: adminUrl("items/new", adminPath),
+  },
   publicLinks: {
     json: PUBLIC_URLS.jsonFeed(Astro.url.origin),
     rss: PUBLIC_URLS.rssFeed(Astro.url.origin),
     website: PUBLIC_URLS.webFeed(Astro.url.origin),
   },
 };
+const settingsSidebar: AdminSettingsSidebarData | undefined = settingsNavigation
+  ? {
+      activeSection: settingsActiveSection,
+      backUrl: adminUrl("", adminPath),
+      deployment,
+      sectionsUrl: adminUrl("settings", adminPath),
+    }
+  : undefined;
 ---
 
 <!doctype html>
-<html lang="en" transition:name="admin-root" transition:animate="none">
+<html
+  class="lg:h-full lg:overflow-hidden"
+  lang="en"
+  transition:name="admin-root"
+  transition:animate="none"
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -115,23 +139,35 @@ const sidebar: AdminSidebarData = {
     <AdminThemeScript />
     <ClientRouter fallback="swap" />
   </head>
-  <body>
-    <div class="min-h-svh bg-admin-canvas lg:flex lg:gap-3">
-      <aside class="sticky top-0 hidden h-svh w-[17rem] shrink-0 overflow-hidden bg-sidebar lg:block">
-        <AdminSidebar client:load data={sidebar} />
+  <body class="lg:h-full lg:overflow-hidden">
+    <div class="min-h-svh bg-admin-canvas lg:flex lg:h-svh lg:min-h-0 lg:gap-3 lg:overflow-hidden">
+      <aside
+        class:list={[
+          "sticky top-0 hidden h-svh shrink-0 overflow-hidden bg-sidebar lg:block",
+          settingsNavigation ? "w-[19rem]" : "w-[17rem]",
+        ]}
+      >
+        {
+          settingsSidebar ? (
+            <AdminSettingsSidebar client:load data={settingsSidebar} />
+          ) : (
+            <AdminSidebar client:load data={sidebar} />
+          )
+        }
       </aside>
-      <section class="min-h-svh min-w-0 flex-1 bg-background lg:mt-3 lg:h-[calc(100svh-0.75rem)] lg:min-h-0 lg:overflow-hidden lg:rounded-tl-[var(--radius-shell)] lg:border lg:border-r-0 lg:border-b-0 lg:shadow-xs">
+      <section class="min-h-svh min-w-0 flex-1 bg-background lg:mt-3 lg:flex lg:h-[calc(100svh-0.75rem)] lg:min-h-0 lg:flex-col lg:overflow-hidden lg:rounded-tl-[var(--radius-shell)] lg:border lg:border-r-0 lg:border-b-0 lg:shadow-xs">
         <AdminTopBar
           {adminPath}
           {breadcrumb}
           {identity}
           {pageTitle}
+          {settingsSidebar}
           {sidebar}
         >
           <div slot="toolbar"><slot name="toolbar" /></div>
         </AdminTopBar>
         <main
-          class="min-h-0 w-full lg:max-h-[calc(100svh-4.75rem)] lg:overflow-y-auto"
+          class="min-h-0 w-full lg:flex-1 lg:overscroll-contain lg:overflow-y-auto"
           id="admin-page-content"
         >
           <div class="mx-auto w-full max-w-[90rem] p-4 sm:p-6 xl:p-8">

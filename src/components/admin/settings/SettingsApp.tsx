@@ -12,7 +12,7 @@ import {ONBOARDING_TYPES} from "@/shared/Constants";
 import {
   preventCloseWhenChanged,
 } from "@/client/BrowserUtils";
-import ApiSettingsApp from "./ApiSettingsApp";
+import {scrollToAdminSettingsHash} from "@/client/AdminSettingsScroll";
 import type {FeedContent, OnboardingResult} from "@/types";
 
 const SUBMIT_STATUS__START = 1;
@@ -24,6 +24,7 @@ interface Props {
 
 export default class SettingsApp extends React.Component<Props, any> {
   private cleanupNavigationGuard?: () => void;
+  private initialHashScrollFrame?: number;
 
   constructor(props: Props) {
     super(props);
@@ -40,9 +41,15 @@ export default class SettingsApp extends React.Component<Props, any> {
 
   componentDidMount() {
     this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
+    this.initialHashScrollFrame = window.requestAnimationFrame(() => {
+      scrollToAdminSettingsHash();
+    });
   }
 
   componentWillUnmount() {
+    if (this.initialHashScrollFrame !== undefined) {
+      window.cancelAnimationFrame(this.initialHashScrollFrame);
+    }
     this.cleanupNavigationGuard?.();
   }
 
@@ -50,15 +57,16 @@ export default class SettingsApp extends React.Component<Props, any> {
     this.setState({changed: true});
   }
 
-  onSubmit(e: any, bundleKey: any, bundle: any) {
+  async onSubmit(e: any, bundleKey: any, bundle: any) {
     e.preventDefault();
     this.setState({submitForType: bundleKey, submitStatus: SUBMIT_STATUS__START});
-    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {[bundleKey]: bundle}})
-      .then(() => {
-        this.setState({submitStatus: null, submitForType: null, changed: false}, () => {
-          showToast('Updated!', 'success');
-        });
-      }).catch((error: any) => {
+    try {
+      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {[bundleKey]: bundle}});
+      this.setState({submitStatus: null, submitForType: null, changed: false}, () => {
+        showToast('Updated!', 'success');
+      });
+      return true;
+    } catch (error: any) {
       this.setState({submitStatus: null, submitForType: null}, () => {
         if (!error.response) {
           showToast('Network error. Please refresh the page and try again.', 'error');
@@ -66,7 +74,8 @@ export default class SettingsApp extends React.Component<Props, any> {
           showToast('Failed. Please try again.', 'error');
         }
       });
-    });
+      return false;
+    }
   }
 
   render() {
@@ -78,67 +87,52 @@ export default class SettingsApp extends React.Component<Props, any> {
     ];
     const mediaStorageReady = mediaStorage?.ready !== false;
     return (<AdminPageApp>
-      <div className="grid grid-cols-1 gap-4">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="h-full">
-            <TrackingSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-              onSubmit={this.onSubmit}
-              setChanged={this.setChanged}
-            />
-          </div>
-          <div className="h-full">
-            <AccessSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-              onSubmit={this.onSubmit}
-              setChanged={this.setChanged}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="h-full">
-            <SubscribeSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-              onSubmit={this.onSubmit}
-              setChanged={this.setChanged}
-            />
-          </div>
-          <div className="h-full">
-            <WebGlobalSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-              mediaStorage={mediaStorage}
-              mediaStorageReady={mediaStorageReady}
-              onSubmit={this.onSubmit}
-              setChanged={this.setChanged}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="h-full">
-            <CustomCodeSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-            />
-          </div>
-          <div className="h-full">
-            <ApiSettingsApp
-              submitting={submitting}
-              submitForType={submitForType}
-              feed={feed}
-              onSubmit={this.onSubmit}
-              setChanged={this.setChanged}
-            />
-          </div>
-        </div>
+      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5">
+        <section className="scroll-mt-6" id="tracking-urls">
+          <TrackingSettingsApp
+            submitting={submitting}
+            submitForType={submitForType}
+            feed={feed}
+            onSubmit={this.onSubmit}
+            setChanged={this.setChanged}
+          />
+        </section>
+        <section className="scroll-mt-6" id="access-control">
+          <AccessSettingsApp
+            submitting={submitting}
+            submitForType={submitForType}
+            feed={feed}
+            onSubmit={this.onSubmit}
+            setChanged={this.setChanged}
+          />
+        </section>
+        <section className="scroll-mt-6" id="subscribe-methods">
+          <SubscribeSettingsApp
+            submitting={submitting}
+            submitForType={submitForType}
+            feed={feed}
+            onSubmit={this.onSubmit}
+            setChanged={this.setChanged}
+          />
+        </section>
+        <section className="scroll-mt-6" id="web-settings">
+          <WebGlobalSettingsApp
+            submitting={submitting}
+            submitForType={submitForType}
+            feed={feed}
+            mediaStorage={mediaStorage}
+            mediaStorageReady={mediaStorageReady}
+            onSubmit={this.onSubmit}
+            setChanged={this.setChanged}
+          />
+        </section>
+        <section className="scroll-mt-6" id="custom-code">
+          <CustomCodeSettingsApp
+            submitting={submitting}
+            submitForType={submitForType}
+            feed={feed}
+          />
+        </section>
       </div>
     </AdminPageApp>);
   }

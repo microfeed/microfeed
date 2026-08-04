@@ -67,7 +67,7 @@ export default class WebGlobalSettingsApp extends React.Component<any, any> {
     } = this.state;
     const {submitting, submitForType, setChanged} = this.props;
     return (<SettingsBase
-      title="Web global settings"
+      title="Global settings"
       submitting={submitting}
       submitForType={submitForType}
       currentType={currentType}

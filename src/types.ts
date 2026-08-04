@@ -5,7 +5,12 @@ export interface FeedSettings {
     currentPolicy?: "public" | "passcode" | "offline";
   };
   apiSettings?: {
-    apps?: Array<{token?: string}>;
+    apps?: Array<{
+      createdAtMs?: number;
+      id?: string;
+      name?: string;
+      token?: string;
+    }>;
     enabled?: boolean;
   };
   subscribeMethods?: {
@@ -28,16 +33,18 @@ export interface FeedSettings {
 
 export interface FeedItem extends JsonObject {
   id?: string;
+  pubDateMs?: number;
   status?: number;
   title?: string;
+  updatedAtMs?: number;
 }
 
 export interface FeedContent extends JsonObject {
   channel?: JsonObject;
   item?: FeedItem;
   items?: FeedItem[];
-  items_next_cursor?: number;
-  items_prev_cursor?: number;
+  items_next_cursor?: number | string;
+  items_prev_cursor?: number | string;
   items_sort_order?: string;
   settings?: FeedSettings;
 }

@@ -50,6 +50,8 @@ const codeType = Object.values(CODE_TYPES).includes(requestedCodeType)
   {feedContent}
   {onboardingResult}
   pageTitle={invalidTheme ? "Code editor not found" : "Code editor"}
+  settingsActiveSection="custom-code"
+  settingsNavigation
   breadcrumb={{
     name: "Settings",
     url: adminUrl("settings", Astro.params.adminPath),

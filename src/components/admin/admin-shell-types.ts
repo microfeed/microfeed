@@ -1,4 +1,5 @@
 import type {AdminNavigationItem} from "@/shared/AdminNavigation";
+import type {AdminSettingsSection} from "@/shared/AdminSettingsNavigation";
 
 export interface AdminBreadcrumb {
   childName?: string;
@@ -35,7 +36,18 @@ export interface AdminSidebarData {
   channel: AdminChannelSummary;
   deployment: AdminDeploymentSummary;
   items: AdminNavigationItem[];
+  newItem: {
+    disabled: boolean;
+    url: string;
+  };
   publicLinks: AdminPublicLinks;
+}
+
+export interface AdminSettingsSidebarData {
+  activeSection?: AdminSettingsSection["id"];
+  backUrl: string;
+  deployment: AdminDeploymentSummary;
+  sectionsUrl: string;
 }
 
 export function adminChannelSummary(

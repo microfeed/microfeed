@@ -20,15 +20,15 @@ import {
   ENCLOSURE_CATEGORIES,
   ENCLOSURE_CATEGORIES_DICT,
   ITEM_STATUSES_DICT,
-  ITEMS_SORT_ORDERS,
   STATUSES,
 } from "@/shared/Constants";
 import {
   buildItemsListUrl,
+  ITEM_LIST_SORT_ORDERS,
   ITEM_STATUS_FILTERS,
   type ItemStatusFilter,
+  itemListSortDefinition,
   normalizeItemStatusFilter,
-  normalizeItemsSortOrder,
 } from "@/shared/ItemList";
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {
@@ -54,6 +54,7 @@ interface ItemTableRow {
   publicBucketUrl: string;
   status: number;
   title: string;
+  updatedAtMs?: number;
 }
 
 interface Props {
@@ -192,6 +193,9 @@ function tableRows(items: FeedItem[], publicBucketUrl: string): ItemTableRow[] {
       publicBucketUrl,
       status: typeof item.status === "number" ? item.status : STATUSES.PUBLISHED,
       title: String(item.title ?? "").trim() || "Untitled",
+      updatedAtMs: typeof item.updatedAtMs === "number"
+        ? item.updatedAtMs
+        : Number(item.updatedAtMs),
     };
   });
 }
@@ -217,7 +221,7 @@ function ItemStatusFilters({
               buttonVariants({size: "lg", variant: "outline"}),
               "w-full text-sm sm:text-base",
               active &&
-                "border-brand-light bg-brand-light/10 text-brand-dark ring-1 ring-brand-light/20 hover:bg-brand-light/15 dark:text-brand-light",
+                "border-brand-light bg-brand-light/10 text-brand-dark ring-1 ring-brand-light/20 hover:bg-brand-light/15 dark:border-brand-light dark:bg-brand-light/20 dark:text-white dark:ring-brand-light/50 dark:hover:bg-brand-light/25",
             )}
             href={buildItemsListUrl({sortOrder, statusFilter})}
             key={statusFilter}
@@ -232,15 +236,8 @@ function ItemStatusFilters({
 
 function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) {
   const activeFilter = currentStatusFilter();
-  const sortOrder = normalizeItemsSortOrder(feed.items_sort_order);
-  const newestFirst = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST;
-  const nextSortOrder = newestFirst
-    ? ITEMS_SORT_ORDERS.OLDEST_FIRST
-    : ITEMS_SORT_ORDERS.NEWEST_FIRST;
-  const sortUrl = buildItemsListUrl({
-    sortOrder: nextSortOrder,
-    statusFilter: activeFilter,
-  });
+  const sort = itemListSortDefinition(feed.items_sort_order);
+  const sortOrder = sort.order;
   const nextUrl = feed.items_next_cursor === undefined
     ? undefined
     : buildItemsListUrl({
@@ -255,6 +252,42 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
         sortOrder,
         statusFilter: activeFilter,
       });
+
+  const sortableHeader = (
+    field: "published" | "updated",
+    label: string,
+  ) => {
+    const active = field === "updated"
+      ? sort.column === "updated_at"
+      : sort.column === "pub_date";
+    const descendingOrder = field === "updated"
+      ? ITEM_LIST_SORT_ORDERS.UPDATED_DESC
+      : ITEM_LIST_SORT_ORDERS.PUBLISHED_DESC;
+    const ascendingOrder = field === "updated"
+      ? ITEM_LIST_SORT_ORDERS.UPDATED_ASC
+      : ITEM_LIST_SORT_ORDERS.PUBLISHED_ASC;
+    const nextSortOrder = active && sort.descending
+      ? ascendingOrder
+      : descendingOrder;
+    const sortUrl = buildItemsListUrl({
+      sortOrder: nextSortOrder,
+      statusFilter: activeFilter,
+    });
+    return (
+      <a
+        aria-label={active
+          ? `${label}, sorted ${sort.descending ? "descending" : "ascending"}. Sort ${sort.descending ? "ascending" : "descending"}.`
+          : `${label}. Sort descending.`}
+        className="inline-flex items-center gap-1.5"
+        href={sortUrl}
+      >
+        {label}
+        {active && (sort.descending
+          ? <ArrowDownIcon aria-hidden="true" className="size-4" />
+          : <ArrowUpIcon aria-hidden="true" className="size-4" />)}
+      </a>
+    );
+  };
 
   const columns = [
     columnHelper.accessor("title", {
@@ -297,18 +330,11 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
       },
     }),
     columnHelper.accessor("pubDateMs", {
-      header: () => (
-        <a
-          aria-label={`Published at, sorted ${newestFirst ? "descending" : "ascending"}. Sort ${newestFirst ? "ascending" : "descending"}.`}
-          className="inline-flex items-center gap-1.5"
-          href={sortUrl}
-        >
-          Published at
-          {newestFirst
-            ? <ArrowDownIcon aria-hidden="true" className="size-4" />
-            : <ArrowUpIcon aria-hidden="true" className="size-4" />}
-        </a>
-      ),
+      header: () => sortableHeader("published", "Published at"),
+      cell: (info) => formatPublishedAt(info.getValue()),
+    }),
+    columnHelper.accessor("updatedAtMs", {
+      header: () => sortableHeader("updated", "Updated at"),
       cell: (info) => formatPublishedAt(info.getValue()),
     }),
     columnHelper.accessor("mediaFile", {
@@ -354,15 +380,19 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
-                    aria-sort={header.column.id === "pubDateMs"
-                      ? newestFirst ? "descending" : "ascending"
-                      : undefined}
+                    aria-sort={
+                      (header.column.id === "pubDateMs" && sort.column === "pub_date") ||
+                        (header.column.id === "updatedAtMs" && sort.column === "updated_at")
+                        ? sort.descending ? "descending" : "ascending"
+                        : undefined
+                    }
                     className={cn(
                       "border-b bg-muted/45 px-5 py-3 text-left text-sm font-semibold text-muted-foreground",
-                      header.column.id === "title" && "w-[44%]",
-                      header.column.id === "pubDateMs" && "w-[20%] whitespace-nowrap",
-                      header.column.id === "mediaFile" && "w-[14%]",
-                      header.column.id === "actions" && "w-[22%]",
+                      header.column.id === "title" && "w-[36%]",
+                      header.column.id === "pubDateMs" && "w-[16%] whitespace-nowrap",
+                      header.column.id === "updatedAtMs" && "w-[16%] whitespace-nowrap",
+                      header.column.id === "mediaFile" && "w-[12%]",
+                      header.column.id === "actions" && "w-[20%]",
                     )}
                     key={header.id}
                   >
@@ -380,7 +410,7 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td className="px-5 py-12 text-center" colSpan={4}>
+                <td className="px-5 py-12 text-center" colSpan={5}>
                   <div className="font-medium text-foreground">
                     No {activeFilter === "all" ? "" : `${activeFilter} `}items yet.
                   </div>
@@ -401,7 +431,8 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
                   <td
                     className={cn(
                       "px-5 py-4 align-middle text-foreground",
-                      cell.column.id === "pubDateMs" && "whitespace-nowrap",
+                      ["pubDateMs", "updatedAtMs"].includes(cell.column.id) &&
+                        "whitespace-nowrap",
                     )}
                     key={cell.id}
                   >

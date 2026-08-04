@@ -36,6 +36,10 @@ function sidebarData(): AdminSidebarData {
       name: "Home",
       url: "/admin/",
     }],
+    newItem: {
+      disabled: false,
+      url: "/admin/items/new/",
+    },
     publicLinks: {
       json: "https://feed.example.com/json/",
       rss: "https://feed.example.com/rss/",
@@ -65,6 +69,8 @@ describe("admin dashboard shell models", () => {
     expect(output).toContain(
       "gap-3 rounded-xl px-3 py-2 text-base font-medium",
     );
+    expect(output).toContain("Add new item");
+    expect(output).toContain('href="/admin/items/new/"');
   });
 
   it("opens public access from the channel button instead of a dropdown", () => {

@@ -8,7 +8,29 @@ export const ITEM_STATUS_FILTERS = [
 ] as const;
 
 export type ItemStatusFilter = typeof ITEM_STATUS_FILTERS[number];
-export type ItemsSortOrder = typeof ITEMS_SORT_ORDERS[keyof typeof ITEMS_SORT_ORDERS];
+
+export const ITEM_LIST_SORT_ORDERS = {
+  PUBLISHED_ASC: ITEMS_SORT_ORDERS.OLDEST_FIRST,
+  PUBLISHED_DESC: ITEMS_SORT_ORDERS.NEWEST_FIRST,
+  UPDATED_ASC: "updated_asc",
+  UPDATED_DESC: "updated_desc",
+} as const;
+
+export type ItemListSortOrder = typeof ITEM_LIST_SORT_ORDERS[
+  keyof typeof ITEM_LIST_SORT_ORDERS
+];
+
+export interface ItemListCursor {
+  id: string;
+  timestamp: number;
+}
+
+interface ItemListSortDefinition {
+  column: "pub_date" | "updated_at";
+  descending: boolean;
+  order: ItemListSortOrder;
+  timestampKey: "pubDateMs" | "updatedAtMs";
+}
 
 const ITEM_STATUS_BY_FILTER = {
   published: STATUSES.PUBLISHED,
@@ -23,10 +45,45 @@ export function normalizeItemStatusFilter(value: unknown): ItemStatusFilter {
     : "all";
 }
 
-export function normalizeItemsSortOrder(value: unknown): ItemsSortOrder {
-  return value === ITEMS_SORT_ORDERS.OLDEST_FIRST
-    ? ITEMS_SORT_ORDERS.OLDEST_FIRST
-    : ITEMS_SORT_ORDERS.NEWEST_FIRST;
+export function normalizeItemListSortOrder(
+  value: unknown,
+  fallback: ItemListSortOrder = ITEM_LIST_SORT_ORDERS.UPDATED_DESC,
+): ItemListSortOrder {
+  const values = Object.values(ITEM_LIST_SORT_ORDERS) as string[];
+  return values.includes(String(value)) ? value as ItemListSortOrder : fallback;
+}
+
+export function itemListSortDefinition(
+  value: unknown,
+  fallback: ItemListSortOrder = ITEM_LIST_SORT_ORDERS.UPDATED_DESC,
+): ItemListSortDefinition {
+  const order = normalizeItemListSortOrder(value, fallback);
+  const updated = order === ITEM_LIST_SORT_ORDERS.UPDATED_ASC ||
+    order === ITEM_LIST_SORT_ORDERS.UPDATED_DESC;
+  return {
+    column: updated ? "updated_at" : "pub_date",
+    descending: order === ITEM_LIST_SORT_ORDERS.UPDATED_DESC ||
+      order === ITEM_LIST_SORT_ORDERS.PUBLISHED_DESC,
+    order,
+    timestampKey: updated ? "updatedAtMs" : "pubDateMs",
+  };
+}
+
+export function encodeItemListCursor(timestamp: number, id: string): string {
+  return `${Math.trunc(timestamp)}:${id}`;
+}
+
+export function decodeItemListCursor(value: unknown): ItemListCursor | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const separator = value.indexOf(":");
+  if (separator < 1) {
+    return undefined;
+  }
+  const timestamp = Number(value.slice(0, separator));
+  const id = value.slice(separator + 1);
+  return Number.isFinite(timestamp) && id ? {id, timestamp} : undefined;
 }
 
 export function itemQueryForStatusFilter(
@@ -41,8 +98,8 @@ export function itemQueryForStatusFilter(
 }
 
 interface ItemsListUrlOptions {
-  nextCursor?: number;
-  prevCursor?: number;
+  nextCursor?: number | string;
+  prevCursor?: number | string;
   sortOrder?: unknown;
   statusFilter?: unknown;
 }
@@ -59,12 +116,18 @@ export function buildItemsListUrl({
   if (normalizedStatus !== "all") {
     searchParams.set("status", normalizedStatus);
   }
-  if (Number.isFinite(nextCursor)) {
+  if (
+    Number.isFinite(nextCursor) ||
+    (typeof nextCursor === "string" && nextCursor.length > 0)
+  ) {
     searchParams.set("next_cursor", String(nextCursor));
-  } else if (Number.isFinite(prevCursor)) {
+  } else if (
+    Number.isFinite(prevCursor) ||
+    (typeof prevCursor === "string" && prevCursor.length > 0)
+  ) {
     searchParams.set("prev_cursor", String(prevCursor));
   }
-  searchParams.set("sort", normalizeItemsSortOrder(sortOrder));
+  searchParams.set("sort", normalizeItemListSortOrder(sortOrder));
 
   return `?${searchParams.toString()}`;
 }

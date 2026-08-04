@@ -4,13 +4,19 @@ import {
   SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, ITEMS_SORT_ORDERS, MAX_ITEMS_PER_PAGE,
 } from '@/shared/Constants';
 import {msToRFC3339, rfc3399ToMs} from "@/shared/TimeUtils";
+import {
+  decodeItemListCursor,
+  encodeItemListCursor,
+  ITEM_LIST_SORT_ORDERS,
+  itemListSortDefinition,
+} from "@/shared/ItemList";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
 
 /**
  * support url query parameters:
- * - next_cursor: pub_date in milliseconds
- * - prev_cursor: pub_date in milliseconds
- * - sort: "oldest_first", or "newest_first" (default).
+ * - next_cursor: selected sort timestamp in milliseconds
+ * - prev_cursor: selected sort timestamp in milliseconds
+ * - sort: "oldest_first", "newest_first", "updated_asc", or "updated_desc".
  *
  * if next_cursor and prev_cursor co-exist, we choose next_cursor and ignore prev_cursor
  *
@@ -20,6 +26,7 @@ export function getFetchItemsParams(
   request: Request,
   queryKwargs: Record<string, any> = {},
   limit: number | null = null,
+  defaultSortOrder?: string,
 ) {
   const fetchItems = {
     queryKwargs,
@@ -33,18 +40,20 @@ export function getFetchItemsParams(
   const sortOrder = searchParams.get('sort');
   if (sortOrder) {
     (fetchItems.fromUrl as any).sortOrder = sortOrder;
+  } else if (defaultSortOrder) {
+    (fetchItems.fromUrl as any).sortOrder = defaultSortOrder;
   }
   if (nextCursor) {
-    try {
-      (fetchItems.fromUrl as any).nextCursor = parseInt(nextCursor, 10);
-    } catch (error) {
-      console.log(error);
+    const decodedCursor = decodeItemListCursor(nextCursor);
+    const numericCursor = Number(nextCursor);
+    if (decodedCursor || Number.isFinite(numericCursor)) {
+      (fetchItems.fromUrl as any).nextCursor = decodedCursor ?? numericCursor;
     }
   } else if (prevCursor) {
-    try {
-      (fetchItems.fromUrl as any).prevCursor = parseInt(prevCursor, 10);
-    } catch (error) {
-      console.log(error);
+    const decodedCursor = decodeItemListCursor(prevCursor);
+    const numericCursor = Number(prevCursor);
+    if (decodedCursor || Number.isFinite(numericCursor)) {
+      (fetchItems.fromUrl as any).prevCursor = decodedCursor ?? numericCursor;
     }
   }
   return fetchItems;
@@ -70,6 +79,7 @@ function getItemJson(itemObj: any) {
     id: itemObj.id,
     status: itemObj.status,
     pubDateMs: rfc3399ToMs(itemObj.pub_date),
+    updatedAtMs: rfc3399ToMs(itemObj.updated_at),
     ...JSON.parse(itemObj.data)
   };
 }
@@ -249,6 +259,16 @@ export default class FeedDb {
       if (whereList.length > 0) {
         sql = `${sql} WHERE ${whereList.join(' AND ')}`;
       }
+      if (thing.cursor) {
+        const cursorClause = `(${thing.cursor.column} ${thing.cursor.timestampOp} ? OR (` +
+          `${thing.cursor.column} == ? AND id ${thing.cursor.idOp} ?))`;
+        sql = `${sql}${whereList.length > 0 ? " AND" : " WHERE"} ${cursorClause}`;
+        bindList.push(
+          thing.cursor.timestamp,
+          thing.cursor.timestamp,
+          thing.cursor.id,
+        );
+      }
       if (thing.orderBy && thing.orderBy.length > 0) {
         sql = `${sql} ORDER BY ${thing.orderBy.join(',')}`
       }
@@ -279,16 +299,23 @@ export default class FeedDb {
       } else if (thing.table === 'items') {
         let nextCursor;
         let prevCursor: any;
+        const sort = itemListSortDefinition(
+          sortOrder,
+          ITEM_LIST_SORT_ORDERS.PUBLISHED_DESC,
+        );
         (contentJson as any)['items'] = response.results.map((result: any) => getItemJson(result));
-        if (sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST) {
-          (contentJson as any)['items'].sort((a: any, b: any) => (b.pubDateMs - a.pubDateMs));
-        } else {
-          (contentJson as any)['items'].sort((a: any, b: any) => (a.pubDateMs - b.pubDateMs));
-        }
+        (contentJson as any)['items'].sort((a: any, b: any) => {
+          const timestampDifference = sort.descending
+            ? b[sort.timestampKey] - a[sort.timestampKey]
+            : a[sort.timestampKey] - b[sort.timestampKey];
+          return timestampDifference || a.id.localeCompare(b.id);
+        });
         (contentJson as any)['items'].forEach((itemJson: any) => {
-          nextCursor = itemJson.pubDateMs;
+          nextCursor = sort.column === "updated_at"
+            ? encodeItemListCursor(itemJson[sort.timestampKey], itemJson.id)
+            : itemJson[sort.timestampKey];
           if (!prevCursor) {
-            prevCursor = itemJson.pubDateMs;
+            prevCursor = nextCursor;
           }
         });
 
@@ -330,28 +357,66 @@ export default class FeedDb {
 
       const fromUrl = fetchItems.fromUrl || {};
       const queryKwargs = fetchItems.queryKwargs || {};
-      const sortOrder = fromUrl.sortOrder || webGlobalSettings.itemsSortOrder || ITEMS_SORT_ORDERS.NEWEST_FIRST;
+      const sort = itemListSortDefinition(
+        fromUrl.sortOrder || webGlobalSettings.itemsSortOrder,
+        ITEM_LIST_SORT_ORDERS.PUBLISHED_DESC,
+      );
+      const sortOrder = sort.order;
       const {nextCursor, prevCursor} = fromUrl;
+      const compoundNextCursor = sort.column === "updated_at" &&
+          typeof nextCursor === "object"
+        ? nextCursor
+        : undefined;
+      const compoundPrevCursor = sort.column === "updated_at" &&
+          typeof prevCursor === "object"
+        ? prevCursor
+        : undefined;
 
-      let orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ?
-        ['pub_date desc', 'id'] : ['pub_date', 'id'];
+      let orderBy = [
+        `${sort.column}${sort.descending ? " desc" : ""}`,
+        'id',
+      ];
       if (nextCursor) {
-        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__<' : 'pub_date__>';
+        const queryParam = `${sort.column}__${sort.descending ? '<' : '>'}`;
         try {
-          queryKwargs[queryParam] = msToRFC3339(nextCursor);
+          if (!compoundNextCursor) {
+            queryKwargs[queryParam] = msToRFC3339(nextCursor);
+          }
         } catch (error) {
           console.log(error);
         }
       } else if (prevCursor) {
-        orderBy = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? ['pub_date', 'id'] : ['pub_date desc', 'id'];
-        const queryParam = sortOrder === ITEMS_SORT_ORDERS.NEWEST_FIRST ? 'pub_date__>' : 'pub_date__<';
+        orderBy = [
+          `${sort.column}${sort.descending ? "" : " desc"}`,
+          'id desc',
+        ];
+        const queryParam = `${sort.column}__${sort.descending ? '>' : '<'}`;
         try {
-          queryKwargs[queryParam] = msToRFC3339(prevCursor);
+          if (!compoundPrevCursor) {
+            queryKwargs[queryParam] = msToRFC3339(prevCursor);
+          }
         } catch (error) {
           console.log(error);
         }
       }
       const fetchItemsParams = {
+        cursor: compoundNextCursor
+          ? {
+              column: sort.column,
+              id: compoundNextCursor.id,
+              idOp: ">",
+              timestamp: msToRFC3339(compoundNextCursor.timestamp),
+              timestampOp: sort.descending ? "<" : ">",
+            }
+          : compoundPrevCursor
+          ? {
+              column: sort.column,
+              id: compoundPrevCursor.id,
+              idOp: "<",
+              timestamp: msToRFC3339(compoundPrevCursor.timestamp),
+              timestampOp: sort.descending ? ">" : "<",
+            }
+          : undefined,
         limit: fetchItems.limit || webGlobalSettings.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
         orderBy,
         queryKwargs,

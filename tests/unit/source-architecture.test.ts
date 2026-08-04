@@ -157,6 +157,53 @@ describe("source architecture", () => {
     await expect(readFile(route, "utf8")).resolves.toContain(
       "<CustomCodeEditorApp",
     );
+    const routeSource = await readFile(route, "utf8");
+    expect(routeSource).toContain("settingsNavigation");
+    expect(routeSource).toContain('settingsActiveSection="custom-code"');
+  });
+
+  it("keeps API settings on their standalone auto-saving page", async () => {
+    const [apiRoute, apiSettings, settingsPage] = await Promise.all([
+      readFile(
+        path.join(
+          repositoryRoot,
+          "src",
+          "pages",
+          "[adminPath]",
+          "api",
+          "index.astro",
+        ),
+        "utf8",
+      ),
+      readFile(
+        path.join(
+          repositoryRoot,
+          "src",
+          "components",
+          "admin",
+          "settings",
+          "ApiSettingsApp",
+          "index.tsx",
+        ),
+        "utf8",
+      ),
+      readFile(
+        path.join(
+          repositoryRoot,
+          "src",
+          "components",
+          "admin",
+          "settings",
+          "SettingsApp.tsx",
+        ),
+        "utf8",
+      ),
+    ]);
+
+    expect(apiRoute).toContain("<ApiSettingsApp");
+    expect(apiSettings).toContain("onCheckedChange={(enabled) => saveBundle");
+    expect(apiSettings).not.toContain("<SettingsBase");
+    expect(settingsPage).not.toContain("ApiSettingsApp");
   });
 
   it("keeps the items list free of a redundant page card", async () => {
@@ -195,9 +242,15 @@ describe("source architecture", () => {
       /\.dark \{[\s\S]*?--admin-canvas: #171721;[\s\S]*?--sidebar: #171721;/u,
     );
     expect(adminShell).toContain("flex-1 bg-background");
+    expect(adminShell).toContain("lg:h-svh lg:min-h-0");
+    expect(adminShell).toContain("lg:flex-col lg:overflow-hidden");
+    expect(adminShell).toContain('class="lg:h-full lg:overflow-hidden"');
+    expect(adminShell).toContain(
+      "lg:flex-1 lg:overscroll-contain lg:overflow-y-auto",
+    );
   });
 
-  it("keeps edit action rails top-aligned and the toaster in the shell", async () => {
+  it("keeps edit action rails below the shell edge and the toaster in the shell", async () => {
     const [channelEditor, itemEditor, adminPageApp, adminShell, sonner] = await Promise.all([
       readFile(
         path.join(repositoryRoot, "src", "components", "admin", "channel", "EditChannelApp", "index.tsx"),
@@ -215,8 +268,8 @@ describe("source architecture", () => {
       readFile(path.join(repositoryRoot, "src", "components", "ui", "sonner.tsx"), "utf8"),
     ]);
 
-    expect(channelEditor).toContain("xl:sticky xl:top-0");
-    expect(itemEditor).toContain("xl:sticky xl:top-0");
+    expect(channelEditor).toContain("xl:sticky xl:top-4");
+    expect(itemEditor).toContain("xl:sticky xl:top-4");
     expect(channelEditor).toContain("showToast('No changes to save.', 'info')");
     expect(itemEditor).toContain("'Add some item details before creating it.'");
     expect(channelEditor).not.toContain("submitting || !changed");

@@ -1,142 +1,162 @@
-import React from 'react';
-import SettingsBase from "../SettingsBase";
-import AdminSwitch from "@/components/admin/shared/AdminSwitch";
+import {useState} from "react";
 import clsx from "clsx";
-import {randomHex, randomShortUUID} from "@/shared/StringUtils";
+import {ExternalLinkIcon} from "lucide-react";
+
 import AdminInput from "@/components/admin/shared/AdminInput";
-import {SETTINGS_CATEGORIES} from "@/shared/Constants";
+import AdminSwitch from "@/components/admin/shared/AdminSwitch";
 import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
+import {showToast} from "@/client/ToastUtils";
+import Requests from "@/client/requests";
+import {SETTINGS_CATEGORIES} from "@/shared/Constants";
+import {
+  ADMIN_URLS,
+  randomHex,
+  randomShortUUID,
+} from "@/shared/StringUtils";
+import type {FeedContent} from "@/types";
 
-export default class ApiSettingsApp extends React.Component<any, any> {
-  constructor(props: any) {
-    super(props);
+interface ApiApp {
+  createdAtMs: number;
+  id: string;
+  name: string;
+  token: string;
+}
 
-    this.setApiEnabled = this.setApiEnabled.bind(this);
-    this.updateApiApps = this.updateApiApps.bind(this);
+interface ApiBundle {
+  apps: ApiApp[];
+  enabled: boolean;
+}
 
-    const currentType = SETTINGS_CATEGORIES.API_SETTINGS;
-    const {feed} = props;
+interface Props {
+  feed: FeedContent;
+}
 
-    let apiBundle = {
-      enabled: false,
-      apps: [{
-        id: randomShortUUID(),
-        name: 'Default',
-        token: randomHex(),
-        createdAtMs: new Date().getTime(),
-      }],
-    };
+function initialApiBundle(feed: FeedContent): ApiBundle {
+  const saved = feed.settings?.apiSettings;
+  const savedApp = saved?.apps?.[0];
+  return {
+    enabled: saved?.enabled === true,
+    apps: [{
+      createdAtMs: typeof savedApp?.createdAtMs === "number"
+        ? savedApp.createdAtMs
+        : Date.now(),
+      id: typeof savedApp?.id === "string" && savedApp.id
+        ? savedApp.id
+        : randomShortUUID(),
+      name: typeof savedApp?.name === "string" && savedApp.name
+        ? savedApp.name
+        : "Default",
+      token: typeof savedApp?.token === "string" && savedApp.token
+        ? savedApp.token
+        : randomHex(),
+    }],
+  };
+}
 
-    if (feed.settings && feed.settings[currentType]) {
-      apiBundle = feed.settings[currentType];
+export default function ApiSettingsApp({feed}: Props) {
+  const [apiBundle, setApiBundle] = useState(() => initialApiBundle(feed));
+  const [saving, setSaving] = useState(false);
+  const app = apiBundle.apps[0]!;
+
+  const saveBundle = async (nextBundle: ApiBundle) => {
+    const previousBundle = apiBundle;
+    setApiBundle(nextBundle);
+    setSaving(true);
+    try {
+      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
+        settings: {[SETTINGS_CATEGORIES.API_SETTINGS]: nextBundle},
+      });
+      showToast("API settings updated.", "success");
+    } catch (error: any) {
+      setApiBundle(previousBundle);
+      showToast(
+        error?.response
+          ? "Failed to update API settings. Please try again."
+          : "Network error. Please refresh the page and try again.",
+        "error",
+      );
+    } finally {
+      setSaving(false);
     }
+  };
 
-    this.state = {
-      feed,
-
-      currentType,
-      apiBundle,
-    };
-  }
-
-  setApiEnabled(checked: any) {
-    this.setState({apiBundle: {...this.state.apiBundle, enabled: checked}}, () => {
-      this.props.setChanged();
-    });
-  }
-
-  updateApiApps(app: any) {
-    const {apiBundle} = this.state;
-    const newApps = apiBundle.apps.map((a: any) => {
-      if (a.id === app.id) {
-        return app;
-      }
-      return a;
-    });
-    this.setState({apiBundle: {...apiBundle, apps: newApps}}, () => {
-      this.props.setChanged();
-    });
-  }
-
-  render() {
-    const {currentType, apiBundle} = this.state;
-    const {submitting, submitForType} = this.props;
-    const app = apiBundle.apps[0];
-    return (<SettingsBase
-      title="API"
-      submitting={submitting}
-      submitForType={submitForType}
-      currentType={currentType}
-      onSubmit={(e: any) => {
-        e.preventDefault();
-        this.props.onSubmit(e, currentType, {
-          ...apiBundle,
-        });
-      }}
-    >
-      <div className="mb-4">
-        <div className="">
+  return (
+    <Card className="gap-0 py-0">
+      <CardContent className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <AdminSwitch
-            label="API Enabled"
-            labelClassName={clsx('', apiBundle.enabled ? 'text-foreground' : 'text-muted-foreground')}
             checked={apiBundle.enabled}
-            onCheckedChange={(checked) => this.setApiEnabled(checked)}
+            disabled={saving}
+            label="API enabled"
+            labelClassName={clsx(
+              apiBundle.enabled ? "text-foreground" : "text-muted-foreground",
+            )}
+            onCheckedChange={(enabled) => saveBundle({...apiBundle, enabled})}
           />
-          <div className="text-muted-color text-xs mt-2">
-            You can use the API to manage contents of your feed, e.g., create, update, and delete items.
-          </div>
+          {saving && (
+            <span aria-live="polite" className="text-xs text-muted-foreground">
+              Saving...
+            </span>
+          )}
         </div>
-        <div className="flex items-center mt-8">
-          <div
-            className={clsx('flex-none text-sm', !apiBundle.enabled && 'text-muted-color')}
-          >
-            API Key:
-          </div>
-          <div className="flex-1 mx-2">
+        <p className="mt-2 text-xs text-muted-foreground">
+          Use the API to create, update, and delete items in your feed.
+        </p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
             <AdminInput
+              customClass={clsx(
+                "select-all font-mono text-sm",
+                !apiBundle.enabled && "text-muted-foreground",
+              )}
               disabled
+              label="API key"
               value={app.token}
-              customClass={clsx('text-sm p-1 select-all', !apiBundle.enabled && 'text-muted-color')}
-              description={"Set the X-MicrofeedAPI-Key header to the API key, e.g., " +
-                `curl -H X-MicrofeedAPI-Key: ${app.token} ...`}
             />
           </div>
-          <div className="flex-none">
-            <Button
-              type="button"
-              disabled={!apiBundle.enabled}
-              size="sm"
-              variant="outline"
-              onClick={(e: any) => {
-                e.preventDefault();
-                const ok = confirm('Are you sure you want to reset the API key?');
-                if (ok) {
-                  this.updateApiApps({...app, token: randomHex()});
-                }
-              }}
-            >
-              Reset
-            </Button>
-          </div>
+          <Button
+            disabled={!apiBundle.enabled || saving}
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to reset the API key?")) {
+                saveBundle({
+                  ...apiBundle,
+                  apps: [{...app, token: randomHex()}],
+                });
+              }
+            }}
+          >
+            Reset key
+          </Button>
         </div>
-        <div className="text-xs mt-8">
-          How to use API key?
-        </div>
-        <div className="mt-2 text-xs text-helper-color">
-          {"Set the X-MicrofeedAPI-Key header to the API key, e.g., " +
-            'curl -H "X-MicrofeedAPI-Key: <API_KEY>" ...'}
-        </div>
-        <div className="mt-8">
-          <a href="/json/openapi.html" target="_blank" rel="noopener noreferrer">
-            Documentation of microfeed's API <span className="lh-icon-arrow-right"/>
+        <p className="mt-3 break-all text-xs text-muted-foreground">
+          Set the <code>X-MicrofeedAPI-Key</code> request header to this key.
+        </p>
+
+        <div className="mt-8 flex flex-col items-start gap-3 text-sm">
+          <a
+            className="inline-flex items-center gap-1.5"
+            href="/json/openapi.html"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            API documentation
+            <ExternalLinkIcon aria-hidden="true" className="size-3.5" />
+          </a>
+          <a
+            className="inline-flex items-center gap-1.5"
+            href="/json/openapi.yaml"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            OpenAPI specification (YAML)
+            <ExternalLinkIcon aria-hidden="true" className="size-3.5" />
           </a>
         </div>
-        <div className="mt-4">
-          <a href="/json/openapi.yaml" target="_blank" rel="noopener noreferrer">
-            OpenAPI Spec in YAML <span className="lh-icon-arrow-right" />
-          </a>
-        </div>
-      </div>
-    </SettingsBase>);
-  }
+      </CardContent>
+    </Card>
+  );
 }
