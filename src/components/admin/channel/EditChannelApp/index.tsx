@@ -24,6 +24,7 @@ import {
 } from "@/client/BrowserUtils";
 import type {FeedContent, OnboardingResult} from "@/types";
 import {Button} from "@/components/ui/button";
+import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -86,6 +87,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
       channel,
       submitStatus: null,
       changed: false,
+      replacedImageUrls: [],
     }
   }
 
@@ -130,12 +132,19 @@ export default class EditChannelApp extends React.Component<Props, any> {
       return;
     }
     this.onUpdateChannelMetaToFeed(() => {
-      const {feed} = this.state;
+      const {feed, replacedImageUrls} = this.state;
       this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {channel: feed.channel})
+      Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
+        channel: feed.channel,
+        deleteImageUrls: replacedImageUrls,
+      })
         .then((response: any) => {
           console.log(response);
-          this.setState({submitStatus: null, changed: false}, () => {
+          this.setState({
+            submitStatus: null,
+            changed: false,
+            replacedImageUrls: [],
+          }, () => {
             showToast('Updated!', 'success');
           });
         })
@@ -179,7 +188,28 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   mediaStorageReady={mediaStorageReady}
                   publicBucketUrl={publicBucketUrl}
                   currentImageUrl={channel.image}
-                  onImageUploaded={(cdnUrl: any) => this.onUpdateChannelMeta('image', cdnUrl)}
+                  imageMetadataTarget={{id: channel.id, type: 'channel'}}
+                  onImageDeleted={() => this.setState((prevState: any) => ({
+                    channel: {
+                      ...prevState.channel,
+                      image: undefined,
+                    },
+                  }))}
+                  onImageUploaded={(
+                    cdnUrl: any,
+                    _contentType: any,
+                    replacedImageUrl: unknown,
+                  ) => this.setState((prevState: any) => ({
+                    changed: true,
+                    channel: {
+                      ...prevState.channel,
+                      image: cdnUrl,
+                    },
+                    replacedImageUrls: queueReplacedImageUrl(
+                      prevState.replacedImageUrls,
+                      replacedImageUrl,
+                    ),
+                  }))}
                 />
               </div>
               <div className="grid flex-1 grid-cols-1 gap-3">

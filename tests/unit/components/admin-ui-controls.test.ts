@@ -4,6 +4,7 @@ import {describe, expect, it, vi} from "vitest";
 
 import AdminCopyableUrl from "@/components/admin/shared/AdminCopyableUrl";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
+import AdminImagePreviewDialog from "@/components/admin/shared/AdminImagePreviewDialog";
 import AdminPublicAccess, {
   publicAccessItems,
 } from "@/components/admin/shared/AdminPublicAccess";
@@ -128,6 +129,39 @@ describe("admin UI controls", () => {
     dialog.props.onOpenChange(false, eventDetails);
     expect(eventDetails.cancel).toHaveBeenCalledOnce();
     expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("renders the reusable full-screen image preview controls", () => {
+    const onOpenChange = vi.fn();
+    const dialog = AdminImagePreviewDialog({
+      imageUrl: "https://media.example.com/production/images/item.png",
+      onOpenChange,
+      open: true,
+    });
+    const content = dialog.props.children as React.ReactElement<any>;
+    const children = React.Children.toArray(
+      content.props.children,
+    ) as React.ReactElement<any>[];
+    const controls = children[2]!;
+    const [openLink, closeButton] = React.Children.toArray(
+      controls.props.children,
+    ) as React.ReactElement<any>[];
+    const image = children[3]!;
+
+    expect(dialog.props.open).toBe(true);
+    expect(content.props.showCloseButton).toBe(false);
+    expect(content.props.className).toContain("h-dvh");
+    expect(openLink!.props.href).toBe(
+      "https://media.example.com/production/images/item.png",
+    );
+    expect(openLink!.props.target).toBe("_blank");
+    expect(openLink!.props.className).toContain("!text-white");
+    expect(openLink!.props.className).toContain("hover:bg-white/15");
+    expect(closeButton!.props.children).toContain("Close");
+    const closeControl = closeButton!.props.render as React.ReactElement<any>;
+    expect(closeControl.props.className).toContain("!text-white");
+    expect(closeControl.props.className).toContain("hover:bg-white/15");
+    expect(image.props.className).toContain("object-contain");
   });
 
   it("associates a checked switch with its visible label", () => {

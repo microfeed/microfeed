@@ -42,6 +42,7 @@ export interface FeedItem extends JsonObject {
 
 export interface FeedContent extends JsonObject {
   channel?: JsonObject;
+  deleteImageUrls?: string[];
   item?: FeedItem;
   items?: FeedItem[];
   items_next_cursor?: number | string;
@@ -93,6 +94,16 @@ export interface UploadRequest {
   key: string;
   size?: number;
   type?: string;
+}
+
+export type ImageMetadataTarget =
+  | {id?: string; type: "channel"}
+  | {id: string; type: "item"}
+  | {type: "favicon"};
+
+export interface DeleteImageRequest {
+  imageUrl: string;
+  target?: ImageMetadataTarget;
 }
 
 export interface SignedUpload {

@@ -1,10 +1,18 @@
 import axios from 'axios';
 import {ADMIN_URLS} from "@/shared/StringUtils";
+import type {ImageMetadataTarget} from "@/types";
 
 const axiosPost = (url: any, bodyDict: any) => {
   return axios.post(url, bodyDict, {
   });
 };
+
+const deleteImage = (
+  imageUrl: string,
+  target?: ImageMetadataTarget,
+) => axios.delete(ADMIN_URLS.ajaxR2Ops(), {
+  data: {imageUrl, target},
+});
 
 function uploadFile(file: any, cdnFilename: any, onProgress: any, onUploaded: any, onFailure: any, onR2OpsFailure: any) {
   const { size, type } = file;
@@ -55,6 +63,7 @@ function uploadFile(file: any, cdnFilename: any, onProgress: any, onUploaded: an
 
 const Requests = {
   axiosPost,
+  deleteImage,
   upload: uploadFile,
 };
 

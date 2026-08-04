@@ -57,11 +57,19 @@ export default class SettingsApp extends React.Component<Props, any> {
     this.setState({changed: true});
   }
 
-  async onSubmit(e: any, bundleKey: any, bundle: any) {
+  async onSubmit(
+    e: any,
+    bundleKey: any,
+    bundle: any,
+    deleteImageUrls: string[] = [],
+  ) {
     e.preventDefault();
     this.setState({submitForType: bundleKey, submitStatus: SUBMIT_STATUS__START});
     try {
-      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {[bundleKey]: bundle}});
+      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
+        deleteImageUrls,
+        settings: {[bundleKey]: bundle},
+      });
       this.setState({submitStatus: null, submitForType: null, changed: false}, () => {
         showToast('Updated!', 'success');
       });
