@@ -53,6 +53,7 @@ const canonicalUrl = itemId && item
     description={String(item.content_text ?? "")}
     language={loaded.publicFeed.language}
     canonicalUrl={canonicalUrl}
+    channelImage={String(loaded.content.channel?.image ?? "")}
     favicon={webSettings.favicon}
     publicBucketUrl={webSettings.publicBucketUrl}
     headHtml={theme.getWebHeader().html}

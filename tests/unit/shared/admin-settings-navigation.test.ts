@@ -11,7 +11,9 @@ describe("admin settings navigation", () => {
       ["tracking-urls", "Tracking URLs", "activity"],
       ["access-control", "Access control", "shield"],
       ["subscribe-methods", "Subscribe methods", "rss"],
-      ["web-settings", "Global settings", "globe"],
+      ["media-file-storage", "Media file storage", "storage"],
+      ["items-settings", "Items settings", "list"],
+      ["favicon", "Favicon", "image"],
       ["custom-code", "Custom code", "code"],
     ]);
   });
@@ -20,8 +22,8 @@ describe("admin settings navigation", () => {
     expect(filterAdminSettingsSections("SUBSCRIBE").map(({id}) => id)).toEqual([
       "subscribe-methods",
     ]);
-    expect(filterAdminSettingsSections("GLOBAL").map(({id}) => id)).toEqual([
-      "web-settings",
+    expect(filterAdminSettingsSections("STORAGE").map(({id}) => id)).toEqual([
+      "media-file-storage",
     ]);
     expect(filterAdminSettingsSections("  ")).toBe(ADMIN_SETTINGS_SECTIONS);
   });
