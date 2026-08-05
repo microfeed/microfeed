@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import {showToast} from "@/client/ToastUtils";
 import type {ApiAccessSettings, ApiKeyRecord} from "@/shared/Api";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 
 interface Props {
   apiKeys: ApiKeyRecord[];
@@ -136,7 +137,10 @@ export default function ApiOverviewApp({
       <ApiTryIt
         apiKeys={apiKeys}
         authenticationUrl={authenticationUrl}
-        endpointUrl={new URL("/api/feed/?limit=3", llmsFullUrl).toString()}
+        endpointUrl={new URL(
+          `${API_BASE_PATH}feed/?limit=3`,
+          llmsFullUrl,
+        ).toString()}
         settings={settings}
         settingsUrl={settingsUrl}
       />

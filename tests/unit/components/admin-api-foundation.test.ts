@@ -80,13 +80,15 @@ describe("API admin pages", () => {
       apiKeys: [],
       authenticationUrl: "/admin/api/auth/",
       explorerUrl: "/admin/api/explorer/",
-      llmsFullUrl: "https://feed.example.com/api/llms-full.txt",
+      llmsFullUrl: "https://feed.example.com/api/v1/llms-full.txt",
       settings: {enabled: false, publicDocsEnabled: false},
       settingsUrl: "/admin/api/settings/",
     }));
     expect(output).toContain("Active API keys");
     expect(output).toContain("!text-primary-foreground");
-    expect(output).toContain("Read https://feed.example.com/api/llms-full.txt");
+    expect(output).toContain(
+      "Read https://feed.example.com/api/v1/llms-full.txt",
+    );
     expect(output).toContain("Enable API access and publish API docs");
     expect(output).toContain("OpenAPI JSON");
     expect(output).toContain("llms-full.txt");
@@ -99,7 +101,7 @@ describe("API admin pages", () => {
 
   it("prefills Bearer examples from a selected API key", () => {
     const code = buildApiExampleCode(
-      "https://feed.example.com/api/feed/?limit=3",
+      "https://feed.example.com/api/v1/feed/?limit=3",
       apiKey.apiKey,
     );
     expect(code.javascript).toContain(`Bearer ${apiKey.apiKey}`);
@@ -114,7 +116,7 @@ describe("API admin pages", () => {
       apiKeys: [apiKey],
       authenticationUrl: "/admin/api/auth/",
       explorerUrl: "/admin/api/explorer/",
-      llmsFullUrl: "https://feed.example.com/api/llms-full.txt",
+      llmsFullUrl: "https://feed.example.com/api/v1/llms-full.txt",
       settings: {enabled: true, publicDocsEnabled: true},
       settingsUrl: "/admin/api/settings/",
     }));
@@ -155,6 +157,7 @@ describe("API admin pages", () => {
     expect(settings.toLowerCase()).not.toContain("reference");
     expect(settings).toContain("OpenAPI YAML");
     expect(settings).toContain("llms.txt");
+    expect(settings).toContain("/api/v1/*");
     expect(settings).toContain("gap-3 border-b p-5");
     expect(settings).toContain("gap-0 py-0");
     expect(settings).not.toContain(">Update<");

@@ -23,7 +23,10 @@ import {
   hasAdminOwner,
 } from "@/server/auth/admin-owner";
 import {isAdminPasswordSetupPath} from "@/server/auth/password-setup";
-import {decideApiRequest} from "@/server/api/access";
+import {
+  addLegacyApiDeprecationHeaders,
+  decideApiRequest,
+} from "@/server/api/access";
 import {createFeedCrud, loadFeed} from "@/server/feed/feed";
 
 const AUTH_BASE_PATH = "/api/auth";
@@ -108,13 +111,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
       pathname,
     );
     if (decision === "allow-reference") {
-      return next();
+      return addLegacyApiDeprecationHeaders(
+        await next(),
+        context.url,
+        pathname,
+      );
     }
     if (decision === "not-found") {
       return apiNotFoundResponse();
     }
     if (decision === "unauthorized") {
-      return apiUnauthorizedResponse();
+      return addLegacyApiDeprecationHeaders(
+        apiUnauthorizedResponse(),
+        context.url,
+        pathname,
+      );
     }
 
     const loaded = await loadFeed(env, context.request);
@@ -129,6 +140,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.locals.publicBucketUrl = resolvePublicBucketUrl(
       webGlobalSettings.publicBucketUrl,
       context.url.hostname,
+    );
+    return addLegacyApiDeprecationHeaders(
+      await next(),
+      context.url,
+      pathname,
     );
   } else if (isAdminPathname(pathname, adminPath)) {
     const loginPath = adminUrl("login", adminPath);

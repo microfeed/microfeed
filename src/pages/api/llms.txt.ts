@@ -1,7 +1,5 @@
-import type {APIRoute} from "astro";
+import {redirectApiDocs} from "@/server/api/reference";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 
-import {API_LLMS_TEXT} from "@/server/openapi/document";
-
-export const GET: APIRoute = () => new Response(API_LLMS_TEXT, {
-  headers: {"content-type": "text/plain; charset=utf-8"},
-});
+export const GET = redirectApiDocs(`${API_BASE_PATH}llms.txt`);
+export const HEAD = GET;

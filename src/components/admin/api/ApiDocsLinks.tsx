@@ -1,11 +1,12 @@
 import {cn} from "@/lib/utils";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 
 export const API_DOC_LINKS = [
-  {href: "/api/", label: "Interactive API docs"},
-  {href: "/api/openapi.json", label: "OpenAPI JSON"},
-  {href: "/api/openapi.yaml", label: "OpenAPI YAML"},
-  {href: "/api/llms.txt", label: "llms.txt"},
-  {href: "/api/llms-full.txt", label: "llms-full.txt"},
+  {href: API_BASE_PATH, label: "Interactive API docs"},
+  {href: `${API_BASE_PATH}openapi.json`, label: "OpenAPI JSON"},
+  {href: `${API_BASE_PATH}openapi.yaml`, label: "OpenAPI YAML"},
+  {href: `${API_BASE_PATH}llms.txt`, label: "llms.txt"},
+  {href: `${API_BASE_PATH}llms-full.txt`, label: "llms-full.txt"},
 ] as const;
 
 export default function ApiDocsLinks({className}: {className?: string}) {

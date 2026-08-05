@@ -12,6 +12,7 @@ import {
 } from "@/shared/ApiSchemas";
 import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
 import {MICROFEED_VERSION} from "@/shared/Version";
+import {API_BASE_PATH, API_MAJOR_VERSION} from "@/shared/ApiVersion";
 import {
   API_LLMS_FULL_TEXT,
   OPENAPI_JSON,
@@ -27,8 +28,9 @@ describe("generated API reference", () => {
     expect(OPENAPI_DOCUMENT.info.version).toBe(MICROFEED_VERSION);
     expect(OPENAPI_DOCUMENT.servers).toEqual([{
       description: "This microfeed instance API",
-      url: "/api/",
+      url: API_BASE_PATH,
     }]);
+    expect(Number(MICROFEED_VERSION.split(".")[0])).toBe(API_MAJOR_VERSION);
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_API_KEY");
 
     const embeddedContract = API_LLMS_FULL_TEXT.match(
@@ -69,6 +71,18 @@ describe("generated API reference", () => {
     );
     expect(explorer).toContain("followDocumentColorMode");
     expect(explorer).toContain("pinSidebarFooterToPageBottom");
+
+    const htmlReferences = await Promise.all([
+      "src/pages/api/v1/index.astro",
+      "src/pages/api/v1/openapi.html.astro",
+    ].map((filename) => readFile(
+      path.join(repositoryRoot, filename),
+      "utf8",
+    )));
+    for (const htmlReference of htmlReferences) {
+      expect(htmlReference).toContain("ApiReferencePage");
+      expect(htmlReference).not.toContain("Response.redirect");
+    }
   });
 
   it("makes the full LLM reference self-contained", () => {
@@ -96,7 +110,11 @@ describe("generated API reference", () => {
       "/channels/{channelId}/",
       "/media_files/presigned_urls/",
     ]);
-    expect(specification).not.toContain("/api/v1/");
+    expect(OPENAPI_DOCUMENT.servers?.[0]?.url).toBe(API_BASE_PATH);
+    expect(API_LLMS_FULL_TEXT).toContain(
+      `The API base path is ${API_BASE_PATH}`,
+    );
+    expect(API_LLMS_FULL_TEXT).not.toContain("/api/feed/");
     expect(specification).toContain("bearerAuth");
     expect(specification).not.toContain("legacyApiKey");
     expect(specification).not.toContain("X-MicrofeedAPI-Key");

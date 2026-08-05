@@ -82,7 +82,11 @@ reference format synchronized through the shared contract:
    reference formats or product UI.
 4. Implement the Astro route using the same schemas where practical and shared
    domain services. Do not make an internal HTTP request to microfeed's own API
-   or duplicate business logic solely for a transport.
+   or duplicate business logic solely for a transport. Put canonical external
+   endpoints under the current versioned API base from `src/shared/ApiVersion.ts`.
+   When an existing unversioned endpoint must remain compatible, route both
+   paths to the same server-side handler and keep the compatibility path out of
+   generated reference formats and new product examples.
 5. Do not maintain OpenAPI JSON, OpenAPI YAML, Scalar, `llms.txt`, or
    `llms-full.txt` separately. `src/server/openapi/document.ts` derives them
    from `OPENAPI_DOCUMENT`, and `llms-full.txt` embeds the complete generated
