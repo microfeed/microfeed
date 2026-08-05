@@ -3,6 +3,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 
 import {describe, expect, it} from "vitest";
+import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
 
 const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 const legacyRoots = [
@@ -40,28 +41,24 @@ async function contentsUnder(directory: string): Promise<string> {
 }
 
 describe("source architecture", () => {
-  it("points OpenAPI key guidance to the standalone admin API page", async () => {
-    const openApi = await readFile(
-      path.join(repositoryRoot, "src", "server", "openapi", "openapi.yaml"),
-      "utf8",
-    );
+  it("generates the canonical OpenAPI contract from shared schemas", () => {
+    const openApi = JSON.stringify(OPENAPI_DOCUMENT);
 
-    expect(openApi).toContain(
-      "API key at {{baseUrl}}{{adminBasePath}}api/.",
-    );
-    expect(openApi).toContain(
-      'Get API Key on {{baseUrl}}{{adminBasePath}}api/',
-    );
-    expect(openApi).not.toContain(
-      'Get API Key on {{baseUrl}}{{adminBasePath}}settings/',
-    );
-    expect(openApi).toContain("- published_at");
-    expect(openApi).toContain("- created_at");
-    expect(openApi).toContain("- updated_at");
-    expect(openApi).toContain("name: order");
-    expect(openApi).toContain("name: prev_cursor");
-    expect(openApi).toContain("unpadded Base64URL");
-    expect(openApi).toContain("deprecated: true");
+    expect(OPENAPI_DOCUMENT.openapi).toBe("3.1.1");
+    expect(OPENAPI_DOCUMENT.servers).toEqual([{
+      description: "This microfeed instance API",
+      url: "/api/",
+    }]);
+    expect(OPENAPI_DOCUMENT.paths).toHaveProperty("/feed/");
+    expect(openApi).toContain("bearerAuth");
+    expect(openApi).not.toContain("legacyApiKey");
+    expect(openApi).not.toContain("X-MicrofeedAPI-Key");
+    expect(openApi).toContain('"published_at"');
+    expect(openApi).toContain('"created_at"');
+    expect(openApi).toContain('"updated_at"');
+    expect(openApi).toContain('"name":"order"');
+    expect(openApi).toContain('"name":"prev_cursor"');
+    expect(openApi).not.toContain("/api/v1/");
     expect(openApi).not.toContain("updated_desc");
     expect(openApi).not.toContain("updated_asc");
   });
@@ -219,6 +216,7 @@ describe("source architecture", () => {
           "pages",
           "[adminPath]",
           "api",
+          "settings",
           "index.astro",
         ),
         "utf8",
@@ -229,9 +227,8 @@ describe("source architecture", () => {
           "src",
           "components",
           "admin",
-          "settings",
-          "ApiSettingsApp",
-          "index.tsx",
+          "api",
+          "ApiSettingsApp.tsx",
         ),
         "utf8",
       ),
@@ -249,8 +246,9 @@ describe("source architecture", () => {
     ]);
 
     expect(apiRoute).toContain("<ApiSettingsApp");
-    expect(apiSettings).toContain("onCheckedChange={(enabled) => saveBundle");
-    expect(apiSettings).not.toContain("<SettingsBase");
+    expect(apiRoute).toContain("apiNavigation");
+    expect(apiSettings).toContain("onChange={(enabled) => save");
+    expect(apiSettings).toContain("Publish API docs");
     expect(settingsPage).not.toContain("ApiSettingsApp");
   });
 

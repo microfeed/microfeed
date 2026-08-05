@@ -4,6 +4,7 @@ import "@fontsource-variable/geist";
 import {ClientRouter} from "astro:transitions";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminApiSidebar from "@/components/admin/api/AdminApiSidebar";
 import AdminSettingsSidebar from "@/components/admin/settings/AdminSettingsSidebar";
 import AdminThemeScript from "@/components/admin/AdminThemeScript.astro";
 import AdminTopBar from "@/components/admin/AdminTopBar.astro";
@@ -11,6 +12,7 @@ import {Toaster} from "@/components/ui/sonner";
 import {adminChannelSummary} from "@/components/admin/admin-shell-types";
 import type {
   AdminBreadcrumb,
+  AdminApiSidebarData,
   AdminDeploymentSummary,
   AdminIdentitySummary,
   AdminSettingsSidebarData,
@@ -24,6 +26,11 @@ import {
 } from "@/shared/AdminNavigation";
 import type {AdminSettingsSection} from "@/shared/AdminSettingsNavigation";
 import {
+  ADMIN_API_PAGES,
+  adminApiPageUrl,
+  type AdminApiPageId,
+} from "@/shared/AdminApiNavigation";
+import {
   PUBLIC_URLS,
   resolvePublicBucketUrl,
   urlJoinWithRelative,
@@ -36,6 +43,8 @@ export type {AdminBreadcrumb};
 
 interface Props {
   activeNavItem: AdminNavItemId | null;
+  apiActivePage?: AdminApiPageId;
+  apiNavigation?: boolean;
   breadcrumb?: AdminBreadcrumb;
   documentTitle?: string;
   feedContent: FeedContent;
@@ -47,6 +56,8 @@ interface Props {
 
 const {
   activeNavItem,
+  apiActivePage = "overview",
+  apiNavigation = false,
   breadcrumb,
   documentTitle,
   feedContent,
@@ -118,6 +129,19 @@ const settingsSidebar: AdminSettingsSidebarData | undefined = settingsNavigation
       sectionsUrl: adminUrl("settings", adminPath),
     }
   : undefined;
+const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
+  ? {
+      activePage: apiActivePage,
+      backUrl: adminUrl("", adminPath),
+      deployment,
+      pageUrls: Object.fromEntries(
+        ADMIN_API_PAGES.map((page) => [
+          page.id,
+          adminApiPageUrl(page, adminPath),
+        ]),
+      ) as AdminApiSidebarData["pageUrls"],
+    }
+  : undefined;
 ---
 
 <!doctype html>
@@ -144,11 +168,13 @@ const settingsSidebar: AdminSettingsSidebarData | undefined = settingsNavigation
       <aside
         class:list={[
           "sticky top-0 hidden h-svh shrink-0 overflow-hidden bg-sidebar lg:block",
-          settingsNavigation ? "w-[19rem]" : "w-[17rem]",
+          settingsNavigation || apiNavigation ? "w-[19rem]" : "w-[17rem]",
         ]}
       >
         {
-          settingsSidebar ? (
+          apiSidebar ? (
+            <AdminApiSidebar client:load data={apiSidebar} />
+          ) : settingsSidebar ? (
             <AdminSettingsSidebar client:load data={settingsSidebar} />
           ) : (
             <AdminSidebar client:load data={sidebar} />
@@ -158,6 +184,7 @@ const settingsSidebar: AdminSettingsSidebarData | undefined = settingsNavigation
       <section class="min-h-svh min-w-0 flex-1 bg-background lg:mt-3 lg:flex lg:h-[calc(100svh-0.75rem)] lg:min-h-0 lg:flex-col lg:overflow-hidden lg:rounded-tl-[var(--radius-shell)] lg:border lg:border-r-0 lg:border-b-0 lg:shadow-xs">
         <AdminTopBar
           {adminPath}
+          {apiSidebar}
           {breadcrumb}
           {identity}
           {pageTitle}

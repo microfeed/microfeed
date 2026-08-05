@@ -22,6 +22,7 @@ export const SNAPSHOT_TABLES = {
     "channels",
     "items",
     "settings",
+    "api_keys",
     "auth_user",
     "auth_account",
   ],

@@ -4,6 +4,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -14,7 +15,7 @@ export default class SettingsBase extends React.Component<any, any> {
   }
 
   render() {
-    const {submitForType, submitting, currentType, onSubmit, children, title, titleComponent} = this.props;
+    const {children, currentType, description, onSubmit, submitForType, submitting, title, titleComponent} = this.props;
     const submittingForThis = submitForType === currentType;
     return (<form className="h-full"><Card className="h-full gap-0 py-0">
       <CardHeader className="gap-3 border-b p-5">
@@ -22,6 +23,7 @@ export default class SettingsBase extends React.Component<any, any> {
           {title}
           {titleComponent}
         </CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
         {onSubmit && <CardAction>
           <Button
             disabled={submittingForThis || submitting}

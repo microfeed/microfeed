@@ -8,7 +8,7 @@ import {
   isAdminPathname,
   normalizeAdminPath,
 } from "@/shared/AdminPath";
-import {SETTINGS_CATEGORIES, STATUSES} from "@/shared/Constants";
+import {STATUSES} from "@/shared/Constants";
 import {itemQueryForStatusFilter} from "@/shared/ItemList";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import {
@@ -17,16 +17,32 @@ import {
 } from "@/shared/StringUtils";
 import {isExistingItemEditorPath} from "./server/admin-routes";
 import {adminProtectionStatus} from "@/server/auth/admin-protection";
-import {matchesAnyApiKey} from "@/server/auth/auth";
 import {createMicrofeedAuth} from "@/server/auth/better-auth";
 import {
   adminDashboardLockedResponse,
   hasAdminOwner,
 } from "@/server/auth/admin-owner";
 import {isAdminPasswordSetupPath} from "@/server/auth/password-setup";
+import {decideApiRequest} from "@/server/api/access";
 import {createFeedCrud, loadFeed} from "@/server/feed/feed";
 
 const AUTH_BASE_PATH = "/api/auth";
+function apiNotFoundResponse(): Response {
+  return new Response("404", {
+    headers: {"content-type": "text/plain; charset=utf-8"},
+    status: 404,
+  });
+}
+
+function apiUnauthorizedResponse(): Response {
+  return new Response("Unauthorized", {
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "www-authenticate": 'Bearer realm="microfeed"',
+    },
+    status: 401,
+  });
+}
 
 function isBetterAuthPath(pathname: string): boolean {
   return pathname === AUTH_BASE_PATH ||
@@ -86,28 +102,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   if (pathname.startsWith("/api/")) {
-    const loaded = await loadFeed(env, context.request);
-    const settings = loaded.content.settings ?? {};
-    const webGlobalSettings = settings.webGlobalSettings ?? {};
-    const apiSettings = settings[
-      SETTINGS_CATEGORIES.API_SETTINGS
-    ] as {
-      apps?: Array<{token?: string}>;
-      enabled?: boolean;
-    } | undefined;
-    const tokens = apiSettings?.apps
-      ?.map((application) => application.token)
-      .filter((token): token is string => Boolean(token)) ?? [];
-    const authorized = Boolean(apiSettings?.enabled) &&
-      await matchesAnyApiKey(
-        context.request.headers.get("x-microfeedapi-key"),
-        tokens,
-      );
-
-    if (!authorized) {
-      return new Response("Unauthorized", {status: 401});
+    const decision = await decideApiRequest(
+      env.FEED_DB,
+      context.request,
+      pathname,
+    );
+    if (decision === "allow-reference") {
+      return next();
+    }
+    if (decision === "not-found") {
+      return apiNotFoundResponse();
+    }
+    if (decision === "unauthorized") {
+      return apiUnauthorizedResponse();
     }
 
+    const loaded = await loadFeed(env, context.request);
+    const webGlobalSettings = loaded.content.settings?.webGlobalSettings ?? {};
     context.locals.feedDb = loaded.database;
     context.locals.feedContent = loaded.content;
     context.locals.feedCrud = createFeedCrud(

@@ -1,27 +1,19 @@
 import type {APIRoute} from "astro";
 
-import {ITEM_STATUSES_STRINGS_DICT, STATUSES} from "@/shared/Constants";
-import {datetimeLocalToMs} from "@/shared/TimeUtils";
+import {apiItemInputSchema} from "@/shared/ApiSchemas";
+import {createItem} from "@/server/items/service";
 import {jsonResponse} from "../../../server/http";
-
-interface CreateItemPayload extends Record<string, unknown> {
-  date_published_ms?: number;
-  id?: string;
-  status?: number | string;
-}
 
 export const POST: APIRoute = async ({locals, request}) => {
   if (!locals.feedCrud) {
     return new Response("Feed context unavailable", {status: 500});
   }
-  const {id: _ignored, ...item} =
-    await request.json() as CreateItemPayload;
-  const statusByName: Readonly<Record<string, number>> =
-    ITEM_STATUSES_STRINGS_DICT;
-  item.status = statusByName[String(item.status ?? "")] ??
-    STATUSES.PUBLISHED;
-  item.date_published_ms = item.date_published_ms ??
-    datetimeLocalToMs(new Date());
-  const id = await locals.feedCrud.upsertItem(item);
+  const parsed = apiItemInputSchema.safeParse(await request.json().catch(
+    () => null,
+  ));
+  if (!parsed.success) {
+    return jsonResponse({error: "Invalid item."}, {status: 400});
+  }
+  const id = await createItem(locals.feedCrud, parsed.data);
   return jsonResponse({id}, {status: 201});
 };

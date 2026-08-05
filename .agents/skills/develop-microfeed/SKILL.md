@@ -64,6 +64,35 @@ leave the repository in a reviewable state.
 5. Do not commit secrets, local instance state, build output, generated Worker
    types, or unrelated formatting changes.
 
+## Change the external API
+
+When adding or changing a public endpoint, keep runtime behavior and every
+reference format synchronized through the shared contract:
+
+1. Inspect the route, transport-neutral service, existing schemas, generated
+   OpenAPI document, and relevant runtime and contract tests.
+2. Add or update reusable Zod request and response schemas in
+   `src/shared/ApiSchemas.ts`. Preserve deprecated inputs or outputs explicitly
+   when existing integrations require backward compatibility.
+3. Register the operation in `src/shared/OpenApiDocument.ts`, including its
+   method, path, operation ID, parameters, request body, every response status
+   and schema, authentication, descriptions, and compatibility notes.
+   Document Bearer as the only API-key authentication method; compatibility-only
+   authentication remains a tested runtime detail and is not shown in API
+   reference formats or product UI.
+4. Implement the Astro route using the same schemas where practical and shared
+   domain services. Do not make an internal HTTP request to microfeed's own API
+   or duplicate business logic solely for a transport.
+5. Do not maintain OpenAPI JSON, OpenAPI YAML, Scalar, `llms.txt`, or
+   `llms-full.txt` separately. `src/server/openapi/document.ts` derives them
+   from `OPENAPI_DOCUMENT`, and `llms-full.txt` embeds the complete generated
+   contract so it remains self-contained.
+6. Add focused tests for handler behavior and contract generation. Ensure every
+   new route is represented in `OPENAPI_DOCUMENT`, the embedded LLM contract
+   parses back to that same document, and compatibility behavior is covered.
+7. Run `yarn lint:openapi` while iterating, followed by the normal
+   `git diff --check` and `yarn check` validation before publishing.
+
 ## Validate and review
 
 1. Run targeted tests or checks while iterating.

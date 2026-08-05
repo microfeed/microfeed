@@ -45,6 +45,8 @@ Forms and settings must start as one column. Two- and three-column groups may be
 
 Use project-owned components in `src/components/ui/` and compose them in `src/components/admin/`. Prefer the configured Base UI shadcn variants, preserving their keyboard and focus behavior.
 
+Button labels and icons must always use a high-contrast semantic foreground for the button surface in both themes. Primary actions use `primary-foreground`; do not allow global link styles to override that color when a button renders as an anchor.
+
 - `AdminTopBar` owns the page title, optional breadcrumb and toolbar, theme control, and identity menu.
 - Sidebar navigation, mobile navigation, channel links, and the About dialog share one typed data model.
 - The About dialog gives authenticated Cloudflare production deployments a Worker-specific connect-and-deploy prompt; local, preview, legacy, and unprotected dashboards use the generic prompt.
@@ -53,6 +55,12 @@ Use project-owned components in `src/components/ui/` and compose them in `src/co
 - Keep brand artwork as the repository’s image assets. Use the original microfeed horizontal logo on light surfaces and its transparent white variant on dark surfaces; never add a background container around either logo.
 
 Radios retain the approved appearance: a semantic dark unselected border, brand-sky selected border, white center, and visible brand focus ring. Radio controls and labels are vertically centered by default. Descriptive rows may explicitly use start alignment, including the Access control cards, which add a small top offset to align the control with the first line of text. Guided unavailable options stay focusable with `aria-disabled`; truly disabled options use native disabled behavior.
+
+### Settings sections
+
+Settings groups use the standardized bordered card structure provided by `SettingsBase` or `AdminSectionCard`. Put the section title and its concise, one-sentence purpose in the card header, separated from the controls by a border. Do not repeat the title or place introductory section copy as the first row of the card body. The card body contains only settings, supporting details, and actions, with 20px padding by default.
+
+Setting rows place the label and helper text on the left and the control on the right at wider breakpoints, while stacking vertically on narrow screens. Separate peer settings with quiet dividers. Visually indent dependent settings with a left border, and disable them when their parent setting makes them unavailable. Prefer immediate saving for switches, radios, ordering, and other single-choice controls; show an explicit action only when users need to review a larger text or form change before saving.
 
 ## Themes
 

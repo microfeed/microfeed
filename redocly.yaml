@@ -1,0 +1,6 @@
+extends:
+  - recommended
+
+rules:
+  no-server-example.com: off
+  no-path-trailing-slash: off

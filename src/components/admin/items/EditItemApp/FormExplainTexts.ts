@@ -47,7 +47,7 @@ export const CONTROLS_TEXTS_DICT = {
       "To track download stats of a media file, you can add 3rd-party tracking urls " +
       `(e.g., <a href='https://op3.dev/'>OP3</a>, <a href='http://analytics.podtrac.com/'>Podtrac</a>...) at <a href='${ADMIN_URLS.settings()}'>Settings / Tracking urls</a>.`,
     rss: '<channel><item><enclosure url="https://cdn-site.com/audio.mp3" type="audio/mpeg" length="277000"/><itunes:duration>00:21:02</itunes:duration></item></channel>',
-    json: '{ "items": [{"attachments": [{"url": "https://cdn-site.com/audio.mp3", "mime_type": "audio/mpeg", "size_in_byte": 277000, "duration_in_seconds": 1262 }], "_microfeed": {"duration_hhmmss": "00:21:02"}}] }',
+    json: '{ "items": [{"attachments": [{"url": "https://cdn-site.com/audio.mp3", "mime_type": "audio/mpeg", "size_in_bytes": 277000, "duration_in_seconds": 1262 }], "_microfeed": {"duration_hhmmss": "00:21:02"}}] }',
   },
 
   [ITEM_CONTROLS.PUB_DATE]: {

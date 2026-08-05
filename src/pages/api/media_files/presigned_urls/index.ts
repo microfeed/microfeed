@@ -12,42 +12,26 @@ import {
   mediaBucket,
   mediaStorageUnavailableResponse,
 } from "@/server/media/storage";
-
-interface PresignedUrlPayload {
-  category?: string;
-  full_local_file_path?: string;
-  item_id?: string;
-  size?: number;
-  type?: string;
-}
-
-const categories = ["image", "audio", "video", "document"];
+import {apiUploadInputSchema} from "@/shared/ApiSchemas";
 
 export const POST: APIRoute = async ({locals, request}) => {
   if (!mediaBucket(env)) {
     return mediaStorageUnavailableResponse();
   }
-  const input = await request.json() as PresignedUrlPayload | null;
-  if (!input) {
+  const parsed = apiUploadInputSchema.safeParse(await request.json().catch(
+    () => null,
+  ));
+  if (!parsed.success) {
     return jsonResponse({
-      error: "You have to provide JSON input parameters.",
+      error: "Provide a valid media upload request.",
     }, {status: 400});
   }
+  const input = parsed.data;
   const {
     category,
     full_local_file_path: localPath,
     item_id: itemId,
   } = input;
-  if (!category || !categories.includes(category)) {
-    return jsonResponse({
-      error: `Invalid category: ${category}. Category must be one of: ${categories.join(", ")}`,
-    }, {status: 400});
-  }
-  if (!localPath) {
-    return jsonResponse({
-      error: "You have to provide full_local_file_path, e.g., /tmp/1.png",
-    }, {status: 400});
-  }
   if (category !== "image" && !itemId) {
     return jsonResponse({
       error: "You have to provide item_id for non-image categories.",

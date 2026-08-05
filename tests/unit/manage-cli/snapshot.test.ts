@@ -218,6 +218,23 @@ function insertRepresentativeData(database: DatabaseSync, position: number): voi
     INSERT INTO settings (category, data)
       VALUES ('webGlobalSettings', '{"publicBucketUrl":"https://old.example/media/"}');
   `);
+  if (position < 6) {
+    database.exec(`
+      INSERT INTO settings (category, data)
+      VALUES (
+        'apiSettings',
+        '{"enabled":true,"apps":[{"id":"snapshot-api-key","name":"Snapshot integration","token":"snapshot-secret","createdAtMs":1725000000000}]}'
+      );
+    `);
+  } else {
+    database.exec(`
+      INSERT INTO api_keys
+        (id, name, api_key, created_at_ms, updated_at_ms)
+      VALUES
+        ('snapshot-api-key', 'Snapshot integration', 'snapshot-secret',
+         1725000000000, 1725000000000);
+    `);
+  }
   if (position >= 2) {
     database.exec(`
       INSERT INTO auth_user
@@ -322,6 +339,13 @@ describe("migration upgrades from historical snapshot positions", () => {
         expect(database.prepare(
           "SELECT json_extract(data, '$.title') AS title FROM channels",
         ).get()).toEqual({title: "Saved channel"});
+        expect(database.prepare(
+          "SELECT id, name, api_key FROM api_keys WHERE id = 'snapshot-api-key'",
+        ).get()).toEqual({
+          api_key: "snapshot-secret",
+          id: "snapshot-api-key",
+          name: "Snapshot integration",
+        });
         const indexes = database.prepare(
           "SELECT name FROM sqlite_schema WHERE type = 'index' AND " +
             "sql IS NOT NULL ORDER BY name",

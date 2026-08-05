@@ -11,17 +11,20 @@ import {
 } from "@/components/ui/sheet";
 import AdminSidebar from "./AdminSidebar";
 import AdminSettingsSidebar from "./settings/AdminSettingsSidebar";
+import AdminApiSidebar from "./api/AdminApiSidebar";
 import type {
+  AdminApiSidebarData,
   AdminSettingsSidebarData,
   AdminSidebarData,
 } from "./admin-shell-types";
 
 interface Props {
+  apiSidebar?: AdminApiSidebarData;
   settingsSidebar?: AdminSettingsSidebarData;
   sidebar: AdminSidebarData;
 }
 
-export default function AdminMobileNavigation({settingsSidebar, sidebar}: Props) {
+export default function AdminMobileNavigation({apiSidebar, settingsSidebar, sidebar}: Props) {
   const [navigationOpen, setNavigationOpen] = useState(false);
 
   return (
@@ -43,7 +46,12 @@ export default function AdminMobileNavigation({settingsSidebar, sidebar}: Props)
         <SheetDescription className="sr-only">
           Navigate between microfeed dashboard pages.
         </SheetDescription>
-        {settingsSidebar ? (
+        {apiSidebar ? (
+          <AdminApiSidebar
+            data={apiSidebar}
+            onNavigate={() => setNavigationOpen(false)}
+          />
+        ) : settingsSidebar ? (
           <AdminSettingsSidebar
             data={settingsSidebar}
             onNavigate={() => setNavigationOpen(false)}
