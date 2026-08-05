@@ -80,6 +80,7 @@ describe("admin UI controls", () => {
     const output = renderToStaticMarkup(
       React.createElement(SettingsBase, {
         currentType: "access",
+        description: "Choose who can access this site.",
         onSubmit: vi.fn(),
         submitForType: null,
         submitting: false,
@@ -88,6 +89,8 @@ describe("admin UI controls", () => {
     );
 
     expect(output).toContain('data-slot="card-action"');
+    expect(output).toContain('data-slot="card-description"');
+    expect(output).toContain("Choose who can access this site.");
     expect(output).toContain("justify-self-end");
     expect(output).toContain(">Update</button>");
   });

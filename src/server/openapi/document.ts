@@ -11,6 +11,7 @@ export const OPENAPI_JSON = JSON.stringify(OPENAPI_DOCUMENT, null, 2);
 export const OPENAPI_YAML = YAML.stringify(OPENAPI_DOCUMENT);
 
 export const API_LLMS_TEXT = `# microfeed API\n\n` +
+  `Base path: /api/\n` +
   `OpenAPI: /api/openapi.json\n` +
   `Full API guide: /api/llms-full.txt\n\n` +
   `Authenticate with: Authorization: Bearer YOUR_API_KEY\n\n` +
@@ -24,6 +25,8 @@ export const API_LLMS_FULL_TEXT = `# microfeed API\n\n` +
   `Use this API to build integrations that create and manage content in this ` +
   `microfeed instance. Send an API key using Bearer authentication:\n\n` +
   `Authorization: Bearer YOUR_API_KEY\n\n` +
+  `The API base path is /api/. Operation paths in the contract are relative ` +
+  `to that base path.\n\n` +
   `API access may be disabled by the instance owner.\n\n` +
   `## Operations\n\n${API_OPERATION_SUMMARY}\n\n` +
   `## Pagination\n\n` +

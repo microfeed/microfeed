@@ -35,6 +35,8 @@ const channelPath = z.object({
 
 const operationSecurity: [{bearerAuth: string[]}] = [{bearerAuth: []}];
 
+export const API_BASE_PATH = "/api/";
+
 export const OPENAPI_DOCUMENT = createDocument({
   openapi: "3.1.1",
   info: {
@@ -48,7 +50,7 @@ export const OPENAPI_DOCUMENT = createDocument({
       identifier: "AGPL-3.0-only",
     },
   },
-  servers: [{url: "/", description: "This microfeed instance"}],
+  servers: [{url: API_BASE_PATH, description: "This microfeed instance API"}],
   tags: [
     {name: "Feed", description: "Read the complete feed."},
     {name: "Items", description: "Create and manage feed items."},
@@ -57,7 +59,7 @@ export const OPENAPI_DOCUMENT = createDocument({
   ],
   security: operationSecurity,
   paths: {
-    "/api/feed/": {
+    "/feed/": {
       get: {
         operationId: "getFeed",
         summary: "Get the feed",
@@ -69,7 +71,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         },
       },
     },
-    "/api/items/": {
+    "/items/": {
       post: {
         operationId: "createItem",
         summary: "Create an item",
@@ -85,7 +87,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         },
       },
     },
-    "/api/items/{itemId}/": {
+    "/items/{itemId}/": {
       get: {
         operationId: "getItem",
         summary: "Get an item",
@@ -127,7 +129,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         },
       },
     },
-    "/api/channels/{channelId}/": {
+    "/channels/{channelId}/": {
       put: {
         operationId: "updatePrimaryChannel",
         summary: "Update the primary channel",
@@ -144,7 +146,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         },
       },
     },
-    "/api/media_files/presigned_urls/": {
+    "/media_files/presigned_urls/": {
       post: {
         operationId: "prepareMediaUpload",
         summary: "Prepare a media upload",

@@ -25,6 +25,10 @@ describe("generated API reference", () => {
     expect(JSON.parse(OPENAPI_JSON)).toEqual(OPENAPI_DOCUMENT);
     expect(OPENAPI_YAML).toContain("openapi: 3.1.1");
     expect(OPENAPI_DOCUMENT.info.version).toBe(MICROFEED_VERSION);
+    expect(OPENAPI_DOCUMENT.servers).toEqual([{
+      description: "This microfeed instance API",
+      url: "/api/",
+    }]);
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_API_KEY");
 
     const embeddedContract = API_LLMS_FULL_TEXT.match(
@@ -40,14 +44,17 @@ describe("generated API reference", () => {
     expect(scalar).toContain('@scalar/api-reference-react/style.css');
     expect(scalar).toContain("content: document");
     expect(scalar).toContain("customCss: SCALAR_LAYOUT_CSS");
+    expect(scalar).not.toContain("servers: [{");
     expect(scalar).toContain("defaultOpenAllTags: true");
     expect(scalar).toContain("defaultOpenFirstTag: true");
     expect(scalar).toContain("expandAllModelSections: true");
     expect(scalar).toContain("expandAllResponses: true");
     expect(scalar).toContain("grid-area: navigation");
+    expect(scalar).toContain("scalar-reference-page-sidebar");
+    expect(scalar).toContain("position: static");
     expect(scalar).toContain("hideClientButton: true");
     expect(scalar).toContain("hideDarkModeToggle: followDocumentColorMode");
-    expect(scalar).toContain("`${API_REFERENCE_CLASS_NAME} ${documentColorMode}-mode`");
+    expect(scalar).toContain('pinSidebarFooterToPageBottom ? "scalar-reference-page-sidebar"');
     expect(scalar).toContain("persistAuth: false");
     expect(scalar).toContain('showDeveloperTools: "never"');
     expect(scalar).toContain("showSidebar: true");
@@ -61,6 +68,7 @@ describe("generated API reference", () => {
       "utf8",
     );
     expect(explorer).toContain("followDocumentColorMode");
+    expect(explorer).toContain("pinSidebarFooterToPageBottom");
   });
 
   it("makes the full LLM reference self-contained", () => {
@@ -82,11 +90,11 @@ describe("generated API reference", () => {
   it("documents only current routes and Bearer authentication", () => {
     const specification = JSON.stringify(OPENAPI_DOCUMENT);
     expect(Object.keys(OPENAPI_DOCUMENT.paths ?? {})).toEqual([
-      "/api/feed/",
-      "/api/items/",
-      "/api/items/{itemId}/",
-      "/api/channels/{channelId}/",
-      "/api/media_files/presigned_urls/",
+      "/feed/",
+      "/items/",
+      "/items/{itemId}/",
+      "/channels/{channelId}/",
+      "/media_files/presigned_urls/",
     ]);
     expect(specification).not.toContain("/api/v1/");
     expect(specification).toContain("bearerAuth");

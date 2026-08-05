@@ -7,6 +7,7 @@ interface Props {
   document: Record<string, unknown>;
   followDocumentColorMode?: boolean;
   origin: string;
+  pinSidebarFooterToPageBottom?: boolean;
   requestsDisabled?: boolean;
 }
 
@@ -36,6 +37,14 @@ const SCALAR_LAYOUT_CSS = `
   .references-layout.references-sidebar > .t-doc__sidebar {
     z-index: 10;
   }
+
+  .scalar-reference-page-sidebar .references-layout.references-sidebar > .t-doc__sidebar {
+    align-self: stretch;
+    height: auto;
+    min-height: 100%;
+    position: static;
+    top: auto;
+  }
 }
 `;
 
@@ -44,6 +53,7 @@ export default function ApiReference({
   document,
   followDocumentColorMode = false,
   origin,
+  pinSidebarFooterToPageBottom = false,
   requestsDisabled = false,
 }: Props) {
   const [documentColorMode, setDocumentColorMode] = useState<ColorMode>(() =>
@@ -89,7 +99,6 @@ export default function ApiReference({
     hideTestRequestButton: requestsDisabled,
     mcp: {disabled: true},
     persistAuth: false,
-    servers: [{description: "This microfeed instance", url: origin}],
     showDeveloperTools: "never",
     showSidebar: true,
     telemetry: false,
@@ -107,9 +116,11 @@ export default function ApiReference({
     },
   };
 
-  const className = followDocumentColorMode
-    ? `${API_REFERENCE_CLASS_NAME} ${documentColorMode}-mode`
-    : API_REFERENCE_CLASS_NAME;
+  const className = [
+    API_REFERENCE_CLASS_NAME,
+    followDocumentColorMode ? `${documentColorMode}-mode` : undefined,
+    pinSidebarFooterToPageBottom ? "scalar-reference-page-sidebar" : undefined,
+  ].filter(Boolean).join(" ");
 
   return (
     <div className={className}>

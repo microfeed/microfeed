@@ -39,11 +39,11 @@ export default function ApiSettingsApp({initialSettings}: Props) {
   };
 
   return (
-    <SettingsBase title="Availability">
-      <p className="mb-5 text-sm text-muted-foreground">
-        Control integration access and public API docs.
-      </p>
-      <div className="divide-y">
+    <SettingsBase
+      description="Control integration access and public API docs."
+      title="Availability"
+    >
+      <div>
         <SettingRow
           checked={settings.enabled}
           description="Allow external integrations to call /api/* with an API key. Turning this off also unpublishes the API docs and returns 404 for these routes, without affecting the dashboard or admin login."
@@ -51,15 +51,21 @@ export default function ApiSettingsApp({initialSettings}: Props) {
           label="Enable API access"
           onChange={(enabled) => save(updateApiAccessEnabled(settings, enabled))}
         />
-        <SettingRow
-          checked={settings.publicDocsEnabled}
-          description="Publish interactive API docs, OpenAPI files, and llms.txt files. Recommended for AI-agent workflows. API access must be enabled to publish these docs."
-          disabled={saving || !settings.enabled}
-          label="Publish API docs"
-          onChange={(publicDocsEnabled) => save({...settings, publicDocsEnabled})}
-        >
-          <ApiDocsLinks className="mt-2" />
-        </SettingRow>
+        <div className="border-t pt-5">
+          <div className="ml-4 divide-y border-l-2 border-border pl-5 sm:ml-6 sm:pl-6">
+            <SettingRow
+              checked={settings.publicDocsEnabled}
+              description="Publish interactive API docs, OpenAPI files, and llms.txt files. Recommended for AI-agent workflows. API access must be enabled to publish these docs."
+              disabled={saving || !settings.enabled}
+              label="Publish API docs"
+              onChange={(publicDocsEnabled) =>
+                save({...settings, publicDocsEnabled})
+              }
+            >
+              <ApiDocsLinks className="mt-2" />
+            </SettingRow>
+          </div>
+        </div>
       </div>
     </SettingsBase>
   );

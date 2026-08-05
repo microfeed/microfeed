@@ -6,14 +6,8 @@ import {
 } from "lucide-react";
 import {useMemo, useState} from "react";
 
+import AdminSectionCard from "@/components/admin/shared/AdminSectionCard";
 import {Button} from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {Label} from "@/components/ui/label";
 import {showToast} from "@/client/ToastUtils";
 import {cn} from "@/lib/utils";
@@ -147,15 +141,15 @@ export default function ApiTryIt({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Try it now</CardTitle>
-        <CardDescription>
+    <AdminSectionCard
+      description={
+        <>
           Select an API key to prefill a same-origin example. The selected API
           key stays in memory and is never persisted by this page.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </>
+      }
+      title="Try it now"
+    >
         {apiKeys.length ? (
           <div className="mb-5 max-w-md">
             <Label htmlFor="overview-api-key">API key for this example</Label>
@@ -285,8 +279,7 @@ export default function ApiTryIt({
             <JsonTree value={output} />
           </div>
         )}
-      </CardContent>
-    </Card>
+    </AdminSectionCard>
   );
 }
 

@@ -3,10 +3,10 @@ import {useState} from "react";
 
 import ApiDocsLinks from "@/components/admin/api/ApiDocsLinks";
 import ApiTryIt from "@/components/admin/api/ApiTryIt";
+import AdminSectionCard from "@/components/admin/shared/AdminSectionCard";
 import {Button} from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -63,15 +63,15 @@ export default function ApiOverviewApp({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Start building</CardTitle>
-            <CardDescription>
+        <AdminSectionCard
+          description={
+            <>
               Create an API key, then explore requests and generated examples in
               your browser.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </>
+          }
+          title="Start building"
+        >
             <div className="flex flex-wrap gap-3">
               <Button render={<a href={authenticationUrl} />}>
                 <KeyRoundIcon aria-hidden="true" />
@@ -88,18 +88,17 @@ export default function ApiOverviewApp({
               </p>
               <ApiDocsLinks className="mt-2" />
             </div>
-          </CardContent>
-        </Card>
+        </AdminSectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Build with an AI coding agent</CardTitle>
-            <CardDescription>
+        <AdminSectionCard
+          description={
+            <>
               Copy this prompt into a coding agent to give it the complete API
               contract for this instance.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </>
+          }
+          title="Build with an AI coding agent"
+        >
             <div className="relative rounded-xl border bg-muted/40 p-4 pr-14 pb-12 font-mono text-sm leading-6">
               {prompt}
               <Tooltip>
@@ -131,8 +130,7 @@ export default function ApiOverviewApp({
                 to use this prompt.
               </p>
             )}
-          </CardContent>
-        </Card>
+        </AdminSectionCard>
       </div>
 
       <ApiTryIt

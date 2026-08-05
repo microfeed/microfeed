@@ -56,6 +56,12 @@ Button labels and icons must always use a high-contrast semantic foreground for 
 
 Radios retain the approved appearance: a semantic dark unselected border, brand-sky selected border, white center, and visible brand focus ring. Radio controls and labels are vertically centered by default. Descriptive rows may explicitly use start alignment, including the Access control cards, which add a small top offset to align the control with the first line of text. Guided unavailable options stay focusable with `aria-disabled`; truly disabled options use native disabled behavior.
 
+### Settings sections
+
+Settings groups use the standardized bordered card structure provided by `SettingsBase` or `AdminSectionCard`. Put the section title and its concise, one-sentence purpose in the card header, separated from the controls by a border. Do not repeat the title or place introductory section copy as the first row of the card body. The card body contains only settings, supporting details, and actions, with 20px padding by default.
+
+Setting rows place the label and helper text on the left and the control on the right at wider breakpoints, while stacking vertically on narrow screens. Separate peer settings with quiet dividers. Visually indent dependent settings with a left border, and disable them when their parent setting makes them unavailable. Prefer immediate saving for switches, radios, ordering, and other single-choice controls; show an explicit action only when users need to review a larger text or form change before saving.
+
 ## Themes
 
 Admin pages support Light, Dark, and System modes. First visit defaults to Light. The preference is stored locally, applied before first paint, and reapplied after Astro transitions. System mode alone responds to operating-system changes. Set both the root `.dark` class and `color-scheme`; editors and other third-party surfaces must derive colors from the resolved root theme.

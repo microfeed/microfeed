@@ -45,7 +45,11 @@ describe("source architecture", () => {
     const openApi = JSON.stringify(OPENAPI_DOCUMENT);
 
     expect(OPENAPI_DOCUMENT.openapi).toBe("3.1.1");
-    expect(OPENAPI_DOCUMENT.paths).toHaveProperty("/api/feed/");
+    expect(OPENAPI_DOCUMENT.servers).toEqual([{
+      description: "This microfeed instance API",
+      url: "/api/",
+    }]);
+    expect(OPENAPI_DOCUMENT.paths).toHaveProperty("/feed/");
     expect(openApi).toContain("bearerAuth");
     expect(openApi).not.toContain("legacyApiKey");
     expect(openApi).not.toContain("X-MicrofeedAPI-Key");

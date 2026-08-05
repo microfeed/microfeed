@@ -62,6 +62,7 @@ export default function ApiExplorerApp({
           document={document}
           followDocumentColorMode
           origin={origin}
+          pinSidebarFooterToPageBottom
           requestsDisabled={disabled}
         />
       </div>

@@ -124,6 +124,7 @@ describe("API admin pages", () => {
     expect(output).toContain("cURL");
     expect(output).toContain("Try it now");
     expect(output).toContain("pb-[50vh]");
+    expect(output.match(/gap-3 border-b p-5/g)).toHaveLength(3);
     expect(output).toContain('data-syntax="keyword"');
     expect(output).toContain(">Run<");
   });
@@ -147,6 +148,10 @@ describe("API admin pages", () => {
     }));
     expect(settings).toContain("Enable API access");
     expect(settings).toContain("Publish API docs");
+    expect(settings).toContain("Control integration access and public API docs.");
+    expect(settings.indexOf('data-slot="card-description"'))
+      .toBeLessThan(settings.indexOf('data-slot="card-content"'));
+    expect(settings).toContain("ml-4 divide-y border-l-2");
     expect(settings.toLowerCase()).not.toContain("reference");
     expect(settings).toContain("OpenAPI YAML");
     expect(settings).toContain("llms.txt");
