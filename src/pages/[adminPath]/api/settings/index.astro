@@ -1,0 +1,31 @@
+---
+import {env} from "cloudflare:workers";
+
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import ApiSettingsApp from "@/components/admin/api/ApiSettingsApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {readApiAccessSettings} from "@/server/api/api-keys";
+import {NAV_ITEMS} from "@/shared/Constants";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const initialSettings = await readApiAccessSettings(env.FEED_DB);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.API}
+  apiActivePage="settings"
+  apiNavigation
+  documentTitle="API Settings | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="API Settings"
+>
+  <div class="mx-auto max-w-5xl">
+    <ApiSettingsApp client:only="react" {initialSettings}>
+      <AdminPageFallback slot="fallback" kind="settings" />
+    </ApiSettingsApp>
+  </div>
+</AdminShell>

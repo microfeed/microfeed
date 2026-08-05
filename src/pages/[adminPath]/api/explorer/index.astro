@@ -1,0 +1,43 @@
+---
+import {env} from "cloudflare:workers";
+
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import ApiExplorerApp from "@/components/admin/api/ApiExplorerApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {listApiKeys, readApiAccessSettings} from "@/server/api/api-keys";
+import {adminUrl, normalizeAdminPath} from "@/shared/AdminPath";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const [initialApiKeys, settings] = await Promise.all([
+  listApiKeys(env.FEED_DB),
+  readApiAccessSettings(env.FEED_DB),
+]);
+const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.API}
+  apiActivePage="explorer"
+  apiNavigation
+  documentTitle="API Explorer | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="API Explorer"
+>
+  <ApiExplorerApp
+    client:only="react"
+    authenticationUrl={adminUrl("api/auth", adminPath)}
+    document={OPENAPI_DOCUMENT as unknown as Record<string, unknown>}
+    {initialApiKeys}
+    origin={Astro.url.origin}
+    {settings}
+    settingsUrl={adminUrl("api/settings", adminPath)}
+  >
+    <AdminPageFallback slot="fallback" kind="settings" />
+  </ApiExplorerApp>
+</AdminShell>

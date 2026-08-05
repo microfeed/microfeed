@@ -438,6 +438,21 @@ export default class FeedDb {
     return {...contentJson, ...itemJson};
   }
 
+  async getItemById(
+    id: string,
+    statuses: number[] = [
+      STATUSES.PUBLISHED,
+      STATUSES.UNLISTED,
+      STATUSES.UNPUBLISHED,
+    ],
+  ): Promise<Record<string, any> | null> {
+    const placeholders = statuses.map(() => "?").join(", ");
+    const row = await this.FEED_DB.prepare(
+      `SELECT * FROM items WHERE id = ? AND status IN (${placeholders}) LIMIT 1`,
+    ).bind(id, ...statuses).first();
+    return row ? getItemJson(row) : null;
+  }
+
   async _putChannelToContent(channel: any) {
     const {id, status, is_primary, ...data} = channel;
     const batchStatements = [];

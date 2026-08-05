@@ -1,5 +1,6 @@
 import type {APIRoute} from "astro";
 
+import {apiChannelInputSchema} from "@/shared/ApiSchemas";
 import {jsonResponse} from "../../../../server/http";
 
 export const PUT: APIRoute = async ({locals, params, request}) => {
@@ -9,6 +10,12 @@ export const PUT: APIRoute = async ({locals, params, request}) => {
   if (!locals.feedCrud) {
     return new Response("Feed context unavailable", {status: 500});
   }
-  await locals.feedCrud.upsertChannel(await request.json());
+  const parsed = apiChannelInputSchema.safeParse(await request.json().catch(
+    () => null,
+  ));
+  if (!parsed.success) {
+    return jsonResponse({error: "Invalid channel."}, {status: 400});
+  }
+  await locals.feedCrud.upsertChannel(parsed.data);
   return jsonResponse({});
 };

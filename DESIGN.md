@@ -45,6 +45,8 @@ Forms and settings must start as one column. Two- and three-column groups may be
 
 Use project-owned components in `src/components/ui/` and compose them in `src/components/admin/`. Prefer the configured Base UI shadcn variants, preserving their keyboard and focus behavior.
 
+Button labels and icons must always use a high-contrast semantic foreground for the button surface in both themes. Primary actions use `primary-foreground`; do not allow global link styles to override that color when a button renders as an anchor.
+
 - `AdminTopBar` owns the page title, optional breadcrumb and toolbar, theme control, and identity menu.
 - Sidebar navigation, mobile navigation, channel links, and the About dialog share one typed data model.
 - The About dialog gives authenticated Cloudflare production deployments a Worker-specific connect-and-deploy prompt; local, preview, legacy, and unprotected dashboards use the generic prompt.

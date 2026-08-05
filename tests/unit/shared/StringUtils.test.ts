@@ -118,8 +118,16 @@ test('application page URLs always include a trailing slash', () => {
     ADMIN_URLS.newItem(),
     ADMIN_URLS.allItems(),
     ADMIN_URLS.settings(),
+    ADMIN_URLS.api(),
+    ADMIN_URLS.apiAuthentication(),
+    ADMIN_URLS.apiExplorer(),
+    ADMIN_URLS.apiSettings(),
     ADMIN_URLS.codeEditorSettings(),
     ADMIN_URLS.ajaxFeed(),
+    ADMIN_URLS.ajaxApiSettings(),
+    ADMIN_URLS.ajaxApiKeys(),
+    ADMIN_URLS.ajaxApiKey("key-id"),
+    ADMIN_URLS.ajaxRotateApiKey("key-id"),
     PUBLIC_URLS.webFeed(),
     PUBLIC_URLS.rssFeed(),
     PUBLIC_URLS.rssFeedStylesheet(),
@@ -133,8 +141,10 @@ test('application page URLs always include a trailing slash', () => {
 });
 
 test('literal file endpoints do not include a trailing slash', () => {
-  expect(PUBLIC_URLS.jsonFeedOpenApiYaml()).toBe("/json/openapi.yaml");
-  expect(PUBLIC_URLS.jsonFeedOpenApiHtml()).toBe("/json/openapi.html");
+  expect(PUBLIC_URLS.jsonFeedOpenApiYaml()).toBe("/api/openapi.yaml");
+  expect(PUBLIC_URLS.jsonFeedOpenApiHtml()).toBe("/api/");
+  expect(PUBLIC_URLS.apiOpenApiJson()).toBe("/api/openapi.json");
+  expect(PUBLIC_URLS.apiLlmsFull()).toBe("/api/llms-full.txt");
 });
 
 test('file paths are slashless while application paths retain trailing slashes', () => {

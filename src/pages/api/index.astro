@@ -1,0 +1,24 @@
+---
+import ApiReference from "@/components/api/ApiReference";
+import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>microfeed API docs</title>
+    <style is:global>
+      html, body { margin: 0; min-height: 100%; }
+    </style>
+  </head>
+  <body class="m-0">
+    <ApiReference
+      client:only="react"
+      document={OPENAPI_DOCUMENT as unknown as Record<string, unknown>}
+      origin={Astro.url.origin}
+    />
+  </body>
+</html>

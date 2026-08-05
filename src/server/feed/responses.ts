@@ -48,6 +48,7 @@ export async function jsonFeedResponse(
   checkSubscription = true,
   itemSlug?: string,
   itemStatuses: number[] = [STATUSES.PUBLISHED, STATUSES.UNLISTED],
+  checkAccessPolicy = true,
 ): Promise<Response> {
   const itemId = itemSlug ? getIdFromSlug(itemSlug) : undefined;
   if (itemSlug && !itemId) {
@@ -62,7 +63,7 @@ export async function jsonFeedResponse(
         },
       }
     : {});
-  const unavailable = feedUnavailable(loaded.content);
+  const unavailable = checkAccessPolicy ? feedUnavailable(loaded.content) : null;
   if (unavailable) {
     return unavailable;
   }

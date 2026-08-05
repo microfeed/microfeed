@@ -77,6 +77,29 @@
 - Keep stable, unprocessed public assets in `public/`; do not move them into the
   source bundle or change their public URLs without an explicit migration.
 
+## API contracts and documentation
+
+- Treat `src/shared/ApiSchemas.ts` and `src/shared/OpenApiDocument.ts` as the
+  source of truth for the external API contract. Define reusable request and
+  response schemas with Zod, then register every public API operation in the
+  OpenAPI document with its method, path, parameters, request body, response
+  statuses, response schemas, authentication, and compatibility behavior.
+- Update an API handler and its OpenAPI operation together. Reuse the same Zod
+  schemas in runtime validation wherever possible, keep route files thin, and
+  preserve existing fields or authentication methods explicitly when backward
+  compatibility requires them.
+- Present Bearer authentication as the only API-key authentication method in
+  the UI, OpenAPI, Scalar, and LLM documentation. Keep compatibility-only
+  authentication behavior in runtime code and focused tests without exposing
+  it as a choice to new integrations.
+- Never hand-edit OpenAPI JSON, OpenAPI YAML, Scalar input, `llms.txt`, or
+  `llms-full.txt` as independent contracts. They must be generated from
+  `OPENAPI_DOCUMENT`; the full LLM reference must remain self-contained by
+  embedding that complete generated contract.
+- Add contract and runtime tests for every changed or new endpoint. Verify that
+  generated reference formats still describe the same document, then run
+  `yarn lint:openapi` and `yarn check` before publishing.
+
 ## Frontend components
 
 - Prefer the project-owned shadcn/ui components in `src/components/ui/` for new frontend work and when substantially revising an existing interface.

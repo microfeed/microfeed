@@ -38,6 +38,9 @@ export default class FeedPublicJsonBuilder {
     const timezone = this.request.cf ? this.request.cf.timezone : null;
     item.pubDate = humanizeMs(item.pubDateMs, timezone);
     item.pubDateRfc3339 = msToRFC3339(item.pubDateMs);
+    item.updatedDateRfc3339 = item.updatedAtMs
+      ? msToRFC3339(item.updatedAtMs)
+      : undefined;
     item.descriptionText = htmlToPlainText(item.description);
 
     if (item.image) {
@@ -257,6 +260,7 @@ export default class FeedPublicJsonBuilder {
       }
       if (mediaFile.sizeByte) {
         (attachment as any)['size_in_byte'] = mediaFile.sizeByte;
+        (attachment as any)['size_in_bytes'] = mediaFile.sizeByte;
       }
       if (mediaFile.durationSecond) {
         (attachment as any)['duration_in_seconds'] = mediaFile.durationSecond;
@@ -331,7 +335,10 @@ export default class FeedPublicJsonBuilder {
     const existingitems = items || [];
     (publicContent as any)['items'] = [];
     existingitems.forEach((item: any) => {
-      if (![STATUSES.PUBLISHED, STATUSES.UNLISTED].includes(item.status)) {
+      if (
+        ![STATUSES.PUBLISHED, STATUSES.UNLISTED].includes(item.status) &&
+        !(this.forOneItem && item.status === STATUSES.UNPUBLISHED)
+      ) {
         return;
       }
       this._decorateForItem(item, this.baseUrl);

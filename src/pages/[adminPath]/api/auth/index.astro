@@ -1,0 +1,34 @@
+---
+import {env} from "cloudflare:workers";
+
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import ApiAuthenticationApp from "@/components/admin/api/ApiAuthenticationApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {listApiKeys, readApiAccessSettings} from "@/server/api/api-keys";
+import {NAV_ITEMS} from "@/shared/Constants";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const [initialApiKeys, initialSettings] = await Promise.all([
+  listApiKeys(env.FEED_DB),
+  readApiAccessSettings(env.FEED_DB),
+]);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.API}
+  apiActivePage="authentication"
+  apiNavigation
+  documentTitle="API Authentication | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="API Authentication"
+>
+  <div class="mx-auto max-w-6xl">
+    <ApiAuthenticationApp client:only="react" {initialApiKeys} {initialSettings}>
+      <AdminPageFallback slot="fallback" kind="settings" />
+    </ApiAuthenticationApp>
+  </div>
+</AdminShell>

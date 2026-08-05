@@ -7,13 +7,8 @@ export interface FeedSettings {
     currentPolicy?: AccessPolicy;
   };
   apiSettings?: {
-    apps?: Array<{
-      createdAtMs?: number;
-      id?: string;
-      name?: string;
-      token?: string;
-    }>;
     enabled?: boolean;
+    publicDocsEnabled?: boolean;
   };
   subscribeMethods?: {
     methods?: Array<{

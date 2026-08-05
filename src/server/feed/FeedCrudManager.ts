@@ -14,6 +14,7 @@ export default class FeedCrudManager {
 
   _publicToInternalSchemaForItem(item: any): Record<string, any> {
     const internalSchema: Record<string, any> = {};
+    const attachment = item.attachment ?? item.attachments?.[0];
 
     if (item.title) {
       (internalSchema as any).title = item.title;
@@ -23,27 +24,29 @@ export default class FeedCrudManager {
       (internalSchema as any).status = item.status;
     }
 
-    if (item.attachment &&
-        ENCLOSURE_CATEGORIES_DICT[item.attachment.category] &&
-        item.attachment.url) {
+    if (attachment &&
+        ENCLOSURE_CATEGORIES_DICT[attachment.category] &&
+        attachment.url) {
       const mediaFile = {};
-      if (item.attachment.category) {
-        (mediaFile as any).category = item.attachment.category;
+      if (attachment.category) {
+        (mediaFile as any).category = attachment.category;
       }
-      if (item.attachment.url) {
+      if (attachment.url) {
         // Media file url for internal schema doesn't have host:
         // [environment]/media/[file-type]-[uuid].[extension]
-        (mediaFile as any).url = item.attachment.category !== ENCLOSURE_CATEGORIES.EXTERNAL_URL ?
-          removeHostFromUrl(item.attachment.url) : item.attachment.url;
+        (mediaFile as any).url = attachment.category !== ENCLOSURE_CATEGORIES.EXTERNAL_URL ?
+          removeHostFromUrl(attachment.url) : attachment.url;
       }
-      if (item.attachment.mime_type) {
-        (mediaFile as any).contentType = item.attachment.mime_type;
+      if (attachment.mime_type) {
+        (mediaFile as any).contentType = attachment.mime_type;
       }
-      if (item.attachment.size_in_bytes) {
-        (mediaFile as any).sizeByte = item.attachment.size_in_bytes;
+      if (attachment.size_in_bytes !== undefined) {
+        (mediaFile as any).sizeByte = attachment.size_in_bytes;
+      } else if (attachment.size_in_byte !== undefined) {
+        (mediaFile as any).sizeByte = attachment.size_in_byte;
       }
-      if (item.attachment.duration_in_seconds) {
-        (mediaFile as any).durationSecond = item.attachment.duration_in_seconds;
+      if (attachment.duration_in_seconds !== undefined) {
+        (mediaFile as any).durationSecond = attachment.duration_in_seconds;
       }
       (internalSchema as any).mediaFile = mediaFile;
     }
@@ -101,8 +104,8 @@ export default class FeedCrudManager {
     if (channel.title) {
       (internalSchema as any).title = channel.title;
     }
-    if (channel.home_page_url) {
-      (internalSchema as any).link = channel.home_page_url;
+    if (channel.homepage_url || channel.home_page_url) {
+      (internalSchema as any).link = channel.homepage_url ?? channel.home_page_url;
     }
     if (channel.description) {
       (internalSchema as any).description = channel.description;
@@ -153,6 +156,12 @@ export default class FeedCrudManager {
     };
     await this.feedDb.putContent(this.feedContent);
     return itemId;
+  }
+
+  async saveInternalItem(item: any) {
+    this.feedContent.item = item;
+    await this.feedDb.putContent(this.feedContent);
+    return item.id;
   }
 
   /**

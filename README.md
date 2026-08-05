@@ -66,7 +66,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a personal website with custom links
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless cms with a GUI dashboard and a public json feed (e.g., [microfeed.org/json](https://www.microfeed.org/json/) with OpenAPI spec in [YAML](https://www.microfeed.org/json/openapi.yaml) and [HTML](https://www.microfeed.org/json/openapi.html))
+* a headless CMS with a GUI dashboard, JSON Feed, and generated API docs. Each instance can publish interactive docs at `/api/`, OpenAPI JSON and YAML, and `llms.txt` resources for coding agents.
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
 * a website for an entire book (e.g., [The Art of War](https://the-art-of-war.microfeed.org/))
 * a changelog website (e.g., [changelog.listennotes.com](https://changelog.listennotes.com/))

@@ -336,6 +336,10 @@ export const ADMIN_URLS = {
     urlJoin(baseUrl, adminUrl("items/new", browserAdminPath())),
   allItems: () => adminUrl("items/list", browserAdminPath()),
   settings: () => adminUrl("settings", browserAdminPath()),
+  api: () => adminUrl("api", browserAdminPath()),
+  apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
+  apiExplorer: () => adminUrl("api/explorer", browserAdminPath()),
+  apiSettings: () => adminUrl("api/settings", browserAdminPath()),
   codeEditorSettings: () =>
     adminUrl("settings/code-editor", browserAdminPath()),
   login: () => adminUrl("login", browserAdminPath()),
@@ -343,6 +347,12 @@ export const ADMIN_URLS = {
 
   ajaxFeed: () => adminUrl("ajax/feed", browserAdminPath()),
   ajaxR2Ops: () => adminUrl("ajax/r2-ops", browserAdminPath()),
+  ajaxApiSettings: () => adminUrl("ajax/api/settings", browserAdminPath()),
+  ajaxApiKeys: () => adminUrl("ajax/api/keys", browserAdminPath()),
+  ajaxApiKey: (id: string) =>
+    adminUrl(`ajax/api/keys/${id}`, browserAdminPath()),
+  ajaxRotateApiKey: (id: string) =>
+    adminUrl(`ajax/api/keys/${id}/rotate`, browserAdminPath()),
 };
 
 /**
@@ -394,11 +404,19 @@ export const PUBLIC_URLS = {
     return urlJoin(baseUrl, 'json/');
   },
   jsonFeedOpenApiYaml: (baseUrl: any = '/') => {
-    return urlJoin(baseUrl, 'json/openapi.yaml');
+    return urlJoin(baseUrl, 'api/openapi.yaml');
   },
   jsonFeedOpenApiHtml: (baseUrl: any = '/') => {
-    return urlJoin(baseUrl, 'json/openapi.html');
+    return urlJoin(baseUrl, 'api/');
   },
+  apiReference: (baseUrl: any = '/') => urlJoin(baseUrl, 'api/'),
+  apiOpenApiJson: (baseUrl: any = '/') =>
+    urlJoin(baseUrl, 'api/openapi.json'),
+  apiOpenApiYaml: (baseUrl: any = '/') =>
+    urlJoin(baseUrl, 'api/openapi.yaml'),
+  apiLlms: (baseUrl: any = '/') => urlJoin(baseUrl, 'api/llms.txt'),
+  apiLlmsFull: (baseUrl: any = '/') =>
+    urlJoin(baseUrl, 'api/llms-full.txt'),
   webItem,
   jsonItem: (itemId: any, itemTitle: any = null, baseUrl: any = '/', locale: any = 'en') => {
     return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');
