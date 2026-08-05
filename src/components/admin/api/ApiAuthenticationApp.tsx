@@ -35,6 +35,7 @@ import {
   type ApiKeyRecord,
   updateApiAccessEnabled,
 } from "@/shared/Api";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 
 interface Props {
@@ -294,7 +295,7 @@ export default function ApiAuthenticationApp({
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
                   Optional, but recommended for AI-agent workflows using
-                  {" "}<code>/api/llms-full.txt</code>.
+                  {" "}<code>{API_BASE_PATH}llms-full.txt</code>.
                 </p>
               </div>
             </div>

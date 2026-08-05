@@ -3,6 +3,7 @@ import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
 import {STATUSES} from "@/shared/Constants";
 import {apiFeedSchema} from "@/shared/ApiSchemas";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 import FeedDb from "@/server/feed/FeedDb";
 import FeedCrudManager from "@/server/feed/FeedCrudManager";
 import {jsonFeedResponse} from "@/server/feed/responses";
@@ -12,7 +13,7 @@ const ORIGIN = "https://feed.example.com";
 const ITEM_ID = "apiitem0001";
 
 async function databaseAndCrud() {
-  const request = new Request(`${ORIGIN}/api/items/${ITEM_ID}/`);
+  const request = new Request(`${ORIGIN}${API_BASE_PATH}items/${ITEM_ID}/`);
   const database = new FeedDb(env, request);
   const content = await database.getContent();
   return {
@@ -122,7 +123,9 @@ describe("transport-neutral item service", () => {
     await database._updateOrAddSetting({
       access: {currentPolicy: "offline"},
     }, "access");
-    const request = new Request(`${ORIGIN}/api/items/${ITEM_ID}/`);
+    const request = new Request(
+      `${ORIGIN}${API_BASE_PATH}items/${ITEM_ID}/`,
+    );
 
     const authenticated = await jsonFeedResponse(
       request,

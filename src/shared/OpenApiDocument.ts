@@ -11,6 +11,7 @@ import {
   apiUploadOutputSchema,
 } from "./ApiSchemas";
 import {MICROFEED_VERSION} from "./Version";
+import {API_BASE_PATH} from "./ApiVersion";
 import * as z from "zod";
 
 const json = (schema: z.ZodType) => ({
@@ -35,7 +36,7 @@ const channelPath = z.object({
 
 const operationSecurity: [{bearerAuth: string[]}] = [{bearerAuth: []}];
 
-export const API_BASE_PATH = "/api/";
+export {API_BASE_PATH};
 
 export const OPENAPI_DOCUMENT = createDocument({
   openapi: "3.1.1",

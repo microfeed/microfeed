@@ -1,4 +1,5 @@
-import type {APIRoute} from "astro";
+import {redirectApiDocs} from "@/server/api/reference";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 
-export const GET: APIRoute = ({url}) =>
-  Response.redirect(new URL("/api/", url), 308);
+export const GET = redirectApiDocs(`${API_BASE_PATH}openapi.html`);
+export const HEAD = GET;

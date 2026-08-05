@@ -3,6 +3,7 @@ import {
   adminUrl,
   browserAdminPath,
 } from "./AdminPath";
+import {API_BASE_PATH} from "./ApiVersion";
 
 export function randomHex(size: any = 32) {
   const bytes = new Uint8Array(Math.ceil(size / 2));
@@ -404,19 +405,20 @@ export const PUBLIC_URLS = {
     return urlJoin(baseUrl, 'json/');
   },
   jsonFeedOpenApiYaml: (baseUrl: any = '/') => {
-    return urlJoin(baseUrl, 'api/openapi.yaml');
+    return urlJoin(baseUrl, `${API_BASE_PATH}openapi.yaml`);
   },
   jsonFeedOpenApiHtml: (baseUrl: any = '/') => {
-    return urlJoin(baseUrl, 'api/');
+    return urlJoin(baseUrl, API_BASE_PATH);
   },
-  apiReference: (baseUrl: any = '/') => urlJoin(baseUrl, 'api/'),
+  apiReference: (baseUrl: any = '/') => urlJoin(baseUrl, API_BASE_PATH),
   apiOpenApiJson: (baseUrl: any = '/') =>
-    urlJoin(baseUrl, 'api/openapi.json'),
+    urlJoin(baseUrl, `${API_BASE_PATH}openapi.json`),
   apiOpenApiYaml: (baseUrl: any = '/') =>
-    urlJoin(baseUrl, 'api/openapi.yaml'),
-  apiLlms: (baseUrl: any = '/') => urlJoin(baseUrl, 'api/llms.txt'),
+    urlJoin(baseUrl, `${API_BASE_PATH}openapi.yaml`),
+  apiLlms: (baseUrl: any = '/') =>
+    urlJoin(baseUrl, `${API_BASE_PATH}llms.txt`),
   apiLlmsFull: (baseUrl: any = '/') =>
-    urlJoin(baseUrl, 'api/llms-full.txt'),
+    urlJoin(baseUrl, `${API_BASE_PATH}llms-full.txt`),
   webItem,
   jsonItem: (itemId: any, itemTitle: any = null, baseUrl: any = '/', locale: any = 'en') => {
     return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');

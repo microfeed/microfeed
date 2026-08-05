@@ -1,7 +1,5 @@
-import type {APIRoute} from "astro";
+import {redirectApiDocs} from "@/server/api/reference";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 
-import {OPENAPI_JSON} from "@/server/openapi/document";
-
-export const GET: APIRoute = () => new Response(OPENAPI_JSON, {
-  headers: {"content-type": "application/json; charset=utf-8"},
-});
+export const GET = redirectApiDocs(`${API_BASE_PATH}openapi.json`);
+export const HEAD = GET;

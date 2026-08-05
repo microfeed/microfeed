@@ -8,6 +8,7 @@ import {
   type ApiAccessSettings,
   updateApiAccessEnabled,
 } from "@/shared/Api";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 
 interface Props {
@@ -46,7 +47,7 @@ export default function ApiSettingsApp({initialSettings}: Props) {
       <div>
         <SettingRow
           checked={settings.enabled}
-          description="Allow external integrations to call /api/* with an API key. Turning this off also unpublishes the API docs and returns 404 for these routes, without affecting the dashboard or admin login."
+          description={`Allow external integrations to call ${API_BASE_PATH}* with an API key. Turning this off also unpublishes the API docs and returns 404 for these routes, without affecting the dashboard or admin login.`}
           disabled={saving}
           label="Enable API access"
           onChange={(enabled) => save(updateApiAccessEnabled(settings, enabled))}

@@ -1,8 +1,31 @@
 import {env} from "cloudflare:workers";
+import type {APIContext, APIRoute} from "astro";
 import {beforeEach, describe, expect, it} from "vitest";
 
-import {decideApiRequest, providedApiKey} from "@/server/api/access";
+import {
+  addLegacyApiDeprecationHeaders,
+  apiPathDetails,
+  decideApiRequest,
+  providedApiKey,
+} from "@/server/api/access";
 import {legacyApiReferenceRedirect} from "@/server/api/reference";
+import {API_BASE_PATH, LEGACY_API_DEPRECATION} from "@/shared/ApiVersion";
+import * as legacyChannel from "@/pages/api/channels/[channelId]/index";
+import * as legacyFeed from "@/pages/api/feed/index";
+import * as legacyApiDocs from "@/pages/api/index";
+import * as legacyItem from "@/pages/api/items/[itemId]/index";
+import * as legacyItems from "@/pages/api/items/index";
+import * as legacyMedia from "@/pages/api/media_files/presigned_urls/index";
+import * as legacyLlms from "@/pages/api/llms.txt";
+import * as legacyLlmsFull from "@/pages/api/llms-full.txt";
+import * as legacyOpenApiHtml from "@/pages/api/openapi.html";
+import * as legacyOpenApiJson from "@/pages/api/openapi.json";
+import * as legacyOpenApiYaml from "@/pages/api/openapi.yaml";
+import * as versionedChannel from "@/pages/api/v1/channels/[channelId]/index";
+import * as versionedFeed from "@/pages/api/v1/feed/index";
+import * as versionedItem from "@/pages/api/v1/items/[itemId]/index";
+import * as versionedItems from "@/pages/api/v1/items/index";
+import * as versionedMedia from "@/pages/api/v1/media_files/presigned_urls/index";
 import {
   ApiKeyNameConflictError,
   apiKeyExists,
@@ -31,6 +54,10 @@ function request(
   headers: HeadersInit = {},
 ): Request {
   return new Request(`${ORIGIN}${pathname}`, {headers});
+}
+
+async function callRoute(handler: APIRoute, url: string): Promise<Response> {
+  return handler({url: new URL(url)} as APIContext);
 }
 
 describe("table-only API keys", () => {
@@ -108,8 +135,8 @@ describe("API access decisions", () => {
     });
     expect(await decideApiRequest(
       env.FEED_DB,
-      request("/api/openapi.json"),
-      "/api/openapi.json",
+      request(`${API_BASE_PATH}openapi.json`),
+      `${API_BASE_PATH}openapi.json`,
     )).toBe("not-found");
   });
 
@@ -130,25 +157,29 @@ describe("API access decisions", () => {
     });
     const apiKey = await createApiKey(env.FEED_DB, {name: "Integration"});
 
+    for (const pathname of [`${API_BASE_PATH}feed/`, "/api/feed/"]) {
+      expect(await decideApiRequest(
+        env.FEED_DB,
+        request(pathname, {authorization: `bearer ${apiKey.apiKey}`}),
+        pathname,
+      )).toBe("allow-integration");
+    }
     expect(await decideApiRequest(
       env.FEED_DB,
-      request("/api/feed/", {authorization: `bearer ${apiKey.apiKey}`}),
-      "/api/feed/",
+      request(`${API_BASE_PATH}feed/`, {
+        "X-MicrofeedAPI-Key": apiKey.apiKey,
+      }),
+      `${API_BASE_PATH}feed/`,
     )).toBe("allow-integration");
     expect(await decideApiRequest(
       env.FEED_DB,
-      request("/api/feed/", {"X-MicrofeedAPI-Key": apiKey.apiKey}),
-      "/api/feed/",
-    )).toBe("allow-integration");
-    expect(await decideApiRequest(
-      env.FEED_DB,
-      request("/api/feed/", {
+      request(`${API_BASE_PATH}feed/`, {
         authorization: "Bearer invalid",
         "X-MicrofeedAPI-Key": apiKey.apiKey,
       }),
-      "/api/feed/",
+      `${API_BASE_PATH}feed/`,
     )).toBe("unauthorized");
-    expect(providedApiKey(request("/api/feed/", {
+    expect(providedApiKey(request(`${API_BASE_PATH}feed/`, {
       authorization: "Bearer invalid",
       "X-MicrofeedAPI-Key": apiKey.apiKey,
     }))).toBe("invalid");
@@ -163,8 +194,10 @@ describe("API access decisions", () => {
     })).run();
     expect(await decideApiRequest(
       env.FEED_DB,
-      request("/api/feed/", {authorization: "Bearer json-only-key"}),
-      "/api/feed/",
+      request(`${API_BASE_PATH}feed/`, {
+        authorization: "Bearer json-only-key",
+      }),
+      `${API_BASE_PATH}feed/`,
     )).toBe("unauthorized");
   });
 
@@ -175,26 +208,31 @@ describe("API access decisions", () => {
     });
     expect(await decideApiRequest(
       env.FEED_DB,
-      request("/api/llms-full.txt"),
-      "/api/llms-full.txt",
+      request(`${API_BASE_PATH}llms-full.txt`),
+      `${API_BASE_PATH}llms-full.txt`,
     )).toBe("not-found");
     await updateApiAccessSettings(env.FEED_DB, {
       enabled: true,
       publicDocsEnabled: true,
     });
-    expect(await decideApiRequest(
-      env.FEED_DB,
-      request("/api/llms-full.txt"),
+    for (const pathname of [
+      `${API_BASE_PATH}llms-full.txt`,
       "/api/llms-full.txt",
-    )).toBe("allow-reference");
+    ]) {
+      expect(await decideApiRequest(
+        env.FEED_DB,
+        request(pathname),
+        pathname,
+      )).toBe("allow-reference");
+    }
     const legacy = await legacyApiReferenceRedirect(
       env.FEED_DB,
       new URL(`${ORIGIN}/json/openapi.yaml`),
-      "/api/openapi.yaml",
+      `${API_BASE_PATH}openapi.yaml`,
     );
     expect(legacy.status).toBe(308);
     expect(legacy.headers.get("location")).toBe(
-      `${ORIGIN}/api/openapi.yaml`,
+      `${ORIGIN}${API_BASE_PATH}openapi.yaml`,
     );
     await updateApiAccessSettings(env.FEED_DB, {
       enabled: false,
@@ -206,13 +244,116 @@ describe("API access decisions", () => {
     });
     expect(await decideApiRequest(
       env.FEED_DB,
-      request("/api/llms-full.txt"),
-      "/api/llms-full.txt",
+      request(`${API_BASE_PATH}llms-full.txt`),
+      `${API_BASE_PATH}llms-full.txt`,
     )).toBe("not-found");
     expect((await legacyApiReferenceRedirect(
       env.FEED_DB,
       new URL(`${ORIGIN}/json/openapi.yaml`),
-      "/api/openapi.yaml",
+      `${API_BASE_PATH}openapi.yaml`,
     )).status).toBe(404);
+  });
+
+  it("recognizes only canonical and compatibility API route shapes", () => {
+    expect(apiPathDetails(`${API_BASE_PATH}items/item-id/`)).toEqual({
+      canonicalPath: `${API_BASE_PATH}items/item-id/`,
+      kind: "integration",
+      legacy: false,
+    });
+    expect(apiPathDetails("/api/items/item-id/")).toEqual({
+      canonicalPath: `${API_BASE_PATH}items/item-id/`,
+      kind: "integration",
+      legacy: true,
+    });
+    expect(apiPathDetails(API_BASE_PATH)).toEqual({
+      canonicalPath: API_BASE_PATH,
+      kind: "reference",
+      legacy: false,
+    });
+    expect(apiPathDetails("/api/v2/feed/")).toBeNull();
+    expect(apiPathDetails(`${API_BASE_PATH}items/one/extra/`)).toBeNull();
+    expect(apiPathDetails("/api/unknown/")).toBeNull();
+    expect(apiPathDetails("/api/auth/session/")).toBeNull();
+  });
+
+  it("adds deprecation metadata only to recognized compatibility routes", () => {
+    const legacyUrl = new URL(`${ORIGIN}/api/feed/?limit=3&order=asc`);
+    const deprecated = addLegacyApiDeprecationHeaders(
+      new Response("Unauthorized", {
+        headers: {link: "</terms>; rel=license"},
+        status: 401,
+      }),
+      legacyUrl,
+      legacyUrl.pathname,
+    );
+    expect(deprecated.headers.get("deprecation")).toBe(
+      LEGACY_API_DEPRECATION,
+    );
+    expect(deprecated.status).toBe(401);
+    expect(deprecated.headers.get("link")).toContain(
+      `<${ORIGIN}${API_BASE_PATH}feed/?limit=3&order=asc>; ` +
+        'rel="successor-version"',
+    );
+    expect(deprecated.headers.get("link")).toContain("rel=license");
+    expect(deprecated.headers.get("sunset")).toBeNull();
+
+    const canonicalUrl = new URL(`${ORIGIN}${API_BASE_PATH}feed/`);
+    const canonical = addLegacyApiDeprecationHeaders(
+      new Response("ok"),
+      canonicalUrl,
+      canonicalUrl.pathname,
+    );
+    expect(canonical.headers.get("deprecation")).toBeNull();
+  });
+});
+
+describe("API route version aliases", () => {
+  it("exports the same integration handlers from compatibility routes", () => {
+    expect(legacyFeed.GET).toBe(versionedFeed.GET);
+    expect(legacyFeed.HEAD).toBe(versionedFeed.HEAD);
+    expect(legacyItems.POST).toBe(versionedItems.POST);
+    expect(legacyItem.GET).toBe(versionedItem.GET);
+    expect(legacyItem.PUT).toBe(versionedItem.PUT);
+    expect(legacyItem.DELETE).toBe(versionedItem.DELETE);
+    expect(legacyChannel.PUT).toBe(versionedChannel.PUT);
+    expect(legacyMedia.POST).toBe(versionedMedia.POST);
+  });
+
+  it("redirects compatibility API docs directly to their v1 paths", async () => {
+    const routes: Array<[APIRoute, string, string]> = [
+      [legacyApiDocs.GET, "/api/", API_BASE_PATH],
+      [
+        legacyOpenApiHtml.GET,
+        "/api/openapi.html",
+        `${API_BASE_PATH}openapi.html`,
+      ],
+      [
+        legacyOpenApiJson.GET,
+        "/api/openapi.json",
+        `${API_BASE_PATH}openapi.json`,
+      ],
+      [
+        legacyOpenApiYaml.GET,
+        "/api/openapi.yaml",
+        `${API_BASE_PATH}openapi.yaml`,
+      ],
+      [legacyLlms.GET, "/api/llms.txt", `${API_BASE_PATH}llms.txt`],
+      [
+        legacyLlmsFull.GET,
+        "/api/llms-full.txt",
+        `${API_BASE_PATH}llms-full.txt`,
+      ],
+    ];
+
+    for (const [handler, legacyPath, canonicalPath] of routes) {
+      const response = await callRoute(
+        handler,
+        `${ORIGIN}${legacyPath}?download=1`,
+      );
+      expect(response.status).toBe(308);
+      expect(response.headers.get("location")).toBe(
+        `${ORIGIN}${canonicalPath}?download=1`,
+      );
+    }
   });
 });

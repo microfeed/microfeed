@@ -4,6 +4,8 @@ import {fileURLToPath} from "node:url";
 
 import {describe, expect, it} from "vitest";
 import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
+import {API_BASE_PATH, API_MAJOR_VERSION} from "@/shared/ApiVersion";
+import {MICROFEED_VERSION} from "@/shared/Version";
 
 const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 const legacyRoots = [
@@ -47,8 +49,9 @@ describe("source architecture", () => {
     expect(OPENAPI_DOCUMENT.openapi).toBe("3.1.1");
     expect(OPENAPI_DOCUMENT.servers).toEqual([{
       description: "This microfeed instance API",
-      url: "/api/",
+      url: API_BASE_PATH,
     }]);
+    expect(Number(MICROFEED_VERSION.split(".")[0])).toBe(API_MAJOR_VERSION);
     expect(OPENAPI_DOCUMENT.paths).toHaveProperty("/feed/");
     expect(openApi).toContain("bearerAuth");
     expect(openApi).not.toContain("legacyApiKey");
@@ -58,7 +61,7 @@ describe("source architecture", () => {
     expect(openApi).toContain('"updated_at"');
     expect(openApi).toContain('"name":"order"');
     expect(openApi).toContain('"name":"prev_cursor"');
-    expect(openApi).not.toContain("/api/v1/");
+    expect(openApi).toContain(API_BASE_PATH);
     expect(openApi).not.toContain("updated_desc");
     expect(openApi).not.toContain("updated_asc");
   });

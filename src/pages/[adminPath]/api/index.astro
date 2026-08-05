@@ -6,6 +6,7 @@ import ApiOverviewApp from "@/components/admin/api/ApiOverviewApp";
 import {listApiKeys, readApiAccessSettings} from "@/server/api/api-keys";
 import {adminUrl, normalizeAdminPath} from "@/shared/AdminPath";
 import {NAV_ITEMS} from "@/shared/Constants";
+import {API_BASE_PATH} from "@/shared/ApiVersion";
 import AdminShell from "../../../layouts/AdminShell.astro";
 
 const {feedContent, onboardingResult} = Astro.locals;
@@ -34,7 +35,10 @@ const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
       {apiKeys}
       authenticationUrl={adminUrl("api/auth", adminPath)}
       explorerUrl={adminUrl("api/explorer", adminPath)}
-      llmsFullUrl={new URL("/api/llms-full.txt", Astro.url).toString()}
+      llmsFullUrl={new URL(
+        `${API_BASE_PATH}llms-full.txt`,
+        Astro.url,
+      ).toString()}
       {settings}
       settingsUrl={adminUrl("api/settings", adminPath)}
     >
