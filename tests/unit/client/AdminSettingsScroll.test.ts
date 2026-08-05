@@ -20,13 +20,13 @@ function installElements({scrollable}: {scrollable: boolean}) {
     scrollTop: 100,
   };
   const section = {
-    getBoundingClientRect: () => ({top: 350}),
+    getBoundingClientRect: () => ({height: 200, top: 350}),
     scrollIntoView,
   };
   vi.stubGlobal("document", {
     getElementById: vi.fn((id: string) => {
       if (id === "admin-page-content") return scrollRoot;
-      if (id === "web-settings") return section;
+      if (id === "media-file-storage" || id === "custom-code") return section;
       return null;
     }),
   });
@@ -37,7 +37,7 @@ describe("admin settings hash scrolling", () => {
   it("scrolls the desktop admin content panel to the requested section", () => {
     const {scrollIntoView, scrollTo} = installElements({scrollable: true});
 
-    expect(scrollToAdminSettingsHash("#web-settings")).toBe(true);
+    expect(scrollToAdminSettingsHash("#media-file-storage")).toBe(true);
     expect(scrollTo).toHaveBeenCalledWith({behavior: "auto", top: 376});
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
@@ -45,12 +45,20 @@ describe("admin settings hash scrolling", () => {
   it("uses document scrolling when the admin content panel is not scrollable", () => {
     const {scrollIntoView, scrollTo} = installElements({scrollable: false});
 
-    expect(scrollToAdminSettingsSection("web-settings")).toBe(true);
+    expect(scrollToAdminSettingsSection("media-file-storage")).toBe(true);
     expect(scrollIntoView).toHaveBeenCalledWith({
       behavior: "auto",
       block: "start",
     });
     expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("centers Custom code when the trailing page space allows it", () => {
+    const {scrollIntoView, scrollTo} = installElements({scrollable: true});
+
+    expect(scrollToAdminSettingsSection("custom-code")).toBe(true);
+    expect(scrollTo).toHaveBeenCalledWith({behavior: "auto", top: 250});
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it("ignores unknown settings hashes", () => {

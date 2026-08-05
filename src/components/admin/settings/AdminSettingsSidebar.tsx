@@ -3,7 +3,9 @@ import {
   ActivityIcon,
   ArrowLeftIcon,
   Code2Icon,
-  Globe2Icon,
+  HardDriveIcon,
+  ImageIcon,
+  ListFilterIcon,
   RssIcon,
   SearchIcon,
   ShieldCheckIcon,
@@ -15,6 +17,7 @@ import {
   filterAdminSettingsSections,
   type AdminSettingsSection,
 } from "@/shared/AdminSettingsNavigation";
+import {scrollToAdminSettingsSection} from "@/client/AdminSettingsScroll";
 import AdminAboutDialog from "../AdminAboutDialog";
 import type {AdminSettingsSidebarData} from "../admin-shell-types";
 
@@ -26,22 +29,27 @@ interface Props {
 const sectionIcons: Record<AdminSettingsSection["icon"], typeof ActivityIcon> = {
   activity: ActivityIcon,
   code: Code2Icon,
-  globe: Globe2Icon,
+  image: ImageIcon,
+  list: ListFilterIcon,
   rss: RssIcon,
   shield: ShieldCheckIcon,
+  storage: HardDriveIcon,
 };
 
-function sectionFromLocation(): string {
+function sectionFromLocation(): AdminSettingsSection["id"] {
   if (typeof window === "undefined") {
     return ADMIN_SETTINGS_SECTIONS[0].id;
   }
-  return ADMIN_SETTINGS_SECTIONS.some(({id}) => id === window.location.hash.slice(1))
-    ? window.location.hash.slice(1)
-    : ADMIN_SETTINGS_SECTIONS[0].id;
+  const matchingSection = ADMIN_SETTINGS_SECTIONS.find(
+    ({id}) => id === window.location.hash.slice(1),
+  );
+  return matchingSection?.id ?? ADMIN_SETTINGS_SECTIONS[0].id;
 }
 
 export default function AdminSettingsSidebar({data, onNavigate}: Props) {
-  const [activeSection, setActiveSection] = useState(sectionFromLocation);
+  const [activeSection, setActiveSection] = useState<AdminSettingsSection["id"]>(
+    ADMIN_SETTINGS_SECTIONS[0].id,
+  );
   const [query, setQuery] = useState("");
   const visibleSections = useMemo(
     () => filterAdminSettingsSections(query),
@@ -53,6 +61,8 @@ export default function AdminSettingsSidebar({data, onNavigate}: Props) {
       setActiveSection(data.activeSection);
       return;
     }
+
+    setActiveSection(sectionFromLocation());
 
     const scrollRoot = document.getElementById("admin-page-content");
     if (!scrollRoot) {
@@ -73,10 +83,17 @@ export default function AdminSettingsSidebar({data, onNavigate}: Props) {
         }
         const rootTop = scrollRoot.getBoundingClientRect().top;
         const threshold = rootTop + 56;
-        let nextActive: string = ADMIN_SETTINGS_SECTIONS[0].id;
+        let nextActive: AdminSettingsSection["id"] =
+          ADMIN_SETTINGS_SECTIONS[0].id;
         for (const section of ADMIN_SETTINGS_SECTIONS) {
           const element = document.getElementById(section.id);
-          if (element && element.getBoundingClientRect().top <= threshold) {
+          const sectionThreshold = section.id === "custom-code"
+            ? rootTop + scrollRoot.clientHeight / 2
+            : threshold;
+          if (
+            element &&
+            element.getBoundingClientRect().top <= sectionThreshold
+          ) {
             nextActive = section.id;
           }
         }
@@ -96,19 +113,11 @@ export default function AdminSettingsSidebar({data, onNavigate}: Props) {
 
   const openSection = (section: AdminSettingsSection) => {
     const sectionUrl = `${data.sectionsUrl}#${section.id}`;
-    const element = document.getElementById(section.id);
-    const scrollRoot = document.getElementById("admin-page-content");
-    if (!element || !scrollRoot) {
+    if (!scrollToAdminSettingsSection(section.id, {behavior: "smooth"})) {
       onNavigate?.();
       window.location.assign(sectionUrl);
       return;
     }
-
-    const top = scrollRoot.scrollTop +
-      element.getBoundingClientRect().top -
-      scrollRoot.getBoundingClientRect().top -
-      24;
-    scrollRoot.scrollTo({behavior: "smooth", top});
     window.history.replaceState(null, "", sectionUrl);
     setActiveSection(section.id);
     onNavigate?.();

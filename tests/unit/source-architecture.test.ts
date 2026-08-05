@@ -74,7 +74,7 @@ describe("source architecture", () => {
         "components",
         "admin",
         "settings",
-        "WebGlobalSettingsApp",
+        "ItemsSettingsApp",
         "index.tsx",
       ),
       "utf8",
@@ -271,6 +271,44 @@ describe("source architecture", () => {
     expect(itemsList).not.toContain('@/components/ui/card');
     expect(itemsList).not.toContain("NAV_ITEMS_DICT");
     expect(itemsList).toContain("<ItemListTable data={data} feed={feed} />");
+  });
+
+  it("keeps web settings as three independent cards", async () => {
+    const settingsDirectory = path.join(
+      repositoryRoot,
+      "src",
+      "components",
+      "admin",
+      "settings",
+    );
+    const [settingsPage, mediaStorage, itemsSettings, faviconSettings] =
+      await Promise.all([
+        readFile(path.join(settingsDirectory, "SettingsApp.tsx"), "utf8"),
+        readFile(
+          path.join(settingsDirectory, "MediaFileStorageSettingsApp", "index.tsx"),
+          "utf8",
+        ),
+        readFile(
+          path.join(settingsDirectory, "ItemsSettingsApp", "index.tsx"),
+          "utf8",
+        ),
+        readFile(
+          path.join(settingsDirectory, "FaviconSettingsApp", "index.tsx"),
+          "utf8",
+        ),
+      ]);
+
+    expect(settingsPage).not.toContain("WebGlobalSettingsApp");
+    expect(settingsPage).toContain('id="media-file-storage"');
+    expect(settingsPage).toContain('id="items-settings"');
+    expect(settingsPage).toContain('id="favicon"');
+    expect(settingsPage).toContain('className="h-[50vh]"');
+    expect(mediaStorage).toContain('title="Media file storage"');
+    expect(mediaStorage).toContain('label="R2 public bucket URL"');
+    expect(itemsSettings).toContain('title="Items settings"');
+    expect(faviconSettings).toContain('title="Favicon"');
+    expect([mediaStorage, itemsSettings, faviconSettings].join("\n"))
+      .not.toContain("<details");
   });
 
   it("keeps the admin sidebar aligned with the darker shell canvas", async () => {

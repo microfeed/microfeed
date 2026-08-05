@@ -15,9 +15,19 @@ export const ADMIN_SETTINGS_SECTIONS = [
     name: "Subscribe methods",
   },
   {
-    icon: "globe",
-    id: "web-settings",
-    name: "Global settings",
+    icon: "storage",
+    id: "media-file-storage",
+    name: "Media file storage",
+  },
+  {
+    icon: "list",
+    id: "items-settings",
+    name: "Items settings",
+  },
+  {
+    icon: "image",
+    id: "favicon",
+    name: "Favicon",
   },
   {
     icon: "code",

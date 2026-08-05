@@ -11,6 +11,7 @@ import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "@/shared/Const
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {buildItemPaginationUrl} from "@/shared/ItemPagination";
+import {resolveEffectiveFavicon} from "@/shared/Favicon";
 
 export default class FeedPublicJsonBuilder {
   [member: string]: any;
@@ -84,9 +85,16 @@ export default class FeedPublicJsonBuilder {
       (publicContent as any)['icon'] = urlJoinWithRelative(this.publicBucketUrl, channel.image, this.baseUrl);
     }
 
-    if (this.webGlobalSettings.favicon && this.webGlobalSettings.favicon.url) {
-        (publicContent as any)['favicon'] = urlJoinWithRelative(
-          this.publicBucketUrl, this.webGlobalSettings.favicon.url, this.baseUrl);
+    const favicon = resolveEffectiveFavicon(
+      this.webGlobalSettings.favicon,
+      channel.image,
+    );
+    if (favicon?.url) {
+      (publicContent as any)['favicon'] = urlJoinWithRelative(
+        this.publicBucketUrl,
+        favicon.url,
+        this.baseUrl,
+      );
     }
 
     if (channel.publisher) {

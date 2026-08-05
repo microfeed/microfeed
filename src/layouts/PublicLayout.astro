@@ -4,6 +4,7 @@ import {
   resolvePublicBucketUrl,
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
+import {resolveEffectiveFavicon} from "@/shared/Favicon";
 import "../styles/interactive.css";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   bodyHtml: string;
   bodyStart: string;
   canonicalUrl?: string;
+  channelImage?: string;
   description?: string;
   favicon?: {
     contentType?: string;
@@ -30,6 +32,7 @@ const {
   bodyHtml,
   bodyStart,
   canonicalUrl,
+  channelImage,
   description,
   favicon,
   headHtml,
@@ -44,8 +47,13 @@ const effectivePublicBucketUrl = resolvePublicBucketUrl(
   publicBucketUrl,
   Astro.url.hostname,
 );
-const faviconUrl = favicon?.url
-  ? urlJoinWithRelative(effectivePublicBucketUrl, favicon.url, Astro.url.origin)
+const effectiveFavicon = resolveEffectiveFavicon(favicon, channelImage);
+const faviconUrl = effectiveFavicon?.url
+  ? urlJoinWithRelative(
+      effectivePublicBucketUrl,
+      effectiveFavicon.url,
+      Astro.url.origin,
+    )
   : undefined;
 ---
 
@@ -57,7 +65,7 @@ const faviconUrl = favicon?.url
     <title>{title}</title>
     {description && <meta name="description" content={htmlMetaDescription(description, false)} />}
     {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-    {faviconUrl && <link rel="icon" type={favicon?.contentType} href={faviconUrl} />}
+    {faviconUrl && <link rel="icon" type={effectiveFavicon?.contentType} href={faviconUrl} />}
     <Fragment set:html={sharedHeadHtml} />
     <Fragment set:html={headHtml} />
   </head>

@@ -33,6 +33,7 @@ const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
     title={loaded.publicFeed.title}
     description={String(loaded.publicFeed._microfeed?.description_text ?? "")}
     language={loaded.publicFeed.language}
+    channelImage={String(loaded.content.channel?.image ?? "")}
     favicon={webSettings.favicon}
     publicBucketUrl={webSettings.publicBucketUrl}
     headHtml={theme.getWebHeader().html}

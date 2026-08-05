@@ -5,6 +5,18 @@ interface ScrollToAdminSettingsSectionOptions {
   offset?: number;
 }
 
+function settingsSectionOffset(
+  sectionId: string,
+  elementHeight: number,
+  scrollRootHeight: number,
+  defaultOffset: number,
+): number {
+  if (sectionId !== "custom-code") {
+    return defaultOffset;
+  }
+  return Math.max(defaultOffset, (scrollRootHeight - elementHeight) / 2);
+}
+
 export function scrollToAdminSettingsSection(
   sectionId: string,
   {
@@ -23,14 +35,24 @@ export function scrollToAdminSettingsSection(
   }
 
   if (scrollRoot.scrollHeight <= scrollRoot.clientHeight) {
-    element.scrollIntoView({behavior, block: "start"});
+    element.scrollIntoView({
+      behavior,
+      block: sectionId === "custom-code" ? "center" : "start",
+    });
     return true;
   }
 
+  const elementBounds = element.getBoundingClientRect();
+  const effectiveOffset = settingsSectionOffset(
+    sectionId,
+    elementBounds.height,
+    scrollRoot.clientHeight,
+    offset,
+  );
   const top = scrollRoot.scrollTop +
-    element.getBoundingClientRect().top -
+    elementBounds.top -
     scrollRoot.getBoundingClientRect().top -
-    offset;
+    effectiveOffset;
   scrollRoot.scrollTo({behavior, top});
   return true;
 }
