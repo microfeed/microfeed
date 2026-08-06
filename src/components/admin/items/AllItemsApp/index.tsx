@@ -15,6 +15,11 @@ import {
 
 import AdminPageApp from "@/components/admin/shared/AdminPageApp";
 import {buttonVariants} from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {cn} from "@/lib/utils";
 import {
   ENCLOSURE_CATEGORIES,
@@ -101,18 +106,54 @@ function statusName(status: number): string {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 }
 
-function formatPublishedAt(value: number | undefined): string {
+function validDate(value: number | undefined): Date | undefined {
   if (!Number.isFinite(value)) {
-    return "—";
+    return undefined;
   }
 
+  return new Date(value as number);
+}
+
+function formatShortDate(date: Date): string {
   return new Intl.DateTimeFormat(undefined, {
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value as number));
+  }).format(date);
+}
+
+function formatFullTimestamp(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "long",
+  }).format(date);
+}
+
+function ItemDate({value}: {value?: number}) {
+  const date = validDate(value);
+  if (!date) {
+    return <span aria-label="Date unavailable">—</span>;
+  }
+
+  const fullTimestamp = formatFullTimestamp(date);
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <time
+            aria-label={fullTimestamp}
+            className="block min-w-0 cursor-help whitespace-normal break-words leading-snug"
+            dateTime={date.toISOString()}
+            suppressHydrationWarning
+            tabIndex={0}
+          >
+            {formatShortDate(date)}
+          </time>
+        }
+      />
+      <TooltipContent>{fullTimestamp}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 function ItemThumbnail({imageUrl}: {imageUrl?: string}) {
@@ -167,7 +208,7 @@ function MediaCell({row}: {row: ItemTableRow}) {
   return (
     <div>
       <a
-        className="inline-flex items-center gap-1.5"
+        className="inline-flex min-w-0 flex-wrap items-center gap-1.5"
         href={mediaUrl}
         rel="noopener noreferrer"
         target="_blank"
@@ -285,7 +326,7 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
         aria-label={active
           ? `${label}, sorted ${descending ? "descending" : "ascending"}. Sort ${descending ? "ascending" : "descending"}.`
           : `${label}. Sort descending.`}
-        className="inline-flex items-center gap-1.5"
+        className="inline-flex min-w-0 flex-wrap items-center gap-1.5"
         href={sortUrl}
       >
         {label}
@@ -338,15 +379,15 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
     }),
     columnHelper.accessor("pubDateMs", {
       header: () => sortableHeader(ITEM_SORTS.PUBLISHED_AT, "Published at"),
-      cell: (info) => formatPublishedAt(info.getValue()),
+      cell: (info) => <ItemDate value={info.getValue()} />,
     }),
     columnHelper.accessor("createdAtMs", {
       header: () => sortableHeader(ITEM_SORTS.CREATED_AT, "Created at"),
-      cell: (info) => formatPublishedAt(info.getValue()),
+      cell: (info) => <ItemDate value={info.getValue()} />,
     }),
     columnHelper.accessor("updatedAtMs", {
       header: () => sortableHeader(ITEM_SORTS.UPDATED_AT, "Updated at"),
-      cell: (info) => formatPublishedAt(info.getValue()),
+      cell: (info) => <ItemDate value={info.getValue()} />,
     }),
     columnHelper.accessor("mediaFile", {
       header: "Media",
@@ -401,9 +442,9 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
                     className={cn(
                       "border-b bg-muted/45 px-5 py-3 text-left text-sm font-semibold text-muted-foreground",
                       header.column.id === "title" && "w-[29%]",
-                      header.column.id === "pubDateMs" && "w-[13%] whitespace-nowrap",
-                      header.column.id === "createdAtMs" && "w-[13%] whitespace-nowrap",
-                      header.column.id === "updatedAtMs" && "w-[13%] whitespace-nowrap",
+                      header.column.id === "pubDateMs" && "w-[13%] break-words",
+                      header.column.id === "createdAtMs" && "w-[13%] break-words",
+                      header.column.id === "updatedAtMs" && "w-[13%] break-words",
                       header.column.id === "mediaFile" && "w-[12%]",
                       header.column.id === "actions" && "w-[20%]",
                     )}
@@ -445,7 +486,7 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
                     className={cn(
                       "px-5 py-4 align-middle text-foreground",
                       ["createdAtMs", "pubDateMs", "updatedAtMs"].includes(cell.column.id) &&
-                        "whitespace-nowrap",
+                        "min-w-0 whitespace-normal break-words",
                     )}
                     key={cell.id}
                   >
