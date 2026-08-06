@@ -1,6 +1,4 @@
-import {useId, type ReactNode} from "react";
-
-import {Label} from "@/components/ui/label";
+import {useId, type MouseEvent, type ReactNode} from "react";
 import {
   RadioGroup,
   RadioGroupItem,
@@ -84,14 +82,35 @@ export default function AdminRadioGroup({
       >
         {options.map((option) => {
           const optionId = `${generatedId}-${option.value}`;
+          const optionLabelId = `${optionId}-label`;
+          const optionDescriptionId = `${optionId}-description`;
           const guidedDisabled = Boolean(
             !disabled && option.disabled && option.onDisabledClick,
           );
           const optionDisabled = Boolean(disabled || option.disabled);
+          const selectFromOption = (event: MouseEvent<HTMLDivElement>) => {
+            const target = event.target;
+            if (
+              target instanceof Element &&
+              target.closest("button, a, input, select, textarea")
+            ) {
+              return;
+            }
+
+            event.currentTarget
+              .querySelector<HTMLButtonElement>(
+                '[data-slot="radio-group-item"]',
+              )
+              ?.click();
+          };
           const radio = (
             <RadioGroupItem
               id={optionId}
               value={option.value}
+              aria-labelledby={optionLabelId}
+              aria-describedby={
+                option.description ? optionDescriptionId : undefined
+              }
               aria-disabled={optionDisabled || undefined}
               disabled={optionDisabled && !guidedDisabled}
               className={cn(
@@ -103,12 +122,13 @@ export default function AdminRadioGroup({
 
           if (variant === "cards") {
             return (
-              <Label
+              <div
                 key={option.value}
-                htmlFor={optionId}
+                data-slot="radio-option"
                 data-disabled={optionDisabled || undefined}
+                onClick={selectFromOption}
                 className={cn(
-                  "gap-4 rounded-[14px] border bg-card p-4 has-[[data-slot=radio-group-item][data-checked]]:border-brand-light has-[[data-slot=radio-group-item][data-checked]]:ring-1 has-[[data-slot=radio-group-item][data-checked]]:ring-brand-light/20",
+                  "flex gap-4 rounded-[14px] border bg-card p-4 text-sm leading-none font-medium select-none has-[[data-slot=radio-group-item][data-checked]]:border-brand-light has-[[data-slot=radio-group-item][data-checked]]:ring-1 has-[[data-slot=radio-group-item][data-checked]]:ring-brand-light/20",
                   alignment === "start" ? "items-start" : "items-center",
                   optionDisabled
                     ? "cursor-not-allowed opacity-60"
@@ -117,24 +137,30 @@ export default function AdminRadioGroup({
               >
                 {radio}
                 <span className="flex min-w-0 flex-col gap-1">
-                  <span className="text-sm font-semibold">{option.label}</span>
+                  <span id={optionLabelId} className="text-sm font-semibold">
+                    {option.label}
+                  </span>
                   {option.description && (
-                    <span className="text-xs font-normal text-muted-foreground">
+                    <span
+                      id={optionDescriptionId}
+                      className="text-xs font-normal text-muted-foreground"
+                    >
                       {option.description}
                     </span>
                   )}
                 </span>
-              </Label>
+              </div>
             );
           }
 
           return (
-            <Label
+            <div
               key={option.value}
-              htmlFor={optionId}
+              data-slot="radio-option"
               data-disabled={optionDisabled || undefined}
+              onClick={selectFromOption}
               className={cn(
-                "gap-1.5",
+                "flex gap-1.5 text-sm leading-none font-medium select-none",
                 alignment === "start" ? "items-start" : "items-center",
                 optionDisabled
                   ? "cursor-not-allowed opacity-60"
@@ -143,8 +169,8 @@ export default function AdminRadioGroup({
               )}
             >
               {radio}
-              <span>{option.label}</span>
-            </Label>
+              <span id={optionLabelId}>{option.label}</span>
+            </div>
           );
         })}
       </RadioGroup>

@@ -209,6 +209,12 @@ describe("admin UI controls", () => {
 
     expect(output).toContain('data-slot="radio-group"');
     expect(output).toContain('aria-label="Access policy"');
+    expect(output).toContain('<button');
+    expect(output).toContain('type="button"');
+    expect(output).toContain('data-slot="radio-option"');
+    expect(output).not.toContain("<label");
+    expect(output).toMatch(/aria-labelledby="[^"]+-label"/u);
+    expect(output).toMatch(/aria-describedby="[^"]+-description"/u);
     expect(output).toContain('data-checked=""');
     expect(output).toContain("border-foreground");
     expect(output).toContain("data-checked:border-brand-light");
@@ -235,7 +241,8 @@ describe("admin UI controls", () => {
       }),
     );
 
-    expect(output).toContain("gap-1.5 items-center");
+    expect(output).toContain("gap-1.5");
+    expect(output).toContain("items-center");
     expect(output).not.toContain("mt-1");
   });
 
