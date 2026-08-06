@@ -1,6 +1,6 @@
 ---
 name: document-microfeed
-description: Create, revise, organize, validate, and publish microfeed documentation. Use when changing the public Starlight site under docs/, the documentation portions of the root README, docs navigation or styling, AI-readable llms.txt output, documentation screenshots, the canonical yarn manage reference, or the GitHub Pages documentation workflow.
+description: Create, revise, organize, validate, and publish microfeed documentation. Use when changing the public Starlight site under docs/, the documentation portions of the root README, docs navigation or styling, AI-readable llms.txt output, documentation screenshots, the canonical yarn manage reference, or the Cloudflare documentation Worker workflow.
 ---
 
 # Document microfeed
@@ -78,18 +78,31 @@ relevant. Stop every development or preview server started for verification.
 
 ## Publish safely
 
-Pull requests build and validate the site without deploying it. Merges to
-`main` and manual workflow dispatches deploy `docs/dist` through GitHub Actions.
+Pull requests and pushes validate the site without deploying it. Publish only
+from an up-to-date local checkout using browser-authenticated Wrangler; do not
+add Git integration, deployment Actions, API tokens, or repository secrets.
 
-Treat repository Pages settings and DNS as separately authorized external
-changes. For the one-time handoff:
+Before changing production, confirm Wrangler is using the Cloudflare account
+that owns `microfeed.org`, then deploy the isolated preview environment:
 
-1. Select GitHub Actions as the repository Pages source.
-2. Add and verify `docs.microfeed.org` in Pages settings before changing DNS.
-3. Point the `docs.microfeed.org` CNAME to `microfeed.github.io`, without the
-   repository name.
-4. Wait for verification, enable HTTPS, and check the homepage, internal links,
-   search, sitemap, and all three LLM text endpoints.
+```console
+yarn docs:upload-preview
+```
 
-If deployment fails, inspect the workflow build before changing DNS and keep
-the last working domain settings in place.
+Verify the returned `microfeed-docs-preview` workers.dev URL, including internal
+links, search, the sitemap, the custom 404 page, and all three LLM text
+endpoints. Deploy that local source only after the preview passes:
+
+```console
+yarn docs:deploy
+```
+
+`docs/wrangler.jsonc` is the source of truth for the asset-only
+`microfeed-docs` Worker and its `docs.microfeed.org` Custom Domain. It must not
+gain a runtime entry point, asset binding, `run_worker_first`, or secrets.
+
+After deployment, repeat the preview checks against `https://docs.microfeed.org`.
+If production validation fails, inspect the last ten deployments with
+`yarn wrangler deployments list --config docs/wrangler.jsonc` and use the
+interactive `yarn wrangler rollback <version-id> --config docs/wrangler.jsonc`
+only after identifying the last known-good version.

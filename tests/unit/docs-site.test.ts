@@ -139,10 +139,10 @@ describe("documentation site", () => {
       '<video controls autoplay muted playsinline preload="metadata"',
     );
     expect(readme).toContain(
-      '<source media="(max-width: 700px)" srcset="docs/public/images/screenshots/2-dashboard-overview-mobile.png">',
+      '<img src="docs/public/images/screenshots/2-dashboard-1-home.png" width="45%" alt="Dashboard home">',
     );
     expect(readme).toContain(
-      'src="docs/public/images/screenshots/2-dashboard-overview-desktop.png"',
+      '<img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">',
     );
     expect(readme).toContain(
       '<source src="docs/public/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">',
@@ -603,7 +603,7 @@ describe("documentation site", () => {
     expect(manageReference).toContain("## `yarn manage destroy`");
   });
 
-  it("isolates the Starlight build and configures Pages without a base path", async () => {
+  it("isolates the Starlight build and configures asset-only Worker deployment", async () => {
     const rootConfig = await readFile(
       path.join(repositoryRoot, "astro.config.ts"),
       "utf8",
@@ -644,15 +644,83 @@ describe("documentation site", () => {
       'aria-label="Star microfeed/microfeed on GitHub"',
     );
 
-    const workflow = await readFile(
-      path.join(repositoryRoot, ".github/workflows/docs.yml"),
+    const workerConfig = JSON.parse(await readFile(
+      path.join(docsRoot, "wrangler.jsonc"),
+      "utf8",
+    )) as {
+      name: string;
+      main?: unknown;
+      workers_dev: boolean;
+      preview_urls: boolean;
+      routes: Array<{pattern: string; custom_domain: boolean}>;
+      assets: {
+        directory: string;
+        not_found_handling: string;
+        html_handling: string;
+        binding?: unknown;
+        run_worker_first?: unknown;
+      };
+      env: {
+        preview: {
+          name: string;
+          workers_dev: boolean;
+          preview_urls: boolean;
+          routes: unknown[];
+        };
+      };
+    };
+    expect(workerConfig.name).toBe("microfeed-docs");
+    expect(workerConfig.main).toBeUndefined();
+    expect(workerConfig.workers_dev).toBe(false);
+    expect(workerConfig.preview_urls).toBe(true);
+    expect(workerConfig.routes).toEqual([{
+      pattern: "docs.microfeed.org",
+      custom_domain: true,
+    }]);
+    expect(workerConfig.assets).toEqual({
+      directory: "./dist",
+      not_found_handling: "404-page",
+      html_handling: "auto-trailing-slash",
+    });
+    expect(workerConfig.assets.binding).toBeUndefined();
+    expect(workerConfig.assets.run_worker_first).toBeUndefined();
+    expect(workerConfig.env.preview).toEqual({
+      name: "microfeed-docs-preview",
+      workers_dev: true,
+      preview_urls: true,
+      routes: [],
+    });
+
+    const packageJson = JSON.parse(await readFile(
+      path.join(repositoryRoot, "package.json"),
+      "utf8",
+    )) as {scripts: Record<string, string>};
+    expect(packageJson.scripts["docs:upload-preview"]).toBe(
+      "yarn docs:check && wrangler deploy --strict --env preview --config docs/wrangler.jsonc",
+    );
+    expect(packageJson.scripts["docs:deploy"]).toBe(
+      'yarn docs:check && wrangler deploy --strict --env="" --config docs/wrangler.jsonc',
+    );
+
+    const buildCheck = await readFile(
+      path.join(docsRoot, "scripts", "check-build.mjs"),
       "utf8",
     );
-    expect(workflow).toContain("node-version: 24");
-    expect(workflow).toContain("yarn install --immutable");
+    expect(buildCheck).toContain('entry.name === ".DS_Store"');
+    expect(buildCheck).toContain("await rm(entryPath)");
+
+    const workflow = await readFile(
+      path.join(repositoryRoot, ".github/workflows/ci.yml"),
+      "utf8",
+    );
     expect(workflow).toContain("yarn docs:check");
-    expect(workflow).toContain("path: docs/dist");
-    expect(workflow).toContain("github.event_name != 'pull_request'");
+    expect(workflow).not.toContain("actions/configure-pages");
+    expect(workflow).not.toContain("actions/upload-pages-artifact");
+    expect(workflow).not.toContain("actions/deploy-pages");
+    await expect(stat(path.join(
+      repositoryRoot,
+      ".github/workflows/docs.yml",
+    ))).rejects.toThrow();
   });
 
   it("preserves generated per-instance OpenAPI routes without duplicating the spec", async () => {

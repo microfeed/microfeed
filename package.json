@@ -21,6 +21,8 @@
     "docs:dev": "astro dev --root docs",
     "docs:build": "astro build --root docs",
     "docs:check": "astro check --root docs && yarn docs:build && node docs/scripts/check-build.mjs",
+    "docs:upload-preview": "yarn docs:check && wrangler deploy --strict --env preview --config docs/wrangler.jsonc",
+    "docs:deploy": "yarn docs:check && wrangler deploy --strict --env=\"\" --config docs/wrangler.jsonc",
     "check": "yarn lint:openapi && yarn typecheck && yarn test && yarn build && wrangler deploy --dry-run --strict --config dist/server/wrangler.json && yarn docs:check"
   },
   "dependencies": {
