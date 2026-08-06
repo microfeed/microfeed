@@ -124,7 +124,10 @@ That's it. The agent guides the setup, runs the deployment, and verifies the
 finished site. You only step in for Cloudflare browser authorization, choices
 that require your approval, and creating your private dashboard password.
 
-https://github.com/user-attachments/assets/d5629387-977c-4322-b231-589cdfbfe73e
+
+https://github.com/user-attachments/assets/96c73a94-2068-4172-9003-8bf3a262121d
+
+
 
 
 
