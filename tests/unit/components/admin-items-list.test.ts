@@ -114,6 +114,20 @@ describe("admin items list", () => {
     expect(output.match(/Public page/gu)).toHaveLength(2);
   });
 
+  it("shows compact wrapping dates with full timestamp tooltips", () => {
+    const output = renderItemsList();
+
+    expect(output).toContain("Aug 4, 2026");
+    expect(output).not.toContain("Aug 4, 2026 at 5:00 PM");
+    expect(output).toContain('dateTime="2026-08-04T17:00:00.000Z"');
+    expect(output).toContain('data-slot="tooltip-trigger"');
+    expect(output).toContain("cursor-help whitespace-normal break-words");
+    expect(output).toContain("min-w-0 whitespace-normal break-words");
+    expect(output).toMatch(
+      /aria-label="Aug 4, 2026(?:,| at) 5:00:00 PM [^"]+"/u,
+    );
+  });
+
   it("exposes descending sort state and preserves the status filter", () => {
     const output = renderItemsList();
 
