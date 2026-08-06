@@ -83,7 +83,18 @@ describe("documentation site", () => {
       "1-deploy-walkthrough.mp4",
     ));
     expect(video.subarray(4, 8).toString("ascii")).toBe("ftyp");
-    expect(video.byteLength).toBeLessThan(1_500_000);
+    expect(video.byteLength).toBeLessThan(10_000_000);
+    const trackHeaderMarker = video.indexOf(Buffer.from("tkhd"));
+    expect(trackHeaderMarker).toBeGreaterThan(4);
+    const trackHeaderStart = trackHeaderMarker - 4;
+    const trackHeaderSize = video.readUInt32BE(trackHeaderStart);
+    const fixedPointScale = 65_536;
+    expect(video.readUInt32BE(
+      trackHeaderStart + trackHeaderSize - 8,
+    ) / fixedPointScale).toBe(2_560);
+    expect(video.readUInt32BE(
+      trackHeaderStart + trackHeaderSize - 4,
+    ) / fixedPointScale).toBe(1_656);
     for (const composite of [
       "2-dashboard-overview-desktop.png",
       "2-dashboard-overview-mobile.png",
@@ -135,17 +146,14 @@ describe("documentation site", () => {
       path.join(repositoryRoot, "README.md"),
       "utf8",
     );
-    expect(readme).toContain(
-      '<video controls autoplay muted playsinline preload="metadata"',
+    expect(readme).toMatch(
+      /^https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f-]+$/mu,
     );
     expect(readme).toContain(
       '<img src="docs/public/images/screenshots/2-dashboard-1-home.png" width="45%" alt="Dashboard home">',
     );
     expect(readme).toContain(
       '<img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">',
-    );
-    expect(readme).toContain(
-      '<source src="docs/public/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">',
     );
     expect(readme).toContain(
       "](docs/public/images/screenshots/4-code-editor-1.png)",
