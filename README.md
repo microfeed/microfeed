@@ -12,6 +12,10 @@
 <h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>
 
   <p align="center">
+    <a href="https://docs.microfeed.org"><b>Docs</b></a>   
+    ·    
+    <a href="https://www.microfeed.org/api/"><b>API</b></a>   
+    ·        
     <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>Report Bug</b></a>
     ·
     <a href="https://github.com/microfeed/microfeed/discussions/new?category=ideas"><b>Request Feature</b></a>
