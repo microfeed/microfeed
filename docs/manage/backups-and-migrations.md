@@ -42,12 +42,14 @@ eligibility checks, resumable maintenance state, and all options.
 
 ## Migrate an older Pages installation
 
-Older microfeed deployments hosted with Cloudflare Pages use:
+[Older microfeed deployments](https://github.com/microfeed/microfeed/tree/microfeed-classic) hosted with Cloudflare Pages use:
 
 ```console
 yarn manage migrate-pages
 ```
 
-The guided workflow discovers the source, creates or selects the supported
-Worker-based target, and verifies the migration. Do not improvise a direct
-database copy; migration history and media relationships must stay consistent.
+This command will create a new Workers project to connect to the existing d1 database and r2 bucket.
+So the old Pages project and the new Workers project both connect to the same d1 database and r2 bucket.
+You can decide when to switch the custom domain name from the old Pages project to the new Workers project, and vice versa.
+
+See [the canonical migrate-pages reference](/manage-cli/#yarn-manage-migrate-pages) for all options.
