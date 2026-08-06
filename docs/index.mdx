@@ -1,0 +1,83 @@
+---
+title: microfeed documentation
+description: Publish on your own domain with a lightweight, open-source, headless CMS that runs entirely on Cloudflare.
+template: splash
+hero:
+  title: >-
+    <span class="hero-line hero-topic-line"><span>Publish</span><span class="sr-only">blogs, podcasts, documents, video, audio, and curations</span><span class="rotating-topic" aria-hidden="true"><span class="rotating-topic-track"><span>blogs</span><span>podcasts</span><span>documents</span><span>video</span><span>audio</span><span>curations</span><span>blogs</span></span></span></span><br><span class="hero-line">on your own domain</span><br><span class="hero-line">without hosting fees</span>
+  tagline: A <span class="brand-highlight">lightweight</span>, <span class="brand-highlight">open-source</span> CMS that runs entirely in your <span class="cloudflare-brand">Cloudflare</span> account. Bring a domain you own; microfeed provides a website, RSS and JSON feeds, and a <span class="brand-highlight">headless</span> Admin API. It’s <span class="brand-highlight">serverless</span>!
+  image:
+    html: >-
+      <aside class="r2-capacity-card" aria-label="10 GB of media storage included"><div class="r2-capacity-eyebrow"><span class="r2-capacity-provider"><span aria-hidden="true"></span>Cloudflare R2</span><span class="r2-capacity-badge">For free!</span></div><p class="r2-capacity-total"><strong>10</strong><span>GB</span></p><p class="r2-capacity-title">of media storage included</p><p class="r2-capacity-intro">Enough for approximately:</p><ul class="r2-capacity-list" aria-label="Examples of what 10 GB can store"><li><span class="r2-capacity-format" aria-hidden="true">IMG</span><span><strong>10,000</strong> optimized images</span></li><li><span class="r2-capacity-format" aria-hidden="true">MP3</span><span><strong>300 hours</strong> of podcast audio</span></li><li><span class="r2-capacity-format" aria-hidden="true">HD</span><span><strong>5–10 hours</strong> of HD video</span></li><li><span class="r2-capacity-format" aria-hidden="true">PDF</span><span><strong>5,000</strong> typical PDFs</span></li></ul><p class="r2-capacity-note"><em>Estimates based on typical optimized files. Actual capacity varies.</em></p><a class="r2-capacity-link" href="https://developers.cloudflare.com/r2/pricing/" target="_blank" rel="noreferrer">Cloudflare R2 pricing <span aria-hidden="true">↗</span></a></aside>
+  actions:
+    - text: Get started
+      link: /start-here/
+      icon: rocket
+    - text: View on GitHub
+      link: https://github.com/microfeed/microfeed
+      variant: minimal
+      icon: external
+      attrs:
+        target: _blank
+        rel: noreferrer
+---
+
+<section class="home-section">
+  <h2>Why microfeed</h2>
+  <div class="why-grid">
+    <article class="why-card">
+      <h3>Open source</h3>
+      <p>Own <span class="brand-highlight">your code</span> and <span class="brand-highlight">your data</span>. Deploy microfeed into your own <span class="cloudflare-brand">Cloudflare</span> account.</p>
+    </article>
+    <article class="why-card">
+      <h3>Serverless</h3>
+      <p><span class="cloudflare-brand">Cloudflare</span> Workers, D1, and optional R2 replace a traditional server stack.</p>
+    </article>
+    <article class="why-card">
+      <h3>Free-tier friendly</h3>
+      <p>Many small sites can stay within <span class="cloudflare-brand">Cloudflare’s</span> included usage. <a href="https://developers.cloudflare.com/r2/pricing/">Standard R2 includes 10 GB-month of storage and free egress</a>.</p>
+    </article>
+    <article class="why-card">
+      <h3>Headless</h3>
+      <p>Publish and automate through an authenticated Admin API with OpenAPI and agent-ready references.</p>
+    </article>
+  </div>
+</section>
+
+<section class="home-section">
+  <h2>Quick start</h2>
+  <div class="quick-start-list">
+
+1. Clone the microfeed repository.
+
+   ```console
+   git clone https://github.com/microfeed/microfeed.git
+   ```
+
+2. Open the new `microfeed` folder in a local coding agent.
+
+3. Ask the agent:
+
+   ```text frame="terminal"
+   Deploy microfeed to Cloudflare.
+   ```
+
+  </div>
+  <p><a href="/start-here/ai-agent/">Follow the complete AI-agent deployment guide</a> for browser handoffs, verification, and recovery guidance.</p>
+</section>
+
+<section class="home-section">
+  <h2>Features</h2>
+  <ul class="feature-list">
+    <li><a href="/dashboard/channel-and-feeds/"><strong>Open distribution</strong></a> — Publish a website, RSS feed, and JSON Feed.</li>
+    <li><a href="/dashboard/publish/"><strong>Media publishing</strong></a> — Share text, links, images, audio, video, and documents.</li>
+    <li><a href="/dashboard/"><strong>Private dashboard</strong></a> — Create and manage content from a responsive interface.</li>
+    <li><a href="/dashboard/customize/"><strong>Customization</strong></a> — Control themes, domains, access, and custom code.</li>
+    <li><a href="/api/"><strong>Admin API</strong></a> — Automate publishing with named keys and generated references.</li>
+    <li><a href="/manage/"><strong>Site management</strong></a> — Update, inspect, snapshot, and migrate an instance safely.</li>
+  </ul>
+</section>
+
+<footer class="home-attribution" aria-label="Site attribution">
+  Built by <a href="https://www.listennotes.com" target="_blank" rel="noreferrer">Listen Notes, Inc.<span aria-hidden="true"> ↗</span></a>, not affiliated with <a class="home-cloudflare-link" href="https://www.cloudflare.com" target="_blank" rel="noreferrer">Cloudflare<span aria-hidden="true"> ↗</span></a>.
+</footer>

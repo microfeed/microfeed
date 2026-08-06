@@ -1,0 +1,4 @@
+interface:
+  display_name: "Document microfeed"
+  short_description: "Write and publish microfeed documentation"
+  default_prompt: "Use $document-microfeed to improve and validate the microfeed documentation site."

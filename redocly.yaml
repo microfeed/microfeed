@@ -3,4 +3,6 @@ extends:
 
 rules:
   no-server-example.com: off
+  # Operation paths are relative to the directory-style /api/ base.
+  no-server-trailing-slash: off
   no-path-trailing-slash: off

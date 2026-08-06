@@ -1,4 +1,7 @@
-# `yarn manage` command reference
+---
+title: yarn manage command reference
+description: Canonical commands, options, side effects, and safety contracts for the microfeed management CLI.
+---
 
 This is the canonical capability reference for microfeed's repository-owned
 management CLI. It is written for people and coding agents that need to

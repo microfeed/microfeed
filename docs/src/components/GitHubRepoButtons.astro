@@ -1,0 +1,51 @@
+<nav class="github-repo-buttons" aria-label="GitHub repository actions">
+  <a
+    class="github-button"
+    href="https://github.com/microfeed/microfeed/fork"
+    data-color-scheme="no-preference: light; light: light; dark: dark;"
+    data-size="large"
+    data-show-count="true"
+    aria-label="Fork microfeed/microfeed on GitHub"
+  >Fork</a>
+  <a
+    class="github-button"
+    href="https://github.com/microfeed/microfeed"
+    data-color-scheme="no-preference: light; light: light; dark: dark;"
+    data-icon="octicon-star"
+    data-size="large"
+    data-show-count="true"
+    aria-label="Star microfeed/microfeed on GitHub"
+  >Star</a>
+</nav>
+
+<style>
+  .github-repo-buttons {
+    display: flex;
+    min-height: 1.75rem;
+    align-items: center;
+    gap: 0.55rem;
+    white-space: nowrap;
+  }
+
+  /* Keep the links usable while the optional GitHub enhancement loads. */
+  .github-button {
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 0.4rem;
+    background: var(--sl-color-black);
+    padding: 0.2rem 0.55rem;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: none;
+  }
+
+  .github-button:hover {
+    border-color: var(--sl-color-gray-4);
+  }
+
+  :global(.github-repo-buttons iframe) {
+    display: block;
+    max-width: 100%;
+  }
+</style>

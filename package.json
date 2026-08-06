@@ -18,7 +18,10 @@
     "lint:openapi": "node --import tsx scripts/lint-openapi.ts",
     "test": "TZ=UTC vitest run && TZ=UTC vitest run --config vitest.worker.config.ts",
     "build": "yarn types && astro build",
-    "check": "yarn lint:openapi && yarn typecheck && yarn test && yarn build && wrangler deploy --dry-run --strict --config dist/server/wrangler.json"
+    "docs:dev": "astro dev --root docs",
+    "docs:build": "astro build --root docs",
+    "docs:check": "astro check --root docs && yarn docs:build && node docs/scripts/check-build.mjs",
+    "check": "yarn lint:openapi && yarn typecheck && yarn test && yarn build && wrangler deploy --dry-run --strict --config dist/server/wrangler.json && yarn docs:check"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.7",
@@ -53,6 +56,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/starlight": "0.41.6",
     "@cloudflare/vitest-pool-workers": "^0.19.0",
     "@redocly/cli": "^2.44.1",
     "@tailwindcss/forms": "^0.5.3",
@@ -66,6 +71,7 @@
     "astro": "^7.1.6",
     "miniflare": "4.20260722.1",
     "postcss": "^8.5.25",
+    "starlight-llms-txt": "^0.11.0",
     "tailwind-gradient-mask-image": "^1.0.0",
     "tailwindcss": "^4.0.14",
     "tar": "^7.4.3",
