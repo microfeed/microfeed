@@ -82,10 +82,14 @@ microfeed provides a simple yet powerful admin dashboard: the site-management
 area where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-<picture>
-  <source media="(max-width: 700px)" srcset="docs/public/images/screenshots/2-dashboard-overview-mobile.png">
-  <img src="docs/public/images/screenshots/2-dashboard-overview-desktop.png" alt="microfeed dashboard home, channel editor, and new item screens">
-</picture>
+<p align="center">
+  <a href="docs/public/images/screenshots/2-dashboard-1-home.png">
+    <img src="docs/public/images/screenshots/2-dashboard-1-home.png" width="45%" alt="Dashboard home">
+  </a>
+  <a href="docs/public/images/screenshots/2-dashboard-2-add-item.png">
+    <img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">
+  </a>
+</p>
 
 [Back to 📚TOC](#-table-of-contents)
 
