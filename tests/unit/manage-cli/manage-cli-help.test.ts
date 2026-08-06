@@ -91,23 +91,21 @@ describe("management CLI help and canonical reference", () => {
       repositoryFile(".agents/skills/deploy-microfeed/SKILL.md"),
     ]);
 
-    expect(readme).toMatch(/\]\(docs\/manage-cli\.md\)/u);
+    expect(readme).toContain("https://docs.microfeed.org/manage-cli/");
     expect(agents).toContain("`docs/manage-cli.md`");
     expect(skill).toContain("../../../docs/manage-cli.md");
   });
 
-  it("keeps the README dashboard login guidance action-oriented", async () => {
-    const readme = await repositoryFile("README.md");
-    const start = readme.indexOf("#### Manage the dashboard login");
-    const end = readme.indexOf("\n#### ", start + 1);
-    const section = readme.slice(start, end < 0 ? undefined : end);
+  it("keeps the canonical dashboard login guidance action-oriented", async () => {
+    const reference = await repositoryFile("docs/manage-cli.md");
+    const section = commandSection(reference, "auth");
     const authCommand = CLI_COMMANDS.find(({name}) => name === "auth");
 
-    expect(start).toBeGreaterThanOrEqual(0);
+    expect(section).not.toBe("");
     expect(authCommand).toBeDefined();
     expect(section).toContain(authCommand!.usage);
     expect(section).toContain(
-      "Running `yarn manage auth` without an action only prints",
+      "Without an action, `yarn manage auth` prints",
     );
     expect(section).toContain("It does not select an instance");
     for (const action of [

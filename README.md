@@ -38,16 +38,7 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
 * [🚀 Installation](#-installation)
   * [Quickstarts](#quickstarts)
   * [Details](#details)
-    * [Method 1: AI coding agent (recommended)](#method-1-ai-coding-agent-recommended)
-    * [Method 2: yarn manage CLI (manual)](#method-2-yarn-manage-cli-manual)
   * [Advanced](#advanced)
-    * [Multiple local and Cloudflare instances](#multiple-local-and-cloudflare-instances)
-    * [Safely remove a deployment](#safely-remove-a-deployment)
-    * [Preview deployment](#preview-deployment)
-    * [Migrating an existing Pages installation](#migrating-an-existing-pages-installation)
-    * [Custom domain and optional extra protection](#custom-domain-and-optional-extra-protection)
-    * [Manage the dashboard login](#manage-the-dashboard-login)
-    * [Update to the latest version of microfeed](#update-to-the-latest-version-of-microfeed)
 * [✍️ Start publishing](#%EF%B8%8F-start-publishing)
 * [💻 FAQs](#-faqs)
 * [💪 Contributions](#-contributions)
@@ -66,7 +57,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a personal website with custom links
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless CMS with a GUI dashboard, JSON Feed, and generated API docs. Each instance can publish interactive docs at `/api/`, OpenAPI JSON and YAML, and `llms.txt` resources for coding agents.
+* a headless CMS with a GUI dashboard, JSON Feed, and generated API docs. Explore the public demo’s [interactive API reference](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
 * a website for an entire book (e.g., [The Art of War](https://the-art-of-war.microfeed.org/))
 * a changelog website (e.g., [changelog.listennotes.com](https://changelog.listennotes.com/))
@@ -91,7 +82,10 @@ microfeed provides a simple yet powerful admin dashboard: the site-management
 area where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-![image-6d056193c81c0b8f5de0503f5af18116](https://user-images.githubusercontent.com/1719237/209486588-00acefe0-dd51-4bfc-aed7-1f63850aa720.png)
+<picture>
+  <source media="(max-width: 700px)" srcset="docs/public/images/screenshots/2-dashboard-overview-mobile.png">
+  <img src="docs/public/images/screenshots/2-dashboard-overview-desktop.png" alt="microfeed dashboard home, channel editor, and new item screens">
+</picture>
 
 [Back to 📚TOC](#-table-of-contents)
 
@@ -101,8 +95,7 @@ your site looks. If you've used WordPress before, you'll find it familiar.
 
 The simplest way to install microfeed is with a local AI coding agent:
 
-1. Create a local copy of this Git repository on your computer. Developers call
-   this a **Git clone**. [Install Git](https://git-scm.com/downloads) first if
+1. Create a local copy of this Git repository on your computer. [Install Git](https://git-scm.com/downloads) first if
    the `git` command is not available on your computer:
 
    ```console
@@ -123,660 +116,41 @@ That's it. The agent guides the setup, runs the deployment, and verifies the
 finished site. You only step in for Cloudflare browser authorization, choices
 that require your approval, and creating your private dashboard password.
 
-Throughout this guide, the **microfeed admin dashboard** means the
-site-management area where you create and edit posts, upload media files, and
-customize your site.
+<video controls autoplay muted playsinline preload="metadata" poster="docs/public/images/screenshots/1-deploy-1.png" aria-label="Codex deploying microfeed to Cloudflare, followed by the ready microfeed dashboard">
+  <source src="docs/public/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">
+  <a href="docs/public/images/screenshots/1-deploy-walkthrough.mp4">Watch the microfeed deployment walkthrough.</a>
+</video>
 
 ### Details
 
-Under the hood, microfeed has one supported deployment engine: `yarn manage`
-from a local Git copy of this repository. The AI agent follows the repository's
-deployment skill and uses that same CLI and its safety checks. You can also
-operate the CLI yourself.
+microfeed has one supported deployment engine: `yarn manage`, run from a local
+Git copy of this repository. A local AI coding agent can operate it for you, or
+you can run the same guided commands yourself.
 
-| | AI agent + repository skill | `yarn manage` CLI |
-| --- | --- | --- |
-| Driven by | A local AI agent operating the guided commands | A person running the guided commands |
-| Best for | Getting started quickly while the agent handles command execution and verification | Direct control over initialization and management |
-| Local Git copy of this repository | Required | Required |
-| Cloudflare changes | Performed by `yarn manage`; the skill guides the agent | Performed by `yarn manage` |
-| Human handoffs | Approvals, browser authorization, account choice when needed, password page | Browser authorization, genuine choices, password page |
+* **Recommended:** [deploy with an AI coding agent](https://docs.microfeed.org/start-here/ai-agent/).
+* **Manual:** [deploy with `yarn manage`](https://docs.microfeed.org/start-here/manual/).
+* **Every command and option:** read the [canonical `yarn manage` reference](https://docs.microfeed.org/manage-cli/).
 
-Cloudflare repository imports, Workers Builds, deploy buttons, GitHub Actions,
-and user-created API tokens are not supported deployment paths. Neither method
-requires R2 credentials or GitHub secrets.
-
-#### Method 1: AI coding agent (recommended)
-
-Choose this method when you want an agent to get microfeed running for you. The
-agent is the guide and operator; it does not deploy through a separate API,
-plugin, MCP server, or hand-written Cloudflare commands.
-
-This repository includes the `deploy-microfeed` skill under `.agents/skills/`.
-OpenAI Codex discovers it automatically when you open the local `microfeed`
-folder created by `git clone` and ask to deploy, publish, update, or configure
-microfeed. Other compatible local coding agents can follow the same repository
-instructions. No separately installed skill, Cloudflare plugin, or MCP server
-is required.
-
-Use the same short prompt shown at the top of this section:
-
-```text
-Deploy microfeed to Cloudflare.
-```
-
-The agent asks for your site name and administrator sign-in email during the
-guided setup. Choose a globally unique, distinctive site name. If you plan to
-use a custom address, a useful convention is to replace its dots with hyphens:
-for `my.domainname.com`, use `my-domainname-com`. The management CLI validates
-the name and checks the selected Cloudflare account for conflicts before
-creating anything.
-
-The agent:
-
-* checks the trusted working tree, Node.js, Corepack, and locked dependencies
-* runs `yarn manage accounts --json` before any Cloudflare resource is changed
-* asks you to choose when your login can access several Cloudflare accounts
-* explains the site, database, media storage, login, and optional domain in
-  plain language before requesting approval
-* runs initialization with the exact account and non-secret choices you approved
-* relays the private one-time password page and verifies the finished site with
-  `yarn manage status`
-
-You only need to:
-
-* approve dependency downloads and the described Cloudflare changes
-* finish Cloudflare authorization in your browser
-* choose the Cloudflare account when more than one is available
-* open the private one-time page and choose the dashboard password yourself
-
-Never send a Cloudflare token, dashboard password, or private password link to
-the agent. The agent must never use the unsafe `--admin-password` option. It
-may relay the one-time link printed by the trusted CLI, but it must not ask you
-to paste that link or your password back into chat. The dashboard returns HTTP
-403 until you finish creating the password.
-
-This workflow requires a local agent with access to your local Git copy of the
-repository and a browser that can complete Wrangler's local Cloudflare
-callback. Hosted/headless agents and unattended API-token deployment are not
-supported.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Method 2: `yarn manage` CLI (manual)
-
-Choose this method when you want to run guided initialization yourself from a
-local terminal. It includes the recommended built-in dashboard login and
-supports upgrades, multiple installations, preview environments, custom
-domains, and Cloudflare Pages migrations.
-
-For every command, option, side effect, safety rule, and example, see the
-canonical [`yarn manage` command reference](docs/manage-cli.md). You can also
-run `yarn manage help <command>` from your local `microfeed` folder for
-matching terminal help.
-
-The `yarn manage` command is included in this repository—it is not a command
-installed on your computer globally. Before you can use it, install
-[Git](https://git-scm.com/downloads) and
-[Node.js 24](https://nodejs.org/en/download), then use Git to create a local
-copy of this repository on your computer:
-
-```console
-git clone https://github.com/microfeed/microfeed.git
-cd microfeed
-corepack enable
-yarn install
-yarn manage accounts
-yarn manage init
-```
-
-Run future `yarn manage` commands from this same `microfeed` folder.
-
-`yarn manage accounts` opens Cloudflare's sign-in page when needed and lists the
-accounts available to that login without creating or changing any Cloudflare
-resource. It also lists every Wrangler login profile stored on your computer
-and marks the one active for this local repository. A **profile** is a saved
-Cloudflare login; a **Cloudflare account** is a workspace that owns sites,
-databases, and media storage. The command shows the accounts available through
-the active login and prints commands for switching to other saved profiles. If
-several accounts are available through that login, choose the one where you
-want the site to live. `yarn manage init` then asks for the site settings and
-explains the Cloudflare resources before creating them.
-
-If you keep personal and company Cloudflare logins on the same computer, you
-can create or select a named Wrangler login for this local Git copy of the
-repository:
-
-```console
-yarn manage accounts --profile personal
-yarn manage accounts --profile company
-```
-
-The profile name is only a local login label and does not need to be globally
-unique. It is different from your microfeed site/Worker name, which should be
-globally distinctive. Add `--reauthorize` when you deliberately want to sign
-that profile in again as a different Cloudflare user.
-
-The installer also asks how to protect the microfeed admin dashboard, where you
-create and edit posts, upload media files, and customize your site:
-
-* **Set up dashboard login (Recommended):** Enter the email you will use to sign
-  in as administrator. After deployment, the installer opens a private one-time
-  page where you choose the password. The email does not need to match your
-  Cloudflare account and is not shown publicly.
-* **Skip authentication:** Leave the microfeed admin dashboard public until you
-  protect it with [Cloudflare Zero Trust Access](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/).
-  Anyone on the internet can create, edit, or delete content while it is
-  unprotected.
-
-The admin address defaults to `/admin/`, and you can choose a different
-address if you prefer.
-
-When deployment finishes, the installer prints a single-use password link that
-expires after 30 minutes and normally opens it automatically. Use `--no-open`
-to print it without opening a browser. A new password setup or reset link
-immediately invalidates the previous one. If initialization is interrupted,
-run the same command again to continue; microfeed never deletes existing
-resources during a retry.
-
-R2 media storage is optional. If Cloudflare asks you to activate an R2
-subscription or add a payment method, that consent stays in the Cloudflare
-dashboard. microfeed cannot enable billing for you. The installer can still
-finish a content-only deployment when Cloudflare returns its documented
-subscription-required response; text publishing and existing external URL
-features keep working. You can also opt out deliberately for production or
-local testing:
-
-```console
-yarn manage init --no-r2
-```
-
-The intended bucket name is saved without probing R2. After activating R2, or
-whenever you decide to opt in, add media uploads with:
-
-```console
-yarn manage deploy --enable-r2
-```
-
-An ordinary interactive deployment offers this upgrade once R2 becomes
-available for an automatically pending installation. Declining is remembered;
-explicitly disabled installations stay quiet until the enable command is run.
-
-New installations upload to and serve media through the Worker, so you do not
-need to configure public R2 access, CORS, an R2 custom domain, or S3
-credentials.
-
-For later deployments and diagnostics, use:
-
-```console
-yarn manage deploy
-yarn manage status
-```
+Both paths pause for Cloudflare browser authorization and choices that require
+your approval. Never paste a Cloudflare token, dashboard password, or private
+password-setup link into an agent conversation or command.
 
 [Back to 📚TOC](#-table-of-contents)
 
 ### Advanced
 
-Both operating styles share the same saved configuration and commands because
-the agent always operates through `yarn manage`. You can start with an agent and
-later run the CLI yourself—or do the reverse—without creating a different kind
-of installation.
-
-Here is a map of what the management CLI can do. The
-[`yarn manage` command reference](docs/manage-cli.md) documents every option,
-side effect, and safety check.
-
-| Task | Command |
-| --- | --- |
-| Sign in to Cloudflare and list available accounts | `yarn manage accounts` |
-| Create or select a separate named Cloudflare login for this local repository | `yarn manage accounts --profile <name>` |
-| Create or resume a Cloudflare, preview, or local site | `yarn manage init` |
-| Connect an existing compatible microfeed Worker without changing it | `yarn manage connect` |
-| Deploy an update | `yarn manage deploy` |
-| Create a content-only site without R2 | `yarn manage init --no-r2` |
-| Enable the saved R2 bucket later | `yarn manage deploy --enable-r2` |
-| Prepare a local-only release without starting the server | `yarn manage deploy --local` |
-| Create, pull, or restore a whole-site backup | `yarn manage snapshot` |
-| Check deployment health and dashboard protection | `yarn manage status` |
-| List sites or select the default site | `yarn manage instances`, `yarn manage use` |
-| Add a custom domain | `yarn manage domain` |
-| Add optional Cloudflare Access protection to the dashboard | `yarn manage access` |
-| Set up or change the administrator login and dashboard address | `yarn manage auth <action>` |
-| Create and inspect an isolated preview deployment | `yarn manage init --preview`, `yarn manage deploy --preview`, `yarn manage status --preview` |
-| Migrate an older Cloudflare Pages installation | `yarn manage migrate-pages` |
-| Safely plan and remove a deployment | `yarn manage destroy` |
-| Validate and regenerate local configuration | `yarn manage config` |
-| Run a site locally on your computer | `yarn manage dev` |
-
-For automated initialization, `CLOUDFLARE_PROJECT_NAME` can provide your own
-globally distinctive site name without an interactive prompt.
-
-#### Multiple local and Cloudflare instances
-
-One local Git copy of this repository can keep any number of independent
-microfeed instances. An instance can be:
-
-* **Local only:** Runs on your computer with simulated D1 and optional R2
-  resources and has no Cloudflare deployment.
-* **Cloudflare — managed here:** Has saved configuration in this local Git copy
-  and can be deployed or administered from it.
-* **Cloudflare — available to connect:** Is an existing compatible Worker in
-  your Cloudflare account that has not been connected to this local Git copy
-  yet.
-
-Create as many isolated local-only instances as you need:
-
-```console
-yarn manage init --local --instance my-podcast-custom-com
-yarn manage init --local --instance jacks-photo-album-com
-```
-
-During local initialization, the built-in email and password login is optional.
-You can enable it to try the same sign-in flow used in production, or skip it
-and open the local microfeed admin dashboard directly. Add it later for a
-specific instance with:
-
-```console
-yarn manage auth setup --instance my-podcast-custom-com
-```
-
-For production, strongly protect `/admin/` with the built-in login,
-[Cloudflare Zero Trust Access](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/),
-or both. Skipping the built-in login during local initialization does not change any
-production authentication setting.
-
-Create new Cloudflare deployments with the same naming convention:
-
-```console
-yarn manage init --instance my-podcast-custom-com
-yarn manage init --instance podcast-corp-com
-```
-
-To manage an existing microfeed Worker without deploying it again, run:
-
-```console
-yarn manage connect
-```
-
-The command signs in through Wrangler when necessary, discovers compatible
-Workers, verifies the selected Worker's public microfeed identity, and saves
-its existing bindings and settings locally. Connecting is read-only: it does
-not deploy, copy data, or change any Cloudflare resource.
-If your Wrangler login can access several accounts, both `connect` and
-`instances` accept `--account-id <id>` to limit discovery.
-
-List every saved instance plus compatible Workers available to connect, or
-select the default saved instance:
-
-```console
-yarn manage instances
-yarn manage use my-podcast-custom-com
-```
-
-The instance list keeps local-only instances in their own section and groups
-Cloudflare instances by account. When Wrangler exposes the information, each
-Cloudflare section also shows the active local auth profile, login email, and
-account ID.
-
-The active instance is used by commands that do not specify a name. To target
-one explicitly:
-
-```console
-yarn manage deploy --instance podcast-corp-com
-yarn manage status --instance my-podcast-custom-com
-yarn manage domain --instance my-podcast-custom-com
-yarn manage auth --instance podcast-corp-com
-```
-
-Every saved instance uses its own gitignored directory under
-`.microfeed/instances/<name>/`. Local-only instances keep separate D1 data, R2
-media, admin accounts, development secrets, and generated Wrangler
-configuration. A connected Cloudflare instance also gets its own local
-development sandbox, but that sandbox is separate from its production D1 and
-R2 resources.
-
-Local and production content never synchronize automatically. Running
-`yarn dev --instance podcast-corp-com` uses that Cloudflare instance's
-configuration locally, but it does not download, access, or modify production
-data. Deploying remains a separate explicit operation.
-
-Only saved local-only and managed Cloudflare instances can be selected with
-`yarn manage use`. Connect an available Worker first. Cloudflare-only commands
-also stop with guidance when a local-only instance is selected.
-
-If this repository already has the older single-instance configuration,
-microfeed imports it automatically as the first named instance without
-changing anything in Cloudflare.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Safely remove a deployment
-
-First print a read-only plan for the exact saved site:
-
-```console
-yarn manage destroy --instance my-podcast-custom-com --dry-run
-```
-
-The plan shows the Cloudflare account, public address, hosted application,
-content database ID and name, media bucket, and whether each data resource will
-be deleted or preserved. It also prints unwrapped Cloudflare dashboard links
-for manually inspecting the application, database, and media storage before
-continuing. Each account-wide page is paired with the exact resource name and
-its expected state after removal:
-
-```text
-https://dash.cloudflare.com/<account-id>/workers-and-pages
-https://dash.cloudflare.com/<account-id>/workers/d1
-https://dash.cloudflare.com/<account-id>/r2/overview
-```
-
-The plan also calls out deletion of the local instance folder, including its
-saved configuration and its separate local development database and media
-sandbox.
-
-After exporting anything you need and checking those links, run:
-
-```console
-yarn manage destroy --instance my-podcast-custom-com
-```
-
-The interactive command requires you to review the plan and type the exact site
-name. Automation can use `--confirm my-podcast-custom-com` only after presenting
-the same dry-run plan and receiving explicit approval; `--yes` is deliberately
-rejected.
-
-Destruction stops the hosted application first, verifies that it is gone, then
-permanently deletes the site's content database and every object in its media
-bucket. It verifies each removal and deletes the local instance folder last. If
-a step fails, rerun the same command to resume from the recorded progress. A
-replacement resource, unexpected custom domain, changed installation identity,
-or changed database ID causes the command to stop instead of guessing.
-
-Use `--keep-data` to delete the hosted application while preserving its
-database and media bucket. Resources marked as reused are always preserved,
-even without that option. If a preview exists, destroy it first:
-
-```console
-yarn manage destroy --preview --instance my-podcast-custom-com --dry-run
-yarn manage destroy --preview --instance my-podcast-custom-com
-```
-
-The command does not inspect or change Cloudflare Zero Trust or SSL settings.
-At the end, it prints the same Workers & Pages, D1, and R2 links again. Open each
-page, search for the displayed exact name, and confirm that it is absent—or
-still present when `--keep-data` or a shared/reused resource requires
-preservation. Cloudflare's lists can take a moment to refresh.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Preview deployment
-
-The guided CLI can create a separate preview environment that behaves like
-production without changing the production Worker or its database.
-
-After initializing production, create the preview environment once:
-
-```console
-yarn manage init --preview
-```
-
-The CLI creates a separate preview Worker and D1 database. It reuses the
-production R2 bucket, but keeps uploaded files separate:
-
-* production media is stored under `production/`
-* preview media is stored under `preview/`
-
-Older project-prefixed object keys remain valid after an upgrade. Existing
-D1 media paths and R2 objects are not renamed or migrated; only new uploads
-use the shorter environment-only prefix.
-
-The preview environment does not use or modify the production D1 database.
-Its Worker and D1 names default to `<project-name>-preview` and
-`<project-name>-preview-db`; the CLI lets you change these names during initialization.
-
-For later preview deployments and diagnostics, use the same commands with
-`--preview`:
-
-```console
-yarn manage deploy --preview
-yarn manage status --preview
-```
-
-Preview deployments use their own `workers.dev` URL instead of the production
-custom domain and have a separate administrator login. The `init` command asks for its
-sign-in email and provides a separate browser password link.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Migrating an existing Pages installation
-
-Older microfeed installations used Cloudflare Pages and were deployed with a
-GitHub Actions workflow. That version remains available under the
-[`microfeed-classic` tag](https://github.com/microfeed/microfeed/tree/microfeed-classic).
-If your site uses that deployment flow, consider upgrading to the latest code:
-current microfeed runs on Cloudflare Workers instead of Pages and receives
-active development.
-
-The migration creates a new Worker, reuses your existing D1 database and R2
-bucket, and keeps the existing Pages project online while you deploy and verify
-the replacement. Your existing content and media remain in the same data
-resources.
-
-The easiest option is to open the latest `microfeed` folder in an AI coding
-agent and send:
-
-```text
-Help me migrate my existing microfeed site from Cloudflare Pages to Workers.
-Reuse its existing D1 database and R2 bucket.
-```
-
-The agent will guide you through the migration and use the repository's safe
-`yarn manage migrate-pages` workflow. If you prefer to migrate manually, run:
-
-```console
-yarn manage migrate-pages
-```
-
-Enter the existing Pages project name and choose a different Worker name, defaulting to `<pages-name>-worker`.
-The CLI suggests `<pages-name>_feed_db_production` for the existing D1 database and `<pages-name>` for the existing R2 bucket, while allowing custom names.
-It asks how to protect the dashboard and lets you choose an optional admin
-address, then reuses those resources, applies database migrations, deploys to
-`workers.dev`, and verifies the new installation without modifying Pages.
-
-Before changing traffic, verify the website, individual items, JSON Feed, RSS,
-sitemap, admin operations, uploads, and existing media. If you use a custom
-domain, run:
-
-```console
-yarn manage domain
-```
-
-If the domain is still attached to Pages, the CLI links directly to that
-project's **Custom domains** page and stops without changing anything. Remove
-only that custom domain from Pages, which also removes its Pages-managed CNAME,
-then run `yarn manage domain` again.
-
-Workers Custom Domains require a Cloudflare-managed zone and cannot coexist
-with a CNAME on the same hostname. After the Pages dashboard removal, Wrangler
-creates the Worker-managed DNS record during the custom-domain deployment. Your
-built-in dashboard login continues to work after the domain changes. The CLI never
-renames, redeploys, deletes, or removes a domain from the Pages project.
-
-If the operating system still has a stale DNS result after cutover, deployment
-verification immediately retries the HTTPS identity check through Cloudflare
-DNS over HTTPS. A successful fallback avoids waiting for the remaining retries
-and does not flush or change the computer's DNS settings. All deployment flows
-use the same six-retry exponential backoff schedule: 5, 10, 20, 40, 80, and
-160 seconds.
-
-For safety, `yarn manage init` stops before creating any resource when a Pages project has the requested name.
-It asks you to change `CLOUDFLARE_PROJECT_NAME` to a name such as `<pages-name>-worker` and try again.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Custom domain and optional extra protection
-
-The guided installer offers to configure a custom domain. If you skip it, you
-can add and verify one later with:
-
-```console
-yarn manage domain
-```
-
-After custom-domain setup:
-
-* Public pages, feeds, media, and APIs use the custom domain.
-* The built-in login protects the microfeed admin dashboard at its configured
-  address.
-* The project's `workers.dev` address is disabled by default. You can enable it
-  from [Workers & Pages](https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages)
-  by selecting the Worker and opening **Settings → Domains & Routes**. A later
-  microfeed deployment restores the safer disabled default.
-
-The recommended built-in login is all you need. If you want Cloudflare Access
-as a second gate—or skipped the built-in login and need to protect the public
-microfeed admin dashboard—run:
-
-```console
-yarn manage access
-```
-
-The command opens the correct Cloudflare page and gives you the hostname and
-dashboard path to enter. This step is optional and does not require another API
-token.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Manage the dashboard login
-
-The microfeed admin dashboard is where you create and edit posts, upload media
-files, and customize your site. Dashboard login changes require an explicit
-action:
-
-```console
-yarn manage auth <setup|reset-password|change-email|change-path|disable> [options]
-```
-
-Running `yarn manage auth` without an action only prints the available actions,
-options, and examples. It does not select an instance, inspect authentication
-state, or change anything.
-
-Use the action that matches the change you want to make:
-
-| Action | What it does |
-| --- | --- |
-| `setup` | Add or restore the built-in dashboard login. |
-| `reset-password` | Create a one-time remote reset link or securely replace a local password. |
-| `change-email` | Change the administrator email and sign out existing sessions. |
-| `change-path` | Move a Cloudflare dashboard to a new path and redeploy the Worker. |
-| `disable` | Disable the built-in login for a local-only instance or Cloudflare deployment after a warning. |
-
-For example, if you skipped authentication during initialization, add the
-built-in login later with:
-
-```console
-yarn manage auth setup \
-  --instance my-podcast-custom-com \
-  --owner-email me@example.com
-```
-
-For a Cloudflare instance, `yarn manage auth setup` creates a new first-password
-link when no administrator exists, and `yarn manage auth reset-password`
-creates a one-time reset link for the existing administrator. Completing a
-reset signs out existing sessions; until then, the current password continues
-to work.
-
-After you choose an action, the CLI shows the selected instance, target
-environment, dashboard location, and operation before prompting or changing
-anything. A saved local-only instance automatically uses its local data; its
-name is enough. Email changes and password resets update only that local
-instance:
-
-```console
-yarn manage auth change-email \
-  --instance microfeed-org-local \
-  --owner-email new-owner@example.com
-
-yarn manage auth reset-password \
-  --instance microfeed-org-local
-
-yarn manage auth disable \
-  --instance microfeed-org-local
-```
-
-The local password reset uses hidden password and confirmation prompts, hashes
-the replacement password, and signs out existing local sessions. Local disable
-keeps the account, credentials, and local D1/R2 data; restart the development
-server afterward.
-
-For a Cloudflare-connected instance, auth commands target Cloudflare by
-default. Add `--local` only when you intentionally want that instance's
-separate local development sandbox. Use `--preview` to target its preview
-deployment. A connected site's local sandbox cannot override the saved
-production authentication mode. Changing the dashboard path is Cloudflare-only.
-
-To move the dashboard to a new path:
-
-```console
-yarn manage auth change-path \
-  --instance my-podcast-custom-com \
-  --admin-path dashboard
-```
-
-Remote automation can instead supply `--admin-password <value>` to production
-or preview initialization, `auth setup`, or `auth reset-password`. This is intentionally
-unsafe because command arguments can appear in shell history, process listings,
-agent transcripts, and CI logs. microfeed validates the same 12–128 character
-policy, never prints or saves the raw value, and sends only its hash to D1.
-Codex never uses this option, and local instances reject it.
-
-To disable the built-in login:
-
-```console
-yarn manage auth disable --instance my-podcast-custom-com
-```
-
-The command first checks whether Cloudflare Access protects the dashboard. It
-warns before making the dashboard public, then redeploys only after you
-confirm. The existing account and credentials are preserved, so
-`yarn manage auth setup` can restore the built-in login later.
-
-Changing the admin address redeploys the Worker and verifies the new address.
-The old address returns 404.
-
-[Back to 📚TOC](#-table-of-contents)
-
-#### Update to the latest version of microfeed
-
-We will continue to add features and fix bugs in this repository.
-
-If you use an AI agent, pull the latest code into your local Git copy of the
-repository from the `microfeed` folder:
-
-```console
-git pull --ff-only
-```
-
-Then open that folder in the agent again and send:
-
-```text
-Deploy microfeed again to update my existing site.
-```
-
-That's it. The agent installs any updated dependencies, deploys the latest
-version, and verifies the site.
-
-If you prefer to update manually, run:
-
-```console
-corepack enable
-yarn install
-yarn manage deploy
-```
-
-If one local Git copy manages several installations, add `--instance <name>`
-to deploy the one you want to update.
+The documentation site covers advanced setup and ongoing management:
+
+* [Manage your site](https://docs.microfeed.org/manage/)
+* [Update microfeed](https://docs.microfeed.org/manage/update/)
+* [Add a custom domain and manage authentication](https://docs.microfeed.org/manage/domains-and-access/)
+* [Manage multiple local, production, and preview instances](https://docs.microfeed.org/manage/multiple-instances/)
+* [Create snapshots and migrate older Pages installations](https://docs.microfeed.org/manage/backups-and-migrations/)
+* [Check status and troubleshoot problems](https://docs.microfeed.org/manage/troubleshooting/)
+* [Remove a deployment safely](https://docs.microfeed.org/manage/remove/)
+
+For exact CLI behavior and safeguards, use the [canonical `yarn manage`
+reference](https://docs.microfeed.org/manage-cli/).
 
 [Back to 📚TOC](#-table-of-contents)
 
@@ -789,7 +163,7 @@ external URLs in content-only mode; and customize your site.
 
 You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
 
-<img width="1098" alt="Screenshot 2022-12-30 at 7 57 45 PM" src="https://user-images.githubusercontent.com/1719237/210062910-e56135f6-557e-419e-a00d-b25dd391c93d.png">
+![Editing a microfeed website with raw HTML, CSS, and dynamic feed variables](docs/public/images/screenshots/4-code-editor-1.png)
 
 The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a templating language, where you can access to variables from Feed Json or Item Json. For example, on our marketing website [microfeed.org](https://www.microfeed.org/)'s home page (Feed Web), we use variables in the html code from [microfeed.org/json/](https://www.microfeed.org/json/), and on [an item's page](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/) (Item Web), we use variables from [${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json).
 
