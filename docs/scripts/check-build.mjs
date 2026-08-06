@@ -1,8 +1,22 @@
-import {access, readFile, stat} from "node:fs/promises";
+import {access, readFile, readdir, rm, stat} from "node:fs/promises";
 import path from "node:path";
 
 const docsRoot = path.resolve(import.meta.dirname, "..");
 const outputRoot = path.join(docsRoot, "dist");
+
+async function removeOperatingSystemMetadata(directory) {
+  const entries = await readdir(directory, {withFileTypes: true});
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.name === ".DS_Store") {
+      await rm(entryPath);
+    } else if (entry.isDirectory()) {
+      await removeOperatingSystemMetadata(entryPath);
+    }
+  }
+}
+
+await removeOperatingSystemMetadata(outputRoot);
 
 const requiredArtifacts = [
   "index.html",

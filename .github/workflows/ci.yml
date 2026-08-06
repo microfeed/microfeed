@@ -28,3 +28,5 @@ jobs:
         run: yarn build
       - name: Verify the Worker bundle
         run: yarn wrangler deploy --dry-run --strict --config dist/server/wrangler.json
+      - name: Check documentation
+        run: yarn docs:check
