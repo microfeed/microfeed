@@ -17,7 +17,7 @@ integration.
    open the generated documentation formats without an API key.
 
 The switches save immediately. Turning API access off also unpublishes the API
-docs and makes `/api/*` routes return not found. Existing keys remain in the
+docs and makes `/api/v1/*` routes return not found. Existing keys remain in the
 database so they can work again if access is deliberately re-enabled.
 
 ## Create a named API key

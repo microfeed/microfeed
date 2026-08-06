@@ -31,6 +31,11 @@ The agent should discover your Cloudflare login, ask you to choose an account
 if more than one is available, initialize a site, and verify the finished
 deployment.
 
+<video class="docs-walkthrough" controls autoplay muted playsinline preload="metadata" poster="/images/screenshots/1-deploy-1.png" aria-label="A silent Codex deployment walkthrough progressing from the initial request through verification to the ready microfeed dashboard">
+  <source src="/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">
+  <a href="/images/screenshots/1-deploy-walkthrough.mp4">Watch the microfeed deployment walkthrough.</a>
+</video>
+
 ## 3. Complete browser handoffs
 
 Stay nearby for these steps:

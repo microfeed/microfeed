@@ -16,7 +16,8 @@ export default defineConfig({
         alt: "microfeed by Listen Notes",
         replacesTitle: true,
       },
-      favicon: "/favicon.svg",
+      favicon:
+        "https://media-cdn.microfeed.org/production/images/favicon-99ed35713d5dad0bb07a4255ec6d73b2.png",
       customCss: ["./src/styles/custom.css"],
       head: [
         {
@@ -42,9 +43,9 @@ export default defineConfig({
       sidebar: [
         { label: "Home", link: "/" },
         {
-          label: "Start here",
+          label: "Installation",
           items: [
-            { label: "Choose your path", link: "/start-here/" },
+            { label: "Quick start", link: "/start-here/" },
             { label: "How microfeed works", link: "/start-here/concepts/" },
             { label: "Deploy with an AI agent", link: "/start-here/ai-agent/" },
             { label: "Deploy manually", link: "/start-here/manual/" },
@@ -56,7 +57,8 @@ export default defineConfig({
           items: [
             { label: "Dashboard tour", link: "/dashboard/" },
             { label: "Create and edit items", link: "/dashboard/publish/" },
-            { label: "Channel, media, and feeds", link: "/dashboard/channel-and-feeds/" },
+            { label: "Edit channel", link: "/dashboard/edit-channel/" },
+            { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
             { label: "Themes, access, and custom code", link: "/dashboard/customize/" },
           ],
         },
@@ -101,7 +103,7 @@ export default defineConfig({
           description:
             "microfeed is an open-source, self-hosted CMS that publishes one collection as a website, RSS feed, and JSON feed from Cloudflare.",
           details:
-            "Use the Start here guides for deployment workflows. Use the yarn manage reference for exact command behavior and safety rules.",
+            "Use the Installation guides for deployment workflows. Use the yarn manage reference for exact command behavior and safety rules.",
           promote: ["index", "start-here/**", "manage-cli"],
           demote: ["contribute/**"],
           customSets: [

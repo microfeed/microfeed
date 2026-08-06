@@ -62,8 +62,8 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* At 90rem wide, this reduces the default 11.25rem homepage gutters by one-third. */
-html[data-has-hero]:not([data-has-sidebar]) {
+/* Keep the homepage wide after restoring the documentation sidebar. */
+html[data-has-hero][data-has-sidebar]:not([data-has-toc]) {
   --sl-content-width: 75rem;
 }
 
@@ -76,6 +76,14 @@ html[data-has-hero]:not([data-has-sidebar]) {
   width: 10.5rem;
   max-height: 2.65rem;
   object-fit: contain;
+}
+
+.sl-markdown-content .docs-walkthrough {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
 }
 
 .hero {
@@ -437,39 +445,6 @@ html[data-has-hero]:not([data-has-sidebar]) {
   color: var(--sl-color-gray-2);
 }
 
-.quick-start-list {
-  width: 100%;
-  min-width: 0;
-  max-width: 48rem;
-  margin-block: 0 1.25rem;
-}
-
-.quick-start-list > ol {
-  margin-block: 0;
-}
-
-.quick-start-list li + li {
-  margin-top: 1.25rem;
-}
-
-.quick-start-list p {
-  margin-bottom: 0.5rem;
-}
-
-.quick-start-list .expressive-code {
-  max-width: 100%;
-  margin-block: 0;
-}
-
-.quick-start-list .expressive-code pre,
-.quick-start-list .expressive-code code,
-.quick-start-list .expressive-code .ec-line,
-.quick-start-list .expressive-code .code {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
 .feature-list {
   max-width: 55rem;
   padding-inline-start: 1.25rem;
@@ -498,6 +473,10 @@ html[data-has-hero]:not([data-has-sidebar]) {
 }
 
 @media (max-width: 50rem) {
+  .hero > .hero-html {
+    margin-block-start: clamp(2.5rem, 10vw, 4rem);
+  }
+
   .why-grid {
     grid-template-columns: 1fr;
   }
@@ -507,8 +486,18 @@ html[data-has-hero]:not([data-has-sidebar]) {
   }
 }
 
-@media (min-width: 50rem) {
-  :root[data-has-hero] .hero {
+@media (min-width: 50rem) and (max-width: 89.999rem) {
+  :root[data-has-hero][data-has-sidebar] .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root[data-has-hero][data-has-sidebar] .hero > .hero-html {
+    margin-block-start: clamp(2.5rem, 6vw, 4rem);
+  }
+}
+
+@media (min-width: 90rem) {
+  :root[data-has-hero][data-has-sidebar] .hero {
     grid-template-columns: 8fr 5fr;
   }
 }

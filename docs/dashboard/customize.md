@@ -27,6 +27,8 @@ change the public theme.
 The custom-theme code editor is available from the theme settings when the
 custom option is selected.
 
+![Editing a custom microfeed web theme with raw HTML, CSS classes, Mustache variables, and pagination controls](/images/screenshots/4-code-editor-1.png)
+
 ## Custom code
 
 Custom code can add markup, CSS, or supported integration snippets to the public

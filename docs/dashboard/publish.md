@@ -20,6 +20,8 @@ Expected result: a success notification appears, and the item becomes available
 from the channel’s item list. If public visibility is enabled, use the external
 link to inspect the page.
 
+![Creating a new microfeed item with media type, upload, image, title, publication, visibility, and description controls](/images/screenshots/2-dashboard-2-add-item.png)
+
 ## Upload media
 
 Media uploads require an R2 bucket attached to the instance. If the uploader is

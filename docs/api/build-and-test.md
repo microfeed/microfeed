@@ -17,10 +17,10 @@ for the feed endpoint. Choose a key and run the example from the dashboard.
 
 ## Call the API from code
 
-Use the instance origin, `/api/` base path, and Bearer authentication:
+Use the instance origin, `/api/v1/` base path, and Bearer authentication:
 
 ```js
-const response = await fetch("https://feed.example.com/api/feed/?limit=3", {
+const response = await fetch("https://feed.example.com/api/v1/feed/?limit=3", {
   headers: {
     Authorization: `Bearer ${process.env.MICROFEED_API_KEY}`,
   },
@@ -44,7 +44,7 @@ instead of constructing cursors yourself. To start a listing, choose
 
 Media upload is a three-part flow:
 
-1. Call `POST /api/media_files/presigned_urls/` with the file category, intended
+1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
    item ID, and local filename information required by the schema.
 2. `PUT` the raw file bytes to the returned short-lived `presigned_url`.
 3. Save the returned `media_url` on the item or channel through the appropriate
@@ -57,7 +57,9 @@ upload destination.
 ## Design for changes
 
 - Generate clients or validate requests against the instance’s current
-  `/api/openapi.json` or `/api/openapi.yaml`.
+  [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) at
+  `/api/v1/openapi.json` or [OpenAPI YAML](https://www.microfeed.org/api/v1/openapi.yaml)
+  at `/api/v1/openapi.yaml`.
 - Treat unknown response fields as forward-compatible additions.
 - Handle documented 400, 401, 404, and 503 responses explicitly.
 - Do not scrape the admin dashboard or reuse its browser session.

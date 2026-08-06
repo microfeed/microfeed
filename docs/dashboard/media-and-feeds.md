@@ -1,24 +1,18 @@
 ---
-title: Channel, media, and feeds
-description: Configure channel identity, public URLs, subscribe methods, media storage, and feed ordering.
+title: Media and feeds
+description: Configure subscribe methods, media file URLs, public feed ordering, and the favicon under Settings.
 ---
 
-Open **Settings** to manage the channel that contains your items.
-
-## Channel identity
-
-Set the channel image, title, publisher, website, language, categories, and
-description. The channel image also acts as the default favicon until you
-upload a separate favicon.
-
-After saving, use the **Public access** links to inspect the website, RSS feed,
-and JSON feed.
+Open **Settings** for the controls on this page. Editing the channel’s image,
+title, publisher, website, categories, language, or description happens on the
+separate [Edit channel](/dashboard/edit-channel/) page.
 
 ## Subscribe methods
 
-Subscribe methods are public destinations such as RSS, JSON, Apple Podcasts,
-or another listening service. For each method, set its name, URL, visibility,
-and order. Only advertise a destination you have verified.
+Select **Subscribe methods** in the settings navigation. Subscribe methods are
+public destinations such as RSS, JSON, Apple Podcasts, or another listening
+service. For each method, set its name, URL, visibility, and order. Only
+advertise a destination you have verified.
 
 ## Media file storage
 
@@ -43,3 +37,4 @@ Without a separate favicon, public pages use the channel image. Upload, replace,
 or delete the favicon from its settings section; the action saves immediately.
 Browsers cache favicons aggressively, so a replacement may need a hard refresh
 or a new private window before it appears.
+

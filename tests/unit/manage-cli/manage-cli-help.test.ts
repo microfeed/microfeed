@@ -91,7 +91,7 @@ describe("management CLI help and canonical reference", () => {
       repositoryFile(".agents/skills/deploy-microfeed/SKILL.md"),
     ]);
 
-    expect(readme).toMatch(/\]\(docs\/manage-cli\.md\)/u);
+    expect(readme).toContain("https://docs.microfeed.org/manage-cli/");
     expect(agents).toContain("`docs/manage-cli.md`");
     expect(skill).toContain("../../../docs/manage-cli.md");
   });

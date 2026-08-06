@@ -49,17 +49,207 @@ describe("documentation site", () => {
     expect(mdxFiles).toEqual(["index.mdx"]);
   });
 
-  it("keeps the initial documentation release free of content images", async () => {
-    const files = await documentationFiles();
-    for (const file of files) {
-      const source = await readFile(file, "utf8");
-      expect(source, file).not.toMatch(/!\[[^\]]*\]\([^)]+\)/u);
-      expect(source, file).not.toMatch(/<img\b/u);
-      expect(source, file).not.toContain("/screenshots/");
+  it("publishes optimized screenshots with descriptive placement", async () => {
+    const screenshotRoot = path.join(
+      docsRoot,
+      "public",
+      "images",
+      "screenshots",
+    );
+    const expectedAssets = [
+      "1-deploy-1.png",
+      "1-deploy-2.png",
+      "1-deploy-3.png",
+      "1-deploy-4.png",
+      "1-deploy-5.png",
+      "1-deploy-6.png",
+      "1-deploy-walkthrough.mp4",
+      "2-dashboard-1-home.png",
+      "2-dashboard-2-add-item.png",
+      "2-dashboard-2-edit-channel.png",
+      "2-dashboard-overview-desktop.png",
+      "2-dashboard-overview-mobile.png",
+      "3-api-1.png",
+      "4-code-editor-1.png",
+    ];
+    for (const asset of expectedAssets) {
+      const metadata = await stat(path.join(screenshotRoot, asset));
+      expect(metadata.isFile(), asset).toBe(true);
+      expect(metadata.size, asset).toBeGreaterThan(1_000);
     }
 
-    await expect(stat(path.join(docsRoot, "public", "screenshots")))
-      .rejects.toThrow();
+    const video = await readFile(path.join(
+      screenshotRoot,
+      "1-deploy-walkthrough.mp4",
+    ));
+    expect(video.subarray(4, 8).toString("ascii")).toBe("ftyp");
+    expect(video.byteLength).toBeLessThan(1_500_000);
+    for (const composite of [
+      "2-dashboard-overview-desktop.png",
+      "2-dashboard-overview-mobile.png",
+    ]) {
+      const png = await readFile(path.join(screenshotRoot, composite));
+      expect([...png.subarray(0, 8)]).toEqual([
+        137,
+        80,
+        78,
+        71,
+        13,
+        10,
+        26,
+        10,
+      ]);
+      expect(png.byteLength, composite).toBeLessThan(500_000);
+    }
+
+    const placements = new Map([
+      ["dashboard/index.md", "2-dashboard-1-home.png"],
+      ["dashboard/edit-channel.md", "2-dashboard-2-edit-channel.png"],
+      ["dashboard/publish.md", "2-dashboard-2-add-item.png"],
+      ["api/index.md", "3-api-1.png"],
+      ["dashboard/customize.md", "4-code-editor-1.png"],
+    ]);
+    for (const [file, asset] of placements) {
+      const source = await readFile(path.join(docsRoot, file), "utf8");
+      expect(source, file).toContain(`](/images/screenshots/${asset})`);
+      expect(source, file).toMatch(
+        new RegExp(`!\\[[^\\]]+\\]\\(/images/screenshots/${asset}\\)`, "u"),
+      );
+    }
+
+    const deploymentGuide = await readFile(
+      path.join(docsRoot, "start-here/ai-agent.md"),
+      "utf8",
+    );
+    expect(deploymentGuide).toContain(
+      '<video class="docs-walkthrough" controls autoplay muted playsinline preload="metadata"',
+    );
+    expect(deploymentGuide).toContain(
+      '<source src="/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">',
+    );
+    expect(deploymentGuide).toContain(
+      'aria-label="A silent Codex deployment walkthrough',
+    );
+
+    const readme = await readFile(
+      path.join(repositoryRoot, "README.md"),
+      "utf8",
+    );
+    expect(readme).toContain(
+      '<video controls autoplay muted playsinline preload="metadata"',
+    );
+    expect(readme).toContain(
+      '<source media="(max-width: 700px)" srcset="docs/public/images/screenshots/2-dashboard-overview-mobile.png">',
+    );
+    expect(readme).toContain(
+      'src="docs/public/images/screenshots/2-dashboard-overview-desktop.png"',
+    );
+    expect(readme).toContain(
+      '<source src="docs/public/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">',
+    );
+    expect(readme).toContain(
+      "](docs/public/images/screenshots/4-code-editor-1.png)",
+    );
+    expect(readme).not.toContain(
+      "Throughout this guide, the **microfeed admin dashboard** means",
+    );
+  });
+
+  it("keeps Edit channel separate from Settings", async () => {
+    const dashboardTour = await readFile(
+      path.join(docsRoot, "dashboard/index.md"),
+      "utf8",
+    );
+    expect(dashboardTour).toContain(
+      "**Edit channel** manages the channel image, title, publisher, website,",
+    );
+    expect(dashboardTour).toContain(
+      "It does not\ncontain the **Edit channel** form.",
+    );
+    expect(dashboardTour).not.toContain(
+      "**Settings** manages channel identity and description",
+    );
+
+    const editChannelGuide = await readFile(
+      path.join(docsRoot, "dashboard/edit-channel.md"),
+      "utf8",
+    );
+    expect(editChannelGuide).toContain(
+      "Select **Edit channel** in the left navigation.",
+    );
+    expect(editChannelGuide).not.toContain(
+      "Open **Settings** for the controls on this page.",
+    );
+
+    const docsConfig = await readFile(
+      path.join(docsRoot, "astro.config.ts"),
+      "utf8",
+    );
+    expect(docsConfig).toContain(
+      '{ label: "Edit channel", link: "/dashboard/edit-channel/" }',
+    );
+    expect(docsConfig).toContain(
+      '{ label: "Media and feeds", link: "/dashboard/media-and-feeds/" }',
+    );
+
+    const mediaAndFeedsGuide = await readFile(
+      path.join(docsRoot, "dashboard/media-and-feeds.md"),
+      "utf8",
+    );
+    expect(mediaAndFeedsGuide).toContain(
+      "Open **Settings** for the controls on this page.",
+    );
+    expect(mediaAndFeedsGuide).toContain(
+      "separate [Edit channel](/dashboard/edit-channel/) page.",
+    );
+    expect(mediaAndFeedsGuide).not.toContain(
+      "## Channel identity",
+    );
+  });
+
+  it("links generated API references to the public versioned demo", async () => {
+    const demoUrls = [
+      "https://www.microfeed.org/api/v1/",
+      "https://www.microfeed.org/api/v1/openapi.json",
+      "https://www.microfeed.org/api/v1/openapi.yaml",
+      "https://www.microfeed.org/api/v1/llms.txt",
+      "https://www.microfeed.org/api/v1/llms-full.txt",
+    ];
+    const readme = await readFile(
+      path.join(repositoryRoot, "README.md"),
+      "utf8",
+    );
+    const apiOverview = await readFile(
+      path.join(docsRoot, "api/index.md"),
+      "utf8",
+    );
+    for (const url of demoUrls) {
+      expect(readme).toContain(`](${url})`);
+      expect(apiOverview).toContain(`](${url})`);
+    }
+    expect(apiOverview).toContain("`GET /api/v1/feed/`");
+    expect(apiOverview).not.toContain("`GET /api/feed/`");
+    expect(apiOverview).not.toContain("`<site-origin>/api/`");
+
+    const agentGuide = await readFile(
+      path.join(docsRoot, "api/ai-agents.md"),
+      "utf8",
+    );
+    expect(agentGuide).toContain(
+      "Read https://www.microfeed.org/api/v1/llms-full.txt",
+    );
+    expect(agentGuide).not.toContain("feed.example.com/api/llms-full.txt");
+
+    const integrationGuide = await readFile(
+      path.join(docsRoot, "api/build-and-test.md"),
+      "utf8",
+    );
+    expect(integrationGuide).toContain(
+      "https://feed.example.com/api/v1/feed/?limit=3",
+    );
+    expect(integrationGuide).not.toContain(
+      "https://feed.example.com/api/feed/?limit=3",
+    );
   });
 
   it("keeps the homepage concise and links readers to deeper guidance", async () => {
@@ -126,10 +316,10 @@ describe("documentation site", () => {
     expect(homepage).toContain(
       "Standard R2 includes 10 GB-month of storage and free egress",
     );
-    expect(homepage.replaceAll(/<[^>]+>/gu, "")).toContain(
-      "Deploy microfeed to Cloudflare.",
+    expect(homepage).not.toContain("<h2>Quick start</h2>");
+    expect(homepage).not.toContain(
+      "git clone https://github.com/microfeed/microfeed.git",
     );
-    expect(homepage).toContain("/start-here/ai-agent/");
 
     for (const topic of [
       "podcasts",
@@ -148,17 +338,13 @@ describe("documentation site", () => {
     );
     expect(homepage.match(/class="cloudflare-brand"/gu)).toHaveLength(4);
     expect(homepage).toContain(
-      "```console\n   git clone https://github.com/microfeed/microfeed.git\n   ```",
-    );
-    expect(homepage).toContain(
-      "```text frame=\"terminal\"\n   Deploy microfeed to Cloudflare.\n   ```",
-    );
-    expect(homepage).toContain(
       '<footer class="home-attribution" aria-label="Site attribution">',
     );
     expect(homepage).toContain(
       '<a href="https://www.listennotes.com" target="_blank" rel="noreferrer">Listen Notes, Inc.',
     );
+    expect(homepage).toContain("template: doc");
+    expect(homepage).toContain("tableOfContents: false");
     expect(homepage).toContain(
       '<a class="home-cloudflare-link" href="https://www.cloudflare.com" target="_blank" rel="noreferrer">Cloudflare',
     );
@@ -166,6 +352,25 @@ describe("documentation site", () => {
       ", not affiliated with <a class=\"home-cloudflare-link\"",
     );
     expect(homepage).not.toContain("<pre><code>");
+
+    const quickStart = await readFile(
+      path.join(docsRoot, "start-here", "index.md"),
+      "utf8",
+    );
+    expect(quickStart).toContain("title: Quick start");
+    expect(quickStart).toContain("## Before you begin");
+    expect(quickStart).toContain("## Deploy with an agent");
+    expect(quickStart).toContain("```console wrap");
+    expect(quickStart).toContain(
+      "git clone https://github.com/microfeed/microfeed.git",
+    );
+    expect(quickStart).toContain("cd microfeed");
+    expect(quickStart).toContain('```text frame="terminal" wrap');
+    expect(quickStart).toContain("Deploy microfeed to Cloudflare.");
+    expect(quickStart).toContain("## Confirm the installation");
+    expect(quickStart).toContain("`yarn manage status`");
+    expect(quickStart).toContain("[Deploy with an AI coding agent](./ai-agent/)");
+    expect(quickStart).toContain("[Deploy manually](./manual/)");
 
     const customCss = await readFile(
       path.join(docsRoot, "src", "styles", "custom.css"),
@@ -203,13 +408,19 @@ describe("documentation site", () => {
       /\.r2-capacity-card \{[\s\S]*?border-radius: 1\.5rem;[\s\S]*?var\(--sl-color-black\);/u,
     );
     expect(customCss).toMatch(
-      /html\[data-has-hero\]:not\(\[data-has-sidebar\]\) \{[\s\S]*?--sl-content-width: 75rem;/u,
+      /html\[data-has-hero\]\[data-has-sidebar\]:not\(\[data-has-toc\]\) \{[\s\S]*?--sl-content-width: 75rem;/u,
     );
     expect(customCss).toMatch(
       /\.hero > \.hero-html \{[\s\S]*?width: min\(100%, 34rem\);/u,
     );
     expect(customCss).toMatch(
-      /@media \(min-width: 50rem\) \{[\s\S]*?grid-template-columns: 8fr 5fr;/u,
+      /@media \(min-width: 90rem\) \{[\s\S]*?grid-template-columns: 8fr 5fr;/u,
+    );
+    expect(customCss).toMatch(
+      /@media \(max-width: 50rem\) \{[\s\S]*?\.hero > \.hero-html \{[\s\S]*?margin-block-start: clamp\(2\.5rem, 10vw, 4rem\);/u,
+    );
+    expect(customCss).toMatch(
+      /@media \(min-width: 50rem\) and \(max-width: 89\.999rem\) \{[\s\S]*?\[data-has-hero\]\[data-has-sidebar\] \.hero \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/u,
     );
     expect(customCss).toMatch(
       /\.r2-capacity-card::before \{[\s\S]*?var\(--microfeed-sky\),[\s\S]*?var\(--cloudflare-orange\)/u,
@@ -238,16 +449,14 @@ describe("documentation site", () => {
     expect(customCss).toMatch(
       /\.hero-topic-line \{[\s\S]*?display: inline-flex;[\s\S]*?column-gap: 0\.18em;/u,
     );
-    expect(customCss).toMatch(
-      /\.quick-start-list \.expressive-code pre,[\s\S]*?\.quick-start-list \.expressive-code \.code \{[\s\S]*?overflow-wrap: anywhere;[\s\S]*?white-space: pre-wrap;/u,
-    );
+    expect(customCss).not.toContain(".quick-start-list");
     expect(customCss).toContain("@keyframes rotate-homepage-topic");
     expect(customCss).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.rotating-topic-track \{[\s\S]*?animation: none;/u,
     );
 
     for (const route of [
-      "/dashboard/channel-and-feeds/",
+      "/dashboard/media-and-feeds/",
       "/dashboard/publish/",
       "/dashboard/",
       "/dashboard/customize/",
@@ -286,6 +495,7 @@ describe("documentation site", () => {
         ...source.matchAll(/^\s+link: (\/[^\s#?]+)(?:[?#].*)?$/gmu),
       ].flatMap((match) => match[1] ? [match[1]] : []);
       for (const link of links) {
+        if (link.startsWith("/images/")) continue;
         expect(routes.has(link), `${file}: ${link}`).toBe(true);
       }
     }
@@ -309,6 +519,15 @@ describe("documentation site", () => {
     );
     expect(docsConfig).not.toContain("Documentation style");
     expect(docsConfig).not.toContain("Publish the docs site");
+    expect(docsConfig).toContain('label: "Installation"');
+    expect(docsConfig).toContain(
+      '{ label: "Quick start", link: "/start-here/" }',
+    );
+    expect(docsConfig).not.toContain('label: "Start here"');
+    expect(docsConfig).not.toContain('label: "Choose your path"');
+    expect(docsConfig).toContain(
+      'favicon:\n        "https://media-cdn.microfeed.org/production/images/favicon-99ed35713d5dad0bb07a4255ec6d73b2.png"',
+    );
 
     const documentationSkill = await readFile(path.join(
       repositoryRoot,
@@ -324,15 +543,54 @@ describe("documentation site", () => {
     expect(documentationSkill).toContain("docs.microfeed.org");
   });
 
-  it("keeps the README short and assigns detailed guidance to docs", async () => {
+  it("preserves the README overview and assigns installation details to docs", async () => {
     const readme = await readFile(
       path.join(repositoryRoot, "README.md"),
       "utf8",
     );
-    expect(readme.length).toBeLessThan(12_000);
-    expect(readme).toContain("https://docs.microfeed.org/");
+    expect(readme).toContain(
+      '<h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>',
+    );
+    expect(readme).toContain("## ⭐️ How it works");
+    expect(readme).toContain("### Quickstarts");
+    expect(readme).toContain("## ✍️ Start publishing");
+    expect(readme).toContain("## 💻 FAQs");
+    expect(readme).toContain("## 💪 Contributions");
+    expect(readme).toContain("## 🛡️ License");
     expect(readme).toContain("Deploy microfeed to Cloudflare.");
-    expect(readme).toContain("docs/manage-cli.md");
+
+    const details = readme.slice(
+      readme.indexOf("### Details"),
+      readme.indexOf("### Advanced"),
+    );
+    const advanced = readme.slice(
+      readme.indexOf("### Advanced"),
+      readme.indexOf("## ✍️ Start publishing"),
+    );
+    expect(details.length).toBeLessThan(1_500);
+    expect(details).toContain(
+      "https://docs.microfeed.org/start-here/ai-agent/",
+    );
+    expect(details).toContain("https://docs.microfeed.org/start-here/manual/");
+    expect(details).toContain("https://docs.microfeed.org/manage-cli/");
+    expect(details).not.toContain("#### Method");
+    expect(advanced.length).toBeLessThan(2_500);
+    expect(advanced).toContain("https://docs.microfeed.org/manage/");
+    expect(advanced).toContain("https://docs.microfeed.org/manage/update/");
+    expect(advanced).toContain(
+      "https://docs.microfeed.org/manage/domains-and-access/",
+    );
+    expect(advanced).toContain(
+      "https://docs.microfeed.org/manage/multiple-instances/",
+    );
+    expect(advanced).toContain(
+      "https://docs.microfeed.org/manage/backups-and-migrations/",
+    );
+    expect(advanced).toContain(
+      "https://docs.microfeed.org/manage/troubleshooting/",
+    );
+    expect(advanced).toContain("https://docs.microfeed.org/manage/remove/");
+    expect(advanced).toContain("https://docs.microfeed.org/manage-cli/");
 
     const manageReference = await readFile(
       path.join(docsRoot, "manage-cli.md"),

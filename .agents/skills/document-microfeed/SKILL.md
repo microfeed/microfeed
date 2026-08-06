@@ -54,10 +54,12 @@ levels sequential, use descriptive link text, and tag code fences.
 - Keep maintainer-only publishing and writing procedures in this skill rather
   than exposing them as public docs pages.
 
-The initial documentation release contains no content illustrations. When a
-user explicitly adds screenshots later, use sanitized demo data, descriptive
-filenames, useful alt text, optimized assets, and documented viewport
-conventions. Never let an image be the only instruction.
+Store documentation screenshots under `docs/public/images/screenshots/`. Use
+public or demo content, remove private emails, account IDs, credentials, and
+setup links, and give every image a descriptive filename and useful alt text.
+Keep source captures replaceable, optimize generated composites and animation,
+and provide desktop and mobile variants when layout changes materially. Never
+let an image be the only instruction.
 
 ## Validate documentation changes
 

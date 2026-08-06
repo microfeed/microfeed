@@ -6,19 +6,25 @@ description: Give a coding agent a self-contained, instance-specific API contrac
 When public API docs are enabled, each instance publishes two plain-text files
 for coding agents:
 
-- `/api/llms.txt` is a compact index of operations and links.
-- `/api/llms-full.txt` is a self-contained guide containing every operation,
+- [`/api/v1/llms.txt`](https://www.microfeed.org/api/v1/llms.txt) is a compact
+  index of operations and links.
+- [`/api/v1/llms-full.txt`](https://www.microfeed.org/api/v1/llms-full.txt) is a
+  self-contained guide containing every operation,
   parameter, request body, response, reusable schema, and the complete OpenAPI
   3.1.1 document.
 
 ## Give an agent the contract
 
-Replace the origin and paste this prompt into an agent that can read public
-URLs:
+The microfeed.org demo keeps its reference public. Paste this prompt into an
+agent that can read public URLs:
 
 ```text
-Read https://feed.example.com/api/llms-full.txt so I can ask you questions and build with this microfeed API.
+Read https://www.microfeed.org/api/v1/llms-full.txt so I can ask you questions and build with this microfeed API.
 ```
+
+For code that targets another microfeed instance, replace
+`https://www.microfeed.org` with that instance’s origin so the agent reads the
+contract for the deployed version it will call.
 
 The dashboard’s **API Overview** page generates the exact prompt for the
 current instance and provides a copy button.

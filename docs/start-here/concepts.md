@@ -40,9 +40,14 @@ When you publish an item, microfeed can expose it as:
 3. An entry in the JSON feed at `/json/`.
 
 The public JSON Feed is read-only. Separately, an instance owner can enable the
-authenticated API for integrations that create and manage content. That API can
-publish interactive docs, OpenAPI JSON and YAML, and agent-ready `llms.txt`
-files under `/api/`.
+authenticated API for integrations that create and manage content. See the
+public microfeed.org examples: [interactive docs](https://www.microfeed.org/api/v1/),
+[OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json),
+[OpenAPI YAML](https://www.microfeed.org/api/v1/openapi.yaml),
+[llms.txt](https://www.microfeed.org/api/v1/llms.txt), and
+[llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt). Each instance
+publishes the same resources under its versioned `/api/v1/` path when public
+API docs are enabled.
 
 ## What the local management tool changes
 

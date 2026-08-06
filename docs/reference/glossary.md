@@ -14,8 +14,9 @@ stored by the explorer.
 
 **API key**
 A secret credential created for one integration. Send it as a Bearer credential
-to enabled `/api/` operations. Use a separate named key for each integration so
-it can be rotated or revoked independently.
+to enabled [`/api/v1/` operations](https://www.microfeed.org/api/v1/). Use a
+separate named key for each integration so it can be rotated or revoked
+independently.
 
 **Channel**
 The collection identity shared by a public website, RSS feed, and JSON feed.
