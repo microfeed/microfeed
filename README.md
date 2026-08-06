@@ -120,10 +120,9 @@ That's it. The agent guides the setup, runs the deployment, and verifies the
 finished site. You only step in for Cloudflare browser authorization, choices
 that require your approval, and creating your private dashboard password.
 
-<video controls autoplay muted playsinline preload="metadata" poster="docs/public/images/screenshots/1-deploy-1.png" aria-label="Codex deploying microfeed to Cloudflare, followed by the ready microfeed dashboard">
-  <source src="docs/public/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">
-  <a href="docs/public/images/screenshots/1-deploy-walkthrough.mp4">Watch the microfeed deployment walkthrough.</a>
-</video>
+https://github.com/user-attachments/assets/d5629387-977c-4322-b231-589cdfbfe73e
+
+
 
 ### Details
 
