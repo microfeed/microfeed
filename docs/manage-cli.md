@@ -86,7 +86,7 @@ use this `yarn manage` interface.
 
 | Command | Purpose | External effect |
 | --- | --- | --- |
-| `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local OAuth profiles and the repository binding |
+| `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local Wrangler login profiles and the repository binding |
 | `init` | Initialize production, preview, or local installation | Creates or updates Cloudflare resources, or local-only state |
 | `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
 | `deploy` | Check, migrate, deploy, verify, or prepare a local release | Updates Worker code and D1 migrations, or only local state with `--local` |
@@ -148,7 +148,7 @@ keeps the automatic state, and prints the exact `deploy --enable-r2` command.
 
 **Purpose:** Authorize Cloudflare and list available accounts.
 
-**Changes:** Read-only Cloudflare discovery; may update local OAuth profiles
+**Changes:** Read-only Cloudflare discovery; may update local Wrangler login profiles
 and the repository binding.
 
 Authorize Cloudflare and list every account available to the active Wrangler
@@ -167,7 +167,7 @@ accounts belong only to the active profile; inactive profiles remain stored
 but are not queried. Wrangler's `default` profile is a fallback login rather
 than a named profile selected by this option.
 
-Use `--profile <name>` to create or select a named Wrangler OAuth login and
+Use `--profile <name>` to create or select a named Wrangler browser login and
 bind it to this local Git copy of the repository. If the profile does not yet
 exist, the command opens Cloudflare authorization to create it. If it already
 exists, the command selects it without changing its credentials. Add
@@ -183,10 +183,10 @@ yarn manage accounts [--json] [--profile <name>] [--reauthorize]
 | Option | Meaning |
 | --- | --- |
 | `--json` | Print the login, active profile, all profiles with active markers, and `{name, id}` accounts as JSON. |
-| `--profile <name>` | Create or select a named Wrangler OAuth login and bind it to this local repository. |
+| `--profile <name>` | Create or select a named Wrangler browser login and bind it to this local repository. |
 | `--reauthorize` | Force fresh browser authorization, for example when the desired account is missing. |
 
-OAuth rejection, missing permissions, zero accounts, or an unavailable browser
+Browser authorization rejection, missing permissions, zero accounts, or an unavailable browser
 callback fail before resource creation.
 
 ## `yarn manage init`
@@ -742,6 +742,12 @@ configuration and its generated Wrangler file.
 
 Manage the built-in administrator login and path.
 
+When you are already signed in and know the current password, use the
+dashboard's [**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
+for a routine email or password change. Use this command for setup,
+forgotten-password recovery, dashboard-path changes, disabling login, or
+administration from the connected clone.
+
 ```console
 yarn manage auth <setup|reset-password|change-email|change-path|disable> [options]
 ```
@@ -749,10 +755,10 @@ yarn manage auth <setup|reset-password|change-email|change-path|disable> [option
 | Action | Effect |
 | --- | --- |
 | `setup` | Remotely, enable the built-in login and create a first-password browser link when needed; locally, securely prompt for the initial password. |
-| `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. Completing the reset revokes the owner's OAuth grants and tokens. |
+| `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. Completing the reset revokes the owner's app authorizations and credentials. |
 | `change-email` | Update the administrator email and revoke existing sessions. |
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
-| `disable` | Disable built-in protection after a high-visibility warning and immediately revoke the owner's OAuth grants and tokens. Locally, the development dashboard opens without login; remotely, the dashboard may become public. |
+| `disable` | Disable built-in protection after a high-visibility warning and immediately revoke the owner's app authorizations and credentials. Locally, the development dashboard opens without login; remotely, the dashboard may become public. |
 
 Without an action, `yarn manage auth` prints its subcommand usage, options, and
 examples. It does not select an instance, inspect authentication state, or
@@ -814,7 +820,7 @@ yarn manage auth disable \
 
 Local password reset always uses hidden password and confirmation prompts.
 Local disable shows a warning unless `--yes` is supplied and does not query or
-modify feed content or R2 data. Both actions revoke OAuth grants and tokens in
+modify feed content or R2 data. Both actions revoke app authorizations and credentials in
 the selected D1 database.
 
 ## `yarn manage config`
@@ -894,7 +900,7 @@ metadata inventory used by documentation consistency tests.
 | `MICROFEED_INSTANCE` | Default site name when `--instance` is omitted. |
 | `CLOUDFLARE_PROJECT_NAME` | Default production Worker name during initialization. |
 
-Wrangler manages Cloudflare account and OAuth environment internally. Do not
+Wrangler manages the Cloudflare account and browser-login environment internally. Do not
 use environment variables to pass a microfeed password.
 
 ## Maintaining this reference

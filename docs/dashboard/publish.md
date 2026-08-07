@@ -70,7 +70,7 @@ and associated media. Read the target carefully before confirming.
 ## Publish with a coding agent
 
 Give the agent a content goal and the root URL of your microfeed site. Do not
-give it an API key or OAuth token. For example:
+give it an API key or CLI credential. For example:
 
 ```text
 Use @microfeed/cli to create a published item on https://feed.example.com.
@@ -81,8 +81,8 @@ confirmation.
 
 Inside a microfeed clone, the agent should prefer `yarn microfeed`. Elsewhere,
 it can use a project-local installation or `yarn dlx @microfeed/cli`. You sign
-in and approve OAuth permissions in the browser; the CLI stores and refreshes
-the credential without printing it. First [enable API access and OAuth for the
+in and approve permissions in the browser; the CLI stores and refreshes the
+credential without printing it. First [enable API access and connect the
 CLI](/api/authentication/), then see the [agent workflow](/api/ai-agents/) and
 complete [`yarn microfeed` command reference](/microfeed-cli/) for media
 vocabulary, deterministic input, and deletion safeguards.

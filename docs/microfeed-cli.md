@@ -58,21 +58,21 @@ or skill installers that distribute skills with the CLI. The repository copy
 is canonical, and the package check fails when the bundled copy differs.
 
 The skill teaches invocation selection, site and instance vocabulary,
-browser-consent handoff, deterministic output, the difference between
+connection identity, browser-consent handoff, deterministic output, the difference between
 standalone media, item images, and media attachments, credential safety, and
 deletion confirmation.
 
 ## Authentication and safety
 
-The CLI uses OAuth for interactive work and an existing API key for unattended
-work. Both are sent to the REST API as Bearer credentials. OAuth does not make
-the API credential-free.
+The CLI uses browser authorization for interactive work and an existing API
+key for unattended work. Both result in a Bearer credential; browser login
+does not make the API credential-free.
 
 Browser login:
 
 1. Verifies `/.well-known/microfeed.json` identifies the target as microfeed.
-2. Loads standard OAuth authorization-server metadata from the same site URL.
-3. Rejects redirects and OAuth issuers or endpoints hosted at another site.
+2. Loads the official CLI authorization endpoints from the same site URL.
+3. Rejects redirects or authorization endpoints hosted at another site.
 4. Opens administrator login and consent in the browser.
 5. Uses authorization-code flow, S256 PKCE, and state validation.
 6. Listens for the callback only at `http://127.0.0.1:8977/callback`.
@@ -83,15 +83,15 @@ A coding agent may start login, but must pause for that user-controlled step.
 Login requires HTTPS except for `http://localhost` and `http://127.0.0.1` test
 instances. If a site's public URL changes, log in again.
 
-New instances keep API access disabled by default. OAuth login can be saved
+New instances keep API access disabled by default. Browser login can be saved
 while access is off, but content commands return `404` until the site owner
 signs in to the admin dashboard, opens **API → API Settings**, and turns on
 **Enable API access**. An AI agent must pause for this browser-only change and
-must not request the owner's dashboard password, API key, or OAuth token.
+must not request the owner's dashboard password, API key, or CLI credential.
 
 For every authenticated REST request, the CLI:
 
-- injects the selected Bearer credential and refreshes OAuth tokens when
+- injects the selected Bearer credential and refreshes CLI credentials when
   needed;
 - accepts only the selected site URL;
 - does not follow redirects or forward credentials through one;
@@ -101,8 +101,8 @@ For every authenticated REST request, the CLI:
 
 | Command | Purpose | Local or remote change |
 | --- | --- | --- |
-| `login <site-url>` | Authorize the official public CLI client in a browser and save an instance. | Creates or replaces a local encrypted saved instance after browser consent. |
-| `logout` | Revoke the selected OAuth token family and remove its saved instance locally. | Changes both the site and local instance store. |
+| `login <site-url>` | Authorize the official public CLI client in a browser and save an instance for this computer connection. | Creates or replaces a local encrypted saved instance after browser consent. |
+| `logout` | Revoke this computer's selected credential family and remove its saved instance locally. | Leaves the server-side connection listed as Inactive until the owner revokes it. |
 | `instances list` | List saved instances and the current selection. | Read-only. |
 | `instances use <name>` | Select the default saved instance. | Changes only the local current-instance pointer. |
 | `instances remove <name>` | Remove a saved instance locally without contacting the site. | Changes only the local instance store. |
@@ -125,7 +125,7 @@ Global options may appear before or after a command and its arguments.
 | `-h`, `--help` | Show help for the selected command or subcommand without running it. |
 
 When `MICROFEED_API_KEY` is set, `--instance` selects its site URL from a saved
-instance; it does not cause the saved OAuth credential to be used.
+instance; it does not cause the saved browser credential to be used.
 
 ## `yarn microfeed login`
 
@@ -137,12 +137,13 @@ saved instance and makes it current. It does not expose a credential in terminal
 output.
 
 ```console
-yarn microfeed login <site-url> [--instance <name>]
+yarn microfeed login <site-url> [--instance <name>] [--connection-name <computer-name>]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Save the site under this local instance name. Names contain 1–64 letters, numbers, dots, underscores, or hyphens. |
+| `--connection-name <computer-name>` | Label this computer under **Account settings → App access**. Names contain 1–64 printable characters. Without it, the CLI uses the computer hostname or a privacy-neutral platform label. |
 
 Without `--instance`, the CLI derives the name from the site hostname.
 Use the URL that opens the public microfeed site. It may use a custom domain or
@@ -152,22 +153,30 @@ Login requests the official `microfeed-cli` public client with the fixed
 loopback callback. The callback port must be available, and browser approval
 must complete within five minutes.
 
+The CLI generates a random, non-secret connection ID for each saved site and
+stores it separately from the encrypted token bundle. Logging the same saved
+site in again reuses that connection ID, replaces the old token family, and
+updates the connection name without creating a duplicate computer entry.
+
 Login may succeed while API access is disabled. Before running a content
 command on a new instance, the site owner signs in to the admin dashboard,
 opens **API → API Settings**, and turns on **Enable API access**. If an agent is
 operating the CLI, it pauses and asks the owner to complete that browser step.
 
 ```console
-yarn microfeed login https://feed.example.com --instance production
+yarn microfeed login https://feed.example.com \
+  --instance production \
+  --connection-name "Home Mac"
 ```
 
-With `--json`, success returns the saved `name`, canonical `siteUrl`, and
-verified `instanceId`.
+With `--json`, success returns the saved `name`, canonical `siteUrl`, verified
+`instanceId`, and non-secret `connectionName`. It never returns the connection
+ID or a credential.
 
 ## `yarn microfeed logout`
 
-**Purpose:** Revoke the selected OAuth authorization and remove its saved
-instance locally.
+**Purpose:** Revoke this computer's selected credential family and remove its
+saved instance locally.
 
 **Changes:** Attempts to revoke the refresh token, or the access token when no
 refresh token exists, then deletes the saved instance locally. If it was
@@ -177,9 +186,11 @@ current, the alphabetically first remaining instance becomes current.
 yarn microfeed logout [--instance <name>]
 ```
 
-If revocation cannot be delivered, logout still removes the saved instance. An
-instance owner can revoke the application separately from **API → Authorized
-applications**.
+If revocation cannot be delivered, logout still removes the saved instance.
+The server-side authorization remains visible as **Inactive** under **Account
+settings → App access** until the owner revokes it. An owner can revoke one
+computer connection without interrupting another, or revoke all microfeed CLI
+connections together.
 
 Use `instances remove` instead when local credentials are unreadable or when
 you intentionally want a local-only removal.
@@ -201,7 +212,7 @@ yarn microfeed instances list [--json]
 
 Human-readable output marks the current instance with `*`. JSON output returns
 an `instances` array whose entries contain `name`, `siteUrl`, `instanceId`,
-and `current`.
+`connectionName`, and `current`.
 
 ## `yarn microfeed instances use`
 
@@ -216,7 +227,7 @@ yarn microfeed instances use <name> [--json]
 ## `yarn microfeed instances remove`
 
 **Purpose:** Remove a saved instance locally without decrypting or revoking its
-OAuth tokens.
+CLI credentials.
 
 **Changes:** Deletes the saved instance locally. It does not contact the site.
 
@@ -604,7 +615,7 @@ contain a credential or assume the dashboard uses the default `/admin/` path.
     "instructions": [
       "New microfeed instances keep API access disabled by default.",
       "The site owner should sign in to the admin dashboard, open API → API Settings, and turn on Enable API access.",
-      "If you are an AI agent, pause and ask the site owner to complete that browser step; do not request their dashboard password, API key, or OAuth token.",
+      "If you are an AI agent, pause and ask the site owner to complete that browser step; do not request their dashboard password, API key, or CLI credential.",
       "After API access is enabled, retry the same command. If it is already enabled, verify that the requested resource and /api/v1/ path exist."
     ],
     "message": "API access may be disabled, or the requested resource may not exist."
@@ -630,7 +641,7 @@ step, and links to the [API setup guide](/api/authentication/#enable-the-api).
 
 ## Saved instances and credentials
 
-Saved instances record the verified instance ID, site URL, OAuth endpoints,
+Saved instances record the verified instance ID, site URL, authorization endpoints,
 and an AES-256-GCM encrypted token bundle. The encryption key exists only in the
 operating-system keychain under the `microfeed-cli` service. The CLI never
 falls back to plaintext storage.
@@ -647,7 +658,7 @@ store. If the keychain is unavailable or locked, the CLI fails without storing
 credentials. Install the optional `@napi-rs/keyring` dependency when the
 published package manager did not install it for the current platform.
 
-OAuth access tokens are refreshed automatically when they are within one
+CLI credentials are refreshed automatically when they are within one
 minute of expiry. A successful refresh rotates the locally encrypted bundle.
 When refresh fails or no refresh token exists, log in again.
 
@@ -655,7 +666,7 @@ When refresh fails or no refresh token exists, log in again.
 
 | Variable | Purpose |
 | --- | --- |
-| `MICROFEED_API_KEY` | Use an existing API key as the Bearer credential. It takes precedence over saved OAuth credentials and is never persisted. Supply it through a CI secret manager. |
+| `MICROFEED_API_KEY` | Use an existing API key as the Bearer credential. It takes precedence over saved browser credentials and is never persisted. Supply it through a CI secret manager. |
 | `MICROFEED_URL` | Set the API-key target site URL when no selected saved instance supplies one. HTTPS is required except for local loopback site URLs. |
 | `MICROFEED_INSTANCE` | Select a saved instance when `--instance` is omitted. |
 | `MICROFEED_CONFIG_DIR` | Override the instance-store directory. Intended for isolated environments and tests; it does not weaken encryption or replace the OS keychain. |

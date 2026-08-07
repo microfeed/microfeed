@@ -68,13 +68,13 @@ export async function discoverInstance(originInput: string): Promise<{
   if ([issuer, authorizationEndpoint, tokenEndpoint].some((url) =>
     url.origin !== origin
   )) {
-    throw new CliError("The OAuth issuer and endpoints must use the same site URL.");
+    throw new CliError("The authorization service must use the same site URL.");
   }
   if (!metadata.code_challenge_methods_supported?.includes("S256")) {
     throw new CliError("This instance does not advertise mandatory S256 PKCE.");
   }
   if (!metadata.grant_types_supported?.includes("authorization_code")) {
-    throw new CliError("This instance does not support OAuth authorization-code login.");
+    throw new CliError("This instance does not support browser authorization.");
   }
   return {identity, metadata, origin};
 }

@@ -5,7 +5,7 @@ description: Manage content on one or more microfeed sites through @microfeed/cl
 
 # Manage microfeed content
 
-Use the `microfeed` CLI so credentials, OAuth refresh, upload URLs, redirects,
+Use the `microfeed` CLI so credentials, browser authorization, upload URLs, redirects,
 and output safety remain inside the project-owned client.
 
 ## Choose the invocation
@@ -27,7 +27,10 @@ clone, use <https://docs.microfeed.org/microfeed-cli/>.
   `https://feed.example.com`. Do not include a dashboard path. Local testing may
   use `http://127.0.0.1:<port>`.
 - **Instance name**: a local alias for a saved site, such as `production` or
-  `local`. It is not a username, account, OAuth identity, or Wrangler profile.
+  `local`. It is not a username, account, browser identity, or Wrangler profile.
+- **Connection name**: this computer's label under **Account settings → App
+  access**, such as `Home Mac`. It is not the local instance name. One site can
+  show several computer connections for the same microfeed CLI application.
 - **Item ID**: the stable ID returned by `item list` or `item get`.
 - **Item image**: cover art or a thumbnail stored in the top-level `image`
   field. Use `--image-file <path>` for a local file or `--image <url>` for an
@@ -57,23 +60,32 @@ Use the named site the user supplied. If several saved sites exist and the
 target is unclear, show their instance names and site URLs and ask the user to
 choose. Never silently select the first one.
 
-New microfeed instances keep API access disabled by default. OAuth login may
+New microfeed instances keep API access disabled by default. Browser login may
 succeed while content commands still return `404`. When that happens, pause
 and ask the site owner to sign in to the admin dashboard, open **API → API
 Settings**, and turn on **Enable API access**. This is a browser-only owner
-action. Never ask for the dashboard password, an API key, or an OAuth token.
+action. Never ask for the dashboard password, an API key, or a CLI credential.
 After the owner confirms access is enabled, retry the same content command;
-the saved OAuth login does not need to be recreated.
+the saved browser login does not need to be recreated.
 
 When authorization is missing, run:
 
 ```console
-yarn microfeed login <site-url> --instance <name>
+yarn microfeed login <site-url> --instance <name> \
+  --connection-name <computer-name>
 ```
 
 Tell the user that browser administrator sign-in and consent are required,
 then pause. The user must approve or deny access; do not click **Allow** for
-them. Never ask the user to paste a credential into chat.
+them. Never ask the user to paste a credential into chat. If the user does not
+choose a connection name, let the CLI use the computer hostname; do not invent
+an owner identity. Re-login reuses the saved connection ID and should not
+create a duplicate entry for that computer.
+
+`logout` revokes this computer's token family and removes the local saved
+instance. It intentionally leaves the authorization visible as **Inactive**
+under **Account settings → App access** until the owner revokes it. Do not
+promise that logout removes the App access entry.
 
 ## Operate deterministically
 
@@ -136,8 +148,8 @@ item blindly.
 
 ## Protect credentials and destructive actions
 
-- Never request, read, print, log, copy, or expose API keys, OAuth access or
-  refresh tokens, client secrets, encrypted credential files, or keychain
+- Never request, read, print, log, copy, or expose API keys, CLI access or
+  refresh credentials, encrypted credential files, or keychain
   entries.
 - Let `MICROFEED_API_KEY` and `MICROFEED_URL` remain opaque environment inputs
   in CI. Never persist them.

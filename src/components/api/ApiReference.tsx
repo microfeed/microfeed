@@ -1,6 +1,6 @@
 import {ApiReferenceReact} from "@scalar/api-reference-react";
 import "@scalar/api-reference-react/style.css";
-import {useEffect, useState, type ComponentProps} from "react";
+import {useEffect, useMemo, useState, type ComponentProps} from "react";
 
 interface Props {
   apiKey?: string;
@@ -48,6 +48,28 @@ const SCALAR_LAYOUT_CSS = `
 }
 `;
 
+export function interactiveApiDocument(
+  document: Record<string, unknown>,
+): Record<string, unknown> {
+  const copy = JSON.parse(JSON.stringify(document)) as {
+    components?: {securitySchemes?: Record<string, unknown>};
+    paths?: Record<string, Record<string, {security?: Record<string, unknown>[]}>>;
+  };
+  if (copy.components?.securitySchemes) {
+    delete copy.components.securitySchemes.oauth2;
+  }
+  for (const path of Object.values(copy.paths ?? {})) {
+    for (const operation of Object.values(path)) {
+      if (operation && Array.isArray(operation.security)) {
+        operation.security = operation.security.filter((requirement) =>
+          !("oauth2" in requirement)
+        );
+      }
+    }
+  }
+  return copy as Record<string, unknown>;
+}
+
 export default function ApiReference({
   apiKey,
   document,
@@ -60,6 +82,10 @@ export default function ApiReference({
     followDocumentColorMode && typeof window !== "undefined"
       ? resolvedDocumentColorMode()
       : "light",
+  );
+  const interactiveDocument = useMemo(
+    () => interactiveApiDocument(document),
+    [document],
   );
 
   useEffect(() => {
@@ -87,7 +113,7 @@ export default function ApiReference({
         : {}),
     },
     baseServerURL: origin,
-    content: document,
+    content: interactiveDocument,
     customCss: SCALAR_LAYOUT_CSS,
     defaultHttpClient: {clientKey: "fetch", targetKey: "js"},
     defaultOpenAllTags: true,

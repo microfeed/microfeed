@@ -382,7 +382,6 @@ export const ADMIN_URLS = {
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
-  apiOAuth: () => adminUrl("api/oauth", browserAdminPath()),
   apiExplorer: () => adminUrl("api/explorer", browserAdminPath()),
   apiSettings: () => adminUrl("api/settings", browserAdminPath()),
   codeEditorSettings: () =>
@@ -394,11 +393,6 @@ export const ADMIN_URLS = {
   ajaxR2Ops: () => adminUrl("ajax/r2-ops", browserAdminPath()),
   ajaxApiSettings: () => adminUrl("ajax/api/settings", browserAdminPath()),
   ajaxApiKeys: () => adminUrl("ajax/api/keys", browserAdminPath()),
-  ajaxOAuth: () => adminUrl("ajax/api/oauth", browserAdminPath()),
-  ajaxOAuthClient: (clientId: string) =>
-    adminUrl(`ajax/api/oauth/clients/${encodeURIComponent(clientId)}`, browserAdminPath()),
-  ajaxOAuthConsent: (consentId: string) =>
-    adminUrl(`ajax/api/oauth/consents/${encodeURIComponent(consentId)}`, browserAdminPath()),
   ajaxApiKey: (id: string) =>
     adminUrl(`ajax/api/keys/${id}`, browserAdminPath()),
   ajaxRotateApiKey: (id: string) =>

@@ -34,7 +34,7 @@ function safeRedirect(): string {
     : fallback;
 }
 
-function safeOAuthRedirect(value: unknown): string | null {
+function safeAuthorizationRedirect(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const adminBase = adminBasePath(browserAdminPath());
   const candidate = new URL(value, window.location.origin);
@@ -49,6 +49,7 @@ export default function AdminLoginApp() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [passkeySubmitting, setPasskeySubmitting] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,11 +66,33 @@ export default function AdminLoginApp() {
         return;
       }
       const response = result.data as {url?: unknown} | null;
-      window.location.assign(safeOAuthRedirect(response?.url) ?? safeRedirect());
+      window.location.assign(
+        safeAuthorizationRedirect(response?.url) ?? safeRedirect(),
+      );
     } catch {
       setError("Unable to sign in right now. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function signInWithPasskey() {
+    setError("");
+    setPasskeySubmitting(true);
+    try {
+      const result = await authClient.signIn.passkey();
+      if (result.error) {
+        setError(result.error.message || "Passkey sign-in failed.");
+        return;
+      }
+      const response = result.data as {url?: unknown} | null;
+      window.location.assign(
+        safeAuthorizationRedirect(response?.url) ?? safeRedirect(),
+      );
+    } catch {
+      setError("Unable to sign in with a passkey right now.");
+    } finally {
+      setPasskeySubmitting(false);
     }
   }
 
@@ -158,6 +181,23 @@ export default function AdminLoginApp() {
                     />
                   )}
                   {submitting ? "Signing in…" : "Sign in"}
+                </Button>
+
+                <div className="flex items-center gap-3 text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                  or
+                </div>
+                <Button
+                  className="h-11 w-full text-base font-medium"
+                  disabled={submitting || passkeySubmitting}
+                  onClick={() => void signInWithPasskey()}
+                  size="lg"
+                  type="button"
+                  variant="outline"
+                >
+                  {passkeySubmitting && (
+                    <LoaderCircleIcon aria-hidden="true" className="animate-spin" />
+                  )}
+                  {passkeySubmitting ? "Waiting for passkey…" : "Sign in with a passkey"}
                 </Button>
               </FieldGroup>
             </form>

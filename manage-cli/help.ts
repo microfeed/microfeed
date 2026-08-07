@@ -20,7 +20,7 @@ const option = (
 
 export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
-    changes: "Read-only Cloudflare discovery; may update local OAuth profiles and the repository binding.",
+    changes: "Read-only Cloudflare discovery; may update local Wrangler login profiles and the repository binding.",
     details: [
       "Checks the current Wrangler login and required permissions, opening browser authorization when needed.",
       "With --profile, creates or selects a named Wrangler login and binds it to this local repository without changing Cloudflare resources.",
@@ -316,7 +316,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Before prompting or changing anything, each action shows the selected instance, target environment, dashboard location, and operation. Cloudflare targets also show the Worker name.",
       "Cloudflare-connected instances target Cloudflare by default. Use --local only for their separate local development sandbox. Snapshot restore still needs --local because its target does not exist yet.",
       "Remote password setup/reset uses a browser link; local setup/reset uses hidden password and confirmation prompts. A local-only instance can disable its login without changing local D1 or R2 data; restart its dev server afterward. A connected site's local sandbox cannot override the saved production authentication mode.",
-      "Completing a password reset revokes the owner's OAuth grants and tokens. Disabling built-in login also revokes them immediately.",
+      "Completing a password reset revokes the owner's app authorizations and credentials. Disabling built-in login also revokes them immediately.",
       "Setup does not redeploy when built-in login is already active. The raw --admin-password option is remote-only and intentionally unsafe.",
     ],
     examples: [

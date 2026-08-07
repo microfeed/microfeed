@@ -10,6 +10,7 @@ import {
 import AdminMobileNavigation from "@/components/admin/AdminMobileNavigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import {
+  adminAccountSettingsDestination,
   adminLogoutDestination,
   displayedAdminIdentities,
 } from "@/components/admin/AdminUserMenu";
@@ -110,6 +111,13 @@ describe("admin dashboard shell models", () => {
     expect(displayedAdminIdentities({
       cloudflareAccessDetected: false,
     })).toEqual([]);
+  });
+
+  it("builds the Account settings link from a custom admin path", () => {
+    expect(adminAccountSettingsDestination("private-studio"))
+      .toBe("/private-studio/account/");
+    expect(displayedAdminIdentities({cloudflareAccessDetected: false}))
+      .toHaveLength(0);
   });
 
   it("distinguishes authenticated, unprotected, and legacy deployment metadata", () => {

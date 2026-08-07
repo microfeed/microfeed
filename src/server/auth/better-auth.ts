@@ -1,7 +1,9 @@
 import {oauthProvider} from "@better-auth/oauth-provider";
+import {passkey} from "@better-auth/passkey";
 import {betterAuth} from "better-auth";
 import {admin} from "better-auth/plugins";
 
+import {oauthConnectionHandoff} from "@/server/auth/account-security";
 import {adminUrl, normalizeAdminPath} from "@/shared/AdminPath";
 import {
   MICROFEED_OAUTH_CLIENT_ID,
@@ -35,6 +37,12 @@ export function createMicrofeedAuth(
     basePath: "/api/auth",
     baseURL: origin,
     database: runtimeEnv.FEED_DB,
+    disabledPaths: [
+      "/oauth2/create-client",
+      "/oauth2/delete-client",
+      "/oauth2/update-client",
+      "/oauth2/client/rotate-secret",
+    ],
     emailAndPassword: {
       disableSignUp: true,
       enabled: true,
@@ -44,9 +52,17 @@ export function createMicrofeedAuth(
     },
     plugins: [
       admin(),
+      passkey({
+        origin,
+        rpID: new URL(origin).hostname,
+        rpName: "microfeed",
+        schema: {
+          passkey: {modelName: "passkey"},
+        },
+      }),
       oauthProvider({
         accessTokenExpiresIn: OAUTH_ACCESS_TOKEN_SECONDS,
-        allowDynamicClientRegistration: true,
+        allowDynamicClientRegistration: false,
         allowUnauthenticatedClientRegistration: false,
         cachedTrustedClients: new Set([MICROFEED_OAUTH_CLIENT_ID]),
         clientPrivileges: () => true,
@@ -64,6 +80,15 @@ export function createMicrofeedAuth(
           clientSecret: OAUTH_CLIENT_SECRET_PREFIX,
           opaqueAccessToken: OAUTH_ACCESS_TOKEN_PREFIX,
           refreshToken: OAUTH_REFRESH_TOKEN_PREFIX,
+        },
+        postLogin: {
+          consentReferenceId: async () =>
+            (await oauthConnectionHandoff(
+              request,
+              runtimeEnv.BETTER_AUTH_SECRET,
+            ))?.connectionId,
+          page: adminUrl("api/oauth/consent", adminPath),
+          shouldRedirect: () => false,
         },
         refreshTokenExpiresIn: OAUTH_REFRESH_TOKEN_SECONDS,
         schema: {
@@ -85,6 +110,10 @@ export function createMicrofeedAuth(
     rateLimit: {
       customRules: {
         "/sign-in/email": {
+          max: 5,
+          window: 60,
+        },
+        "/verify-password": {
           max: 5,
           window: 60,
         },

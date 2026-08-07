@@ -16,7 +16,8 @@ Cloudflare resources and content remain in your Cloudflare account.
 | Connect a new clone to an existing site | `yarn manage connect` |
 | List or select saved sites | `yarn manage instances` / `yarn manage use` |
 | Add a custom hostname | `yarn manage domain` |
-| Manage built-in dashboard login | `yarn manage auth <action>` |
+| Change the current login email or password | Dashboard avatar → **Account settings** |
+| Set up, recover, change the path, or disable built-in login | `yarn manage auth <action>` |
 | Add optional Cloudflare Access | `yarn manage access` |
 | Back up or restore a whole site | `yarn manage snapshot <action>` |
 | Plan removal without changing anything | `yarn manage destroy --dry-run` |

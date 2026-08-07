@@ -6,7 +6,7 @@ description: Run the local or published @microfeed/cli, authorize an instance in
 The official
 [`@microfeed/cli` package](https://www.npmjs.com/package/@microfeed/cli) gives
 people and coding agents a consistent way to publish and manage content on one
-or more microfeed sites without handling OAuth tokens directly. For every
+or more microfeed sites without handling credentials directly. For every
 command, option, output contract, and safety rule, use the canonical
 [`yarn microfeed` command reference](/microfeed-cli/).
 
@@ -59,7 +59,7 @@ New microfeed instances keep API access disabled by default. Before content
 commands can succeed, the site owner signs in to the admin dashboard, opens
 **API → API Settings**, and turns on **Enable API access**. This is a
 browser-only owner action; an agent must pause and ask the owner to complete it
-without requesting a dashboard password, API key, or OAuth token. See
+without requesting a dashboard password, API key, or CLI credential. See
 [Enable the API](../authentication/#enable-the-api).
 
 ```console
@@ -72,14 +72,14 @@ address, but it must not include a dashboard path, query, or fragment.
 `production` is a local **instance name**, not a username or Wrangler profile.
 
 The CLI reads the unchanged `/.well-known/microfeed.json` identity document,
-then loads standard OAuth authorization-server metadata from the same HTTPS
-site URL. It rejects an issuer or token endpoint hosted at another site. If the
-public site URL changes, log in again.
+then loads its authorization endpoints from the same HTTPS site URL. It
+rejects an endpoint hosted at another site. If the public site URL changes, log
+in again.
 
 The command opens a browser for administrator login and permission approval.
 The terminal or coding agent cannot approve the browser prompt for you. The
 callback uses `127.0.0.1:8977`; if that port is unavailable, close the process
-using it and retry. OAuth login can be saved while API access is disabled; the
+using it and retry. Browser login can be saved while API access is disabled; the
 first content command then returns `404` with recovery instructions.
 
 Manage saved instances with:

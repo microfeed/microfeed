@@ -46,9 +46,12 @@ a visitor.
 
 ## Dashboard authentication
 
-Use `yarn manage auth <action>` from the connected repository clone to set up,
-reset, change, or disable built-in login. Running `yarn manage auth` without an
-action prints help and makes no change.
+For routine email and password changes, open the avatar menu and select
+[**Account settings**](/manage/domains-and-access/#change-your-built-in-login).
+Use `yarn manage auth <action>` from the connected repository clone for initial
+setup, forgotten-password recovery, dashboard-path changes, or disabling the
+built-in login. Running `yarn manage auth` without an action prints help and
+makes no change.
 
 Optional Cloudflare Access is managed through `yarn manage access`. See
 [Domains and authentication](/manage/domains-and-access/) before changing a

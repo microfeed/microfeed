@@ -3,6 +3,7 @@ import {
   ChevronDownIcon,
   CircleUserRoundIcon,
   LogOutIcon,
+  SettingsIcon,
   ShieldAlertIcon,
 } from "lucide-react";
 
@@ -30,6 +31,10 @@ export function adminLogoutDestination(
   return cloudflareAccessDetected
     ? "/cdn-cgi/access/logout"
     : adminUrl("login", adminPath);
+}
+
+export function adminAccountSettingsDestination(adminPath: string): string {
+  return adminUrl("account", adminPath);
 }
 
 export function displayedAdminIdentities(
@@ -116,6 +121,13 @@ export default function AdminUserMenu({
                 </span>
               ))}
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              render={<a href={adminAccountSettingsDestination(adminPath)} />}
+            >
+              <SettingsIcon aria-hidden="true" />
+              Account settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             {error && (
               <div className="mx-1 mb-1 rounded-lg bg-destructive/10 px-2 py-2 text-xs text-destructive" role="alert">

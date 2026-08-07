@@ -146,7 +146,7 @@ describe("microfeed CLI help", () => {
       options: {instance: "production", json: true},
     });
     await expect(loginCommand([], {json: false})).rejects.toThrow(
-      "login <site-url> [--instance <name>]",
+      "login <site-url> [--instance <local-name>] [--connection-name <computer-name>]",
     );
     await expect(loginCommand([
       "https://feed.example.com",

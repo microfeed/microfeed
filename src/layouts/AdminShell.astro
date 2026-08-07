@@ -5,6 +5,7 @@ import {ClientRouter} from "astro:transitions";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminApiSidebar from "@/components/admin/api/AdminApiSidebar";
+import AdminAccountSidebar from "@/components/admin/account/AdminAccountSidebar";
 import AdminSettingsSidebar from "@/components/admin/settings/AdminSettingsSidebar";
 import AdminThemeScript from "@/components/admin/AdminThemeScript.astro";
 import AdminTopBar from "@/components/admin/AdminTopBar.astro";
@@ -12,6 +13,7 @@ import {Toaster} from "@/components/ui/sonner";
 import {adminChannelSummary} from "@/components/admin/admin-shell-types";
 import type {
   AdminBreadcrumb,
+  AdminAccountSidebarData,
   AdminApiSidebarData,
   AdminDeploymentSummary,
   AdminIdentitySummary,
@@ -25,6 +27,7 @@ import {
   type AdminNavItemId,
 } from "@/shared/AdminNavigation";
 import type {AdminSettingsSection} from "@/shared/AdminSettingsNavigation";
+import type {AdminAccountSection} from "@/shared/AdminAccountNavigation";
 import {
   ADMIN_API_PAGES,
   adminApiPageUrl,
@@ -42,6 +45,8 @@ import "@/styles/interactive.css";
 export type {AdminBreadcrumb};
 
 interface Props {
+  accountActiveSection?: AdminAccountSection["id"];
+  accountNavigation?: boolean;
   activeNavItem: AdminNavItemId | null;
   apiActivePage?: AdminApiPageId;
   apiNavigation?: boolean;
@@ -55,6 +60,8 @@ interface Props {
 }
 
 const {
+  accountActiveSection,
+  accountNavigation = false,
   activeNavItem,
   apiActivePage = "overview",
   apiNavigation = false,
@@ -129,6 +136,14 @@ const settingsSidebar: AdminSettingsSidebarData | undefined = settingsNavigation
       sectionsUrl: adminUrl("settings", adminPath),
     }
   : undefined;
+const accountSidebar: AdminAccountSidebarData | undefined = accountNavigation
+  ? {
+      activeSection: accountActiveSection,
+      backUrl: adminUrl("", adminPath),
+      deployment,
+      sectionsUrl: adminUrl("account", adminPath),
+    }
+  : undefined;
 const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
   ? {
       activePage: apiActivePage,
@@ -168,11 +183,13 @@ const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
       <aside
         class:list={[
           "sticky top-0 hidden h-svh shrink-0 overflow-hidden bg-sidebar lg:block",
-          settingsNavigation || apiNavigation ? "w-[19rem]" : "w-[17rem]",
+          settingsNavigation || apiNavigation || accountNavigation ? "w-[19rem]" : "w-[17rem]",
         ]}
       >
         {
-          apiSidebar ? (
+          accountSidebar ? (
+            <AdminAccountSidebar client:load data={accountSidebar} />
+          ) : apiSidebar ? (
             <AdminApiSidebar client:load data={apiSidebar} />
           ) : settingsSidebar ? (
             <AdminSettingsSidebar client:load data={settingsSidebar} />
@@ -183,6 +200,7 @@ const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
       </aside>
       <section class="min-h-svh min-w-0 flex-1 bg-background lg:mt-3 lg:flex lg:h-[calc(100svh-0.75rem)] lg:min-h-0 lg:flex-col lg:overflow-hidden lg:rounded-tl-[var(--radius-shell)] lg:border lg:border-r-0 lg:border-b-0 lg:shadow-xs">
         <AdminTopBar
+          {accountSidebar}
           {adminPath}
           {apiSidebar}
           {breadcrumb}

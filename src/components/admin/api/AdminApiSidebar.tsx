@@ -3,7 +3,6 @@ import {
   BlocksIcon,
   Code2Icon,
   KeyRoundIcon,
-  ShieldCheckIcon,
   SlidersHorizontalIcon,
 } from "lucide-react";
 
@@ -22,7 +21,6 @@ interface Props {
 const pageIcons: Record<AdminApiPage["icon"], typeof BlocksIcon> = {
   explorer: Code2Icon,
   key: KeyRoundIcon,
-  oauth: ShieldCheckIcon,
   overview: BlocksIcon,
   settings: SlidersHorizontalIcon,
 };

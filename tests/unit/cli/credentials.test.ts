@@ -1,4 +1,4 @@
-import {mkdtemp, readFile, rm} from "node:fs/promises";
+import {mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -74,7 +74,7 @@ describe("CLI credentials", () => {
           tokenEndpoint: "https://feed.example/api/auth/oauth2/token",
         },
       },
-      version: 1,
+      version: 2,
     });
 
     const serialized = await readFile(storePath(), "utf8");
@@ -84,6 +84,41 @@ describe("CLI credentials", () => {
     const store = await readStore();
     await expect(decryptTokens("feed", store.instances.feed!)).resolves
       .toMatchObject({accessToken: "access-secret-value"});
+  });
+
+  it("migrates a version-one store without decrypting or losing credentials", async () => {
+    const encryptedTokens = await encryptTokens("feed", "https://feed.example", {
+      accessToken: "preserved-access-token",
+      expiresAt: Date.now() + 60_000,
+      refreshToken: "preserved-refresh-token",
+      scope: "content:read offline_access",
+      tokenType: "Bearer",
+    });
+    await writeStore({
+      current: "feed",
+      instances: {
+        feed: {
+          authorizationEndpoint: "https://feed.example/api/auth/oauth2/authorize",
+          encryptedTokens,
+          instanceId: "instance-id",
+          issuer: "https://feed.example/api/auth",
+          origin: "https://feed.example",
+          tokenEndpoint: "https://feed.example/api/auth/oauth2/token",
+        },
+      },
+      version: 2,
+    });
+    const legacy = JSON.parse(await readFile(storePath(), "utf8")) as {
+      version: number;
+    };
+    legacy.version = 1;
+    await writeFile(storePath(), JSON.stringify(legacy), "utf8");
+
+    const migrated = await readStore();
+    expect(migrated.version).toBe(2);
+    expect(migrated.instances.feed?.connectionId).toBeUndefined();
+    await expect(decryptTokens("feed", migrated.instances.feed!)).resolves
+      .toMatchObject({refreshToken: "preserved-refresh-token"});
   });
 
   it("keeps multiple profiles independently bound to their origins", async () => {
@@ -119,7 +154,7 @@ describe("CLI credentials", () => {
           tokenEndpoint: "https://second.example/api/auth/oauth2/token",
         },
       },
-      version: 1,
+      version: 2,
     });
 
     const store = await readStore();

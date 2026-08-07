@@ -44,7 +44,7 @@ describe("generated API reference", () => {
       "utf8",
     );
     expect(scalar).toContain('@scalar/api-reference-react/style.css');
-    expect(scalar).toContain("content: document");
+    expect(scalar).toContain("content: interactiveDocument");
     expect(scalar).toContain("customCss: SCALAR_LAYOUT_CSS");
     expect(scalar).not.toContain("servers: [{");
     expect(scalar).toContain("defaultOpenAllTags: true");
@@ -118,9 +118,9 @@ describe("generated API reference", () => {
     );
     expect(API_LLMS_FULL_TEXT).not.toContain("/api/feed/");
     expect(specification).toContain("bearerAuth");
-    expect(specification).toContain("oauth2");
-    expect(specification).toContain("content:read");
-    expect(specification).toContain("content:write");
+    expect(specification).not.toContain("oauth2");
+    expect(specification).not.toContain("content:read");
+    expect(specification).not.toContain("content:write");
     expect(specification).not.toContain("legacyApiKey");
     expect(specification).not.toContain("X-MicrofeedAPI-Key");
     expect(API_LLMS_FULL_TEXT).not.toContain("legacyApiKey");

@@ -185,7 +185,7 @@ Choose the publishing workflow that fits the task:
   site](https://docs.microfeed.org/dashboard/customize/).
 * **For AI agents:** use the official
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
-  same content through short-lived OAuth access after you enable the API. The
+  same content through browser-authorized access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the
   browser. See the [guided CLI workflow](https://docs.microfeed.org/api/cli/)
   or the complete [`yarn microfeed`
@@ -193,7 +193,7 @@ Choose the publishing workflow that fits the task:
 
 Inside a microfeed clone, ask your agent to use `yarn microfeed`. For one-off
 use elsewhere, it can run `yarn dlx @microfeed/cli`. Never paste an API key or
-OAuth token into an agent conversation.
+CLI credential into an agent conversation.
 
 You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
 

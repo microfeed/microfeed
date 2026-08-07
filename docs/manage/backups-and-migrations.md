@@ -19,10 +19,9 @@ Expected result: a new archive at the requested path. Existing output files are
 not overwritten. Store the archive like private site data; it can contain
 unpublished content and media.
 
-OAuth application registrations, grants, access tokens, refresh tokens, and
-sessions are intentionally not portable. A restore recreates only the official
-`microfeed-cli` public client. Register third-party applications again and run
-`yarn microfeed login <restored-site-url>` before managing restored content.
+App-access connections, temporary CLI credentials, and dashboard sessions are
+intentionally not portable. Run `yarn microfeed login <restored-site-url>`
+before managing restored content.
 
 ## Test a production snapshot locally
 

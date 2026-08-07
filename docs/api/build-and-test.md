@@ -3,9 +3,9 @@ title: Build and test integrations
 description: Use generated examples, API Explorer, cursor pagination, and the media upload flow safely.
 ---
 
-Start with OAuth through the [microfeed CLI](../cli/) or an API key created for
-this integration, plus the generated contract from the exact instance you will
-call.
+Start with a named API key created for this integration and the generated
+contract from the exact microfeed instance you will call. Send the key in the
+`Authorization: Bearer` header on every authenticated request.
 
 ## Test in the dashboard
 
@@ -50,11 +50,7 @@ microfeed distinguishes two item fields:
   link. JSON Feed exposes it as an attachment and RSS exposes it as
   `<enclosure>`.
 
-For a local attachment, use `yarn microfeed item create --attachment-file` or
-`yarn microfeed item update <item-id> --attachment-file` when possible. For an
-inline rich-text image or other standalone upload, use `yarn microfeed media
-upload <file> --json`, then store the returned permanent `media_url` in the
-item. The underlying REST upload is a three-part flow:
+The REST upload is a three-part flow:
 
 1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
    item ID, MIME type, size, and local filename information required by the

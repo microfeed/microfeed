@@ -1,0 +1,54 @@
+---
+import {env} from "cloudflare:workers";
+
+import AccountSettingsApp from "@/components/admin/account/AccountSettingsApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {readApiAccessSettings} from "@/server/api/api-keys";
+import {
+  listAccountPasskeys,
+  listAccountSessions,
+} from "@/server/auth/account-admin";
+import {cloudflareAccessIdentity} from "@/server/auth/admin-protection";
+import {listOAuthApplicationAccess} from "@/server/auth/oauth-admin";
+
+const {authSession, authUser, feedContent, onboardingResult} = Astro.locals;
+const accessIdentity = cloudflareAccessIdentity(Astro.request);
+if (!authUser && !accessIdentity.detected) {
+  return new Response("Not found", {status: 404});
+}
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const [passkeys, sessions, applications, apiSettings] = authUser
+  ? await Promise.all([
+      listAccountPasskeys(env.FEED_DB, authUser.id),
+      listAccountSessions(env.FEED_DB, authUser.id, authSession?.id),
+      listOAuthApplicationAccess(env.FEED_DB, authUser.id),
+      readApiAccessSettings(env.FEED_DB),
+    ])
+  : [[], [], [], await readApiAccessSettings(env.FEED_DB)];
+---
+
+<AdminShell
+  accountNavigation
+  activeNavItem={null}
+  documentTitle="Account settings | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Account settings"
+>
+  <AccountSettingsApp
+    client:only="react"
+    apiEnabled={apiSettings.enabled}
+    {applications}
+    builtInEmail={authUser?.email}
+    cloudflareAccessDetected={accessIdentity.detected}
+    cloudflareAccessEmail={accessIdentity.email}
+    hostname={Astro.url.hostname}
+    {passkeys}
+    {sessions}
+  >
+    <AdminPageFallback slot="fallback" kind="settings" />
+  </AccountSettingsApp>
+</AdminShell>

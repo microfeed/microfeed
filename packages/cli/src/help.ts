@@ -35,7 +35,7 @@ const jsonOption = option(
 );
 const apiAccessDetails = [
   "New microfeed instances keep API access disabled by default. Before running content commands, the site owner signs in to the admin dashboard, opens API → API Settings, and turns on Enable API access.",
-  "If a command returns 404, API access may still be disabled or the requested resource may not exist. An AI agent must pause and ask the site owner to complete the dashboard step in the browser; it must not request a dashboard password, API key, or OAuth token.",
+  "If a command returns 404, API access may still be disabled or the requested resource may not exist. An AI agent must pause and ask the site owner to complete the dashboard step in the browser; it must not request a dashboard password, API key, or CLI credential.",
 ] as const;
 
 const itemInputOptions = [
@@ -74,13 +74,16 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "<site-url> is the root public URL of one microfeed site: scheme plus hostname and optional port, with no path, query, fragment, or embedded credentials.",
       "Valid site URLs include https://feed.example.com and, for local testing, http://127.0.0.1:4321. A dashboard URL such as https://feed.example.com/admin is not a site URL.",
       "Use the URL that opens the public microfeed site. It may be a custom-domain URL or the generated workers.dev URL.",
-      "<name> is the local saved-instance name, not a user account, OAuth identity, or Wrangler profile. It uses 1–64 ASCII letters, numbers, dots, underscores, or hyphens; production and personal-feed are valid examples.",
-      "Login verifies the microfeed identity and OAuth metadata at the same site URL, opens administrator sign-in and consent in a browser, and stores only encrypted tokens. The person using the instance must approve the browser step.",
-      "OAuth login can be saved while API access is disabled, but content commands return 404 until the site owner enables access.",
+      "<name> is the local saved-instance name, not a user account, browser identity, or Wrangler profile. It uses 1–64 ASCII letters, numbers, dots, underscores, or hyphens; production and personal-feed are valid examples.",
+      "<computer-name> identifies this computer under Account settings → App access, such as Home Mac or Publishing server. It is separate from the local saved-instance name and accepts 1–64 printable characters.",
+      "The CLI creates a random connection ID for this saved site. Logging in again reuses that ID, replaces its token family, and avoids adding a duplicate computer connection.",
+      "Login verifies the microfeed site, opens administrator sign-in and consent in a browser, and stores only encrypted credentials. The person using the instance must approve the browser step.",
+      "Browser login can be saved while API access is disabled, but content commands return 404 until the site owner enables access.",
       ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed login https://feed.example.com --instance production",
+      "yarn microfeed login https://feed.example.com --instance production --connection-name \"Home Mac\"",
       "yarn microfeed login http://127.0.0.1:4321 --instance local",
     ],
     options: [
@@ -88,15 +91,19 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
         "--instance <name>",
         "Save this local instance name. Without it, the hostname becomes the name.",
       ),
+      option(
+        "--connection-name <computer-name>",
+        "Name this computer in the site's Account settings → App access page. Without it, the CLI uses the computer hostname or a privacy-neutral platform label.",
+      ),
       jsonOption,
     ],
     path: ["login"],
     summary: "Authorize one site in a browser and save it as a local instance.",
-    usage: "yarn microfeed login <site-url> [--instance <name>] [--json]",
+    usage: "yarn microfeed login <site-url> [--instance <name>] [--connection-name <computer-name>] [--json]",
   },
   {
     details: [
-      "Revokes the selected OAuth refresh token, or its access token when no refresh token exists, then removes the saved instance locally.",
+      "Revokes this computer's selected credential family, then removes the saved instance locally. The site keeps the authorization visible as Inactive until its owner revokes it under Account settings → App access.",
       "Use --instance when the saved instance to revoke is not current. This command does not use MICROFEED_INSTANCE.",
       "Use `instances remove` only for local cleanup or recovery when credentials cannot be decrypted; remove does not contact the instance.",
     ],
@@ -106,12 +113,12 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     ],
     options: [instanceOption, jsonOption],
     path: ["logout"],
-    summary: "Revoke OAuth authorization and remove the saved instance locally.",
+    summary: "Revoke this computer's credentials and remove the saved instance locally.",
     usage: "yarn microfeed logout [--instance <name>] [--json]",
   },
   {
     details: [
-      "A saved instance binds one local name to a verified site URL and encrypted OAuth token bundle.",
+      "A saved instance binds one local name to a verified site URL and encrypted credential bundle.",
       "The current saved instance is used by content and raw API commands when --instance and MICROFEED_INSTANCE are omitted.",
       "Run help for a subcommand to see its exact inputs and output.",
     ],
@@ -148,7 +155,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   {
     details: [
       "<name> is the exact local saved-instance name shown by `instances list`, such as production. It is not a site URL, email address, username, or Wrangler profile.",
-      "This changes only the local current-instance pointer. It does not contact the site or change OAuth authorization.",
+      "This changes only the local current-instance pointer. It does not contact the site or change browser authorization.",
     ],
     examples: [
       "yarn microfeed instances use production",
@@ -162,7 +169,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   {
     details: [
       "<name> is the exact local saved-instance name shown by `instances list`, such as old-test.",
-      "This deletes only the local saved instance and does not revoke its OAuth authorization on the site. Prefer `logout --instance <name>` for normal revoke-and-remove behavior.",
+      "This deletes only the local saved instance and does not revoke its authorization on the site. Prefer `logout --instance <name>` for normal revoke-and-remove behavior.",
       "If the removed instance was current, the alphabetically first remaining saved instance becomes current.",
     ],
     examples: [
@@ -452,7 +459,7 @@ export function renderCliHelp(path?: readonly string[]): string {
 
   const commands = [
     {syntax: "login <site-url>", description: "Authorize a site and save it as an instance."},
-    {syntax: "logout", description: "Revoke and remove a saved instance."},
+    {syntax: "logout", description: "Revoke this computer's tokens and remove its saved instance."},
     {syntax: "instances", description: "List, select, or locally remove saved instances."},
     {syntax: "item", description: "List, read, create, update, or delete items."},
     {syntax: "media", description: "Upload standalone media for rich content or later API use."},
@@ -475,6 +482,8 @@ export function renderCliHelp(path?: readonly string[]): string {
     "  <name>      Local saved-instance name, such as production.",
     "              Not a username or Wrangler profile. Use 1–64 letters,",
     "              numbers, dots, underscores, or hyphens.",
+    "  <computer-name>  This computer's label in Account settings → App access.",
+    "              It accepts 1–64 printable characters and is not an instance name.",
     "  <item-id>  Stable item ID returned by item list, such as 0HGJLSML3P1.",
     "  <file|->   UTF-8 file path, or - to read from standard input.",
     "  <attachment-path>  Local audio, video, document, or image attachment.",
@@ -484,14 +493,14 @@ export function renderCliHelp(path?: readonly string[]): string {
     "",
     "Authentication:",
     "  `login` opens administrator sign-in and consent in a browser. The user",
-    "  approves content:read, content:write, and offline_access. OAuth tokens",
-    "  are encrypted; the encryption key stays in the OS keychain.",
+    "  approves read, write, and offline access. CLI credentials are encrypted;",
+    "  the encryption key stays in the OS keychain.",
     "  For CI, MICROFEED_API_KEY takes precedence and is never persisted. Set",
     "  MICROFEED_URL when no saved instance supplies the target site URL.",
     "  New instances keep API access disabled by default. The site owner",
     "  enables it in the dashboard under API → API Settings → Enable API access.",
     "  If a command returns 404, an AI agent pauses for that browser step and",
-    "  never asks for a dashboard password, API key, or OAuth token.",
+    "  never asks for a dashboard password, API key, or CLI credential.",
     "",
     "Global options:",
     "  --instance <name>  On login, save this name; otherwise use this instance.",

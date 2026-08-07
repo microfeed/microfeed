@@ -4,17 +4,21 @@ import {oauthProviderAuthServerMetadata} from "@better-auth/oauth-provider";
 import {beforeEach, describe, expect, it} from "vitest";
 
 import {createMicrofeedAuth} from "@/server/auth/better-auth";
+import {createPasskeyStepUpCookie} from "@/server/auth/account-security";
 import {decideApiRequest} from "@/server/api/access";
 import {updateApiAccessSettings} from "@/server/api/api-keys";
 import {
-  deleteOAuthClientAndTokens,
-  listOAuthClients,
+  listOAuthApplicationAccess,
   listOAuthConsents,
+  revokeOAuthApplicationAccess,
+  revokeOAuthConnectionAndTokens,
   revokeOAuthConsentAndTokens,
 } from "@/server/auth/oauth-admin";
 import {API_BASE_PATH} from "@/shared/ApiVersion";
 import {OAUTH_ACCESS_TOKEN_PREFIX, OAUTH_REFRESH_TOKEN_PREFIX} from "@/shared/OAuth";
-import {hasExactRegisteredRedirect} from "@/pages/api/auth/[...all]";
+import {ALL, hasExactRegisteredRedirect} from "@/pages/api/auth/[...all]";
+import {POST as changeAccountEmail} from "@/pages/[adminPath]/ajax/account/email";
+import {POST as changeAccountPassword} from "@/pages/[adminPath]/ajax/account/password";
 
 const ORIGIN = "https://feed.example.com";
 
@@ -160,10 +164,71 @@ async function exchangeCode(code: string, verifier = "a".repeat(64)) {
   return await createMicrofeedAuth(env, request).handler(request);
 }
 
+async function authRoute(request: Request): Promise<Response> {
+  return await ALL({request} as Parameters<typeof ALL>[0]);
+}
+
+async function authorizeConnection(
+  cookie: string,
+  connectionId: string,
+  connectionName: string,
+): Promise<{code: string; refreshToken: string; accessToken: string}> {
+  const verifier = "c".repeat(64);
+  const url = new URL("/api/auth/oauth2/authorize", ORIGIN);
+  url.search = new URLSearchParams({
+    client_id: "microfeed-cli",
+    code_challenge: await pkceChallenge(verifier),
+    code_challenge_method: "S256",
+    microfeed_connection_id: connectionId,
+    microfeed_connection_name: connectionName,
+    prompt: "consent",
+    redirect_uri: "http://127.0.0.1:8977/callback",
+    response_type: "code",
+    scope: "content:read offline_access",
+    state: "connection-state",
+  }).toString();
+  const authorization = await authRoute(authRequest(
+    `${url.pathname}${url.search}`,
+    {headers: {cookie}},
+  ));
+  expect(authorization.status).toBe(302);
+  const connectionCookie = authorization.headers.getSetCookie().find((value) =>
+    value.startsWith("microfeed.oauth_connection=")
+  )?.split(";", 1)[0];
+  expect(connectionCookie).toBeTruthy();
+  const consentUrl = new URL(authorization.headers.get("location")!, ORIGIN);
+  const consent = await authRoute(authRequest("/api/auth/oauth2/consent", {
+    body: JSON.stringify({
+      accept: true,
+      oauth_query: consentUrl.search.slice(1),
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      cookie: `${cookie}; ${connectionCookie}`,
+    },
+    method: "POST",
+  }));
+  expect(consent.status).toBe(200);
+  const callback = new URL((await consent.json() as {url: string}).url);
+  const code = callback.searchParams.get("code")!;
+  const tokenResponse = await exchangeCode(code, verifier);
+  expect(tokenResponse.status).toBe(200);
+  const tokens = await tokenResponse.json() as {
+    access_token: string;
+    refresh_token: string;
+  };
+  return {
+    accessToken: tokens.access_token,
+    code,
+    refreshToken: tokens.refresh_token,
+  };
+}
+
 beforeEach(seedOwner);
 
 describe("Better Auth on Workers with D1", () => {
-  it("publishes same-origin OAuth discovery without operator or credential data", async () => {
+  it("publishes same-origin authorization metadata without registration or owner data", async () => {
     const request = authRequest(
       "/.well-known/oauth-authorization-server/api/auth",
     );
@@ -178,6 +243,8 @@ describe("Better Auth on Workers with D1", () => {
       issuer: `${ORIGIN}/api/auth`,
       token_endpoint: `${ORIGIN}/api/auth/oauth2/token`,
     });
+    expect(metadata).not.toHaveProperty("dynamic_client_registration_supported");
+    expect(metadata).not.toHaveProperty("registration_endpoint");
     expect(JSON.stringify(metadata)).not.toMatch(
       /owner@example|BETTER_AUTH_SECRET|instanceId|accountId/iu,
     );
@@ -278,6 +345,98 @@ describe("Better Auth on Workers with D1", () => {
     ).handler(signInRequest);
     expect(signIn.ok).toBe(false);
     expect(await signIn.text()).not.toContain("owner@example.com");
+  });
+
+  it("requires a password-bound proof before passkey registration", async () => {
+    const cookie = await ownerCookie();
+    const request = authRequest(
+      "/api/auth/passkey/generate-register-options?name=Home%20Mac",
+      {headers: {cookie}},
+    );
+    const rejected = await authRoute(request);
+    expect(rejected.status).toBe(403);
+    expect(await rejected.json()).toMatchObject({
+      code: "PASSKEY_REAUTH_REQUIRED",
+    });
+
+    const proof = await createPasskeyStepUpCookie(
+      request,
+      env.BETTER_AUTH_SECRET,
+      {action: "add", userId: "owner-id"},
+    );
+    const confirmed = await authRoute(authRequest(
+      "/api/auth/passkey/generate-register-options?name=Home%20Mac",
+      {headers: {cookie: `${cookie}; ${proof.split(";", 1)[0]}`}},
+    ));
+    expect(confirmed.status).toBe(200);
+    expect(await confirmed.json()).toMatchObject({
+      rp: {id: "feed.example.com", name: "microfeed"},
+      user: {displayName: "owner@example.com", name: "Home Mac"},
+    });
+  });
+
+  it("changes the password while preserving the current browser and app access", async () => {
+    const currentCookie = await ownerCookie();
+    await ownerCookie();
+    const approved = await authorize(currentCookie);
+    await exchangeCode(approved.code!);
+
+    const request = authRequest("/admin/ajax/account/password/", {
+      body: JSON.stringify({
+        confirmation: "new correct horse battery staple",
+        currentPassword: "correct horse battery staple",
+        newPassword: "new correct horse battery staple",
+      }),
+      headers: {
+        "content-type": "application/json",
+        cookie: currentCookie,
+      },
+      method: "POST",
+    });
+    const response = await changeAccountPassword({
+      locals: {authUser: {id: "owner-id"}},
+      request,
+    } as Parameters<typeof changeAccountPassword>[0]);
+    expect(response.status).toBe(200);
+    expect(response.headers.getSetCookie().join(";")).toContain(
+      "microfeed.session_token=",
+    );
+    const counts = await env.FEED_DB.prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM "auth_session" WHERE "userId" = 'owner-id') AS "sessions",
+         (SELECT COUNT(*) FROM "oauth_consent" WHERE "userId" = 'owner-id') AS "consents"`,
+    ).first<{consents: number; sessions: number}>();
+    expect(counts).toEqual({consents: 1, sessions: 1});
+  });
+
+  it("changes the email, signs out built-in sessions, and preserves app access", async () => {
+    const cookie = await ownerCookie();
+    const approved = await authorize(cookie);
+    await exchangeCode(approved.code!);
+    const request = authRequest("/admin/ajax/account/email/", {
+      body: JSON.stringify({
+        currentPassword: "correct horse battery staple",
+        email: "new-owner@example.com",
+      }),
+      headers: {"content-type": "application/json", cookie},
+      method: "POST",
+    });
+    const response = await changeAccountEmail({
+      locals: {authUser: {id: "owner-id"}},
+      request,
+    } as Parameters<typeof changeAccountEmail>[0]);
+    expect(response.status).toBe(200);
+    const account = await env.FEED_DB.prepare(
+      `SELECT
+         (SELECT "email" FROM "auth_user" WHERE "id" = 'owner-id') AS "email",
+         (SELECT COUNT(*) FROM "auth_session" WHERE "userId" = 'owner-id') AS "sessions",
+         (SELECT COUNT(*) FROM "oauth_consent" WHERE "userId" = 'owner-id') AS "consents"`,
+    ).first<{consents: number; email: string; sessions: number}>();
+    expect(account).toEqual({
+      consents: 1,
+      email: "new-owner@example.com",
+      sessions: 0,
+    });
   });
 
   it("continues an authorization request through administrator login", async () => {
@@ -418,8 +577,7 @@ describe("Better Auth on Workers with D1", () => {
       headers: {"content-type": "application/x-www-form-urlencoded"},
       method: "POST",
     });
-    expect((await createMicrofeedAuth(env, revokeRequest).handler(revokeRequest)).ok)
-      .toBe(true);
+    expect((await authRoute(revokeRequest)).ok).toBe(true);
     const revokedRequest = authRequest(`${API_BASE_PATH}feed/`, {
       headers: {authorization: `Bearer ${rotated.access_token}`},
     });
@@ -443,7 +601,93 @@ describe("Better Auth on Workers with D1", () => {
       .toBe(false);
   });
 
-  it("revokes grants and owner-registered clients immediately", async () => {
+  it("groups independent CLI computers and revokes one token family at a time", async () => {
+    const cookie = await ownerCookie();
+    const homeId = "86fe12c4-35a2-4f90-8b44-f14740c14551";
+    const workId = "e5438d3a-fdf0-4328-9d55-1d14681d3e0c";
+    const home = await authorizeConnection(cookie, homeId, "Home Mac");
+    const work = await authorizeConnection(cookie, workId, "Work laptop");
+
+    const applications = await listOAuthApplicationAccess(
+      env.FEED_DB,
+      "owner-id",
+    );
+    expect(applications).toHaveLength(1);
+    expect(applications[0]).toMatchObject({
+      clientId: "microfeed-cli",
+      name: "microfeed CLI",
+    });
+    expect(applications[0]?.connections).toEqual(expect.arrayContaining([
+      expect.objectContaining({active: true, id: workId, name: "Work laptop"}),
+      expect.objectContaining({active: true, id: homeId, name: "Home Mac"}),
+    ]));
+
+    const refresh = authRequest("/api/auth/oauth2/token", {
+      body: new URLSearchParams({
+        client_id: "microfeed-cli",
+        grant_type: "refresh_token",
+        refresh_token: home.refreshToken,
+      }),
+      headers: {"content-type": "application/x-www-form-urlencoded"},
+      method: "POST",
+    });
+    const refreshedResponse = await createMicrofeedAuth(env, refresh).handler(refresh);
+    expect(refreshedResponse.ok).toBe(true);
+    const refreshedTokens = await refreshedResponse.json() as {
+      refresh_token: string;
+    };
+    const refreshedReference = await env.FEED_DB.prepare(
+      `SELECT "referenceId" FROM "oauth_refresh_token"
+       WHERE "clientId" = 'microfeed-cli'
+         AND "referenceId" = ?1
+         AND "revoked" IS NULL
+       ORDER BY "createdAt" DESC LIMIT 1`,
+    ).bind(homeId).first<{referenceId: string}>();
+    expect(refreshedReference?.referenceId).toBe(homeId);
+
+    expect(await revokeOAuthConnectionAndTokens(
+      env.FEED_DB,
+      "owner-id",
+      "microfeed-cli",
+      workId,
+    )).toBe(true);
+    await updateApiAccessSettings(env.FEED_DB, {
+      enabled: true,
+      publicDocsEnabled: false,
+    });
+    expect(await decideApiRequest(
+      env.FEED_DB,
+      authRequest(`${API_BASE_PATH}feed/`, {
+        headers: {authorization: `Bearer ${work.accessToken}`},
+      }),
+      `${API_BASE_PATH}feed/`,
+      "built-in",
+    )).toBe("unauthorized");
+
+    const revoke = authRequest("/api/auth/oauth2/revoke", {
+      body: new URLSearchParams({
+        client_id: "microfeed-cli",
+        token: refreshedTokens.refresh_token,
+        token_type_hint: "refresh_token",
+      }),
+      headers: {"content-type": "application/x-www-form-urlencoded"},
+      method: "POST",
+    });
+    expect((await authRoute(revoke)).ok).toBe(true);
+    expect(await listOAuthApplicationAccess(env.FEED_DB, "owner-id"))
+      .toMatchObject([{
+        connections: [{active: false, id: homeId, name: "Home Mac"}],
+      }]);
+    expect(await revokeOAuthApplicationAccess(
+      env.FEED_DB,
+      "owner-id",
+      "microfeed-cli",
+    )).toBe(true);
+    expect(await listOAuthApplicationAccess(env.FEED_DB, "owner-id"))
+      .toEqual([]);
+  });
+
+  it("revokes grants and rejects dynamic client registration", async () => {
     const cookie = await ownerCookie();
     const approved = await authorize(cookie, {scope: "content:read"});
     const tokens = await (await exchangeCode(approved.code!)).json() as {
@@ -483,19 +727,7 @@ describe("Better Auth on Workers with D1", () => {
     });
     const createdResponse = await createMicrofeedAuth(env, createRequest)
       .handler(createRequest);
-    expect(createdResponse.status).toBe(200);
-    const created = await createdResponse.json() as {
-      client_id: string;
-      client_secret: string;
-    };
-    expect(created.client_secret).toMatch(/^mf_ocs_/u);
-    expect((await listOAuthClients(env.FEED_DB, "owner-id"))[0])
-      .toMatchObject({clientId: created.client_id, name: "Example app"});
-    expect(await deleteOAuthClientAndTokens(
-      env.FEED_DB,
-      "owner-id",
-      created.client_id,
-    )).toBe(true);
-    expect(await listOAuthClients(env.FEED_DB, "owner-id")).toEqual([]);
+    expect(createdResponse.ok).toBe(false);
+    expect(await createdResponse.text()).not.toContain("client_secret");
   });
 });

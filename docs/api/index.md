@@ -1,6 +1,6 @@
 ---
 title: API overview
-description: Use microfeed as a headless CMS with per-instance OAuth, named API keys, a content CLI, and generated OpenAPI documents.
+description: Use microfeed as a headless CMS with named Bearer API keys and generated OpenAPI documents.
 ---
 
 microfeed has two structured interfaces with different purposes:
@@ -34,10 +34,10 @@ document, an image, or an external link; it becomes the RSS `<enclosure>`.
 
 ![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](/images/screenshots/3-api-1.png)
 
-Every integration request requires a Bearer credential: either a full-access
-`mf_…` API key or a short-lived OAuth access token with the operation's
-`content:read` or `content:write` scope. Dashboard login credentials are never
-sent to content API routes.
+Every direct integration request requires a full-access `mf_…` API key sent as
+a Bearer credential. Dashboard login credentials are never sent to content API
+routes. Create a separate named key for each integration so it can be rotated or
+revoked without interrupting other clients.
 
 ## Documentation formats on each instance
 
@@ -60,11 +60,8 @@ docs are enabled.
 
 ## Choose your next step
 
-- [Choose OAuth or an API key](./authentication/).
-- [Manage content with the official `@microfeed/cli`](./cli/) ([npm
-  package](https://www.npmjs.com/package/@microfeed/cli)).
+- [Enable API access or create an API key](./authentication/).
 - [Build and test an integration](./build-and-test/).
-- [Give an AI agent the self-contained API contract](./ai-agents/).
 
 This documentation page is the stable central overview. The generated
 per-instance files remain the source of truth for the exact microfeed release
