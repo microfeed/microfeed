@@ -10,6 +10,7 @@ import type {
   PublicFeed,
 } from "@/types";
 import type {ItemOrder, ItemSort} from "@/shared/ItemPagination";
+import type {PublicCachePurger} from "@/server/cache/public-cache";
 
 export interface FeedQuery {
   adminProtection?: AdminProtectionStatus;
@@ -29,8 +30,9 @@ export async function loadFeed(
   runtimeEnv: Env,
   request: Request,
   query?: FeedQuery,
+  publicCachePurger?: PublicCachePurger,
 ): Promise<LoadedFeed> {
-  const database = new FeedDb(runtimeEnv, request);
+  const database = new FeedDb(runtimeEnv, request, publicCachePurger);
   const fetchItems = query
     ? getFetchItemsParams(
         request,

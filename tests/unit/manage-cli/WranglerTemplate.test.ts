@@ -5,6 +5,7 @@ import {describe, expect, it} from "vitest";
 import {
   adminAuthMode,
   requiredSecrets,
+  workersCacheEnabled,
   workersDevEnabled,
 } from "../../../manage-cli/lib/config";
 import type {MicrofeedConfig} from "../../../manage-cli/types";
@@ -32,6 +33,7 @@ describe("Wrangler configuration template", () => {
     const config = JSON.parse(
       template
         .replace("__WORKERS_DEV__", "true")
+        .replace("__WORKERS_CACHE_ENABLED__", "true")
         .replace(
           "__REQUIRED_SECRETS__",
           '["UPLOAD_SIGNING_KEY","BETTER_AUTH_SECRET"]',
@@ -40,6 +42,9 @@ describe("Wrangler configuration template", () => {
         .replace("__R2_SETUP_MODE__", "automatic")
         .replace("__ROUTES__", "[]"),
     ) as {
+      cache?: {
+        enabled?: boolean;
+      };
       observability?: {
         enabled?: boolean;
       };
@@ -49,6 +54,7 @@ describe("Wrangler configuration template", () => {
       vars?: Record<string, string>;
     };
 
+    expect(config.cache?.enabled).toBe(true);
     expect(config.observability?.enabled).toBe(false);
     expect(config.version_metadata?.binding).toBe("CF_VERSION_METADATA");
     expect(config.vars?.MICROFEED_CLOUDFLARE_ACCOUNT_ID).toBe(
@@ -67,6 +73,19 @@ describe("Wrangler configuration template", () => {
     expect(workersDevEnabled({
       ...config,
       customDomain: "feed.example.com",
+    })).toBe(false);
+  });
+
+  it("enables Workers Caching only for Cloudflare production", () => {
+    expect(workersCacheEnabled(config)).toBe(true);
+    expect(workersCacheEnabled({
+      ...config,
+      deploymentEnvironment: "preview",
+    })).toBe(false);
+    expect(workersCacheEnabled({
+      ...config,
+      accountId: null,
+      hosting: "local",
     })).toBe(false);
   });
 

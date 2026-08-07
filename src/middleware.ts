@@ -1,4 +1,4 @@
-import {env} from "cloudflare:workers";
+import {cache, env} from "cloudflare:workers";
 import {defineMiddleware} from "astro:middleware";
 
 import {builtInAdminAuthEnabled} from "@/shared/AdminAuth";
@@ -31,6 +31,7 @@ import {
   decideApiRequest,
 } from "@/server/api/access";
 import {createFeedCrud, loadFeed} from "@/server/feed/feed";
+import {applyWorkerCachePolicy} from "@/server/cache/public-cache";
 
 const AUTH_BASE_PATH = "/api/auth";
 function apiNotFoundResponse(): Response {
@@ -73,7 +74,7 @@ function wantsJson(request: Request, pathname: string): boolean {
     request.headers.get("accept")?.includes("application/json") === true;
 }
 
-export const onRequest = defineMiddleware(async (context, next) => {
+const handleRequest = defineMiddleware(async (context, next) => {
   const {pathname} = context.url;
   let authSessionHeaders: Headers | undefined;
   const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
@@ -132,7 +133,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       );
     }
 
-    const loaded = await loadFeed(env, context.request);
+    const loaded = await loadFeed(env, context.request, undefined, cache);
     const webGlobalSettings = loaded.content.settings?.webGlobalSettings ?? {};
     context.locals.feedDb = loaded.database;
     context.locals.feedContent = loaded.content;
@@ -277,6 +278,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
               }
             : {}),
         },
+        cache,
       );
       context.locals.feedDb = loaded.database;
       context.locals.feedContent = loaded.content;
@@ -288,4 +290,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
   return authSessionHeaders
     ? withAuthSessionCookies(response, authSessionHeaders)
     : response;
+});
+
+export const onRequest = defineMiddleware(async (context, next) => {
+  const response = await handleRequest(context, next);
+  if (!(response instanceof Response)) {
+    throw new TypeError("microfeed middleware did not return a response");
+  }
+  return applyWorkerCachePolicy(context.request, response, {
+    adminPath: normalizeAdminPath(env.MICROFEED_ADMIN_PATH),
+    deploymentEnvironment: env.DEPLOYMENT_ENVIRONMENT,
+  });
 });

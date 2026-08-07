@@ -154,13 +154,13 @@ export default class FeedCrudManager {
       id: itemId,
       guid,
     };
-    await this.feedDb.putContent(this.feedContent);
+    await this.feedDb.putContent({item: this.feedContent.item});
     return itemId;
   }
 
   async saveInternalItem(item: any) {
     this.feedContent.item = item;
-    await this.feedDb.putContent(this.feedContent);
+    await this.feedDb.putContent({item: this.feedContent.item});
     return item.id;
   }
 
@@ -173,7 +173,7 @@ export default class FeedCrudManager {
       ...this.feedContent.channel,
       ...this._publicToInternalSchemaForChannel(channel),
     };
-    await this.feedDb.putContent(this.feedContent);
+    await this.feedDb.putContent({channel: this.feedContent.channel});
     return this.feedContent.id;
   }
 }

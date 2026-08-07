@@ -531,6 +531,11 @@ export function workersDevEnabled(config: MicrofeedConfig): boolean {
   return config.customDomain === null;
 }
 
+export function workersCacheEnabled(config: MicrofeedConfig): boolean {
+  return config.hosting === "cloudflare" &&
+    deploymentEnvironment(config) === "production";
+}
+
 export function localConfig(instanceName = "local"): MicrofeedConfig {
   const resourcePrefix = instanceName === "local"
     ? "microfeed-local"
@@ -659,6 +664,10 @@ export async function generateWranglerConfig(
     .replaceAll("__PROJECT_ROOT__", relativeRoot)
     .replaceAll("__WORKER_NAME__", workerName(config))
     .replaceAll("__WORKERS_DEV__", String(workersDevEnabled(config)))
+    .replaceAll(
+      "__WORKERS_CACHE_ENABLED__",
+      String(workersCacheEnabled(config)),
+    )
     .replaceAll("__CLOUDFLARE_ACCOUNT_ID__", config.accountId ?? "")
     .replaceAll("__PROJECT_NAME__", config.projectName)
     .replaceAll("__ADMIN_AUTH_MODE__", effectiveAdminAuthMode)

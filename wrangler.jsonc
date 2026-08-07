@@ -7,6 +7,9 @@
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-07-29",
   "compatibility_flags": ["nodejs_compat"],
+  "cache": {
+    "enabled": true
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist"
