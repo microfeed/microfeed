@@ -19,12 +19,25 @@ same channel after its owner enables the authenticated API. Start with
 3. Add a clear title and description. The visual editor supports formatted
    text; the HTML source view is available when you need direct markup.
 4. Add an external URL or upload media when appropriate.
-5. Review the public-page and feed settings.
-6. Select the save or publish action.
+5. Review the publication date, generated link, and item status.
+6. Leave the item **Unpublished** while you prepare it, or select **Published**
+   when it is ready to go live.
 
-Expected result: a success notification appears, and the item becomes available
-from the channel’s item list. If public visibility is enabled, use the external
-link to inspect the page.
+Opening the form does not create an empty item. Your first genuine edit creates
+one **Unpublished** draft, changes the browser address from `/items/new/` to the
+draft's edit address, and adds it to **See all items**. Ordinary edits autosave
+after a one-second pause; status choices and completed uploads save immediately.
+
+The action panel reports **Unsaved changes**, **Saving…**, or **All changes
+saved**. Select **Save now** to save without waiting. If a save fails, the form
+retains your changes and offers **Retry save**. Keep the page open until the
+latest changes are saved.
+
+Selecting **Published** is an explicit action that saves immediately and makes
+the item public. If you have not changed the draft's displayed publication date,
+the dashboard updates it to the publication time. A date you chose yourself is
+preserved. If public visibility is enabled, use the external link to inspect the
+page.
 
 ![Creating a new microfeed item with media type, upload, image, title, publication, visibility, and description controls](/images/screenshots/2-dashboard-2-add-item.png)
 
@@ -43,7 +56,11 @@ context.
 
 1. Select **See all items**.
 2. Find the item, then open its edit action.
-3. Change the fields and save.
+3. Change the fields and wait for **All changes saved**, or select **Save now**.
+
+The editor preserves the item's current Published, Unlisted, or Unpublished
+status when it opens. Changes to an existing item follow the same autosave and
+retry behavior as a new draft.
 
 Deletion uses a confirmation dialog because it may remove both the item record
 and associated media. Read the target carefully before confirming.

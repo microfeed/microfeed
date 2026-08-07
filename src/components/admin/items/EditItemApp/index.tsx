@@ -32,6 +32,9 @@ import {
 import {
   preventCloseWhenChanged,
 } from "@/client/BrowserUtils";
+import AutosaveCoordinator, {
+  type AutosaveState,
+} from "@/client/AutosaveCoordinator";
 import {getMediaFileFromUrl} from "@/shared/MediaFileUtils";
 import type {FeedContent, OnboardingResult} from "@/types";
 import {Button} from "@/components/ui/button";
@@ -47,13 +50,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
+import AdminAutosaveAction from "@/components/admin/shared/AdminAutosaveAction";
 
 const SUBMIT_STATUS__START = 1;
 
-function initItem(itemId?: any) {
+function initItem(itemId: string) {
   return ({
-    status: STATUSES.PUBLISHED,
+    status: STATUSES.UNPUBLISHED,
     pubDateMs: datetimeLocalToMs(new Date()),
+    pubDateIsDraftDefault: true,
     guid: itemId,
     'itunes:explicit': false,
     'itunes:block': false,
@@ -67,41 +72,65 @@ interface Props {
   onboardingResult: OnboardingResult;
 }
 
+interface ItemSnapshot {
+  deleteImageUrls: string[];
+  item: Record<string, unknown>;
+}
+
 export default class EditItemApp extends React.Component<Props, any> {
+  private autosave: AutosaveCoordinator<ItemSnapshot>;
   private cleanupNavigationGuard?: () => void;
+  private mounted = false;
 
   constructor(props: Props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
     this.onDelete = this.onDelete.bind(this);
-    this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdateItemMeta = this.onUpdateItemMeta.bind(this);
-    this.onUpdateItemToFeed = this.onUpdateItemToFeed.bind(this);
+    this.saveSnapshot = this.saveSnapshot.bind(this);
 
-    const itemId = props.itemId;
-    const action = itemId ? 'edit' : 'create';
+    const action = props.itemId ? 'edit' : 'create';
+    const itemId = props.itemId || randomShortUUID();
     const feed = {
       ...props.feedContent,
       items: props.feedContent.items ? [...props.feedContent.items] : [],
     };
-    const item = feed.item || initItem();
+    const item = feed.item
+      ? {...feed.item, guid: feed.item.guid || itemId}
+      : initItem(itemId);
 
     this.state = {
       feed,
       item,
       submitStatus: null,
-      itemId: itemId || randomShortUUID(),
+      itemId,
       action,
 
+      autoUpdateLink: action === 'create',
       userChangedLink: false,
-      changed: false,
+      autosaveState: {dirty: false, phase: "idle"} satisfies AutosaveState,
       replacedImageUrls: [],
     };
+
+    this.autosave = new AutosaveCoordinator({
+      getSnapshot: () => ({
+        deleteImageUrls: [...this.state.replacedImageUrls],
+        item: {id: this.state.itemId, ...this.state.item},
+      }),
+      onError: (error) => this.showSaveError(error),
+      onStateChange: (autosaveState) => {
+        if (this.mounted) this.setState({autosaveState});
+      },
+      save: this.saveSnapshot,
+    });
   }
 
   componentDidMount() {
-    this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
+    this.mounted = true;
+    this.cleanupNavigationGuard = preventCloseWhenChanged(
+      () => this.autosave.hasUnsavedChanges(),
+    );
 
     const {action, item} = this.state;
     if (action === 'create') {
@@ -125,42 +154,29 @@ export default class EditItemApp extends React.Component<Props, any> {
   }
 
   componentWillUnmount() {
+    this.mounted = false;
+    this.autosave.dispose();
     this.cleanupNavigationGuard?.();
   }
 
-  onUpdateFeed(props: any, onSuccess: any) {
+  onUpdateItemMeta(attrDict: any, extraDict?: any, immediate = false) {
     this.setState((prevState: any) => ({
-      feed: {
-        ...prevState.feed,
-        ...props,
-      },
-    }), () => onSuccess())
-  }
-
-  onUpdateItemMeta(attrDict: any, extraDict?: any) {
-    this.setState((prevState: any) => ({
-      changed: true,
       item: {...prevState.item, ...attrDict,},
       ...extraDict,
-    }));
+    }), () => this.autosave.markChanged({immediate}));
   }
 
-  onUpdateItemToFeed(onSuccess: any) {
-    let {item, itemId, feed} = this.state;
-    const itemsBundle = {
-      ...feed.items,
-      [itemId]: {...item},
-    };
-    this.onUpdateFeed({'items': itemsBundle}, onSuccess);
-  }
+  async onDelete() {
+    if (!await this.autosave.flush()) return;
 
-  onDelete() {
-    const {item} = this.state;
+    const {item, itemId} = this.state;
     this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {item: {...item, status: STATUSES.DELETED}})
+    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
+      item: {id: itemId, ...item, status: STATUSES.DELETED},
+    })
       .then(() => {
         showToast('Deleted!', 'success');
-        this.setState({submitStatus: null, changed: false}, () => {
+        this.setState({submitStatus: null}, () => {
           setTimeout(() => {
             void navigate(ADMIN_URLS.allItems());
           }, 1000);
@@ -179,61 +195,51 @@ export default class EditItemApp extends React.Component<Props, any> {
 
   onSubmit(e: any) {
     e.preventDefault();
-    const {
-      item,
-      itemId,
-      action,
-      changed,
-      replacedImageUrls,
-    } = this.state;
-    if (!changed) {
-      showToast(
-        action === 'edit'
-          ? 'No changes to save.'
-          : 'Add some item details before creating it.',
-        'info',
-      );
-      return;
-    }
-    this.setState({submitStatus: SUBMIT_STATUS__START});
-    Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
-      deleteImageUrls: replacedImageUrls,
-      item: {id: itemId, ...item},
-    })
-      .then(() => {
-        this.setState({
-          submitStatus: null,
-          changed: false,
-          replacedImageUrls: [],
-        }, () => {
-          if (action === 'edit') {
-            showToast('Updated!', 'success');
-          } else {
-            showToast('Created!', 'success');
-            if (itemId) {
-              setTimeout(() => {
-                void navigate(ADMIN_URLS.editItem(itemId));
-              }, 1000);
-            }
-          }
-        });
-      }).catch((error: any) => {
-      this.setState({submitStatus: null}, () => {
-        if (!error.response) {
-          showToast('Network error. Please refresh the page and try again.', 'error');
-        } else {
-          showToast('Failed. Please try again.', 'error');
+    void this.autosave.flush();
+  }
+
+  async saveSnapshot(snapshot: ItemSnapshot) {
+    await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), snapshot);
+    if (!this.mounted) return;
+
+    const created = this.state.action === 'create';
+    await new Promise<void>((resolve) => {
+      this.setState((previousState: any) => ({
+        action: created ? 'edit' : previousState.action,
+        feed: {
+          ...previousState.feed,
+          item: snapshot.item,
+        },
+        replacedImageUrls: previousState.replacedImageUrls.filter(
+          (url: string) => !snapshot.deleteImageUrls.includes(url),
+        ),
+      }), () => {
+        if (created) {
+          window.history.replaceState(
+            window.history.state,
+            '',
+            ADMIN_URLS.editItem(this.state.itemId),
+          );
         }
+        resolve();
       });
     });
   }
 
+  showSaveError(error: any) {
+    if (!error?.response) {
+      showToast('Network error. Your changes are still on this page.', 'error');
+    } else {
+      showToast('Couldn’t save. Your changes are still on this page.', 'error');
+    }
+  }
+
   render() {
-    const {submitStatus, itemId, item, action, feed} = this.state;
+    const {autosaveState, submitStatus, itemId, item, action, feed} = this.state;
     const {onboardingResult} = this.props;
-    const submitting = submitStatus === SUBMIT_STATUS__START;
+    const deleting = submitStatus === SUBMIT_STATUS__START;
     const {mediaFile} = item;
-    const status = item.status || STATUSES.PUBLISHED;
+    const status = item.status || STATUSES.UNPUBLISHED;
     const mediaStorage = onboardingResult.result[
       ONBOARDING_TYPES.MEDIA_STORAGE
     ];
@@ -245,12 +251,6 @@ export default class EditItemApp extends React.Component<Props, any> {
       window.location.hostname,
     );
 
-    let buttonText = 'Create';
-    let submittingButtonText = 'Creating...';
-    if (action === 'edit') {
-      buttonText = 'Update';
-      submittingButtonText = 'Updating...';
-    }
     return (<AdminPageApp>
       <form className="grid grid-cols-1 gap-4 xl:grid-cols-12" onSubmit={this.onSubmit}>
         <div className="grid grid-cols-1 gap-4 xl:col-span-9">
@@ -261,13 +261,13 @@ export default class EditItemApp extends React.Component<Props, any> {
               mediaStorage={mediaStorage}
               mediaStorageReady={mediaStorageReady}
               initMediaFile={mediaFile || {}}
-              onMediaFileUpdated={(newMediaFile: any) => {
+              onMediaFileUpdated={(newMediaFile: any, options?: {immediate?: boolean}) => {
                 this.onUpdateItemMeta({
                   mediaFile: {
                     ...mediaFile,
                     ...newMediaFile,
                   },
-                });
+                }, undefined, options?.immediate);
               }}
             />
           </div>
@@ -294,7 +294,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                         },
                       }));
                     } else {
-                      this.onUpdateItemMeta({image: undefined});
+                      this.onUpdateItemMeta({image: undefined}, undefined, true);
                     }
                   }}
                   onImageUploaded={(
@@ -302,13 +302,12 @@ export default class EditItemApp extends React.Component<Props, any> {
                     _contentType: any,
                     replacedImageUrl: unknown,
                   ) => this.setState((prevState: any) => ({
-                    changed: true,
                     item: {...prevState.item, image: cdnUrl},
                     replacedImageUrls: queueReplacedImageUrl(
                       prevState.replacedImageUrls,
                       replacedImageUrl,
                     ),
-                  }))}
+                  }), () => this.autosave.markChanged({immediate: true}))}
                 />
               </div>
               <div className="ml-8 flex-1">
@@ -316,9 +315,14 @@ export default class EditItemApp extends React.Component<Props, any> {
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.TITLE]}/>}
                   value={item.title}
                   onChange={(e: any) => {
-                    const attrDict = {'title': e.target.value};
-                    if (action !== 'edit' && !this.state.userChangedLink) {
-                      (attrDict as any).link = PUBLIC_URLS.webItem(itemId, item.title, getPublicBaseUrl());
+                    const nextTitle = e.target.value;
+                    const attrDict = {'title': nextTitle};
+                    if (this.state.autoUpdateLink && !this.state.userChangedLink) {
+                      (attrDict as any).link = PUBLIC_URLS.webItem(
+                        itemId,
+                        nextTitle,
+                        getPublicBaseUrl(),
+                      );
                     }
                     this.onUpdateItemMeta(attrDict);
                   }}
@@ -328,7 +332,10 @@ export default class EditItemApp extends React.Component<Props, any> {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
                     value={item.pubDateMs}
                     onChange={(e: any) => {
-                      this.onUpdateItemMeta({'pubDateMs': datetimeLocalStringToMs(e.target.value)});
+                      this.onUpdateItemMeta({
+                        'pubDateIsDraftDefault': false,
+                        'pubDateMs': datetimeLocalStringToMs(e.target.value),
+                      }, undefined, true);
                     }}
                   />
                   <AdminInput
@@ -356,7 +363,18 @@ export default class EditItemApp extends React.Component<Props, any> {
                         value: String(STATUSES.UNPUBLISHED),
                       }]}
                     onValueChange={(value) => {
-                      this.onUpdateItemMeta({'status': parseInt(value, 10)})
+                      const nextStatus = parseInt(value, 10);
+                      const publicationFields = nextStatus === STATUSES.PUBLISHED &&
+                          item.pubDateIsDraftDefault === true
+                        ? {
+                            pubDateIsDraftDefault: false,
+                            pubDateMs: Date.now(),
+                          }
+                        : {};
+                      this.onUpdateItemMeta({
+                        ...publicationFields,
+                        status: nextStatus,
+                      }, undefined, true);
                     }}
                   />
                   <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: (ITEM_STATUSES_DICT[status] as any).description}} />
@@ -392,16 +410,11 @@ export default class EditItemApp extends React.Component<Props, any> {
                       label: 'no',
                       value: 'no',
                     }]}
-                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:explicit': value === 'yes'})}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:explicit': value === 'yes'}, undefined, true)}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
                     value={item.guid || itemId}
-                    setRef={(ref: any) => {
-                      if (!item.guid && ref) {
-                        this.onUpdateItemMeta({'guid': ref.value}, {changed: false});
-                      }
-                    }}
                     onChange={(e: any) => this.onUpdateItemMeta({'guid': e.target.value})}
                   />
                   <AdminInput
@@ -426,7 +439,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                       value: 'bonus',
                     },
                     ]}
-                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:episodeType': value})}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:episodeType': value}, undefined, true)}
                   />
                   <AdminInput
                     type="number"
@@ -455,7 +468,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                       label: 'No',
                       value: 'no',
                     }]}
-                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:block': value === 'yes'})}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:block': value === 'yes'}, undefined, true)}
                   />
                 </div>
               </div>
@@ -464,16 +477,12 @@ export default class EditItemApp extends React.Component<Props, any> {
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">
-            <div className="rounded-[14px] border bg-card p-5 text-center text-card-foreground shadow-xs">
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={submitting}
-              >
-                {submitting ? submittingButtonText : buttonText}
-              </Button>
-            </div>
+            <AdminAutosaveAction
+              {...autosaveState}
+              idleMessage={action === 'create'
+                ? 'Start editing to create an unpublished draft.'
+                : undefined}
+            />
             {action === 'edit' && <div>
               <AdminSideQuickLinks
                 AdditionalLinksDiv={<div className="flex flex-wrap">
@@ -483,7 +492,7 @@ export default class EditItemApp extends React.Component<Props, any> {
               />
               <div className="mt-4 flex justify-center rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
                 <AlertDialog>
-                  <AlertDialogTrigger render={<Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}>
+                  <AlertDialogTrigger render={<Button disabled={deleting} type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}>
                     <Trash2Icon aria-hidden="true" className="size-4" />
                     Delete this item
                   </AlertDialogTrigger>
@@ -495,9 +504,9 @@ export default class EditItemApp extends React.Component<Props, any> {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction type="button" variant="destructive" onClick={this.onDelete}>
-                        Delete item
+                      <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction disabled={deleting} type="button" variant="destructive" onClick={this.onDelete}>
+                        {deleting ? 'Deleting...' : 'Delete item'}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

@@ -223,7 +223,7 @@ export default class MediaManager extends React.Component<any, any> {
           sizeByte: size,
           contentType: type,
           category,
-        });
+        }, {immediate: true});
         if (this.audioRef && category === ENCLOSURE_CATEGORIES.AUDIO) {
           this.audioRef.pause();
           this.audioRef.load();
@@ -296,7 +296,15 @@ export default class MediaManager extends React.Component<any, any> {
                 return;
               }
             }
-            this.setState({category: nextCategory, ...this.initState});
+            this.setState({category: nextCategory, ...this.initState}, () => {
+              this.props.onMediaFileUpdated({
+                category: nextCategory,
+                contentType: null,
+                durationSecond: 0,
+                sizeByte: 0,
+                url: '',
+              }, {immediate: true});
+            });
           }}
         />
       </div>
@@ -335,7 +343,7 @@ export default class MediaManager extends React.Component<any, any> {
                 }, () => {
                   this.props.onMediaFileUpdated({
                     durationSecond: newDurationSecond,
-                  });
+                  }, {immediate: true});
                 });
               }
             } catch (e) { // eslint-disable-line

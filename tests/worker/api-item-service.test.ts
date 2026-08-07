@@ -110,6 +110,51 @@ describe("transport-neutral item service", () => {
     ).bind(ITEM_ID).first()).toEqual({count: 0});
   });
 
+  it("finalizes the GUI draft-date marker for explicit API publication changes", async () => {
+    const {crud, database} = await databaseAndCrud();
+    const originalDate = "2026-08-01T10:00:00.000Z";
+    await env.FEED_DB.prepare(
+      "INSERT INTO items (id, status, data, pub_date) VALUES (?, ?, ?, ?)",
+    ).bind(
+      ITEM_ID,
+      STATUSES.UNPUBLISHED,
+      JSON.stringify({
+        pubDateIsDraftDefault: true,
+        title: "GUI draft",
+      }),
+      originalDate,
+    ).run();
+
+    const titleOnly = await updateItem(database, crud, ITEM_ID, {
+      title: "Still a draft",
+    });
+    expect(titleOnly?.pubDateIsDraftDefault).toBe(true);
+
+    const customDate = "2026-09-01T18:30:00.000Z";
+    const dated = await updateItem(database, crud, ITEM_ID, {
+      date_published: customDate,
+    });
+    expect(dated?.pubDateIsDraftDefault).toBe(false);
+    expect(dated?.pubDateMs).toBe(Date.parse(customDate));
+
+    await env.FEED_DB.prepare(
+      "UPDATE items SET status = ?, data = ? WHERE id = ?",
+    ).bind(
+      STATUSES.UNPUBLISHED,
+      JSON.stringify({
+        pubDateIsDraftDefault: true,
+        title: "Draft again",
+      }),
+      ITEM_ID,
+    ).run();
+    const published = await updateItem(database, crud, ITEM_ID, {
+      status: "published",
+    });
+    expect(published?.status).toBe(STATUSES.PUBLISHED);
+    expect(published?.pubDateIsDraftDefault).toBe(false);
+    expect(published?.pubDateMs).toBe(Date.parse(customDate));
+  });
+
   it("stores same-site item-image and attachment URLs without duplicating the media path", async () => {
     const {crud, database} = await databaseAndCrud();
     await env.FEED_DB.prepare(
