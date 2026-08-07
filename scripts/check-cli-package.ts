@@ -34,10 +34,46 @@ try {
   await extractTar({cwd: temporary, file: archive});
   const packedPackage = JSON.parse(
     await readFile(path.join(temporary, "package", "package.json"), "utf8"),
-  ) as {bin?: {microfeed?: string}; name?: string};
+  ) as {
+    bin?: {microfeed?: string};
+    bugs?: {url?: string};
+    homepage?: string;
+    keywords?: string[];
+    name?: string;
+    publishConfig?: {access?: string; registry?: string};
+    repository?: {directory?: string; type?: string; url?: string};
+  };
   if (packedPackage.name !== "@microfeed/cli" ||
       packedPackage.bin?.microfeed !== "dist/index.js") {
     throw new Error("The packed CLI does not expose the microfeed binary.");
+  }
+  if (packedPackage.homepage !== "https://docs.microfeed.org/microfeed-cli/" ||
+      packedPackage.bugs?.url !==
+        "https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug" ||
+      !packedPackage.keywords?.includes("headless cms") ||
+      packedPackage.repository?.directory !== "packages/cli" ||
+      packedPackage.repository?.type !== "git" ||
+      packedPackage.repository?.url !==
+        "git+https://github.com/microfeed/microfeed.git" ||
+      packedPackage.publishConfig?.access !== "public" ||
+      packedPackage.publishConfig?.registry !== "https://registry.npmjs.org") {
+    throw new Error("The packed CLI is missing its npm discovery metadata.");
+  }
+  const packedReadme = await readFile(
+    path.join(temporary, "package", "README.md"),
+    "utf8",
+  );
+  if (!packedReadme.includes("yarn microfeed login") ||
+      !packedReadme.includes("Site URLs and instance names") ||
+      !packedReadme.includes("GNU Affero General Public License v3.0")) {
+    throw new Error("The packed CLI README is incomplete.");
+  }
+  const [rootLicense, packedLicense] = await Promise.all([
+    readFile(path.join(process.cwd(), "LICENSE"), "utf8"),
+    readFile(path.join(temporary, "package", "LICENSE"), "utf8"),
+  ]);
+  if (packedLicense !== rootLicense) {
+    throw new Error("The packed CLI license differs from the repository license.");
   }
 
   const packedHelp = run(process.execPath, [
