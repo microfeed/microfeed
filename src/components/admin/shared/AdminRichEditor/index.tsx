@@ -1,7 +1,7 @@
 import React from "react";
-import '@enzedonline/quill-blot-formatter2/dist/css/quill-blot-formatter2.css';
 import 'quill/dist/quill.snow.css';
 import {formatHtmlForEditing} from "@/client/HtmlUtils";
+import {stripTransientRichEditorAttributes} from "@/client/RichEditorMedia";
 import AdminRadioGroup from "../AdminRadioGroup";
 import AdminHtmlEditor from "../AdminHtmlEditor";
 import RichEditorQuill from "./component/RichEditorQuill";
@@ -11,7 +11,9 @@ export default class AdminRichEditor extends React.Component<any, any> {
     super(props);
     this.state = {
       mode: 'rich',
-      htmlSource: formatHtmlForEditing(props.value || ""),
+      htmlSource: formatHtmlForEditing(
+        stripTransientRichEditorAttributes(props.value || ""),
+      ),
 
       isOpenImage: false,
     };
@@ -32,8 +34,9 @@ export default class AdminRichEditor extends React.Component<any, any> {
   render() {
     const {htmlSource, mode} = this.state;
     const {label, value, extra, labelComponent} = this.props;
+    const editorValue = stripTransientRichEditorAttributes(value || "");
     return (
-      <div>
+      <div className="admin-rich-editor">
         {label && <div className="mb-2 font-semibold text-foreground">
           {label}
         </div>}
@@ -52,7 +55,7 @@ export default class AdminRichEditor extends React.Component<any, any> {
           />
         </div>
         {mode === 'rich' ? <RichEditorQuill
-          value={value}
+          value={editorValue}
           onChange={this.onRichChange}
           extra={extra}
         /> : <AdminHtmlEditor value={htmlSource} onChange={this.onHtmlChange} />}

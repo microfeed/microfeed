@@ -3,8 +3,12 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 
 import AdminCopyableUrl from "@/components/admin/shared/AdminCopyableUrl";
+import AdminCodeEditor, {
+  isCaretOnLastLine,
+} from "@/components/admin/shared/AdminCodeEditor";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
 import AdminImagePreviewDialog from "@/components/admin/shared/AdminImagePreviewDialog";
+import AdminHtmlEditor from "@/components/admin/shared/AdminHtmlEditor";
 import AdminPublicAccess, {
   publicAccessItems,
 } from "@/components/admin/shared/AdminPublicAccess";
@@ -15,6 +19,44 @@ import SettingsBase from "@/components/admin/settings/SettingsBase";
 import {Input} from "@/components/ui/input";
 
 describe("admin UI controls", () => {
+  it("only auto-scrolls a code editor when its caret is on the final line", () => {
+    const value = "first line\nsecond line\nlast line";
+
+    expect(isCaretOnLastLine(value, value.length, value.length)).toBe(true);
+    expect(isCaretOnLastLine(value, 24, 24)).toBe(true);
+    expect(isCaretOnLastLine(value, 5, 5)).toBe(false);
+    expect(isCaretOnLastLine(value, 5, value.length)).toBe(false);
+  });
+
+  it("scrolls code editors outside their synchronized textarea and preview layers", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminCodeEditor, {
+        code: "<p>Hello</p>",
+        language: "html",
+        maxHeight: "32rem",
+        minHeight: "16rem",
+        onChange: vi.fn(),
+      }),
+    );
+
+    expect(output).toMatch(
+      /^<label[^>]+overflow-auto[^>]+style="max-height:32rem"/u,
+    );
+    expect(output).toContain("min-height:16rem");
+    expect(output).not.toContain("max-height:32rem;min-height:16rem");
+  });
+
+  it("renders the rich HTML source editor at 120% of its base font size", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminHtmlEditor, {
+        onChange: vi.fn(),
+        value: "<p>Hello</p>",
+      }),
+    );
+
+    expect(output).toContain("font-size:14.4px");
+  });
+
   it("orders and labels the public access feeds", () => {
     const links = {
       json: "https://feed.example.com/json/",

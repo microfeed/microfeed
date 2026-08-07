@@ -212,11 +212,42 @@ a {
 }
 
 .ql-container .ql-editor {
+  contain: paint;
   height: auto;
   min-height:200px;
   max-height: 500px;
   overflow: auto;
   /* @apply min-h-screen; */
+}
+
+.admin-rich-editor .ql-container .ql-editor {
+  font-size: 120%;
+}
+
+.ql-editor img,
+.ql-editor video,
+.ql-editor iframe.ql-video {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: element;
+}
+
+.ql-editor .rich-editor-media-dragging {
+  cursor: grabbing;
+  opacity: 0.45;
+}
+
+.ql-editor .rich-editor-media-selected {
+  outline: 3px solid var(--color-brand-light);
+  outline-offset: 2px;
+}
+
+.ql-editor .rich-editor-media-drop-before {
+  box-shadow: 0 -3px 0 var(--color-brand-light);
+}
+
+.ql-editor .rich-editor-media-drop-after {
+  box-shadow: 0 3px 0 var(--color-brand-light);
 }
 
 .ql-toolbar {
