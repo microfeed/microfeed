@@ -4,6 +4,7 @@ import {
   browserAdminPath,
 } from "./AdminPath";
 import {API_BASE_PATH} from "./ApiVersion";
+import {OAUTH_AUTHORIZATION_SERVER_METADATA_PATH} from "./OAuth";
 
 export function randomHex(size: any = 32) {
   const bytes = new Uint8Array(Math.ceil(size / 2));
@@ -109,6 +110,11 @@ export function canonicalPathname(pathname: string) {
     return pathname;
   }
   const pathnameWithoutTrailingSlash = pathname.replace(/\/+$/u, '');
+  if (
+    pathnameWithoutTrailingSlash === OAUTH_AUTHORIZATION_SERVER_METADATA_PATH
+  ) {
+    return pathnameWithoutTrailingSlash;
+  }
   return hasFileExtension(pathnameWithoutTrailingSlash)
     ? pathnameWithoutTrailingSlash
     : `${pathnameWithoutTrailingSlash}/`;

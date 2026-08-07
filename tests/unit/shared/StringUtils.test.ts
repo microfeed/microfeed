@@ -1,4 +1,5 @@
 import {expect, test} from "vitest";
+import {OAUTH_AUTHORIZATION_SERVER_METADATA_PATH} from "@/shared/OAuth";
 import {
   ADMIN_URLS,
   buildAudioUrlWithTracking,
@@ -155,6 +156,12 @@ test('file paths are slashless while application paths retain trailing slashes',
     "/media/project/image.png",
   );
   expect(canonicalPathname("/admin/items/list")).toBe("/admin/items/list/");
+  expect(canonicalPathname(OAUTH_AUTHORIZATION_SERVER_METADATA_PATH)).toBe(
+    OAUTH_AUTHORIZATION_SERVER_METADATA_PATH,
+  );
+  expect(canonicalPathname(
+    `${OAUTH_AUTHORIZATION_SERVER_METADATA_PATH}/`,
+  )).toBe(OAUTH_AUTHORIZATION_SERVER_METADATA_PATH);
   expect(canonicalPathname("/")).toBe("/");
 });
 

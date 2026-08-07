@@ -1,6 +1,8 @@
 export const MICROFEED_OAUTH_CLIENT_ID = "microfeed-cli";
 export const MICROFEED_OAUTH_CALLBACK_URL =
   "http://127.0.0.1:8977/callback";
+export const OAUTH_AUTHORIZATION_SERVER_METADATA_PATH =
+  "/.well-known/oauth-authorization-server/api/auth";
 
 export const OAUTH_SCOPES = {
   READ: "content:read",

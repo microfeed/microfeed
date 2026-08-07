@@ -1,15 +1,74 @@
 import {createServer} from "node:http";
 
-import {afterEach, describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {startOAuthCallback} from "../../../packages/cli/src/oauth";
+import {
+  refreshTokens,
+  revokeToken,
+  startOAuthCallback,
+} from "../../../packages/cli/src/oauth";
 
 const servers: ReturnType<typeof createServer>[] = [];
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   await Promise.all(servers.splice(0).map((server) =>
     new Promise<void>((resolve) => server.close(() => resolve()))
   ));
+});
+
+describe("CLI OAuth requests", () => {
+  it("sends the verified site origin for token exchange and refresh", async () => {
+    const fetchMock = vi.fn(async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      expect(String(input)).toBe("https://feed.example/api/auth/oauth2/token");
+      const headers = new Headers(init?.headers);
+      expect(headers.get("origin")).toBe("https://feed.example");
+      expect(headers.get("content-type")).toBe(
+        "application/x-www-form-urlencoded",
+      );
+      return Response.json({
+        access_token: "mf_oat_access",
+        expires_in: 3600,
+        refresh_token: "mf_ort_refresh",
+        scope: "content:read content:write offline_access",
+        token_type: "Bearer",
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(refreshTokens(
+      "https://feed.example/api/auth/oauth2/token",
+      "mf_ort_existing",
+    )).resolves.toMatchObject({
+      accessToken: "mf_oat_access",
+      refreshToken: "mf_ort_refresh",
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("sends the verified site origin when revoking a token", async () => {
+    const fetchMock = vi.fn(async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      expect(String(input)).toBe("https://feed.example/api/auth/oauth2/revoke");
+      expect(new Headers(init?.headers).get("origin")).toBe(
+        "https://feed.example",
+      );
+      return new Response(null, {status: 200});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await revokeToken(
+      "https://feed.example/api/auth",
+      "mf_ort_refresh",
+      "refresh_token",
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
 });
 
 describe("CLI OAuth callback", () => {

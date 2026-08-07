@@ -102,9 +102,14 @@ async function exchangeToken(
   endpoint: string,
   parameters: URLSearchParams,
 ): Promise<TokenBundle> {
+  const origin = new URL(endpoint).origin;
   const response = await fetch(endpoint, {
     body: parameters,
-    headers: {accept: "application/json"},
+    headers: {
+      accept: "application/json",
+      "content-type": "application/x-www-form-urlencoded",
+      origin,
+    },
     method: "POST",
     redirect: "manual",
   });
@@ -172,12 +177,17 @@ export async function revokeToken(
   token: string,
   hint: "access_token" | "refresh_token",
 ): Promise<void> {
-  await fetch(`${issuer.replace(/\/$/u, "")}/oauth2/revoke`, {
+  const endpoint = `${issuer.replace(/\/$/u, "")}/oauth2/revoke`;
+  await fetch(endpoint, {
     body: new URLSearchParams({
       client_id: CLI_CLIENT_ID,
       token,
       token_type_hint: hint,
     }),
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      origin: new URL(endpoint).origin,
+    },
     method: "POST",
     redirect: "manual",
   }).catch(() => undefined);
