@@ -8,6 +8,7 @@ import {
   isLocalDevelopmentHostname,
   isR2CustomDomainUrl,
   isValidPublicBucketUrl,
+  mediaReferenceForStorage,
   normalizePublicBucketUrl,
   normalizeR2CustomDomainUrl,
   PUBLIC_URLS,
@@ -49,6 +50,24 @@ test('removeHostFromUrl', () => {
   expect(removeHostFromUrl(url)).toBe('project/hello/audio.mp3');
   const badUrl = 'asfafffaf'
   expect(removeHostFromUrl(badUrl)).toBe(badUrl);
+});
+
+test('media URLs are stored relative only to the configured public bucket', () => {
+  expect(mediaReferenceForStorage(
+    "https://feed.example.com/media/production/media/image.png",
+    "/media/",
+    "https://feed.example.com/api/v1/items/item-id/",
+  )).toBe("production/media/image.png");
+  expect(mediaReferenceForStorage(
+    "https://cdn.example.com/production/media/image.png",
+    "https://cdn.example.com/",
+    "https://feed.example.com/api/v1/items/item-id/",
+  )).toBe("production/media/image.png");
+  expect(mediaReferenceForStorage(
+    "https://images.example.net/image.png",
+    "/media/",
+    "https://feed.example.com/api/v1/items/item-id/",
+  )).toBe("https://images.example.net/image.png");
 });
 
 test('local development hostnames are detected without matching arbitrary hosts', () => {
@@ -163,6 +182,13 @@ test('file paths are slashless while application paths retain trailing slashes',
     `${OAUTH_AUTHORIZATION_SERVER_METADATA_PATH}/`,
   )).toBe(OAUTH_AUTHORIZATION_SERVER_METADATA_PATH);
   expect(canonicalPathname("/")).toBe("/");
+});
+
+test('absolute media URLs are not joined to the configured public bucket', () => {
+  expect(urlJoinWithRelative(
+    "/media/",
+    "https://images.example.net/image.png",
+  )).toBe("https://images.example.net/image.png");
 });
 
 test('Worker media routes do not add a trailing slash to R2 object keys', () => {

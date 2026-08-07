@@ -98,6 +98,10 @@ async function credentials(options: GlobalOptions): Promise<{
   return {origin: instance.origin, token: bundle.accessToken};
 }
 
+export async function apiOrigin(options: GlobalOptions): Promise<string> {
+  return (await credentials(options)).origin;
+}
+
 function responseBody(text: string, contentType: string | null): unknown {
   if (!text) return null;
   if (contentType?.includes("json")) {
@@ -173,7 +177,12 @@ export function writeApiResponse(response: ApiResponse, json: boolean): void {
     process.stdout.write(`${JSON.stringify(response.body, null, 2)}\n`);
   }
   if (!response.ok) {
-    process.stderr.write(`microfeed API request failed (${response.status}).\n`);
+    const recovery = response.status === 404
+      ? " The resource may not exist, or API access may be disabled for this instance."
+      : "";
+    process.stderr.write(
+      `microfeed API request failed (${response.status}).${recovery}\n`,
+    );
     process.exitCode = 1;
   }
 }

@@ -76,11 +76,27 @@ yarn microfeed item list --instance production --json
 yarn microfeed item get <item-id> --instance production --json
 yarn microfeed item create --instance production --input item.json --json
 yarn microfeed item update <item-id> --instance production --input - --json
+yarn microfeed item update <item-id> --instance production --attachment-file ./episode.mp3 --json
+yarn microfeed item update <item-id> --instance production --image-file ./cover.png --json
 ```
 
 Create and update accept either a JSON file or standard input with `--input`,
 or common flags such as `--title`, `--content-html`, and `--status`. Do not mix
 JSON input and item flags in one command.
+
+Use `--attachment-file <path>` for the item's one main media attachment. It may
+be audio, video, a document, or an image; it becomes JSON Feed
+`attachments[0]` and the RSS `<enclosure>`. The CLI infers the category, MIME
+type, and byte size from supported common extensions. On create, the CLI first
+creates the item so it has an ID, then uploads and attaches the file.
+
+Use `--image-file <path>` for item cover art or a thumbnail. Supported cover
+images are AVIF, GIF, JPEG, PNG, and WebP. Use `--image <url>` only for cover
+art already hosted at an absolute URL. An item image and a media attachment are
+independent fields.
+
+For both file options, the CLI sends the bytes without exposing or forwarding
+its Bearer credential and never prints the short-lived upload URL.
 
 Deletion requires an interactive exact-ID confirmation. In deterministic
 automation, provide the same ID explicitly only after reviewing the target:
@@ -103,6 +119,14 @@ It injects and refreshes credentials internally, refuses caller-provided
 through a redirect. Without `--json`, response bodies go to standard output and
 diagnostics go to standard error. With `--json`, output contains the status,
 safe response headers, and body—but never a credential.
+
+The raw command reads UTF-8 request bodies; it is not a binary-file uploader.
+Use `item create --attachment-file` or `item update <item-id>
+--attachment-file` for a local media attachment/RSS enclosure. Use
+`--image-file` for local item cover art.
+
+Content commands require API access to be enabled on the selected instance. A
+`404` can mean the requested resource does not exist or API access is disabled.
 
 ## Use an API key in CI
 

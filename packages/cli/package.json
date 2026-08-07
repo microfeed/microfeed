@@ -35,7 +35,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "microfeed": "node --import tsx src/index.ts",
-    "prepack": "yarn build"
+    "prepack": "yarn build && node scripts/copy-agent-skill.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

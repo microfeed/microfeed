@@ -41,7 +41,18 @@ const itemInputOptions = [
     "--date-published <datetime>",
     "Set an ISO 8601 date and time, such as 2026-08-07T16:30:00Z.",
   ),
-  option("--image <url>", "Set an absolute image URL."),
+  option(
+    "--attachment-file <path>",
+    "Upload one local main media attachment (JSON Feed attachments[0]; RSS enclosure). Supports .mp3, .m4b, .flac, .mp4, .pdf, .doc, .docx, .xlsx, .ppt, .pptx, .txt, .avif, .gif, .heic, .jpeg, .jpg, .png, .webp, and .cr2. Do not combine with --input.",
+  ),
+  option(
+    "--image <url>",
+    "Set an already-hosted absolute item cover image URL; this is not a local file path or media attachment.",
+  ),
+  option(
+    "--image-file <path>",
+    "Upload one local item cover image (.avif, .gif, .jpeg, .jpg, .png, or .webp). This is not the media attachment. Do not combine with --image or --input.",
+  ),
   option(
     "--status <status>",
     "Set published, unlisted, or unpublished.",
@@ -161,6 +172,8 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "<item-id> is the stable ID returned by `item list` or `item get`, for example 0HGJLSML3P1.",
       "Create and update accept either common flags or one JSON object from --input; they reject mixed input forms.",
+      "An item image is cover art or a thumbnail. A media attachment is the item's one main audio, video, document, or image file; it becomes JSON Feed attachments[0] and the RSS enclosure.",
+      "Content commands require API access to be enabled on the selected instance. A 404 can mean either that a requested item does not exist or that API access is disabled.",
       "Delete is permanent and requires an exact item-ID confirmation. Run help for a subcommand before changing content.",
     ],
     examples: [
@@ -224,10 +237,17 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "Creates an item with POST /api/v1/items/ on the selected instance.",
       "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for fields not represented by common flags.",
+      "Use --attachment-file for the one main media attachment exported as JSON Feed attachments[0] and the RSS enclosure. Supported files: mp3, m4b, flac, mp4, pdf, doc, docx, xlsx, ppt, pptx, txt, avif, gif, heic, jpeg, jpg, png, webp, and cr2.",
+      "A new item must exist before its media attachment can be prepared. The CLI creates the item, uploads the file, then updates the item. If either later step fails, it reports the created item ID so the partial result can be recovered.",
+      "Use --image-file only for item cover art or a thumbnail. It does not create a JSON Feed attachment or RSS enclosure.",
+      "For either file option, the CLI prepares a same-site upload, sends the bytes without a Bearer credential, never prints the short-lived upload URL, and rejects redirects or another-site upload URLs.",
       "With --input -, the CLI reads UTF-8 JSON from stdin. It never reads a credential from stdin.",
     ],
     examples: [
       "yarn microfeed item create --instance production --title \"Release notes\" --status published --json",
+      "yarn microfeed item create --instance production --title \"Episode 1\" --attachment-file ./episode.mp3 --status published --json",
+      "yarn microfeed item create --instance production --title \"Full-resolution photo\" --attachment-file ./photo.png --status unlisted --json",
+      "yarn microfeed item create --instance production --title \"Photo\" --image-file ./cover.png --status unlisted --json",
       "yarn microfeed item create --instance production --input item.json --json",
       "yarn microfeed item create --instance production --input - --json < item.json",
     ],
@@ -241,9 +261,14 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Updates PUT /api/v1/items/{item-id}/ on the selected instance.",
       "<item-id> is the exact stable ID returned by `item list` or `item get`, for example 0HGJLSML3P1.",
       "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for fields not represented by common flags.",
+      "Use --attachment-file for a local main media attachment. The CLI infers audio, video, document, or image category and MIME type from the extension, records the file size, and replaces any existing attachment.",
+      "Use --image-file for local cover art or a thumbnail, and --image only for cover art already hosted at an absolute URL. Neither option changes the media attachment or RSS enclosure.",
     ],
     examples: [
       "yarn microfeed item update 0HGJLSML3P1 --instance production --status unlisted --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./episode.mp3 --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./original.png --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance production --image-file ./cover.png --json",
       "yarn microfeed item update 0HGJLSML3P1 --instance production --input item.json --json",
       "yarn microfeed item update 0HGJLSML3P1 --input - --json < item.json",
     ],
@@ -279,6 +304,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "<method> is an HTTP method such as GET, POST, PUT, or DELETE. </api/v1/path> is a relative path on the selected instance, such as /api/v1/feed/?limit=3; an absolute URL is rejected.",
       "Quote a path containing ? or & so the shell passes it as one argument. The path must begin with /api/v1/ and cannot change the selected site URL.",
       "The CLI injects and refreshes its Bearer credential. It blocks caller-provided Authorization, Cookie, and Host headers and refuses redirects so credentials never cross origins.",
+      "--input is for UTF-8 request bodies, not binary files. Use `item create --attachment-file` or `item update <item-id> --attachment-file` for a local media attachment/RSS enclosure; use --image-file for item cover art.",
       "Without --json, the response body goes to stdout and diagnostics to stderr. With --json, stdout contains status, ok, safe response headers, and body.",
     ],
     examples: [
@@ -392,6 +418,8 @@ export function renderCliHelp(path?: readonly string[]): string {
     "              numbers, dots, underscores, or hyphens.",
     "  <item-id>  Stable item ID returned by item list, such as 0HGJLSML3P1.",
     "  <file|->   UTF-8 file path, or - to read from standard input.",
+    "  <attachment-path>  Local audio, video, document, or image attachment.",
+    "  <image-path>  Local AVIF, GIF, JPEG, PNG, or WebP cover image.",
     "  <path>     Relative API path beginning /api/v1/; never an absolute URL.",
     "",
     "Authentication:",
@@ -400,6 +428,8 @@ export function renderCliHelp(path?: readonly string[]): string {
     "  are encrypted; the encryption key stays in the OS keychain.",
     "  For CI, MICROFEED_API_KEY takes precedence and is never persisted. Set",
     "  MICROFEED_URL when no saved instance supplies the target site URL.",
+    "  Content commands require API access on the selected instance. A 404",
+    "  may mean the resource is absent or API access is disabled.",
     "",
     "Global options:",
     "  --instance <name>  On login, save this name; otherwise use this instance.",

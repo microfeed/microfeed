@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage microfeed content"
+  short_description: "Manage microfeed content safely with the CLI"
+  default_prompt: "Use $manage-microfeed-content to manage items on my microfeed site."

@@ -75,6 +75,26 @@ try {
   if (packedLicense !== rootLicense) {
     throw new Error("The packed CLI license differs from the repository license.");
   }
+  const [repositorySkill, packedSkill, packedSkillMetadata] = await Promise.all([
+    readFile(path.join(
+      process.cwd(),
+      ".agents/skills/manage-microfeed-content/SKILL.md",
+    ), "utf8"),
+    readFile(path.join(
+      temporary,
+      "package/dist/skills/manage-microfeed-content/SKILL.md",
+    ), "utf8"),
+    readFile(path.join(
+      temporary,
+      "package/dist/skills/manage-microfeed-content/agents/openai.yaml",
+    ), "utf8"),
+  ]);
+  if (packedSkill !== repositorySkill ||
+      !packedSkill.includes("--attachment-file") ||
+      !packedSkill.includes("RSS enclosure") ||
+      !packedSkillMetadata.includes("Manage microfeed content")) {
+    throw new Error("The packed content-management skill is missing or stale.");
+  }
 
   const packedHelp = run(process.execPath, [
     path.join(temporary, "package", "dist", "index.js"),

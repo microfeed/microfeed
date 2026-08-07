@@ -7,6 +7,15 @@ The recommended agent workflow inside a microfeed clone is `yarn microfeed`.
 The local workspace works after `yarn install`, so the agent does not need a
 global CLI or permission to download one from a registry.
 
+The clone also includes the `manage-microfeed-content` agent skill at
+`.agents/skills/manage-microfeed-content/`. It is the agent-focused workflow
+for CLI selection, vocabulary, browser-consent handoff, media uploads,
+credential safety, and destructive-action confirmation. The published
+`@microfeed/cli` tarball bundles the identical skill at
+`dist/skills/manage-microfeed-content/` for agent hosts or skill installers
+that distribute skills with npm packages. The top-level repository copy is the
+source of truth; packaging tests require the bundled copy to match it.
+
 When public API docs are enabled, each instance also publishes two plain-text files
 for coding agents:
 
@@ -43,6 +52,18 @@ Ask the agent to use `yarn microfeed --json` and JSON file or standard-input
 payloads. The CLI obtains and refreshes OAuth credentials internally. Do not
 ask the agent to read its encrypted credential file or operating-system
 keychain.
+
+Use the user's vocabulary carefully. An **item image** is cover art or a
+thumbnail. A **media attachment** is the item's one main audio, video,
+document, or image file; it becomes JSON Feed `attachments[0]` and the RSS
+enclosure.
+
+When the user asks to upload, attach, enclose, or add a media file, use `item
+create --attachment-file <path>` or `item update <item-id> --attachment-file
+<path>`. Use `--image-file <path>` only when the user asks for item cover art
+or a thumbnail. Do not script the short-lived upload URL yourself, and do not
+treat `--image <url>` as a local-file option. Prefer `--json` so only the final
+item response is consumed.
 
 If `yarn microfeed login <site-url>` is required, the agent may start it, but you
 must sign in and approve or deny permissions in the browser. The agent must

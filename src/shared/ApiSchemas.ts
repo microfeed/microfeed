@@ -15,16 +15,34 @@ export const apiStatusSchema = z.union([
 });
 
 export const apiAttachmentSchema = z.object({
-  category: z.enum(["audio", "video", "document", "image", "external_url"]),
-  duration_in_seconds: z.number().nonnegative().optional(),
-  mime_type: z.string().optional(),
+  category: z.enum(["audio", "video", "document", "image", "external_url"]).meta({
+    description: "How the main media attachment should be presented. Use external_url only for a linked web page rather than an uploaded file.",
+    example: "audio",
+  }),
+  duration_in_seconds: z.number().nonnegative().optional().meta({
+    description: "Optional playback duration for an audio or video attachment.",
+    example: 1262,
+  }),
+  mime_type: z.string().optional().meta({
+    description: "Media type of the attachment, such as audio/mpeg or image/png.",
+    example: "audio/mpeg",
+  }),
   size_in_byte: z.number().int().nonnegative().optional().meta({
     deprecated: true,
     description: "Deprecated singular spelling. Use size_in_bytes.",
   }),
-  size_in_bytes: z.number().int().nonnegative().optional(),
-  url: z.url(),
-}).loose().meta({id: "Attachment"});
+  size_in_bytes: z.number().int().nonnegative().optional().meta({
+    description: "Attachment size in bytes. RSS uses this as the enclosure length.",
+    example: 277000,
+  }),
+  url: z.url().meta({
+    description: "Permanent attachment URL. Uploaded media should use media_url returned by the upload-preparation operation.",
+    example: "https://feed.example.com/media/production/media/audio.mp3",
+  }),
+}).loose().meta({
+  id: "Attachment",
+  description: "The item's one main media attachment. It appears as JSON Feed attachments[0] and as the RSS enclosure.",
+});
 
 export const apiAttachmentOutputSchema = apiAttachmentSchema.extend({
   category: apiAttachmentSchema.shape.category.optional(),
@@ -33,14 +51,21 @@ export const apiAttachmentOutputSchema = apiAttachmentSchema.extend({
 
 export const apiItemInputSchema = z.object({
   _microfeed: z.record(z.string(), z.unknown()).optional(),
-  attachment: apiAttachmentSchema.optional(),
-  attachments: z.array(apiAttachmentSchema).max(1).optional(),
+  attachment: apiAttachmentSchema.optional().meta({
+    description: "Compatibility input alias for attachments[0]. Prefer attachments.",
+  }),
+  attachments: z.array(apiAttachmentSchema).max(1).optional().meta({
+    description: "Zero or one main media attachment. This is distinct from the item cover image and becomes the RSS enclosure.",
+  }),
   content_html: z.string().optional(),
   date_published: z.iso.datetime().optional(),
   date_published_ms: z.number().int().nonnegative().optional(),
   guid: z.string().optional(),
   id: z.string().optional(),
-  image: z.url().optional(),
+  image: z.url().optional().meta({
+    description: "Item-specific cover art or thumbnail. This is not the main media attachment or RSS enclosure.",
+    example: "https://feed.example.com/media/production/images/item.png",
+  }),
   status: apiStatusSchema.optional(),
   title: z.string().optional(),
   url: z.url().optional(),
@@ -82,13 +107,17 @@ export const apiChannelInputSchema = z.object({
 }).loose().meta({id: "ChannelInput"});
 
 export const apiUploadInputSchema = z.object({
-  category: z.enum(["image", "audio", "video", "document"]),
+  category: z.enum(["image", "audio", "video", "document"]).meta({
+    description: "The uploaded file category. For an item attachment, this must match attachments[0].category.",
+    example: "audio",
+  }),
   full_local_file_path: z.string().min(1).meta({
     description: "A filename or local path used to preserve the extension. The server never reads this path.",
     example: "/tmp/episode.mp3",
   }),
   item_id: z.string().optional().meta({
-    description: "Required for audio, video, and document uploads.",
+    description: "The existing item ID that will own a media attachment. Required for audio, video, and document uploads; include it for an image attachment. Omit it only for item or channel cover-image uploads.",
+    example: "0HGJLSML3P1",
   }),
   size: z.number().int().nonnegative().optional().meta({
     description: "Expected upload size in bytes.",
@@ -100,7 +129,7 @@ export const apiUploadInputSchema = z.object({
 
 export const apiUploadOutputSchema = z.object({
   media_url: z.url().meta({
-    description: "The URL to save in the item or channel after the upload succeeds.",
+    description: "Permanent URL to save as the item image, channel icon, or attachment URL after the upload succeeds.",
   }),
   presigned_url: z.url().meta({
     description: "Send the file bytes to this same-origin URL using HTTP PUT before saving media_url.",

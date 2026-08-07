@@ -43,17 +43,30 @@ instead of constructing cursors yourself. To start a listing, choose
 
 ## Upload media
 
-Media upload is a three-part flow:
+microfeed distinguishes two item fields:
+
+- `image` is item cover art or a thumbnail.
+- `attachments[0]` is the one main audio, video, document, image, or external
+  link. JSON Feed exposes it as an attachment and RSS exposes it as
+  `<enclosure>`.
+
+For a local attachment, use `yarn microfeed item create --attachment-file` or
+`yarn microfeed item update <item-id> --attachment-file` when possible. The
+underlying REST upload is a three-part flow:
 
 1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
-   item ID, and local filename information required by the schema.
-2. `PUT` the raw file bytes to the returned short-lived `presigned_url`.
-3. Save the returned `media_url` on the item or channel through the appropriate
-   API operation.
+   item ID, MIME type, size, and local filename information required by the
+   schema. Include `item_id` for an attachment; omit it only for a cover-image
+   upload.
+2. `PUT` the raw file bytes to the returned short-lived `presigned_url` without
+   a Bearer credential.
+3. Save the returned `media_url` as `attachments[0].url`, `image`, or the
+   channel icon through the appropriate API operation. Include the attachment
+   category, MIME type, byte size, and optional audio/video duration.
 
 The upload URL is same-origin and short-lived. A 503 response means media
 storage is unavailable for this instance; do not invent a different bucket or
-upload destination.
+upload destination. Do not log or persist the short-lived URL.
 
 ## Design for changes
 

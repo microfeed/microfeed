@@ -99,6 +99,8 @@ describe("generated API reference", () => {
     expect(API_LLMS_FULL_TEXT).toContain("schemas:");
     expect(API_LLMS_FULL_TEXT).toContain("name: next_cursor");
     expect(API_LLMS_FULL_TEXT).toContain("UploadResponse:");
+    expect(API_LLMS_FULL_TEXT).toContain("RSS enclosure");
+    expect(API_LLMS_FULL_TEXT).toContain("JSON Feed attachments[0]");
   });
 
   it("documents only current routes and Bearer authentication", () => {
@@ -143,6 +145,15 @@ describe("generated API reference", () => {
       category: "audio",
       full_local_file_path: "/tmp/episode.mp3",
       item_id: "0HGJLSML3P1",
+    }).success).toBe(true);
+    expect(apiItemInputSchema.safeParse({
+      attachments: [{
+        category: "image",
+        mime_type: "image/png",
+        size_in_bytes: 456,
+        url: "https://example.com/original.png",
+      }],
+      image: "https://example.com/cover.png",
     }).success).toBe(true);
   });
 });

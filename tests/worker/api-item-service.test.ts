@@ -110,6 +110,48 @@ describe("transport-neutral item service", () => {
     ).bind(ITEM_ID).first()).toEqual({count: 0});
   });
 
+  it("stores same-site item-image and attachment URLs without duplicating the media path", async () => {
+    const {crud, database} = await databaseAndCrud();
+    await env.FEED_DB.prepare(
+      "INSERT INTO items (id, status, data, pub_date) VALUES (?, ?, ?, ?)",
+    ).bind(
+      ITEM_ID,
+      STATUSES.UNLISTED,
+      JSON.stringify({title: "Image item"}),
+      "2026-08-01T10:00:00.000Z",
+    ).run();
+
+    const updated = await updateItem(database, crud, ITEM_ID, {
+      attachments: [{
+        category: "image",
+        mime_type: "image/png",
+        size_in_bytes: 4321,
+        url: `${ORIGIN}/media/production/media/image-original.png`,
+      }],
+      image: `${ORIGIN}/media/production/media/image.png`,
+    });
+    expect(updated?.image).toBe("production/media/image.png");
+    expect(updated?.mediaFile).toMatchObject({
+      category: "image",
+      contentType: "image/png",
+      sizeByte: 4321,
+      url: "production/media/image-original.png",
+    });
+
+    const publicFeed = await database.getPublicJsonData({
+      ...crud.feedContent,
+      items: [updated],
+    }, true);
+    expect(publicFeed.items[0]?.image).toBe(
+      "/media/production/media/image.png",
+    );
+    expect(publicFeed.items[0]?.attachments).toEqual([expect.objectContaining({
+      mime_type: "image/png",
+      size_in_bytes: 4321,
+      url: "/media/production/media/image-original.png",
+    })]);
+  });
+
   it("allows authenticated-style reads while the public feed is Offline", async () => {
     const {database} = await databaseAndCrud();
     await env.FEED_DB.prepare(

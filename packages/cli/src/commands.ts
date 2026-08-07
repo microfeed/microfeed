@@ -11,6 +11,7 @@ import {
   writeApiResponse,
 } from "./http.js";
 import {browserLogin, revokeToken} from "./oauth.js";
+import {uploadAttachmentFile, uploadImageFile} from "./media.js";
 import {
   encryptTokens,
   readStore,
@@ -18,9 +19,11 @@ import {
 } from "./store.js";
 
 const ITEM_VALUE_FLAGS = new Set([
+  "attachment-file",
   "content-html",
   "date-published",
   "image",
+  "image-file",
   "input",
   "status",
   "title",
@@ -130,12 +133,38 @@ function itemPayload(parsed: ReturnType<typeof parseOptions>): Record<string, un
   return payload;
 }
 
-async function itemBody(parsed: ReturnType<typeof parseOptions>): Promise<string> {
+async function itemBody(
+  parsed: ReturnType<typeof parseOptions>,
+  globals: GlobalOptions,
+  itemId?: string,
+  includeAttachment = true,
+): Promise<string> {
   const input = stringFlag(parsed, "input");
-  if (!input) return JSON.stringify(itemPayload(parsed));
-  const hasFlags = ["content-html", "date-published", "image", "status", "title", "url"]
+  const attachmentFile = stringFlag(parsed, "attachment-file");
+  const imageFile = stringFlag(parsed, "image-file");
+  const hasFlags = ["attachment-file", "content-html", "date-published", "image", "image-file", "status", "title", "url"]
     .some((name) => stringFlag(parsed, name) !== undefined);
-  if (hasFlags) throw new CliError("Use either --input or item flags, not both.");
+  if (input && hasFlags) {
+    throw new CliError("Use either --input or item flags, not both.");
+  }
+  if (imageFile && stringFlag(parsed, "image")) {
+    throw new CliError("Use either --image-file or --image, not both.");
+  }
+  if (!input) {
+    const payload = itemPayload(parsed);
+    if (imageFile) {
+      payload.image = await uploadImageFile(imageFile, itemId, globals);
+    }
+    if (attachmentFile && includeAttachment) {
+      if (!itemId) {
+        throw new CliError("A media attachment upload requires an item ID.");
+      }
+      payload.attachments = [
+        await uploadAttachmentFile(attachmentFile, itemId, globals),
+      ];
+    }
+    return JSON.stringify(payload);
+  }
   const text = await readInput(input);
   try {
     const value: unknown = JSON.parse(text);
@@ -180,13 +209,51 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
   if (action === "create") {
     const parsed = parseOptions(rest, ITEM_VALUE_FLAGS);
     if (parsed.positionals.length) throw new CliError("item create does not accept positional arguments.");
-    writeApiResponse(await apiRequest("POST", "/api/v1/items/", globals, {body: await itemBody(parsed)}), globals.json);
+    const attachmentFile = stringFlag(parsed, "attachment-file");
+    const created = await apiRequest("POST", "/api/v1/items/", globals, {
+      body: await itemBody(parsed, globals, undefined, false),
+    });
+    if (!attachmentFile || !created.ok) {
+      writeApiResponse(created, globals.json);
+      return;
+    }
+    const itemId = created.body && typeof created.body === "object" &&
+        "id" in created.body && typeof created.body.id === "string"
+      ? created.body.id
+      : undefined;
+    if (!itemId) {
+      throw new CliError(
+        "The instance created an item but did not return its item ID, so the media attachment could not be added.",
+      );
+    }
+    let attachment: Awaited<ReturnType<typeof uploadAttachmentFile>>;
+    try {
+      attachment = await uploadAttachmentFile(attachmentFile, itemId, globals);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Unexpected upload failure.";
+      throw new CliError(
+        `Item ${itemId} was created, but its media attachment was not added. ${detail}`,
+      );
+    }
+    const updated = await apiRequest(
+      "PUT",
+      `/api/v1/items/${encodeURIComponent(itemId)}/`,
+      globals,
+      {body: JSON.stringify({attachments: [attachment]})},
+    );
+    if (!updated.ok) {
+      process.stderr.write(
+        `Item ${itemId} was created, but its media attachment could not be saved.\n`,
+      );
+    }
+    writeApiResponse(updated, globals.json);
     return;
   }
   if (action === "update") {
     const parsed = parseOptions(rest, ITEM_VALUE_FLAGS);
     if (parsed.positionals.length !== 1) throw new CliError("Usage: yarn microfeed item update <item-id> [flags]");
-    writeApiResponse(await apiRequest("PUT", `/api/v1/items/${encodeURIComponent(parsed.positionals[0]!)}/`, globals, {body: await itemBody(parsed)}), globals.json);
+    const itemId = parsed.positionals[0]!;
+    writeApiResponse(await apiRequest("PUT", `/api/v1/items/${encodeURIComponent(itemId)}/`, globals, {body: await itemBody(parsed, globals, itemId)}), globals.json);
     return;
   }
   if (action === "delete") {

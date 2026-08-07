@@ -9,7 +9,7 @@ microfeed has two structured interfaces with different purposes:
   published channel content without a credential.
 - The optional authenticated **API** under `/api/v1/` lets integrations read,
   create, update, and delete content, update the primary channel, and prepare
-  media uploads.
+  item images and media-attachment uploads.
 
 New installations keep API access and public API docs off until the instance
 owner enables them in the dashboard.
@@ -27,6 +27,10 @@ The generated OpenAPI 3.1 contract currently includes:
 | `DELETE /api/v1/items/{itemId}/` | Delete one item. |
 | `PUT /api/v1/channels/primary/` | Update the primary channel. |
 | `POST /api/v1/media_files/presigned_urls/` | Prepare a short-lived, same-origin media upload. |
+
+Each item may have both an `image` for cover art or a thumbnail and one main
+media attachment in `attachments[0]`. The attachment may be audio, video, a
+document, an image, or an external link; it becomes the RSS `<enclosure>`.
 
 ![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](/images/screenshots/3-api-1.png)
 

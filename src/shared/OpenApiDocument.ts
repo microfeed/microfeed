@@ -81,6 +81,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         security: writeSecurity,
         operationId: "createItem",
         summary: "Create an item",
+        description:
+          "Creates an item. The optional image field is cover art; the optional " +
+          "attachments array holds at most one main media attachment, which is " +
+          "published as JSON Feed attachments[0] and the RSS enclosure.",
         tags: ["Items"],
         requestBody: {
           required: true,
@@ -112,7 +116,11 @@ export const OPENAPI_DOCUMENT = createDocument({
         security: writeSecurity,
         operationId: "updateItem",
         summary: "Update an item",
-        description: "Only provided fields are changed. Attachments, GUIDs, dates, and omitted fields are preserved.",
+        description:
+          "Only provided fields are changed; omitted attachments, GUIDs, dates, " +
+          "and other fields are preserved. Supplying attachments replaces the one " +
+          "main media attachment/RSS enclosure. The image field remains separate " +
+          "cover art.",
         tags: ["Items"],
         requestParams: {path: itemPath},
         requestBody: {
@@ -168,7 +176,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         summary: "Prepare a media upload",
         description:
           "Creates a short-lived same-origin upload URL. PUT the raw file bytes " +
-          "to presigned_url, then save media_url on an item or channel.",
+          "to presigned_url without a Bearer credential, then save media_url as " +
+          "an item image, channel icon, or attachments[0].url. An item media " +
+          "attachment is published as the RSS enclosure. Include item_id for an " +
+          "attachment; omit it only for cover-image uploads.",
         tags: ["Media"],
         requestBody: {
           required: true,

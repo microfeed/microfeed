@@ -21,6 +21,8 @@ describe("microfeed CLI help", () => {
     expect(HELP).toContain("<name>");
     expect(HELP).toContain("Not a username or Wrangler profile");
     expect(HELP).toContain("<item-id>");
+    expect(HELP).toContain("<attachment-path>");
+    expect(HELP).toContain("<image-path>");
     expect(HELP).toContain("/api/v1/");
     expect(HELP).toContain("--instance <name>");
     expect(HELP).toContain("--json");
@@ -30,6 +32,27 @@ describe("microfeed CLI help", () => {
     expect(HELP).toContain("https://docs.microfeed.org/microfeed-cli/");
     expect(HELP).not.toContain("<origin>");
     expect(HELP).not.toContain("<profile>");
+  });
+
+  it("distinguishes media attachments from item cover images", () => {
+    const createHelp = renderCliHelp(["item", "create"]);
+    const updateHelp = renderCliHelp(["item", "update"]);
+
+    for (const help of [createHelp, updateHelp]) {
+      expect(help).toContain("--attachment-file <path>");
+      expect(help).toContain("JSON Feed attachments[0]");
+      expect(help).toContain("RSS enclosure");
+      expect(help).toContain(".mp3");
+      expect(help).toContain(".cr2");
+      expect(help).toContain("--image <url>");
+      expect(help).toContain("absolute item cover image URL");
+      expect(help).toContain("--image-file <path>");
+      expect(help).toContain("Do not combine with --image or --input");
+    }
+    expect(renderCliHelp(["api"]))
+      .toContain("not binary files");
+    expect(renderCliHelp(["api"]))
+      .toContain("media attachment/RSS enclosure");
   });
 
   it("renders comprehensive help for every command and subcommand", () => {

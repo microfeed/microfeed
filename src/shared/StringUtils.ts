@@ -220,6 +220,39 @@ export function removeHostFromUrl(url: any) {
   }
 }
 
+export function mediaReferenceForStorage(
+  value: string,
+  configuredPublicBucketUrl?: unknown,
+  requestUrl?: string,
+): string {
+  if (!requestUrl) return removeHostFromUrl(value);
+  let mediaUrl: URL;
+  let publicBucketUrl: URL;
+  try {
+    const request = new URL(requestUrl);
+    mediaUrl = new URL(value, request);
+    publicBucketUrl = new URL(
+      resolvePublicBucketUrl(
+        configuredPublicBucketUrl,
+        request.hostname,
+      ),
+      request,
+    );
+  } catch {
+    return value;
+  }
+  const bucketPath = publicBucketUrl.pathname.endsWith("/")
+    ? publicBucketUrl.pathname
+    : `${publicBucketUrl.pathname}/`;
+  if (
+    mediaUrl.origin === publicBucketUrl.origin &&
+    mediaUrl.pathname.startsWith(bucketPath)
+  ) {
+    return `${mediaUrl.pathname.slice(bucketPath.length)}${mediaUrl.search}${mediaUrl.hash}`;
+  }
+  return value;
+}
+
 export function urlJoin(...args: any) {
   const parts = Array.from(Array.isArray(args[0]) ? args[0] : args);
   return normalize(parts);
@@ -233,6 +266,10 @@ export function urlJoin(...args: any) {
 export function urlJoinWithRelative(baseUrl: any, path: any, baseUrlForRelativePath: any = '/') {
   if (!path) {
     return null;
+  }
+
+  if (/^https?:\/\//iu.test(path)) {
+    return path;
   }
 
   if (path.startsWith('/')) {

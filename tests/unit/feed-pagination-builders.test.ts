@@ -75,6 +75,28 @@ describe("public feed pagination links", () => {
     expect(json._microfeed.items_order).toBeUndefined();
   });
 
+  it("emits absolute RSS enclosure URLs for same-site attachments", () => {
+    const rss = new FeedPublicRssBuilder({
+      _microfeed: {},
+      items: [{
+        _microfeed: {date_published_ms: 1_800_000_000_123},
+        attachments: [{
+          mime_type: "image/png",
+          size_in_bytes: 80633,
+          url: "/media/production/media/original.png",
+        }],
+        id: "photo-id",
+        title: "Photo",
+      }],
+      title: "Media feed",
+    }, baseUrl).getRssData();
+
+    expect(rss).toContain(
+      'enclosure url="https://feed.example.com/media/production/media/original.png"',
+    );
+    expect(rss).toContain('length="80633"');
+  });
+
   it("uses generated pagination URLs in the default web theme", async () => {
     const filename = fileURLToPath(new URL(
       "../../src/server/themes/defaults/web_feed.html",

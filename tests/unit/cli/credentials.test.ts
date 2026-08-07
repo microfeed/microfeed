@@ -4,7 +4,10 @@ import path from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {discoverInstance} from "../../../packages/cli/src/discovery";
-import {apiRequest} from "../../../packages/cli/src/http";
+import {
+  apiRequest,
+  writeApiResponse,
+} from "../../../packages/cli/src/http";
 import {
   type Keychain,
   setKeychainForTests,
@@ -40,6 +43,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   setKeychainForTests(undefined);
   delete process.env.MICROFEED_CONFIG_DIR;
@@ -174,6 +178,28 @@ describe("CLI credentials", () => {
       await expect(apiRequest("GET", "/api/v1/feed/", {json: false}, {
         headers: [header],
       })).rejects.toThrow("managed by microfeed");
+    }
+  });
+});
+
+describe("CLI API diagnostics", () => {
+  it("explains the two intentional meanings of a 404 response", () => {
+    const previousExitCode = process.exitCode;
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi.spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    try {
+      writeApiResponse({
+        body: "404",
+        headers: {},
+        ok: false,
+        status: 404,
+      }, true);
+      expect(write).toHaveBeenCalledWith(expect.stringContaining(
+        "resource may not exist, or API access may be disabled",
+      ));
+    } finally {
+      process.exitCode = previousExitCode;
     }
   });
 });

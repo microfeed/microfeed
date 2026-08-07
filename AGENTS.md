@@ -102,6 +102,10 @@
 
 ## Content management CLI
 
+- When a user asks Codex to list, read, create, update, delete, or upload media
+  for content on a microfeed site, use the `manage-microfeed-content` skill.
+  Do not use that operational skill when changing the CLI implementation or
+  documentation itself.
 - Treat `docs/microfeed-cli.md` as the canonical command, option, output, and
   safety reference for the content-management CLI. Keep it synchronized with
   the shared help inventory in `packages/cli/src/help.ts` and the command
@@ -111,6 +115,12 @@
 - Use `--json` and JSON files or standard input for deterministic agent
   operations. Do not scrape dashboard pages or construct OAuth requests by
   hand when the CLI supports the operation.
+- Distinguish an item image (cover art or thumbnail) from the one main media
+  attachment (JSON Feed `attachments[0]` and RSS enclosure). Use
+  `--attachment-file <path>` when the user asks to upload, attach, or enclose a
+  media file. Use `--image-file <path>` only for item cover art. Do not
+  construct or print short-lived upload URLs, and use `--image <url>` only for
+  cover art that is already hosted.
 - Never ask for, read, print, log, or copy an API key, OAuth access token,
   refresh token, client secret, or encrypted credential file. Environment
   credentials are supplied by the operator and must remain opaque to agents.

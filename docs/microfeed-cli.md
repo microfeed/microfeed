@@ -10,6 +10,7 @@ workflow, start with [Manage content with the microfeed CLI](/api/cli/).
 ## Contents
 
 - [Run the CLI](#run-the-cli)
+- [Agent skill](#agent-skill)
 - [Authentication and safety](#authentication-and-safety)
 - [Command summary](#command-summary)
 - [Global options](#global-options)
@@ -42,6 +43,19 @@ matches where you are working.
 
 The examples below use `yarn microfeed`. Replace that prefix with
 `yarn dlx @microfeed/cli` or `microfeed` when using one of the other modes.
+
+## Agent skill
+
+Inside a microfeed clone, agent hosts discover the repository-owned
+`manage-microfeed-content` skill at
+`.agents/skills/manage-microfeed-content/`. The published npm tarball contains
+the identical skill at `dist/skills/manage-microfeed-content/` for agent hosts
+or skill installers that distribute skills with the CLI. The repository copy
+is canonical, and the package check fails when the bundled copy differs.
+
+The skill teaches invocation selection, site and instance vocabulary,
+browser-consent handoff, deterministic output, the difference between item
+images and media attachments, credential safety, and deletion confirmation.
 
 ## Authentication and safety
 
@@ -254,13 +268,49 @@ Do not combine the two input forms.
 | `--title <text>` | `title` | Item title. |
 | `--content-html <html>` | `content_html` | HTML body. |
 | `--date-published <datetime>` | `date_published` | ISO 8601 publication date and time. |
-| `--image <url>` | `image` | Item image URL. |
+| `--attachment-file <path>` | `attachments[0]` | Upload one local main media attachment, which becomes the JSON Feed attachment and RSS enclosure. Do not combine with `--input`. |
+| `--image <url>` | `image` | An already-hosted absolute item cover-image URL. This is not a local file path or media attachment. |
+| `--image-file <path>` | `image` | Upload one local AVIF, GIF, JPEG, PNG, or WebP cover image. This is not the media attachment. Do not combine with `--image` or `--input`. |
 | `--status <status>` | `status` | Prefer `published`, `unlisted`, or `unpublished`. |
 | `--url <url>` | `url` | Canonical item URL. |
 | `--input <file|->` | Entire JSON body | Read a JSON object from a UTF-8 file, or from standard input when the value is `-`. |
 
 JSON input may use the complete item schema documented by the target
 instance, including fields not represented by the common flags.
+
+An **item image** is cover art or a thumbnail and uses the top-level `image`
+field. A **media attachment** is the item's one main audio, video, document, or
+image file. It uses `attachments[0]` in JSON Feed and becomes `<enclosure>` in
+RSS. These fields are independent: attaching a full-resolution image does not
+set the cover image, and setting a cover image does not create an enclosure.
+
+`--attachment-file` supports MP3, M4B, FLAC, MP4, PDF, DOC, DOCX, XLSX, PPT,
+PPTX, TXT, AVIF, GIF, HEIC, JPEG, JPG, PNG, WebP, and CR2. The CLI infers the
+attachment category and MIME type from the extension and records its byte
+size. Supplying it on update replaces the existing main attachment.
+
+For either local-file option, the CLI asks the selected instance for a
+short-lived, same-site upload URL, sends only the file bytes to that URL without
+a Bearer credential, and saves the returned permanent media URL on the item.
+It refuses upload redirects and upload URLs hosted at another site. Standard
+output contains only the final item API response; the short-lived upload URL is
+never printed.
+
+To reference already-hosted media with JSON input, use one attachment:
+
+```json
+{
+  "attachments": [{
+    "category": "audio",
+    "url": "https://cdn.example.com/episode.mp3",
+    "mime_type": "audio/mpeg",
+    "size_in_bytes": 277000,
+    "duration_in_seconds": 1262
+  }]
+}
+```
+
+Use `category: "external_url"` for a linked web page rather than a file.
 
 ## `yarn microfeed item create`
 
@@ -284,7 +334,33 @@ yarn microfeed item create \
   --instance production \
   --input item.json \
   --json
+
+yarn microfeed item create \
+  --instance production \
+  --title "Episode 1" \
+  --attachment-file ./episode.mp3 \
+  --status published \
+  --json
+
+yarn microfeed item create \
+  --instance production \
+  --title "Full-resolution photo" \
+  --attachment-file ./original.png \
+  --status unlisted \
+  --json
+
+yarn microfeed item create \
+  --instance production \
+  --title "Photo update" \
+  --image-file ./cover.png \
+  --status unlisted \
+  --json
 ```
+
+For `item create --attachment-file`, the item must exist before the instance
+can prepare its attachment upload. The CLI creates the item, uploads the file,
+then updates the new item with `attachments[0]`. If upload or update fails after
+creation, the error reports the new item ID so it can be inspected or repaired.
 
 ## `yarn microfeed item update`
 
@@ -301,6 +377,16 @@ yarn microfeed item update 0HGJLSML3P1 \
   --instance production \
   --input - \
   --json < item.json
+
+yarn microfeed item update 0HGJLSML3P1 \
+  --instance production \
+  --attachment-file ./episode.mp3 \
+  --json
+
+yarn microfeed item update 0HGJLSML3P1 \
+  --instance production \
+  --image-file ./cover.png \
+  --json
 ```
 
 ## `yarn microfeed item delete`
@@ -354,6 +440,11 @@ The path must be relative, begin with `/api/v1/`, and remain on the selected
 site URL. The CLI rejects caller-provided `Authorization`, `Cookie`, and `Host`
 headers. It returns an error rather than following a redirect.
 
+`--input` reads UTF-8 request bodies and does not upload binary files or follow
+prepared upload URLs. Use `item create --attachment-file <path>` or `item
+update <item-id> --attachment-file <path>` for a local media attachment/RSS
+enclosure. Use `--image-file <path>` for local item cover art.
+
 Quote paths containing `?` or `&` so the shell passes them as one argument.
 
 ```console
@@ -394,7 +485,9 @@ commands also return one deterministic JSON object when `--json` is present.
 CLI validation failures, authentication failures, transport failures, and
 non-success API responses set a nonzero exit status. Missing authentication is
 never an interactive token prompt; the error tells you to run `login` or select
-a saved instance.
+a saved instance. Content commands require API access to be enabled. Because a
+disabled API intentionally returns `404`, that status can mean either that the
+requested resource does not exist or that API access is disabled.
 
 ## Saved instances and credentials
 
