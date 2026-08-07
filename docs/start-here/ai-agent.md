@@ -52,8 +52,10 @@ link into the agent conversation.
 
 Ask the agent to run `yarn manage status`. The final report should show the
 Worker address, dashboard protection, D1 database, and R2 state. Open the
-public address and confirm the site loads, then sign in to the dashboard and
-publish a test item.
+public address and confirm the site loads. You can sign in to the dashboard and
+publish a test item yourself, or follow the
+[post-deployment checklist](../after-deploy/) to enable `yarn microfeed` for
+the agent.
 
 If setup stops partway through, tell the agent to continue the same microfeed
 deployment. Initialization is designed to resume without recreating resources.

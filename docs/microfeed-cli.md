@@ -3,9 +3,11 @@ title: yarn microfeed command reference
 description: Canonical commands, options, authentication behavior, output, and safety rules for @microfeed/cli.
 ---
 
-This is the canonical capability reference for `@microfeed/cli`, including the
-`yarn microfeed` command available inside a microfeed clone. For a shorter
-workflow, start with [Manage content with the microfeed CLI](/api/cli/).
+This is the canonical capability reference for the official
+[`@microfeed/cli` package](https://www.npmjs.com/package/@microfeed/cli),
+including the `yarn microfeed` command available inside a microfeed clone. For
+a shorter workflow, start with
+[Manage content with the microfeed CLI](/api/cli/).
 
 ## Contents
 

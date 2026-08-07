@@ -79,7 +79,7 @@ export default defineConfig({
           items: [
             { label: "API overview", link: "/api/" },
             { label: "Authentication and OAuth", link: "/api/authentication/" },
-            { label: "Manage content with the CLI", link: "/api/cli/" },
+            { label: "Manage content with @microfeed/cli", link: "/api/cli/" },
             { label: "Build and test integrations", link: "/api/build-and-test/" },
             { label: "Use the API with AI agents", link: "/api/ai-agents/" },
           ],
@@ -88,7 +88,7 @@ export default defineConfig({
           label: "Reference",
           items: [
             { label: "yarn manage command reference", link: "/manage-cli/" },
-            { label: "yarn microfeed command reference", link: "/microfeed-cli/" },
+            { label: "@microfeed/cli command reference", link: "/microfeed-cli/" },
             { label: "Glossary", link: "/reference/glossary/" },
           ],
         },
