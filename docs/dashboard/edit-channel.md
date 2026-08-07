@@ -11,13 +11,13 @@ public website and feeds.
 1. Select **Edit channel** in the left navigation.
 2. Update the channel image, title, publisher, website, categories, language,
    or description.
-3. Pause for a moment. The dashboard saves ordinary edits automatically after
-   one second. Image uploads and selection changes save immediately.
+3. Select **Save changes** when the channel is ready to update.
 
 The action panel reports **Unsaved changes**, **Saving…**, or **All changes
-saved**. Select **Save now** when you do not want to wait for the one-second
-pause. If a save fails, your edits remain in the form and the action changes to
-**Retry save**. Keep the page open until the latest changes are saved.
+saved**. Channel changes are never saved on a timer, including image uploads
+and selection changes. If a save fails, your edits remain in the form and the
+action changes to **Retry save**. Keep the page open until the latest changes
+are saved.
 
 ![Editing a microfeed channel image, title, publisher, website, categories, language, and description](/images/screenshots/2-dashboard-2-edit-channel.png)
 
@@ -25,8 +25,8 @@ pause. If a save fails, your edits remain in the form and the action changes to
 
 Use the **Public access** links beside the form to open the website, RSS feed,
 or JSON feed. Confirm that the channel title, image, and description appear as
-expected after saving. Channels do not have a separate draft state, so saved
-channel changes become public immediately.
+expected after saving. Channels do not have a separate draft state: selecting
+**Save changes** updates the public channel immediately.
 
 The **Website** field is channel metadata. It does not change the address where
 the microfeed instance is deployed. To attach or change a custom domain, see

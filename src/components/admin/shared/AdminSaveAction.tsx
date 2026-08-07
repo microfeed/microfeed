@@ -5,6 +5,7 @@ import type {
 } from "@/client/AutosaveCoordinator";
 
 interface Props extends AutosaveState {
+  buttonLabel?: string;
   idleMessage?: string;
 }
 
@@ -15,9 +16,10 @@ const STATUS_TEXT: Record<Exclude<AutosavePhase, "idle">, string> = {
   saving: "Saving…",
 };
 
-export default function AdminAutosaveAction({
+export default function AdminSaveAction({
+  buttonLabel = "Save now",
   dirty,
-  idleMessage = "Changes save automatically.",
+  idleMessage = "Changes save automatically after five seconds.",
   phase,
 }: Props) {
   const message = phase === "idle" ? idleMessage : STATUS_TEXT[phase];
@@ -40,7 +42,7 @@ export default function AdminAutosaveAction({
         size="lg"
         type="submit"
       >
-        {failed ? "Retry save" : "Save now"}
+        {failed ? "Retry save" : buttonLabel}
       </Button>
     </div>
   );

@@ -303,7 +303,7 @@ export default class MediaManager extends React.Component<any, any> {
                 durationSecond: 0,
                 sizeByte: 0,
                 url: '',
-              }, {immediate: true});
+              });
             });
           }}
         />

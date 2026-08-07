@@ -49,7 +49,7 @@ describe("AutosaveCoordinator", () => {
     await vi.advanceTimersByTimeAsync(600);
     setValue(2);
     coordinator.markChanged();
-    await vi.advanceTimersByTimeAsync(999);
+    await vi.advanceTimersByTimeAsync(4999);
 
     expect(save).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
@@ -73,7 +73,7 @@ describe("AutosaveCoordinator", () => {
 
     setValue(2);
     coordinator.markChanged();
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(5000);
     expect(save).toHaveBeenCalledOnce();
 
     first.resolve();
@@ -81,6 +81,31 @@ describe("AutosaveCoordinator", () => {
     expect(save).toHaveBeenLastCalledWith({value: 2});
     second.resolve();
     await vi.waitFor(() => expect(coordinator.hasUnsavedChanges()).toBe(false));
+  });
+
+  it("tracks revisions without scheduling saves in manual-only mode", async () => {
+    vi.useFakeTimers();
+    let value = 0;
+    const states: AutosaveState[] = [];
+    const save = vi.fn(async (_snapshot: {value: number}) => {});
+    const coordinator = new AutosaveCoordinator({
+      delayMs: null,
+      getSnapshot: () => ({value}),
+      onStateChange: (state) => states.push(state),
+      save,
+    });
+
+    value = 1;
+    coordinator.markChanged();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(save).not.toHaveBeenCalled();
+    expect(coordinator.hasUnsavedChanges()).toBe(true);
+    expect(states.at(-1)).toEqual({dirty: true, phase: "pending"});
+
+    await expect(coordinator.flush()).resolves.toBe(true);
+    expect(save).toHaveBeenCalledWith({value: 1});
+    expect(states.at(-1)).toEqual({dirty: false, phase: "saved"});
   });
 
   it("retains failed changes and saves them when manually retried", async () => {

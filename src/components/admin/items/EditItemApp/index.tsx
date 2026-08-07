@@ -50,7 +50,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
-import AdminAutosaveAction from "@/components/admin/shared/AdminAutosaveAction";
+import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -335,7 +335,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                       this.onUpdateItemMeta({
                         'pubDateIsDraftDefault': false,
                         'pubDateMs': datetimeLocalStringToMs(e.target.value),
-                      }, undefined, true);
+                      });
                     }}
                   />
                   <AdminInput
@@ -410,7 +410,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                       label: 'no',
                       value: 'no',
                     }]}
-                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:explicit': value === 'yes'}, undefined, true)}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:explicit': value === 'yes'})}
                   />
                   <AdminInput
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
@@ -439,7 +439,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                       value: 'bonus',
                     },
                     ]}
-                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:episodeType': value}, undefined, true)}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:episodeType': value})}
                   />
                   <AdminInput
                     type="number"
@@ -468,7 +468,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                       label: 'No',
                       value: 'no',
                     }]}
-                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:block': value === 'yes'}, undefined, true)}
+                    onValueChange={(value) => this.onUpdateItemMeta({'itunes:block': value === 'yes'})}
                   />
                 </div>
               </div>
@@ -477,7 +477,7 @@ export default class EditItemApp extends React.Component<Props, any> {
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">
-            <AdminAutosaveAction
+            <AdminSaveAction
               {...autosaveState}
               idleMessage={action === 'create'
                 ? 'Start editing to create an unpublished draft.'

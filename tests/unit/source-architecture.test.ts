@@ -359,8 +359,10 @@ describe("source architecture", () => {
     expect(itemEditor).toContain("xl:sticky xl:top-4");
     expect(channelEditor).toContain("new AutosaveCoordinator");
     expect(itemEditor).toContain("new AutosaveCoordinator");
-    expect(channelEditor).toContain("<AdminAutosaveAction");
-    expect(itemEditor).toContain("<AdminAutosaveAction");
+    expect(channelEditor).toContain("delayMs: null");
+    expect(channelEditor).toContain("<AdminSaveAction");
+    expect(channelEditor).toContain('buttonLabel="Save changes"');
+    expect(itemEditor).toContain("<AdminSaveAction");
     expect(itemEditor).toContain("status: STATUSES.UNPUBLISHED");
     expect(itemEditor).toContain("Start editing to create an unpublished draft.");
     expect(adminPageApp).not.toContain("<Toaster");

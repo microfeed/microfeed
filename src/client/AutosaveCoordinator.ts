@@ -1,4 +1,4 @@
-export const DEFAULT_AUTOSAVE_DELAY_MS = 1000;
+export const DEFAULT_AUTOSAVE_DELAY_MS = 5000;
 
 export type AutosavePhase =
   | "idle"
@@ -13,7 +13,7 @@ export interface AutosaveState {
 }
 
 interface AutosaveCoordinatorOptions<Snapshot> {
-  delayMs?: number;
+  delayMs?: number | null;
   getSnapshot: () => Snapshot;
   onError?: (error: unknown) => void;
   onStateChange: (state: AutosaveState) => void;
@@ -21,7 +21,7 @@ interface AutosaveCoordinatorOptions<Snapshot> {
 }
 
 export default class AutosaveCoordinator<Snapshot> {
-  private readonly delayMs: number;
+  private readonly delayMs: number | null;
   private disposed = false;
   private flushRequested = false;
   private getSnapshot: () => Snapshot;
@@ -34,7 +34,9 @@ export default class AutosaveCoordinator<Snapshot> {
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: AutosaveCoordinatorOptions<Snapshot>) {
-    this.delayMs = options.delayMs ?? DEFAULT_AUTOSAVE_DELAY_MS;
+    this.delayMs = options.delayMs === undefined
+      ? DEFAULT_AUTOSAVE_DELAY_MS
+      : options.delayMs;
     this.getSnapshot = options.getSnapshot;
     this.onError = options.onError;
     this.onStateChange = options.onStateChange;
@@ -62,6 +64,8 @@ export default class AutosaveCoordinator<Snapshot> {
       void this.flush();
       return;
     }
+
+    if (this.delayMs === null) return;
 
     this.timer = setTimeout(() => {
       this.timer = null;

@@ -5,7 +5,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import Requests from "@/client/requests";
 import EditChannelApp from "@/components/admin/channel/EditChannelApp";
 import EditItemApp from "@/components/admin/items/EditItemApp";
-import AdminAutosaveAction from "@/components/admin/shared/AdminAutosaveAction";
+import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 import AdminDatetimePicker from "@/components/admin/shared/AdminDatetimePicker";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {STATUSES} from "@/shared/Constants";
@@ -134,7 +134,7 @@ afterEach(() => {
 describe("admin editor autosave", () => {
   it("reports autosave state and exposes a retry action after failure", () => {
     const clean = renderToStaticMarkup(
-      React.createElement(AdminAutosaveAction, {
+      React.createElement(AdminSaveAction, {
         dirty: false,
         phase: "saved",
       }),
@@ -145,7 +145,7 @@ describe("admin editor autosave", () => {
     expect(clean).toContain('disabled=""');
 
     const failed = renderToStaticMarkup(
-      React.createElement(AdminAutosaveAction, {
+      React.createElement(AdminSaveAction, {
         dirty: true,
         phase: "error",
       }),
@@ -153,6 +153,17 @@ describe("admin editor autosave", () => {
     expect(failed).toContain("Your changes are still on this page");
     expect(failed).toContain("Retry save");
     expect(failed).not.toContain('disabled=""');
+
+    const channel = renderToStaticMarkup(
+      React.createElement(AdminSaveAction, {
+        buttonLabel: "Save changes",
+        dirty: true,
+        idleMessage: "Make changes, then select Save changes.",
+        phase: "pending",
+      }),
+    );
+    expect(channel).toContain("Unsaved changes");
+    expect(channel).toContain("Save changes");
   });
 
   it("creates one unpublished draft after the first genuine item edit", async () => {
@@ -165,12 +176,12 @@ describe("admin editor autosave", () => {
       pubDateIsDraftDefault: true,
       status: STATUSES.UNPUBLISHED,
     });
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(5000);
     expect(axiosPost).not.toHaveBeenCalled();
 
     app.onUpdateItemMeta({title: "Draft title"});
     expect(app.state.autosaveState).toEqual({dirty: true, phase: "pending"});
-    await vi.advanceTimersByTimeAsync(999);
+    await vi.advanceTimersByTimeAsync(4999);
     expect(axiosPost).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -195,7 +206,7 @@ describe("admin editor autosave", () => {
     );
 
     app.onUpdateItemMeta({description: "More details"});
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(5000);
     expect(axiosPost).toHaveBeenCalledTimes(2);
     expect(axiosPost.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
       item: expect.objectContaining({id: itemId}),
@@ -236,7 +247,10 @@ describe("admin editor autosave", () => {
       (element) => element.type === AdminDatetimePicker,
     );
     dateControl?.props.onChange({target: {value: "2026-09-01T18:30"}});
-    await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledOnce());
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(Requests.axiosPost).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(Requests.axiosPost).toHaveBeenCalledOnce();
 
     itemStatusControl(draft)?.props.onValueChange(String(STATUSES.PUBLISHED));
     await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledTimes(2));
@@ -274,7 +288,7 @@ describe("admin editor autosave", () => {
 
     expect(app.state.item.status).toBe(STATUSES.UNLISTED);
     app.onUpdateItemMeta({title: "Edited item"});
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(5000);
 
     expect(Requests.axiosPost).toHaveBeenCalledWith(
       expect.any(String),
@@ -284,6 +298,27 @@ describe("admin editor autosave", () => {
           status: STATUSES.UNLISTED,
           title: "Edited item",
         }),
+      }),
+    );
+  });
+
+  it("debounces ordinary item radio changes for five seconds", async () => {
+    const app = mount(new EditItemApp(props()));
+    const explicitControl = findElement(
+      app.render(),
+      (element) => element.type === AdminRadioGroup &&
+        element.props.name === "lh-explicit",
+    );
+
+    explicitControl?.props.onValueChange("yes");
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(Requests.axiosPost).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(Requests.axiosPost).toHaveBeenCalledOnce();
+    expect(vi.mocked(Requests.axiosPost).mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        item: expect.objectContaining({"itunes:explicit": true}),
       }),
     );
   });
@@ -325,7 +360,7 @@ describe("admin editor autosave", () => {
     expect(allowedNavigation.defaultPrevented).toBe(false);
   });
 
-  it("autosaves channel fields and keeps later image cleanup queued", async () => {
+  it("saves channel fields only on submit and keeps later image cleanup queued", async () => {
     const firstSave = deferred();
     const axiosPost = vi.mocked(Requests.axiosPost)
       .mockImplementationOnce(() => firstSave.promise as any)
@@ -335,19 +370,34 @@ describe("admin editor autosave", () => {
     app.setState({
       channel: {...app.state.channel, image: "images/first.png"},
       replacedImageUrls: ["images/old.png"],
-    }, () => (app as any).autosave.markChanged({immediate: true}));
+    }, () => (app as any).autosave.markChanged());
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(axiosPost).not.toHaveBeenCalled();
+    expect(app.state.autosaveState).toEqual({dirty: true, phase: "pending"});
+
+    app.onSubmit({preventDefault: vi.fn()});
     await vi.waitFor(() => expect(axiosPost).toHaveBeenCalledOnce());
 
     app.setState({
       channel: {...app.state.channel, image: "images/second.png"},
       replacedImageUrls: ["images/old.png", "images/first.png"],
-    }, () => (app as any).autosave.markChanged({immediate: true}));
+    }, () => (app as any).autosave.markChanged());
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(axiosPost).toHaveBeenCalledOnce();
+
     firstSave.resolve();
-    await vi.waitFor(() => expect(axiosPost).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => {
+      expect(app.state.autosaveState).toEqual({dirty: true, phase: "pending"});
+    });
+    expect(axiosPost).toHaveBeenCalledOnce();
 
     expect(axiosPost.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
       deleteImageUrls: ["images/old.png"],
     }));
+    expect(app.state.replacedImageUrls).toEqual(["images/first.png"]);
+
+    app.onSubmit({preventDefault: vi.fn()});
+    await vi.waitFor(() => expect(axiosPost).toHaveBeenCalledTimes(2));
     expect(axiosPost.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
       deleteImageUrls: ["images/first.png"],
       channel: expect.objectContaining({image: "images/second.png"}),
@@ -355,11 +405,49 @@ describe("admin editor autosave", () => {
     expect(app.state.replacedImageUrls).toEqual([]);
 
     axiosPost.mockClear();
-    app.onUpdateChannelMeta("title", "Autosaved title");
-    await vi.advanceTimersByTimeAsync(1000);
+    app.onUpdateChannelMeta("title", "Manually saved title");
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(axiosPost).not.toHaveBeenCalled();
+    app.onSubmit({preventDefault: vi.fn()});
+    await vi.waitFor(() => expect(axiosPost).toHaveBeenCalledOnce());
     expect(axiosPost).toHaveBeenCalledOnce();
     expect(axiosPost.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
-      channel: expect.objectContaining({title: "Autosaved title"}),
+      channel: expect.objectContaining({title: "Manually saved title"}),
     }));
+  });
+
+  it("retains failed channel changes, cleanup, and navigation protection for retry", async () => {
+    const failure = Object.assign(new Error("offline"), {response: undefined});
+    const axiosPost = vi.mocked(Requests.axiosPost)
+      .mockRejectedValueOnce(failure)
+      .mockResolvedValueOnce({} as any);
+    const app = mount(new EditChannelApp(props()));
+
+    app.setState({
+      channel: {...app.state.channel, image: "images/new.png"},
+      replacedImageUrls: ["images/old.png"],
+    }, () => (app as any).autosave.markChanged());
+    app.onSubmit({preventDefault: vi.fn()});
+    await vi.waitFor(() => {
+      expect(app.state.autosaveState).toEqual({dirty: true, phase: "error"});
+    });
+    expect(app.state.replacedImageUrls).toEqual(["images/old.png"]);
+
+    const blockedNavigation = new Event("astro:before-preparation", {
+      cancelable: true,
+    });
+    documentListeners.get("astro:before-preparation")?.(blockedNavigation);
+    expect(blockedNavigation.defaultPrevented).toBe(true);
+
+    app.onSubmit({preventDefault: vi.fn()});
+    await vi.waitFor(() => {
+      expect(app.state.autosaveState).toEqual({dirty: false, phase: "saved"});
+    });
+    expect(axiosPost).toHaveBeenCalledTimes(2);
+    expect(axiosPost.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
+      deleteImageUrls: ["images/old.png"],
+      channel: expect.objectContaining({image: "images/new.png"}),
+    }));
+    expect(app.state.replacedImageUrls).toEqual([]);
   });
 });

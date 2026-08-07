@@ -27,7 +27,7 @@ import AutosaveCoordinator, {
 } from "@/client/AutosaveCoordinator";
 import type {FeedContent, OnboardingResult} from "@/types";
 import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
-import AdminAutosaveAction from "@/components/admin/shared/AdminAutosaveAction";
+import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 
 interface ChannelSnapshot {
   channel: Record<string, unknown>;
@@ -97,6 +97,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
     };
 
     this.autosave = new AutosaveCoordinator({
+      delayMs: null,
       getSnapshot: () => ({
         channel: {...this.state.channel},
         deleteImageUrls: [...this.state.replacedImageUrls],
@@ -122,13 +123,13 @@ export default class EditChannelApp extends React.Component<Props, any> {
     this.cleanupNavigationGuard?.();
   }
 
-  onUpdateChannelMeta(keyName: any, value: any, immediate = false) {
+  onUpdateChannelMeta(keyName: any, value: any) {
     this.setState((prevState: any) => ({
       channel: {
         ...prevState.channel,
         [keyName]: value,
       },
-    }), () => this.autosave.markChanged({immediate}));
+    }), () => this.autosave.markChanged());
   }
 
   onSubmit(e: any) {
@@ -208,7 +209,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                       prevState.replacedImageUrls,
                       replacedImageUrl,
                     ),
-                  }), () => this.autosave.markChanged({immediate: true}))}
+                  }), () => this.autosave.markChanged())}
                 />
               </div>
               <div className="grid flex-1 grid-cols-1 gap-3">
@@ -239,7 +240,6 @@ export default class EditChannelApp extends React.Component<Props, any> {
                       this.onUpdateChannelMeta(
                         'categories',
                         [...selectedOptions.map((o: any) => o.value)],
-                        true,
                       );
                     }}
                     multiple
@@ -251,7 +251,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.LANGUAGE]}/>}
                     options={LANGUAGE_CODES_SELECT_OPTIONS}
                     onChange={(selected: any) => {
-                      this.onUpdateChannelMeta('language', selected.code, true);
+                      this.onUpdateChannelMeta('language', selected.code);
                     }}
                   />
                 </div>
@@ -289,7 +289,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     label: 'no',
                     value: 'no',
                   }]}
-                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:explicit', value === 'yes', true)}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:explicit', value === 'yes')}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
@@ -314,7 +314,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     label: 'serial',
                     value: 'serial',
                   }]}
-                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:type', value, true)}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:type', value)}
                 />
                 <AdminInput
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EMAIL]}/>}
@@ -341,7 +341,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     label: 'no',
                     value: 'no',
                   }]}
-                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:block', value === 'yes', true)}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:block', value === 'yes')}
                 />
                 <AdminRadioGroup
                   labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_COMPLETE]}/>}
@@ -354,7 +354,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     label: 'no',
                     value: 'no',
                   }]}
-                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:complete', value === 'yes', true)}
+                  onValueChange={(value) => this.onUpdateChannelMeta('itunes:complete', value === 'yes')}
                 />
               </div>
             </div>
@@ -362,7 +362,11 @@ export default class EditChannelApp extends React.Component<Props, any> {
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">
-            <AdminAutosaveAction {...autosaveState} />
+            <AdminSaveAction
+              {...autosaveState}
+              buttonLabel="Save changes"
+              idleMessage="Make changes, then select Save changes."
+            />
             <AdminSideQuickLinks />
           </div>
         </div>

@@ -26,7 +26,9 @@ same channel after its owner enables the authenticated API. Start with
 Opening the form does not create an empty item. Your first genuine edit creates
 one **Unpublished** draft, changes the browser address from `/items/new/` to the
 draft's edit address, and adds it to **See all items**. Ordinary edits autosave
-after a one-second pause; status choices and completed uploads save immediately.
+after a five-second pause. Published, Unlisted, and Unpublished status choices,
+plus completed media uploads and replacements, save immediately. Other field
+and selection changes use the five-second pause.
 
 The action panel reports **Unsaved changes**, **Saving…**, or **All changes
 saved**. Select **Save now** to save without waiting. If a save fails, the form
