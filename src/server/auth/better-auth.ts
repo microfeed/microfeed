@@ -56,4 +56,22 @@ export function createMicrofeedAuth(
   });
 }
 
+export function withAuthSessionCookies(
+  response: Response,
+  authHeaders: Headers,
+): Response {
+  const cookies = authHeaders.getSetCookie();
+  if (cookies.length === 0) {
+    return response;
+  }
+
+  const headers = new Headers(response.headers);
+  cookies.forEach((cookie) => headers.append("set-cookie", cookie));
+  return new Response(response.body, {
+    headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
+}
+
 export type MicrofeedAuth = ReturnType<typeof createMicrofeedAuth>;

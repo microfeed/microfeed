@@ -30,7 +30,6 @@
     "@astrojs/react": "^6.0.2",
     "@base-ui/react": "^1.6.0",
     "@clack/prompts": "^1.7.0",
-    "@enzedonline/quill-blot-formatter2": "^3.2.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@scalar/api-reference-react": "^0.9.60",
     "@tanstack/react-table": "^8.5.28",

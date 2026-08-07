@@ -17,7 +17,10 @@ import {
 } from "@/shared/StringUtils";
 import {isExistingItemEditorPath} from "./server/admin-routes";
 import {adminProtectionStatus} from "@/server/auth/admin-protection";
-import {createMicrofeedAuth} from "@/server/auth/better-auth";
+import {
+  createMicrofeedAuth,
+  withAuthSessionCookies,
+} from "@/server/auth/better-auth";
 import {
   adminDashboardLockedResponse,
   hasAdminOwner,
@@ -72,6 +75,7 @@ function wantsJson(request: Request, pathname: string): boolean {
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const {pathname} = context.url;
+  let authSessionHeaders: Headers | undefined;
   const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
   const builtInAuthEnabled = builtInAdminAuthEnabled(
     env.MICROFEED_ADMIN_AUTH_MODE,
@@ -161,39 +165,51 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return next();
       }
       const auth = createMicrofeedAuth(env, context.request);
-      const authSession = await auth.api.getSession({
+      const sessionResult = await auth.api.getSession({
         headers: context.request.headers,
+        returnHeaders: true,
       });
+      const authSession = sessionResult.response;
+      authSessionHeaders = sessionResult.headers;
       if (!authSession && !await hasAdminOwner(env.FEED_DB)) {
-        return adminDashboardLockedResponse(
-          !wantsJson(context.request, pathname),
-          {
-            instanceName: env.MICROFEED_INSTANCE_NAME,
-            local: !env.MICROFEED_CLOUDFLARE_ACCOUNT_ID?.trim(),
-          },
+        return withAuthSessionCookies(
+          adminDashboardLockedResponse(
+            !wantsJson(context.request, pathname),
+            {
+              instanceName: env.MICROFEED_INSTANCE_NAME,
+              local: !env.MICROFEED_CLOUDFLARE_ACCOUNT_ID?.trim(),
+            },
+          ),
+          authSessionHeaders,
         );
       }
       if (pathname === loginPath) {
         if (authSession) {
-          return Response.redirect(
-            new URL(adminBasePath(adminPath), context.url),
-            302,
+          return withAuthSessionCookies(
+            Response.redirect(
+              new URL(adminBasePath(adminPath), context.url),
+              302,
+            ),
+            authSessionHeaders,
           );
         }
-        return next();
+        return withAuthSessionCookies(await next(), authSessionHeaders);
       }
       if (!authSession) {
         if (wantsJson(context.request, pathname)) {
-          return new Response("Unauthorized", {status: 401});
+          return withAuthSessionCookies(
+            new Response("Unauthorized", {status: 401}),
+            authSessionHeaders,
+          );
         }
         const loginUrl = new URL(loginPath, context.url);
         loginUrl.searchParams.set(
           "redirect",
           `${context.url.pathname}${context.url.search}`,
         );
-        return Response.redirect(
-          loginUrl,
-          302,
+        return withAuthSessionCookies(
+          Response.redirect(loginUrl, 302),
+          authSessionHeaders,
         );
       }
       context.locals.authSession = authSession.session;
@@ -215,7 +231,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     if (isAdminAjax(pathname, adminPath)) {
-      return next();
+      const response = await next();
+      return authSessionHeaders
+        ? withAuthSessionCookies(response, authSessionHeaders)
+        : response;
     }
 
     // The item-edit page loads one item itself so deleted items can return a
@@ -265,5 +284,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  return next();
+  const response = await next();
+  return authSessionHeaders
+    ? withAuthSessionCookies(response, authSessionHeaders)
+    : response;
 });

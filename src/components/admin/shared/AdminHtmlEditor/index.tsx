@@ -16,6 +16,7 @@ export default function AdminHtmlEditor({onChange, value = ""}: Props) {
     <AdminCodeEditor
       ariaLabel="HTML source"
       code={value}
+      fontSize={14.4}
       language="html"
       maxHeight="32rem"
       minHeight="16rem"

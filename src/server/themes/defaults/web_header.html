@@ -45,6 +45,46 @@
     max-width: 100%;
   }
 
+  /* Inline code */
+  :not(pre) > code {
+    padding: 0.1em 0.35em;
+    border: 1px solid #DCDCDC;
+    border-radius: 0.35em;
+    background: #f6f8fa;
+    color: #24292f;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* Multiline code block */
+  pre {
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 1em;
+    margin: 1em 0;
+    overflow-x: auto;
+    border: 1px solid #DCDCDC;
+    border-radius: 0.5em;
+    background: #f6f8fa;
+    line-height: 1.5;
+    tab-size: 2;
+    white-space: pre;
+  }
+
+  pre code {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #24292f;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9em;
+    overflow-wrap: normal;
+  }
+
   /* Some css classes */
   .flex {
     display: flex;
@@ -236,4 +276,3 @@
   }, false);
 
 </script>
-

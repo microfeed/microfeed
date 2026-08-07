@@ -14,6 +14,7 @@ import {
 import Requests from "@/client/requests";
 import {showToast} from "@/client/ToastUtils";
 import {Button} from "@/components/ui/button";
+import {richEditorMediaEmbedFormat} from "@/client/RichEditorMedia";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -118,7 +119,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
         progressText: 'Done!',
         uploadStatus: null,
       }, () => {
-        this.insertMedia();
+        this.insertMedia(true);
         setIsOpen(false);
       })
     }, () => {
@@ -138,7 +139,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
     });
   }
 
-  insertMedia() {
+  insertMedia(uploadedFile = false) {
     const {quill, quillSelection, mediaType} = this.props;
     if (!quill) {
       return;
@@ -146,7 +147,14 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
     const {url} = this.state;
     if (url) {
       const index = quillSelection ? quillSelection.index : 0;
-      quill.insertEmbed(index, mediaType, url, Quill.sources.USER);
+      quill.insertEmbed(
+        index,
+        richEditorMediaEmbedFormat(mediaType, uploadedFile),
+        url,
+        Quill.sources.USER,
+      );
+      quill.insertText(index + 1, "\n", Quill.sources.USER);
+      quill.setSelection(index + 2, 0, Quill.sources.SILENT);
       this.setState({url: null});
     }
   }
