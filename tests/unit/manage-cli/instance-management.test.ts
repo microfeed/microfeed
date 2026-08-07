@@ -634,7 +634,9 @@ describe("first-class local instances", () => {
       if (command.startsWith("d1 execute FEED_DB --local --command ")) {
         return commandResult(JSON.stringify([{results: []}]));
       }
-      if (["types", "typecheck", "test", "build"].includes(args[0]!)) {
+      if (
+        ["types", "typecheck", "test:deploy", "build"].includes(args[0]!)
+      ) {
         return commandResult();
       }
       throw new Error(`Unexpected command: ${command}`);
@@ -684,6 +686,44 @@ describe("first-class local instances", () => {
     await expect(
       readFile(config.wranglerConfigPath(enabled!), "utf8"),
     ).resolves.toContain('"binding": "MEDIA_BUCKET"');
+    const yarnScripts = runner.mock.calls
+      .filter(([executable]) => /(?:^|\/)yarn(?:\.cmd)?$/u.test(executable))
+      .map(([, args]) => args[0]);
+    expect(yarnScripts).toEqual([
+      "types",
+      "typecheck",
+      "test:deploy",
+      "build",
+    ]);
+    expect(yarnScripts).not.toContain("test");
+  });
+
+  it("stops local deployment preparation when smoke tests fail", async () => {
+    const {commands, config} = await freshModules();
+    await config.ensureLocalOnlyConfig("smoke-failure");
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
+        return commandResult("Migrations applied");
+      }
+      if (["types", "typecheck"].includes(args[0]!)) {
+        return commandResult();
+      }
+      if (args[0] === "test:deploy") {
+        throw new Error("deployment smoke tests failed");
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await expect(commands.deployCommand({
+      instance: "smoke-failure",
+      local: true,
+    }, runner)).rejects.toThrow("deployment smoke tests failed");
+    const yarnScripts = runner.mock.calls
+      .filter(([executable]) => /(?:^|\/)yarn(?:\.cmd)?$/u.test(executable))
+      .map(([, args]) => args[0]);
+    expect(yarnScripts).toEqual(["types", "typecheck", "test:deploy"]);
+    expect(yarnScripts).not.toContain("build");
   });
 
   it("rejects incompatible no-R2 flags and never detaches ready local R2", async () => {

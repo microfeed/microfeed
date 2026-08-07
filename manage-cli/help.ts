@@ -48,6 +48,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Choose a globally unique site name; for a custom address such as my.domainname.com, use my-domainname-com.",
       "Production initialization creates or reuses a Worker, D1 database, optional R2 bucket, secrets, migrations, and optional custom domain.",
+      "Remote initialization runs type checks, focused deployment smoke tests, and a Worker build before publishing. The complete repository test suite remains part of yarn check and continuous integration.",
       "Use --no-r2 to create a content-only Cloudflare or local instance without probing or binding R2; the validated bucket name is saved for a later deploy --enable-r2.",
       "If Cloudflare returns its subscription-required R2 response, initialization completes in content-only mode and prints the account-specific activation and billing handoff.",
       "Preview initialization creates a separate Worker and D1 database while reusing production media storage.",
@@ -112,11 +113,11 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     changes: "Updates a selected Cloudflare Worker, or prepares a local-only release with --local.",
     details: [
       "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
-      "Runs type checks, tests, and a build before deploying, then verifies the public site and protected admin route.",
+      "Runs type checks, focused deployment smoke tests, and a build before deploying, then verifies the public site and protected admin route. The complete repository test suite remains part of yarn check and continuous integration.",
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
-      "--local is limited to init --local instances. It regenerates configuration, applies local D1 migrations, runs checks and a build, preserves local data, and does not start a server.",
+      "--local is limited to init --local instances. It regenerates configuration, applies local D1 migrations, runs focused deployment smoke tests and a build, preserves local data, and does not start a server.",
     ],
     examples: [
       "yarn manage deploy --instance personal",

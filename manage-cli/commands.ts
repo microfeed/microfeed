@@ -585,8 +585,8 @@ async function runChecks(
     await runYarnScript(runner, "types", {env});
     currentActivity.update("Checking TypeScript and Astro");
     await runYarnScript(runner, "typecheck", {env});
-    currentActivity.update("Running tests");
-    await runYarnScript(runner, "test", {env});
+    currentActivity.update("Running deployment smoke tests");
+    await runYarnScript(runner, "test:deploy", {env});
     currentActivity.update("Building the Worker");
     await runYarnScript(runner, "build", {env});
   };
