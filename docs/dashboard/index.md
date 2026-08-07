@@ -19,8 +19,8 @@ page, or edit an existing item.
 **Edit channel** manages the channel image, title, publisher, website,
 categories, language, and description.
 
-**API** opens a dedicated area for availability, API keys, OAuth apps, an
-interactive browser explorer, and public API documentation formats.
+**API** opens a dedicated area for availability, API keys, an interactive
+browser explorer, and public API documentation formats.
 
 **Settings** manages tracking URLs, subscribe methods, access control, media
 storage, feed ordering, favicon, public themes, and custom code. It does not
@@ -28,7 +28,10 @@ contain the **Edit channel** form.
 
 The channel control at the top of the sidebar links directly to the public
 website, RSS feed, and JSON feed. The top bar also contains theme and user
-menus. On small screens, the menu button opens the sidebar as a drawer.
+menus. [**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
+in the user menu manages login identity, passkeys, dashboard sessions, and
+microfeed CLI computer connections. On small screens, the menu button opens
+the sidebar as a drawer.
 
 ## Light and dark dashboard themes
 

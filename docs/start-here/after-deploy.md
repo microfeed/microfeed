@@ -32,7 +32,7 @@ Open the dashboard URL printed by the CLI. Then:
 
 Create a clearly labeled test item, preview its public page, and check the RSS
 and JSON feeds. You can publish it yourself in the admin dashboard. To publish
-with a coding agent, first [enable API access and OAuth](/api/authentication/),
+with a coding agent, first [enable API access and connect the CLI](/api/authentication/),
 then ask the agent to use the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside this
 clone, the agent should run `yarn microfeed`; you remain responsible for

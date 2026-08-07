@@ -24,6 +24,8 @@ interface EncryptedBundle {
 
 export interface SavedInstance {
   authorizationEndpoint: string;
+  connectionId?: string;
+  connectionName?: string;
   encryptedTokens: EncryptedBundle;
   instanceId: string;
   issuer: string;
@@ -34,6 +36,10 @@ export interface SavedInstance {
 export interface InstanceStore {
   current?: string;
   instances: Record<string, SavedInstance>;
+  version: 2;
+}
+
+interface LegacyInstanceStore extends Omit<InstanceStore, "version"> {
   version: 1;
 }
 
@@ -55,14 +61,18 @@ export async function readStore(): Promise<InstanceStore> {
   try {
     const value: unknown = JSON.parse(await readFile(storePath(), "utf8"));
     if (!value || typeof value !== "object" ||
-      (value as {version?: unknown}).version !== 1 ||
+      ![1, 2].includes((value as {version?: number}).version ?? 0) ||
       typeof (value as {instances?: unknown}).instances !== "object") {
       throw new Error("unsupported store format");
+    }
+    if ((value as {version: number}).version === 1) {
+      const legacy = value as LegacyInstanceStore;
+      return {...legacy, version: 2};
     }
     return value as InstanceStore;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return {instances: {}, version: 1};
+      return {instances: {}, version: 2};
     }
     throw new CliError("Unable to read the microfeed instance store.");
   }

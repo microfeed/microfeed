@@ -7,31 +7,31 @@
 The official, agent-friendly command for publishing and managing content on
 one or more [microfeed](https://www.microfeed.org/) sites. Use it directly from
 a terminal or let a local coding agent drive it. The CLI uses browser-based
-OAuth for interactive work and accepts an existing API key for unattended CI
-jobs.
+authorization for interactive work and accepts an existing API key for
+unattended CI jobs.
 
 Create, read, update, and delete items; upload cover art, inline media, and RSS
 enclosures; update a channel; or call any documented REST operation without
-giving an agent a raw OAuth token.
+giving an agent a raw credential.
 
 ## Requirements
 
 - Node.js 22.12 or newer
 - A microfeed site with API access enabled
-- Built-in administrator login for browser-based OAuth
+- Built-in administrator login for browser authorization
 
 Instances without built-in login can continue using an API key.
 
 New microfeed instances keep API access disabled by default. The site owner
 must sign in to the admin dashboard, open **API → API Settings**, and turn on
-**Enable API access** before content commands can succeed. OAuth login itself
+**Enable API access** before content commands can succeed. Browser login itself
 can be saved while API access is off.
 
 If a content command returns `404`, the CLI prints these steps and a link to
 the [API setup guide](https://docs.microfeed.org/api/authentication/#enable-the-api).
 With `--json`, the result also includes a structured `recovery` object. An AI
 agent must pause and ask the owner to complete the dashboard step in the
-browser; it must never request a dashboard password, API key, or OAuth token.
+browser; it must never request a dashboard password, API key, or CLI credential.
 
 ## Run the CLI
 
@@ -71,7 +71,7 @@ confirmation.
 
 Inside a microfeed clone, tell the agent to prefer `yarn microfeed`. Elsewhere,
 it can use a project-local installation or `yarn dlx @microfeed/cli`. You—not
-the agent—approve OAuth permissions in the browser.
+the agent—approve permissions in the browser.
 
 ## Site URLs and instance names
 
@@ -87,19 +87,29 @@ Do not include a dashboard path, query, fragment, or embedded credentials.
 Local HTTP is allowed only for `localhost` and `127.0.0.1`.
 
 An **instance name** is a local name for a saved site, such as `production` or
-`personal-feed`. It is not a username, OAuth identity, or Wrangler profile.
+`personal-feed`. It is not a username, browser identity, or Wrangler profile.
+
+A **connection name** identifies this computer on the site's **Account
+settings → App access** page, such as `Home Mac` or `Work laptop`. One site can
+have several microfeed CLI computer connections. The local instance name and
+server-visible connection name are intentionally separate.
 
 ## Log in
 
 ```console
-yarn microfeed login https://feed.example.com --instance production
+yarn microfeed login https://feed.example.com \
+  --instance production \
+  --connection-name "Home Mac"
 ```
 
 The CLI verifies the site, opens administrator login and consent in a browser,
 and saves the authorized instance locally. The person operating the site must
-approve or deny access in the browser.
+approve or deny access in the browser. Without `--connection-name`, the CLI
+uses the computer hostname or a privacy-neutral platform label. Re-login reuses
+the same random connection ID for that saved site instead of creating a
+duplicate computer entry.
 
-OAuth token bundles are encrypted with AES-256-GCM. Only the encryption key is
+CLI credential bundles are encrypted with AES-256-GCM. Only the encryption key is
 stored in the operating-system keychain; the CLI never falls back to plaintext
 credential storage.
 
@@ -110,6 +120,12 @@ yarn microfeed instances list
 yarn microfeed instances use production
 yarn microfeed logout --instance production
 ```
+
+Logout revokes this computer's current token family and removes the local
+saved instance. The authorization remains visible as **Inactive** under
+**Account settings → App access** until the owner revokes it. Owners can revoke
+one computer without interrupting others, or revoke every connection for the
+microfeed CLI application.
 
 ## Manage items
 
@@ -185,14 +201,14 @@ Raw `--input` is UTF-8 text. Use `media upload` for inline or standalone media,
 ## Use an API key in CI
 
 Supply credentials through the CI secret manager. `MICROFEED_API_KEY` takes
-precedence over saved OAuth credentials and is never persisted. Identify the
+precedence over saved browser credentials and is never persisted. Identify the
 target with a saved instance or `MICROFEED_URL`:
 
 ```console
 MICROFEED_URL=https://feed.example.com yarn microfeed item list --json
 ```
 
-Never put an API key or OAuth token in a command, checked-in file, log,
+Never put an API key or CLI credential in a command, checked-in file, log,
 generated example, or agent conversation.
 
 ## Command help and documentation

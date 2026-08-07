@@ -52,7 +52,7 @@ export async function startOAuthCallback(
       const oauthError = url.searchParams.get("error");
       if (state !== expectedState) {
         response.writeHead(400, {"content-type": "text/plain; charset=utf-8"}).end("State validation failed. Return to the terminal.");
-        finish(new CliError("OAuth state validation failed."));
+        finish(new CliError("Browser authorization state validation failed."));
         return;
       }
       if (oauthError || !code) {
@@ -114,7 +114,7 @@ async function exchangeToken(
     redirect: "manual",
   });
   if (!response.ok) {
-    throw new CliError(`OAuth token exchange failed (${response.status}).`);
+    throw new CliError(`Browser authorization failed (${response.status}).`);
   }
   const value = await response.json() as {
     access_token?: string;
@@ -124,7 +124,7 @@ async function exchangeToken(
     token_type?: string;
   };
   if (!value.access_token || value.token_type?.toLowerCase() !== "bearer") {
-    throw new CliError("The OAuth token response was invalid.");
+    throw new CliError("The authorization response was invalid.");
   }
   return {
     accessToken: value.access_token,
@@ -135,18 +135,19 @@ async function exchangeToken(
   };
 }
 
-export async function browserLogin(metadata: OAuthMetadata): Promise<TokenBundle> {
+export async function browserLogin(
+  metadata: OAuthMetadata,
+  connection: {id: string; name: string},
+): Promise<TokenBundle> {
   const verifier = randomBase64Url(48);
   const challenge = createHash("sha256").update(verifier).digest("base64url");
   const state = randomBase64Url(32);
-  const authorization = new URL(metadata.authorization_endpoint);
-  authorization.searchParams.set("response_type", "code");
-  authorization.searchParams.set("client_id", CLI_CLIENT_ID);
-  authorization.searchParams.set("redirect_uri", CLI_CALLBACK_URL);
-  authorization.searchParams.set("scope", REQUESTED_SCOPES.join(" "));
-  authorization.searchParams.set("state", state);
-  authorization.searchParams.set("code_challenge", challenge);
-  authorization.searchParams.set("code_challenge_method", "S256");
+  const authorization = authorizationRequestUrl(
+    metadata,
+    connection,
+    state,
+    challenge,
+  );
 
   const callback = await startOAuthCallback(state);
   openBrowser(authorization.toString());
@@ -159,6 +160,26 @@ export async function browserLogin(metadata: OAuthMetadata): Promise<TokenBundle
     grant_type: "authorization_code",
     redirect_uri: CLI_CALLBACK_URL,
   }));
+}
+
+export function authorizationRequestUrl(
+  metadata: OAuthMetadata,
+  connection: {id: string; name: string},
+  state: string,
+  challenge: string,
+): URL {
+  const authorization = new URL(metadata.authorization_endpoint);
+  authorization.searchParams.set("response_type", "code");
+  authorization.searchParams.set("client_id", CLI_CLIENT_ID);
+  authorization.searchParams.set("redirect_uri", CLI_CALLBACK_URL);
+  authorization.searchParams.set("scope", REQUESTED_SCOPES.join(" "));
+  authorization.searchParams.set("state", state);
+  authorization.searchParams.set("code_challenge", challenge);
+  authorization.searchParams.set("code_challenge_method", "S256");
+  authorization.searchParams.set("microfeed_connection_id", connection.id);
+  authorization.searchParams.set("microfeed_connection_name", connection.name);
+  authorization.searchParams.set("prompt", "consent");
+  return authorization;
 }
 
 export async function refreshTokens(

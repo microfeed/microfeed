@@ -1,6 +1,7 @@
 import type {AdminNavigationItem} from "@/shared/AdminNavigation";
 import type {AdminSettingsSection} from "@/shared/AdminSettingsNavigation";
 import type {AdminApiPageId} from "@/shared/AdminApiNavigation";
+import type {AdminAccountSection} from "@/shared/AdminAccountNavigation";
 
 export interface AdminBreadcrumb {
   childName?: string;
@@ -46,6 +47,13 @@ export interface AdminSidebarData {
 
 export interface AdminSettingsSidebarData {
   activeSection?: AdminSettingsSection["id"];
+  backUrl: string;
+  deployment: AdminDeploymentSummary;
+  sectionsUrl: string;
+}
+
+export interface AdminAccountSidebarData {
+  activeSection?: AdminAccountSection["id"];
   backUrl: string;
   deployment: AdminDeploymentSummary;
   sectionsUrl: string;

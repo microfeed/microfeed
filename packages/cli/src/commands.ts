@@ -1,4 +1,6 @@
 import {createInterface} from "node:readline/promises";
+import {randomUUID} from "node:crypto";
+import {hostname, platform} from "node:os";
 
 import {parseOptions, stringFlag} from "./arguments.js";
 import {discoverInstance} from "./discovery.js";
@@ -17,6 +19,7 @@ import {
   uploadStandaloneMediaFile,
 } from "./media.js";
 import {
+  decryptTokens,
   encryptTokens,
   readStore,
   writeStore,
@@ -45,19 +48,65 @@ function validateInstanceName(name: string): string {
   return name;
 }
 
+function defaultConnectionName(): string {
+  const computerName = hostname().trim();
+  const length = Array.from(computerName).length;
+  return computerName && length <= 64 && !/[\p{Cc}\p{Cf}]/u.test(computerName)
+    ? computerName
+    : `${platform()} computer`;
+}
+
+function validateConnectionName(name: string): string {
+  const normalized = name.trim();
+  const length = Array.from(normalized).length;
+  if (length < 1 || length > 64 || /[\p{Cc}\p{Cf}]/u.test(normalized)) {
+    throw new CliError(
+      "Connection names must contain 1–64 printable characters.",
+    );
+  }
+  return normalized;
+}
+
+function isConnectionId(value: string | undefined): value is string {
+  return Boolean(value &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value));
+}
+
 export async function loginCommand(args: string[], globals: GlobalOptions): Promise<void> {
-  const parsed = parseOptions(args, new Set());
+  const parsed = parseOptions(args, new Set(["connection-name"]));
   if (parsed.positionals.length !== 1) {
-    throw new CliError("Usage: yarn microfeed login <site-url> [--instance <name>]");
+    throw new CliError(
+      "Usage: yarn microfeed login <site-url> [--instance <local-name>] [--connection-name <computer-name>]",
+    );
   }
   const discovered = await discoverInstance(parsed.positionals[0]!);
   const name = validateInstanceName(
     globals.instance ?? instanceName(discovered.origin),
   );
-  const tokens = await browserLogin(discovered.metadata);
   const store = await readStore();
+  const existing = store.instances[name];
+  const sameSite = existing?.instanceId === discovered.identity.instanceId &&
+    existing.origin === discovered.origin;
+  const connectionId = sameSite && isConnectionId(existing.connectionId)
+    ? existing.connectionId
+    : randomUUID();
+  const connectionName = validateConnectionName(
+    stringFlag(parsed, "connection-name") ??
+      (sameSite ? existing?.connectionName : undefined) ??
+      defaultConnectionName(),
+  );
+  let previousTokens: Awaited<ReturnType<typeof decryptTokens>> | undefined;
+  if (existing) {
+    previousTokens = await decryptTokens(name, existing).catch(() => undefined);
+  }
+  const tokens = await browserLogin(discovered.metadata, {
+    id: connectionId,
+    name: connectionName,
+  });
   store.instances[name] = {
     authorizationEndpoint: discovered.metadata.authorization_endpoint,
+    connectionId,
+    connectionName,
     encryptedTokens: await encryptTokens(name, discovered.origin, tokens),
     instanceId: discovered.identity.instanceId,
     issuer: discovered.metadata.issuer,
@@ -66,10 +115,22 @@ export async function loginCommand(args: string[], globals: GlobalOptions): Prom
   };
   store.current = name;
   await writeStore(store);
-  const result = {instanceId: discovered.identity.instanceId, name, siteUrl: discovered.origin};
+  if (existing && previousTokens) {
+    if (previousTokens.refreshToken) {
+      await revokeToken(existing.issuer, previousTokens.refreshToken, "refresh_token");
+    } else {
+      await revokeToken(existing.issuer, previousTokens.accessToken, "access_token");
+    }
+  }
+  const result = {
+    connectionName,
+    instanceId: discovered.identity.instanceId,
+    name,
+    siteUrl: discovered.origin,
+  };
   process.stdout.write(globals.json
     ? `${JSON.stringify(result)}\n`
-    : `Saved instance “${name}” for ${discovered.origin}.\n`);
+    : `Saved instance “${name}” for ${discovered.origin} on “${connectionName}”.\n`);
 }
 
 export async function logoutCommand(globals: GlobalOptions): Promise<void> {
@@ -96,6 +157,7 @@ export async function instancesCommand(args: string[], globals: GlobalOptions): 
   if (action === "list") {
     const instances = Object.entries(store.instances).map(([name, instance]) => ({
       current: store.current === name,
+      connectionName: instance.connectionName ?? null,
       instanceId: instance.instanceId,
       name,
       siteUrl: instance.origin,

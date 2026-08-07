@@ -121,6 +121,7 @@ export async function passwordResetSql(
     `DELETE FROM "oauth_access_token" WHERE "userId" = ${sqlString(owner.id)};`,
     `DELETE FROM "oauth_refresh_token" WHERE "userId" = ${sqlString(owner.id)};`,
     `DELETE FROM "oauth_consent" WHERE "userId" = ${sqlString(owner.id)};`,
+    `DELETE FROM "oauth_connection" WHERE "userId" = ${sqlString(owner.id)};`,
     `DELETE FROM "auth_session" WHERE "userId" = ${sqlString(owner.id)};`,
   ].join("\n");
 }
@@ -130,6 +131,7 @@ export function revokeOwnerOAuthSql(owner: AuthOwner): string {
     `DELETE FROM "oauth_access_token" WHERE "userId" = ${sqlString(owner.id)};`,
     `DELETE FROM "oauth_refresh_token" WHERE "userId" = ${sqlString(owner.id)};`,
     `DELETE FROM "oauth_consent" WHERE "userId" = ${sqlString(owner.id)};`,
+    `DELETE FROM "oauth_connection" WHERE "userId" = ${sqlString(owner.id)};`,
   ].join("\n");
 }
 

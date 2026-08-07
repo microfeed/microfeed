@@ -7,7 +7,6 @@
     "headless cms",
     "cms",
     "cli",
-    "oauth",
     "cloudflare"
   ],
   "homepage": "https://docs.microfeed.org/microfeed-cli/",

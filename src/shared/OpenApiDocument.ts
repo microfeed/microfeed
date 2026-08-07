@@ -12,7 +12,6 @@ import {
 } from "./ApiSchemas";
 import {MICROFEED_VERSION} from "./Version";
 import {API_BASE_PATH} from "./ApiVersion";
-import {OAUTH_SCOPES} from "./OAuth";
 import * as z from "zod";
 
 const json = (schema: z.ZodType) => ({
@@ -36,8 +35,8 @@ const channelPath = z.object({
 });
 
 const apiKeySecurity = {bearerAuth: [] as string[]};
-const readSecurity = [apiKeySecurity, {oauth2: [OAUTH_SCOPES.READ]}];
-const writeSecurity = [apiKeySecurity, {oauth2: [OAUTH_SCOPES.WRITE]}];
+const readSecurity = [apiKeySecurity];
+const writeSecurity = [apiKeySecurity];
 
 export {API_BASE_PATH};
 
@@ -48,7 +47,7 @@ export const OPENAPI_DOCUMENT = createDocument({
     version: MICROFEED_VERSION,
     description:
       "Create, read, update, and delete content in this microfeed instance. " +
-      "Send either an API key or a scoped OAuth access token using Bearer authentication.",
+      "Send an API key using Bearer authentication.",
     license: {
       name: "GNU Affero General Public License v3.0",
       identifier: "AGPL-3.0-only",
@@ -72,7 +71,6 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "200": success(apiFeedSchema),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:read scope."),
         },
       },
     },
@@ -94,7 +92,6 @@ export const OPENAPI_DOCUMENT = createDocument({
           "201": success(z.object({id: z.string()})),
           "400": error("The request body is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:write scope."),
         },
       },
     },
@@ -108,7 +105,6 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "200": success(apiFeedSchema),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:read scope."),
           "404": error("The item does not exist."),
         },
       },
@@ -131,7 +127,6 @@ export const OPENAPI_DOCUMENT = createDocument({
           "200": success(apiItemOutputSchema),
           "400": error("The request body or item ID is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:write scope."),
           "404": error("The item does not exist."),
         },
       },
@@ -145,7 +140,6 @@ export const OPENAPI_DOCUMENT = createDocument({
           "200": success(z.object({})),
           "400": error("The item ID is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:write scope."),
           "404": error("The item does not exist."),
         },
       },
@@ -165,7 +159,6 @@ export const OPENAPI_DOCUMENT = createDocument({
           "200": success(z.object({})),
           "400": error("The request body or channel ID is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:write scope."),
         },
       },
     },
@@ -189,7 +182,6 @@ export const OPENAPI_DOCUMENT = createDocument({
           "201": success(apiUploadOutputSchema),
           "400": error("The upload request is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
-          "403": error("The OAuth token lacks content:write scope."),
           "503": error("Media storage is unavailable."),
         },
       },
@@ -201,23 +193,6 @@ export const OPENAPI_DOCUMENT = createDocument({
         type: "http",
         scheme: "bearer",
         description: "A full-access mf_ API key sent using Bearer authentication.",
-      },
-      oauth2: {
-        type: "oauth2",
-        description: "A short-lived access token issued by this microfeed instance.",
-        flows: {
-          authorizationCode: {
-            authorizationUrl: "/api/auth/oauth2/authorize",
-            tokenUrl: "/api/auth/oauth2/token",
-            refreshUrl: "/api/auth/oauth2/token",
-            scopes: {
-              [OAUTH_SCOPES.READ]: "Read feeds and items.",
-              [OAUTH_SCOPES.WRITE]:
-                "Create, update, and delete items; update the channel; prepare media uploads.",
-              [OAUTH_SCOPES.OFFLINE]: "Obtain a rotating refresh token.",
-            },
-          },
-        },
       },
     },
   },

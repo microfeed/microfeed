@@ -34,8 +34,8 @@ upload media, and customize the channel. It is separate from the public site.
 
 **Content CLI** is the `microfeed` command exposed by the official
 `@microfeed/cli` package. After the instance owner enables API access, it lets
-people or coding agents manage the same channel through OAuth without reading
-or printing the credential.
+people or coding agents manage the same channel through browser authorization
+without reading or printing the credential.
 
 ## One item, three outputs
 

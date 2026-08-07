@@ -3,6 +3,7 @@ import {createServer} from "node:http";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {
+  authorizationRequestUrl,
   refreshTokens,
   revokeToken,
   startOAuthCallback,
@@ -18,6 +19,25 @@ afterEach(async () => {
 });
 
 describe("CLI OAuth requests", () => {
+  it("always asks for consent with a stable per-computer connection", () => {
+    const url = authorizationRequestUrl({
+      authorization_endpoint: "https://feed.example/api/auth/oauth2/authorize",
+      code_challenge_methods_supported: ["S256"],
+      grant_types_supported: ["authorization_code", "refresh_token"],
+      issuer: "https://feed.example/api/auth",
+      token_endpoint: "https://feed.example/api/auth/oauth2/token",
+    }, {
+      id: "86fe12c4-35a2-4f90-8b44-f14740c14551",
+      name: "Home Mac",
+    }, "state-value", "challenge-value");
+
+    expect(url.searchParams.get("prompt")).toBe("consent");
+    expect(url.searchParams.get("microfeed_connection_id"))
+      .toBe("86fe12c4-35a2-4f90-8b44-f14740c14551");
+    expect(url.searchParams.get("microfeed_connection_name")).toBe("Home Mac");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+  });
+
   it("sends the verified site origin for token exchange and refresh", async () => {
     const fetchMock = vi.fn(async (
       input: string | URL | Request,
@@ -85,7 +105,7 @@ describe("CLI OAuth callback", () => {
 
     expect(response.status).toBe(400);
     expect(await rejection).toMatchObject({
-      message: "OAuth state validation failed.",
+      message: "Browser authorization state validation failed.",
     });
   });
 

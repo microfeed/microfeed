@@ -41,3 +41,20 @@ export interface OAuthConsentSummary {
   scopes: string[];
   updatedAt: string;
 }
+
+export interface OAuthConnectionSummary {
+  active: boolean;
+  connectedAt: string;
+  id: string | null;
+  lastUsedAt: string | null;
+  legacy: boolean;
+  name: string;
+  scopes: string[];
+  updatedAt: string;
+}
+
+export interface OAuthApplicationAccessSummary {
+  clientId: string;
+  connections: OAuthConnectionSummary[];
+  name: string;
+}

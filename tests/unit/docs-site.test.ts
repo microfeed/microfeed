@@ -230,6 +230,45 @@ describe("documentation site", () => {
     );
   });
 
+  it("documents routine login changes separately from password recovery", async () => {
+    const authenticationGuide = await readFile(
+      path.join(docsRoot, "manage/domains-and-access.md"),
+      "utf8",
+    );
+    expect(authenticationGuide).toContain("## Change your built-in login");
+    expect(authenticationGuide).toContain(
+      "select **Account settings**. The **Login & identity** section",
+    );
+    expect(authenticationGuide).toContain(
+      "The current browser remains signed in and microfeed CLI connections stay",
+    );
+    expect(authenticationGuide).toContain(
+      "Every built-in dashboard session, including the current browser, is signed",
+    );
+    expect(authenticationGuide).toContain(
+      "yarn manage auth reset-password --instance <instance-name>",
+    );
+    expect(authenticationGuide).toContain(
+      "Completing recovery signs out all built-in dashboard sessions and revokes",
+    );
+
+    const dashboardTour = await readFile(
+      path.join(docsRoot, "dashboard/index.md"),
+      "utf8",
+    );
+    expect(dashboardTour).toContain(
+      "[**Account settings**](/manage/domains-and-access/#change-your-built-in-login)",
+    );
+
+    const managementGuide = await readFile(
+      path.join(docsRoot, "manage/index.md"),
+      "utf8",
+    );
+    expect(managementGuide).toContain(
+      "| Change the current login email or password | Dashboard avatar → **Account settings** |",
+    );
+  });
+
   it("links generated API references to the public versioned demo", async () => {
     const demoUrls = [
       "https://www.microfeed.org/api/v1/",
@@ -254,15 +293,6 @@ describe("documentation site", () => {
     expect(apiOverview).toContain("`<site-url>/api/v1/`");
     expect(apiOverview).not.toContain("`GET /api/feed/`");
     expect(apiOverview).not.toContain("`<site-origin>/api/`");
-
-    const agentGuide = await readFile(
-      path.join(docsRoot, "api/ai-agents.md"),
-      "utf8",
-    );
-    expect(agentGuide).toContain(
-      "Read https://www.microfeed.org/api/v1/llms-full.txt",
-    );
-    expect(agentGuide).not.toContain("feed.example.com/api/llms-full.txt");
 
     const integrationGuide = await readFile(
       path.join(docsRoot, "api/build-and-test.md"),
@@ -687,7 +717,7 @@ describe("documentation site", () => {
       "utf8",
     );
     expect(docsConfig).toContain(
-      '{ label: "@microfeed/cli command reference", link: "/microfeed-cli/" }',
+      '{ label: "yarn microfeed command reference", link: "/microfeed-cli/" }',
     );
     expect(docsConfig).toContain(
       'promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"]',
@@ -710,7 +740,6 @@ describe("documentation site", () => {
       readFile(path.join(docsRoot, "microfeed-cli.md"), "utf8"),
       readFile(path.join(docsRoot, "start-here", "index.md"), "utf8"),
       readFile(path.join(docsRoot, "start-here", "concepts.md"), "utf8"),
-      readFile(path.join(docsRoot, "api", "index.md"), "utf8"),
     ]);
 
     for (const source of sources) expect(source).toContain(npmPackageUrl);
@@ -719,14 +748,65 @@ describe("documentation site", () => {
     expect(publishingGuide).toContain("## Publish with a coding agent");
     expect(publishingGuide).toContain("Use --json for deterministic output");
     expect(publishingGuide).toContain("You sign");
-    expect(publishingGuide).toContain("approve OAuth permissions");
+    expect(publishingGuide).toContain("approve permissions in the browser");
 
     const docsConfig = await readFile(
       path.join(docsRoot, "astro.config.ts"),
       "utf8",
     );
     expect(docsConfig).toContain("Manage content with @microfeed/cli");
-    expect(docsConfig).toContain("@microfeed/cli command reference");
+    expect(docsConfig).toContain("yarn microfeed command reference");
+  });
+
+  it("separates direct API integration docs from CLI and AI-agent workflows", async () => {
+    const [docsConfig, apiOverview, authentication, integrationGuide, agentGuide] =
+      await Promise.all([
+        readFile(path.join(docsRoot, "astro.config.ts"), "utf8"),
+        readFile(path.join(docsRoot, "api", "index.md"), "utf8"),
+        readFile(path.join(docsRoot, "api", "authentication.md"), "utf8"),
+        readFile(path.join(docsRoot, "api", "build-and-test.md"), "utf8"),
+        readFile(path.join(docsRoot, "api", "ai-agents.md"), "utf8"),
+      ]);
+
+    const apiSectionStart = docsConfig.indexOf('label: "API and integrations"');
+    const cliSectionStart = docsConfig.indexOf(
+      'label: "@microfeed/cli and AI agents"',
+    );
+    const referenceSectionStart = docsConfig.indexOf('label: "Reference"');
+    const contributeSectionStart = docsConfig.indexOf('label: "Contribute"');
+    expect(apiSectionStart).toBeGreaterThan(-1);
+    expect(cliSectionStart).toBeGreaterThan(apiSectionStart);
+    expect(referenceSectionStart).toBeGreaterThan(cliSectionStart);
+    expect(contributeSectionStart).toBeGreaterThan(referenceSectionStart);
+
+    const apiSection = docsConfig.slice(apiSectionStart, cliSectionStart);
+    const cliSection = docsConfig.slice(cliSectionStart, referenceSectionStart);
+    const referenceSection = docsConfig.slice(
+      referenceSectionStart,
+      contributeSectionStart,
+    );
+    expect(apiSection).toContain("Bearer authentication");
+    expect(apiSection).not.toContain("@microfeed/cli");
+    expect(apiSection).not.toContain("AI agents");
+    expect(cliSection).toContain("Manage content with @microfeed/cli");
+    expect(cliSection).toContain("Manage content with AI agents");
+    expect(cliSection).not.toContain("command reference");
+    expect(referenceSection).toContain("yarn manage command reference");
+    expect(referenceSection).toContain("yarn microfeed command reference");
+
+    for (const apiGuide of [apiOverview, authentication, integrationGuide]) {
+      expect(apiGuide).not.toContain("@microfeed/cli");
+      expect(apiGuide).not.toContain("microfeed CLI");
+      expect(apiGuide).not.toContain("browser authorization");
+    }
+    expect(authentication).toContain("title: Bearer authentication");
+    expect(authentication).toContain("curl --request GET");
+    expect(authentication).toContain(
+      'Authorization: Bearer ${MICROFEED_API_KEY}',
+    );
+    expect(agentGuide).toContain("title: Manage content with AI agents");
+    expect(agentGuide).not.toContain("title: Use the API with AI agents");
+    expect(agentGuide).not.toContain("llms-full.txt");
   });
 
   it("isolates the Starlight build and configures asset-only Worker deployment", async () => {

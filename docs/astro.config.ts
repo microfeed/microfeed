@@ -78,17 +78,22 @@ export default defineConfig({
           label: "API and integrations",
           items: [
             { label: "API overview", link: "/api/" },
-            { label: "Authentication and OAuth", link: "/api/authentication/" },
-            { label: "Manage content with @microfeed/cli", link: "/api/cli/" },
+            { label: "Bearer authentication", link: "/api/authentication/" },
             { label: "Build and test integrations", link: "/api/build-and-test/" },
-            { label: "Use the API with AI agents", link: "/api/ai-agents/" },
+          ],
+        },
+        {
+          label: "@microfeed/cli and AI agents",
+          items: [
+            { label: "Manage content with @microfeed/cli", link: "/api/cli/" },
+            { label: "Manage content with AI agents", link: "/api/ai-agents/" },
           ],
         },
         {
           label: "Reference",
           items: [
             { label: "yarn manage command reference", link: "/manage-cli/" },
-            { label: "@microfeed/cli command reference", link: "/microfeed-cli/" },
+            { label: "yarn microfeed command reference", link: "/microfeed-cli/" },
             { label: "Glossary", link: "/reference/glossary/" },
           ],
         },
@@ -116,10 +121,16 @@ export default defineConfig({
               paths: ["start-here/**", "manage/**", "manage-cli"],
             },
             {
-              label: "Manage microfeed content",
+              label: "Build with the microfeed API",
               description:
-                "The API, OAuth, agent workflow, and complete content-management command reference for a microfeed instance.",
-              paths: ["api/**", "microfeed-cli"],
+                "The REST API overview, Bearer authentication guide, and integration workflow for a microfeed instance.",
+              paths: ["api/index", "api/authentication", "api/build-and-test"],
+            },
+            {
+              label: "Manage content with @microfeed/cli and AI agents",
+              description:
+                "The guided CLI workflow, AI-agent conventions, and complete content-management command reference.",
+              paths: ["api/cli", "api/ai-agents", "microfeed-cli"],
             },
           ],
           optionalLinks: [

@@ -19,6 +19,7 @@ import {
 
 interface Props {
   client: OAuthClientSummary;
+  connectionName?: string;
   instanceName: string;
   instanceOrigin: string;
   requestedScopes: string[];
@@ -26,6 +27,7 @@ interface Props {
 
 export default function OAuthConsentApp({
   client,
+  connectionName,
   instanceName,
   instanceOrigin,
   requestedScopes,
@@ -70,6 +72,12 @@ export default function OAuthConsentApp({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5 px-7 py-6 sm:px-9">
+            {connectionName && (
+              <div className="rounded-xl border bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">Computer connection</p>
+                <p className="mt-1 font-medium">{connectionName}</p>
+              </div>
+            )}
             <div>
               <h2 className="font-medium">Requested permissions</h2>
               <ul className="mt-3 grid gap-3">
@@ -91,7 +99,7 @@ export default function OAuthConsentApp({
               </div>
             )}
             <p className="text-sm text-muted-foreground">
-              Your password is never shared with the application. You can revoke this access later from API → OAuth Apps.
+              Your password is never shared with the application. You can revoke this access later from Account settings → App access.
             </p>
             {error && <p aria-live="polite" className="text-sm text-destructive">{error}</p>}
           </CardContent>
