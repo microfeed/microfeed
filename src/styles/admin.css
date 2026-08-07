@@ -229,7 +229,7 @@ a {
 .ql-editor iframe.ql-video {
   cursor: grab;
   user-select: none;
-  -webkit-user-drag: element;
+  -webkit-user-drag: none;
 }
 
 .ql-editor .rich-editor-media-dragging {

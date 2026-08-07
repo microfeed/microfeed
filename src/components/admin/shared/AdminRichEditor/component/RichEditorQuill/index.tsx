@@ -14,6 +14,7 @@ import {
   RICH_EDITOR_MEDIA_STYLE_FORMAT,
   RICH_EDITOR_MEDIA_TITLE_FORMAT,
   richEditorMediaType,
+  shouldStartRichEditorMediaDrag,
   type RichEditorMediaSettings,
   type RichEditorMediaType,
 } from "@/client/RichEditorMedia";
@@ -220,6 +221,13 @@ const EMPTY_MEDIA_SETTINGS: RichEditorMediaSettings = {
 
 type MediaDropPosition = "after" | "before";
 
+interface MediaPointerDown {
+  element: HTMLElement;
+  pointerId: number;
+  startX: number;
+  startY: number;
+}
+
 function editorBlockForTarget(
   target: EventTarget | null,
   editorRoot: HTMLElement,
@@ -255,13 +263,14 @@ export default class RichEditorQuill extends React.Component<any, any> {
     | ((delta: Delta, oldDelta: Delta, source: EmitterSource) => void)
     | null = null;
   mediaClickHandler: ((event: MouseEvent) => void) | null = null;
-  mediaDragEndHandler: ((event: DragEvent) => void) | null = null;
-  mediaDragOverHandler: ((event: DragEvent) => void) | null = null;
-  mediaDragStartHandler: ((event: DragEvent) => void) | null = null;
-  mediaDropHandler: ((event: DragEvent) => void) | null = null;
+  mediaPointerCancelHandler: ((event: PointerEvent) => void) | null = null;
+  mediaPointerDownHandler: ((event: PointerEvent) => void) | null = null;
+  mediaPointerMoveHandler: ((event: PointerEvent) => void) | null = null;
+  mediaPointerUpHandler: ((event: PointerEvent) => void) | null = null;
   draggedMediaElement: HTMLElement | null = null;
   mediaDropBlock: HTMLElement | null = null;
   mediaDropPosition: MediaDropPosition | null = null;
+  mediaPointerDown: MediaPointerDown | null = null;
   selectedMediaElement: HTMLElement | null = null;
   lastMediaClickAt = 0;
   lastMediaClickElement: HTMLElement | null = null;
@@ -292,11 +301,11 @@ export default class RichEditorQuill extends React.Component<any, any> {
     this.props.onChange(html);
   }
 
-  enableMediaDragging() {
+  prepareMediaDragging() {
     this.quillRef?.root.querySelectorAll<HTMLElement>(
       "img, video, iframe.ql-video",
     ).forEach((element) => {
-      element.draggable = true;
+      element.draggable = false;
     });
   }
 
@@ -317,15 +326,20 @@ export default class RichEditorQuill extends React.Component<any, any> {
     editor.update(Quill.sources.USER);
   }
 
-  clearMediaDragState() {
-    this.draggedMediaElement?.classList.remove("rich-editor-media-dragging");
+  clearMediaDropPosition() {
     this.mediaDropBlock?.classList.remove(
       "rich-editor-media-drop-after",
       "rich-editor-media-drop-before",
     );
-    this.draggedMediaElement = null;
     this.mediaDropBlock = null;
     this.mediaDropPosition = null;
+  }
+
+  clearMediaDragState() {
+    this.draggedMediaElement?.classList.remove("rich-editor-media-dragging");
+    this.clearMediaDropPosition();
+    this.draggedMediaElement = null;
+    this.mediaPointerDown = null;
   }
 
   selectMediaForClipboard(element: HTMLElement) {
@@ -488,7 +502,7 @@ export default class RichEditorQuill extends React.Component<any, any> {
       editor.clipboard.dangerouslyPasteHTML(initialValue, 'silent');
     }
     this.textChangeHandler = (_delta, _oldDelta, source) => {
-      this.enableMediaDragging();
+      this.prepareMediaDragging();
       if (source !== 'silent') {
         this.emitHtmlChange();
       }
@@ -552,29 +566,54 @@ export default class RichEditorQuill extends React.Component<any, any> {
       this.mediaClickHandler,
       true,
     );
-    this.mediaDragStartHandler = (event) => {
+    this.mediaPointerDownHandler = (event) => {
+      if (event.button !== 0 || !event.isPrimary) {
+        return;
+      }
       const mediaElement = findRichEditorMediaElement(event.target, editor.root);
       if (!mediaElement) {
         return;
       }
-      this.draggedMediaElement = mediaElement;
-      mediaElement.classList.add("rich-editor-media-dragging");
-      if (event.dataTransfer) {
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", "microfeed-rich-editor-media");
-      }
+      this.clearMediaDragState();
+      this.mediaPointerDown = {
+        element: mediaElement,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
     };
-    this.mediaDragOverHandler = (event) => {
+    this.mediaPointerMoveHandler = (event) => {
+      const pointerDown = this.mediaPointerDown;
+      if (!pointerDown || event.pointerId !== pointerDown.pointerId) {
+        return;
+      }
       if (!this.draggedMediaElement) {
-        return;
+        if (!shouldStartRichEditorMediaDrag(
+          pointerDown.startX,
+          pointerDown.startY,
+          event.clientX,
+          event.clientY,
+        )) {
+          return;
+        }
+        if (!editor.root.contains(pointerDown.element)) {
+          this.clearMediaDragState();
+          return;
+        }
+        this.clearSelectedMedia();
+        this.draggedMediaElement = pointerDown.element;
+        this.draggedMediaElement.classList.add("rich-editor-media-dragging");
       }
-      const block = editorBlockForTarget(event.target, editor.root);
-      if (!block || block.contains(this.draggedMediaElement)) {
-        return;
-      }
+
       event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "move";
+      const target = editor.root.ownerDocument.elementFromPoint(
+        event.clientX,
+        event.clientY,
+      );
+      const block = editorBlockForTarget(target, editor.root);
+      if (!block || block.contains(this.draggedMediaElement)) {
+        this.clearMediaDropPosition();
+        return;
       }
       const bounds = block.getBoundingClientRect();
       this.showMediaDropPosition(
@@ -582,20 +621,35 @@ export default class RichEditorQuill extends React.Component<any, any> {
         event.clientY < bounds.top + bounds.height / 2 ? "before" : "after",
       );
     };
-    this.mediaDropHandler = (event) => {
-      if (!this.draggedMediaElement || !this.mediaDropBlock) {
+    this.mediaPointerUpHandler = (event) => {
+      if (
+        !this.mediaPointerDown ||
+        event.pointerId !== this.mediaPointerDown.pointerId
+      ) {
         return;
       }
-      event.preventDefault();
-      this.moveDraggedMedia();
+      if (this.draggedMediaElement) {
+        event.preventDefault();
+        this.moveDraggedMedia();
+        this.lastMediaClickAt = 0;
+        this.lastMediaClickElement = null;
+      }
       this.clearMediaDragState();
     };
-    this.mediaDragEndHandler = () => this.clearMediaDragState();
-    editor.root.addEventListener("dragstart", this.mediaDragStartHandler);
-    editor.root.addEventListener("dragover", this.mediaDragOverHandler);
-    editor.root.addEventListener("drop", this.mediaDropHandler);
-    editor.root.addEventListener("dragend", this.mediaDragEndHandler);
-    this.enableMediaDragging();
+    this.mediaPointerCancelHandler = (event) => {
+      if (event.pointerId === this.mediaPointerDown?.pointerId) {
+        this.clearMediaDragState();
+      }
+    };
+    editor.root.addEventListener("pointerdown", this.mediaPointerDownHandler);
+    document.addEventListener("pointermove", this.mediaPointerMoveHandler, true);
+    document.addEventListener("pointerup", this.mediaPointerUpHandler, true);
+    document.addEventListener(
+      "pointercancel",
+      this.mediaPointerCancelHandler,
+      true,
+    );
+    this.prepareMediaDragging();
     this.ensureTrailingEditableLine();
   }
 
@@ -615,7 +669,7 @@ export default class RichEditorQuill extends React.Component<any, any> {
       if (shouldReplace) {
         const selection = this.quillRef.getSelection();
         this.quillRef.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
-        this.enableMediaDragging();
+        this.prepareMediaDragging();
         this.ensureTrailingEditableLine();
         if (selection) {
           const maxIndex = Math.max(0, this.quillRef.getLength() - 1);
@@ -632,18 +686,30 @@ export default class RichEditorQuill extends React.Component<any, any> {
   componentWillUnmount() {
     if (this.quillRef) {
       const root = this.quillRef.root;
-      if (this.mediaDragStartHandler) {
-        root.removeEventListener("dragstart", this.mediaDragStartHandler);
+      if (this.mediaPointerDownHandler) {
+        root.removeEventListener("pointerdown", this.mediaPointerDownHandler);
       }
-      if (this.mediaDragOverHandler) {
-        root.removeEventListener("dragover", this.mediaDragOverHandler);
-      }
-      if (this.mediaDropHandler) {
-        root.removeEventListener("drop", this.mediaDropHandler);
-      }
-      if (this.mediaDragEndHandler) {
-        root.removeEventListener("dragend", this.mediaDragEndHandler);
-      }
+    }
+    if (this.mediaPointerMoveHandler) {
+      document.removeEventListener(
+        "pointermove",
+        this.mediaPointerMoveHandler,
+        true,
+      );
+    }
+    if (this.mediaPointerUpHandler) {
+      document.removeEventListener(
+        "pointerup",
+        this.mediaPointerUpHandler,
+        true,
+      );
+    }
+    if (this.mediaPointerCancelHandler) {
+      document.removeEventListener(
+        "pointercancel",
+        this.mediaPointerCancelHandler,
+        true,
+      );
     }
     if (this.quillRef && this.mediaClickHandler) {
       document.removeEventListener(
@@ -657,10 +723,10 @@ export default class RichEditorQuill extends React.Component<any, any> {
     }
     this.clearMediaDragState();
     this.clearSelectedMedia();
-    this.mediaDragEndHandler = null;
-    this.mediaDragOverHandler = null;
-    this.mediaDragStartHandler = null;
-    this.mediaDropHandler = null;
+    this.mediaPointerCancelHandler = null;
+    this.mediaPointerDownHandler = null;
+    this.mediaPointerMoveHandler = null;
+    this.mediaPointerUpHandler = null;
     this.mediaClickHandler = null;
     this.lastMediaClickAt = 0;
     this.lastMediaClickElement = null;
@@ -692,10 +758,6 @@ export default class RichEditorQuill extends React.Component<any, any> {
       quillSelection={quillSelection}
       extra={extra}
     />
-    <p className="mt-2 text-xs text-muted-foreground">
-      Tip: Drag an image or video to move it. Double-click to edit its size and
-      style.
-    </p>
     <RichEditorMediaSettingsDialog
       errors={mediaSettingsErrors}
       mediaType={settingsMediaType}

@@ -4,6 +4,7 @@ import {
   applyRichEditorMediaSettings,
   isValidMediaDimension,
   richEditorMediaEmbedFormat,
+  shouldStartRichEditorMediaDrag,
   stripTransientRichEditorAttributes,
 } from "@/client/RichEditorMedia";
 
@@ -81,7 +82,7 @@ describe("rich editor media helpers", () => {
       ' data-blot-formatter-id="video-1"',
       ' src="https://media.example.com/video.mp4"></iframe>',
       "<p>Keep editing this source.</p>",
-      "<img class='rich-editor-media-dragging' draggable='true'",
+      "<img class='rich-editor-media-dragging' draggable='false'",
       " data-blot-formatter-id='image-1'",
       ' src="/image.png">',
       '<video class="ql-native-video ql-video custom-video"',
@@ -107,10 +108,14 @@ describe("rich editor media helpers", () => {
     expect(stripTransientRichEditorAttributes(html)).toBe(html);
   });
 
-  it("uses native video for uploads and keeps URL embeds compatible", () => {
-    expect(richEditorMediaEmbedFormat("image", true)).toBe("image");
-    expect(richEditorMediaEmbedFormat("video", true)).toBe("video");
-    expect(richEditorMediaEmbedFormat("video", false)).toBe("legacyVideo");
+  it("uses native media formats for new URL and file inserts", () => {
+    expect(richEditorMediaEmbedFormat("image")).toBe("image");
+    expect(richEditorMediaEmbedFormat("video")).toBe("video");
+  });
+
+  it("starts pointer dragging only after intentional movement", () => {
+    expect(shouldStartRichEditorMediaDrag(10, 10, 13, 14)).toBe(false);
+    expect(shouldStartRichEditorMediaDrag(10, 10, 16, 10)).toBe(true);
   });
 
   it("accepts practical CSS media dimensions and rejects invalid values", () => {

@@ -1,16 +1,24 @@
 export const RICH_EDITOR_MEDIA_STYLE_FORMAT = "mediaStyle";
 export const RICH_EDITOR_MEDIA_TITLE_FORMAT = "mediaTitle";
 export const RICH_EDITOR_LEGACY_VIDEO_FORMAT = "legacyVideo";
+const RICH_EDITOR_MEDIA_DRAG_THRESHOLD_PX = 6;
 
 export type RichEditorMediaType = "image" | "video";
 
 export function richEditorMediaEmbedFormat(
   mediaType: RichEditorMediaType,
-  uploadedFile: boolean,
-): RichEditorMediaType | typeof RICH_EDITOR_LEGACY_VIDEO_FORMAT {
-  return mediaType === "video" && !uploadedFile
-    ? RICH_EDITOR_LEGACY_VIDEO_FORMAT
-    : mediaType;
+): RichEditorMediaType {
+  return mediaType;
+}
+
+export function shouldStartRichEditorMediaDrag(
+  startX: number,
+  startY: number,
+  currentX: number,
+  currentY: number,
+): boolean {
+  return Math.hypot(currentX - startX, currentY - startY) >=
+    RICH_EDITOR_MEDIA_DRAG_THRESHOLD_PX;
 }
 
 export interface RichEditorMediaSettings {
@@ -59,7 +67,7 @@ export function stripTransientRichEditorAttributes(html: string): string {
       /\sdata-blot-formatter-id=(?:"[^"]*"|'[^']*')/giu,
       "",
     )
-    .replace(/\sdraggable=(?:"true"|'true')/giu, "")
+    .replace(/\sdraggable=(?:"(?:true|false)"|'(?:true|false)')/giu, "")
     .replace(
       /\sclass=("([^"]*)"|'([^']*)')/giu,
       (_match, quotedValue: string, doubleQuoted: string, singleQuoted: string) => {
