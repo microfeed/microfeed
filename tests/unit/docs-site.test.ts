@@ -375,6 +375,19 @@ describe("documentation site", () => {
     expect(quickStart).toContain("cd microfeed");
     expect(quickStart).toContain('```text frame="terminal" wrap');
     expect(quickStart).toContain("Deploy microfeed to Cloudflare.");
+    expect(quickStart).toContain(
+      '<video class="docs-walkthrough" controls autoplay muted playsinline preload="metadata"',
+    );
+    expect(quickStart).toContain(
+      '<source src="/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">',
+    );
+    const walkthroughIndex = quickStart.indexOf("1-deploy-walkthrough.mp4");
+    expect(walkthroughIndex).toBeGreaterThan(
+      quickStart.indexOf("The result is a microfeed site"),
+    );
+    expect(walkthroughIndex).toBeLessThan(
+      quickStart.indexOf("## Confirm the installation"),
+    );
     expect(quickStart).toContain("## Confirm the installation");
     expect(quickStart).toContain("`yarn manage status`");
     expect(quickStart).toContain("[Deploy with an AI coding agent](./ai-agent/)");
