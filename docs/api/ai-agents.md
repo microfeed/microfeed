@@ -3,9 +3,11 @@ title: Use the API with AI agents
 description: Let a coding agent drive the local microfeed CLI while browser consent and destructive actions remain under your control.
 ---
 
-The recommended agent workflow inside a microfeed clone is `yarn microfeed`.
-The local workspace works after `yarn install`, so the agent does not need a
-global CLI or permission to download one from a registry.
+The recommended agent workflow inside a microfeed clone is `yarn microfeed`,
+the repository-local form of the official
+[`@microfeed/cli` package](https://www.npmjs.com/package/@microfeed/cli). The
+local workspace works after `yarn install`, so the agent does not need a global
+CLI or permission to download one from a registry.
 
 The clone also includes the `manage-microfeed-content` agent skill at
 `.agents/skills/manage-microfeed-content/`. It is the agent-focused workflow
@@ -25,6 +27,21 @@ for coding agents:
   self-contained guide containing every operation,
   parameter, request body, response, reusable schema, and the complete OpenAPI
   3.1.1 document.
+
+## Start with a content task
+
+Tell the agent what to publish and which site to use. Do not send it a token.
+For example:
+
+```text
+Use @microfeed/cli to create a published item on https://feed.example.com.
+Use --json for deterministic output, and pause for me if browser authorization
+or confirmation of a destructive action is required.
+```
+
+The agent should inspect command help, show you the selected site before a
+destructive change, and return the resulting public item URL. You complete any
+OAuth login and consent in the browser.
 
 ## Give an agent the contract
 

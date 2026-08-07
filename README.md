@@ -15,6 +15,8 @@
     <a href="https://docs.microfeed.org"><b>Docs</b></a>   
     ·    
     <a href="https://www.microfeed.org/api/"><b>API</b></a>   
+    ·
+    <a href="https://www.npmjs.com/package/@microfeed/cli"><b>Content CLI</b></a>
     ·        
     <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>Report Bug</b></a>
     ·
@@ -27,6 +29,11 @@ Welcome to microfeed, a lightweight content management system (CMS) self-hosted 
 With microfeed, you can easily publish a variety of content such as audios, videos, photos, documents, blog posts,
 and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect solution for tech-savvy individuals who
 want to self-host their own CMS without having to run their own servers.
+
+Publish content yourself in the built-in admin dashboard, or let a coding agent
+manage it through the official [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli).
+The CLI handles OAuth credentials internally while browser consent and destructive
+actions stay under your control.
 
 microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Workers](https://workers.cloudflare.com/),
 [R2](https://www.cloudflare.com/products/r2/), and [D1](https://developers.cloudflare.com/d1/).
@@ -84,6 +91,12 @@ Check out some examples of microfeed in action:
 microfeed provides a simple yet powerful admin dashboard: the site-management
 area where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
+
+For agentic content management, the official
+[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
+coding agent create, update, and delete items; upload cover art, inline media,
+and RSS enclosures; and call the authenticated REST API. Inside this repository
+the same command is available as `yarn microfeed`, with no global installation.
 
 <p align="center">
   <a href="docs/public/images/screenshots/2-dashboard-1-home.png">
@@ -166,9 +179,22 @@ reference](https://docs.microfeed.org/manage-cli/).
 ## ✍️ Start publishing
 
 Once initialization is complete, your microfeed instance is ready to use.
-From the microfeed admin dashboard, you can create, edit, or delete posts;
-upload audio, video, images, and other media files when R2 is enabled; use
-external URLs in content-only mode; and customize your site.
+Choose the publishing workflow that fits the task:
+
+* **For people:** use the microfeed admin dashboard to create, edit, or delete
+  posts; upload audio, video, images, and other media files when R2 is enabled;
+  use external URLs in content-only mode; and customize your site.
+* **For coding agents:** use the official
+  [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
+  same content through short-lived OAuth access after you enable the API. The
+  agent may start login, but you sign in and approve permissions in the
+  browser. See the [guided CLI workflow](https://docs.microfeed.org/api/cli/)
+  or the complete [`yarn microfeed`
+  reference](https://docs.microfeed.org/microfeed-cli/).
+
+Inside a microfeed clone, ask your agent to use `yarn microfeed`. For one-off
+use elsewhere, it can run `yarn dlx @microfeed/cli`. Never paste an API key or
+OAuth token into an agent conversation.
 
 You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
 

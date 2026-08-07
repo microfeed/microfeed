@@ -1,8 +1,18 @@
 # `@microfeed/cli`
 
-Manage content on one or more [microfeed](https://www.microfeed.org/) sites
-from a terminal or coding agent. The CLI uses browser-based OAuth for
-interactive work and accepts an existing API key for unattended CI jobs.
+[Package on npm](https://www.npmjs.com/package/@microfeed/cli) ·
+[Guided workflow](https://docs.microfeed.org/api/cli/) ·
+[Complete command reference](https://docs.microfeed.org/microfeed-cli/)
+
+The official, agent-friendly command for publishing and managing content on
+one or more [microfeed](https://www.microfeed.org/) sites. Use it directly from
+a terminal or let a local coding agent drive it. The CLI uses browser-based
+OAuth for interactive work and accepts an existing API key for unattended CI
+jobs.
+
+Create, read, update, and delete items; upload cover art, inline media, and RSS
+enclosures; update a channel; or call any documented REST operation without
+giving an agent a raw OAuth token.
 
 ## Requirements
 
@@ -38,6 +48,21 @@ yarn dlx @microfeed/cli --help
 ```
 
 A global installation is optional and is not required.
+
+## Ask a coding agent
+
+Give an agent a content goal and the site URL instead of a credential. For
+example:
+
+```text
+Use @microfeed/cli to create a published item on https://feed.example.com.
+Use --json for deterministic output, and pause for me if browser authorization
+or confirmation of a destructive action is required.
+```
+
+Inside a microfeed clone, tell the agent to prefer `yarn microfeed`. Elsewhere,
+it can use a project-local installation or `yarn dlx @microfeed/cli`. You—not
+the agent—approve OAuth permissions in the browser.
 
 ## Site URLs and instance names
 

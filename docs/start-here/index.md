@@ -42,8 +42,11 @@ You need:
    the conversation.
 
 5. When deployment finishes, open the private one-time setup page and choose
-   your dashboard password. Then open the public site and publish a test item
-   from the dashboard.
+   your dashboard password. Then open the public site and publish a test item.
+   Use the dashboard yourself, or follow the
+   [post-deployment checklist](./after-deploy/) to enable the official
+   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) for a coding
+   agent.
 
 The result is a microfeed site in your Cloudflare account with a public
 website, RSS feed, JSON Feed, and a private admin dashboard.

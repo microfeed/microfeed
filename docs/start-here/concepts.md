@@ -3,9 +3,10 @@ title: How microfeed works
 description: Plain-language definitions for the parts of a microfeed installation.
 ---
 
-microfeed is a content management system, or **CMS**. You use a private
-dashboard to publish content, and visitors use the public site or subscribe to
-its feeds.
+microfeed is a content management system, or **CMS**. People can use a private
+dashboard to publish content, while coding agents can use the official
+[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Visitors use
+the public site or subscribe to its feeds.
 
 ## The important words
 
@@ -30,6 +31,11 @@ several instances in one clone and select them by name.
 
 **Admin dashboard** is the private management area where you create items,
 upload media, and customize the channel. It is separate from the public site.
+
+**Content CLI** is the `microfeed` command exposed by the official
+`@microfeed/cli` package. After the instance owner enables API access, it lets
+people or coding agents manage the same channel through OAuth without reading
+or printing the credential.
 
 ## One item, three outputs
 

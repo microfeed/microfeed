@@ -61,7 +61,8 @@ docs are enabled.
 ## Choose your next step
 
 - [Choose OAuth or an API key](./authentication/).
-- [Manage content with the microfeed CLI](./cli/).
+- [Manage content with the official `@microfeed/cli`](./cli/) ([npm
+  package](https://www.npmjs.com/package/@microfeed/cli)).
 - [Build and test an integration](./build-and-test/).
 - [Give an AI agent the self-contained API contract](./ai-agents/).
 

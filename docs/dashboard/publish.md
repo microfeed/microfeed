@@ -1,10 +1,16 @@
 ---
 title: Create and edit items
-description: Publish text, links, images, audio, video, and documents from the dashboard.
+description: Publish text, links, images, audio, video, and documents yourself or with a coding agent.
 ---
 
 An **item** is one entry in your channel. Publishing it can create a public web
 page and add an entry to both RSS and JSON feeds.
+
+People can use the visual admin dashboard described below. For repeatable or
+agent-driven publishing, the official
+[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) manages the
+same channel after its owner enables the authenticated API. Start with
+[Manage content with the microfeed CLI](/api/cli/).
 
 ## Create an item
 
@@ -41,6 +47,25 @@ context.
 
 Deletion uses a confirmation dialog because it may remove both the item record
 and associated media. Read the target carefully before confirming.
+
+## Publish with a coding agent
+
+Give the agent a content goal and the root URL of your microfeed site. Do not
+give it an API key or OAuth token. For example:
+
+```text
+Use @microfeed/cli to create a published item on https://feed.example.com.
+Use --json for deterministic output, and pause for me if browser authorization
+or confirmation of a destructive action is required.
+```
+
+Inside a microfeed clone, the agent should prefer `yarn microfeed`. Elsewhere,
+it can use a project-local installation or `yarn dlx @microfeed/cli`. You sign
+in and approve OAuth permissions in the browser; the CLI stores and refreshes
+the credential without printing it. First [enable API access and OAuth for the
+CLI](/api/authentication/), then see the [agent workflow](/api/ai-agents/) and
+complete [`yarn microfeed` command reference](/microfeed-cli/) for media
+vocabulary, deterministic input, and deletion safeguards.
 
 ## Verify distribution
 

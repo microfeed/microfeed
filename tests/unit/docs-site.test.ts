@@ -672,11 +672,46 @@ describe("documentation site", () => {
       "utf8",
     );
     expect(docsConfig).toContain(
-      '{ label: "yarn microfeed command reference", link: "/microfeed-cli/" }',
+      '{ label: "@microfeed/cli command reference", link: "/microfeed-cli/" }',
     );
     expect(docsConfig).toContain(
       'promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"]',
     );
+  });
+
+  it("advertises agentic content publishing from the main discovery paths", async () => {
+    const npmPackageUrl = "https://www.npmjs.com/package/@microfeed/cli";
+    const sources = await Promise.all([
+      readFile(path.join(repositoryRoot, "README.md"), "utf8"),
+      readFile(
+        path.join(repositoryRoot, "packages", "cli", "README.md"),
+        "utf8",
+      ),
+      readFile(path.join(docsRoot, "index.mdx"), "utf8"),
+      readFile(path.join(docsRoot, "dashboard", "publish.md"), "utf8"),
+      readFile(path.join(docsRoot, "start-here", "after-deploy.md"), "utf8"),
+      readFile(path.join(docsRoot, "api", "cli.md"), "utf8"),
+      readFile(path.join(docsRoot, "api", "ai-agents.md"), "utf8"),
+      readFile(path.join(docsRoot, "microfeed-cli.md"), "utf8"),
+      readFile(path.join(docsRoot, "start-here", "index.md"), "utf8"),
+      readFile(path.join(docsRoot, "start-here", "concepts.md"), "utf8"),
+      readFile(path.join(docsRoot, "api", "index.md"), "utf8"),
+    ]);
+
+    for (const source of sources) expect(source).toContain(npmPackageUrl);
+
+    const publishingGuide = sources[3];
+    expect(publishingGuide).toContain("## Publish with a coding agent");
+    expect(publishingGuide).toContain("Use --json for deterministic output");
+    expect(publishingGuide).toContain("You sign");
+    expect(publishingGuide).toContain("approve OAuth permissions");
+
+    const docsConfig = await readFile(
+      path.join(docsRoot, "astro.config.ts"),
+      "utf8",
+    );
+    expect(docsConfig).toContain("Manage content with @microfeed/cli");
+    expect(docsConfig).toContain("@microfeed/cli command reference");
   });
 
   it("isolates the Starlight build and configures asset-only Worker deployment", async () => {

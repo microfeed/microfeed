@@ -3,9 +3,11 @@ title: Manage content with the microfeed CLI
 description: Run the local or published @microfeed/cli, authorize an instance in the browser, and manage content safely from a terminal or coding agent.
 ---
 
-The `@microfeed/cli` package gives people and coding agents a consistent way to
-manage one or more microfeed instances without handling OAuth tokens directly.
-For every command, option, output contract, and safety rule, use the canonical
+The official
+[`@microfeed/cli` package](https://www.npmjs.com/package/@microfeed/cli) gives
+people and coding agents a consistent way to publish and manage content on one
+or more microfeed sites without handling OAuth tokens directly. For every
+command, option, output contract, and safety rule, use the canonical
 [`yarn microfeed` command reference](/microfeed-cli/).
 
 ## Choose an invocation
@@ -34,6 +36,21 @@ yarn dlx @microfeed/cli --help
 ```
 
 A global installation is optional and is not required for these workflows.
+
+## Start with a content goal
+
+An agent needs the task and your microfeed site URL—not a credential. For
+example:
+
+```text
+Use @microfeed/cli to create a published item on https://feed.example.com.
+Use --json for deterministic output, and pause for me if browser authorization
+or confirmation of a destructive action is required.
+```
+
+The agent can inspect `--help`, prepare file or standard-input payloads, and
+run the content command. You complete login and permission approval in the
+browser when required.
 
 ## Log in to an instance
 
