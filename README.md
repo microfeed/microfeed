@@ -30,10 +30,8 @@ With microfeed, you can easily publish a variety of content such as audios, vide
 and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect solution for tech-savvy individuals who
 want to self-host their own CMS without having to run their own servers.
 
-Publish content yourself in the built-in admin dashboard, or let a coding agent
+Publish content yourself in [the built-in admin dashboard](https://docs.microfeed.org/dashboard/), or let an AI agent
 manage it through the official [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli).
-The CLI handles OAuth credentials internally while browser consent and destructive
-actions stay under your control.
 
 microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Workers](https://workers.cloudflare.com/),
 [R2](https://www.cloudflare.com/products/r2/), and [D1](https://developers.cloudflare.com/d1/).
@@ -88,15 +86,9 @@ Check out some examples of microfeed in action:
 * Rss feed: [https://llamacorn.listennotes.com/rss/](https://llamacorn.listennotes.com/rss/)
 * Json feed: [https://llamacorn.listennotes.com/json/](https://llamacorn.listennotes.com/json/)
 
-microfeed provides a simple yet powerful admin dashboard: the site-management
-area where you create and edit posts, upload media files, and customize how
+microfeed provides a simple yet powerful [admin dashboard](https://docs.microfeed.org/dashboard/), 
+where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
-
-For agentic content management, the official
-[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
-coding agent create, update, and delete items; upload cover art, inline media,
-and RSS enclosures; and call the authenticated REST API. Inside this repository
-the same command is available as `yarn microfeed`, with no global installation.
 
 <p align="center">
   <a href="docs/public/images/screenshots/2-dashboard-1-home.png">
@@ -106,6 +98,11 @@ the same command is available as `yarn microfeed`, with no global installation.
     <img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">
   </a>
 </p>
+
+For agentic content management, the official
+[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
+AI agent create, update, and delete items; upload media files like images, audios, videos and documents. 
+Inside this repository the same command is available as `yarn microfeed`, without global installation.
 
 [Back to 📚TOC](#-table-of-contents)
 
