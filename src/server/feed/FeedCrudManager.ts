@@ -1,4 +1,7 @@
-import {randomShortUUID, removeHostFromUrl} from "@/shared/StringUtils";
+import {
+  mediaReferenceForStorage,
+  randomShortUUID,
+} from "@/shared/StringUtils";
 import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT, LANGUAGE_CODES_LIST} from "@/shared/Constants";
 
 const LANGUAGE_CODES = LANGUAGE_CODES_LIST.map((lc: any) => lc.code);
@@ -10,6 +13,14 @@ export default class FeedCrudManager {
     this.feedContent = feedContent;
     this.feedDb = feedDb;
     this.request = request;
+  }
+
+  _mediaReferenceForStorage(value: string): string {
+    return mediaReferenceForStorage(
+      value,
+      this.feedContent?.settings?.webGlobalSettings?.publicBucketUrl,
+      this.request?.url,
+    );
   }
 
   _publicToInternalSchemaForItem(item: any): Record<string, any> {
@@ -32,10 +43,10 @@ export default class FeedCrudManager {
         (mediaFile as any).category = attachment.category;
       }
       if (attachment.url) {
-        // Media file url for internal schema doesn't have host:
-        // [environment]/media/[file-type]-[uuid].[extension]
+        // Uploaded media uses a key relative to the configured public bucket;
+        // externally hosted media keeps its absolute URL.
         (mediaFile as any).url = attachment.category !== ENCLOSURE_CATEGORIES.EXTERNAL_URL ?
-          removeHostFromUrl(attachment.url) : attachment.url;
+          this._mediaReferenceForStorage(attachment.url) : attachment.url;
       }
       if (attachment.mime_type) {
         (mediaFile as any).contentType = attachment.mime_type;
@@ -60,9 +71,9 @@ export default class FeedCrudManager {
     }
 
     if (item.image) {
-      // Media file url for internal schema doesn't have host:
-      // [environment]/media/[file-type]-[uuid].[extension]
-      (internalSchema as any).image = removeHostFromUrl(item.image);
+      // Uploaded media uses a key relative to the configured public bucket;
+      // externally hosted images keep their absolute URL.
+      (internalSchema as any).image = this._mediaReferenceForStorage(item.image);
     }
 
     if (item.date_published_ms) {
@@ -111,7 +122,7 @@ export default class FeedCrudManager {
       (internalSchema as any).description = channel.description;
     }
     if (channel.icon) {
-      (internalSchema as any).image = removeHostFromUrl(channel.icon);
+      (internalSchema as any).image = this._mediaReferenceForStorage(channel.icon);
     }
     if (channel.authors && channel.authors.length > 0 && channel.authors[0].name) {
       (internalSchema as any).publisher = channel.authors[0].name;

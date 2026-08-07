@@ -236,6 +236,7 @@ describe("documentation site", () => {
       expect(apiOverview).toContain(`](${url})`);
     }
     expect(apiOverview).toContain("`GET /api/v1/feed/`");
+    expect(apiOverview).toContain("`<site-url>/api/v1/`");
     expect(apiOverview).not.toContain("`GET /api/feed/`");
     expect(apiOverview).not.toContain("`<site-origin>/api/`");
 
@@ -622,6 +623,60 @@ describe("documentation site", () => {
     );
     expect(manageReference).toContain("## `yarn manage deploy`");
     expect(manageReference).toContain("## `yarn manage destroy`");
+
+    const microfeedReference = await readFile(
+      path.join(docsRoot, "microfeed-cli.md"),
+      "utf8",
+    );
+    expect(microfeedReference).toContain(
+      "This is the canonical capability reference",
+    );
+    for (const command of [
+      "login",
+      "logout",
+      "instances",
+      "item list",
+      "item get",
+      "item create",
+      "item update",
+      "item delete",
+      "api",
+    ]) {
+      expect(microfeedReference).toContain(
+        `## \`yarn microfeed ${command}\``,
+      );
+    }
+    for (const option of [
+      "--instance <name>",
+      "--json",
+      "--limit <1-300>",
+      "--next-cursor <cursor>",
+      "--prev-cursor <cursor>",
+      "--sort <field>",
+      "--order <direction>",
+      "--title <text>",
+      "--content-html <html>",
+      "--date-published <datetime>",
+      "--image <url>",
+      "--status <status>",
+      "--url <url>",
+      "--input <file|->",
+      "--confirm <item-id>",
+      "--header <name:value>",
+    ]) {
+      expect(microfeedReference).toContain(`\`${option}\``);
+    }
+
+    const docsConfig = await readFile(
+      path.join(docsRoot, "astro.config.ts"),
+      "utf8",
+    );
+    expect(docsConfig).toContain(
+      '{ label: "yarn microfeed command reference", link: "/microfeed-cli/" }',
+    );
+    expect(docsConfig).toContain(
+      'promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"]',
+    );
   });
 
   it("isolates the Starlight build and configures asset-only Worker deployment", async () => {

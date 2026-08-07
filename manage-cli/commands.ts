@@ -45,6 +45,7 @@ import {
   ownerInsertSql,
   passwordSetupSql,
   passwordResetSql,
+  revokeOwnerOAuthSql,
   validateOwnerEmail,
   validateOwnerPassword,
 } from "./lib/auth";
@@ -4057,6 +4058,15 @@ export async function authCommand(
       ) {
         throw new Error("Built-in authentication was not changed.");
       }
+      await context.cloudflare.applyLocalMigrations(config);
+      const owner = await context.cloudflare.authOwner(config, true);
+      if (owner) {
+        await withEphemeralSqlFile(
+          revokeOwnerOAuthSql(owner),
+          (filename) =>
+            context.cloudflare.executeAuthSql(config, filename, true),
+        );
+      }
       await updateAdminAuthMode(config, "none", {
         apply: generateWranglerConfig,
         generate: generateWranglerConfig,
@@ -4165,6 +4175,14 @@ export async function authCommand(
     ) {
       throw new Error(
         "Built-in authentication was not changed.",
+      );
+    }
+    await context.cloudflare.applyMigrations(config);
+    const owner = await context.cloudflare.authOwner(config);
+    if (owner) {
+      await withEphemeralSqlFile(
+        revokeOwnerOAuthSql(owner),
+        (filename) => context.cloudflare.executeAuthSql(config, filename),
       );
     }
     await redeployWithAdminAuthMode(

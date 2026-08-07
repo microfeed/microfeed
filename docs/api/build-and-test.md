@@ -3,8 +3,9 @@ title: Build and test integrations
 description: Use generated examples, API Explorer, cursor pagination, and the media upload flow safely.
 ---
 
-Start with an API key created for this integration and the generated contract
-from the exact instance you will call.
+Start with OAuth through the [microfeed CLI](../cli/) or an API key created for
+this integration, plus the generated contract from the exact instance you will
+call.
 
 ## Test in the dashboard
 
@@ -17,7 +18,7 @@ for the feed endpoint. Choose a key and run the example from the dashboard.
 
 ## Call the API from code
 
-Use the instance origin, `/api/v1/` base path, and Bearer authentication:
+Use the microfeed site URL, `/api/v1/` base path, and Bearer authentication:
 
 ```js
 const response = await fetch("https://feed.example.com/api/v1/feed/?limit=3", {
@@ -42,17 +43,33 @@ instead of constructing cursors yourself. To start a listing, choose
 
 ## Upload media
 
-Media upload is a three-part flow:
+microfeed distinguishes two item fields:
+
+- `image` is item cover art or a thumbnail.
+- `attachments[0]` is the one main audio, video, document, image, or external
+  link. JSON Feed exposes it as an attachment and RSS exposes it as
+  `<enclosure>`.
+
+For a local attachment, use `yarn microfeed item create --attachment-file` or
+`yarn microfeed item update <item-id> --attachment-file` when possible. For an
+inline rich-text image or other standalone upload, use `yarn microfeed media
+upload <file> --json`, then store the returned permanent `media_url` in the
+item. The underlying REST upload is a three-part flow:
 
 1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
-   item ID, and local filename information required by the schema.
-2. `PUT` the raw file bytes to the returned short-lived `presigned_url`.
-3. Save the returned `media_url` on the item or channel through the appropriate
-   API operation.
+   item ID, MIME type, size, and local filename information required by the
+   schema. Include `item_id` for attachments and all standalone audio, video,
+   or document uploads. It may be omitted for standalone or cover images.
+2. `PUT` the raw file bytes to the returned short-lived `presigned_url` without
+   a Bearer credential.
+3. Save the returned `media_url` inside `content_html`, as
+   `attachments[0].url`, as `image`, or as the channel icon through the
+   appropriate API operation. Include attachment category, MIME type, byte
+   size, and optional audio/video duration when populating an attachment.
 
 The upload URL is same-origin and short-lived. A 503 response means media
 storage is unavailable for this instance; do not invent a different bucket or
-upload destination.
+upload destination. Do not log or persist the short-lived URL.
 
 ## Design for changes
 
@@ -61,7 +78,7 @@ upload destination.
   `/api/v1/openapi.json` or [OpenAPI YAML](https://www.microfeed.org/api/v1/openapi.yaml)
   at `/api/v1/openapi.yaml`.
 - Treat unknown response fields as forward-compatible additions.
-- Handle documented 400, 401, 404, and 503 responses explicitly.
+- Handle documented 400, 401, 403, 404, and 503 responses explicitly.
 - Do not scrape the admin dashboard or reuse its browser session.
 - Use a unique named API key so the instance owner can rotate or revoke only
   this integration.

@@ -4,6 +4,7 @@ import {
   browserAdminPath,
 } from "./AdminPath";
 import {API_BASE_PATH} from "./ApiVersion";
+import {OAUTH_AUTHORIZATION_SERVER_METADATA_PATH} from "./OAuth";
 
 export function randomHex(size: any = 32) {
   const bytes = new Uint8Array(Math.ceil(size / 2));
@@ -109,6 +110,11 @@ export function canonicalPathname(pathname: string) {
     return pathname;
   }
   const pathnameWithoutTrailingSlash = pathname.replace(/\/+$/u, '');
+  if (
+    pathnameWithoutTrailingSlash === OAUTH_AUTHORIZATION_SERVER_METADATA_PATH
+  ) {
+    return pathnameWithoutTrailingSlash;
+  }
   return hasFileExtension(pathnameWithoutTrailingSlash)
     ? pathnameWithoutTrailingSlash
     : `${pathnameWithoutTrailingSlash}/`;
@@ -214,6 +220,39 @@ export function removeHostFromUrl(url: any) {
   }
 }
 
+export function mediaReferenceForStorage(
+  value: string,
+  configuredPublicBucketUrl?: unknown,
+  requestUrl?: string,
+): string {
+  if (!requestUrl) return removeHostFromUrl(value);
+  let mediaUrl: URL;
+  let publicBucketUrl: URL;
+  try {
+    const request = new URL(requestUrl);
+    mediaUrl = new URL(value, request);
+    publicBucketUrl = new URL(
+      resolvePublicBucketUrl(
+        configuredPublicBucketUrl,
+        request.hostname,
+      ),
+      request,
+    );
+  } catch {
+    return value;
+  }
+  const bucketPath = publicBucketUrl.pathname.endsWith("/")
+    ? publicBucketUrl.pathname
+    : `${publicBucketUrl.pathname}/`;
+  if (
+    mediaUrl.origin === publicBucketUrl.origin &&
+    mediaUrl.pathname.startsWith(bucketPath)
+  ) {
+    return `${mediaUrl.pathname.slice(bucketPath.length)}${mediaUrl.search}${mediaUrl.hash}`;
+  }
+  return value;
+}
+
 export function urlJoin(...args: any) {
   const parts = Array.from(Array.isArray(args[0]) ? args[0] : args);
   return normalize(parts);
@@ -227,6 +266,10 @@ export function urlJoin(...args: any) {
 export function urlJoinWithRelative(baseUrl: any, path: any, baseUrlForRelativePath: any = '/') {
   if (!path) {
     return null;
+  }
+
+  if (/^https?:\/\//iu.test(path)) {
+    return path;
   }
 
   if (path.startsWith('/')) {
@@ -339,6 +382,7 @@ export const ADMIN_URLS = {
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
+  apiOAuth: () => adminUrl("api/oauth", browserAdminPath()),
   apiExplorer: () => adminUrl("api/explorer", browserAdminPath()),
   apiSettings: () => adminUrl("api/settings", browserAdminPath()),
   codeEditorSettings: () =>
@@ -350,6 +394,11 @@ export const ADMIN_URLS = {
   ajaxR2Ops: () => adminUrl("ajax/r2-ops", browserAdminPath()),
   ajaxApiSettings: () => adminUrl("ajax/api/settings", browserAdminPath()),
   ajaxApiKeys: () => adminUrl("ajax/api/keys", browserAdminPath()),
+  ajaxOAuth: () => adminUrl("ajax/api/oauth", browserAdminPath()),
+  ajaxOAuthClient: (clientId: string) =>
+    adminUrl(`ajax/api/oauth/clients/${encodeURIComponent(clientId)}`, browserAdminPath()),
+  ajaxOAuthConsent: (consentId: string) =>
+    adminUrl(`ajax/api/oauth/consents/${encodeURIComponent(consentId)}`, browserAdminPath()),
   ajaxApiKey: (id: string) =>
     adminUrl(`ajax/api/keys/${id}`, browserAdminPath()),
   ajaxRotateApiKey: (id: string) =>

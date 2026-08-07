@@ -15,6 +15,7 @@ export default defineConfig({
       miniflare: {
         bindings: {
           BETTER_AUTH_SECRET: "worker-test-better-auth-secret-32-bytes",
+          DEPLOYMENT_ENVIRONMENT: "production",
           MICROFEED_ADMIN_AUTH_MODE: "built-in",
           MICROFEED_ADMIN_PATH: "admin",
           TEST_MIGRATIONS: await readD1Migrations(

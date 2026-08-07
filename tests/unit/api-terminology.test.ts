@@ -17,7 +17,7 @@ async function filesUnder(directory: string): Promise<string[]> {
 }
 
 describe("API terminology", () => {
-  it("uses API key as the product term", async () => {
+  it("distinguishes API keys from OAuth access tokens", async () => {
     const directories = [
       path.join(repositoryRoot, "src", "components", "admin", "api"),
       path.join(repositoryRoot, "src", "server", "api"),
@@ -30,7 +30,8 @@ describe("API terminology", () => {
       .join("\n");
 
     expect(source).not.toMatch(/\bAPI tokens?\b/iu);
-    expect(source).not.toMatch(/\baccess tokens?\b/iu);
+    expect(source).not.toMatch(/\bAPI access tokens?\b/iu);
     expect(source).toContain("API key");
+    expect(source).toContain("OAuth access token");
   });
 });

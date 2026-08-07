@@ -19,7 +19,7 @@ page, or edit an existing item.
 **Edit channel** manages the channel image, title, publisher, website,
 categories, language, and description.
 
-**API** opens a dedicated four-page area for availability, API keys, an
+**API** opens a dedicated area for availability, API keys, OAuth apps, an
 interactive browser explorer, and public API documentation formats.
 
 **Settings** manages tracking URLs, subscribe methods, access control, media

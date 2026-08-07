@@ -17,6 +17,9 @@ administration experience.
 - Keep `docs/manage-cli.md` as the canonical command, option, side-effect, and
   safety contract. Update it together with `manage-cli/help.ts` when CLI
   behavior changes.
+- Keep `docs/microfeed-cli.md` as the canonical command, option, output, and
+  safety contract for `@microfeed/cli`. Update it together with the help
+  inventory in `packages/cli/src/help.ts` when content CLI behavior changes.
 - Keep agent execution safeguards in repository skills and `AGENTS.md`, not on
   the public documentation site.
 - Derive API references from `src/shared/OpenApiDocument.ts`; do not maintain a

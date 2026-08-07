@@ -12,6 +12,7 @@ import {
 } from "./ApiSchemas";
 import {MICROFEED_VERSION} from "./Version";
 import {API_BASE_PATH} from "./ApiVersion";
+import {OAUTH_SCOPES} from "./OAuth";
 import * as z from "zod";
 
 const json = (schema: z.ZodType) => ({
@@ -34,7 +35,9 @@ const channelPath = z.object({
   }),
 });
 
-const operationSecurity: [{bearerAuth: string[]}] = [{bearerAuth: []}];
+const apiKeySecurity = {bearerAuth: [] as string[]};
+const readSecurity = [apiKeySecurity, {oauth2: [OAUTH_SCOPES.READ]}];
+const writeSecurity = [apiKeySecurity, {oauth2: [OAUTH_SCOPES.WRITE]}];
 
 export {API_BASE_PATH};
 
@@ -45,7 +48,7 @@ export const OPENAPI_DOCUMENT = createDocument({
     version: MICROFEED_VERSION,
     description:
       "Create, read, update, and delete content in this microfeed instance. " +
-      "Send an API key using Bearer authentication.",
+      "Send either an API key or a scoped OAuth access token using Bearer authentication.",
     license: {
       name: "GNU Affero General Public License v3.0",
       identifier: "AGPL-3.0-only",
@@ -58,24 +61,30 @@ export const OPENAPI_DOCUMENT = createDocument({
     {name: "Channel", description: "Update the primary channel."},
     {name: "Media", description: "Prepare same-origin media uploads."},
   ],
-  security: operationSecurity,
   paths: {
     "/feed/": {
       get: {
+        security: readSecurity,
         operationId: "getFeed",
         summary: "Get the feed",
         tags: ["Feed"],
         requestParams: {query: apiPaginationQuerySchema},
         responses: {
           "200": success(apiFeedSchema),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:read scope."),
         },
       },
     },
     "/items/": {
       post: {
+        security: writeSecurity,
         operationId: "createItem",
         summary: "Create an item",
+        description:
+          "Creates an item. The optional image field is cover art; the optional " +
+          "attachments array holds at most one main media attachment, which is " +
+          "published as JSON Feed attachments[0] and the RSS enclosure.",
         tags: ["Items"],
         requestBody: {
           required: true,
@@ -84,26 +93,34 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "201": success(z.object({id: z.string()})),
           "400": error("The request body is invalid."),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:write scope."),
         },
       },
     },
     "/items/{itemId}/": {
       get: {
+        security: readSecurity,
         operationId: "getItem",
         summary: "Get an item",
         tags: ["Items"],
         requestParams: {path: itemPath},
         responses: {
           "200": success(apiFeedSchema),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:read scope."),
           "404": error("The item does not exist."),
         },
       },
       put: {
+        security: writeSecurity,
         operationId: "updateItem",
         summary: "Update an item",
-        description: "Only provided fields are changed. Attachments, GUIDs, dates, and omitted fields are preserved.",
+        description:
+          "Only provided fields are changed; omitted attachments, GUIDs, dates, " +
+          "and other fields are preserved. Supplying attachments replaces the one " +
+          "main media attachment/RSS enclosure. The image field remains separate " +
+          "cover art.",
         tags: ["Items"],
         requestParams: {path: itemPath},
         requestBody: {
@@ -113,11 +130,13 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "200": success(apiItemOutputSchema),
           "400": error("The request body or item ID is invalid."),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:write scope."),
           "404": error("The item does not exist."),
         },
       },
       delete: {
+        security: writeSecurity,
         operationId: "deleteItem",
         summary: "Delete an item",
         tags: ["Items"],
@@ -125,13 +144,15 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "200": success(z.object({})),
           "400": error("The item ID is invalid."),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:write scope."),
           "404": error("The item does not exist."),
         },
       },
     },
     "/channels/{channelId}/": {
       put: {
+        security: writeSecurity,
         operationId: "updatePrimaryChannel",
         summary: "Update the primary channel",
         tags: ["Channel"],
@@ -143,17 +164,22 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "200": success(z.object({})),
           "400": error("The request body or channel ID is invalid."),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:write scope."),
         },
       },
     },
     "/media_files/presigned_urls/": {
       post: {
+        security: writeSecurity,
         operationId: "prepareMediaUpload",
         summary: "Prepare a media upload",
         description:
           "Creates a short-lived same-origin upload URL. PUT the raw file bytes " +
-          "to presigned_url, then save media_url on an item or channel.",
+          "to presigned_url without a Bearer credential, then save media_url as " +
+          "an item image, channel icon, or attachments[0].url. An item media " +
+          "attachment is published as the RSS enclosure. Include item_id for an " +
+          "attachment; omit it only for cover-image uploads.",
         tags: ["Media"],
         requestBody: {
           required: true,
@@ -162,7 +188,8 @@ export const OPENAPI_DOCUMENT = createDocument({
         responses: {
           "201": success(apiUploadOutputSchema),
           "400": error("The upload request is invalid."),
-          "401": error("The API key is missing or invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The OAuth token lacks content:write scope."),
           "503": error("Media storage is unavailable."),
         },
       },
@@ -173,7 +200,24 @@ export const OPENAPI_DOCUMENT = createDocument({
       bearerAuth: {
         type: "http",
         scheme: "bearer",
-        description: "An API key sent using Bearer authentication.",
+        description: "A full-access mf_ API key sent using Bearer authentication.",
+      },
+      oauth2: {
+        type: "oauth2",
+        description: "A short-lived access token issued by this microfeed instance.",
+        flows: {
+          authorizationCode: {
+            authorizationUrl: "/api/auth/oauth2/authorize",
+            tokenUrl: "/api/auth/oauth2/token",
+            refreshUrl: "/api/auth/oauth2/token",
+            scopes: {
+              [OAUTH_SCOPES.READ]: "Read feeds and items.",
+              [OAUTH_SCOPES.WRITE]:
+                "Create, update, and delete items; update the channel; prepare media uploads.",
+              [OAUTH_SCOPES.OFFLINE]: "Obtain a rotating refresh token.",
+            },
+          },
+        },
       },
     },
   },

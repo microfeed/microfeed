@@ -57,6 +57,9 @@ describe("Better Auth owner provisioning", () => {
 
     expect(passwordSql).toContain('UPDATE "auth_account"');
     expect(passwordSql).toContain('DELETE FROM "auth_session"');
+    expect(passwordSql).toContain('DELETE FROM "oauth_access_token"');
+    expect(passwordSql).toContain('DELETE FROM "oauth_refresh_token"');
+    expect(passwordSql).toContain('DELETE FROM "oauth_consent"');
     expect(passwordSql).not.toContain(password);
     expect(emailSql).toContain("new-owner@example.com");
     expect(emailSql).toContain('DELETE FROM "auth_session"');

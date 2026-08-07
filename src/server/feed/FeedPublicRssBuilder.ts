@@ -12,6 +12,14 @@ export default class FeedPublicRssBuilder {
     this.baseUrl = baseUrl;
   }
 
+  _absoluteUrl(value: string) {
+    try {
+      return new URL(value, this.baseUrl).toString();
+    } catch {
+      return value;
+    }
+  }
+
   _buildItemsRss() {
    const items: any[] = [];
    this.jsonData.items.forEach((item: any) => {
@@ -68,13 +76,14 @@ export default class FeedPublicRssBuilder {
      }
      if (mediaFile && mediaFile.url && mediaFile.url.length > 0) {
        (itemJson as any).enclosure = {
-         '@_url': mediaFile.url,
+         '@_url': this._absoluteUrl(mediaFile.url),
        };
        if (mediaFile.mime_type) {
          (itemJson as any).enclosure['@_type'] = mediaFile.mime_type;
        }
-       if (mediaFile.size_in_byte && mediaFile.size_in_byte > 0) {
-         (itemJson as any).enclosure['@_length'] = mediaFile.size_in_byte;
+       const sizeInBytes = mediaFile.size_in_bytes ?? mediaFile.size_in_byte;
+       if (sizeInBytes && sizeInBytes > 0) {
+         (itemJson as any).enclosure['@_length'] = sizeInBytes;
        }
        if (mediaFile.duration_in_seconds && mediaFile.duration_in_seconds > 0) {
          (itemJson as any)['itunes:duration'] = secondsToHHMMSS(mediaFile.duration_in_seconds);

@@ -12,6 +12,11 @@ import path from "node:path";
 
 import * as tar from "tar";
 
+import {
+  MICROFEED_OAUTH_CALLBACK_URL,
+  MICROFEED_OAUTH_CLIENT_ID,
+  OAUTH_SCOPES,
+} from "../../src/shared/OAuth";
 import {repositoryRoot} from "./process";
 
 export const SNAPSHOT_FORMAT = "microfeed-portable-snapshot";
@@ -27,6 +32,10 @@ export const SNAPSHOT_TABLES = {
     "auth_account",
   ],
   ephemeral: [
+    "oauth_access_token",
+    "oauth_refresh_token",
+    "oauth_consent",
+    "oauth_client",
     "auth_session",
     "auth_verification",
     "auth_rate_limit",
@@ -725,10 +734,29 @@ export function buildRestoreSql(input: {
 }
 
 export function buildRestoreFinalizationSql(instanceId: string): string {
+  const officialScopes = JSON.stringify(Object.values(OAUTH_SCOPES));
   return [
     ...SNAPSHOT_TABLES.ephemeral.map((table) =>
       `DELETE FROM ${sqlIdentifier(table)};`
     ),
+    `INSERT INTO ${sqlIdentifier("oauth_client")} (` +
+      `${sqlIdentifier("id")}, ${sqlIdentifier("clientId")}, ` +
+      `${sqlIdentifier("disabled")}, ${sqlIdentifier("skipConsent")}, ` +
+      `${sqlIdentifier("scopes")}, ${sqlIdentifier("createdAt")}, ` +
+      `${sqlIdentifier("updatedAt")}, ${sqlIdentifier("name")}, ` +
+      `${sqlIdentifier("redirectUris")}, ` +
+      `${sqlIdentifier("tokenEndpointAuthMethod")}, ` +
+      `${sqlIdentifier("grantTypes")}, ${sqlIdentifier("responseTypes")}, ` +
+      `${sqlIdentifier("public")}, ${sqlIdentifier("type")}, ` +
+      `${sqlIdentifier("requirePKCE")}) VALUES (` +
+      `${sqlString(MICROFEED_OAUTH_CLIENT_ID)}, ` +
+      `${sqlString(MICROFEED_OAUTH_CLIENT_ID)}, 0, 0, ` +
+      `${sqlString(officialScopes)}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ` +
+      `${sqlString("microfeed CLI")}, ` +
+      `${sqlString(JSON.stringify([MICROFEED_OAUTH_CALLBACK_URL]))}, ` +
+      `${sqlString("none")}, ` +
+      `${sqlString(JSON.stringify(["authorization_code", "refresh_token"]))}, ` +
+      `${sqlString(JSON.stringify(["code"]))}, 1, ${sqlString("native")}, 1);`,
     `DELETE FROM ${sqlIdentifier("microfeed_installation")};`,
     `INSERT INTO ${sqlIdentifier("microfeed_installation")} ` +
       `(${sqlIdentifier("id")}, ${sqlIdentifier("instanceId")}) VALUES ` +

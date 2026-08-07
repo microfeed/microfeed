@@ -1,0 +1,33 @@
+---
+import {env} from "cloudflare:workers";
+
+import OAuthConsentApp from "@/components/admin/api/OAuthConsentApp";
+import AdminLoginShell from "@/layouts/AdminLoginShell.astro";
+import {getOAuthClientSummary} from "@/server/auth/oauth-admin";
+import {normalizeAdminPath} from "@/shared/AdminPath";
+
+const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
+const clientId = Astro.url.searchParams.get("client_id")?.trim() ?? "";
+const requestedScopes = Astro.url.searchParams.get("scope")?.split(" ").filter(Boolean) ?? [];
+const client = clientId
+  ? await getOAuthClientSummary(env.FEED_DB, clientId)
+  : null;
+if (!client || requestedScopes.some((scope) => !client.scopes.includes(scope))) {
+  return new Response("Invalid OAuth authorization request.", {
+    headers: {"content-type": "text/plain; charset=utf-8"},
+    status: 400,
+  });
+}
+const instanceName = env.MICROFEED_INSTANCE_NAME?.trim() || "This microfeed";
+const instanceOrigin = Astro.url.origin;
+---
+
+<AdminLoginShell title={`Authorize ${client.name} | microfeed`} {adminPath}>
+  <OAuthConsentApp
+    client:load
+    {client}
+    {instanceName}
+    {instanceOrigin}
+    {requestedScopes}
+  />
+</AdminLoginShell>

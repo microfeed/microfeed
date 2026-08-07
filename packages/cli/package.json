@@ -1,0 +1,52 @@
+{
+  "name": "@microfeed/cli",
+  "version": "1.0.1",
+  "description": "Manage content on a microfeed instance",
+  "keywords": [
+    "microfeed",
+    "headless cms",
+    "cms",
+    "cli",
+    "oauth",
+    "cloudflare"
+  ],
+  "homepage": "https://docs.microfeed.org/microfeed-cli/",
+  "bugs": {
+    "url": "https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microfeed/microfeed.git",
+    "directory": "packages/cli"
+  },
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "bin": {
+    "microfeed": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "microfeed": "node --import tsx src/index.ts",
+    "prepack": "yarn build && node scripts/copy-agent-skill.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^6.0.3"
+  },
+  "optionalDependencies": {
+    "@napi-rs/keyring": "1.3.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}

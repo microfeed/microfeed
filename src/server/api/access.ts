@@ -1,9 +1,12 @@
 import {apiKeyExists, readApiAccessSettings} from "./api-keys";
+import {builtInAdminAuthEnabled} from "@/shared/AdminAuth";
 import {
   API_BASE_PATH,
   LEGACY_API_BASE_PATH,
   LEGACY_API_DEPRECATION,
 } from "@/shared/ApiVersion";
+import {OAUTH_SCOPES} from "@/shared/OAuth";
+import {verifyOAuthAccessToken} from "@/server/auth/oauth-access";
 
 const PUBLIC_API_REFERENCE_SUFFIXES = new Set([
   "",
@@ -23,6 +26,7 @@ export interface ApiPathDetails {
 export type ApiRequestDecision =
   | "allow-integration"
   | "allow-reference"
+  | "insufficient-scope"
   | "not-found"
   | "unauthorized";
 
@@ -108,6 +112,7 @@ export async function decideApiRequest(
   database: D1Database,
   request: Request,
   pathname: string,
+  adminAuthMode?: string,
 ): Promise<ApiRequestDecision> {
   const settings = await readApiAccessSettings(database);
   const details = apiPathDetails(pathname);
@@ -120,7 +125,17 @@ export async function decideApiRequest(
     return "not-found";
   }
   const apiKey = providedApiKey(request);
-  return apiKey && await apiKeyExists(database, apiKey)
+  if (!apiKey) return "unauthorized";
+  if (await apiKeyExists(database, apiKey)) return "allow-integration";
+  if (!builtInAdminAuthEnabled(adminAuthMode)) {
+    return "unauthorized";
+  }
+  const grant = await verifyOAuthAccessToken(database, apiKey);
+  if (!grant) return "unauthorized";
+  const requiredScope = ["GET", "HEAD"].includes(request.method.toUpperCase())
+    ? OAUTH_SCOPES.READ
+    : OAUTH_SCOPES.WRITE;
+  return grant.scopes.has(requiredScope)
     ? "allow-integration"
-    : "unauthorized";
+    : "insufficient-scope";
 }
