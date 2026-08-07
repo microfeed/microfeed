@@ -31,8 +31,12 @@ const instanceOption = option(
 );
 const jsonOption = option(
   "--json",
-  "Write one deterministic JSON result to stdout; diagnostics still use stderr.",
+  "Write one deterministic JSON result to stdout; a 404 adds recovery guidance, while diagnostics still use stderr.",
 );
+const apiAccessDetails = [
+  "New microfeed instances keep API access disabled by default. Before running content commands, the site owner signs in to the admin dashboard, opens API → API Settings, and turns on Enable API access.",
+  "If a command returns 404, API access may still be disabled or the requested resource may not exist. An AI agent must pause and ask the site owner to complete the dashboard step in the browser; it must not request a dashboard password, API key, or OAuth token.",
+] as const;
 
 const itemInputOptions = [
   option("--title <text>", "Set the item title."),
@@ -72,6 +76,8 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Use the URL that opens the public microfeed site. It may be a custom-domain URL or the generated workers.dev URL.",
       "<name> is the local saved-instance name, not a user account, OAuth identity, or Wrangler profile. It uses 1–64 ASCII letters, numbers, dots, underscores, or hyphens; production and personal-feed are valid examples.",
       "Login verifies the microfeed identity and OAuth metadata at the same site URL, opens administrator sign-in and consent in a browser, and stores only encrypted tokens. The person using the instance must approve the browser step.",
+      "OAuth login can be saved while API access is disabled, but content commands return 404 until the site owner enables access.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed login https://feed.example.com --instance production",
@@ -173,7 +179,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "<item-id> is the stable ID returned by `item list` or `item get`, for example 0HGJLSML3P1.",
       "Create and update accept either common flags or one JSON object from --input; they reject mixed input forms.",
       "An item image is cover art or a thumbnail. A media attachment is the item's one main audio, video, document, or image file; it becomes JSON Feed attachments[0] and the RSS enclosure.",
-      "Content commands require API access to be enabled on the selected instance. A 404 can mean either that a requested item does not exist or that API access is disabled.",
+      ...apiAccessDetails,
       "Delete is permanent and requires an exact item-ID confirmation. Run help for a subcommand before changing content.",
     ],
     examples: [
@@ -198,6 +204,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "Reads GET /api/v1/feed/ from the selected instance. It does not change content.",
       "Use a cursor exactly as returned by the API. Do not combine next and previous cursors unless the target API explicitly documents that behavior.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item list --instance production --limit 25 --json",
@@ -223,6 +230,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "<item-id> is the ID shown in an item response, for example 0HGJLSML3P1. An item-page slug ending in that ID is also accepted by the API.",
       "Reads GET /api/v1/items/{item-id}/ and does not change content.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item get 0HGJLSML3P1 --instance production",
@@ -242,6 +250,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Use --image-file only for item cover art or a thumbnail. It does not create a JSON Feed attachment or RSS enclosure.",
       "For either file option, the CLI prepares a same-site upload, sends the bytes without a Bearer credential, never prints the short-lived upload URL, and rejects redirects or another-site upload URLs.",
       "With --input -, the CLI reads UTF-8 JSON from stdin. It never reads a credential from stdin.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item create --instance production --title \"Release notes\" --status published --json",
@@ -263,6 +272,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for fields not represented by common flags.",
       "Use --attachment-file for a local main media attachment. The CLI infers audio, video, document, or image category and MIME type from the extension, records the file size, and replaces any existing attachment.",
       "Use --image-file for local cover art or a thumbnail, and --image only for cover art already hosted at an absolute URL. Neither option changes the media attachment or RSS enclosure.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item update 0HGJLSML3P1 --instance production --status unlisted --json",
@@ -282,6 +292,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Permanently deletes DELETE /api/v1/items/{item-id}/ on the selected instance.",
       "In an interactive terminal, omitting --confirm prompts you to type the exact item ID. In non-interactive use, --confirm is required and must exactly match the positional ID.",
       "There is no generic --yes option. Before an agent runs this command, it must report the selected saved-instance name and item ID, explain the permanent effect, and obtain approval.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item delete 0HGJLSML3P1 --instance production",
@@ -304,6 +315,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Uploads a supported local file through POST /api/v1/media_files/presigned_urls/ without changing an item. Use the returned permanent media_url in rich HTML, JSON input, or another supported API field.",
       "This is the command for an image embedded inside content_html. It is different from --image-file, which sets item cover art, and --attachment-file, which sets the item's main JSON Feed attachment and RSS enclosure.",
       "Run help for the upload subcommand to see supported file types, item-ID requirements, security behavior, and complete examples.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed media upload ./diagram.png --instance production --json",
@@ -325,6 +337,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "The command creates a stored media object but does not edit an item. Read media_url from the JSON result, insert it into content_html or another field, and save the item. An uploaded object remains stored if it is never referenced; there is no CLI media-delete command.",
       "The CLI requests a same-site prepared upload, streams the bytes without a Bearer credential, rejects redirects and another-site upload URLs, and never prints the short-lived presigned URL.",
       "Human output is only the permanent media URL followed by a newline. With --json, stdout contains category, media_url, mime_type, and size_in_bytes. Diagnostics use stderr.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed media upload ./diagram.png --instance production --json",
@@ -350,6 +363,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "The CLI injects and refreshes its Bearer credential. It blocks caller-provided Authorization, Cookie, and Host headers and refuses redirects so credentials never cross origins.",
       "--input is for UTF-8 request bodies, not binary files. Use `media upload` for inline or standalone media, --attachment-file for a media attachment/RSS enclosure, and --image-file for item cover art.",
       "Without --json, the response body goes to stdout and diagnostics to stderr. With --json, stdout contains status, ok, safe response headers, and body.",
+      ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed api GET \"/api/v1/feed/?limit=3\" --instance production --json",
@@ -474,12 +488,15 @@ export function renderCliHelp(path?: readonly string[]): string {
     "  are encrypted; the encryption key stays in the OS keychain.",
     "  For CI, MICROFEED_API_KEY takes precedence and is never persisted. Set",
     "  MICROFEED_URL when no saved instance supplies the target site URL.",
-    "  Content commands require API access on the selected instance. A 404",
-    "  may mean the resource is absent or API access is disabled.",
+    "  New instances keep API access disabled by default. The site owner",
+    "  enables it in the dashboard under API → API Settings → Enable API access.",
+    "  If a command returns 404, an AI agent pauses for that browser step and",
+    "  never asks for a dashboard password, API key, or OAuth token.",
     "",
     "Global options:",
     "  --instance <name>  On login, save this name; otherwise use this instance.",
-    "  --json             Write deterministic JSON to stdout.",
+    "  --json             Write deterministic JSON to stdout; 404 API results",
+    "                     include safe recovery guidance.",
     "  -h, --help         Show help without running a command.",
     "",
     "Start here:",

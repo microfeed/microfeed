@@ -203,9 +203,10 @@ describe("CLI credentials", () => {
 });
 
 describe("CLI API diagnostics", () => {
-  it("explains the two intentional meanings of a 404 response", () => {
+  it("gives people and agents actionable recovery for a 404 response", () => {
     const previousExitCode = process.exitCode;
-    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stdout = vi.spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     const write = vi.spyOn(process.stderr, "write")
       .mockImplementation(() => true);
     try {
@@ -215,9 +216,29 @@ describe("CLI API diagnostics", () => {
         ok: false,
         status: 404,
       }, true);
-      expect(write).toHaveBeenCalledWith(expect.stringContaining(
-        "resource may not exist, or API access may be disabled",
-      ));
+      const diagnostic = String(write.mock.calls[0]?.[0]);
+      expect(diagnostic).toContain("API access may be disabled");
+      expect(diagnostic).toContain("disabled by default");
+      expect(diagnostic).toContain("API → API Settings");
+      expect(diagnostic).toContain("turn on Enable API access");
+      expect(diagnostic).toContain("AI agent, pause");
+      expect(diagnostic).toContain("do not request their dashboard password");
+      expect(diagnostic).toContain("retry the same command");
+      expect(diagnostic).toContain(
+        "https://docs.microfeed.org/api/authentication/#enable-the-api",
+      );
+
+      const output = JSON.parse(String(stdout.mock.calls[0]?.[0])) as {
+        recovery: {
+          code: string;
+          documentationUrl: string;
+          instructions: string[];
+        };
+      };
+      expect(output.recovery.code).toBe("api_access_or_resource_not_found");
+      expect(output.recovery.documentationUrl).toContain("#enable-the-api");
+      expect(output.recovery.instructions.join(" "))
+        .toContain("site owner should sign in");
     } finally {
       process.exitCode = previousExitCode;
     }

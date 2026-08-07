@@ -44,8 +44,9 @@ example:
 
 ```text
 Use @microfeed/cli to create a published item on https://feed.example.com.
-Use --json for deterministic output, and pause for me if browser authorization
-or confirmation of a destructive action is required.
+Use --json for deterministic output, and pause for me if API access must be
+enabled, browser authorization is required, or a destructive action needs
+confirmation.
 ```
 
 The agent can inspect `--help`, prepare file or standard-input payloads, and
@@ -53,6 +54,13 @@ run the content command. You complete login and permission approval in the
 browser when required.
 
 ## Log in to an instance
+
+New microfeed instances keep API access disabled by default. Before content
+commands can succeed, the site owner signs in to the admin dashboard, opens
+**API → API Settings**, and turns on **Enable API access**. This is a
+browser-only owner action; an agent must pause and ask the owner to complete it
+without requesting a dashboard password, API key, or OAuth token. See
+[Enable the API](../authentication/#enable-the-api).
 
 ```console
 yarn microfeed login https://feed.example.com --instance production
@@ -71,7 +79,8 @@ public site URL changes, log in again.
 The command opens a browser for administrator login and permission approval.
 The terminal or coding agent cannot approve the browser prompt for you. The
 callback uses `127.0.0.1:8977`; if that port is unavailable, close the process
-using it and retry.
+using it and retry. OAuth login can be saved while API access is disabled; the
+first content command then returns `404` with recovery instructions.
 
 Manage saved instances with:
 
@@ -159,6 +168,9 @@ art.
 
 Content commands require API access to be enabled on the selected instance. A
 `404` can mean the requested resource does not exist or API access is disabled.
+The CLI prints the exact dashboard navigation and agent handoff to standard
+error. With `--json`, stdout also contains a `recovery` object with a stable
+code, documentation URL, and safe next steps.
 
 ## Use an API key in CI
 
