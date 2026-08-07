@@ -15,7 +15,13 @@ import {
   type ResolvedItemPagination,
 } from "@/shared/ItemPagination";
 import FeedPublicJsonBuilder from "./FeedPublicJsonBuilder";
-import type {ImageMetadataTarget} from "@/types";
+import {
+  publicCacheTagsForFeedUpdate,
+  publicCacheTagsForImageTarget,
+  type PublicCachePurger,
+  purgePublicCache,
+} from "@/server/cache/public-cache";
+import type {FeedContent, ImageMetadataTarget} from "@/types";
 
 /**
  * support url query parameters:
@@ -72,8 +78,22 @@ function getItemJson(itemObj: any) {
 export default class FeedDb {
   [member: string]: any;
 
-  constructor(env: Pick<Env, "FEED_DB">, request: Request) {
-    this.FEED_DB = env.FEED_DB;
+  constructor(
+    runtimeEnv: Pick<
+      Env,
+      | "DEPLOYMENT_ENVIRONMENT"
+      | "FEED_DB"
+      | "MICROFEED_CLOUDFLARE_ACCOUNT_ID"
+    >,
+    request: Request,
+    publicCachePurger?: PublicCachePurger,
+  ) {
+    this.FEED_DB = runtimeEnv.FEED_DB;
+    this.publicCacheInvalidationEnabled =
+      runtimeEnv.DEPLOYMENT_ENVIRONMENT !== "preview" &&
+      Boolean(runtimeEnv.MICROFEED_CLOUDFLARE_ACCOUNT_ID?.trim()) &&
+      publicCachePurger !== undefined;
+    this.publicCachePurger = publicCachePurger;
 
     const urlObj = new URL(request.url);
     this.baseUrl = urlObj.origin;
@@ -511,19 +531,31 @@ export default class FeedDb {
     console.log('Done!', res);
   }
 
-  async putContent(feed: any) {
+  async _purgePublicCacheTags(tags: string[]) {
+    if (!this.publicCacheInvalidationEnabled) return;
+    await purgePublicCache(tags, this.publicCachePurger);
+  }
+
+  async putContent(feed: FeedContent) {
     const {channel, settings, item} = feed;
-    if (channel) {
-      await this._putChannelToContent(channel);
-    }
+    const cacheTags = publicCacheTagsForFeedUpdate(feed);
+    try {
+      if (channel) {
+        await this._putChannelToContent(channel);
+      }
 
-    if (settings) {
-      await this._putSettingsToContent(settings);
-    }
+      if (settings) {
+        await this._putSettingsToContent(settings);
+      }
 
-    if (item) {
-      await this._putItemToContent(item);
+      if (item) {
+        await this._putItemToContent(item);
+      }
+    } catch (error) {
+      await this._purgePublicCacheTags(cacheTags);
+      throw error;
     }
+    await this._purgePublicCacheTags(cacheTags);
   }
 
   async removeImageMetadata(
@@ -574,6 +606,9 @@ export default class FeedDb {
     }
 
     const [selected] = await this.FEED_DB.batch([select, update]);
+    await this._purgePublicCacheTags(
+      publicCacheTagsForImageTarget(target),
+    );
     const imageUrl = selected.results[0]?.image_url;
     return typeof imageUrl === "string" ? imageUrl : null;
   }

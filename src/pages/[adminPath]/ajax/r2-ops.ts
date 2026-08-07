@@ -1,4 +1,4 @@
-import {env, waitUntil} from "cloudflare:workers";
+import {cache, env, waitUntil} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
 import {jsonResponse} from "../../../server/http";
@@ -13,6 +13,7 @@ import {
   mediaStorageUnavailableResponse,
 } from "@/server/media/storage";
 import type {UploadRequest} from "../../../types";
+import type {PublicCachePurger} from "@/server/cache/public-cache";
 
 export const POST: APIRoute = async ({request}) => {
   if (!mediaBucket(env)) {
@@ -33,6 +34,7 @@ export async function deleteAdminImage(
   request: Request,
   runtimeEnv: Env,
   schedule: (promise: Promise<unknown>) => void,
+  publicCachePurger?: PublicCachePurger,
 ): Promise<Response> {
   let rawInput: unknown;
   try {
@@ -47,7 +49,8 @@ export async function deleteAdminImage(
 
   try {
     const storedImageUrl = input.target
-      ? await new FeedDb(runtimeEnv, request).removeImageMetadata(input.target)
+      ? await new FeedDb(runtimeEnv, request, publicCachePurger)
+        .removeImageMetadata(input.target)
       : null;
     const keys = scheduleBestEffortMediaDeletion(
       mediaBucket(runtimeEnv),
@@ -65,4 +68,4 @@ export async function deleteAdminImage(
 }
 
 export const DELETE: APIRoute = async ({request}) =>
-  deleteAdminImage(request, env, waitUntil);
+  deleteAdminImage(request, env, waitUntil, cache);
