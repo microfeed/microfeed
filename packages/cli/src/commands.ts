@@ -11,7 +11,11 @@ import {
   writeApiResponse,
 } from "./http.js";
 import {browserLogin, revokeToken} from "./oauth.js";
-import {uploadAttachmentFile, uploadImageFile} from "./media.js";
+import {
+  uploadAttachmentFile,
+  uploadImageFile,
+  uploadStandaloneMediaFile,
+} from "./media.js";
 import {
   encryptTokens,
   readStore,
@@ -265,6 +269,27 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
     return;
   }
   throw new CliError("Usage: yarn microfeed item list|get|create|update|delete");
+}
+
+export async function mediaCommand(args: string[], globals: GlobalOptions): Promise<void> {
+  const [action, ...rest] = args;
+  if (action !== "upload") {
+    throw new CliError("Usage: yarn microfeed media upload <file> [--item-id <item-id>]");
+  }
+  const parsed = parseOptions(rest, new Set(["item-id"]));
+  if (parsed.positionals.length !== 1) {
+    throw new CliError("Usage: yarn microfeed media upload <file> [--item-id <item-id>]");
+  }
+  const uploaded = await uploadStandaloneMediaFile(
+    parsed.positionals[0]!,
+    stringFlag(parsed, "item-id"),
+    globals,
+  );
+  process.stdout.write(
+    globals.json
+      ? `${JSON.stringify(uploaded)}\n`
+      : `${uploaded.media_url}\n`,
+  );
 }
 
 export async function rawApiCommand(args: string[], globals: GlobalOptions): Promise<void> {

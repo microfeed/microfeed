@@ -51,18 +51,21 @@ microfeed distinguishes two item fields:
   `<enclosure>`.
 
 For a local attachment, use `yarn microfeed item create --attachment-file` or
-`yarn microfeed item update <item-id> --attachment-file` when possible. The
-underlying REST upload is a three-part flow:
+`yarn microfeed item update <item-id> --attachment-file` when possible. For an
+inline rich-text image or other standalone upload, use `yarn microfeed media
+upload <file> --json`, then store the returned permanent `media_url` in the
+item. The underlying REST upload is a three-part flow:
 
 1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
    item ID, MIME type, size, and local filename information required by the
-   schema. Include `item_id` for an attachment; omit it only for a cover-image
-   upload.
+   schema. Include `item_id` for attachments and all standalone audio, video,
+   or document uploads. It may be omitted for standalone or cover images.
 2. `PUT` the raw file bytes to the returned short-lived `presigned_url` without
    a Bearer credential.
-3. Save the returned `media_url` as `attachments[0].url`, `image`, or the
-   channel icon through the appropriate API operation. Include the attachment
-   category, MIME type, byte size, and optional audio/video duration.
+3. Save the returned `media_url` inside `content_html`, as
+   `attachments[0].url`, as `image`, or as the channel icon through the
+   appropriate API operation. Include attachment category, MIME type, byte
+   size, and optional audio/video duration when populating an attachment.
 
 The upload URL is same-origin and short-lived. A 503 response means media
 storage is unavailable for this instance; do not invent a different bucket or

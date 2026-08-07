@@ -4,18 +4,22 @@ import path from "node:path";
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {itemCommand} from "../../../packages/cli/src/commands";
+import {itemCommand, mediaCommand} from "../../../packages/cli/src/commands";
 import {
   uploadAttachmentFile,
   uploadImageFile,
+  uploadStandaloneMediaFile,
 } from "../../../packages/cli/src/media";
 
+let audioPath: string;
 let directory: string;
 let imagePath: string;
 
 beforeEach(async () => {
   directory = await mkdtemp(path.join(tmpdir(), "microfeed-image-test-"));
+  audioPath = path.join(directory, "episode.mp3");
   imagePath = path.join(directory, "cover.png");
+  await writeFile(audioPath, new Uint8Array([73, 68, 51]));
   await writeFile(imagePath, new Uint8Array([137, 80, 78, 71]));
   process.env.MICROFEED_API_KEY = "environment-secret";
   process.env.MICROFEED_URL = "https://feed.example";
@@ -301,6 +305,104 @@ describe("CLI media attachment uploads", () => {
         mime_type: "image/png",
         size_in_bytes: 4,
         url: "https://feed.example/media/production/media/image.png",
+      });
+  });
+});
+
+describe("CLI standalone media uploads", () => {
+  it("uploads an inline image without an item ID and returns safe JSON metadata", async () => {
+    const fetchMock = vi.fn(async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/media_files/presigned_urls/")) {
+        expect(JSON.parse(String(init?.body))).toEqual({
+          category: "image",
+          full_local_file_path: "cover.png",
+          size: 4,
+          type: "image/png",
+        });
+        return preparedResponse();
+      }
+      expect(url).toContain("/media-upload/");
+      expect(new Headers(init?.headers).get("authorization")).toBeNull();
+      expect(init?.redirect).toBe("manual");
+      const chunks: Buffer[] = [];
+      for await (const chunk of init?.body as unknown as NodeJS.ReadableStream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      expect(Buffer.concat(chunks).byteLength).toBe(4);
+      return Response.json({etag: "etag"});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const write = vi.spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    await mediaCommand(["upload", imagePath], {json: true});
+
+    expect(write).toHaveBeenCalledWith(`${JSON.stringify({
+      category: "image",
+      media_url: "https://feed.example/media/production/media/image.png",
+      mime_type: "image/png",
+      size_in_bytes: 4,
+    })}\n`);
+    expect(write.mock.calls.flat().join("")).not.toContain("signature=secret");
+  });
+
+  it("writes only the permanent URL in human output", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) =>
+      String(input).includes("/api/v1/")
+        ? preparedResponse()
+        : Response.json({etag: "etag"})
+    ));
+    const write = vi.spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    await mediaCommand(["upload", imagePath], {json: false});
+
+    expect(write).toHaveBeenCalledOnce();
+    expect(write).toHaveBeenCalledWith(
+      "https://feed.example/media/production/media/image.png\n",
+    );
+  });
+
+  it("requires an item ID for non-image media before making a request", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(uploadStandaloneMediaFile(audioPath, undefined, {json: true}))
+      .rejects.toThrow(
+        "Uploading an audio file requires --item-id <item-id>. Create or choose the item first.",
+      );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("associates non-image media with the specified item", async () => {
+    const fetchMock = vi.fn(async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      if (String(input).includes("/api/v1/")) {
+        expect(JSON.parse(String(init?.body))).toEqual({
+          category: "audio",
+          full_local_file_path: "episode.mp3",
+          item_id: "item-id",
+          size: 3,
+          type: "audio/mpeg",
+        });
+        return preparedResponse();
+      }
+      return Response.json({etag: "etag"});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(uploadStandaloneMediaFile(audioPath, "item-id", {json: true}))
+      .resolves.toEqual({
+        category: "audio",
+        media_url: "https://feed.example/media/production/media/image.png",
+        mime_type: "audio/mpeg",
+        size_in_bytes: 3,
       });
   });
 });

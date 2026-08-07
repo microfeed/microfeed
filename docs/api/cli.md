@@ -78,6 +78,7 @@ yarn microfeed item create --instance production --input item.json --json
 yarn microfeed item update <item-id> --instance production --input - --json
 yarn microfeed item update <item-id> --instance production --attachment-file ./episode.mp3 --json
 yarn microfeed item update <item-id> --instance production --image-file ./cover.png --json
+yarn microfeed media upload ./inline-image.png --instance production --json
 ```
 
 Create and update accept either a JSON file or standard input with `--input`,
@@ -97,6 +98,20 @@ independent fields.
 
 For both file options, the CLI sends the bytes without exposing or forwarding
 its Bearer credential and never prints the short-lived upload URL.
+
+For an image embedded in `content_html`, use the standalone uploader rather
+than the cover-image or attachment flags:
+
+```console
+yarn microfeed media upload ./diagram.png --instance production --json
+```
+
+Read the permanent `media_url` from the result, insert it in an `<img src>` in
+your item JSON, and then create or update the item with `--input`. This mirrors
+**Insert image** in the admin visual editor. The upload command does not edit an
+item; reference the returned URL promptly. Images need no item ID. Audio,
+video, and documents require `--item-id <item-id>` under the current REST
+contract.
 
 Deletion requires an interactive exact-ID confirmation. In deterministic
 automation, provide the same ID explicitly only after reviewing the target:
@@ -121,9 +136,9 @@ diagnostics go to standard error. With `--json`, output contains the status,
 safe response headers, and body—but never a credential.
 
 The raw command reads UTF-8 request bodies; it is not a binary-file uploader.
-Use `item create --attachment-file` or `item update <item-id>
---attachment-file` for a local media attachment/RSS enclosure. Use
-`--image-file` for local item cover art.
+Use `media upload` for inline or standalone media, `--attachment-file` for a
+local media attachment/RSS enclosure, and `--image-file` for local item cover
+art.
 
 Content commands require API access to be enabled on the selected instance. A
 `404` can mean the requested resource does not exist or API access is disabled.

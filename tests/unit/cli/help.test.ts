@@ -23,6 +23,7 @@ describe("microfeed CLI help", () => {
     expect(HELP).toContain("<item-id>");
     expect(HELP).toContain("<attachment-path>");
     expect(HELP).toContain("<image-path>");
+    expect(HELP).toContain("<media-file>");
     expect(HELP).toContain("/api/v1/");
     expect(HELP).toContain("--instance <name>");
     expect(HELP).toContain("--json");
@@ -53,6 +54,20 @@ describe("microfeed CLI help", () => {
       .toContain("not binary files");
     expect(renderCliHelp(["api"]))
       .toContain("media attachment/RSS enclosure");
+  });
+
+  it("documents standalone uploads for inline rich-content images", () => {
+    const help = renderCliHelp(["media", "upload"]);
+
+    expect(HELP).toContain("media");
+    expect(help).toContain("--item-id <item-id>");
+    expect(help).toContain("content_html");
+    expect(help).toContain("permanent media URL");
+    expect(help).toContain("presigned URL");
+    expect(help).toContain("never prints");
+    expect(help).toContain("media_url");
+    expect(help).toContain("--image-file");
+    expect(help).toContain("--attachment-file");
   });
 
   it("renders comprehensive help for every command and subcommand", () => {

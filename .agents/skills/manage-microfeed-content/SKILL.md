@@ -1,6 +1,6 @@
 ---
 name: manage-microfeed-content
-description: Manage content on one or more microfeed sites through @microfeed/cli. Use when an agent is asked to log in to a microfeed site; select a saved site; list, read, create, update, or delete items; upload item cover art or a media attachment/RSS enclosure; or call the authenticated microfeed REST API.
+description: Manage content on one or more microfeed sites through @microfeed/cli. Use when an agent is asked to log in to a microfeed site; select a saved site; list, read, create, update, or delete items; upload standalone or inline media, item cover art, or a media attachment/RSS enclosure; or call the authenticated microfeed REST API.
 ---
 
 # Manage microfeed content
@@ -35,11 +35,15 @@ clone, use <https://docs.microfeed.org/microfeed-cli/>.
 - **Media attachment**: the item's one main audio, video, document, image, or
   external link. It is JSON Feed `attachments[0]` and the RSS enclosure. Use
   `--attachment-file <path>` for a local file.
+- **Standalone media**: an uploaded file not assigned to either item field,
+  such as an image embedded inside `content_html`. Use `media upload <path>`
+  and read its permanent `media_url`.
 
-When a user says “upload,” “attach,” “media file,” or “enclosure,” default to a
-media attachment. Use an item image only when the user says cover, artwork,
-thumbnail, item image, or equivalent. If their intent remains ambiguous and
-would change which field is written, ask before uploading.
+When a user says “attach,” “media file,” or “enclosure,” default to a media
+attachment. When they say insert, embed, inline, description image, or rich-text
+image, use standalone media. Use an item image only when they say cover,
+artwork, thumbnail, item image, or equivalent. If their intent remains
+ambiguous and would change which field is written, ask before uploading.
 
 ## Select and authorize a site
 
@@ -87,6 +91,18 @@ yarn microfeed item update <item-id> --instance <name> \
 
 ## Upload files safely
 
+For an image embedded in the description or other rich HTML:
+
+```console
+yarn microfeed media upload ./diagram.png --instance <name> --json
+```
+
+Read only the permanent `media_url`, insert it into an `<img src>` in
+`content_html`, and create or update the item. The upload command does not edit
+the item. Reference the returned URL promptly so the standalone object is not
+left unused. Images need no item ID. For standalone audio, video, or documents,
+pass `--item-id <item-id>` as required by the REST contract.
+
 For a main media attachment/RSS enclosure:
 
 ```console
@@ -101,9 +117,9 @@ yarn microfeed item update <item-id> --instance <name> \
   --image-file ./cover.png --json
 ```
 
-Do not construct, follow, copy, persist, or print a presigned upload URL. The
-CLI sends file bytes without a Bearer credential and refuses cross-site upload
-URLs and redirects.
+Do not construct, follow, copy, persist, read, or print a presigned upload URL.
+The CLI sends file bytes without a Bearer credential and refuses cross-site
+upload URLs and redirects.
 
 Creating with `--attachment-file` is a create-upload-update sequence because
 the attachment requires an item ID. If upload or update fails after creation,

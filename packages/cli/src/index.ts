@@ -7,6 +7,7 @@ import {
   itemCommand,
   loginCommand,
   logoutCommand,
+  mediaCommand,
   rawApiCommand,
 } from "./commands.js";
 import {CliError} from "./errors.js";
@@ -20,7 +21,7 @@ function requestedHelp(args: string[]): readonly string[] | undefined {
   }
   const [command, subcommand] = args;
   if (!command || command === "--help" || command === "-h") return [];
-  if (command === "instances" || command === "item") {
+  if (command === "instances" || command === "item" || command === "media") {
     if (subcommand && subcommand !== "--help" && subcommand !== "-h") {
       return [command, subcommand];
     }
@@ -54,6 +55,7 @@ export async function run(argv: string[]): Promise<void> {
   if (command === "logout") return await logoutCommand(options);
   if (command === "instances") return await instancesCommand(rest, options);
   if (command === "item") return await itemCommand(rest, options);
+  if (command === "media") return await mediaCommand(rest, options);
   if (command === "api") return await rawApiCommand(rest, options);
   throw new CliError(`Unknown command: ${command}\n\n${HELP}`);
 }

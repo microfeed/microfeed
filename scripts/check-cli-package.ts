@@ -91,6 +91,7 @@ try {
   ]);
   if (packedSkill !== repositorySkill ||
       !packedSkill.includes("--attachment-file") ||
+      !packedSkill.includes("media upload") ||
       !packedSkill.includes("RSS enclosure") ||
       !packedSkillMetadata.includes("Manage microfeed content")) {
     throw new Error("The packed content-management skill is missing or stale.");

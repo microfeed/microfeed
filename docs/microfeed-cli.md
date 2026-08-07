@@ -23,6 +23,8 @@ workflow, start with [Manage content with the microfeed CLI](/api/cli/).
 - [`item create`](#yarn-microfeed-item-create)
 - [`item update`](#yarn-microfeed-item-update)
 - [`item delete`](#yarn-microfeed-item-delete)
+- [`media`](#yarn-microfeed-media)
+- [`media upload`](#yarn-microfeed-media-upload)
 - [`api`](#yarn-microfeed-api)
 - [Output and errors](#output-and-errors)
 - [Saved instances and credentials](#saved-instances-and-credentials)
@@ -54,8 +56,9 @@ or skill installers that distribute skills with the CLI. The repository copy
 is canonical, and the package check fails when the bundled copy differs.
 
 The skill teaches invocation selection, site and instance vocabulary,
-browser-consent handoff, deterministic output, the difference between item
-images and media attachments, credential safety, and deletion confirmation.
+browser-consent handoff, deterministic output, the difference between
+standalone media, item images, and media attachments, credential safety, and
+deletion confirmation.
 
 ## Authentication and safety
 
@@ -100,6 +103,7 @@ For every authenticated REST request, the CLI:
 | `item create` | Create an item from flags or JSON. | Creates remote content. |
 | `item update <item-id>` | Update an item from flags or JSON. | Changes remote content. |
 | `item delete <item-id>` | Delete an item after exact-ID confirmation. | Permanently deletes remote content. |
+| `media upload <file>` | Upload standalone media for rich content or later API use. | Creates a remote media object but does not edit an item. |
 | `api <method> <path>` | Call a relative `/api/v1/…` REST endpoint. | Depends on the method and endpoint. |
 
 ## Global options
@@ -284,6 +288,11 @@ image file. It uses `attachments[0]` in JSON Feed and becomes `<enclosure>` in
 RSS. These fields are independent: attaching a full-resolution image does not
 set the cover image, and setting a cover image does not create an enclosure.
 
+**Standalone media** is an uploaded file that the CLI does not assign to an
+item field. Use `media upload` for an image that will be embedded inside
+`content_html`, then save its permanent `media_url` in the HTML. This is the
+command-line counterpart to **Insert image** in the admin visual editor.
+
 `--attachment-file` supports MP3, M4B, FLAC, MP4, PDF, DOC, DOCX, XLSX, PPT,
 PPTX, TXT, AVIF, GIF, HEIC, JPEG, JPG, PNG, WebP, and CR2. The CLI infers the
 attachment category and MIME type from the extension and records its byte
@@ -418,6 +427,92 @@ Before an agent runs this command, it must report the selected saved-instance
 name and exact item ID, explain that deletion is permanent, and receive
 approval.
 
+## `yarn microfeed media`
+
+Upload standalone media for rich content or later use by another documented
+API field.
+
+```console
+yarn microfeed media upload <file> [--item-id <item-id>]
+```
+
+The upload creates a remote media object and returns its permanent URL. It does
+not edit an item. Use `item --help` when you instead want to set item cover art
+or the main RSS enclosure.
+
+## `yarn microfeed media upload`
+
+**Purpose:** Upload one supported local file and return permanent, safe media
+metadata.
+
+**Changes:** Creates a stored media object. It does not insert the object into
+an item, and an object that is never referenced remains stored because the CLI
+has no media-delete command.
+
+```console
+yarn microfeed media upload <file> \
+  [--item-id <item-id>] \
+  [--instance <name>] \
+  [--json]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--item-id <item-id>` | Associate the prepared upload with an existing item. Required for audio, video, and document files; optional for images. |
+| `--instance <name>` | Use this saved instance instead of the current one. |
+| `--json` | Return `category`, `media_url`, `mime_type`, and `size_in_bytes`. |
+
+Supported extensions are MP3, M4B, FLAC, MP4, PDF, DOC, DOCX, XLSX, PPT,
+PPTX, TXT, AVIF, GIF, HEIC, JPEG, JPG, PNG, WebP, and CR2. The CLI infers the
+category and MIME type from the extension. Images can be uploaded without an
+item ID, matching the admin visual editor's inline-image flow. The current REST
+contract requires an existing item ID for audio, video, and document uploads.
+
+For an inline rich-text image, upload first:
+
+```console
+yarn microfeed media upload ./diagram.png --instance production --json
+```
+
+```json
+{
+  "category": "image",
+  "media_url": "https://feed.example.com/media/production/images/diagram.png",
+  "mime_type": "image/png",
+  "size_in_bytes": 80633
+}
+```
+
+Then use `media_url` in the item's HTML and create or update the item through
+JSON input:
+
+```json
+{
+  "content_html": "<p>Before the image.</p><img src=\"https://feed.example.com/media/production/images/diagram.png\" alt=\"Diagram\"><p>After the image.</p>"
+}
+```
+
+```console
+yarn microfeed item update 0HGJLSML3P1 \
+  --instance production \
+  --input item.json \
+  --json
+```
+
+Without `--json`, successful output is only the permanent URL plus a newline,
+which makes the result easy to compose in a shell. The CLI never outputs the
+short-lived presigned URL. Reference the returned permanent URL promptly so an
+unused upload is not left behind.
+
+For non-image media, supply the target item:
+
+```console
+yarn microfeed media upload ./episode.mp3 \
+  --item-id 0HGJLSML3P1 \
+  --instance production \
+  --json
+```
+
 ## `yarn microfeed api`
 
 **Purpose:** Call a documented REST operation while the CLI selects, injects,
@@ -441,9 +536,9 @@ site URL. The CLI rejects caller-provided `Authorization`, `Cookie`, and `Host`
 headers. It returns an error rather than following a redirect.
 
 `--input` reads UTF-8 request bodies and does not upload binary files or follow
-prepared upload URLs. Use `item create --attachment-file <path>` or `item
-update <item-id> --attachment-file <path>` for a local media attachment/RSS
-enclosure. Use `--image-file <path>` for local item cover art.
+prepared upload URLs. Use `media upload <file>` for inline or standalone media,
+`--attachment-file <path>` for a local media attachment/RSS enclosure, and
+`--image-file <path>` for local item cover art.
 
 Quote paths containing `?` or `&` so the shell passes them as one argument.
 
@@ -481,6 +576,8 @@ With `--json`, API commands return one JSON object:
 Only safe response headers are included: `cache-control`, `content-length`,
 `content-type`, `etag`, `last-modified`, and `x-request-id`. Saved-instance
 commands also return one deterministic JSON object when `--json` is present.
+`media upload --json` returns `category`, permanent `media_url`, `mime_type`,
+and `size_in_bytes`; it never returns the prepared upload URL.
 
 CLI validation failures, authentication failures, transport failures, and
 non-success API responses set a nonzero exit status. Missing authentication is
@@ -533,6 +630,7 @@ yarn microfeed login --help
 yarn microfeed instances use -h
 yarn microfeed item create --help
 yarn microfeed help item delete
+yarn microfeed media upload --help
 yarn microfeed api --help
 ```
 

@@ -19,6 +19,13 @@ export interface UploadedAttachment {
   url: string;
 }
 
+export interface UploadedMediaFile {
+  category: UploadCategory;
+  media_url: string;
+  mime_type: string;
+  size_in_bytes: number;
+}
+
 interface MediaType {
   category: UploadCategory;
   contentType: string;
@@ -118,7 +125,9 @@ async function fileMetadata(filename: string, label: string): Promise<{
     throw new CliError(
       label === "item image"
         ? "--image-file supports .avif, .gif, .jpeg, .jpg, .png, and .webp files."
-        : "--attachment-file supports common audio, video, document, and image files. Run `yarn microfeed item update --help` for the complete list.",
+        : label === "media file"
+          ? "media upload supports common audio, video, document, and image files. Run `yarn microfeed media upload --help` for the complete list."
+          : "--attachment-file supports common audio, video, document, and image files. Run `yarn microfeed item update --help` for the complete list.",
     );
   }
   if (label === "item image" && !ITEM_IMAGE_EXTENSIONS.has(extension)) {
@@ -146,6 +155,7 @@ async function uploadMediaFile(
   itemId: string | undefined,
   label: string,
   options: GlobalOptions,
+  requireItemIdForNonImage = false,
 ): Promise<{
   category: UploadCategory;
   contentType: string;
@@ -153,6 +163,12 @@ async function uploadMediaFile(
   size: number;
 }> {
   const {fileSize, mediaType, modifiedAt} = await fileMetadata(filename, label);
+  if (requireItemIdForNonImage && mediaType.category !== "image" && !itemId) {
+    const article = mediaType.category === "audio" ? "an" : "a";
+    throw new CliError(
+      `Uploading ${article} ${mediaType.category} file requires --item-id <item-id>. Create or choose the item first.`,
+    );
+  }
   const origin = await apiOrigin(options);
   const prepared = preparedUpload(await apiRequest(
     "POST",
@@ -251,5 +267,25 @@ export async function uploadAttachmentFile(
     mime_type: uploaded.contentType,
     size_in_bytes: uploaded.size,
     url: uploaded.mediaUrl,
+  };
+}
+
+export async function uploadStandaloneMediaFile(
+  filename: string,
+  itemId: string | undefined,
+  options: GlobalOptions,
+): Promise<UploadedMediaFile> {
+  const uploaded = await uploadMediaFile(
+    filename,
+    itemId,
+    "media file",
+    options,
+    true,
+  );
+  return {
+    category: uploaded.category,
+    media_url: uploaded.mediaUrl,
+    mime_type: uploaded.contentType,
+    size_in_bytes: uploaded.size,
   };
 }

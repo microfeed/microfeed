@@ -89,6 +89,7 @@ yarn microfeed item create --instance production --input item.json --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --input item.json --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./episode.mp3 --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --image-file ./cover.png --json
+yarn microfeed media upload ./inline-image.png --instance production --json
 ```
 
 Create and update accept either a JSON object through `--input` or common flags
@@ -106,6 +107,17 @@ absolute URL. The item image and media attachment are independent fields.
 
 The CLI never prints the short-lived upload URL or sends its Bearer credential
 with file bytes.
+
+For an image embedded inside `content_html`, upload it as standalone media:
+
+```console
+yarn microfeed media upload ./diagram.png --instance production --json
+```
+
+Read the permanent `media_url` from the JSON result, insert it into an `<img
+src>` in the item HTML, and save the item with `--input`. This command does not
+edit the item. Images need no item ID; audio, video, and documents require
+`--item-id <item-id>`. The CLI never returns the short-lived presigned URL.
 
 Item deletion requires an interactive exact-ID confirmation. For reviewed
 automation, pass the same ID to `--confirm`:
@@ -132,8 +144,9 @@ yarn microfeed api GET "/api/v1/feed/?limit=3" \
 The CLI selects and refreshes credentials internally. It blocks
 caller-provided `Authorization`, `Cookie`, and `Host` headers and refuses
 redirects so credentials are never forwarded to another site.
-Raw `--input` is UTF-8 text. Use the item command's `--attachment-file` option
-for a local media attachment/RSS enclosure, or `--image-file` for cover art.
+Raw `--input` is UTF-8 text. Use `media upload` for inline or standalone media,
+`--attachment-file` for a local media attachment/RSS enclosure, or
+`--image-file` for cover art.
 
 ## Use an API key in CI
 
@@ -157,6 +170,7 @@ yarn microfeed login --help
 yarn microfeed instances use -h
 yarn microfeed item create --help
 yarn microfeed help item delete
+yarn microfeed media upload --help
 yarn microfeed api --help
 ```
 
@@ -170,8 +184,8 @@ skill automatically from `.agents/skills/`. The npm package also includes the
 same skill at `dist/skills/manage-microfeed-content/` so agent hosts and skill
 installers can distribute it together with the CLI. The skill teaches site and
 instance vocabulary, browser-consent handoff, deterministic output,
-item-image versus media-attachment semantics, credential safety, and deletion
-confirmation.
+standalone-media versus item-image versus media-attachment semantics,
+credential safety, and deletion confirmation.
 
 ## Bugs and source
 

@@ -301,10 +301,54 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   },
   {
     details: [
+      "Uploads a supported local file through POST /api/v1/media_files/presigned_urls/ without changing an item. Use the returned permanent media_url in rich HTML, JSON input, or another supported API field.",
+      "This is the command for an image embedded inside content_html. It is different from --image-file, which sets item cover art, and --attachment-file, which sets the item's main JSON Feed attachment and RSS enclosure.",
+      "Run help for the upload subcommand to see supported file types, item-ID requirements, security behavior, and complete examples.",
+    ],
+    examples: [
+      "yarn microfeed media upload ./diagram.png --instance production --json",
+      "yarn microfeed help media upload",
+    ],
+    options: [],
+    path: ["media"],
+    subcommands: [
+      {name: "upload <file>", description: "Upload a file and return its permanent media URL."},
+    ],
+    summary: "Upload standalone media for rich content or later API use.",
+    usage: "yarn microfeed media <upload> [arguments] [options]",
+  },
+  {
+    details: [
+      "<file> is one readable local file. Supported extensions are .mp3, .m4b, .flac, .mp4, .pdf, .doc, .docx, .xlsx, .ppt, .pptx, .txt, .avif, .gif, .heic, .jpeg, .jpg, .png, .webp, and .cr2. Category and MIME type are inferred from the extension.",
+      "Images may be uploaded without an item ID, matching the visual editor's inline-image flow. Audio, video, and document uploads require --item-id because the current REST upload contract associates those categories with an existing item.",
+      "Use this standalone upload for rich-content media. Use --image-file on item create or update for cover art, and --attachment-file for the item's main JSON Feed attachment and RSS enclosure.",
+      "The command creates a stored media object but does not edit an item. Read media_url from the JSON result, insert it into content_html or another field, and save the item. An uploaded object remains stored if it is never referenced; there is no CLI media-delete command.",
+      "The CLI requests a same-site prepared upload, streams the bytes without a Bearer credential, rejects redirects and another-site upload URLs, and never prints the short-lived presigned URL.",
+      "Human output is only the permanent media URL followed by a newline. With --json, stdout contains category, media_url, mime_type, and size_in_bytes. Diagnostics use stderr.",
+    ],
+    examples: [
+      "yarn microfeed media upload ./diagram.png --instance production --json",
+      "yarn microfeed media upload ./episode.mp3 --item-id 0HGJLSML3P1 --instance production --json",
+      "MEDIA_URL=$(yarn microfeed media upload ./diagram.png --instance production)",
+    ],
+    options: [
+      option(
+        "--item-id <item-id>",
+        "Associate the prepared upload with this existing item. Required for audio, video, and document files; optional for images.",
+      ),
+      instanceOption,
+      jsonOption,
+    ],
+    path: ["media", "upload"],
+    summary: "Upload one local file and return safe permanent metadata.",
+    usage: "yarn microfeed media upload <file> [--item-id <item-id>] [--instance <name>] [--json]",
+  },
+  {
+    details: [
       "<method> is an HTTP method such as GET, POST, PUT, or DELETE. </api/v1/path> is a relative path on the selected instance, such as /api/v1/feed/?limit=3; an absolute URL is rejected.",
       "Quote a path containing ? or & so the shell passes it as one argument. The path must begin with /api/v1/ and cannot change the selected site URL.",
       "The CLI injects and refreshes its Bearer credential. It blocks caller-provided Authorization, Cookie, and Host headers and refuses redirects so credentials never cross origins.",
-      "--input is for UTF-8 request bodies, not binary files. Use `item create --attachment-file` or `item update <item-id> --attachment-file` for a local media attachment/RSS enclosure; use --image-file for item cover art.",
+      "--input is for UTF-8 request bodies, not binary files. Use `media upload` for inline or standalone media, --attachment-file for a media attachment/RSS enclosure, and --image-file for item cover art.",
       "Without --json, the response body goes to stdout and diagnostics to stderr. With --json, stdout contains status, ok, safe response headers, and body.",
     ],
     examples: [
@@ -397,6 +441,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     {syntax: "logout", description: "Revoke and remove a saved instance."},
     {syntax: "instances", description: "List, select, or locally remove saved instances."},
     {syntax: "item", description: "List, read, create, update, or delete items."},
+    {syntax: "media", description: "Upload standalone media for rich content or later API use."},
     {syntax: "api", description: "Call one relative /api/v1/ REST operation."},
   ];
   return [
@@ -420,6 +465,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     "  <file|->   UTF-8 file path, or - to read from standard input.",
     "  <attachment-path>  Local audio, video, document, or image attachment.",
     "  <image-path>  Local AVIF, GIF, JPEG, PNG, or WebP cover image.",
+    "  <media-file>  Local media to upload for rich content or later API use.",
     "  <path>     Relative API path beginning /api/v1/; never an absolute URL.",
     "",
     "Authentication:",
@@ -439,6 +485,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     "Start here:",
     "  yarn microfeed login --help",
     "  yarn microfeed item create --help",
+    "  yarn microfeed media upload --help",
     "  yarn microfeed api --help",
     "",
     `Complete reference: ${referenceUrl()}`,

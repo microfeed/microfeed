@@ -56,14 +56,16 @@ keychain.
 Use the user's vocabulary carefully. An **item image** is cover art or a
 thumbnail. A **media attachment** is the item's one main audio, video,
 document, or image file; it becomes JSON Feed `attachments[0]` and the RSS
-enclosure.
+enclosure. **Standalone media** is an uploaded file that has not been assigned
+to either field, such as an image embedded inside `content_html`.
 
-When the user asks to upload, attach, enclose, or add a media file, use `item
-create --attachment-file <path>` or `item update <item-id> --attachment-file
-<path>`. Use `--image-file <path>` only when the user asks for item cover art
-or a thumbnail. Do not script the short-lived upload URL yourself, and do not
-treat `--image <url>` as a local-file option. Prefer `--json` so only the final
-item response is consumed.
+When the user asks to attach or enclose a file, use `item create
+--attachment-file <path>` or `item update <item-id> --attachment-file <path>`.
+Use `--image-file <path>` only for item cover art or a thumbnail. For an inline
+rich-text image, use `media upload <path> --json`, read its permanent
+`media_url`, insert that URL in `content_html`, and then save the item. Do not
+script, read, or print the short-lived upload URL, and do not treat `--image
+<url>` as a local-file option. Prefer `--json` for deterministic results.
 
 If `yarn microfeed login <site-url>` is required, the agent may start it, but you
 must sign in and approve or deny permissions in the browser. The agent must
