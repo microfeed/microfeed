@@ -180,6 +180,26 @@ describe("CLI credentials", () => {
       })).rejects.toThrow("managed by microfeed");
     }
   });
+
+  it("marks bodyless DELETE requests as JSON instead of browser form submissions", async () => {
+    process.env.MICROFEED_API_KEY = "environment-secret";
+    process.env.MICROFEED_URL = "https://feed.example";
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      expect(init?.body).toBeUndefined();
+      expect(init?.method).toBe("DELETE");
+      expect(new Headers(init?.headers).get("content-type"))
+        .toBe("application/json");
+      return Response.json({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiRequest(
+      "DELETE",
+      "/api/v1/items/item-id/",
+      {json: true},
+    )).resolves.toMatchObject({body: {}, status: 200});
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
 });
 
 describe("CLI API diagnostics", () => {

@@ -142,7 +142,8 @@ export async function apiRequest(
     }
     headers.append(name, value);
   }
-  if (request?.body !== undefined && !headers.has("content-type")) {
+  if ((request?.body !== undefined || method.toUpperCase() === "DELETE") &&
+      !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
   const response = await fetch(target, {
