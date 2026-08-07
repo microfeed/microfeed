@@ -31,6 +31,7 @@ export interface FeedSettings {
 export interface FeedItem extends JsonObject {
   createdAtMs?: number;
   id?: string;
+  pubDateIsDraftDefault?: boolean;
   pubDateMs?: number;
   status?: number;
   title?: string;

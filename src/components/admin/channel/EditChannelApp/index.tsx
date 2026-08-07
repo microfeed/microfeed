@@ -22,11 +22,17 @@ import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./FormExplainTexts";
 import {
   preventCloseWhenChanged,
 } from "@/client/BrowserUtils";
+import AutosaveCoordinator, {
+  type AutosaveState,
+} from "@/client/AutosaveCoordinator";
 import type {FeedContent, OnboardingResult} from "@/types";
-import {Button} from "@/components/ui/button";
 import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
+import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 
-const SUBMIT_STATUS__START = 1;
+interface ChannelSnapshot {
+  channel: Record<string, unknown>;
+  deleteImageUrls: string[];
+}
 
 const LANGUAGE_CODES_DICT = {};
 const LANGUAGE_CODES_SELECT_OPTIONS: any[] = [];
@@ -69,15 +75,16 @@ interface Props {
 }
 
 export default class EditChannelApp extends React.Component<Props, any> {
+  private autosave: AutosaveCoordinator<ChannelSnapshot>;
   private cleanupNavigationGuard?: () => void;
+  private mounted = false;
 
   constructor(props: Props) {
     super(props);
 
-    this.onUpdateFeed = this.onUpdateFeed.bind(this);
     this.onUpdateChannelMeta = this.onUpdateChannelMeta.bind(this);
-    this.onUpdateChannelMetaToFeed = this.onUpdateChannelMetaToFeed.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
+    this.saveSnapshot = this.saveSnapshot.bind(this);
 
     const feed = props.feedContent;
 
@@ -85,86 +92,80 @@ export default class EditChannelApp extends React.Component<Props, any> {
     this.state = {
       feed,
       channel,
-      submitStatus: null,
-      changed: false,
+      autosaveState: {dirty: false, phase: "idle"} satisfies AutosaveState,
       replacedImageUrls: [],
-    }
+    };
+
+    this.autosave = new AutosaveCoordinator({
+      delayMs: null,
+      getSnapshot: () => ({
+        channel: {...this.state.channel},
+        deleteImageUrls: [...this.state.replacedImageUrls],
+      }),
+      onError: (error) => this.showSaveError(error),
+      onStateChange: (autosaveState) => {
+        if (this.mounted) this.setState({autosaveState});
+      },
+      save: this.saveSnapshot,
+    });
   }
 
   componentDidMount() {
-    this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
+    this.mounted = true;
+    this.cleanupNavigationGuard = preventCloseWhenChanged(
+      () => this.autosave.hasUnsavedChanges(),
+    );
   }
 
   componentWillUnmount() {
+    this.mounted = false;
+    this.autosave.dispose();
     this.cleanupNavigationGuard?.();
-  }
-
-  onUpdateFeed(props: any, onSucceed: any) {
-    this.setState((prevState: any) => ({
-      feed: {
-        ...prevState.feed,
-        channel: {
-          ...prevState.channel,
-          ...props,
-        },
-      },
-    }), () => onSucceed())
   }
 
   onUpdateChannelMeta(keyName: any, value: any) {
     this.setState((prevState: any) => ({
-      changed: true,
       channel: {
         ...prevState.channel,
         [keyName]: value,
       },
-    }));
-  }
-
-  onUpdateChannelMetaToFeed(onSucceed: any) {
-    this.onUpdateFeed(this.state.channel, onSucceed);
+    }), () => this.autosave.markChanged());
   }
 
   onSubmit(e: any) {
     e.preventDefault();
-    if (!this.state.changed) {
-      showToast('No changes to save.', 'info');
-      return;
-    }
-    this.onUpdateChannelMetaToFeed(() => {
-      const {feed, replacedImageUrls} = this.state;
-      this.setState({submitStatus: SUBMIT_STATUS__START});
-      Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {
-        channel: feed.channel,
-        deleteImageUrls: replacedImageUrls,
-      })
-        .then((response: any) => {
-          console.log(response);
-          this.setState({
-            submitStatus: null,
-            changed: false,
-            replacedImageUrls: [],
-          }, () => {
-            showToast('Updated!', 'success');
-          });
-        })
-        .catch((error: any) => {
-          this.setState({submitStatus: null}, () => {
-            if (!error.response) {
-              showToast('Network error. Please refresh the page and try again.', 'error');
-            } else {
-              showToast('Failed. Please try again.', 'error');
-            }
-          });
-        });
+    void this.autosave.flush();
+  }
+
+  async saveSnapshot(snapshot: ChannelSnapshot) {
+    await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), snapshot);
+    if (!this.mounted) return;
+
+    await new Promise<void>((resolve) => {
+      this.setState((previousState: any) => ({
+        feed: {
+          ...previousState.feed,
+          channel: snapshot.channel,
+        },
+        replacedImageUrls: previousState.replacedImageUrls.filter(
+          (url: string) => !snapshot.deleteImageUrls.includes(url),
+        ),
+      }), resolve);
     });
   }
 
+  showSaveError(error: any) {
+    if (!error?.response) {
+      showToast('Network error. Your changes are still on this page.', 'error');
+    } else {
+      showToast('Couldn’t save. Your changes are still on this page.', 'error');
+    }
+  }
+
   render() {
-    const {submitStatus, channel, feed} = this.state;
+    const {autosaveState, channel, feed} = this.state;
     const {onboardingResult} = this.props;
     const categories = channel.categories || [];
-    const submitting = submitStatus === SUBMIT_STATUS__START;
     const mediaStorage = onboardingResult.result[
       ONBOARDING_TYPES.MEDIA_STORAGE
     ];
@@ -200,7 +201,6 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     _contentType: any,
                     replacedImageUrl: unknown,
                   ) => this.setState((prevState: any) => ({
-                    changed: true,
                     channel: {
                       ...prevState.channel,
                       image: cdnUrl,
@@ -209,7 +209,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                       prevState.replacedImageUrls,
                       replacedImageUrl,
                     ),
-                  }))}
+                  }), () => this.autosave.markChanged())}
                 />
               </div>
               <div className="grid flex-1 grid-cols-1 gap-3">
@@ -237,7 +237,10 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.CATEGORIES]}/>}
                     options={CATEGORIES_SELECT_OPTIONS}
                     onChange={(selectedOptions: any) => {
-                      this.onUpdateChannelMeta('categories', [...selectedOptions.map((o: any) => o.value)]);
+                      this.onUpdateChannelMeta(
+                        'categories',
+                        [...selectedOptions.map((o: any) => o.value)],
+                      );
                     }}
                     multiple
                     isOptionDisabled={() => categories.length >= 3}
@@ -359,16 +362,11 @@ export default class EditChannelApp extends React.Component<Props, any> {
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">
-            <div className="rounded-[14px] border bg-card p-5 text-center text-card-foreground shadow-xs">
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={submitting}
-              >
-                {submitting ? 'Updating...' : 'Update'}
-              </Button>
-            </div>
+            <AdminSaveAction
+              {...autosaveState}
+              buttonLabel="Save changes"
+              idleMessage="Make changes, then select Save changes."
+            />
             <AdminSideQuickLinks />
           </div>
         </div>

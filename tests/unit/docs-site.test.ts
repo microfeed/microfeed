@@ -185,8 +185,23 @@ describe("documentation site", () => {
     expect(editChannelGuide).toContain(
       "Select **Edit channel** in the left navigation.",
     );
+    expect(editChannelGuide).toContain(
+      "Select **Save changes** when the channel is ready to update.",
+    );
+    expect(editChannelGuide).toContain(
+      "Channel changes are never saved on a timer",
+    );
     expect(editChannelGuide).not.toContain(
       "Open **Settings** for the controls on this page.",
+    );
+
+    const publishGuide = await readFile(
+      path.join(docsRoot, "dashboard/publish.md"),
+      "utf8",
+    );
+    expect(publishGuide).toContain("after a five-second pause");
+    expect(publishGuide).toContain(
+      "plus completed media uploads and replacements, save immediately",
     );
 
     const docsConfig = await readFile(

@@ -53,9 +53,19 @@ export async function updateItem(
   if (!existing) return null;
   const normalized = normalizedInput(input, existing.status);
   const patch = feedCrud._publicToInternalSchemaForItem(normalized);
+  const finalizesDraftPublicationDate =
+    input.date_published !== undefined ||
+    input.date_published_ms !== undefined ||
+    (
+      Object.hasOwn(input, "status") &&
+      normalized.status === STATUSES.PUBLISHED
+    );
   const item = {
     ...existing,
     ...patch,
+    ...(finalizesDraftPublicationDate
+      ? {pubDateIsDraftDefault: false}
+      : {}),
     guid: input.guid ?? existing.guid ?? id,
     id,
     pubDateMs: patch.pubDateMs ?? existing.pubDateMs,
