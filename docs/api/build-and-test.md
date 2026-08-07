@@ -3,8 +3,9 @@ title: Build and test integrations
 description: Use generated examples, API Explorer, cursor pagination, and the media upload flow safely.
 ---
 
-Start with an API key created for this integration and the generated contract
-from the exact instance you will call.
+Start with OAuth through the [microfeed CLI](../cli/) or an API key created for
+this integration, plus the generated contract from the exact instance you will
+call.
 
 ## Test in the dashboard
 
@@ -61,7 +62,7 @@ upload destination.
   `/api/v1/openapi.json` or [OpenAPI YAML](https://www.microfeed.org/api/v1/openapi.yaml)
   at `/api/v1/openapi.yaml`.
 - Treat unknown response fields as forward-compatible additions.
-- Handle documented 400, 401, 404, and 503 responses explicitly.
+- Handle documented 400, 401, 403, 404, and 503 responses explicitly.
 - Do not scrape the admin dashboard or reuse its browser session.
 - Use a unique named API key so the instance owner can rotate or revoke only
   this integration.

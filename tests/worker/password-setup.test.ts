@@ -247,6 +247,49 @@ describe("browser-based admin password setup", () => {
       'SELECT COUNT(*) AS "count" FROM "auth_session"',
     ).first<{count: number}>();
     expect(sessionBefore?.count).toBe(1);
+    const now = new Date().toISOString();
+    const expires = new Date(Date.now() + 60_000).toISOString();
+    await env.FEED_DB.batch([
+      env.FEED_DB.prepare(
+        'INSERT INTO "oauth_refresh_token" ' +
+          '("id", "token", "clientId", "userId", "expiresAt", "createdAt", "scopes") ' +
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).bind(
+        "reset-refresh",
+        "hashed-refresh",
+        "microfeed-cli",
+        ownerId,
+        expires,
+        now,
+        '["content:read","offline_access"]',
+      ),
+      env.FEED_DB.prepare(
+        'INSERT INTO "oauth_access_token" ' +
+          '("id", "token", "clientId", "userId", "refreshId", "expiresAt", "createdAt", "scopes") ' +
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      ).bind(
+        "reset-access",
+        "hashed-access",
+        "microfeed-cli",
+        ownerId,
+        "reset-refresh",
+        expires,
+        now,
+        '["content:read","offline_access"]',
+      ),
+      env.FEED_DB.prepare(
+        'INSERT INTO "oauth_consent" ' +
+          '("id", "clientId", "userId", "scopes", "createdAt", "updatedAt") ' +
+          'VALUES (?, ?, ?, ?, ?, ?)',
+      ).bind(
+        "reset-consent",
+        "microfeed-cli",
+        ownerId,
+        '["content:read","offline_access"]',
+        now,
+        now,
+      ),
+    ]);
 
     const token = "e".repeat(64);
     await issueSetup(token, "reset", ownerId);
@@ -269,6 +312,16 @@ describe("browser-based admin password setup", () => {
       'SELECT COUNT(*) AS "count" FROM "auth_session"',
     ).first<{count: number}>();
     expect(sessionsAfter?.count).toBe(0);
+    for (const table of [
+      "oauth_access_token",
+      "oauth_refresh_token",
+      "oauth_consent",
+    ]) {
+      const remaining = await env.FEED_DB.prepare(
+        `SELECT COUNT(*) AS "count" FROM "${table}" WHERE "userId" = ?`,
+      ).bind(ownerId).first<{count: number}>();
+      expect(remaining?.count).toBe(0);
+    }
     expect((await signIn(OLD_PASSWORD)).status).toBe(401);
     expect((await signIn(NEW_PASSWORD)).status).toBe(200);
   });

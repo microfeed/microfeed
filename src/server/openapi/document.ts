@@ -15,7 +15,8 @@ export const API_LLMS_TEXT = `# microfeed API\n\n` +
   `Base path: ${API_BASE_PATH}\n` +
   `OpenAPI: ${API_BASE_PATH}openapi.json\n` +
   `Full API guide: ${API_BASE_PATH}llms-full.txt\n\n` +
-  `Authenticate with: Authorization: Bearer YOUR_API_KEY\n\n` +
+  `Authenticate with an API key or scoped OAuth access token: ` +
+  `Authorization: Bearer YOUR_CREDENTIAL\n\n` +
   API_OPERATION_SUMMARY + "\n";
 
 export const API_LLMS_FULL_TEXT = `# microfeed API\n\n` +
@@ -24,8 +25,17 @@ export const API_LLMS_FULL_TEXT = `# microfeed API\n\n` +
   `schema. You do not need to fetch another document to understand or use ` +
   `the API.\n\n` +
   `Use this API to build integrations that create and manage content in this ` +
-  `microfeed instance. Send an API key using Bearer authentication:\n\n` +
-  `Authorization: Bearer YOUR_API_KEY\n\n` +
+  `microfeed instance. Send either a full-access API key or a scoped, ` +
+  `short-lived OAuth access token using Bearer authentication:\n\n` +
+  `Authorization: Bearer YOUR_CREDENTIAL\n\n` +
+  `OAuth read operations require content:read. Mutating operations require ` +
+  `content:write. offline_access permits a rotating refresh token. A missing ` +
+  `or invalid credential returns 401; an inadequate OAuth scope returns 403.\n\n` +
+  `When operating from a microfeed repository clone, prefer ` +
+  `\`yarn microfeed --json\`. Let that CLI inject and refresh credentials, ` +
+  `use JSON file or standard-input payloads, never request or print a key or ` +
+  `token, pause for user-controlled browser consent, and confirm an exact ` +
+  `item ID before deletion.\n\n` +
   `The API base path is ${API_BASE_PATH}. Operation paths in the contract ` +
   `are relative ` +
   `to that base path.\n\n` +

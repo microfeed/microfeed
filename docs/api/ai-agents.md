@@ -1,9 +1,13 @@
 ---
 title: Use the API with AI agents
-description: Give a coding agent a self-contained, instance-specific API contract without sharing an API key in chat.
+description: Let a coding agent drive the local microfeed CLI while browser consent and destructive actions remain under your control.
 ---
 
-When public API docs are enabled, each instance publishes two plain-text files
+The recommended agent workflow inside a microfeed clone is `yarn microfeed`.
+The local workspace works after `yarn install`, so the agent does not need a
+global CLI or permission to download one from a registry.
+
+When public API docs are enabled, each instance also publishes two plain-text files
 for coding agents:
 
 - [`/api/v1/llms.txt`](https://www.microfeed.org/api/v1/llms.txt) is a compact
@@ -30,18 +34,31 @@ The dashboard’s **API Overview** page generates the exact prompt for the
 current instance and provides a copy button.
 
 The contract contains the instruction to send
-`Authorization: Bearer YOUR_API_KEY`; it does not contain a real key.
+`Authorization: Bearer YOUR_CREDENTIAL`; it does not contain a real key or
+OAuth token.
 
 ## Keep the credential separate
 
-Do not paste an API key into the agent conversation. Give runtime code access
-through a local environment variable or the deployment platform’s secret
-manager. Ask the agent to reference that variable, for example
-`MICROFEED_API_KEY`, without printing its value.
+Ask the agent to use `yarn microfeed --json` and JSON file or standard-input
+payloads. The CLI obtains and refreshes OAuth credentials internally. Do not
+ask the agent to read its encrypted credential file or operating-system
+keychain.
 
-If the agent itself must send test requests, use a narrowly scoped execution
-environment, a separate named API key, and an explicit approval step. Revoke
-the key when the task is complete.
+If `yarn microfeed login <origin>` is required, the agent may start it, but you
+must sign in and approve or deny permissions in the browser. The agent must
+pause for that step and must not click **Allow** on your behalf.
+
+Do not paste an API key, access token, refresh token, or client secret into the
+agent conversation. For CI, provide `MICROFEED_API_KEY` through the secret
+manager and instruct the agent to reference the variable without reading or
+printing its value.
+
+Before deleting content, have the agent report the selected instance profile
+and exact item ID. Approve the operation explicitly; the agent can then pass
+the same ID to `--confirm`. The CLI will not accept a generic yes flag.
+
+See [Manage content with the microfeed CLI](../cli/) for commands and
+credential behavior.
 
 ## When public docs are off
 

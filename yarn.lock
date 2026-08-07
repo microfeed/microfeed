@@ -887,9 +887,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@better-auth/core@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/core@npm:1.6.25"
+"@better-auth/core@npm:1.6.26, @better-auth/core@npm:^1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/core@npm:1.6.26"
   dependencies:
     "@opentelemetry/semantic-conventions": "npm:^1.39.0"
     "@standard-schema/spec": "npm:^1.1.0"
@@ -908,67 +908,83 @@ __metadata:
       optional: true
     "@opentelemetry/api":
       optional: true
-  checksum: 10/4e42a10a3885ea367637eeb0f677c61c509d322e72304985fbadb9cb1e41b2c9c993c424d687697dd94eecc00411f6c089e3e3280bfbdfacf23b484039713def
+  checksum: 10/f23ed97ea00ce3b86ca132a92c6b1dcca37ddd20357109cf0b7c09961b02c5c916b7952fa05d0f08688e6463ae87d2ae8e9e3155ff2245273c02fc202e40b922
   languageName: node
   linkType: hard
 
-"@better-auth/drizzle-adapter@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/drizzle-adapter@npm:1.6.25"
+"@better-auth/drizzle-adapter@npm:1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/drizzle-adapter@npm:1.6.26"
   peerDependencies:
-    "@better-auth/core": ^1.6.25
+    "@better-auth/core": ^1.6.26
     "@better-auth/utils": 0.4.2
     drizzle-orm: ^0.45.2
   peerDependenciesMeta:
     drizzle-orm:
       optional: true
-  checksum: 10/a36d27cb2bbf6b8423634a3ae4114bd66640965d7f2a7377052c50242a8385dd9a27cb35defc9b485876ca976ea85aad20227f1ff615d6364b63f6d5e07d7d89
+  checksum: 10/36a9d27ab6aedc959b9ee0be9bc950c82f698fbbdccd04de28527f708ebd215753556396a5dbb53cad3b99b02141fd24ec8e787ca77a44d9fda80ef2b0689e0c
   languageName: node
   linkType: hard
 
-"@better-auth/kysely-adapter@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/kysely-adapter@npm:1.6.25"
+"@better-auth/kysely-adapter@npm:1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/kysely-adapter@npm:1.6.26"
   peerDependencies:
-    "@better-auth/core": ^1.6.25
+    "@better-auth/core": ^1.6.26
     "@better-auth/utils": 0.4.2
     kysely: ^0.28.17 || ^0.29.0
   peerDependenciesMeta:
     kysely:
       optional: true
-  checksum: 10/3a6bdc491df8b4a40a57f249adc655b0cefbf1147e609652975128058e80d158839568b39cf9434f1b9226c83faadebffe0fc48edc15a8d534df366b8ece8b93
+  checksum: 10/c64cfabdf1c2e76409f46d12a89b73f5b965310efd941886df1fedf219a41b53391d50f487a32c7b5fcee1e332ef17a76c2300224236e47811b9c1e9e173f997
   languageName: node
   linkType: hard
 
-"@better-auth/memory-adapter@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/memory-adapter@npm:1.6.25"
+"@better-auth/memory-adapter@npm:1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/memory-adapter@npm:1.6.26"
   peerDependencies:
-    "@better-auth/core": ^1.6.25
+    "@better-auth/core": ^1.6.26
     "@better-auth/utils": 0.4.2
-  checksum: 10/a9da68e0b46a72d3f82dac07b61b1e6dfa77d8fc4537ac44fb5c986036525818a9ce74eab474b706dabc16e27527fa994c3b470f38254a294660d99ac68de132
+  checksum: 10/282e15b8b82d6b9e0a8bc37700c59b931ac1c0a256646f2e2c6f2e37b732dd0ba0b3ebbb7bab33b8fc2c1bd850488b7e5b1c00a0d9096e0ab528ddc6e5e97ade
   languageName: node
   linkType: hard
 
-"@better-auth/mongo-adapter@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/mongo-adapter@npm:1.6.25"
+"@better-auth/mongo-adapter@npm:1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/mongo-adapter@npm:1.6.26"
   peerDependencies:
-    "@better-auth/core": ^1.6.25
+    "@better-auth/core": ^1.6.26
     "@better-auth/utils": 0.4.2
     mongodb: ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
     mongodb:
       optional: true
-  checksum: 10/fd4f43a87eeccfd9b8b2da04e64be0f2a2f2d0604b023bac1d1f9c9b75b8329509b8adf39f159a68260e3eea62201039321fb4ba2e4204284643a7d34d26ab81
+  checksum: 10/aced994d0b27c9dcf5acdefdfb1a5786706e6dd40a0d3887ddcdec7925cac453e4e7ada5009592241c835763a6a74cc2d814277b4b2cf2743be027c2e7c5534b
   languageName: node
   linkType: hard
 
-"@better-auth/prisma-adapter@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/prisma-adapter@npm:1.6.25"
+"@better-auth/oauth-provider@npm:^1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/oauth-provider@npm:1.6.26"
+  dependencies:
+    jose: "npm:^6.1.3"
+    zod: "npm:^4.3.6"
   peerDependencies:
-    "@better-auth/core": ^1.6.25
+    "@better-auth/core": ^1.6.26
+    "@better-auth/utils": 0.4.2
+    "@better-fetch/fetch": 1.3.1
+    better-auth: ^1.6.26
+    better-call: 1.3.7
+  checksum: 10/214b85dab271e906459f773b18ffa9e39c6f733b1797bc8345cafaab2214a50c337703b2c82bfd07781b45133e4d39ee2eac71c68b522813df50b215284d29aa
+  languageName: node
+  linkType: hard
+
+"@better-auth/prisma-adapter@npm:1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/prisma-adapter@npm:1.6.26"
+  peerDependencies:
+    "@better-auth/core": ^1.6.26
     "@better-auth/utils": 0.4.2
     "@prisma/client": ^5.0.0 || ^6.0.0 || ^7.0.0
     prisma: ^5.0.0 || ^6.0.0 || ^7.0.0
@@ -977,18 +993,18 @@ __metadata:
       optional: true
     prisma:
       optional: true
-  checksum: 10/97c8e411852697574260c543620015f619220f834ca46ef2574afd496dbc230a0cc390f71016b04916b30925cb0f15d0c1f1f0be02732b3a324589400b3c79d3
+  checksum: 10/606c6a05d92e0e814d0c7c730ea5d74661d1298e67ea4b7426c3d32baa9e76cc8fd14fe556a018f4cd2f623dfc03f108c7ac6e8ad909a23b7d971b5bab4f9ebd
   languageName: node
   linkType: hard
 
-"@better-auth/telemetry@npm:1.6.25":
-  version: 1.6.25
-  resolution: "@better-auth/telemetry@npm:1.6.25"
+"@better-auth/telemetry@npm:1.6.26":
+  version: 1.6.26
+  resolution: "@better-auth/telemetry@npm:1.6.26"
   peerDependencies:
-    "@better-auth/core": ^1.6.25
+    "@better-auth/core": ^1.6.26
     "@better-auth/utils": 0.4.2
     "@better-fetch/fetch": 1.3.1
-  checksum: 10/5890f066362f6a007f2d336b8b88adcadc1681e10109fb146d78eb081c402832929b60c91048396d20e2e2cbf57b89da8e768218e1a28a179257a2321534a355
+  checksum: 10/8de3b2117c6f26f9dcfe7f9673de4fa23eb46654c12038aaf99481220f8754b1298cafdb1a77c8a9c5fb9b44bbd1c6705ba2689116a8e589b62b005a4e89c44a
   languageName: node
   linkType: hard
 
@@ -2606,6 +2622,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@microfeed/cli@workspace:packages/cli":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/cli@workspace:packages/cli"
+  dependencies:
+    "@napi-rs/keyring": "npm:1.3.0"
+    "@types/node": "npm:^24.0.0"
+    tsx: "npm:^4.20.0"
+    typescript: "npm:^6.0.3"
+  dependenciesMeta:
+    "@napi-rs/keyring":
+      optional: true
+  bin:
+    microfeed: dist/index.js
+  languageName: unknown
+  linkType: soft
+
 "@modelcontextprotocol/sdk@npm:^1.26.0":
   version: 1.30.0
   resolution: "@modelcontextprotocol/sdk@npm:1.30.0"
@@ -2636,6 +2668,135 @@ __metadata:
     zod:
       optional: false
   checksum: 10/369723a62ce230e55d4fc98549fb080a51916a2004f3907bfca899f5602de8791d9b252038abc6cf120a9d1c75845d2459a471b678c9b9cfc7bae5febf112b63
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-darwin-arm64@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-darwin-arm64@npm:1.3.0"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-darwin-x64@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-darwin-x64@npm:1.3.0"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-freebsd-x64@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-freebsd-x64@npm:1.3.0"
+  conditions: os=freebsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-linux-arm-gnueabihf@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-linux-arm-gnueabihf@npm:1.3.0"
+  conditions: os=linux & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-linux-arm64-gnu@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-linux-arm64-gnu@npm:1.3.0"
+  conditions: os=linux & cpu=arm64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-linux-arm64-musl@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-linux-arm64-musl@npm:1.3.0"
+  conditions: os=linux & cpu=arm64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-linux-riscv64-gnu@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-linux-riscv64-gnu@npm:1.3.0"
+  conditions: os=linux & cpu=riscv64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-linux-x64-gnu@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-linux-x64-gnu@npm:1.3.0"
+  conditions: os=linux & cpu=x64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-linux-x64-musl@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-linux-x64-musl@npm:1.3.0"
+  conditions: os=linux & cpu=x64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-win32-arm64-msvc@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-win32-arm64-msvc@npm:1.3.0"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-win32-ia32-msvc@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-win32-ia32-msvc@npm:1.3.0"
+  conditions: os=win32 & cpu=ia32
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring-win32-x64-msvc@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring-win32-x64-msvc@npm:1.3.0"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@napi-rs/keyring@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@napi-rs/keyring@npm:1.3.0"
+  dependencies:
+    "@napi-rs/keyring-darwin-arm64": "npm:1.3.0"
+    "@napi-rs/keyring-darwin-x64": "npm:1.3.0"
+    "@napi-rs/keyring-freebsd-x64": "npm:1.3.0"
+    "@napi-rs/keyring-linux-arm-gnueabihf": "npm:1.3.0"
+    "@napi-rs/keyring-linux-arm64-gnu": "npm:1.3.0"
+    "@napi-rs/keyring-linux-arm64-musl": "npm:1.3.0"
+    "@napi-rs/keyring-linux-riscv64-gnu": "npm:1.3.0"
+    "@napi-rs/keyring-linux-x64-gnu": "npm:1.3.0"
+    "@napi-rs/keyring-linux-x64-musl": "npm:1.3.0"
+    "@napi-rs/keyring-win32-arm64-msvc": "npm:1.3.0"
+    "@napi-rs/keyring-win32-ia32-msvc": "npm:1.3.0"
+    "@napi-rs/keyring-win32-x64-msvc": "npm:1.3.0"
+  dependenciesMeta:
+    "@napi-rs/keyring-darwin-arm64":
+      optional: true
+    "@napi-rs/keyring-darwin-x64":
+      optional: true
+    "@napi-rs/keyring-freebsd-x64":
+      optional: true
+    "@napi-rs/keyring-linux-arm-gnueabihf":
+      optional: true
+    "@napi-rs/keyring-linux-arm64-gnu":
+      optional: true
+    "@napi-rs/keyring-linux-arm64-musl":
+      optional: true
+    "@napi-rs/keyring-linux-riscv64-gnu":
+      optional: true
+    "@napi-rs/keyring-linux-x64-gnu":
+      optional: true
+    "@napi-rs/keyring-linux-x64-musl":
+      optional: true
+    "@napi-rs/keyring-win32-arm64-msvc":
+      optional: true
+    "@napi-rs/keyring-win32-ia32-msvc":
+      optional: true
+    "@napi-rs/keyring-win32-x64-msvc":
+      optional: true
+  checksum: 10/bfef7fe1dfcfc29a5cf0988ce3dad06a19850351598b6a8f2b8ccd6a8f64540a80f66ae3eb018112bdabb366dbb421c026c418756ffe93d2ea19518aa87c0440
   languageName: node
   linkType: hard
 
@@ -4927,17 +5088,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"better-auth@npm:^1.6.25":
-  version: 1.6.25
-  resolution: "better-auth@npm:1.6.25"
+"better-auth@npm:^1.6.26":
+  version: 1.6.26
+  resolution: "better-auth@npm:1.6.26"
   dependencies:
-    "@better-auth/core": "npm:1.6.25"
-    "@better-auth/drizzle-adapter": "npm:1.6.25"
-    "@better-auth/kysely-adapter": "npm:1.6.25"
-    "@better-auth/memory-adapter": "npm:1.6.25"
-    "@better-auth/mongo-adapter": "npm:1.6.25"
-    "@better-auth/prisma-adapter": "npm:1.6.25"
-    "@better-auth/telemetry": "npm:1.6.25"
+    "@better-auth/core": "npm:1.6.26"
+    "@better-auth/drizzle-adapter": "npm:1.6.26"
+    "@better-auth/kysely-adapter": "npm:1.6.26"
+    "@better-auth/memory-adapter": "npm:1.6.26"
+    "@better-auth/mongo-adapter": "npm:1.6.26"
+    "@better-auth/prisma-adapter": "npm:1.6.26"
+    "@better-auth/telemetry": "npm:1.6.26"
     "@better-auth/utils": "npm:0.4.2"
     "@better-fetch/fetch": "npm:1.3.1"
     "@noble/ciphers": "npm:^2.1.1"
@@ -5007,7 +5168,7 @@ __metadata:
       optional: true
     vue:
       optional: true
-  checksum: 10/3fa8c79caaa02ed05e984b8d1e9878247ece4ce46356983adcac1dc089e3933d4cab906d7e6602f5b80147d53b6b4dfd0de0af7f712a03c32ad14a338f44fd5e
+  checksum: 10/4f0b25e410f7f8b152f61fb8746849fde325bd22483f5e4fe7d50d6317e6e9949c4d5d45f0559f93f28cb81e3f5c637eecf5554f894e3db60b2c4487e54226c1
   languageName: node
   linkType: hard
 
@@ -7869,6 +8030,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jose@npm:^6.1.0":
+  version: 6.2.8
+  resolution: "jose@npm:6.2.8"
+  checksum: 10/d1534f56cf693dfbb4b433b72df469c3c858748fe627621e27d9c1e7894716fc1d0225923be3ae98153345b9823a25c0ac376bfccce3ed363a4c032cfd4e2f5b
+  languageName: node
+  linkType: hard
+
 "jose@npm:^6.1.3":
   version: 6.2.4
   resolution: "jose@npm:6.2.4"
@@ -8017,6 +8185,13 @@ __metadata:
   version: 0.29.4
   resolution: "kysely@npm:0.29.4"
   checksum: 10/80d1678a13587efbf511cfaa9aebaea4be94582d2b14225b81f822947c6f64a0ba782cc153a2b87afe3514cd2a3cab87932eb1acf0bf450b63df3732375bae5a
+  languageName: node
+  linkType: hard
+
+"kysely@npm:^0.28.5":
+  version: 0.28.17
+  resolution: "kysely@npm:0.28.17"
+  checksum: 10/50690d745016d25f09574fe58c7e31f84427845497f30c84280131bc1f9f60d118c53640a184e225708a1f54f2b54ac12fdf3a0dfc6405527487ad96ff594f42
   languageName: node
   linkType: hard
 
@@ -8767,6 +8942,10 @@ __metadata:
     "@astrojs/sitemap": "npm:^3.7.3"
     "@astrojs/starlight": "npm:0.41.6"
     "@base-ui/react": "npm:^1.6.0"
+    "@better-auth/core": "npm:^1.6.26"
+    "@better-auth/oauth-provider": "npm:^1.6.26"
+    "@better-auth/utils": "npm:0.4.2"
+    "@better-fetch/fetch": "npm:1.3.1"
     "@clack/prompts": "npm:^1.7.0"
     "@cloudflare/vitest-pool-workers": "npm:^0.19.0"
     "@fontsource-variable/geist": "npm:^5.3.0"
@@ -8784,15 +8963,19 @@ __metadata:
     "@vitest/snapshot": "npm:^4.1.10"
     astro: "npm:^7.1.6"
     axios: "npm:^1.19.0"
-    better-auth: "npm:^1.6.25"
+    better-auth: "npm:^1.6.26"
+    better-call: "npm:1.3.7"
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^1.2.1"
     cropperjs: "npm:^1.5.12"
     fast-xml-parser: "npm:^5.10.1"
+    jose: "npm:^6.1.0"
+    kysely: "npm:^0.28.5"
     lucide-react: "npm:^1.27.0"
     lz-string: "npm:^1.4.4"
     miniflare: "npm:4.20260722.1"
     mustache: "npm:^4.2.0"
+    nanostores: "npm:^1.0.1"
     postcss: "npm:^8.5.25"
     quill: "npm:^2.0.3"
     react: "npm:^18.3.1"
@@ -9512,6 +9695,13 @@ __metadata:
   bin:
     nanoid: bin/nanoid.js
   checksum: 10/b1e702e2b7072e74ac2ae880907d0a291853a36617ec5c3d27d81ab04965ebc0d4d0f707cf9220928cf93d5370b1f561c930efee853dc9c1a3facaefdf1a42ee
+  languageName: node
+  linkType: hard
+
+"nanostores@npm:^1.0.1":
+  version: 1.4.2
+  resolution: "nanostores@npm:1.4.2"
+  checksum: 10/548fcefceb755a4806b8da778663e63f4aba296b3fa485f251a70db81e82fcc753bc2f7db16d8b32227915e7412f5987f12e24770c56b436f14ac016fcca4617
   languageName: node
   linkType: hard
 

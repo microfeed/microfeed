@@ -100,6 +100,25 @@
   generated reference formats still describe the same document, then run
   `yarn lint:openapi` and `yarn check` before publishing.
 
+## Content management CLI
+
+- Prefer `yarn microfeed` when managing content from a repository clone. It
+  runs the local `@microfeed/cli` workspace without a global installation.
+- Use `--json` and JSON files or standard input for deterministic agent
+  operations. Do not scrape dashboard pages or construct OAuth requests by
+  hand when the CLI supports the operation.
+- Never ask for, read, print, log, or copy an API key, OAuth access token,
+  refresh token, client secret, or encrypted credential file. Environment
+  credentials are supplied by the operator and must remain opaque to agents.
+- `yarn microfeed login <origin>` requires the administrator to sign in and
+  approve scopes in a browser. Start the command when needed, clearly ask the
+  user to complete that browser step, and do not attempt to approve consent on
+  the user's behalf.
+- Before deleting an item, identify the exact instance profile and item ID,
+  explain the effect, and obtain confirmation. Use
+  `yarn microfeed item delete <item-id> --confirm <item-id>` only after that
+  confirmation; never bypass the exact-ID safeguard.
+
 ## Frontend components
 
 - Prefer the project-owned shadcn/ui components in `src/components/ui/` for new frontend work and when substantially revising an existing interface.

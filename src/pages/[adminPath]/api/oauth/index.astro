@@ -1,0 +1,42 @@
+---
+import {env} from "cloudflare:workers";
+
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import OAuthAppsApp from "@/components/admin/api/OAuthAppsApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {
+  listOAuthClients,
+  listOAuthConsents,
+} from "@/server/auth/oauth-admin";
+import {builtInAdminAuthEnabled} from "@/shared/AdminAuth";
+import {NAV_ITEMS} from "@/shared/Constants";
+
+const {feedContent, onboardingResult, authUser} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const available = builtInAdminAuthEnabled(env.MICROFEED_ADMIN_AUTH_MODE) &&
+  Boolean(authUser?.id);
+const [initialClients, initialConsents] = available && authUser
+  ? await Promise.all([
+      listOAuthClients(env.FEED_DB, authUser.id),
+      listOAuthConsents(env.FEED_DB, authUser.id),
+    ])
+  : [[], []];
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.API}
+  apiActivePage="oauth"
+  apiNavigation
+  documentTitle="OAuth Apps | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="OAuth Apps"
+>
+  <div class="mx-auto max-w-5xl">
+    <OAuthAppsApp client:only="react" {available} {initialClients} {initialConsents}>
+      <AdminPageFallback slot="fallback" kind="settings" />
+    </OAuthAppsApp>
+  </div>
+</AdminShell>

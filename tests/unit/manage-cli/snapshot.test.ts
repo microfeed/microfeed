@@ -273,13 +273,10 @@ function snapshotSql(
   ).all() as Array<{name: string}>;
   const data: string[] = [];
   for (const {name} of tables) {
-    if ([
-      "auth_password_setup",
-      "auth_rate_limit",
-      "auth_session",
-      "auth_verification",
-      "microfeed_installation",
-    ].includes(name)) {
+    if (new Set<string>([
+      ...SNAPSHOT_TABLES.ephemeral,
+      ...SNAPSHOT_TABLES.targetSpecific,
+    ]).has(name)) {
       continue;
     }
     const rows = database.prepare(`SELECT * FROM "${name}" ORDER BY rowid`)
@@ -1122,6 +1119,8 @@ describe("snapshot archive validation", () => {
     expect(finalization).toContain("target-instance");
     expect(finalization).toContain("'$.publicBucketUrl', '/media/'");
     expect(finalization).toContain('DELETE FROM "auth_session"');
+    expect(finalization).toContain('DELETE FROM "oauth_access_token"');
+    expect(finalization).toContain('INSERT INTO "oauth_client"');
   });
 
   it("finalizes target identity and clears every ephemeral authentication table", async () => {
@@ -1161,6 +1160,13 @@ describe("snapshot archive validation", () => {
       expect(database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get())
         .toEqual({count: 0});
     }
+    expect(database.prepare(
+      "SELECT clientId, redirectUris, requirePKCE FROM oauth_client",
+    ).all()).toEqual([{
+      clientId: "microfeed-cli",
+      redirectUris: '["http://127.0.0.1:8977/callback"]',
+      requirePKCE: 1,
+    }]);
     expect(database.prepare(
       "SELECT instanceId FROM microfeed_installation",
     ).get()).toEqual({instanceId: "target-instance"});

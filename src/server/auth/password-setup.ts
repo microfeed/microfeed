@@ -327,6 +327,21 @@ export async function completeAdminPasswordSetup(
         now,
       ),
       database.prepare(
+        'DELETE FROM "oauth_access_token" WHERE "userId" = (' +
+          'SELECT "userId" FROM "auth_password_setup" WHERE "id" = ? ' +
+          'AND "purpose" = ? AND "tokenHash" = ? AND "expiresAt" > ?)',
+      ).bind("owner", "reset", tokenHash, now),
+      database.prepare(
+        'DELETE FROM "oauth_refresh_token" WHERE "userId" = (' +
+          'SELECT "userId" FROM "auth_password_setup" WHERE "id" = ? ' +
+          'AND "purpose" = ? AND "tokenHash" = ? AND "expiresAt" > ?)',
+      ).bind("owner", "reset", tokenHash, now),
+      database.prepare(
+        'DELETE FROM "oauth_consent" WHERE "userId" = (' +
+          'SELECT "userId" FROM "auth_password_setup" WHERE "id" = ? ' +
+          'AND "purpose" = ? AND "tokenHash" = ? AND "expiresAt" > ?)',
+      ).bind("owner", "reset", tokenHash, now),
+      database.prepare(
         'DELETE FROM "auth_session" WHERE "userId" = (' +
           'SELECT "userId" FROM "auth_password_setup" WHERE "id" = ? ' +
           'AND "purpose" = ? AND "tokenHash" = ? AND "expiresAt" > ?)',
@@ -336,7 +351,7 @@ export async function completeAdminPasswordSetup(
           'AND "purpose" = ? AND "tokenHash" = ? AND "expiresAt" > ?',
       ).bind("owner", "reset", tokenHash, now),
     ]);
-    if (results[0]?.meta.changes !== 1 || results[2]?.meta.changes !== 1) {
+    if (results[0]?.meta.changes !== 1 || results[5]?.meta.changes !== 1) {
       return completionError(
         "This password link was already used or replaced.",
         410,

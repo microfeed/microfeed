@@ -9,6 +9,12 @@ export const ADMIN_API_PAGES = [
     path: "api/auth",
   },
   {
+    id: "oauth",
+    name: "OAuth Apps",
+    icon: "oauth",
+    path: "api/oauth",
+  },
+  {
     id: "explorer",
     name: "API Explorer",
     icon: "explorer",

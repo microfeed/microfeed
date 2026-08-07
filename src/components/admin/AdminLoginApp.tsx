@@ -34,6 +34,16 @@ function safeRedirect(): string {
     : fallback;
 }
 
+function safeOAuthRedirect(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const adminBase = adminBasePath(browserAdminPath());
+  const candidate = new URL(value, window.location.origin);
+  return candidate.origin === window.location.origin &&
+      candidate.pathname.startsWith(adminBase)
+    ? `${candidate.pathname}${candidate.search}${candidate.hash}`
+    : null;
+}
+
 export default function AdminLoginApp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,7 +64,8 @@ export default function AdminLoginApp() {
         setError("The email or password is incorrect.");
         return;
       }
-      window.location.assign(safeRedirect());
+      const response = result.data as {url?: unknown} | null;
+      window.location.assign(safeOAuthRedirect(response?.url) ?? safeRedirect());
     } catch {
       setError("Unable to sign in right now. Please try again.");
     } finally {

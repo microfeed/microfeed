@@ -118,7 +118,18 @@ export async function passwordResetSql(
       `"updatedAt\" = ${sqlString(timestamp)} ` +
       `WHERE \"userId\" = ${sqlString(owner.id)} ` +
       "AND \"providerId\" = 'credential';",
+    `DELETE FROM "oauth_access_token" WHERE "userId" = ${sqlString(owner.id)};`,
+    `DELETE FROM "oauth_refresh_token" WHERE "userId" = ${sqlString(owner.id)};`,
+    `DELETE FROM "oauth_consent" WHERE "userId" = ${sqlString(owner.id)};`,
     `DELETE FROM "auth_session" WHERE "userId" = ${sqlString(owner.id)};`,
+  ].join("\n");
+}
+
+export function revokeOwnerOAuthSql(owner: AuthOwner): string {
+  return [
+    `DELETE FROM "oauth_access_token" WHERE "userId" = ${sqlString(owner.id)};`,
+    `DELETE FROM "oauth_refresh_token" WHERE "userId" = ${sqlString(owner.id)};`,
+    `DELETE FROM "oauth_consent" WHERE "userId" = ${sqlString(owner.id)};`,
   ].join("\n");
 }
 

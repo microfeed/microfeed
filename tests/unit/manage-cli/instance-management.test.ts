@@ -506,7 +506,8 @@ describe("first-class local instances", () => {
     const {commands, config, prompts} = await freshModules({
       confirmAnswers: [true],
     });
-    const runner = vi.fn<CommandRunner>();
+    const sqlStatements: string[] = [];
+    const runner = localAuthMutationRunner(sqlStatements);
     const initial = await config.ensureLocalOnlyConfig("practice");
     const localDataDirectory = config.localPersistencePath(initial);
     const sentinelPath = path.join(localDataDirectory, "keep.txt");
@@ -534,7 +535,10 @@ describe("first-class local instances", () => {
     await expect(
       readFile(config.wranglerConfigPath(disabled!), "utf8"),
     ).resolves.toContain('"MICROFEED_ADMIN_AUTH_MODE": "none"');
-    expect(runner).not.toHaveBeenCalled();
+    expect(sqlStatements).toHaveLength(1);
+    expect(sqlStatements[0]).toContain('DELETE FROM "oauth_access_token"');
+    expect(sqlStatements[0]).toContain('DELETE FROM "oauth_refresh_token"');
+    expect(sqlStatements[0]).toContain('DELETE FROM "oauth_consent"');
     expect(note).toHaveBeenCalledWith(
       expect.stringContaining("Anyone who can reach the local development server"),
       "Local dashboard login will be disabled",

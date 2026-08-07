@@ -51,6 +51,19 @@ function apiUnauthorizedResponse(): Response {
   });
 }
 
+function apiInsufficientScopeResponse(): Response {
+  return Response.json(
+    {error: "insufficient_scope"},
+    {
+      headers: {
+        "www-authenticate":
+          'Bearer realm="microfeed", error="insufficient_scope"',
+      },
+      status: 403,
+    },
+  );
+}
+
 function isBetterAuthPath(pathname: string): boolean {
   return pathname === AUTH_BASE_PATH ||
     pathname.startsWith(`${AUTH_BASE_PATH}/`);
@@ -114,6 +127,7 @@ const handleRequest = defineMiddleware(async (context, next) => {
       env.FEED_DB,
       context.request,
       pathname,
+      env.MICROFEED_ADMIN_AUTH_MODE,
     );
     if (decision === "allow-reference") {
       return addLegacyApiDeprecationHeaders(
@@ -128,6 +142,13 @@ const handleRequest = defineMiddleware(async (context, next) => {
     if (decision === "unauthorized") {
       return addLegacyApiDeprecationHeaders(
         apiUnauthorizedResponse(),
+        context.url,
+        pathname,
+      );
+    }
+    if (decision === "insufficient-scope") {
+      return addLegacyApiDeprecationHeaders(
+        apiInsufficientScopeResponse(),
         context.url,
         pathname,
       );

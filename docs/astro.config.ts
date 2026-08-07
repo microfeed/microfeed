@@ -78,7 +78,8 @@ export default defineConfig({
           label: "API and integrations",
           items: [
             { label: "API overview", link: "/api/" },
-            { label: "Enable access and create keys", link: "/api/authentication/" },
+            { label: "Authentication and OAuth", link: "/api/authentication/" },
+            { label: "Manage content with the CLI", link: "/api/cli/" },
             { label: "Build and test integrations", link: "/api/build-and-test/" },
             { label: "Use the API with AI agents", link: "/api/ai-agents/" },
           ],

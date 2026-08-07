@@ -743,10 +743,10 @@ yarn manage auth <setup|reset-password|change-email|change-path|disable> [option
 | Action | Effect |
 | --- | --- |
 | `setup` | Remotely, enable the built-in login and create a first-password browser link when needed; locally, securely prompt for the initial password. |
-| `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. |
+| `reset-password` | Remotely, create a single-use reset link; locally, securely prompt for and immediately store the replacement password. Completing the reset revokes the owner's OAuth grants and tokens. |
 | `change-email` | Update the administrator email and revoke existing sessions. |
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
-| `disable` | Disable built-in protection after a high-visibility warning. Locally, the development dashboard opens without login; remotely, the dashboard may become public. |
+| `disable` | Disable built-in protection after a high-visibility warning and immediately revoke the owner's OAuth grants and tokens. Locally, the development dashboard opens without login; remotely, the dashboard may become public. |
 
 Without an action, `yarn manage auth` prints its subcommand usage, options, and
 examples. It does not select an instance, inspect authentication state, or
@@ -808,7 +808,8 @@ yarn manage auth disable \
 
 Local password reset always uses hidden password and confirmation prompts.
 Local disable shows a warning unless `--yes` is supplied and does not query or
-modify the simulated D1 or R2 data.
+modify feed content or R2 data. Both actions revoke OAuth grants and tokens in
+the selected D1 database.
 
 ## `yarn manage config`
 
