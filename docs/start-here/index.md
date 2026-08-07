@@ -48,6 +48,11 @@ You need:
 The result is a microfeed site in your Cloudflare account with a public
 website, RSS feed, JSON Feed, and a private admin dashboard.
 
+<video class="docs-walkthrough" controls autoplay muted playsinline preload="metadata" poster="/images/screenshots/1-deploy-1.png" aria-label="A silent Codex deployment walkthrough progressing from the initial request through verification to the ready microfeed dashboard">
+  <source src="/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">
+  <a href="/images/screenshots/1-deploy-walkthrough.mp4">Watch the microfeed deployment walkthrough.</a>
+</video>
+
 ## Confirm the installation
 
 Ask the agent to run `yarn manage status`. The report should confirm the Worker,
