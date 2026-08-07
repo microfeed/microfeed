@@ -119,7 +119,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
         progressText: 'Done!',
         uploadStatus: null,
       }, () => {
-        this.insertMedia(true);
+        this.insertMedia();
         setIsOpen(false);
       })
     }, () => {
@@ -139,7 +139,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
     });
   }
 
-  insertMedia(uploadedFile = false) {
+  insertMedia() {
     const {quill, quillSelection, mediaType} = this.props;
     if (!quill) {
       return;
@@ -149,7 +149,7 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
       const index = quillSelection ? quillSelection.index : 0;
       quill.insertEmbed(
         index,
-        richEditorMediaEmbedFormat(mediaType, uploadedFile),
+        richEditorMediaEmbedFormat(mediaType),
         url,
         Quill.sources.USER,
       );
