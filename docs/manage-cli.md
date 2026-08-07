@@ -200,6 +200,9 @@ Initialize or resume an installation. Production initialization can create a
 Worker, D1 database, optional R2 bucket, secrets, migrations, administrator password
 setup link, and
 optional custom domain. It performs collision checks before the first mutation.
+Remote initialization runs type checks, focused deployment smoke tests, and a
+Worker build before publishing. The complete repository test suite remains part
+of `yarn check` and continuous integration.
 The authentication choice and any public-dashboard warning are confirmed before
 D1 or R2 resources are created. If initialization is interrupted later, retrying
 preserves whether each recorded resource was created for this site or explicitly
@@ -314,12 +317,15 @@ yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
 **Changes:** Updates a selected Cloudflare Worker, or prepares a local-only
 release with `--local`.
 
-Regenerate configuration, apply D1 migrations, run checks and tests, and build.
-Cloudflare mode then tags the Worker version with the current Git commit,
-deploys it, and verifies the Worker. The protected dashboard uses that version
-metadata to identify the deployed source release. `--local` preserves local
-data, performs the same preparation against local D1, and does not deploy or
-start a server.
+Regenerate configuration, apply D1 migrations, run type checks and focused
+deployment smoke tests, and build. The smoke tests cover migration compatibility,
+core item and feed operations, installation identity, and administrator setup.
+The complete repository test suite remains part of `yarn check` and continuous
+integration. Cloudflare mode then tags the Worker version with the current Git
+commit, deploys it, and verifies the Worker. The protected dashboard uses that
+version metadata to identify the deployed source release. `--local` preserves
+local data, performs the same preparation against local D1, and does not deploy
+or start a server.
 
 ```console
 yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
