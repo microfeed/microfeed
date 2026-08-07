@@ -181,10 +181,12 @@ reference](https://docs.microfeed.org/manage-cli/).
 Once initialization is complete, your microfeed instance is ready to use.
 Choose the publishing workflow that fits the task:
 
-* **For people:** use the microfeed admin dashboard to create, edit, or delete
+* **For people:** use the microfeed [admin
+  dashboard](https://docs.microfeed.org/dashboard/) to create, edit, or delete
   posts; upload audio, video, images, and other media files when R2 is enabled;
-  use external URLs in content-only mode; and customize your site.
-* **For coding agents:** use the official
+  use external URLs in content-only mode; and [customize your
+  site](https://docs.microfeed.org/dashboard/customize/).
+* **For AI agents:** use the official
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through short-lived OAuth access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the
