@@ -22,6 +22,19 @@ const SAFE_RESPONSE_HEADERS = new Set([
   "last-modified",
   "x-request-id",
 ]);
+const API_ACCESS_HELP_URL =
+  "https://docs.microfeed.org/api/authentication/#enable-the-api";
+const API_NOT_FOUND_RECOVERY = {
+  code: "api_access_or_resource_not_found",
+  documentationUrl: API_ACCESS_HELP_URL,
+  instructions: [
+    "New microfeed instances keep API access disabled by default.",
+    "The site owner should sign in to the admin dashboard, open API → API Settings, and turn on Enable API access.",
+    "If you are an AI agent, pause and ask the site owner to complete that browser step; do not request their dashboard password, API key, or OAuth token.",
+    "After API access is enabled, retry the same command. If it is already enabled, verify that the requested resource and /api/v1/ path exist.",
+  ],
+  message: "API access may be disabled, or the requested resource may not exist.",
+} as const;
 
 export interface GlobalOptions {
   instance?: string;
@@ -170,7 +183,10 @@ export async function apiRequest(
 
 export function writeApiResponse(response: ApiResponse, json: boolean): void {
   if (json) {
-    process.stdout.write(`${JSON.stringify(response)}\n`);
+    const output = response.status === 404
+      ? {...response, recovery: API_NOT_FOUND_RECOVERY}
+      : response;
+    process.stdout.write(`${JSON.stringify(output)}\n`);
   } else if (typeof response.body === "string") {
     process.stdout.write(response.body);
     if (response.body && !response.body.endsWith("\n")) process.stdout.write("\n");
@@ -178,12 +194,15 @@ export function writeApiResponse(response: ApiResponse, json: boolean): void {
     process.stdout.write(`${JSON.stringify(response.body, null, 2)}\n`);
   }
   if (!response.ok) {
-    const recovery = response.status === 404
-      ? " The resource may not exist, or API access may be disabled for this instance."
-      : "";
-    process.stderr.write(
-      `microfeed API request failed (${response.status}).${recovery}\n`,
-    );
+    const diagnostic = response.status === 404
+      ? [
+        `microfeed API request failed (${response.status}).`,
+        API_NOT_FOUND_RECOVERY.message,
+        ...API_NOT_FOUND_RECOVERY.instructions,
+        `Guide: ${API_NOT_FOUND_RECOVERY.documentationUrl}`,
+      ].join("\n")
+      : `microfeed API request failed (${response.status}).`;
+    process.stderr.write(`${diagnostic}\n`);
     process.exitCode = 1;
   }
 }

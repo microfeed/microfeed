@@ -55,8 +55,9 @@ give it an API key or OAuth token. For example:
 
 ```text
 Use @microfeed/cli to create a published item on https://feed.example.com.
-Use --json for deterministic output, and pause for me if browser authorization
-or confirmation of a destructive action is required.
+Use --json for deterministic output, and pause for me if API access must be
+enabled, browser authorization is required, or a destructive action needs
+confirmation.
 ```
 
 Inside a microfeed clone, the agent should prefer `yarn microfeed`. Elsewhere,

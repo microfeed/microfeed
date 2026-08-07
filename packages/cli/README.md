@@ -22,8 +22,16 @@ giving an agent a raw OAuth token.
 
 Instances without built-in login can continue using an API key.
 
-If a content command returns `404`, the requested resource may not exist or API
-access may be disabled for the selected instance.
+New microfeed instances keep API access disabled by default. The site owner
+must sign in to the admin dashboard, open **API → API Settings**, and turn on
+**Enable API access** before content commands can succeed. OAuth login itself
+can be saved while API access is off.
+
+If a content command returns `404`, the CLI prints these steps and a link to
+the [API setup guide](https://docs.microfeed.org/api/authentication/#enable-the-api).
+With `--json`, the result also includes a structured `recovery` object. An AI
+agent must pause and ask the owner to complete the dashboard step in the
+browser; it must never request a dashboard password, API key, or OAuth token.
 
 ## Run the CLI
 
@@ -56,8 +64,9 @@ example:
 
 ```text
 Use @microfeed/cli to create a published item on https://feed.example.com.
-Use --json for deterministic output, and pause for me if browser authorization
-or confirmation of a destructive action is required.
+Use --json for deterministic output, and pause for me if API access must be
+enabled, browser authorization is required, or a destructive action needs
+confirmation.
 ```
 
 Inside a microfeed clone, tell the agent to prefer `yarn microfeed`. Elsewhere,

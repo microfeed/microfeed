@@ -70,6 +70,33 @@ describe("microfeed CLI help", () => {
     expect(help).toContain("--attachment-file");
   });
 
+  it("explains how owners enable API access and when agents must pause", () => {
+    const remoteTopics = [
+      ["login"],
+      ["item"],
+      ["item", "list"],
+      ["item", "get"],
+      ["item", "create"],
+      ["item", "update"],
+      ["item", "delete"],
+      ["media"],
+      ["media", "upload"],
+      ["api"],
+    ];
+
+    for (const topic of remoteTopics) {
+      const help = renderCliHelp(topic);
+      expect(help).toContain("disabled by default");
+      expect(help).toContain("API → API Settings");
+      expect(help).toContain("Enable API access");
+      expect(help).toContain("AI agent must pause");
+      expect(help).toContain("must not request a dashboard password");
+    }
+    expect(HELP).toContain("API → API Settings → Enable API access");
+    expect(HELP).toContain("AI agent pauses");
+    expect(HELP).toContain("include safe recovery guidance");
+  });
+
   it("renders comprehensive help for every command and subcommand", () => {
     for (const topic of CLI_HELP_TOPICS) {
       const help = renderCliHelp(topic.path);
@@ -145,6 +172,12 @@ describe("microfeed CLI help", () => {
         ).toContain(`\`${optionName}`);
       }
     }
+    expect(reference).toContain("api_access_or_resource_not_found");
+    expect(reference).toContain("API → API Settings");
+    expect(reference).toContain("AI agent to pause");
+    expect(reference).toContain(
+      "https://docs.microfeed.org/api/authentication/#enable-the-api",
+    );
   });
 
   it("rejects unknown and overlong help topics", async () => {

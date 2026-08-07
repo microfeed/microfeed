@@ -57,6 +57,14 @@ Use the named site the user supplied. If several saved sites exist and the
 target is unclear, show their instance names and site URLs and ask the user to
 choose. Never silently select the first one.
 
+New microfeed instances keep API access disabled by default. OAuth login may
+succeed while content commands still return `404`. When that happens, pause
+and ask the site owner to sign in to the admin dashboard, open **API → API
+Settings**, and turn on **Enable API access**. This is a browser-only owner
+action. Never ask for the dashboard password, an API key, or an OAuth token.
+After the owner confirms access is enabled, retry the same content command;
+the saved OAuth login does not need to be recreated.
+
 When authorization is missing, run:
 
 ```console
@@ -141,8 +149,10 @@ item blindly.
     --confirm <item-id> --json
   ```
 
-- A `404` can mean the resource is absent or API access is disabled. Do not
-  infer which one without further evidence.
+- A `404` can mean the resource is absent or API access is disabled. Follow the
+  CLI's `recovery` instructions: pause for the owner to enable access under
+  **API → API Settings**, then retry the same command. If access is already on,
+  verify the resource and `/api/v1/` path instead of repeatedly retrying.
 
 For a REST operation that has no dedicated command, use `yarn microfeed api`
 with a relative `/api/v1/...` path. Never supply `Authorization`, `Cookie`, or

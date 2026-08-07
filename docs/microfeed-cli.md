@@ -83,6 +83,12 @@ A coding agent may start login, but must pause for that user-controlled step.
 Login requires HTTPS except for `http://localhost` and `http://127.0.0.1` test
 instances. If a site's public URL changes, log in again.
 
+New instances keep API access disabled by default. OAuth login can be saved
+while access is off, but content commands return `404` until the site owner
+signs in to the admin dashboard, opens **API → API Settings**, and turns on
+**Enable API access**. An AI agent must pause for this browser-only change and
+must not request the owner's dashboard password, API key, or OAuth token.
+
 For every authenticated REST request, the CLI:
 
 - injects the selected Bearer credential and refreshes OAuth tokens when
@@ -115,7 +121,7 @@ Global options may appear before or after a command and its arguments.
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Use a saved instance instead of the current one. This takes precedence over `MICROFEED_INSTANCE`. |
-| `--json` | Write deterministic JSON to standard output. API responses include `status`, `ok`, safe response `headers`, and `body`. |
+| `--json` | Write deterministic JSON to standard output. API responses include `status`, `ok`, safe response `headers`, and `body`; a `404` also includes safe `recovery` guidance. |
 | `-h`, `--help` | Show help for the selected command or subcommand without running it. |
 
 When `MICROFEED_API_KEY` is set, `--instance` selects its site URL from a saved
@@ -145,6 +151,11 @@ the generated `workers.dev` address; do not use a dashboard path such as
 Login requests the official `microfeed-cli` public client with the fixed
 loopback callback. The callback port must be available, and browser approval
 must complete within five minutes.
+
+Login may succeed while API access is disabled. Before running a content
+command on a new instance, the site owner signs in to the admin dashboard,
+opens **API → API Settings**, and turns on **Enable API access**. If an agent is
+operating the CLI, it pauses and asks the owner to complete that browser step.
 
 ```console
 yarn microfeed login https://feed.example.com --instance production
@@ -575,6 +586,32 @@ With `--json`, API commands return one JSON object:
 }
 ```
 
+A `404` result adds a structured `recovery` object with a stable `code`, a
+documentation URL, and safe instructions for the owner or agent. It does not
+contain a credential or assume the dashboard uses the default `/admin/` path.
+
+```json
+{
+  "body": "404",
+  "headers": {
+    "content-type": "text/plain; charset=utf-8"
+  },
+  "ok": false,
+  "status": 404,
+  "recovery": {
+    "code": "api_access_or_resource_not_found",
+    "documentationUrl": "https://docs.microfeed.org/api/authentication/#enable-the-api",
+    "instructions": [
+      "New microfeed instances keep API access disabled by default.",
+      "The site owner should sign in to the admin dashboard, open API → API Settings, and turn on Enable API access.",
+      "If you are an AI agent, pause and ask the site owner to complete that browser step; do not request their dashboard password, API key, or OAuth token.",
+      "After API access is enabled, retry the same command. If it is already enabled, verify that the requested resource and /api/v1/ path exist."
+    ],
+    "message": "API access may be disabled, or the requested resource may not exist."
+  }
+}
+```
+
 Only safe response headers are included: `cache-control`, `content-length`,
 `content-type`, `etag`, `last-modified`, and `x-request-id`. Saved-instance
 commands also return one deterministic JSON object when `--json` is present.
@@ -586,7 +623,10 @@ non-success API responses set a nonzero exit status. Missing authentication is
 never an interactive token prompt; the error tells you to run `login` or select
 a saved instance. Content commands require API access to be enabled. Because a
 disabled API intentionally returns `404`, that status can mean either that the
-requested resource does not exist or that API access is disabled.
+requested resource does not exist or that API access is disabled. The CLI
+explains that new instances default to disabled, directs the owner to **API →
+API Settings → Enable API access**, tells an AI agent to pause for that browser
+step, and links to the [API setup guide](/api/authentication/#enable-the-api).
 
 ## Saved instances and credentials
 
