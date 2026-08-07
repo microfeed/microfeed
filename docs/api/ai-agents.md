@@ -27,7 +27,7 @@ Read https://www.microfeed.org/api/v1/llms-full.txt so I can ask you questions a
 ```
 
 For code that targets another microfeed instance, replace
-`https://www.microfeed.org` with that instance’s origin so the agent reads the
+`https://www.microfeed.org` with that site's URL so the agent reads the
 contract for the deployed version it will call.
 
 The dashboard’s **API Overview** page generates the exact prompt for the
@@ -44,7 +44,7 @@ payloads. The CLI obtains and refreshes OAuth credentials internally. Do not
 ask the agent to read its encrypted credential file or operating-system
 keychain.
 
-If `yarn microfeed login <origin>` is required, the agent may start it, but you
+If `yarn microfeed login <site-url>` is required, the agent may start it, but you
 must sign in and approve or deny permissions in the browser. The agent must
 pause for that step and must not click **Allow** on your behalf.
 
@@ -53,12 +53,13 @@ agent conversation. For CI, provide `MICROFEED_API_KEY` through the secret
 manager and instruct the agent to reference the variable without reading or
 printing its value.
 
-Before deleting content, have the agent report the selected instance profile
-and exact item ID. Approve the operation explicitly; the agent can then pass
+Before deleting content, have the agent report the selected saved-instance
+name and exact item ID. Approve the operation explicitly; the agent can then pass
 the same ID to `--confirm`. The CLI will not accept a generic yes flag.
 
-See [Manage content with the microfeed CLI](../cli/) for commands and
-credential behavior.
+See [Manage content with the microfeed CLI](../cli/) for the guided workflow
+and the canonical [`yarn microfeed` command reference](/microfeed-cli/) for
+every command, option, output contract, and safety rule.
 
 ## When public docs are off
 

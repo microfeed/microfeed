@@ -13,7 +13,7 @@ export function globalOptions(argv: string[]): {
       options.json = true;
     } else if (value === "--instance") {
       const instance = argv[index + 1];
-      if (!instance) throw new CliError("--instance requires a profile name.");
+      if (!instance) throw new CliError("--instance requires a saved instance name.");
       options.instance = instance;
       index += 1;
     } else {

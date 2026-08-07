@@ -10,32 +10,44 @@ import {
   rawApiCommand,
 } from "./commands.js";
 import {CliError} from "./errors.js";
+import {renderCliHelp} from "./help.js";
 
-export const HELP = `microfeed — manage content on a microfeed instance
+export const HELP = renderCliHelp();
 
-Usage:
-  microfeed login <origin> [--profile <name>]
-  microfeed logout [--instance <profile>]
-  microfeed instances list|use|remove [profile]
-  microfeed item list|get|create|update|delete ...
-  microfeed api <method> </api/v1/path> [--input <file|->]
-
-Global options:
-  --instance <profile>  Use a saved instance profile
-  --json                Write deterministic JSON output
-  --help                Show this help
-
-Credentials:
-  Browser login stores encrypted OAuth tokens. MICROFEED_API_KEY takes
-  precedence for CI and is never persisted. Set MICROFEED_ORIGIN when CI
-  does not have a saved instance profile.
-`;
+function requestedHelp(args: string[]): readonly string[] | undefined {
+  if (!args.some((argument) => argument === "--help" || argument === "-h")) {
+    return undefined;
+  }
+  const [command, subcommand] = args;
+  if (!command || command === "--help" || command === "-h") return [];
+  if (command === "instances" || command === "item") {
+    if (subcommand && subcommand !== "--help" && subcommand !== "-h") {
+      return [command, subcommand];
+    }
+  }
+  return [command];
+}
 
 export async function run(argv: string[]): Promise<void> {
   const {args, options} = globalOptions(argv);
   const [command, ...rest] = args;
-  if (!command || command === "help" || command === "--help" || command === "-h") {
+  if (!command) {
     process.stdout.write(HELP);
+    return;
+  }
+  if (command === "help") {
+    const topic = rest.filter((argument) =>
+      argument !== "--help" && argument !== "-h"
+    );
+    if (topic.length > 2 || topic.some((argument) => argument.startsWith("-"))) {
+      throw new CliError("Usage: yarn microfeed help [command [subcommand]]");
+    }
+    process.stdout.write(renderCliHelp(topic));
+    return;
+  }
+  const helpPath = requestedHelp(args);
+  if (helpPath) {
+    process.stdout.write(renderCliHelp(helpPath));
     return;
   }
   if (command === "login") return await loginCommand(rest, options);

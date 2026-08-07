@@ -33,7 +33,7 @@ beforeEach(async () => {
   directory = await mkdtemp(path.join(tmpdir(), "microfeed-cli-test-"));
   process.env.MICROFEED_CONFIG_DIR = directory;
   delete process.env.MICROFEED_API_KEY;
-  delete process.env.MICROFEED_ORIGIN;
+  delete process.env.MICROFEED_URL;
   delete process.env.MICROFEED_INSTANCE;
   key = null;
   setKeychainForTests(memoryKeychain);
@@ -44,7 +44,7 @@ afterEach(async () => {
   setKeychainForTests(undefined);
   delete process.env.MICROFEED_CONFIG_DIR;
   delete process.env.MICROFEED_API_KEY;
-  delete process.env.MICROFEED_ORIGIN;
+  delete process.env.MICROFEED_URL;
   delete process.env.MICROFEED_INSTANCE;
   await rm(directory, {recursive: true, force: true});
 });
@@ -149,7 +149,7 @@ describe("CLI credentials", () => {
 
   it("gives environment API keys precedence without persisting them", async () => {
     process.env.MICROFEED_API_KEY = "environment-secret";
-    process.env.MICROFEED_ORIGIN = "https://feed.example";
+    process.env.MICROFEED_URL = "https://feed.example";
     const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
       expect(new Headers(init?.headers).get("authorization"))
         .toBe("Bearer environment-secret");
@@ -169,7 +169,7 @@ describe("CLI credentials", () => {
 
   it("blocks caller-controlled credential and authority headers", async () => {
     process.env.MICROFEED_API_KEY = "environment-secret";
-    process.env.MICROFEED_ORIGIN = "https://feed.example";
+    process.env.MICROFEED_URL = "https://feed.example";
     for (const header of ["Authorization: other", "Cookie: session=x", "Host: attacker.example"]) {
       await expect(apiRequest("GET", "/api/v1/feed/", {json: false}, {
         headers: [header],
@@ -196,6 +196,6 @@ describe("CLI discovery", () => {
     }));
 
     await expect(discoverInstance("https://feed.example"))
-      .rejects.toThrow("must use the microfeed instance origin");
+      .rejects.toThrow("must use the same site URL");
   });
 });

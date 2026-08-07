@@ -1,15 +1,118 @@
-import {describe, expect, it} from "vitest";
+import {readFile} from "node:fs/promises";
 
-import {HELP} from "../../../packages/cli/src/index";
+import {afterEach, describe, expect, it, vi} from "vitest";
+
+import {globalOptions} from "../../../packages/cli/src/arguments";
+import {loginCommand} from "../../../packages/cli/src/commands";
+import {
+  CLI_HELP_TOPICS,
+  renderCliHelp,
+} from "../../../packages/cli/src/help";
+import {HELP, run} from "../../../packages/cli/src/index";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("microfeed CLI help", () => {
-  it("documents every agent-facing command and global option", () => {
-    expect(HELP).toContain("login <origin>");
-    expect(HELP).toContain("instances list|use|remove");
-    expect(HELP).toContain("item list|get|create|update|delete");
-    expect(HELP).toContain("api <method> </api/v1/path>");
-    expect(HELP).toContain("--instance <profile>");
+  it("defines user-facing inputs and points to guided command help", () => {
+    expect(HELP).toContain("login <site-url>");
+    expect(HELP).toContain("https://feed.example.com");
+    expect(HELP).toContain("<name>");
+    expect(HELP).toContain("Not a username or Wrangler profile");
+    expect(HELP).toContain("<item-id>");
+    expect(HELP).toContain("/api/v1/");
+    expect(HELP).toContain("--instance <name>");
     expect(HELP).toContain("--json");
     expect(HELP).toContain("MICROFEED_API_KEY");
+    expect(HELP).toContain("MICROFEED_URL");
+    expect(HELP).toContain("yarn microfeed item create --help");
+    expect(HELP).toContain("https://docs.microfeed.org/microfeed-cli/");
+    expect(HELP).not.toContain("<origin>");
+    expect(HELP).not.toContain("<profile>");
+  });
+
+  it("renders comprehensive help for every command and subcommand", () => {
+    for (const topic of CLI_HELP_TOPICS) {
+      const help = renderCliHelp(topic.path);
+      expect(help).toContain(topic.usage);
+      expect(help).toContain(topic.summary);
+      expect(help).toContain("-h, --help");
+      expect(help).toContain("Examples:");
+      expect(help).toContain("https://docs.microfeed.org/microfeed-cli/");
+      for (const {syntax} of topic.options) expect(help).toContain(syntax);
+      for (const example of topic.examples) expect(help).toContain(example);
+    }
+  });
+
+  it("supports -h, --help, and the help command without executing a command", async () => {
+    const write = vi.spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    for (const topic of CLI_HELP_TOPICS) {
+      for (const flag of ["-h", "--help"]) {
+        write.mockClear();
+        await run([...topic.path, flag]);
+        expect(write).toHaveBeenCalledOnce();
+        expect(write.mock.calls[0]?.[0]).toBe(renderCliHelp(topic.path));
+      }
+
+      write.mockClear();
+      await run(["help", ...topic.path]);
+      expect(write).toHaveBeenCalledOnce();
+      expect(write.mock.calls[0]?.[0]).toBe(renderCliHelp(topic.path));
+
+      write.mockClear();
+      await run(["help", ...topic.path, "--help"]);
+      expect(write).toHaveBeenCalledOnce();
+      expect(write.mock.calls[0]?.[0]).toBe(renderCliHelp(topic.path));
+    }
+  });
+
+  it("uses site URL and saved-instance vocabulary in runtime parsing", async () => {
+    expect(globalOptions([
+      "login",
+      "https://feed.example.com",
+      "--instance",
+      "production",
+      "--json",
+    ])).toEqual({
+      args: ["login", "https://feed.example.com"],
+      options: {instance: "production", json: true},
+    });
+    await expect(loginCommand([], {json: false})).rejects.toThrow(
+      "login <site-url> [--instance <name>]",
+    );
+    await expect(loginCommand([
+      "https://feed.example.com",
+      "--profile",
+      "production",
+    ], {json: false})).rejects.toThrow("Unknown option: --profile");
+  });
+
+  it("keeps every help topic and option discoverable in the canonical reference", async () => {
+    const reference = await readFile(
+      new URL("../../../docs/microfeed-cli.md", import.meta.url),
+      "utf8",
+    );
+
+    for (const topic of CLI_HELP_TOPICS) {
+      const command = topic.path.join(" ");
+      expect(reference).toContain(`## \`yarn microfeed ${command}\``);
+      for (const {syntax} of topic.options) {
+        const optionName = syntax.split(" ")[0]!;
+        expect(
+          reference,
+          `${command} does not document ${optionName}`,
+        ).toContain(`\`${optionName}`);
+      }
+    }
+  });
+
+  it("rejects unknown and overlong help topics", async () => {
+    expect(() => renderCliHelp(["item", "unknown"]))
+      .toThrow("Unknown help topic: item unknown");
+    await expect(run(["help", "item", "create", "extra"]))
+      .rejects.toThrow("Usage: yarn microfeed help");
   });
 });

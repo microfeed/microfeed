@@ -18,7 +18,7 @@ for the feed endpoint. Choose a key and run the example from the dashboard.
 
 ## Call the API from code
 
-Use the instance origin, `/api/v1/` base path, and Bearer authentication:
+Use the microfeed site URL, `/api/v1/` base path, and Bearer authentication:
 
 ```js
 const response = await fetch("https://feed.example.com/api/v1/feed/?limit=3", {

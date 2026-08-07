@@ -22,7 +22,7 @@ interface EncryptedBundle {
   version: 1;
 }
 
-export interface InstanceProfile {
+export interface SavedInstance {
   authorizationEndpoint: string;
   encryptedTokens: EncryptedBundle;
   instanceId: string;
@@ -33,7 +33,7 @@ export interface InstanceProfile {
 
 export interface InstanceStore {
   current?: string;
-  instances: Record<string, InstanceProfile>;
+  instances: Record<string, SavedInstance>;
   version: 1;
 }
 
@@ -79,19 +79,19 @@ export async function writeStore(store: InstanceStore): Promise<void> {
   await rename(temporary, filename);
 }
 
-function additionalData(profile: string, origin: string): Buffer {
-  return Buffer.from(`microfeed-cli\0${profile}\0${origin}`, "utf8");
+function additionalData(instanceName: string, siteUrl: string): Buffer {
+  return Buffer.from(`microfeed-cli\0${instanceName}\0${siteUrl}`, "utf8");
 }
 
 export async function encryptTokens(
-  profile: string,
-  origin: string,
+  instanceName: string,
+  siteUrl: string,
   tokens: TokenBundle,
 ): Promise<EncryptedBundle> {
   const key = await encryptionKey(true);
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
-  cipher.setAAD(additionalData(profile, origin));
+  cipher.setAAD(additionalData(instanceName, siteUrl));
   const ciphertext = Buffer.concat([
     cipher.update(JSON.stringify(tokens), "utf8"),
     cipher.final(),
@@ -106,8 +106,8 @@ export async function encryptTokens(
 }
 
 export async function decryptTokens(
-  profile: string,
-  instance: InstanceProfile,
+  instanceName: string,
+  instance: SavedInstance,
 ): Promise<TokenBundle> {
   const key = await encryptionKey(false);
   try {
@@ -117,7 +117,7 @@ export async function decryptTokens(
       key,
       Buffer.from(encrypted.iv, "base64"),
     );
-    decipher.setAAD(additionalData(profile, instance.origin));
+    decipher.setAAD(additionalData(instanceName, instance.origin));
     decipher.setAuthTag(Buffer.from(encrypted.tag, "base64"));
     const plaintext = Buffer.concat([
       decipher.update(Buffer.from(encrypted.ciphertext, "base64")),
@@ -126,7 +126,7 @@ export async function decryptTokens(
     return JSON.parse(plaintext) as TokenBundle;
   } catch {
     throw new CliError(
-      `Credentials for instance “${profile}” could not be decrypted. Log in again.`,
+      `Credentials for saved instance “${instanceName}” could not be decrypted. Log in again.`,
     );
   }
 }

@@ -7,7 +7,7 @@ import {refreshTokens} from "./oauth.js";
 import {
   decryptTokens,
   encryptTokens,
-  type InstanceProfile,
+  type SavedInstance,
   readStore,
   type TokenBundle,
   writeStore,
@@ -42,14 +42,14 @@ export async function readInput(filename: string): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function selectedProfile(
+function selectedInstance(
   store: Awaited<ReturnType<typeof readStore>>,
   requested?: string,
-): {instance: InstanceProfile; name: string} {
+): {instance: SavedInstance; name: string} {
   const name = requested ?? process.env.MICROFEED_INSTANCE?.trim() ?? store.current;
   if (!name || !store.instances[name]) {
     throw new CliError(
-      "No microfeed instance is selected. Run `yarn microfeed login <origin>` or choose one with `yarn microfeed instances use <profile>`.",
+      "No microfeed instance is selected. Run `yarn microfeed login <site-url>` or choose one with `yarn microfeed instances use <name>`.",
     );
   }
   return {instance: store.instances[name], name};
@@ -63,24 +63,24 @@ async function credentials(options: GlobalOptions): Promise<{
   const environmentToken = process.env.MICROFEED_API_KEY?.trim();
   if (environmentToken) {
     const selected = options.instance || process.env.MICROFEED_INSTANCE || store.current;
-    const originFromEnvironment = process.env.MICROFEED_ORIGIN?.trim();
-    const origin = originFromEnvironment
-      ? normalizeOrigin(originFromEnvironment)
+    const siteUrlFromEnvironment = process.env.MICROFEED_URL?.trim();
+    const origin = siteUrlFromEnvironment
+      ? normalizeOrigin(siteUrlFromEnvironment)
       : selected && store.instances[selected]?.origin;
     if (!origin) {
       throw new CliError(
-        "MICROFEED_API_KEY is set, but no instance origin is available. Set MICROFEED_ORIGIN or select a saved profile.",
+        "MICROFEED_API_KEY is set, but no site URL is available. Set MICROFEED_URL or select a saved instance.",
       );
     }
     return {origin, token: environmentToken};
   }
 
-  const {instance, name} = selectedProfile(store, options.instance);
+  const {instance, name} = selectedInstance(store, options.instance);
   let bundle = await decryptTokens(name, instance);
   if (bundle.expiresAt <= Date.now() + 60_000) {
     if (!bundle.refreshToken) {
       throw new CliError(
-        `Authentication for “${name}” expired. Run \`yarn microfeed login ${instance.origin} --profile ${name}\`.`,
+        `Authentication for “${name}” expired. Run \`yarn microfeed login ${instance.origin} --instance ${name}\`.`,
       );
     }
     const priorRefresh = bundle.refreshToken;
@@ -88,7 +88,7 @@ async function credentials(options: GlobalOptions): Promise<{
       bundle = await refreshTokens(instance.tokenEndpoint, priorRefresh);
     } catch {
       throw new CliError(
-        `Authentication for “${name}” could not be refreshed. Run \`yarn microfeed login ${instance.origin} --profile ${name}\`.`,
+        `Authentication for “${name}” could not be refreshed. Run \`yarn microfeed login ${instance.origin} --instance ${name}\`.`,
       );
     }
     if (!bundle.refreshToken) bundle.refreshToken = priorRefresh;
@@ -122,7 +122,7 @@ export async function apiRequest(
   const {origin, token} = await credentials(options);
   const target = new URL(relativePath, origin);
   if (target.origin !== origin || !target.pathname.startsWith(API_PATH_PREFIX)) {
-    throw new CliError("The API path cannot change the instance origin.");
+    throw new CliError("The API path cannot change the selected site URL.");
   }
   const headers = new Headers({
     accept: "application/json",
@@ -179,10 +179,10 @@ export function writeApiResponse(response: ApiResponse, json: boolean): void {
 }
 
 export async function currentTokenBundle(
-  profile: string,
-): Promise<{bundle: TokenBundle; instance: InstanceProfile}> {
+  instanceName: string,
+): Promise<{bundle: TokenBundle; instance: SavedInstance}> {
   const store = await readStore();
-  const instance = store.instances[profile];
-  if (!instance) throw new CliError(`Unknown instance profile: ${profile}`);
-  return {bundle: await decryptTokens(profile, instance), instance};
+  const instance = store.instances[instanceName];
+  if (!instance) throw new CliError(`Unknown saved instance: ${instanceName}`);
+  return {bundle: await decryptTokens(instanceName, instance), instance};
 }

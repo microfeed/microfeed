@@ -5,6 +5,8 @@ description: Run the local or published @microfeed/cli, authorize an instance in
 
 The `@microfeed/cli` package gives people and coding agents a consistent way to
 manage one or more microfeed instances without handling OAuth tokens directly.
+For every command, option, output contract, and safety rule, use the canonical
+[`yarn microfeed` command reference](/microfeed-cli/).
 
 ## Choose an invocation
 
@@ -36,20 +38,25 @@ A global installation is optional and is not required for these workflows.
 ## Log in to an instance
 
 ```console
-yarn microfeed login https://feed.example.com --profile production
+yarn microfeed login https://feed.example.com --instance production
 ```
+
+The first argument is the **site URL**: the root URL that opens the public
+microfeed site. It may use a custom domain or the generated `workers.dev`
+address, but it must not include a dashboard path, query, or fragment.
+`production` is a local **instance name**, not a username or Wrangler profile.
 
 The CLI reads the unchanged `/.well-known/microfeed.json` identity document,
 then loads standard OAuth authorization-server metadata from the same HTTPS
-origin. It rejects a cross-origin issuer or token endpoint. If the public origin
-changes, log in again.
+site URL. It rejects an issuer or token endpoint hosted at another site. If the
+public site URL changes, log in again.
 
 The command opens a browser for administrator login and permission approval.
 The terminal or coding agent cannot approve the browser prompt for you. The
 callback uses `127.0.0.1:8977`; if that port is unavailable, close the process
 using it and retry.
 
-Manage saved profiles with:
+Manage saved instances with:
 
 ```console
 yarn microfeed instances list
@@ -57,8 +64,8 @@ yarn microfeed instances use production
 yarn microfeed logout --instance production
 ```
 
-Logout revokes the remote refresh-token family before removing the local
-profile.
+Logout revokes the remote refresh-token family before removing the saved
+instance locally.
 
 ## Manage items
 
@@ -87,7 +94,7 @@ yarn microfeed item delete <item-id> --instance production --confirm <item-id> -
 The raw command accepts only relative `/api/v1/…` paths:
 
 ```console
-yarn microfeed api GET /api/v1/feed/?limit=3 --instance production --json
+yarn microfeed api GET "/api/v1/feed/?limit=3" --instance production --json
 yarn microfeed api POST /api/v1/items/ --instance production --input item.json --json
 ```
 
@@ -100,11 +107,11 @@ safe response headers, and body—but never a credential.
 ## Use an API key in CI
 
 Set `MICROFEED_API_KEY` in the CI secret manager and identify the target with a
-saved profile or `MICROFEED_ORIGIN`. The environment credential takes
+saved instance or `MICROFEED_URL`. The environment credential takes
 precedence and is never persisted:
 
 ```console
-MICROFEED_ORIGIN=https://feed.example.com yarn microfeed item list --json
+MICROFEED_URL=https://feed.example.com yarn microfeed item list --json
 ```
 
 Do not put the key directly in the command, configuration file, logs, or agent

@@ -8,6 +8,7 @@ const docs = defineCollection({
     pattern: [
       "index.mdx",
       "manage-cli.md",
+      "microfeed-cli.md",
       "start-here/**/*.md",
       "dashboard/**/*.{md,mdx}",
       "manage/**/*.md",

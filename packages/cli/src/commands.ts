@@ -27,25 +27,25 @@ const ITEM_VALUE_FLAGS = new Set([
   "url",
 ]);
 
-function profileName(origin: string): string {
-  return new URL(origin).hostname.toLowerCase().replace(/[^a-z0-9.-]+/gu, "-");
+function instanceName(siteUrl: string): string {
+  return new URL(siteUrl).hostname.toLowerCase().replace(/[^a-z0-9.-]+/gu, "-");
 }
 
-function validateProfile(name: string): string {
+function validateInstanceName(name: string): string {
   if (!/^[a-z0-9][a-z0-9._-]{0,63}$/iu.test(name)) {
-    throw new CliError("Profile names use 1–64 letters, numbers, dots, underscores, or hyphens.");
+    throw new CliError("Instance names use 1–64 letters, numbers, dots, underscores, or hyphens.");
   }
   return name;
 }
 
 export async function loginCommand(args: string[], globals: GlobalOptions): Promise<void> {
-  const parsed = parseOptions(args, new Set(["profile"]));
+  const parsed = parseOptions(args, new Set());
   if (parsed.positionals.length !== 1) {
-    throw new CliError("Usage: microfeed login <origin> [--profile <name>]");
+    throw new CliError("Usage: yarn microfeed login <site-url> [--instance <name>]");
   }
   const discovered = await discoverInstance(parsed.positionals[0]!);
-  const name = validateProfile(
-    stringFlag(parsed, "profile") ?? profileName(discovered.origin),
+  const name = validateInstanceName(
+    globals.instance ?? instanceName(discovered.origin),
   );
   const tokens = await browserLogin(discovered.metadata);
   const store = await readStore();
@@ -59,16 +59,16 @@ export async function loginCommand(args: string[], globals: GlobalOptions): Prom
   };
   store.current = name;
   await writeStore(store);
-  const result = {instanceId: discovered.identity.instanceId, origin: discovered.origin, profile: name};
+  const result = {instanceId: discovered.identity.instanceId, name, siteUrl: discovered.origin};
   process.stdout.write(globals.json
     ? `${JSON.stringify(result)}\n`
-    : `Logged in to ${discovered.origin} as profile “${name}”.\n`);
+    : `Saved instance “${name}” for ${discovered.origin}.\n`);
 }
 
 export async function logoutCommand(globals: GlobalOptions): Promise<void> {
   const store = await readStore();
   const name = globals.instance ?? store.current;
-  if (!name || !store.instances[name]) throw new CliError("No matching instance profile is saved.");
+  if (!name || !store.instances[name]) throw new CliError("No matching saved instance was found.");
   const {bundle, instance} = await currentTokenBundle(name);
   if (bundle.refreshToken) await revokeToken(instance.issuer, bundle.refreshToken, "refresh_token");
   else await revokeToken(instance.issuer, bundle.accessToken, "access_token");
@@ -77,40 +77,40 @@ export async function logoutCommand(globals: GlobalOptions): Promise<void> {
   await writeStore(store);
   process.stdout.write(globals.json
     ? `${JSON.stringify({loggedOut: name})}\n`
-    : `Logged out and removed profile “${name}”.\n`);
+    : `Logged out and removed saved instance “${name}”.\n`);
 }
 
 export async function instancesCommand(args: string[], globals: GlobalOptions): Promise<void> {
   const [action, name, ...rest] = args;
   if (rest.length || !["list", "use", "remove"].includes(action ?? "")) {
-    throw new CliError("Usage: microfeed instances list|use|remove [profile]");
+    throw new CliError("Usage: yarn microfeed instances list|use|remove [name]");
   }
   const store = await readStore();
   if (action === "list") {
-    const instances = Object.entries(store.instances).map(([profile, instance]) => ({
-      current: store.current === profile,
+    const instances = Object.entries(store.instances).map(([name, instance]) => ({
+      current: store.current === name,
       instanceId: instance.instanceId,
-      origin: instance.origin,
-      profile,
+      name,
+      siteUrl: instance.origin,
     }));
     if (globals.json) process.stdout.write(`${JSON.stringify({instances})}\n`);
     else if (!instances.length) process.stdout.write("No saved microfeed instances.\n");
     else for (const instance of instances) {
-      process.stdout.write(`${instance.current ? "*" : " "} ${instance.profile}\t${instance.origin}\n`);
+      process.stdout.write(`${instance.current ? "*" : " "} ${instance.name}\t${instance.siteUrl}\n`);
     }
     return;
   }
-  if (!name || !store.instances[name]) throw new CliError(`Unknown instance profile: ${name ?? ""}`);
+  if (!name || !store.instances[name]) throw new CliError(`Unknown saved instance: ${name ?? ""}`);
   if (action === "use") {
     store.current = name;
     await writeStore(store);
-    process.stdout.write(globals.json ? `${JSON.stringify({current: name})}\n` : `Using profile “${name}”.\n`);
+    process.stdout.write(globals.json ? `${JSON.stringify({current: name})}\n` : `Using saved instance “${name}”.\n`);
     return;
   }
   delete store.instances[name];
   if (store.current === name) store.current = Object.keys(store.instances).sort()[0];
   await writeStore(store);
-  process.stdout.write(globals.json ? `${JSON.stringify({removed: name})}\n` : `Removed profile “${name}”.\n`);
+  process.stdout.write(globals.json ? `${JSON.stringify({removed: name})}\n` : `Removed saved instance “${name}”.\n`);
 }
 
 function itemPayload(parsed: ReturnType<typeof parseOptions>): Record<string, unknown> {
@@ -173,7 +173,7 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
     return;
   }
   if (action === "get") {
-    if (rest.length !== 1) throw new CliError("Usage: microfeed item get <item-id>");
+    if (rest.length !== 1) throw new CliError("Usage: yarn microfeed item get <item-id>");
     writeApiResponse(await apiRequest("GET", `/api/v1/items/${encodeURIComponent(rest[0]!)}/`, globals), globals.json);
     return;
   }
@@ -185,25 +185,25 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
   }
   if (action === "update") {
     const parsed = parseOptions(rest, ITEM_VALUE_FLAGS);
-    if (parsed.positionals.length !== 1) throw new CliError("Usage: microfeed item update <item-id> [flags]");
+    if (parsed.positionals.length !== 1) throw new CliError("Usage: yarn microfeed item update <item-id> [flags]");
     writeApiResponse(await apiRequest("PUT", `/api/v1/items/${encodeURIComponent(parsed.positionals[0]!)}/`, globals, {body: await itemBody(parsed)}), globals.json);
     return;
   }
   if (action === "delete") {
     const parsed = parseOptions(rest, new Set(["confirm"]));
-    if (parsed.positionals.length !== 1) throw new CliError("Usage: microfeed item delete <item-id> [--confirm <item-id>]");
+    if (parsed.positionals.length !== 1) throw new CliError("Usage: yarn microfeed item delete <item-id> [--confirm <item-id>]");
     const itemId = parsed.positionals[0]!;
     await confirmDelete(itemId, stringFlag(parsed, "confirm"));
     writeApiResponse(await apiRequest("DELETE", `/api/v1/items/${encodeURIComponent(itemId)}/`, globals), globals.json);
     return;
   }
-  throw new CliError("Usage: microfeed item list|get|create|update|delete");
+  throw new CliError("Usage: yarn microfeed item list|get|create|update|delete");
 }
 
 export async function rawApiCommand(args: string[], globals: GlobalOptions): Promise<void> {
   const parsed = parseOptions(args, new Set(["header", "input"]), new Set(), new Set(["header"]));
   if (parsed.positionals.length !== 2) {
-    throw new CliError("Usage: microfeed api <method> </api/v1/path> [--input <file|->] [--header <name:value>]");
+    throw new CliError("Usage: yarn microfeed api <method> </api/v1/path> [--input <file|->] [--header <name:value>]");
   }
   const method = parsed.positionals[0]!;
   const path = parsed.positionals[1]!;

@@ -88,6 +88,7 @@ export default defineConfig({
           label: "Reference",
           items: [
             { label: "yarn manage command reference", link: "/manage-cli/" },
+            { label: "yarn microfeed command reference", link: "/microfeed-cli/" },
             { label: "Glossary", link: "/reference/glossary/" },
           ],
         },
@@ -104,8 +105,8 @@ export default defineConfig({
           description:
             "microfeed is an open-source, self-hosted CMS that publishes one collection as a website, RSS feed, and JSON feed from Cloudflare.",
           details:
-            "Use the Installation guides for deployment workflows. Use the yarn manage reference for exact command behavior and safety rules.",
-          promote: ["index", "start-here/**", "manage-cli"],
+            "Use the Installation guides for deployment workflows. Use the yarn manage reference for deployment commands and the yarn microfeed reference for content-management commands and safety rules.",
+          promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"],
           demote: ["contribute/**"],
           customSets: [
             {
@@ -113,6 +114,12 @@ export default defineConfig({
               description:
                 "The practical deployment, maintenance, troubleshooting, and command reference for a microfeed instance.",
               paths: ["start-here/**", "manage/**", "manage-cli"],
+            },
+            {
+              label: "Manage microfeed content",
+              description:
+                "The API, OAuth, agent workflow, and complete content-management command reference for a microfeed instance.",
+              paths: ["api/**", "microfeed-cli"],
             },
           ],
           optionalLinks: [

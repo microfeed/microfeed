@@ -4,6 +4,7 @@ import path from "node:path";
 import {spawnSync} from "node:child_process";
 
 import {x as extractTar} from "tar";
+import {CLI_HELP_TOPICS, renderCliHelp} from "../packages/cli/src/help";
 import {HELP} from "../packages/cli/src/index";
 
 function run(command: string, args: string[], cwd = process.cwd()): string {
@@ -48,6 +49,19 @@ try {
       `Workspace and packed CLI help output diverged (${HELP.length} !== ${packedHelp.length}).`,
     );
   }
+  for (const topic of CLI_HELP_TOPICS) {
+    const expected = renderCliHelp(topic.path);
+    const actual = run(process.execPath, [
+      path.join(temporary, "package", "dist", "index.js"),
+      ...topic.path,
+      "--help",
+    ]);
+    if (expected !== actual) {
+      throw new Error(
+        `Packed CLI help diverged for ${topic.path.join(" ")} (${expected.length} !== ${actual.length}).`,
+      );
+    }
+  }
 
   const project = path.join(temporary, "consumer");
   await mkdir(project);
@@ -60,6 +74,15 @@ try {
   const projectHelp = run("yarn", ["microfeed", "--help"], project);
   if (HELP !== projectHelp) {
     throw new Error("A project-local @microfeed/cli behaves differently.");
+  }
+  const expectedCreateHelp = renderCliHelp(["item", "create"]);
+  const projectCreateHelp = run(
+    "yarn",
+    ["microfeed", "item", "create", "--help"],
+    project,
+  );
+  if (expectedCreateHelp !== projectCreateHelp) {
+    throw new Error("Project-local item create help behaves differently.");
   }
 
   const dlxHelp = run("yarn", [

@@ -38,16 +38,16 @@ sent to content API routes.
 ## Documentation formats on each instance
 
 When **API access** and **Publish API docs** are both enabled, replace
-`<site-origin>` with that instance’s public origin. The URLs below link to the
+`<site-url>` with that microfeed site's public URL. The URLs below link to the
 always-public microfeed.org demo:
 
 | Resource | URL |
 | --- | --- |
-| Interactive API docs | [`<site-origin>/api/v1/`](https://www.microfeed.org/api/v1/) |
-| OpenAPI JSON | [`<site-origin>/api/v1/openapi.json`](https://www.microfeed.org/api/v1/openapi.json) |
-| OpenAPI YAML | [`<site-origin>/api/v1/openapi.yaml`](https://www.microfeed.org/api/v1/openapi.yaml) |
-| Compact agent reference | [`<site-origin>/api/v1/llms.txt`](https://www.microfeed.org/api/v1/llms.txt) |
-| Self-contained agent reference | [`<site-origin>/api/v1/llms-full.txt`](https://www.microfeed.org/api/v1/llms-full.txt) |
+| Interactive API docs | [`<site-url>/api/v1/`](https://www.microfeed.org/api/v1/) |
+| OpenAPI JSON | [`<site-url>/api/v1/openapi.json`](https://www.microfeed.org/api/v1/openapi.json) |
+| OpenAPI YAML | [`<site-url>/api/v1/openapi.yaml`](https://www.microfeed.org/api/v1/openapi.yaml) |
+| Compact agent reference | [`<site-url>/api/v1/llms.txt`](https://www.microfeed.org/api/v1/llms.txt) |
+| Self-contained agent reference | [`<site-url>/api/v1/llms-full.txt`](https://www.microfeed.org/api/v1/llms-full.txt) |
 
 Public docs do not reveal API keys. The interactive public page describes the
 contract but does not persist authentication. Older `/json/openapi.html` and

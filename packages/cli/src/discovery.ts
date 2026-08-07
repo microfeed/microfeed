@@ -18,14 +18,14 @@ export function normalizeOrigin(value: string): string {
   try {
     url = new URL(value);
   } catch {
-    throw new CliError("Provide a complete microfeed origin, such as https://feed.example.");
+    throw new CliError("Provide a complete microfeed site URL, such as https://feed.example.com.");
   }
   const loopback = url.hostname === "127.0.0.1" || url.hostname === "localhost";
   if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
     throw new CliError("microfeed login requires HTTPS, except for local loopback instances.");
   }
   if (url.username || url.password || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) {
-    throw new CliError("The instance must be an origin without a path, query, credentials, or fragment.");
+    throw new CliError("The site URL must not contain a path, query, credentials, or fragment.");
   }
   return url.origin;
 }
@@ -40,7 +40,7 @@ async function sameOriginJson<T>(url: URL, origin: string): Promise<T> {
   }
   if (!response.ok) throw new CliError(`The instance did not provide ${url.pathname} (${response.status}).`);
   if (new URL(response.url).origin !== origin) {
-    throw new CliError("The instance returned discovery data from a different origin.");
+    throw new CliError("The instance returned discovery data from a different site.");
   }
   return await response.json() as T;
 }
@@ -68,7 +68,7 @@ export async function discoverInstance(originInput: string): Promise<{
   if ([issuer, authorizationEndpoint, tokenEndpoint].some((url) =>
     url.origin !== origin
   )) {
-    throw new CliError("The OAuth issuer and endpoints must use the microfeed instance origin.");
+    throw new CliError("The OAuth issuer and endpoints must use the same site URL.");
   }
   if (!metadata.code_challenge_methods_supported?.includes("S256")) {
     throw new CliError("This instance does not advertise mandatory S256 PKCE.");
