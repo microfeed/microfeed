@@ -12,6 +12,7 @@ import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {buildItemPaginationUrl} from "@/shared/ItemPagination";
 import {resolveEffectiveFavicon} from "@/shared/Favicon";
+import {resolveBuiltInTemplateVariables} from "@/shared/TemplateVariables";
 
 export default class FeedPublicJsonBuilder {
   [member: string]: any;
@@ -174,7 +175,9 @@ export default class FeedPublicJsonBuilder {
       (microfeedExtra as any)['itunes:title'] = channel['itunes:title'];
     }
     if (channel['copyright']) {
-      (microfeedExtra as any)['copyright'] = channel['copyright'];
+      (microfeedExtra as any)['copyright'] = resolveBuiltInTemplateVariables(
+        channel['copyright'],
+      );
     }
     if (channel['itunes:title']) {
       (microfeedExtra as any)['itunes:title'] = channel['itunes:title'];

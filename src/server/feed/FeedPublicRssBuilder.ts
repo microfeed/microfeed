@@ -3,6 +3,7 @@ import {PUBLIC_URLS, secondsToHHMMSS} from "@/shared/StringUtils";
 import {msToUtcString} from "@/shared/TimeUtils";
 import {OUR_BRAND} from "@/shared/Constants";
 import {buildItemPaginationUrl} from "@/shared/ItemPagination";
+import {resolveBuiltInTemplateVariables} from "@/shared/TemplateVariables";
 
 export default class FeedPublicRssBuilder {
   [member: string]: any;
@@ -168,7 +169,9 @@ export default class FeedPublicRssBuilder {
       };
     }
     if (_microfeed.copyright && _microfeed.copyright.trim().length > 0) {
-      (channelRss as any).copyright = _microfeed.copyright.trim();
+      (channelRss as any).copyright = resolveBuiltInTemplateVariables(
+        _microfeed.copyright,
+      ).trim();
     }
     if (_microfeed['itunes:email'] && _microfeed['itunes:email'].trim().length > 0) {
       (channelRss as any)['itunes:owner'] = {
