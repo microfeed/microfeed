@@ -36,8 +36,7 @@ current UTC year. In 2026, the example publishes as
 `© 2026 Example Publisher`. The value changes at midnight UTC on January 1;
 the existing public cache can retain the previous year for about five minutes.
 
-Only `{{current_year}}` is supported in the Copyright field. Other expressions,
-including feed fields such as `{{_microfeed.base_url}}`, remain unchanged.
+Only `{{current_year}}` is supported in the Copyright field.
 Existing channels with a fixed year are not changed automatically. Replace the
 year with `{{current_year}}` once if you want that channel to update itself in
 future years.
