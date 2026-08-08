@@ -26,14 +26,52 @@ hostname.
 ## Built-in login
 
 Built-in login stores an administrator email and password verifier in the
-microfeed database. If you are signed in and know the current password, use
-**Account settings** for routine email or password changes. From a connected
-repository clone, use `yarn manage auth` for initial setup, forgotten-password
-recovery, dashboard-path changes, or disabling the built-in login. Always
-include an action:
+microfeed database.
+
+### Enable built-in login
+
+On the computer where you installed microfeed, open the microfeed project
+folder in a terminal. If you do not know the saved name for your site, list the
+available sites first:
 
 ```console
-yarn manage auth setup
+yarn manage instances
+```
+
+Then run this command, replacing `<instance-name>` with the name shown above:
+
+```console
+yarn manage auth setup --instance <instance-name>
+```
+
+Check the site and dashboard shown by the command, then follow its prompts. For
+a deployed site, it opens or prints a private, one-time page where you create
+the administrator password.
+
+The setup command automatically redeploys microfeed when enabling built-in
+login requires a configuration change. If built-in login is already enabled,
+it skips the redeploy. You do not need to run `yarn manage deploy` separately.
+After setup, verify the result:
+
+```console
+yarn manage status --instance <instance-name>
+```
+
+You can also ask an AI coding agent that has access to your microfeed project:
+
+> Enable built-in login for my microfeed site and verify it. If more than one
+> site is saved, ask me which one.
+
+The agent can run the setup command and any required redeploy. You must complete
+Cloudflare browser authorization and create the password in the private browser
+page yourself. Never paste the password or private page URL into a conversation.
+
+If you are signed in and know the current password, use **Account settings**
+for routine email or password changes. From a connected repository clone, use
+`yarn manage auth` for forgotten-password recovery, dashboard-path changes, or
+disabling the built-in login. Always include an action:
+
+```console
 yarn manage auth reset-password
 yarn manage auth change-email
 yarn manage auth change-path

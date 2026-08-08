@@ -96,6 +96,10 @@ describe("App access", () => {
     }));
     expect(output).toContain("Cloudflare Access");
     expect(output).toContain("managed externally");
+    expect(output.match(/Learn how to enable the built-in login\./gu)).toHaveLength(2);
+    expect(output).toContain(
+      'href="https://docs.microfeed.org/manage/domains-and-access/#built-in-login"',
+    );
     expect(output).not.toContain("Change password");
   });
 

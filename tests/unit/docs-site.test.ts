@@ -235,6 +235,16 @@ describe("documentation site", () => {
       path.join(docsRoot, "manage/domains-and-access.md"),
       "utf8",
     );
+    expect(authenticationGuide).toContain("### Enable built-in login");
+    expect(authenticationGuide).toContain(
+      "yarn manage auth setup --instance <instance-name>",
+    );
+    expect(authenticationGuide).toContain(
+      "You do not need to run `yarn manage deploy` separately.",
+    );
+    expect(authenticationGuide).toContain(
+      "You can also ask an AI coding agent that has access to your microfeed project",
+    );
     expect(authenticationGuide).toContain("## Change your built-in login");
     expect(authenticationGuide).toContain(
       "select **Account settings**. The **Login & identity** section",

@@ -57,6 +57,22 @@ interface Confirmation {
 
 type CredentialDialog = "email" | "password";
 
+const BUILT_IN_LOGIN_GUIDE_URL =
+  "https://docs.microfeed.org/manage/domains-and-access/#built-in-login";
+
+function BuiltInLoginGuideLink() {
+  return (
+    <a
+      className="font-medium underline underline-offset-4"
+      href={BUILT_IN_LOGIN_GUIDE_URL}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      Learn how to enable the built-in login.
+    </a>
+  );
+}
+
 async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -292,7 +308,7 @@ export default function AccountSettingsApp(props: Props) {
                   <p className="text-sm text-muted-foreground">Passkeys are tied to <strong className="text-foreground">{props.hostname}</strong>. If the site address changes, use your password to recover access and add a new passkey.</p>
                 </CardFooter>
               </>
-            ) : <p className="p-6 text-sm text-muted-foreground">Passkeys require the built-in login. This dashboard uses Cloudflare Access only.</p>}
+            ) : <p className="p-6 text-sm text-muted-foreground">Passkeys require the built-in login. This dashboard uses Cloudflare Access only. <BuiltInLoginGuideLink /></p>}
           </CardContent>
         </SectionCard>
       </section>
@@ -323,7 +339,7 @@ export default function AccountSettingsApp(props: Props) {
                 })}</ul>
                 {application.connections.length === 1 && <Button className="mt-4" onClick={() => void revokeApplication(application.clientId, application.name)} size="sm" type="button" variant="destructive">Revoke all connections</Button>}
               </div>
-            ))}</div> : <p className="p-6 text-sm text-muted-foreground">No applications are authorized. Connect with <code>microfeed login</code> to add microfeed CLI.</p> : <p className="p-6 text-sm text-muted-foreground">App access requires the built-in login.</p>}
+            ))}</div> : <p className="p-6 text-sm text-muted-foreground">No applications are authorized. Connect with <code>microfeed login</code> to add microfeed CLI.</p> : <p className="p-6 text-sm text-muted-foreground">App access requires the built-in login. <BuiltInLoginGuideLink /></p>}
           </CardContent>
         </SectionCard>
       </section>
