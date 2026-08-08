@@ -134,6 +134,11 @@ describe("generated API reference", () => {
     expect(apiChannelInputSchema.safeParse({
       home_page_url: "https://example.com/",
     }).success).toBe(true);
+    expect(apiChannelInputSchema.safeParse({
+      _microfeed: {
+        copyright: "© {{current_year}} Example Publisher",
+      },
+    }).success).toBe(true);
     expect(apiItemInputSchema.safeParse({
       attachments: [{
         category: "audio",
@@ -155,5 +160,12 @@ describe("generated API reference", () => {
       }],
       image: "https://example.com/cover.png",
     }).success).toBe(true);
+  });
+
+  it("documents resolved current-year copyright output", () => {
+    const specification = JSON.stringify(OPENAPI_DOCUMENT);
+    expect(specification).toContain("{{current_year}}");
+    expect(specification).toContain("current UTC year");
+    expect(specification).toContain("Rendered channel copyright");
   });
 });

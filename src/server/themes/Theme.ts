@@ -7,6 +7,7 @@ import DEFAULT_RSS_STYLESHEET from "./defaults/rss_stylesheet.html?raw";
 import DEFAULT_WEB_FEED from "./defaults/web_feed.html?raw";
 import DEFAULT_WEB_ITEM from "./defaults/web_item.html?raw";
 import Mustache from "mustache";
+import {getBuiltInTemplateVariables} from "@/shared/TemplateVariables";
 
 export default class Theme {
   [member: string]: any;
@@ -14,6 +15,7 @@ export default class Theme {
   constructor(jsonData: any, settings: any = null, themeName: string | null = null) {
     this.jsonData = jsonData;
     this.settings = settings;
+    this.templateVariables = getBuiltInTemplateVariables();
 
     this.theme = 'custom';
     if (!themeName) {
@@ -35,9 +37,17 @@ export default class Theme {
     return this.theme;
   }
 
+  renderContext(extra: Record<string, unknown> = {}) {
+    return {
+      ...this.jsonData,
+      ...this.templateVariables,
+      ...extra,
+    };
+  }
+
   getWebHeader() {
     const tmpl = this.getWebHeaderTmpl();
-    const html = Mustache.render(tmpl, {...this.jsonData,});
+    const html = Mustache.render(tmpl, this.renderContext());
     return {html};
   }
 
@@ -54,7 +64,7 @@ export default class Theme {
 
   getWebBodyEnd() {
     const tmpl = this.getWebBodyEndTmpl();
-    const html = Mustache.render(tmpl, {...this.jsonData,});
+    const html = Mustache.render(tmpl, this.renderContext());
     return {html};
   }
 
@@ -71,7 +81,7 @@ export default class Theme {
 
   getWebBodyStart() {
     const tmpl = this.getWebBodyStartTmpl();
-    const html = Mustache.render(tmpl, {...this.jsonData,});
+    const html = Mustache.render(tmpl, this.renderContext());
     return {html};
   }
 
@@ -94,7 +104,7 @@ export default class Theme {
 
   getRssStylesheet() {
     const tmpl = this.getRssStylesheetTmpl();
-    const stylesheet = Mustache.render(tmpl, {});
+    const stylesheet = Mustache.render(tmpl, this.renderContext());
     return {
       stylesheet,
     };
@@ -102,9 +112,7 @@ export default class Theme {
 
   getWebFeed() {
     const tmpl = this.getWebFeedTmpl();
-    const html = Mustache.render(tmpl, {
-      ...this.jsonData,
-    });
+    const html = Mustache.render(tmpl, this.renderContext());
     return {
       html,
     };
@@ -116,12 +124,10 @@ export default class Theme {
 
   getWebItem(item: any) {
     const tmpl = this.getWebItemTmpl();
-    const html = Mustache.render(tmpl, {
-      ...this.jsonData,
-
+    const html = Mustache.render(tmpl, this.renderContext({
       // TODO: Remove "item". We don't need this "item" field any more. Use "items.0" instead.
       item,
-    });
+    }));
     return {
       html,
     };

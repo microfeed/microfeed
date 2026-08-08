@@ -80,8 +80,15 @@ export const apiItemOutputSchema = apiItemInputSchema.extend({
   url: z.string().optional(),
 }).meta({id: "Item"});
 
+export const apiFeedMicrofeedSchema = z.object({
+  copyright: z.string().optional().meta({
+    description: "Rendered channel copyright. A supported {{current_year}} variable in the saved channel has already been replaced with the current UTC year.",
+    example: "© 2026 Example Publisher",
+  }),
+}).loose().meta({id: "FeedMicrofeed"});
+
 export const apiFeedSchema = z.object({
-  _microfeed: z.record(z.string(), z.unknown()).optional(),
+  _microfeed: apiFeedMicrofeedSchema.optional(),
   description: z.string().optional(),
   favicon: z.string().optional(),
   feed_url: z.string().optional(),
@@ -94,8 +101,15 @@ export const apiFeedSchema = z.object({
   version: z.string(),
 }).loose().meta({id: "Feed"});
 
+export const apiChannelMicrofeedInputSchema = z.object({
+  copyright: z.string().optional().meta({
+    description: "Channel copyright text. Use the allowlisted {{current_year}} variable to publish the current UTC year automatically; the expression is saved literally and resolved in public output.",
+    example: "© {{current_year}} Example Publisher",
+  }),
+}).loose().meta({id: "ChannelMicrofeedInput"});
+
 export const apiChannelInputSchema = z.object({
-  _microfeed: z.record(z.string(), z.unknown()).optional(),
+  _microfeed: apiChannelMicrofeedInputSchema.optional(),
   authors: z.array(z.object({name: z.string()})).optional(),
   description: z.string().optional(),
   expired: z.boolean().optional(),

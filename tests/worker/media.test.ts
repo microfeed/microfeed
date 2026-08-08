@@ -430,6 +430,7 @@ describe("R2 media responses", () => {
     );
     const content = contents[0];
     expect(content.channel).toBeTruthy();
+    expect(content.channel.copyright).toBe("©{{current_year}}");
     expect(content.settings.webGlobalSettings.publicBucketUrl).toBe("/media/");
     const rows = await env.FEED_DB.prepare(
       "SELECT COUNT(*) AS count FROM channels WHERE is_primary = 1",

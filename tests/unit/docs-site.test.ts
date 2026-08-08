@@ -191,6 +191,12 @@ describe("documentation site", () => {
     expect(editChannelGuide).toContain(
       "Channel changes are never saved on a timer",
     );
+    expect(editChannelGuide).toContain("## Keep the copyright year current");
+    expect(editChannelGuide).toContain("`{{current_year}}`");
+    expect(editChannelGuide).toContain("current UTC year");
+    expect(editChannelGuide).toContain(
+      "Existing channels with a fixed year are not changed automatically.",
+    );
     expect(editChannelGuide).not.toContain(
       "Open **Settings** for the controls on this page.",
     );

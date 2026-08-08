@@ -21,6 +21,27 @@ are saved.
 
 ![Editing a microfeed channel image, title, publisher, website, categories, language, and description](/images/screenshots/2-dashboard-2-edit-channel.png)
 
+## Keep the copyright year current
+
+In **Podcast-specific fields**, the **Copyright** field accepts the built-in
+`{{current_year}}` variable. For example, enter:
+
+```text
+© {{current_year}} Example Publisher
+```
+
+microfeed saves that text with the variable intact. When it produces the
+public website, JSON feed, or RSS feed, it replaces the variable with the
+current UTC year. In 2026, the example publishes as
+`© 2026 Example Publisher`. The value changes at midnight UTC on January 1;
+the existing public cache can retain the previous year for about five minutes.
+
+Only `{{current_year}}` is supported in the Copyright field. Other expressions,
+including feed fields such as `{{_microfeed.base_url}}`, remain unchanged.
+Existing channels with a fixed year are not changed automatically. Replace the
+year with `{{current_year}}` once if you want that channel to update itself in
+future years.
+
 ## Check the public destinations
 
 Use the **Public access** links beside the form to open the website, RSS feed,

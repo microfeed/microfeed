@@ -1,3 +1,7 @@
+import {getBuiltInTemplateVariables} from "@/shared/TemplateVariables";
+
+const {current_year: currentYear} = getBuiltInTemplateVariables();
+
 export const CHANNEL_CONTROLS = {
   TITLE: 'channel_title',
   IMAGE: 'channel_image',
@@ -101,10 +105,12 @@ export const CONTROLS_TEXTS_DICT = {
     linkName: 'Copyright',
     modalTitle: 'Channel / Copyright',
     text: "The show copyright details.<br>" +
-      "If your show is copyrighted you should use this tag. For example:<br>" +
-      "<em>Copyright 1995-2019 John John Appleseed</em>",
-    rss: '<channel><copyright>©2023</copyright></channel>',
-    json: '{ "_microfeed": {"itunes:type": "©2023"} }',
+      "Use <code>{{current_year}}</code> to keep the year current automatically. " +
+      "microfeed saves the variable as typed and replaces it with the current UTC year in public pages and feeds.<br>" +
+      "For example, <code>© {{current_year}} Publisher</code> currently publishes as " +
+      `<em>© ${currentYear} Publisher</em>. Only <code>{{current_year}}</code> is supported here.`,
+    rss: `<channel><copyright>© ${currentYear} Publisher</copyright></channel>`,
+    json: `{ "_microfeed": {"copyright": "© ${currentYear} Publisher"} }`,
   },
   [CHANNEL_CONTROLS.ITUNES_TITLE]: {
     linkName: '<itunes:title>',
