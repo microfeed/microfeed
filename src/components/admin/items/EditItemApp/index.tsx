@@ -224,6 +224,7 @@ export default class EditItemApp extends React.Component<Props, any> {
         resolve();
       });
     });
+    showToast(created ? 'Item added.' : 'Item saved.', 'success');
   }
 
   showSaveError(error: any) {

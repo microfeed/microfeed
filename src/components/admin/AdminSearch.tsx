@@ -181,7 +181,7 @@ export default function AdminSearch({adminPath}: Props) {
         <kbd className="ml-auto hidden shrink-0 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline">⌘K</kbd>
       </Button>
       <DialogContent
-        className="top-[18vh] block max-w-xl translate-y-0 overflow-hidden p-0"
+        className="top-[18vh] block translate-y-0 overflow-hidden p-0 sm:max-w-xl"
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">
@@ -260,7 +260,7 @@ export default function AdminSearch({adminPath}: Props) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium"><ResultTitle result={result} /></span>
-                    <span className="block text-xs capitalize text-muted-foreground">
+                    <span className="block text-[11px] font-normal capitalize text-muted-foreground">
                       <ResultMetadata result={result} />
                     </span>
                   </span>

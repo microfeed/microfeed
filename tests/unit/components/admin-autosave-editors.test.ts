@@ -3,6 +3,7 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import Requests from "@/client/requests";
+import {showToast} from "@/client/ToastUtils";
 import EditChannelApp from "@/components/admin/channel/EditChannelApp";
 import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
@@ -98,6 +99,7 @@ function itemStatusControl(app: EditItemApp) {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.mocked(showToast).mockClear();
   windowListeners = new Map<string, EventListener>();
   documentListeners = new Map<string, EventListener>();
   vi.stubGlobal("window", {
@@ -204,6 +206,7 @@ describe("admin editor autosave", () => {
       "",
       `/admin/items/${itemId}/`,
     );
+    expect(showToast).toHaveBeenLastCalledWith("Item added.", "success");
 
     app.onUpdateItemMeta({description: "More details"});
     await vi.advanceTimersByTimeAsync(5000);
@@ -212,6 +215,8 @@ describe("admin editor autosave", () => {
       item: expect.objectContaining({id: itemId}),
     }));
     expect(window.history.replaceState).toHaveBeenCalledOnce();
+    expect(showToast).toHaveBeenLastCalledWith("Item saved.", "success");
+    expect(showToast).toHaveBeenCalledTimes(2);
   });
 
   it("publishes immediately and refreshes only a draft-default date", async () => {
@@ -414,6 +419,10 @@ describe("admin editor autosave", () => {
     expect(axiosPost.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
       channel: expect.objectContaining({title: "Manually saved title"}),
     }));
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenLastCalledWith("Channel saved.", "success");
+      expect(showToast).toHaveBeenCalledTimes(3);
+    });
   });
 
   it("retains failed channel changes, cleanup, and navigation protection for retry", async () => {
