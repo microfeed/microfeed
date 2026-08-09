@@ -3,11 +3,13 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import Requests from "@/client/requests";
+import {showToast} from "@/client/ToastUtils";
 import EditChannelApp from "@/components/admin/channel/EditChannelApp";
 import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 import AdminDatetimePicker from "@/components/admin/shared/AdminDatetimePicker";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
+import {Button} from "@/components/ui/button";
 import {STATUSES} from "@/shared/Constants";
 
 vi.mock("@/client/ToastUtils", () => ({showToast: vi.fn()}));
@@ -96,8 +98,16 @@ function itemStatusControl(app: EditItemApp) {
   );
 }
 
+function itemPublishButton(app: EditItemApp) {
+  return findElement(
+    app.render(),
+    (element) => element.type === Button && element.props.children === "Publish",
+  );
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.mocked(showToast).mockClear();
   windowListeners = new Map<string, EventListener>();
   documentListeners = new Map<string, EventListener>();
   vi.stubGlobal("window", {
@@ -204,6 +214,7 @@ describe("admin editor autosave", () => {
       "",
       `/admin/items/${itemId}/`,
     );
+    expect(showToast).toHaveBeenLastCalledWith("Item added.", "success");
 
     app.onUpdateItemMeta({description: "More details"});
     await vi.advanceTimersByTimeAsync(5000);
@@ -212,6 +223,8 @@ describe("admin editor autosave", () => {
       item: expect.objectContaining({id: itemId}),
     }));
     expect(window.history.replaceState).toHaveBeenCalledOnce();
+    expect(showToast).toHaveBeenLastCalledWith("Item saved.", "success");
+    expect(showToast).toHaveBeenCalledTimes(2);
   });
 
   it("publishes immediately and refreshes only a draft-default date", async () => {
@@ -237,6 +250,80 @@ describe("admin editor autosave", () => {
         }),
       }),
     );
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenLastCalledWith("Item added.", "success");
+    });
+  });
+
+  it("publishes the current create or edit form from the save card", async () => {
+    vi.setSystemTime(new Date("2026-08-08T12:00:00.000Z"));
+    const create = mount(new EditItemApp(props()));
+    const createButton = itemPublishButton(create);
+
+    expect(createButton).toBeDefined();
+    expect(createButton?.props["aria-describedby"]).toBe(
+      "publish-item-description",
+    );
+    expect(renderToStaticMarkup(create.render())).toContain(
+      "Save and change status to published",
+    );
+
+    const publishedAt = Date.now();
+    createButton?.props.onClick();
+    await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledOnce());
+    expect(vi.mocked(Requests.axiosPost).mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        item: expect.objectContaining({
+          pubDateIsDraftDefault: false,
+          pubDateMs: publishedAt,
+          status: STATUSES.PUBLISHED,
+        }),
+      }),
+    );
+    expect(itemPublishButton(create)).toBeUndefined();
+    await vi.waitFor(() => {
+      expect(create.state.autosaveState).toEqual({dirty: false, phase: "saved"});
+    });
+    expect(showToast).toHaveBeenLastCalledWith("Item published", "success");
+
+    vi.mocked(Requests.axiosPost).mockClear();
+    vi.mocked(showToast).mockClear();
+    const edit = mount(new EditItemApp({
+      ...props({
+        id: "unlisteditem2",
+        pubDateMs: Date.parse("2026-07-01T10:00:00.000Z"),
+        status: STATUSES.UNLISTED,
+        title: "Unlisted item",
+      }),
+      itemId: "unlisteditem2",
+    }));
+    expect(itemPublishButton(edit)).toBeDefined();
+    itemPublishButton(edit)?.props.onClick();
+    await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledOnce());
+    expect(vi.mocked(Requests.axiosPost).mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        item: expect.objectContaining({
+          pubDateMs: Date.parse("2026-07-01T10:00:00.000Z"),
+          status: STATUSES.PUBLISHED,
+        }),
+      }),
+    );
+    expect(itemPublishButton(edit)).toBeUndefined();
+    await vi.waitFor(() => {
+      expect(edit.state.autosaveState).toEqual({dirty: false, phase: "saved"});
+    });
+    expect(showToast).toHaveBeenLastCalledWith("Item published", "success");
+
+    const published = mount(new EditItemApp({
+      ...props({
+        id: "publisheditem1",
+        pubDateMs: Date.parse("2026-07-02T10:00:00.000Z"),
+        status: STATUSES.PUBLISHED,
+        title: "Published item",
+      }),
+      itemId: "publisheditem1",
+    }));
+    expect(itemPublishButton(published)).toBeUndefined();
   });
 
   it("preserves manually selected and legacy publication dates", async () => {
@@ -414,6 +501,10 @@ describe("admin editor autosave", () => {
     expect(axiosPost.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
       channel: expect.objectContaining({title: "Manually saved title"}),
     }));
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenLastCalledWith("Channel saved.", "success");
+      expect(showToast).toHaveBeenCalledTimes(3);
+    });
   });
 
   it("retains failed channel changes, cleanup, and navigation protection for retry", async () => {

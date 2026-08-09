@@ -7,7 +7,7 @@ import {API_BASE_PATH} from "@/shared/ApiVersion";
 import FeedDb from "@/server/feed/FeedDb";
 import FeedCrudManager from "@/server/feed/FeedCrudManager";
 import {jsonFeedResponse} from "@/server/feed/responses";
-import {deleteItem, updateItem} from "@/server/items/service";
+import {createItem, deleteItem, updateItem} from "@/server/items/service";
 
 const ORIGIN = "https://feed.example.com";
 const ITEM_ID = "apiitem0001";
@@ -37,6 +37,26 @@ afterEach(async () => {
 });
 
 describe("transport-neutral item service", () => {
+  it("derives stored content_text and ignores caller-supplied text", async () => {
+    const {crud, database} = await databaseAndCrud();
+    const id = await createItem(crud, {
+      content_html: "<p>Canonical &amp; searchable</p>",
+      content_text: "caller value must be ignored",
+      id: ITEM_ID,
+      title: "Normalized item",
+    });
+    const item = await database.getItemById(id);
+    expect(item?.contentText).toBe("Canonical & searchable");
+    const stored = await env.FEED_DB.prepare(
+      "SELECT content_text, data FROM items WHERE id = ?",
+    ).bind(id).first<{content_text: string; data: string}>();
+    expect(stored?.content_text).toBe("Canonical & searchable");
+    expect(JSON.parse(stored!.data)).not.toHaveProperty("content_text");
+    await updateItem(database, crud, id, {content_html: ""});
+    expect((await database.getItemById(id))?.contentText).toBe("");
+    await env.FEED_DB.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
+  });
+
   it("preserves omitted fields, the GUID, attachments, and publication date", async () => {
     const {crud, database} = await databaseAndCrud();
     const publishedAt = "2026-08-01T10:00:00.000Z";

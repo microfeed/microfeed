@@ -183,7 +183,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   },
   {
     details: [
-      "<item-id> is the stable ID returned by `item list` or `item get`, for example 0HGJLSML3P1.",
+      "<item-id> is the stable ID returned by `item list`, `item search`, or `item get`, for example 0HGJLSML3P1.",
       "Create and update accept either common flags or one JSON object from --input; they reject mixed input forms.",
       "An item image is cover art or a thumbnail. A media attachment is the item's one main audio, video, document, or image file; it becomes JSON Feed attachments[0] and the RSS enclosure.",
       ...apiAccessDetails,
@@ -191,6 +191,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     ],
     examples: [
       "yarn microfeed item list --instance production --json",
+      "yarn microfeed item search hello --fields title --instance production --json",
       "yarn microfeed item get 0HGJLSML3P1 --instance production --json",
       "yarn microfeed item create --instance production --input item.json --json",
       "yarn microfeed help item delete",
@@ -199,13 +200,14 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     path: ["item"],
     subcommands: [
       {name: "list", description: "Read a paginated feed."},
+      {name: "search <query>", description: "Search item titles or plain-text content."},
       {name: "get <item-id>", description: "Read one item."},
       {name: "create", description: "Create an item from flags or JSON."},
       {name: "update <item-id>", description: "Update an item from flags or JSON."},
       {name: "delete <item-id>", description: "Permanently delete one confirmed item."},
     ],
-    summary: "List, read, create, update, or delete content items.",
-    usage: "yarn microfeed item <list|get|create|update|delete> [arguments] [options]",
+    summary: "List, search, read, create, update, or delete content items.",
+    usage: "yarn microfeed item <list|search|get|create|update|delete> [arguments] [options]",
   },
   {
     details: [
@@ -232,6 +234,46 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     path: ["item", "list"],
     summary: "Read a paginated feed from the selected instance.",
     usage: "yarn microfeed item list [options]",
+  },
+  {
+    details: [
+      "Searches GET /api/v1/search/ on the selected instance without changing content. <query> contains 1–200 characters.",
+      "Unquoted terms are ANDed. Use matching single or double quotes inside the query for an exact phrase. The final unquoted term supports prefix matching.",
+      "Exact matches rank before typo-tolerant title matches. Quoted phrases and content are never fuzzy matched.",
+      "Use a next cursor exactly as returned by the preceding search response. A cursor is valid only for the same query and filters.",
+      ...apiAccessDetails,
+    ],
+    examples: [
+      "yarn microfeed item search hello --fields title --instance production --json",
+      "yarn microfeed item search '\"season finale\"' --fields title,content --status published,unlisted --json",
+      "yarn microfeed item search launch --date-published-ms-gt 1767225600000 --limit 50 --json",
+      "yarn microfeed item search launch --next-cursor eyJ2ZXJzaW9uIjoxfQ --json",
+    ],
+    options: [
+      option(
+        "--fields <fields>",
+        "Search title, content, or title,content. Defaults to title,content.",
+      ),
+      option(
+        "--status <statuses>",
+        "Filter by a comma-separated list of published, unlisted, or unpublished. Defaults to all three.",
+      ),
+      option(
+        "--date-published-ms-gt <milliseconds>",
+        "Return items published strictly after this Unix timestamp in milliseconds.",
+      ),
+      option(
+        "--date-published-ms-lt <milliseconds>",
+        "Return items published strictly before this Unix timestamp in milliseconds.",
+      ),
+      option("--limit <1-100>", "Return at most this many matches. Defaults to 20."),
+      option("--next-cursor <cursor>", "Continue forward from a search response cursor."),
+      instanceOption,
+      jsonOption,
+    ],
+    path: ["item", "search"],
+    summary: "Search item titles or stored plain-text content.",
+    usage: "yarn microfeed item search <query> [options]",
   },
   {
     details: [
@@ -461,7 +503,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     {syntax: "login <site-url>", description: "Authorize a site and save it as an instance."},
     {syntax: "logout", description: "Revoke this computer's tokens and remove its saved instance."},
     {syntax: "instances", description: "List, select, or locally remove saved instances."},
-    {syntax: "item", description: "List, read, create, update, or delete items."},
+    {syntax: "item", description: "List, search, read, create, update, or delete items."},
     {syntax: "media", description: "Upload standalone media for rich content or later API use."},
     {syntax: "api", description: "Call one relative /api/v1/ REST operation."},
   ];
@@ -484,7 +526,8 @@ export function renderCliHelp(path?: readonly string[]): string {
     "              numbers, dots, underscores, or hyphens.",
     "  <computer-name>  This computer's label in Account settings → App access.",
     "              It accepts 1–64 printable characters and is not an instance name.",
-    "  <item-id>  Stable item ID returned by item list, such as 0HGJLSML3P1.",
+    "  <query>    Search text; quote the shell argument when it contains spaces.",
+    "  <item-id>  Stable item ID returned by item list or search, such as 0HGJLSML3P1.",
     "  <file|->   UTF-8 file path, or - to read from standard input.",
     "  <attachment-path>  Local audio, video, document, or image attachment.",
     "  <image-path>  Local AVIF, GIF, JPEG, PNG, or WebP cover image.",
@@ -510,6 +553,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     "",
     "Start here:",
     "  yarn microfeed login --help",
+    "  yarn microfeed item search --help",
     "  yarn microfeed item create --help",
     "  yarn microfeed media upload --help",
     "  yarn microfeed api --help",

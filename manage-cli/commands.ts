@@ -125,6 +125,12 @@ import {
   validateSnapshotMigrations,
   writeSnapshotManifest,
 } from "./lib/snapshot";
+import {
+  dropItemSearchIndexes,
+  prepareItemSearch,
+  setItemSearchReady,
+  withItemSearchIndexesSuspended,
+} from "./lib/item-search";
 
 export type FlagValue = boolean | string;
 export type Flags = Record<string, FlagValue>;
@@ -1582,29 +1588,37 @@ async function deployConfiguredProject(
     await collectInitialAdminSetupEmail(context, config);
   }
   await context.cloudflare.applyMigrations(config);
+  await prepareItemSearch(context.cloudflare, config);
   markStep(config, "migrations-applied");
   await writeConfig(config);
   if (initializeAdmin) {
     await prepareInitialAdminSetup(context, config);
   }
   await runChecks(context.runner, config);
+  await setItemSearchReady(context.cloudflare, config, false);
 
   const needsAuthSecret = adminAuthMode(config) === "built-in" &&
     !config.completedSteps.includes("better-auth-secret-created");
   const needsUploadSigningSecret = includeNewSigningSecret &&
     !config.completedSteps.includes("upload-signing-secret-created") &&
     !config.completedSteps.includes("worker-deployed");
-  const deploymentUrl = needsAuthSecret || needsUploadSigningSecret
-    ? await withEphemeralSecretFile(
-        needsAuthSecret,
-        needsUploadSigningSecret,
-        (filename) => context.cloudflare.deploy(
-          config,
-          filename,
-          sourceCommitSha,
-        ),
-      )
-    : await context.cloudflare.deploy(config, undefined, sourceCommitSha);
+  let deploymentUrl;
+  try {
+    deploymentUrl = needsAuthSecret || needsUploadSigningSecret
+      ? await withEphemeralSecretFile(
+          needsAuthSecret,
+          needsUploadSigningSecret,
+          (filename) => context.cloudflare.deploy(
+            config,
+            filename,
+            sourceCommitSha,
+          ),
+        )
+      : await context.cloudflare.deploy(config, undefined, sourceCommitSha);
+  } catch (error) {
+    await prepareItemSearch(context.cloudflare, config);
+    throw error;
+  }
   config.deploymentUrl = deploymentUrl ?? config.deploymentUrl;
   if (needsAuthSecret) {
     markStep(config, "better-auth-secret-created");
@@ -1614,6 +1628,11 @@ async function deployConfiguredProject(
   }
   markStep(config, "worker-deployed");
   await writeConfig(config);
+
+  // A request handled by the previous Worker version can land after the
+  // pre-deploy pass. Reconcile once the new writer is active before search is
+  // considered ready.
+  await prepareItemSearch(context.cloudflare, config);
 
   if (!config.deploymentUrl) {
     throw new Error(
@@ -2322,6 +2341,10 @@ async function initializeLocal(context: CommandContext): Promise<void> {
     "Local initialization target",
   );
   await context.cloudflare.applyLocalMigrations(config);
+  await prepareItemSearch(context.cloudflare, config, {
+    local: true,
+    persistTo: localPersistencePath(config),
+  });
 
   const requestedMode = flagString(context.flags, "admin-auth");
   if (
@@ -2723,6 +2746,10 @@ export async function deployCommand(
     }
     await generateWranglerConfig(config);
     await context.cloudflare.applyLocalMigrations(config);
+    await prepareItemSearch(context.cloudflare, config, {
+      local: true,
+      persistTo: localPersistencePath(config),
+    });
     markStep(config, "migrations-applied");
     await writeConfig(config);
     await runChecks(context.runner, config);
@@ -4830,6 +4857,10 @@ export async function devCommand(
     "Local development",
   );
   await context.cloudflare.applyLocalMigrations(config);
+  await prepareItemSearch(context.cloudflare, config, {
+    local: true,
+    persistTo: localPersistencePath(config),
+  });
   await runYarnScript(runner, "dev:astro", {
     env: {
       ...process.env,
@@ -5702,42 +5733,48 @@ async function createRemoteSnapshot(
     );
     const schemaPath = path.join(databaseDirectory, "schema.sql");
     const dataPath = path.join(databaseDirectory, "data.sql");
-    progress("Exporting the D1 schema");
-    await context.cloudflare.exportD1(
-      config,
-      schemaPath,
-      [...applicationTables, "d1_migrations"],
-      "schema",
-    );
-    progress("Capturing explicit D1 indexes");
-    const indexDefinitions = await databaseIndexDefinitions(
-      context.cloudflare,
-      config,
-      applicationTables,
-    );
-    const exportedIndexNames = new Set(
-      migrationIndexDefinitions(await readFile(schemaPath, "utf8"))
-        .map(({name}) => name),
-    );
-    const missingIndexDefinitions = indexDefinitions.filter(
-      ({name}) => !exportedIndexNames.has(name),
-    );
-    if (missingIndexDefinitions.length > 0) {
-      await appendFile(
-        schemaPath,
-        `\n${missingIndexDefinitions.map(({sql}) => sql).join("\n")}\n`,
-        "utf8",
-      );
-    }
     const durableTables = SNAPSHOT_TABLES.durable.filter((table) =>
       applicationTables.includes(table)
     );
-    progress("Exporting durable D1 data and the migration ledger");
-    await context.cloudflare.exportD1(
+    await withItemSearchIndexesSuspended(
+      context.cloudflare,
       config,
-      dataPath,
-      [...durableTables, "d1_migrations"],
-      "data",
+      async () => {
+        progress("Exporting the D1 schema");
+        await context.cloudflare.exportD1(
+          config,
+          schemaPath,
+          [...applicationTables, "d1_migrations"],
+          "schema",
+        );
+        progress("Capturing explicit D1 indexes");
+        const indexDefinitions = await databaseIndexDefinitions(
+          context.cloudflare,
+          config,
+          applicationTables,
+        );
+        const exportedIndexNames = new Set(
+          migrationIndexDefinitions(await readFile(schemaPath, "utf8"))
+            .map(({name}) => name),
+        );
+        const missingIndexDefinitions = indexDefinitions.filter(
+          ({name}) => !exportedIndexNames.has(name),
+        );
+        if (missingIndexDefinitions.length > 0) {
+          await appendFile(
+            schemaPath,
+            `\n${missingIndexDefinitions.map(({sql}) => sql).join("\n")}\n`,
+            "utf8",
+          );
+        }
+        progress("Exporting durable D1 data and the migration ledger");
+        await context.cloudflare.exportD1(
+          config,
+          dataPath,
+          [...durableTables, "d1_migrations"],
+          "data",
+        );
+      },
     );
     progress("Counting durable D1 rows for restore verification");
     const rowCounts = await durableRowCounts(
@@ -6376,6 +6413,10 @@ async function restoreSnapshotLocally(
       );
       progress("Applying newer D1 migrations");
       await cloudflare.applyLocalMigrations(config, temporaryPersistence);
+      await prepareItemSearch(cloudflare, config, {
+        local: true,
+        persistTo: temporaryPersistence,
+      });
       const finalizationSqlPath = path.join(
         extractedDirectory,
         "finalize.sql",
@@ -7029,6 +7070,7 @@ async function restoreSnapshotRemotely(
             ),
             snapshotApplicationTables: snapshotApplicationTables(manifest),
           }), {encoding: "utf8", mode: 0o600});
+          await dropItemSearchIndexes(context.cloudflare, config);
           await context.cloudflare.executeSqlFile(config, restoreSqlPath);
           activity.update("Verifying imported D1 row counts and indexes");
           await verifyImportedRowCounts(context.cloudflare, config, manifest);
@@ -7042,6 +7084,7 @@ async function restoreSnapshotRemotely(
           await writeRestoreJournal(config, journal);
           activity.update("Applying newer D1 migrations");
           await context.cloudflare.applyMigrations(config);
+          await prepareItemSearch(context.cloudflare, config);
           const finalizationSqlPath = path.join(
             extractedDirectory,
             "finalize.sql",

@@ -5,6 +5,7 @@ import {
   buildAudioUrlWithTracking,
   canonicalPathname,
   hasFileExtension,
+  htmlToPlainText,
   isLocalDevelopmentHostname,
   isR2CustomDomainUrl,
   isValidPublicBucketUrl,
@@ -18,6 +19,17 @@ import {
   suggestedR2CustomDomainUrl,
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
+
+test("htmlToPlainText strips markup and normalizes decoded text", () => {
+  expect(htmlToPlainText(
+    "<h1>Hello&nbsp;&amp; welcome</h1><p>Line &#x32; &#8212; done</p>" +
+      "<script>ignore()</script><style>.ignore{}</style>",
+  )).toBe("Hello & welcome\nLine 2 — done");
+  expect(htmlToPlainText("<p>Unclosed <strong>markup &copy;")).toBe(
+    "Unclosed markup ©",
+  );
+  expect(htmlToPlainText("")).toBe("");
+});
 
 test('randomShortUUID', () => {
   expect(randomShortUUID().length).toBe(11);

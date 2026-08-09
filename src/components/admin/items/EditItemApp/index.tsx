@@ -81,13 +81,16 @@ export default class EditItemApp extends React.Component<Props, any> {
   private autosave: AutosaveCoordinator<ItemSnapshot>;
   private cleanupNavigationGuard?: () => void;
   private mounted = false;
+  private publishRequested = false;
 
   constructor(props: Props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
     this.onDelete = this.onDelete.bind(this);
+    this.onPublish = this.onPublish.bind(this);
     this.onUpdateItemMeta = this.onUpdateItemMeta.bind(this);
+    this.onUpdateItemStatus = this.onUpdateItemStatus.bind(this);
     this.saveSnapshot = this.saveSnapshot.bind(this);
 
     const action = props.itemId ? 'edit' : 'create';
@@ -166,6 +169,25 @@ export default class EditItemApp extends React.Component<Props, any> {
     }), () => this.autosave.markChanged({immediate}));
   }
 
+  onUpdateItemStatus(nextStatus: number) {
+    const publicationFields = nextStatus === STATUSES.PUBLISHED &&
+        this.state.item.pubDateIsDraftDefault === true
+      ? {
+          pubDateIsDraftDefault: false,
+          pubDateMs: Date.now(),
+        }
+      : {};
+    this.onUpdateItemMeta({
+      ...publicationFields,
+      status: nextStatus,
+    }, undefined, true);
+  }
+
+  onPublish() {
+    this.publishRequested = true;
+    this.onUpdateItemStatus(STATUSES.PUBLISHED);
+  }
+
   async onDelete() {
     if (!await this.autosave.flush()) return;
 
@@ -203,6 +225,8 @@ export default class EditItemApp extends React.Component<Props, any> {
     if (!this.mounted) return;
 
     const created = this.state.action === 'create';
+    const publishRequested = this.publishRequested;
+    this.publishRequested = false;
     await new Promise<void>((resolve) => {
       this.setState((previousState: any) => ({
         action: created ? 'edit' : previousState.action,
@@ -224,6 +248,12 @@ export default class EditItemApp extends React.Component<Props, any> {
         resolve();
       });
     });
+    showToast(
+      publishRequested && snapshot.item.status === STATUSES.PUBLISHED
+        ? 'Item published'
+        : created ? 'Item added.' : 'Item saved.',
+      'success',
+    );
   }
 
   showSaveError(error: any) {
@@ -362,20 +392,8 @@ export default class EditItemApp extends React.Component<Props, any> {
                         label: (ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED] as any).name,
                         value: String(STATUSES.UNPUBLISHED),
                       }]}
-                    onValueChange={(value) => {
-                      const nextStatus = parseInt(value, 10);
-                      const publicationFields = nextStatus === STATUSES.PUBLISHED &&
-                          item.pubDateIsDraftDefault === true
-                        ? {
-                            pubDateIsDraftDefault: false,
-                            pubDateMs: Date.now(),
-                          }
-                        : {};
-                      this.onUpdateItemMeta({
-                        ...publicationFields,
-                        status: nextStatus,
-                      }, undefined, true);
-                    }}
+                    onValueChange={(value) =>
+                      this.onUpdateItemStatus(parseInt(value, 10))}
                   />
                   <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: (ITEM_STATUSES_DICT[status] as any).description}} />
                 </div>
@@ -482,7 +500,28 @@ export default class EditItemApp extends React.Component<Props, any> {
               idleMessage={action === 'create'
                 ? 'Start editing to create an unpublished draft.'
                 : undefined}
-            />
+            >
+              {status !== STATUSES.PUBLISHED && (
+                <>
+                  <Button
+                    aria-describedby="publish-item-description"
+                    className="w-full"
+                    disabled={autosaveState.phase === "saving"}
+                    onClick={this.onPublish}
+                    type="button"
+                    variant="outline"
+                  >
+                    Publish
+                  </Button>
+                  <p
+                    className="mt-2 text-xs text-muted-foreground"
+                    id="publish-item-description"
+                  >
+                    Save and change status to published
+                  </p>
+                </>
+              )}
+            </AdminSaveAction>
             {action === 'edit' && <div>
               <AdminSideQuickLinks
                 AdditionalLinksDiv={<div className="flex flex-wrap">

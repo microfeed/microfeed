@@ -4,6 +4,7 @@ import type {APIRoute} from "astro";
 import {
   apiChannelInputSchema,
   apiItemInputSchema,
+  apiSearchQuerySchema,
   apiUploadInputSchema,
 } from "@/shared/ApiSchemas";
 import {STATUSES} from "@/shared/Constants";
@@ -25,11 +26,76 @@ import {
   mediaStorageUnavailableResponse,
 } from "@/server/media/storage";
 import {createSignedUpload} from "@/server/media/uploads";
+import {
+  ItemSearchRequestError,
+  type ItemSearchResponse,
+  ItemSearchUnavailableError,
+  searchItems,
+} from "@/server/items/search";
+import type {
+  ItemSearchField,
+  ItemSearchStatus,
+} from "@/shared/ItemSearch";
 
 export const getApiFeed: APIRoute = ({request}) =>
   jsonFeedResponse(request, false, undefined, undefined, false);
 
 export const headApiFeed: APIRoute = () => publicFeedHead();
+
+function publicSearchResponse(response: ItemSearchResponse) {
+  return {
+    items: response.items.map((item) => ({
+      content_text: item.content_text,
+      date_modified: item.date_modified,
+      date_published: item.date_published,
+      date_published_ms: item.date_published_ms,
+      highlights: item.highlights,
+      id: item.id,
+      ...(item.image ? {image: item.image} : {}),
+      status: item.status,
+      title: item.title,
+      url: item.web_url,
+    })),
+    ...(response.next_cursor ? {next_cursor: response.next_cursor} : {}),
+  };
+}
+
+export const searchApiItems: APIRoute = async ({locals, request}) => {
+  if (!locals.feedDb) {
+    return new Response("Feed context unavailable", {status: 500});
+  }
+  const parsed = apiSearchQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success) {
+    return jsonResponse({error: "Invalid search query."}, {status: 400});
+  }
+  try {
+    const fields = [...new Set(parsed.data.fields.split(","))] as ItemSearchField[];
+    const statuses = [...new Set(parsed.data.status.split(","))] as ItemSearchStatus[];
+    const response = await searchItems(locals.feedDb.FEED_DB, request, {
+      datePublishedMsGt: parsed.data.date_published_ms_gt,
+      datePublishedMsLt: parsed.data.date_published_ms_lt,
+      fields,
+      limit: parsed.data.limit,
+      nextCursor: parsed.data.next_cursor,
+      publicBucketUrl: locals.publicBucketUrl,
+      query: parsed.data.q,
+      statuses,
+    });
+    return jsonResponse(publicSearchResponse(response), {
+      headers: {"cache-control": "private, no-store"},
+    });
+  } catch (error) {
+    if (error instanceof ItemSearchRequestError) {
+      return jsonResponse({error: error.message}, {status: 400});
+    }
+    if (error instanceof ItemSearchUnavailableError) {
+      return jsonResponse({error: error.message}, {status: 503});
+    }
+    throw error;
+  }
+};
 
 export const createApiItem: APIRoute = async ({locals, request}) => {
   if (!locals.feedCrud) {

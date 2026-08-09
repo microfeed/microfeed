@@ -7,6 +7,8 @@ import {
   apiItemInputSchema,
   apiItemOutputSchema,
   apiPaginationQuerySchema,
+  apiSearchQuerySchema,
+  apiSearchResponseSchema,
   apiUploadInputSchema,
   apiUploadOutputSchema,
 } from "./ApiSchemas";
@@ -57,6 +59,7 @@ export const OPENAPI_DOCUMENT = createDocument({
   tags: [
     {name: "Feed", description: "Read the complete feed."},
     {name: "Items", description: "Create and manage feed items."},
+    {name: "Search", description: "Find items by title or plain-text content."},
     {name: "Channel", description: "Update the primary channel."},
     {name: "Media", description: "Prepare same-origin media uploads."},
   ],
@@ -141,6 +144,27 @@ export const OPENAPI_DOCUMENT = createDocument({
           "400": error("The item ID is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
           "404": error("The item does not exist."),
+        },
+      },
+    },
+    "/search/": {
+      get: {
+        security: readSecurity,
+        operationId: "searchItems",
+        summary: "Search items",
+        description:
+          "Searches D1 for non-deleted items. Unquoted terms use AND semantics; " +
+          "single- and double-quoted clauses require an exact phrase. Exact " +
+          "matches rank before typo-tolerant title matches. Each result is an " +
+          "Item with safe title and content highlight segments.",
+        tags: ["Search"],
+        requestParams: {query: apiSearchQuerySchema},
+        responses: {
+          "200": success(apiSearchResponseSchema),
+          "400": error("The search query, filters, or cursor are invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "403": error("The credential does not have read access."),
+          "503": error("Search normalization or indexing is not ready."),
         },
       },
     },

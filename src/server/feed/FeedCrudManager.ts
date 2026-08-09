@@ -66,8 +66,8 @@ export default class FeedCrudManager {
       (internalSchema as any).link = item.url;
     }
 
-    if (item.content_html) {
-      (internalSchema as any).description = item.content_html;
+    if (Object.hasOwn(item, "content_html")) {
+      (internalSchema as any).description = item.content_html ?? "";
     }
 
     if (item.image) {

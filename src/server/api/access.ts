@@ -30,12 +30,13 @@ export type ApiRequestDecision =
   | "not-found"
   | "unauthorized";
 
-function integrationSuffix(suffix: string): boolean {
+function integrationSuffix(suffix: string, legacy: boolean): boolean {
   return suffix === "feed/" ||
     suffix === "items/" ||
     /^items\/[^/]+\/$/u.test(suffix) ||
     /^channels\/[^/]+\/$/u.test(suffix) ||
-    suffix === "media_files/presigned_urls/";
+    suffix === "media_files/presigned_urls/" ||
+    (!legacy && suffix === "search/");
 }
 
 export function apiPathDetails(pathname: string): ApiPathDetails | null {
@@ -54,7 +55,7 @@ export function apiPathDetails(pathname: string): ApiPathDetails | null {
         legacy,
       };
     }
-    if (integrationSuffix(suffix)) {
+    if (integrationSuffix(suffix, legacy)) {
       return {
         canonicalPath: `${API_BASE_PATH}${suffix}`,
         kind: "integration",

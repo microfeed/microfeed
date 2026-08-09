@@ -320,6 +320,11 @@ release with `--local`.
 Regenerate configuration, apply D1 migrations, run type checks and focused
 deployment smoke tests, and build. The smoke tests cover migration compatibility,
 core item and feed operations, installation identity, and administrator setup.
+When a release introduces or repairs item search, deployment strips saved item
+HTML into D1's stored plain-text column in resumable batches and validates the
+search index before it becomes available. A second pass after the Worker switch
+captures any item write completed by the previous Worker version. An incomplete
+pass stops deployment instead of serving partially normalized search data.
 The complete repository test suite remains part of `yarn check` and continuous
 integration. Cloudflare mode then tags the Worker version with the current Git
 commit, deploys it, and verifies the Worker. The protected dashboard uses that
@@ -385,13 +390,21 @@ yarn manage dev [--instance <name>] [--preview]
 
 **Purpose:** Create, download, validate, and restore migration-safe portable snapshots.
 
-**Changes:** Creates a read-only export, restores a new local instance, or
+**Changes:** Creates an export, restores a new local instance, or
 replaces the data in one explicitly confirmed fresh Cloudflare target.
 
 The archive is one `.tar.gz` containing `manifest.json`, separate D1 schema and
 durable-data SQL exports, and every object in the production R2 bucket. The
 manifest records SHA-256 checksums, object metadata, table classifications, row
 counts, and the exact ordered D1 migration filenames and hashes.
+
+D1 cannot export FTS5 virtual tables. Snapshot creation therefore removes only
+the rebuildable item-search indexes and triggers while the D1 schema and data
+are exported, then recreates and validates them in a `finally` recovery step.
+Item content remains durable and unchanged; item search can briefly return an
+unavailable response during that D1 export window. Restores likewise recreate
+the derived indexes from the restored `items` table rather than archiving FTS
+shadow data.
 
 Long-running snapshot creation and restore steps keep an animated elapsed-time
 indicator visible. Its brief status message changes as D1, migrations, R2, and
@@ -509,6 +522,8 @@ list must be an exact filename-and-hash prefix of the current checkout:
 - An older snapshot restores its original schema and durable data, recreates
   its `d1_migrations` ledger, and then applies only newer migrations.
 - A snapshot at the current head needs no forward migrations.
+- Derived item-search virtual tables are recreated and repopulated after the
+  durable data is imported.
 - A newer, missing, reordered, edited, or divergent migration history is
   rejected before mutation.
 

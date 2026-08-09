@@ -73,12 +73,58 @@ export const apiItemInputSchema = z.object({
 
 export const apiItemOutputSchema = apiItemInputSchema.extend({
   attachments: z.array(apiAttachmentOutputSchema).optional(),
+  content_text: z.string(),
   date_modified: z.iso.datetime().optional(),
   date_published: z.iso.datetime().optional(),
   id: z.string(),
   image: z.string().optional(),
   url: z.string().optional(),
 }).meta({id: "Item"});
+
+export const apiSearchHighlightSegmentSchema = z.object({
+  matched: z.boolean(),
+  text: z.string(),
+}).meta({id: "SearchHighlightSegment"});
+
+export const apiSearchItemSchema = apiItemOutputSchema.and(z.object({
+  highlights: z.object({
+    content_text: z.array(apiSearchHighlightSegmentSchema),
+    title: z.array(apiSearchHighlightSegmentSchema),
+  }),
+}).loose()).meta({id: "SearchItem"});
+
+export const apiSearchResponseSchema = z.object({
+  items: z.array(apiSearchItemSchema),
+  next_cursor: z.string().optional(),
+}).meta({id: "SearchResponse"});
+
+export const apiSearchQuerySchema = z.object({
+  date_published_ms_gt: z.coerce.number().int().nonnegative().optional().meta({
+    description: "Return items published strictly after this Unix timestamp in milliseconds.",
+  }),
+  date_published_ms_lt: z.coerce.number().int().nonnegative().optional().meta({
+    description: "Return items published strictly before this Unix timestamp in milliseconds.",
+  }),
+  fields: z.enum([
+    "title",
+    "content",
+    "title,content",
+    "content,title",
+  ]).default("title,content").meta({
+    description: "Comma-separated fields to search. The default searches title and content.",
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  next_cursor: z.string().min(1).max(2048).optional(),
+  q: z.string().trim().min(1).max(200).meta({
+    description: "Terms are ANDed. Use single or double quotes for an exact phrase.",
+    example: 'launch "season finale"',
+  }),
+  status: z.string().regex(
+    /^(?:published|unlisted|unpublished)(?:,(?:published|unlisted|unpublished))*$/u,
+  ).default("published,unlisted,unpublished").meta({
+    description: "Comma-separated item statuses. Deleted items are never searched.",
+  }),
+});
 
 export const apiFeedMicrofeedSchema = z.object({
   copyright: z.string().optional().meta({

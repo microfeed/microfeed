@@ -75,6 +75,7 @@ describe("microfeed CLI help", () => {
       ["login"],
       ["item"],
       ["item", "list"],
+      ["item", "search"],
       ["item", "get"],
       ["item", "create"],
       ["item", "update"],

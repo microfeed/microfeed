@@ -17,6 +17,7 @@ import {
   MICROFEED_OAUTH_CLIENT_ID,
   OAUTH_SCOPES,
 } from "../../src/shared/OAuth";
+import {ITEM_SEARCH_VIRTUAL_TABLE_PREFIXES} from "../../src/shared/ItemSearchSql";
 import {repositoryRoot} from "./process";
 
 export const SNAPSHOT_FORMAT = "microfeed-portable-snapshot";
@@ -33,6 +34,7 @@ export const SNAPSHOT_TABLES = {
     "passkey",
   ],
   ephemeral: [
+    "item_search_metadata",
     "oauth_access_token",
     "oauth_refresh_token",
     "oauth_consent",
@@ -564,7 +566,10 @@ export function applicationTablesFromSqlite(tables: readonly string[]): string[]
     table !== "d1_migrations" &&
     !table.startsWith("sqlite_") &&
     !table.startsWith("_cf_") &&
-    !internalTables.has(table)
+    !internalTables.has(table) &&
+    !ITEM_SEARCH_VIRTUAL_TABLE_PREFIXES.some((prefix) =>
+      table === prefix || table.startsWith(`${prefix}_`)
+    )
   ).sort((left, right) => left.localeCompare(right));
 }
 

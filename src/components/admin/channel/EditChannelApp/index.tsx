@@ -152,6 +152,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
         ),
       }), resolve);
     });
+    showToast('Channel saved.', 'success');
   }
 
   showSaveError(error: any) {
