@@ -146,14 +146,14 @@ export default function AdminSearch({adminPath}: Props) {
     }}>
       <Button
         aria-label="Search items"
-        className="rounded-full sm:w-auto sm:rounded-lg sm:border sm:border-border sm:px-3"
+        className="rounded-full sm:w-44 sm:justify-start sm:gap-2.5 sm:rounded-lg sm:border sm:border-border sm:px-3 sm:text-xs lg:w-56"
         onClick={() => setOpen(true)}
         size="icon"
         variant="ghost"
       >
         <SearchIcon aria-hidden="true" />
-        <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline">⌘K</kbd>
+        <span className="hidden sm:inline">Search items...</span>
+        <kbd className="ml-auto hidden shrink-0 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline">⌘K</kbd>
       </Button>
       <DialogContent
         className="top-[18vh] block max-w-xl translate-y-0 overflow-hidden p-0"
