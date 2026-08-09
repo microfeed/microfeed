@@ -88,6 +88,7 @@ export default class EditItemApp extends React.Component<Props, any> {
     this.onSubmit = this.onSubmit.bind(this);
     this.onDelete = this.onDelete.bind(this);
     this.onUpdateItemMeta = this.onUpdateItemMeta.bind(this);
+    this.onUpdateItemStatus = this.onUpdateItemStatus.bind(this);
     this.saveSnapshot = this.saveSnapshot.bind(this);
 
     const action = props.itemId ? 'edit' : 'create';
@@ -164,6 +165,20 @@ export default class EditItemApp extends React.Component<Props, any> {
       item: {...prevState.item, ...attrDict,},
       ...extraDict,
     }), () => this.autosave.markChanged({immediate}));
+  }
+
+  onUpdateItemStatus(nextStatus: number) {
+    const publicationFields = nextStatus === STATUSES.PUBLISHED &&
+        this.state.item.pubDateIsDraftDefault === true
+      ? {
+          pubDateIsDraftDefault: false,
+          pubDateMs: Date.now(),
+        }
+      : {};
+    this.onUpdateItemMeta({
+      ...publicationFields,
+      status: nextStatus,
+    }, undefined, true);
   }
 
   async onDelete() {
@@ -363,20 +378,8 @@ export default class EditItemApp extends React.Component<Props, any> {
                         label: (ITEM_STATUSES_DICT[STATUSES.UNPUBLISHED] as any).name,
                         value: String(STATUSES.UNPUBLISHED),
                       }]}
-                    onValueChange={(value) => {
-                      const nextStatus = parseInt(value, 10);
-                      const publicationFields = nextStatus === STATUSES.PUBLISHED &&
-                          item.pubDateIsDraftDefault === true
-                        ? {
-                            pubDateIsDraftDefault: false,
-                            pubDateMs: Date.now(),
-                          }
-                        : {};
-                      this.onUpdateItemMeta({
-                        ...publicationFields,
-                        status: nextStatus,
-                      }, undefined, true);
-                    }}
+                    onValueChange={(value) =>
+                      this.onUpdateItemStatus(parseInt(value, 10))}
                   />
                   <div className="text-muted-color text-xs" dangerouslySetInnerHTML={{__html: (ITEM_STATUSES_DICT[status] as any).description}} />
                 </div>
@@ -483,7 +486,28 @@ export default class EditItemApp extends React.Component<Props, any> {
               idleMessage={action === 'create'
                 ? 'Start editing to create an unpublished draft.'
                 : undefined}
-            />
+            >
+              {status !== STATUSES.PUBLISHED && (
+                <>
+                  <Button
+                    aria-describedby="publish-item-description"
+                    className="w-full"
+                    disabled={autosaveState.phase === "saving"}
+                    onClick={() => this.onUpdateItemStatus(STATUSES.PUBLISHED)}
+                    type="button"
+                    variant="outline"
+                  >
+                    Publish
+                  </Button>
+                  <p
+                    className="mt-2 text-xs text-muted-foreground"
+                    id="publish-item-description"
+                  >
+                    Save and change status to published
+                  </p>
+                </>
+              )}
+            </AdminSaveAction>
             {action === 'edit' && <div>
               <AdminSideQuickLinks
                 AdditionalLinksDiv={<div className="flex flex-wrap">

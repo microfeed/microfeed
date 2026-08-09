@@ -9,6 +9,7 @@ import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 import AdminDatetimePicker from "@/components/admin/shared/AdminDatetimePicker";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
+import {Button} from "@/components/ui/button";
 import {STATUSES} from "@/shared/Constants";
 
 vi.mock("@/client/ToastUtils", () => ({showToast: vi.fn()}));
@@ -94,6 +95,13 @@ function itemStatusControl(app: EditItemApp) {
     app.render(),
     (element) => element.type === AdminRadioGroup &&
       element.props.name === "item-status",
+  );
+}
+
+function itemPublishButton(app: EditItemApp) {
+  return findElement(
+    app.render(),
+    (element) => element.type === Button && element.props.children === "Publish",
   );
 }
 
@@ -242,6 +250,74 @@ describe("admin editor autosave", () => {
         }),
       }),
     );
+  });
+
+  it("publishes the current create or edit form from the save card", async () => {
+    vi.setSystemTime(new Date("2026-08-08T12:00:00.000Z"));
+    const create = mount(new EditItemApp(props()));
+    const createButton = itemPublishButton(create);
+
+    expect(createButton).toBeDefined();
+    expect(createButton?.props["aria-describedby"]).toBe(
+      "publish-item-description",
+    );
+    expect(renderToStaticMarkup(create.render())).toContain(
+      "Save and change status to published",
+    );
+
+    const publishedAt = Date.now();
+    createButton?.props.onClick();
+    await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledOnce());
+    expect(vi.mocked(Requests.axiosPost).mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        item: expect.objectContaining({
+          pubDateIsDraftDefault: false,
+          pubDateMs: publishedAt,
+          status: STATUSES.PUBLISHED,
+        }),
+      }),
+    );
+    expect(itemPublishButton(create)).toBeUndefined();
+    await vi.waitFor(() => {
+      expect(create.state.autosaveState).toEqual({dirty: false, phase: "saved"});
+    });
+
+    vi.mocked(Requests.axiosPost).mockClear();
+    const edit = mount(new EditItemApp({
+      ...props({
+        id: "unlisteditem2",
+        pubDateMs: Date.parse("2026-07-01T10:00:00.000Z"),
+        status: STATUSES.UNLISTED,
+        title: "Unlisted item",
+      }),
+      itemId: "unlisteditem2",
+    }));
+    expect(itemPublishButton(edit)).toBeDefined();
+    itemPublishButton(edit)?.props.onClick();
+    await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledOnce());
+    expect(vi.mocked(Requests.axiosPost).mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        item: expect.objectContaining({
+          pubDateMs: Date.parse("2026-07-01T10:00:00.000Z"),
+          status: STATUSES.PUBLISHED,
+        }),
+      }),
+    );
+    expect(itemPublishButton(edit)).toBeUndefined();
+    await vi.waitFor(() => {
+      expect(edit.state.autosaveState).toEqual({dirty: false, phase: "saved"});
+    });
+
+    const published = mount(new EditItemApp({
+      ...props({
+        id: "publisheditem1",
+        pubDateMs: Date.parse("2026-07-02T10:00:00.000Z"),
+        status: STATUSES.PUBLISHED,
+        title: "Published item",
+      }),
+      itemId: "publisheditem1",
+    }));
+    expect(itemPublishButton(published)).toBeUndefined();
   });
 
   it("preserves manually selected and legacy publication dates", async () => {

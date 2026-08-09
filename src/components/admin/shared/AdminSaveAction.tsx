@@ -1,3 +1,5 @@
+import type {ReactNode} from "react";
+
 import {Button} from "@/components/ui/button";
 import type {
   AutosavePhase,
@@ -6,6 +8,7 @@ import type {
 
 interface Props extends AutosaveState {
   buttonLabel?: string;
+  children?: ReactNode;
   idleMessage?: string;
 }
 
@@ -18,6 +21,7 @@ const STATUS_TEXT: Record<Exclude<AutosavePhase, "idle">, string> = {
 
 export default function AdminSaveAction({
   buttonLabel = "Save now",
+  children,
   dirty,
   idleMessage = "Changes save automatically after five seconds.",
   phase,
@@ -44,6 +48,7 @@ export default function AdminSaveAction({
       >
         {failed ? "Retry save" : buttonLabel}
       </Button>
+      {children && <div className="mt-4 border-t pt-4">{children}</div>}
     </div>
   );
 }
