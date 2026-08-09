@@ -81,12 +81,14 @@ export default class EditItemApp extends React.Component<Props, any> {
   private autosave: AutosaveCoordinator<ItemSnapshot>;
   private cleanupNavigationGuard?: () => void;
   private mounted = false;
+  private publishRequested = false;
 
   constructor(props: Props) {
     super(props);
 
     this.onSubmit = this.onSubmit.bind(this);
     this.onDelete = this.onDelete.bind(this);
+    this.onPublish = this.onPublish.bind(this);
     this.onUpdateItemMeta = this.onUpdateItemMeta.bind(this);
     this.onUpdateItemStatus = this.onUpdateItemStatus.bind(this);
     this.saveSnapshot = this.saveSnapshot.bind(this);
@@ -181,6 +183,11 @@ export default class EditItemApp extends React.Component<Props, any> {
     }, undefined, true);
   }
 
+  onPublish() {
+    this.publishRequested = true;
+    this.onUpdateItemStatus(STATUSES.PUBLISHED);
+  }
+
   async onDelete() {
     if (!await this.autosave.flush()) return;
 
@@ -218,6 +225,8 @@ export default class EditItemApp extends React.Component<Props, any> {
     if (!this.mounted) return;
 
     const created = this.state.action === 'create';
+    const publishRequested = this.publishRequested;
+    this.publishRequested = false;
     await new Promise<void>((resolve) => {
       this.setState((previousState: any) => ({
         action: created ? 'edit' : previousState.action,
@@ -239,7 +248,12 @@ export default class EditItemApp extends React.Component<Props, any> {
         resolve();
       });
     });
-    showToast(created ? 'Item added.' : 'Item saved.', 'success');
+    showToast(
+      publishRequested && snapshot.item.status === STATUSES.PUBLISHED
+        ? 'Item published'
+        : created ? 'Item added.' : 'Item saved.',
+      'success',
+    );
   }
 
   showSaveError(error: any) {
@@ -493,7 +507,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                     aria-describedby="publish-item-description"
                     className="w-full"
                     disabled={autosaveState.phase === "saving"}
-                    onClick={() => this.onUpdateItemStatus(STATUSES.PUBLISHED)}
+                    onClick={this.onPublish}
                     type="button"
                     variant="outline"
                   >

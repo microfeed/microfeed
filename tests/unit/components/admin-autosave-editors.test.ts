@@ -250,6 +250,9 @@ describe("admin editor autosave", () => {
         }),
       }),
     );
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenLastCalledWith("Item added.", "success");
+    });
   });
 
   it("publishes the current create or edit form from the save card", async () => {
@@ -281,8 +284,10 @@ describe("admin editor autosave", () => {
     await vi.waitFor(() => {
       expect(create.state.autosaveState).toEqual({dirty: false, phase: "saved"});
     });
+    expect(showToast).toHaveBeenLastCalledWith("Item published", "success");
 
     vi.mocked(Requests.axiosPost).mockClear();
+    vi.mocked(showToast).mockClear();
     const edit = mount(new EditItemApp({
       ...props({
         id: "unlisteditem2",
@@ -307,6 +312,7 @@ describe("admin editor autosave", () => {
     await vi.waitFor(() => {
       expect(edit.state.autosaveState).toEqual({dirty: false, phase: "saved"});
     });
+    expect(showToast).toHaveBeenLastCalledWith("Item published", "success");
 
     const published = mount(new EditItemApp({
       ...props({
