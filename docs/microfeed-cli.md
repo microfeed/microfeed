@@ -21,6 +21,7 @@ a shorter workflow, start with
 - [`instances`](#yarn-microfeed-instances)
 - [`item`](#yarn-microfeed-item)
 - [`item list`](#yarn-microfeed-item-list)
+- [`item search`](#yarn-microfeed-item-search)
 - [`item get`](#yarn-microfeed-item-get)
 - [`item create`](#yarn-microfeed-item-create)
 - [`item update`](#yarn-microfeed-item-update)
@@ -107,6 +108,7 @@ For every authenticated REST request, the CLI:
 | `instances use <name>` | Select the default saved instance. | Changes only the local current-instance pointer. |
 | `instances remove <name>` | Remove a saved instance locally without contacting the site. | Changes only the local instance store. |
 | `item list` | Read a page of the feed. | Read-only. |
+| `item search <query>` | Search item titles or stored plain-text content. | Read-only. |
 | `item get <item-id>` | Read one item. | Read-only. |
 | `item create` | Create an item from flags or JSON. | Creates remote content. |
 | `item update <item-id>` | Update an item from flags or JSON. | Changes remote content. |
@@ -240,14 +242,15 @@ cleanup or recovery when the keychain entry is unavailable.
 
 ## `yarn microfeed item`
 
-List, read, create, update, or delete content items. An `<item-id>` is the
-stable ID returned by `item list` or `item get`, such as `0HGJLSML3P1`.
+List, search, read, create, update, or delete content items. An `<item-id>` is
+the stable ID returned by `item list`, `item search`, or `item get`, such as
+`0HGJLSML3P1`.
 Create and update accept either common flags or one JSON object from `--input`;
 they reject mixed input forms. Delete is permanent and requires an exact
 item-ID confirmation.
 
 ```console
-yarn microfeed item <list|get|create|update|delete> [arguments] [options]
+yarn microfeed item <list|search|get|create|update|delete> [arguments] [options]
 ```
 
 ## `yarn microfeed item list`
@@ -271,6 +274,52 @@ yarn microfeed item list [options]
 ```console
 yarn microfeed item list --instance production --limit 25 --json
 ```
+
+## `yarn microfeed item search`
+
+**Purpose:** Search items through `GET /api/v1/search/`.
+
+**Changes:** None.
+
+```console
+yarn microfeed item search <query> [options]
+```
+
+The query contains 1–200 characters. Unquoted terms use implicit AND matching,
+and the final unquoted term supports prefix matching. Put matching single or
+double quotes inside the query for an exact phrase. Exact matches rank before
+typo-tolerant title matches; quoted phrases and content are never fuzzy
+matched.
+
+| Option | Meaning |
+| --- | --- |
+| `--fields <fields>` | Search `title`, `content`, or `title,content`. The default searches both. |
+| `--status <statuses>` | Filter by a comma-separated list of `published`, `unlisted`, or `unpublished`. The default includes all three. |
+| `--date-published-ms-gt <milliseconds>` | Return items published strictly after this Unix timestamp in milliseconds. |
+| `--date-published-ms-lt <milliseconds>` | Return items published strictly before this Unix timestamp in milliseconds. |
+| `--limit <1-100>` | Maximum matches to return; defaults to 20. |
+| `--next-cursor <cursor>` | Continue forward using a cursor returned for the same query and filters. |
+
+Search only titles for `hello`:
+
+```console
+yarn microfeed item search hello --fields title --instance production --json
+```
+
+Keep the shell's outer quotes separate from the exact phrase quotes that the
+search API receives:
+
+```console
+yarn microfeed item search '"season finale"' \
+  --fields title,content \
+  --status published,unlisted \
+  --json
+```
+
+Without `--json`, the response body is formatted on standard output. With
+`--json`, the normal CLI API envelope contains the search response under
+`body`, including `items`, safe highlight segments, and an optional
+`next_cursor`.
 
 ## `yarn microfeed item get`
 

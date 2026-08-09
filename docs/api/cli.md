@@ -99,6 +99,7 @@ Use `--json` when another program or coding agent will consume the result:
 
 ```console
 yarn microfeed item list --instance production --json
+yarn microfeed item search hello --fields title --instance production --json
 yarn microfeed item get <item-id> --instance production --json
 yarn microfeed item create --instance production --input item.json --json
 yarn microfeed item update <item-id> --instance production --input - --json
@@ -110,6 +111,21 @@ yarn microfeed media upload ./inline-image.png --instance production --json
 Create and update accept either a JSON file or standard input with `--input`,
 or common flags such as `--title`, `--content-html`, and `--status`. Do not mix
 JSON input and item flags in one command.
+
+Search accepts one 1–200 character query and the same filters as the item
+search API. For example, search only titles for an exact phrase:
+
+```console
+yarn microfeed item search '"season finale"' \
+  --fields title \
+  --status published,unlisted \
+  --instance production \
+  --json
+```
+
+Unquoted terms use AND matching, the final unquoted term supports prefix
+matching, and exact results rank before typo-tolerant title results. Use
+`--next-cursor` with the same query and filters to continue forward.
 
 Use `--attachment-file <path>` for the item's one main media attachment. It may
 be audio, video, a document, or an image; it becomes JSON Feed

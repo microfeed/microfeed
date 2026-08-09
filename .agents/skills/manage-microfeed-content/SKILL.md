@@ -31,7 +31,8 @@ clone, use <https://docs.microfeed.org/microfeed-cli/>.
 - **Connection name**: this computer's label under **Account settings → App
   access**, such as `Home Mac`. It is not the local instance name. One site can
   show several computer connections for the same microfeed CLI application.
-- **Item ID**: the stable ID returned by `item list` or `item get`.
+- **Item ID**: the stable ID returned by `item list`, `item search`, or
+  `item get`.
 - **Item image**: cover art or a thumbnail stored in the top-level `image`
   field. Use `--image-file <path>` for a local file or `--image <url>` for an
   already-hosted absolute URL.
@@ -102,6 +103,7 @@ Common operations:
 
 ```console
 yarn microfeed item list --instance <name> --json
+yarn microfeed item search "hello" --fields title --instance <name> --json
 yarn microfeed item get <item-id> --instance <name> --json
 yarn microfeed item create --instance <name> --title "Title" \
   --content-html "<p>Body</p>" --status unlisted --json

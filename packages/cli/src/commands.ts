@@ -37,6 +37,15 @@ const ITEM_VALUE_FLAGS = new Set([
   "url",
 ]);
 
+const ITEM_SEARCH_VALUE_FLAGS = new Set([
+  "date-published-ms-gt",
+  "date-published-ms-lt",
+  "fields",
+  "limit",
+  "next-cursor",
+  "status",
+]);
+
 function instanceName(siteUrl: string): string {
   return new URL(siteUrl).hostname.toLowerCase().replace(/[^a-z0-9.-]+/gu, "-");
 }
@@ -267,6 +276,26 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
     writeApiResponse(await apiRequest("GET", path, globals), globals.json);
     return;
   }
+  if (action === "search") {
+    const parsed = parseOptions(rest, ITEM_SEARCH_VALUE_FLAGS);
+    if (parsed.positionals.length !== 1) {
+      throw new CliError("Usage: yarn microfeed item search <query> [options]");
+    }
+    const searchQuery = parsed.positionals[0]!.trim();
+    if (!searchQuery || Array.from(searchQuery).length > 200) {
+      throw new CliError("Search queries must contain 1–200 characters.");
+    }
+    const query = new URLSearchParams({q: searchQuery});
+    for (const name of ITEM_SEARCH_VALUE_FLAGS) {
+      const value = stringFlag(parsed, name);
+      if (value) query.set(name.replaceAll("-", "_"), value);
+    }
+    writeApiResponse(
+      await apiRequest("GET", `/api/v1/search/?${query}`, globals),
+      globals.json,
+    );
+    return;
+  }
   if (action === "get") {
     if (rest.length !== 1) throw new CliError("Usage: yarn microfeed item get <item-id>");
     writeApiResponse(await apiRequest("GET", `/api/v1/items/${encodeURIComponent(rest[0]!)}/`, globals), globals.json);
@@ -330,7 +359,7 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
     writeApiResponse(await apiRequest("DELETE", `/api/v1/items/${encodeURIComponent(itemId)}/`, globals), globals.json);
     return;
   }
-  throw new CliError("Usage: yarn microfeed item list|get|create|update|delete");
+  throw new CliError("Usage: yarn microfeed item list|search|get|create|update|delete");
 }
 
 export async function mediaCommand(args: string[], globals: GlobalOptions): Promise<void> {

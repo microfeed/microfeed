@@ -134,6 +134,7 @@ agent:
 
 ```console
 yarn microfeed item list --instance production --json
+yarn microfeed item search hello --fields title --instance production --json
 yarn microfeed item get 0HGJLSML3P1 --instance production --json
 yarn microfeed item create --instance production --input item.json --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --input item.json --json
@@ -145,6 +146,13 @@ yarn microfeed media upload ./inline-image.png --instance production --json
 Create and update accept either a JSON object through `--input` or common flags
 such as `--title`, `--content-html`, and `--status`. Do not mix the two input
 forms.
+
+`item search <query>` searches item titles and stored plain-text content. Use
+`--fields title` for title-only search, `--status` for comma-separated status
+filters, publication-time bounds in Unix milliseconds, and `--next-cursor` for
+forward pagination. Unquoted terms are ANDed, while single or double quotes
+inside the query request an exact phrase. Exact matches rank before
+typo-tolerant title matches.
 
 Use `--attachment-file <path>` for the item's one main media attachment. The
 CLI supports common audio, video, document, and image extensions, infers the
@@ -218,6 +226,7 @@ Every command and nested subcommand supports `-h` and `--help`:
 ```console
 yarn microfeed login --help
 yarn microfeed instances use -h
+yarn microfeed item search --help
 yarn microfeed item create --help
 yarn microfeed help item delete
 yarn microfeed media upload --help
