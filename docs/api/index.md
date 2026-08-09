@@ -25,12 +25,19 @@ The generated OpenAPI 3.1 contract currently includes:
 | `GET /api/v1/items/{itemId}/` | Read one item. |
 | `PUT /api/v1/items/{itemId}/` | Update provided fields without clearing omitted fields. |
 | `DELETE /api/v1/items/{itemId}/` | Delete one item. |
+| `GET /api/v1/search/` | Search item titles or plain-text content with filters and cursor pagination. |
 | `PUT /api/v1/channels/primary/` | Update the primary channel. |
 | `POST /api/v1/media_files/presigned_urls/` | Prepare a short-lived, same-origin media upload. |
 
 Each item may have both an `image` for cover art or a thumbnail and one main
 media attachment in `attachments[0]`. The attachment may be audio, video, a
 document, an image, or an external link; it becomes the RSS `<enclosure>`.
+
+Search uses the site's D1 database. Terms are combined with AND, the last term
+supports prefix matching, and single or double quotes select an exact phrase.
+Exact matches rank before typo-tolerant title matches. Use the generated API
+reference for the current `fields`, status, publication-date, limit, cursor,
+highlight, and response schemas.
 
 ![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](/images/screenshots/3-api-1.png)
 

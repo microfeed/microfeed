@@ -1,4 +1,5 @@
-import {randomShortUUID} from "@/shared/StringUtils";
+import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
+import {ITEM_CONTENT_TEXT_REVISION} from "@/shared/ItemSearch";
 import {
   STATUSES, PREDEFINED_SUBSCRIBE_METHODS,
   SETTINGS_CATEGORIES, DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE,
@@ -71,7 +72,8 @@ function getItemJson(itemObj: any) {
     status: itemObj.status,
     pubDateMs: rfc3399ToMs(itemObj.pub_date),
     updatedAtMs: rfc3399ToMs(itemObj.updated_at),
-    ...JSON.parse(itemObj.data)
+    ...JSON.parse(itemObj.data),
+    contentText: String(itemObj.content_text ?? ""),
   };
 }
 
@@ -138,8 +140,13 @@ export default class FeedDb {
     return this.FEED_DB.prepare(sql).bind(...bindList)
   }
 
-  getUpsertSql(table: any, primaryKey: any, queryKwargs: any, keyValuePairs: any) {
-    const timestamp = (new Date()).toISOString();
+  getUpsertSql(
+    table: any,
+    primaryKey: any,
+    queryKwargs: any,
+    keyValuePairs: any,
+    timestamp = (new Date()).toISOString(),
+  ) {
     let updateSql = 'UPDATE SET';
     const setList = ['updated_at = ?'];
     const updateBindList = [timestamp];
@@ -514,8 +521,22 @@ export default class FeedDb {
   }
 
   async _putItemToContent(item: any) {
-    const {createdAtMs: _createdAtMs, id, pubDateMs, status, updatedAtMs: _updatedAtMs, ...data} = item;
+    const {
+      contentText: _contentText,
+      createdAtMs: _createdAtMs,
+      id,
+      pubDateMs,
+      status,
+      updatedAtMs: _updatedAtMs,
+      ...data
+    } = item;
+    const timestamp = (new Date()).toISOString();
+    const contentText = htmlToPlainText(data.description);
+    item.contentText = contentText;
     const keyValuePairs = {
+      'content_text': contentText,
+      'content_text_revision': ITEM_CONTENT_TEXT_REVISION,
+      'content_text_updated_at': timestamp,
       status,
       'pub_date': msToRFC3339(pubDateMs),
       data: JSON.stringify(data),
@@ -523,7 +544,7 @@ export default class FeedDb {
     let res;
     try {
       res = await this.getUpsertSql(
-        'items', 'id', {id}, {...keyValuePairs}).run();
+        'items', 'id', {id}, {...keyValuePairs}, timestamp).run();
     } catch (error) {
       console.error('Failed to upsert item', error);
       throw error;
@@ -591,8 +612,9 @@ export default class FeedDb {
       ).bind(target.id);
       update = this.FEED_DB.prepare(
         "UPDATE items SET updated_at = ?, " +
+          "content_text_updated_at = ?, " +
           "data = json_remove(data, '$.image') WHERE id = ?",
-      ).bind(timestamp, target.id);
+      ).bind(timestamp, timestamp, target.id);
     } else {
       const category = SETTINGS_CATEGORIES.WEB_GLOBAL_SETTINGS;
       select = this.FEED_DB.prepare(

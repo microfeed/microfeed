@@ -4,7 +4,7 @@ import {
   PUBLIC_URLS,
   resolvePublicBucketUrl,
   secondsToHHMMSS,
-  htmlToPlainText
+  htmlToPlainText,
 } from "@/shared/StringUtils";
 import {humanizeMs, msToRFC3339} from "@/shared/TimeUtils";
 import {ENCLOSURE_CATEGORIES, ITEM_STATUSES_DICT, STATUSES} from "@/shared/Constants";
@@ -42,7 +42,7 @@ export default class FeedPublicJsonBuilder {
     item.updatedDateRfc3339 = item.updatedAtMs
       ? msToRFC3339(item.updatedAtMs)
       : undefined;
-    item.descriptionText = htmlToPlainText(item.description);
+    item.descriptionText = String(item.contentText ?? "");
 
     if (item.image) {
       item.image = urlJoinWithRelative(this.publicBucketUrl, item.image);

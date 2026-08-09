@@ -30,8 +30,10 @@ yarn manage deploy
 yarn manage status
 ```
 
-`deploy` applies database migrations, runs project checks, builds the Worker,
-tags the deployed version with the source commit, deploys, and verifies it.
+`deploy` applies database migrations, completes required data normalization
+(including stored plain text for item search), runs project checks, builds the
+Worker, tags the deployed version with the source commit, deploys, reconciles
+data written during the version switch, and verifies it.
 
 ## If this clone is not connected
 

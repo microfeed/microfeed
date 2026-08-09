@@ -332,12 +332,44 @@ export function escapeHtml(htmlStr: any) {
 }
 
 export function unescapeHtml(htmlStr: any) {
-  htmlStr = htmlStr.replace(/&lt;/g, "<");
-  htmlStr = htmlStr.replace(/&gt;/g, ">");
-  htmlStr = htmlStr.replace(/&quot;/g, "\"");
-  htmlStr = htmlStr.replace(/&#39;/g, "'");
-  htmlStr = htmlStr.replace(/&amp;/g, "&");
-  return htmlStr;
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    copy: "©",
+    gt: ">",
+    hellip: "…",
+    laquo: "«",
+    ldquo: "“",
+    lsquo: "‘",
+    lt: "<",
+    mdash: "—",
+    nbsp: "\u00a0",
+    ndash: "–",
+    quot: "\"",
+    raquo: "»",
+    rdquo: "”",
+    reg: "®",
+    rsquo: "’",
+    trade: "™",
+  };
+  return String(htmlStr ?? "").replace(
+    /&(?:#(\d+)|#x([\da-f]+)|([a-z]+));/giu,
+    (entity, decimal, hexadecimal, named) => {
+      const codePoint = (value: number) =>
+        value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff)
+          ? String.fromCodePoint(value)
+          : entity;
+      if (decimal) {
+        const value = Number.parseInt(decimal, 10);
+        return codePoint(value);
+      }
+      if (hexadecimal) {
+        const value = Number.parseInt(hexadecimal, 16);
+        return codePoint(value);
+      }
+      return namedEntities[String(named).toLowerCase()] ?? entity;
+    },
+  );
 }
 
 export function htmlToPlainText(htmlStr: any, _options: any = null) {

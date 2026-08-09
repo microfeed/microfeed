@@ -120,9 +120,13 @@ describe("snapshot migration history", () => {
       "channels",
       "d1_kv",
       "d1_migrations",
+      "item_search_exact",
+      "item_search_exact_data",
+      "item_search_title_trigram_idx",
       "sqlite_sequence",
     ])).toEqual(["channels"]);
     expect(SNAPSHOT_TABLES.internal).toContain("d1_kv");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("item_search_metadata");
   });
 
   it("extracts explicit index definitions without matching comments or data", () => {
@@ -261,18 +265,31 @@ function snapshotSql(
   database: DatabaseSync,
   includeIndexes = true,
 ): {data: string; schema: string} {
-  const schemaRows = database.prepare(
-    "SELECT sql FROM sqlite_schema WHERE sql IS NOT NULL AND " +
-      "name NOT LIKE 'sqlite_%' " +
-      `${includeIndexes ? "" : "AND type <> 'index' "}` +
-      "ORDER BY type DESC, name",
-  ).all() as Array<{sql: string}>;
-  const tables = database.prepare(
+  const allTables = database.prepare(
     "SELECT name FROM sqlite_schema WHERE type = 'table' AND " +
       "name NOT LIKE 'sqlite_%' ORDER BY name",
   ).all() as Array<{name: string}>;
+  const exportedTables = new Set([
+    ...applicationTablesFromSqlite(allTables.map(({name}) => name)),
+    "d1_migrations",
+  ]);
+  const schemaRows = (database.prepare(
+    "SELECT name, sql, tbl_name, type FROM sqlite_schema " +
+      "WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' " +
+      `${includeIndexes ? "" : "AND type <> 'index' "}` +
+      "ORDER BY type DESC, name",
+  ).all() as Array<{
+    name: string;
+    sql: string;
+    tbl_name: string;
+    type: string;
+  }>).filter(({name, tbl_name, type}) =>
+    exportedTables.has(type === "table" ? name : tbl_name) &&
+    !name.startsWith("item_search_") &&
+    !name.startsWith("items_search_")
+  );
   const data: string[] = [];
-  for (const {name} of tables) {
+  for (const name of exportedTables) {
     if (new Set<string>([
       ...SNAPSHOT_TABLES.ephemeral,
       ...SNAPSHOT_TABLES.targetSpecific,

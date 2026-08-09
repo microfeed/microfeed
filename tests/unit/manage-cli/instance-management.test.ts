@@ -100,9 +100,35 @@ function commandResult(
   return {exitCode, stderr, stdout};
 }
 
+function itemSearchCommandResult(args: readonly string[]) {
+  const command = args.join(" ");
+  if (
+    command.startsWith("d1 execute FEED_DB --local --file ") &&
+    command.includes("microfeed-item-search-")
+  ) {
+    return commandResult();
+  }
+  if (!command.startsWith("d1 execute FEED_DB --local --command ")) {
+    return undefined;
+  }
+  const commandIndex = args.indexOf("--command");
+  const sql = args[commandIndex + 1] ?? "";
+  if (!sql.includes("item_search") && !sql.includes("content_text_updated_at")) {
+    return undefined;
+  }
+  const results = sql.includes("sqlite_schema")
+    ? [{name: "item_search_exact"}, {name: "item_search_title_trigram"}]
+    : sql.includes("COUNT(*)")
+    ? [{count: 0}]
+    : [];
+  return commandResult(JSON.stringify([{results}]));
+}
+
 function existingLocalOwnerRunner(): CommandRunner {
   return vi.fn<CommandRunner>(async (_executable, args) => {
     const command = args.join(" ");
+    const itemSearch = itemSearchCommandResult(args);
+    if (itemSearch) return itemSearch;
     if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
       return commandResult("Migrations applied");
     }
@@ -127,6 +153,8 @@ function configurableLocalOwnerRunner(
 ): CommandRunner {
   return vi.fn<CommandRunner>(async (_executable, args) => {
     const command = args.join(" ");
+    const itemSearch = itemSearchCommandResult(args);
+    if (itemSearch) return itemSearch;
     if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
       return commandResult("Migrations applied");
     }
@@ -148,6 +176,8 @@ function configurableLocalOwnerRunner(
 function localAuthMutationRunner(sqlStatements: string[]): CommandRunner {
   return vi.fn<CommandRunner>(async (_executable, args) => {
     const command = args.join(" ");
+    const itemSearch = itemSearchCommandResult(args);
+    if (itemSearch) return itemSearch;
     if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
       return commandResult("Migrations applied");
     }
@@ -628,6 +658,8 @@ describe("first-class local instances", () => {
     const {commands, config} = await freshModules();
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
+      const itemSearch = itemSearchCommandResult(args);
+      if (itemSearch) return itemSearch;
       if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
         return commandResult("Migrations applied");
       }
@@ -703,6 +735,8 @@ describe("first-class local instances", () => {
     await config.ensureLocalOnlyConfig("smoke-failure");
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
+      const itemSearch = itemSearchCommandResult(args);
+      if (itemSearch) return itemSearch;
       if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
         return commandResult("Migrations applied");
       }

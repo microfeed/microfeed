@@ -27,8 +27,11 @@ storage, feed ordering, favicon, public themes, and custom code. It does not
 contain the **Edit channel** form.
 
 The channel control at the top of the sidebar links directly to the public
-website, RSS feed, and JSON feed. The top bar also contains theme and user
-menus. [**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
+website, RSS feed, and JSON feed. The top bar also contains item search, theme,
+and user menus. Select **Search** or press <kbd>Command</kbd>+<kbd>K</kbd> on a
+Mac or <kbd>Ctrl</kbd>+<kbd>K</kbd> elsewhere. The dialog first shows the five
+most recently updated items; type at least two characters to search titles.
+[**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
 in the user menu manages login identity, passkeys, dashboard sessions, and
 microfeed CLI computer connections. On small screens, the menu button opens
 the sidebar as a drawer.

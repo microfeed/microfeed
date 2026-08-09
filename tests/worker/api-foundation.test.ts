@@ -26,6 +26,7 @@ import * as versionedFeed from "@/pages/api/v1/feed/index";
 import * as versionedItem from "@/pages/api/v1/items/[itemId]/index";
 import * as versionedItems from "@/pages/api/v1/items/index";
 import * as versionedMedia from "@/pages/api/v1/media_files/presigned_urls/index";
+import * as versionedSearch from "@/pages/api/v1/search/index";
 import {
   ApiKeyNameConflictError,
   apiKeyExists,
@@ -260,6 +261,12 @@ describe("API access decisions", () => {
       kind: "integration",
       legacy: false,
     });
+    expect(apiPathDetails(`${API_BASE_PATH}search/`)).toEqual({
+      canonicalPath: `${API_BASE_PATH}search/`,
+      kind: "integration",
+      legacy: false,
+    });
+    expect(apiPathDetails("/api/search/")).toBeNull();
     expect(apiPathDetails("/api/items/item-id/")).toEqual({
       canonicalPath: `${API_BASE_PATH}items/item-id/`,
       kind: "integration",
@@ -317,6 +324,7 @@ describe("API route version aliases", () => {
     expect(legacyItem.DELETE).toBe(versionedItem.DELETE);
     expect(legacyChannel.PUT).toBe(versionedChannel.PUT);
     expect(legacyMedia.POST).toBe(versionedMedia.POST);
+    expect(versionedSearch.GET).toBeTypeOf("function");
   });
 
   it("redirects compatibility API docs directly to their v1 paths", async () => {

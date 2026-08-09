@@ -109,6 +109,7 @@ describe("generated API reference", () => {
       "/feed/",
       "/items/",
       "/items/{itemId}/",
+      "/search/",
       "/channels/{channelId}/",
       "/media_files/presigned_urls/",
     ]);

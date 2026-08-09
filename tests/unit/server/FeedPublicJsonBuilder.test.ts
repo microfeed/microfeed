@@ -3,6 +3,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import FeedPublicJsonBuilder from "@/server/feed/FeedPublicJsonBuilder";
 import FeedPublicRssBuilder from "@/server/feed/FeedPublicRssBuilder";
 import {LEGACY_DEFAULT_FAVICON_URL} from "@/shared/Favicon";
+import {STATUSES} from "@/shared/Constants";
 
 function buildChannel(faviconUrl: string) {
   const builder = new FeedPublicJsonBuilder(
@@ -41,6 +42,35 @@ describe("public JSON feed favicon", () => {
       favicon: "/media/uploads/favicon.png",
       icon: "/media/channel/image.png",
     });
+  });
+});
+
+describe("public JSON item plain text", () => {
+  it("uses only normalized stored text without a runtime HTML fallback", () => {
+    const json = new FeedPublicJsonBuilder(
+      {
+        channel: {title: "Example feed"},
+        items: [{
+          contentText: "Stored text",
+          description: "<p>HTML text</p>",
+          id: "stored-item",
+          pubDateMs: Date.parse("2026-08-01T00:00:00.000Z"),
+          status: STATUSES.PUBLISHED,
+          title: "Stored item",
+        }, {
+          description: "<p>Must not be stripped while rendering</p>",
+          id: "unmigrated-item",
+          pubDateMs: Date.parse("2026-08-01T00:00:00.000Z"),
+          status: STATUSES.PUBLISHED,
+          title: "Unmigrated item",
+        }],
+        settings: {},
+      },
+      "https://feed.example.com",
+      new Request("https://feed.example.com/json/"),
+    ).getJsonData() as any;
+    expect(json.items[0].content_text).toBe("Stored text");
+    expect(json.items[1].content_text).toBe("");
   });
 });
 

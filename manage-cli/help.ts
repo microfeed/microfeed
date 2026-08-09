@@ -114,6 +114,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
       "Runs type checks, focused deployment smoke tests, and a build before deploying, then verifies the public site and protected admin route. The complete repository test suite remains part of yarn check and continuous integration.",
+      "Normalizes stored item plain text before deployment and reconciles it after the Worker switch; search remains unavailable if either validation pass is incomplete.",
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
@@ -157,10 +158,11 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     usage: "yarn manage dev [--instance <name>] [--preview]",
   },
   {
-    changes: "Creates a read-only export, restores a new local instance, or replaces the data in one explicitly confirmed fresh Cloudflare target.",
+    changes: "Creates an export, restores a new local instance, or replaces the data in one explicitly confirmed fresh Cloudflare target.",
     details: [
       "Actions: create packages D1 schema/data and the whole R2 bucket; pull creates that package and restores a new local instance; restore validates and imports one package. Cloudflare snapshot operations require ready R2 media storage.",
       "Every archive records the exact applied migration filenames and SHA-256 hashes. Restore recreates that historical schema and ledger, then applies this checkout's newer migrations.",
+      "D1 FTS virtual tables are rebuildable rather than archived. Creation briefly removes them for export and always recreates them; restore rebuilds them from durable item data.",
       "Long-running create and restore phases show an animated elapsed-time indicator with brief D1, migration, R2, and verification updates.",
       "Archive validation and target readiness are separate checks. A valid archive is not restorable until fresh-target validation also succeeds.",
       "If a completed initialization is missing its fingerprint, --dry-run can repair the local safety record only after read-only Worker, D1, migration, bootstrap-data, installation-identity, and R2 checks pass.",
