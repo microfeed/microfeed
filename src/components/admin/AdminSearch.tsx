@@ -24,6 +24,7 @@ interface HighlightSegment {
 }
 
 interface AdminSearchResult {
+  date_published: string;
   edit_url: string;
   highlights: HighlightSegment[];
   id: string;
@@ -37,6 +38,17 @@ interface Props {
   adminPath: string;
 }
 
+const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+function formatShortDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : shortDateFormatter.format(date);
+}
+
 function ResultTitle({result}: {result: AdminSearchResult}) {
   const segments = result.highlights.length > 0
     ? result.highlights
@@ -44,6 +56,19 @@ function ResultTitle({result}: {result: AdminSearchResult}) {
   return segments.map((segment, index) => segment.matched
     ? <mark className="rounded-sm bg-primary/15 px-0.5 text-foreground" key={index}>{segment.text}</mark>
     : <span key={index}>{segment.text}</span>
+  );
+}
+
+function ResultMetadata({result}: {result: AdminSearchResult}) {
+  const publishedDate = formatShortDate(result.date_published);
+  return (
+    <>
+      {result.status}
+      {publishedDate && (
+        <> · <time dateTime={result.date_published}>{publishedDate}</time></>
+      )}
+      {result.match_type === "fuzzy" ? " · Similar title" : ""}
+    </>
   );
 }
 
@@ -236,7 +261,7 @@ export default function AdminSearch({adminPath}: Props) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium"><ResultTitle result={result} /></span>
                     <span className="block text-xs capitalize text-muted-foreground">
-                      {result.status}{result.match_type === "fuzzy" ? " · Similar title" : ""}
+                      <ResultMetadata result={result} />
                     </span>
                   </span>
                   <span aria-hidden="true" className="text-muted-foreground">↵</span>

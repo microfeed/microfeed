@@ -36,5 +36,7 @@ describe("admin item search", () => {
     expect(search).toContain("sm:text-xs");
     expect(search).toContain("lg:w-56");
     expect(search).toContain("ml-auto hidden shrink-0");
+    expect(search).toContain("const publishedDate = formatShortDate(result.date_published)");
+    expect(search).toContain('<time dateTime={result.date_published}>');
   });
 });

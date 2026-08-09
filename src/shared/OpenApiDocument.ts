@@ -155,7 +155,8 @@ export const OPENAPI_DOCUMENT = createDocument({
         description:
           "Searches D1 for non-deleted items. Unquoted terms use AND semantics; " +
           "single- and double-quoted clauses require an exact phrase. Exact " +
-          "matches rank before typo-tolerant title matches.",
+          "matches rank before typo-tolerant title matches. Each result is an " +
+          "Item with safe title and content highlight segments.",
         tags: ["Search"],
         requestParams: {query: apiSearchQuerySchema},
         responses: {

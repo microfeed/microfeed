@@ -271,8 +271,21 @@ describe("D1 item search", () => {
       request,
     } as APIContext);
     expect(response.status).toBe(200);
-    expect(apiSearchResponseSchema.safeParse(await response.json()).success)
-      .toBe(true);
+    const responseData = await response.json() as {
+      items: Array<Record<string, unknown>>;
+    };
+    expect(apiSearchResponseSchema.safeParse(responseData).success).toBe(true);
+    expect(responseData.items[0]).toEqual({
+      content_text: "Stored text",
+      date_modified: expect.any(String),
+      date_published: "2026-08-01T10:00:00.000Z",
+      date_published_ms: Date.parse("2026-08-01T10:00:00.000Z"),
+      highlights: expect.any(Object),
+      id: "search-api",
+      status: "published",
+      title: "API searchable item",
+      url: `${ORIGIN}/i/api-searchable-item-search-api/`,
+    });
 
     const invalid = await searchApiItems({
       locals: {feedDb: db},
@@ -308,6 +321,12 @@ describe("D1 item search", () => {
     const recentData = await recent.json() as {items: unknown[]};
     expect(recentData.items.length).toBeGreaterThan(0);
     expect(recentData.items.length).toBeLessThanOrEqual(5);
+    expect(recentData.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        date_published: "2026-08-01T10:00:00.000Z",
+        id: "search-admin",
+      }),
+    ]));
 
     const typed = await getAdminItemSearch(
       new Request(`${ORIGIN}/admin/ajax/search/?q=serchable`),

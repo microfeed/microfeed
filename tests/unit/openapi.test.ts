@@ -169,4 +169,21 @@ describe("generated API reference", () => {
     expect(specification).toContain("current UTC year");
     expect(specification).toContain("Rendered channel copyright");
   });
+
+  it("defines search items as Item plus highlights", () => {
+    const searchItem = OPENAPI_DOCUMENT.components?.schemas?.SearchItem as {
+      allOf?: unknown[];
+    };
+    expect(searchItem.allOf?.[0]).toEqual({
+      $ref: "#/components/schemas/Item",
+    });
+    expect(searchItem.allOf?.[1]).toMatchObject({
+      properties: {
+        highlights: {
+          required: ["content_text", "title"],
+        },
+      },
+      required: ["highlights"],
+    });
+  });
 });

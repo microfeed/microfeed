@@ -28,6 +28,7 @@ import {
 import {createSignedUpload} from "@/server/media/uploads";
 import {
   ItemSearchRequestError,
+  type ItemSearchResponse,
   ItemSearchUnavailableError,
   searchItems,
 } from "@/server/items/search";
@@ -40,6 +41,24 @@ export const getApiFeed: APIRoute = ({request}) =>
   jsonFeedResponse(request, false, undefined, undefined, false);
 
 export const headApiFeed: APIRoute = () => publicFeedHead();
+
+function publicSearchResponse(response: ItemSearchResponse) {
+  return {
+    items: response.items.map((item) => ({
+      content_text: item.content_text,
+      date_modified: item.date_modified,
+      date_published: item.date_published,
+      date_published_ms: item.date_published_ms,
+      highlights: item.highlights,
+      id: item.id,
+      ...(item.image ? {image: item.image} : {}),
+      status: item.status,
+      title: item.title,
+      url: item.web_url,
+    })),
+    ...(response.next_cursor ? {next_cursor: response.next_cursor} : {}),
+  };
+}
 
 export const searchApiItems: APIRoute = async ({locals, request}) => {
   if (!locals.feedDb) {
@@ -64,7 +83,7 @@ export const searchApiItems: APIRoute = async ({locals, request}) => {
       query: parsed.data.q,
       statuses,
     });
-    return jsonResponse(response, {
+    return jsonResponse(publicSearchResponse(response), {
       headers: {"cache-control": "private, no-store"},
     });
   } catch (error) {

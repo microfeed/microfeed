@@ -39,6 +39,7 @@ export async function getAdminItemSearch(
     return jsonResponse({
       items: items.map((item) => ({
         edit_url: adminUrl(`items/${item.id}`, adminPath),
+        date_published: item.date_published,
         highlights: item.highlights.title,
         id: item.id,
         match_type: item.match_type,

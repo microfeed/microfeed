@@ -86,25 +86,12 @@ export const apiSearchHighlightSegmentSchema = z.object({
   text: z.string(),
 }).meta({id: "SearchHighlightSegment"});
 
-export const apiSearchItemSchema = z.object({
-  api_url: z.url(),
-  content_text: z.string(),
-  date_modified: z.iso.datetime(),
-  date_modified_ms: z.number().int().nonnegative(),
-  date_published: z.iso.datetime(),
-  date_published_ms: z.number().int().nonnegative(),
+export const apiSearchItemSchema = apiItemOutputSchema.and(z.object({
   highlights: z.object({
     content_text: z.array(apiSearchHighlightSegmentSchema),
     title: z.array(apiSearchHighlightSegmentSchema),
   }),
-  id: z.string(),
-  image: z.string().optional(),
-  match_type: z.enum(["exact", "fuzzy"]),
-  relevance_score: z.number(),
-  status: z.enum(["published", "unlisted", "unpublished"]),
-  title: z.string(),
-  web_url: z.string(),
-}).meta({id: "SearchItem"});
+}).loose()).meta({id: "SearchItem"});
 
 export const apiSearchResponseSchema = z.object({
   items: z.array(apiSearchItemSchema),
