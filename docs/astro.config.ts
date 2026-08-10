@@ -59,7 +59,8 @@ export default defineConfig({
             { label: "Create and edit items", link: "/dashboard/publish/" },
             { label: "Edit channel", link: "/dashboard/edit-channel/" },
             { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
-            { label: "Themes, access, and custom code", link: "/dashboard/customize/" },
+            { label: "Versioned themes", link: "/dashboard/themes/" },
+            { label: "Access and custom code", link: "/dashboard/customize/" },
           ],
         },
         {

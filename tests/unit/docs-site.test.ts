@@ -118,7 +118,6 @@ describe("documentation site", () => {
       ["dashboard/edit-channel.md", "2-dashboard-2-edit-channel.png"],
       ["dashboard/publish.md", "2-dashboard-2-add-item.png"],
       ["api/index.md", "3-api-1.png"],
-      ["dashboard/customize.md", "4-code-editor-1.png"],
     ]);
     for (const [file, asset] of placements) {
       const source = await readFile(path.join(docsRoot, file), "utf8");

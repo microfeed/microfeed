@@ -119,4 +119,7 @@ webpack-stats.json
 .yarn/releases/*
 !.yarn/releases/yarn-4.18.0.cjs
 .microfeed/
+!packages/theme-kit/assets/starter/.microfeed/
+!packages/theme-kit/assets/starter/.microfeed/schemas/
+!packages/theme-kit/assets/starter/.microfeed/schemas/*.json
 src/worker-configuration.d.ts

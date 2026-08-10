@@ -19,6 +19,7 @@ import {
   useInstanceCommand,
 } from "./commands";
 import {renderCliHelp} from "./help";
+import {themeCommand} from "./theme";
 
 function parseArguments(argv: string[]): {command: string; flags: Flags} {
   const [command = "help", ...argumentsAfterCommand] = argv;
@@ -29,6 +30,19 @@ function parseArguments(argv: string[]): {command: string; flags: Flags} {
   }
   if (command === "snapshot" && rest[0] && !rest[0].startsWith("--")) {
     flags.action = rest.shift()!;
+  }
+  if (command === "theme" && rest[0] && !rest[0].startsWith("--")) {
+    flags.action = rest.shift()!;
+    if (flags.action === "init" && rest[0] && !rest[0].startsWith("--")) {
+      flags.output = rest.shift()!;
+    } else if (flags.action === "install" && rest[0] && !rest[0].startsWith("--")) {
+      flags.source = rest.shift()!;
+    } else if (
+      ["update", "activate", "export", "delete"].includes(String(flags.action)) &&
+      rest[0] && !rest[0].startsWith("--")
+    ) {
+      flags["theme-id"] = rest.shift()!;
+    }
   }
   if (command === "use" && rest[0] && !rest[0].startsWith("--")) {
     flags.instance = rest.shift()!;
@@ -114,6 +128,9 @@ async function main(): Promise<void> {
       break;
     case "snapshot":
       await snapshotCommand(flags);
+      break;
+    case "theme":
+      await themeCommand(flags);
       break;
     case "destroy":
       await destroyCommand(flags);

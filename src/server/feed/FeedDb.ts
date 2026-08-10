@@ -23,6 +23,7 @@ import {
   purgePublicCache,
 } from "@/server/cache/public-cache";
 import type {FeedContent, ImageMetadataTarget} from "@/types";
+import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
 
 /**
  * support url query parameters:
@@ -258,7 +259,7 @@ export default class FeedDb {
   ) {
     const batchStatements: any[] = [];
     things.forEach((thing: any) => {
-      let sql = `SELECT * FROM ${thing.table}`;
+      let sql = thing.sql ?? `SELECT * FROM ${thing.table}`;
       const whereList: any[] = [];
       const bindList: any[] = [];
       if (thing.queryKwargs) {
@@ -360,13 +361,37 @@ export default class FeedDb {
           (contentJson as any)['items_sort'] = pagination.sort;
           (contentJson as any)['items_order'] = pagination.order;
         }
+      } else if (thing.table === 'activeTheme' && response.results[0]) {
+        const row = response.results[0] as Record<string, unknown>;
+        (contentJson as any).themeMigrationCompleted = Boolean(
+          row.legacy_migrated_at,
+        );
+        if (row.requested_active_theme_id && !row.id) {
+          console.error(JSON.stringify({
+            message: "Active theme is missing or deleted; falling back",
+            themeId: row.requested_active_theme_id ?? null,
+          }));
+        } else if (row.id) {
+          try {
+            (contentJson as any).activeTheme = storedThemeFromRow(row);
+          } catch (error) {
+            console.error(JSON.stringify({
+              error: error instanceof Error ? error.message : String(error),
+              message: "Active theme row is invalid; falling back",
+              themeId: row.requested_active_theme_id ?? row.id,
+            }));
+          }
+        }
       }
     }
     return contentJson;
   }
 
-  async getContent(fetchItems: any = null): Promise<any> {
-    let things = [
+  async getContent(
+    fetchItems: any = null,
+    includeActiveTheme = false,
+  ): Promise<any> {
+    const things: any[] = [
       {
         table: 'channels',
         queryKwargs: {
@@ -378,6 +403,19 @@ export default class FeedDb {
         table: 'settings',
       },
     ];
+    if (includeActiveTheme) {
+      things.push({
+        sql: `SELECT themes.*,
+            theme_state.active_theme_id AS requested_active_theme_id,
+            theme_state.legacy_migrated_at
+          FROM theme_state
+          LEFT JOIN themes ON themes.id = theme_state.active_theme_id
+            AND themes.deleted_at IS NULL
+          WHERE theme_state.id = 'current'
+          LIMIT 1`,
+        table: 'activeTheme',
+      });
+    }
 
     let contentJson = await this._getContent(things);
     if (Object.keys(contentJson).length === 0 || !(contentJson as any).channel ||

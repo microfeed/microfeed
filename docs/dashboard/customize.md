@@ -1,6 +1,6 @@
 ---
 title: Themes, access, and custom code
-description: Control public availability, select a theme, and make careful code-level customizations.
+description: Control public availability and make careful code-level customizations.
 ---
 
 These settings change the public site. Preview the result before sharing a new
@@ -20,14 +20,15 @@ and optional Cloudflare Access protect the admin area itself.
 
 ## Public theme
 
-Choose a built-in theme and save it, then use the public website link to inspect
-desktop and mobile layouts. The dashboard’s Light/Dark/System switch does not
-change the public theme.
+Use **Settings → Themes** to install, customize, preview, publish, activate, and
+roll back immutable theme versions. The dashboard’s Light/Dark/System switch
+does not change the public theme. See [Versioned themes](/dashboard/themes/)
+for the Admin draft workflow and the standalone authoring kit.
 
-The custom-theme code editor is available from the theme settings when the
-custom option is selected.
-
-![Editing a custom microfeed web theme with raw HTML, CSS classes, Mustache variables, and pagination controls](/images/screenshots/4-code-editor-1.png)
+When an older installation upgrades, its selected custom theme is copied into
+the versioned theme list as **Legacy theme**. The original custom-code data is
+retained unchanged for application rollback, but current releases no longer
+expose the old theme editor or use that data as a rendering fallback.
 
 ## Custom code
 

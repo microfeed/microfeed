@@ -1,0 +1,48 @@
+{
+  "name": "@microfeed/theme-kit",
+  "version": "0.1.0",
+  "description": "Author, validate, test, and preview microfeed themes.",
+  "type": "module",
+  "license": "AGPL-3.0",
+  "main": "./dist/index.js",
+  "types": "./dist/types/packages/theme-kit/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/packages/theme-kit/src/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "microfeed-theme": "./dist/cli.js"
+  },
+  "files": [
+    "assets",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "prepack": "yarn build",
+    "test": "yarn build && node dist/cli.js test assets/starter --json"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.10.1",
+    "mustache": "^4.2.0",
+    "parse5": "^7.3.0",
+    "semver": "^7.8.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/mustache": "^4.2.6",
+    "@types/semver": "^7.8.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.0",
+    "typescript": "^6.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "sideEffects": false
+}

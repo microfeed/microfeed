@@ -1,7 +1,7 @@
 import React from 'react';
 import {ADMIN_URLS} from "@/shared/StringUtils";
 import SettingsBase from '../SettingsBase';
-import {SETTINGS_CATEGORIES, CODE_TYPES} from "@/shared/Constants";
+import {SETTINGS_CATEGORIES} from "@/shared/Constants";
 
 function NavBlock({url, text}: any) {
   return (<div>
@@ -39,11 +39,11 @@ export default class CustomCodeSettingsApp extends React.Component<any, any> {
       <div className="mt-8">
         <div className="mb-2 font-semibold text-foreground">Themes</div>
         <NavBlock
-          url={`${ADMIN_URLS.codeEditorSettings()}?type=${CODE_TYPES.THEMES}&theme=custom`}
-          text="Edit web and rss styling"
+          url={ADMIN_URLS.themesSettings()}
+          text="Manage versioned themes"
         />
         <div className="text-xs text-muted-color mt-2">
-          <em>microfeed will support multiple themes / templates in the future</em>
+          Install, customize, preview, publish, activate, and roll back immutable versions.
         </div>
       </div>
     </SettingsBase>);

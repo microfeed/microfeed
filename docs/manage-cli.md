@@ -23,6 +23,7 @@ you need the complete command and option contract. Run `yarn manage help
   - [`connect`](#yarn-manage-connect)
   - [`deploy`](#yarn-manage-deploy)
   - [`dev`](#yarn-manage-dev)
+  - [`theme`](#yarn-manage-theme)
   - [`snapshot`](#yarn-manage-snapshot)
   - [`status`](#yarn-manage-status)
   - [`destroy`](#yarn-manage-destroy)
@@ -91,6 +92,7 @@ use this `yarn manage` interface.
 | `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
 | `deploy` | Check, migrate, deploy, verify, or prepare a local release | Updates Worker code and D1 migrations, or only local state with `--local` |
 | `dev` | Run a selected site locally | Starts a local server and changes local simulation data |
+| `theme` | Initialize, install, and manage immutable theme versions | Creates local authoring repositories, writes theme rows to D1 and optional assets to R2, or changes active state through the Worker |
 | `snapshot` | Create, pull, or restore a portable backup | Read-only export, local state creation, or an exactly confirmed fresh remote replacement |
 | `status` | Verify resources and protection | Read-only Cloudflare and HTTP checks |
 | `destroy` | Inspect and remove a deployment | Permanent deletion unless data is preserved |
@@ -385,6 +387,115 @@ yarn manage dev [--instance <name>] [--preview]
 | --- | --- |
 | `--instance <name>` | Select the local sandbox. |
 | `--preview` | Use preview configuration with isolated local data. |
+
+## `yarn manage theme`
+
+**Purpose:** Initialize, install, and manage versioned themes.
+
+**Changes:** Initializes a local authoring repository, installs immutable theme
+versions in D1, optionally writes declared assets to R2, or changes the active
+theme through a one-time authenticated Worker operation.
+
+Start a new authoring repository from the theme the selected instance is
+actually using:
+
+```console
+yarn manage theme init ./my-theme --instance <instance-name>
+```
+
+`init` resolves the same effective selection as the live site: a valid active
+D1 version, then the built-in default. During upgrade, microfeed first imports
+the selected old custom theme into D1 as the ordinary
+`local.legacy-theme@1.0.0` version. The command copies the six theme slots and
+any declared packaged assets into an empty directory, adds the authoring kit,
+schemas, fixture, npm scripts, and instructions, and initializes a Git
+repository on `main`. Globally shared header/body wrappers are site-shell code
+and are intentionally not copied into the theme repository.
+
+The derived package receives a separate `local.<directory-name>` package ID
+and starts at `0.1.0`, so edits cannot overwrite the source version. Its source
+license and microfeed compatibility range are preserved. Use `--package-id`,
+`--name`, `--version`, and `--author` to set publish-ready metadata during
+initialization, or edit the generated manifest before the first install. Pass
+`--no-git` when another tool will initialize version control.
+
+Use this command to install a theme package from a local directory or a public
+GitHub repository, directory, or `microfeed-theme.json` URL. GitHub branches
+and tags are resolved to an exact commit before the manifest and declared files
+are downloaded. V1 does not store GitHub credentials and does not support
+private repositories.
+
+Install and update always create an inactive version. Preview it in
+**Settings → Themes**, then activate it separately. Templates and manifests are
+written with parameterized D1 REST queries, avoiding statement interpolation
+and D1's SQL statement-size limit. When a package declares assets, the CLI
+uploads and verifies every object in R2 before inserting the D1 row; a failed
+insert removes the uploaded objects.
+
+Activation, deactivation, rollback, and deletion create a short-lived,
+single-use grant in D1 and call the deployed Worker's management endpoint. The
+Worker consumes the grant atomically, updates theme state, and purges the
+`THEME_CURRENT` cache tag. The CLI never needs an Admin password.
+
+```console
+yarn manage theme <init|install|list|update|activate|deactivate|rollback|export|delete> \
+  [directory|source|theme-id] [options]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--instance <name>` | Select the saved site. |
+| `--ref <ref>` | Select a Git branch, tag, or commit for install or update. |
+| `--path <directory>` | Select the theme directory inside a GitHub repository. |
+| `--output <directory>` | Choose the empty directory used by init or export. |
+| `--package-id <id>` | Set the new package ID created by init. |
+| `--name <name>` | Set the new theme name created by init. |
+| `--version <semver>` | Set the initial semantic version created by init. |
+| `--author <name>` | Set the new theme author created by init. |
+| `--no-git` | Create init files without initializing a Git repository. |
+| `--local` | Use the selected instance's isolated local D1/R2 simulation. |
+| `--preview` | Use the deployed preview environment. |
+| `--json` | Print machine-readable results. |
+| `--confirm <theme-id>` | Confirm deletion by exactly matching the immutable theme ID. |
+
+Common examples:
+
+```console
+# Start a new repository from this instance's effective active theme.
+yarn manage theme init ./my-theme --instance personal
+
+# Set public package metadata immediately.
+yarn manage theme init ./my-theme --instance personal \
+  --package-id example.my-theme --name "My theme" --author "Your name"
+
+# Install an inactive GitHub version.
+yarn manage theme install https://github.com/example/microfeed-theme \
+  --instance personal
+
+# Exercise a local checkout without changing the deployed site.
+yarn manage theme install ./my-theme --local --instance personal
+
+# Inspect and activate an installed version.
+yarn manage theme list --instance personal
+yarn manage theme activate <theme-id> --instance personal
+
+# Return to the previous theme, or deactivate to the built-in default.
+yarn manage theme rollback --instance personal
+yarn manage theme deactivate --instance personal
+
+# Export or explicitly delete an inactive version.
+yarn manage theme export <theme-id> --instance personal --output ./theme-export
+yarn manage theme delete <theme-id> --instance personal --confirm <theme-id>
+```
+
+The unique key is `(packageId, version)`. Reinstalling the same checksum is a
+no-op; different content under an existing version is rejected. `update`
+imports a changed commit as another inactive version and requires the package
+author to bump SemVer. A soft-deleted package/version identity remains reserved
+and must not be reused. Deletion rejects the active version, soft-deletes D1
+metadata first, and retains an asset owner while any published version or draft
+still references it. Failed asset cleanup remains retryable by repeating the
+same confirmed delete command.
 
 ## `yarn manage snapshot`
 

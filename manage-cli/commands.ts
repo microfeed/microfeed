@@ -5160,6 +5160,7 @@ export function validateRemoteRestoreBaselineRepair(input: {
   initialPasswordSetupRows: readonly Record<string, unknown>[];
   installationInstanceIds: readonly string[];
   r2ObjectCount: number;
+  themeStateRows?: readonly Record<string, unknown>[];
 }): void {
   assertClassifiedTables(input.applicationTables);
   const expectedTables = [
@@ -5217,7 +5218,8 @@ export function validateRemoteRestoreBaselineRepair(input: {
       count !== 0 &&
       table !== "channels" &&
       table !== "settings" &&
-      table !== "auth_password_setup"
+      table !== "auth_password_setup" &&
+      table !== "theme_state"
     )
     .map(([table]) => table)
     .sort((left, right) => left.localeCompare(right));
@@ -5230,6 +5232,7 @@ export function validateRemoteRestoreBaselineRepair(input: {
   }
   validateRemoteRestoreBootstrapRows(input);
   validateRemoteRestoreInitialPasswordSetup(input);
+  validateRemoteRestoreThemeState(input);
   if (
     input.installationInstanceIds.length !== 1 ||
     input.installationInstanceIds[0] !== input.expectedInstanceId
@@ -5242,6 +5245,27 @@ export function validateRemoteRestoreBaselineRepair(input: {
     throw new Error(
       "The remote R2 bucket is not empty, so it cannot be repaired as a " +
         "fresh snapshot restore target.",
+    );
+  }
+}
+
+function validateRemoteRestoreThemeState(input: {
+  applicationRowCounts: Record<string, number>;
+  themeStateRows?: readonly Record<string, unknown>[];
+}): void {
+  const count = input.applicationRowCounts.theme_state ?? 0;
+  const rows = input.themeStateRows ?? [];
+  if (count === 0 && rows.length === 0) return;
+  const row = rows[0];
+  if (
+    count !== 1 ||
+    rows.length !== 1 ||
+    row?.id !== "current" ||
+    row.active_theme_id !== null ||
+    row.previous_theme_id !== null
+  ) {
+    throw new Error(
+      "The remote D1 theme state is not the automatic inactive state of a fresh instance.",
     );
   }
 }
@@ -5456,7 +5480,7 @@ async function assertFreshRemoteRestoreBaselineTarget(
     !targetSpecificTables.has(table)
   );
   const [appliedMigrations, currentMigrations, currentIndexes, expectedIndexes,
-    rowCounts, channels, settings, passwordSetups, installations, objects] =
+    rowCounts, channels, settings, passwordSetups, themeState, installations, objects] =
     await Promise.all([
       migrationLedger(context.cloudflare, config),
       repositoryMigrations(),
@@ -5475,6 +5499,10 @@ async function assertFreshRemoteRestoreBaselineTarget(
         config,
         "SELECT id, purpose, email, userId, tokenHash, createdAt, expiresAt " +
           "FROM auth_password_setup ORDER BY id",
+      ),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT id, active_theme_id, previous_theme_id FROM theme_state ORDER BY id",
       ),
       context.cloudflare.queryD1(
         config,
@@ -5513,6 +5541,7 @@ async function assertFreshRemoteRestoreBaselineTarget(
       typeof instanceId === "string" ? [instanceId] : []
     ),
     r2ObjectCount: objects.length,
+    themeStateRows: themeState,
   });
 }
 

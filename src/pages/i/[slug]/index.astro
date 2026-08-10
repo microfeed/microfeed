@@ -6,6 +6,7 @@ import {getIdFromSlug, PUBLIC_URLS} from "@/shared/StringUtils";
 import Theme from "@/server/themes/Theme";
 import PublicLayout from "../../../layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
+import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 
 const itemId = getIdFromSlug(Astro.params.slug ?? "");
 if (!itemId) {
@@ -15,6 +16,7 @@ if (!itemId) {
   });
 }
 const loaded = await loadPublishedFeed(env, Astro.request, {
+  includeActiveTheme: true,
   limit: 1,
   queryKwargs: {
     id: itemId,
@@ -33,11 +35,25 @@ const unavailable = !item || hidePublicWeb;
 if (unavailable) {
   Astro.response.status = 404;
 }
-const theme = new Theme(loaded.publicFeed, loaded.content.settings);
+const assetBaseUrl = themeAssetBaseUrl(
+  env,
+  Astro.request.url,
+  loaded.content.activeTheme?.assetOwnerThemeId,
+  loaded.content.activeTheme?.bundle.assets,
+);
+const theme = new Theme(
+  loaded.publicFeed,
+  loaded.content.settings,
+  null,
+  loaded.content.activeTheme,
+  assetBaseUrl,
+);
 const sharedTheme = new Theme(
   loaded.publicFeed,
   loaded.content.settings,
   CODE_TYPES.SHARED,
+  loaded.content.activeTheme,
+  assetBaseUrl,
 );
 const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const canonicalUrl = itemId && item

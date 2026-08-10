@@ -1,0 +1,8 @@
+<main class="mf-feed">
+  <h1>{{title}}</h1>
+  {{#description}}<p>{{description}}</p>{{/description}}
+  {{^items}}<p>No posts yet.</p>{{/items}}
+  {{#items}}
+    <article><h2><a href="{{_microfeed.web_url}}">{{title}}</a></h2>{{{content_html}}}</article>
+  {{/items}}
+</main>

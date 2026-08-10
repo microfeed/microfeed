@@ -5,6 +5,7 @@ import {escapeHtml, getIdFromSlug} from "@/shared/StringUtils";
 import {STATUSES} from "@/shared/Constants";
 import FeedPublicRssBuilder from "@/server/feed/FeedPublicRssBuilder";
 import Theme from "@/server/themes/Theme";
+import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 import type {FeedContent} from "@/types";
 import {
   isPublicFeedOffline,
@@ -127,10 +128,21 @@ export async function rssFeedResponse(
 }
 
 export async function rssStylesheetResponse(request: Request): Promise<Response> {
-  const loaded = await loadPublishedFeed(env, request, {limit: 1});
+  const loaded = await loadPublishedFeed(env, request, {
+    includeActiveTheme: true,
+    limit: 1,
+  });
   const theme = new Theme(
     loaded.publicFeed,
     loaded.content.settings,
+    null,
+    loaded.content.activeTheme,
+    themeAssetBaseUrl(
+      env,
+      request.url,
+      loaded.content.activeTheme?.assetOwnerThemeId,
+      loaded.content.activeTheme?.bundle.assets,
+    ),
   );
   return new Response(theme.getRssStylesheet().stylesheet, {
     headers: {"content-type": "text/xsl"},

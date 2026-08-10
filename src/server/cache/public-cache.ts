@@ -142,7 +142,9 @@ function isSensitivePath(pathname: string, adminPath: string): boolean {
     pathname === "/media-upload" ||
     pathname.startsWith("/media-upload/") ||
     pathname === "/.well-known/microfeed/bootstrap-admin" ||
-    pathname.startsWith("/.well-known/microfeed/bootstrap-admin/");
+    pathname.startsWith("/.well-known/microfeed/bootstrap-admin/") ||
+    pathname === "/.well-known/microfeed/theme-management" ||
+    pathname.startsWith("/.well-known/microfeed/theme-management/");
 }
 
 export function publicCacheTagsForPath(pathname: string): string[] {

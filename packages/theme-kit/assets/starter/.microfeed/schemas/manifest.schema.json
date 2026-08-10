@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "assets": {
+      "default": [],
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 240
+      }
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "files": {
+      "type": "object",
+      "properties": {
+        "rssStylesheet": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "webBodyEnd": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "webBodyStart": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "webFeed": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "webHeader": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "webItem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      },
+      "required": [
+        "rssStylesheet",
+        "webBodyEnd",
+        "webBodyStart",
+        "webFeed",
+        "webHeader",
+        "webItem"
+      ],
+      "additionalProperties": false
+    },
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "microfeed": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "packageId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "repository": {
+      "type": "string",
+      "format": "uri"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    }
+  },
+  "required": [
+    "assets",
+    "author",
+    "files",
+    "formatVersion",
+    "license",
+    "microfeed",
+    "name",
+    "packageId",
+    "version"
+  ],
+  "additionalProperties": false
+}

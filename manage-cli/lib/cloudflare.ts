@@ -1042,6 +1042,41 @@ export class CloudflareClient {
     );
   }
 
+  async putR2Object(
+    accountId: string,
+    bucketName: string,
+    key: string,
+    bytes: Uint8Array,
+    contentType: string,
+  ): Promise<void> {
+    const encodedKey = encodeURIComponent(key).replaceAll("%2F", "/");
+    await this.apiRawRequest(
+      `/accounts/${encodeURIComponent(accountId)}/r2/buckets/` +
+        `${encodeURIComponent(bucketName)}/objects/${encodedKey}`,
+      {
+        body: new Uint8Array(bytes).buffer,
+        headers: {
+          "content-length": String(bytes.byteLength),
+          "content-type": contentType,
+        },
+        method: "PUT",
+      },
+    );
+  }
+
+  async deleteR2Object(
+    accountId: string,
+    bucketName: string,
+    key: string,
+  ): Promise<void> {
+    const encodedKey = encodeURIComponent(key).replaceAll("%2F", "/");
+    await this.apiRawRequest(
+      `/accounts/${encodeURIComponent(accountId)}/r2/buckets/` +
+        `${encodeURIComponent(bucketName)}/objects/${encodedKey}`,
+      {method: "DELETE"},
+    );
+  }
+
   async deleteD1(accountId: string, databaseId: string): Promise<void> {
     await this.apiDelete(
       `/accounts/${encodeURIComponent(accountId)}/d1/database/` +
@@ -1178,6 +1213,30 @@ export class CloudflareClient {
           )
         : [];
     });
+  }
+
+  async queryD1WithParameters(
+    config: MicrofeedConfig,
+    sql: string,
+    params: Array<string | number | null> = [],
+  ): Promise<Array<Record<string, unknown>>> {
+    const response = await this.apiRequest<Array<{
+      results?: Array<Record<string, unknown>>;
+      success?: boolean;
+    }>>(
+      `/accounts/${encodeURIComponent(cloudflareAccountId(config))}/d1/database/` +
+        `${encodeURIComponent(config.d1.id)}/query`,
+      {
+        body: JSON.stringify({params, sql}),
+        headers: {"content-type": "application/json"},
+        method: "POST",
+      },
+    );
+    const resultSets = Array.isArray(response.result) ? response.result : [];
+    if (resultSets.some((result) => result.success === false)) {
+      throw new Error("Cloudflare D1 rejected a parameterized theme query.");
+    }
+    return resultSets.flatMap((result) => result.results ?? []);
   }
 
   async exportD1(

@@ -7,6 +7,10 @@ A microfeed snapshot packages the D1 schema and durable data together with every
 object in the production R2 bucket. The archive also records checksums and the
 ordered migration history needed to validate a restore.
 
+The durable D1 set includes installed theme versions, unpublished Admin drafts,
+and active/previous theme state. Because snapshots already include the entire
+R2 bucket, declared theme assets restore in the same archive.
+
 ## Create a backup
 
 ```console
