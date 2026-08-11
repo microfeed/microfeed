@@ -2890,7 +2890,7 @@ __metadata:
     "@types/mustache": "npm:^4.2.6"
     "@types/semver": "npm:^7.8.0"
     esbuild: "npm:^0.28.2"
-    fast-xml-parser: "npm:^5.10.1"
+    fast-xml-validator: "npm:^1.4.1"
     mustache: "npm:^4.2.0"
     parse5: "npm:^7.3.0"
     semver: "npm:^7.8.5"
@@ -3114,10 +3114,44 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nodable/entities@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "@nodable/entities@npm:3.0.0"
-  checksum: 10/185fef58192584a95c3417d6c59b89bfd0108910da1c2a48ac1c32988d0ff8a9bb4dada0ad27157af49cf18a1765140c61acd7deb6e61f99def08094cc2265db
+"@nodable/base-output-builder@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@nodable/base-output-builder@npm:2.0.0"
+  dependencies:
+    "@nodable/entities": "npm:^2.2.0"
+    is-unsafe: "npm:^1.0.1"
+    path-expression-matcher: "npm:^1.6.1"
+    strnum: "npm:^2.4.1"
+  checksum: 10/e7b78621a9b15bbc6dd1dff35454dcadb0c568074760ccf5787b6236bed114503ba5c98779ac3e9ddd6362e892d9a751cb55e0e708740aff97195989598d0a59
+  languageName: node
+  linkType: hard
+
+"@nodable/compact-builder@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@nodable/compact-builder@npm:2.0.0"
+  dependencies:
+    "@nodable/base-output-builder": "npm:^2.0.0"
+    path-expression-matcher: "npm:^1.6.1"
+  checksum: 10/047be27441dc6ba50158e83e8abc2a5e791569b94216218225440ca4448fbe7ff43b9351905dd87069a5f0c30cbd1ba7a7494701d8da9b55640974a4f4c545c3
+  languageName: node
+  linkType: hard
+
+"@nodable/entities@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@nodable/entities@npm:2.2.0"
+  checksum: 10/7f44743adb5947ea6e0c276fecc927eb47ff1a6526256aeb03098d98086c906b2ab98663330c049a55758644b1fd23478222cbc8d4f773ac737c979ff2c1c769
+  languageName: node
+  linkType: hard
+
+"@nodable/flexible-xml-parser@npm:^1.11.2":
+  version: 1.11.2
+  resolution: "@nodable/flexible-xml-parser@npm:1.11.2"
+  dependencies:
+    "@nodable/base-output-builder": "npm:^2.0.0"
+    "@nodable/compact-builder": "npm:^2.0.0"
+    path-expression-matcher: "npm:^1.6.2"
+    xml-naming: "npm:^0.3.0"
+  checksum: 10/d5daf69c426d771cfe3b3226ab63bcb74e598c1332d77f55accaa8378715084f0f6900c042c587770676cdc2366b93a8dae3e23d1698406bd517ef56e0b310e2
   languageName: node
   linkType: hard
 
@@ -6567,6 +6601,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"detailed-xml-validator@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "detailed-xml-validator@npm:2.2.0"
+  dependencies:
+    "@nodable/base-output-builder": "npm:^2.0.0"
+    "@nodable/compact-builder": "npm:^2.0.0"
+    "@nodable/flexible-xml-parser": "npm:^1.11.2"
+  checksum: 10/c558a402857805f661cf5eb5b7631696a72992f4c490bd1f610f846913bb7b80a292a50541c3cb59a58b93b19f68db119787dba648bda5e51bbe984ef0da1ae2
+  languageName: node
+  linkType: hard
+
 "detect-libc@npm:^2.0.3, detect-libc@npm:^2.0.4":
   version: 2.0.4
   resolution: "detect-libc@npm:2.0.4"
@@ -7398,7 +7443,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-builder@npm:^1.2.0":
+"fast-xml-builder@npm:^1.3.0":
   version: 1.3.0
   resolution: "fast-xml-builder@npm:1.3.0"
   dependencies:
@@ -7408,19 +7453,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:^5.10.1":
-  version: 5.10.1
-  resolution: "fast-xml-parser@npm:5.10.1"
+"fast-xml-validator@npm:^1.4.1":
+  version: 1.4.1
+  resolution: "fast-xml-validator@npm:1.4.1"
   dependencies:
-    "@nodable/entities": "npm:^3.0.0"
-    fast-xml-builder: "npm:^1.2.0"
-    is-unsafe: "npm:^2.0.0"
+    detailed-xml-validator: "npm:^2.2.0"
     path-expression-matcher: "npm:^1.6.2"
-    strnum: "npm:^2.4.1"
     xml-naming: "npm:^0.3.0"
-  bin:
-    fxparser: src/cli/cli.js
-  checksum: 10/3d2a502efd652fbfacd5beb205f3abb61e065facd9acd6b524aee01bda19765caa47407b7aa3743fc58b3b00da51c18a0ff0ee030ba3b952341ca8717bae2b05
+  checksum: 10/d7c1258a17a0344e0ff4d98694005331a6ed2afc4172cb2482ddb7f9e89b32081ed853bd3600ea5887a1745bc7903cf2961d15f77831c561cc830b47f27e81ae
   languageName: node
   linkType: hard
 
@@ -8715,10 +8755,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-unsafe@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "is-unsafe@npm:2.0.0"
-  checksum: 10/a5d47fa4f3140037fc0ed9ef08b8677f8bc5a15757c5e24696313f52443ac7ef1f47976eab4cb43ba1301685be96aee84695e12547f805c8e3ce05586edd6e4f
+"is-unsafe@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "is-unsafe@npm:1.0.1"
+  checksum: 10/971d05c69a742f866e4f257e4008ee3a9fb84ebf81141352211698416e1cf52aa03bcda54e3a5c2f25547f4b4cbb6d9e02c048a4daef5e7baea51f33089ddc9e
   languageName: node
   linkType: hard
 
@@ -9847,7 +9887,8 @@ __metadata:
     clsx: "npm:^1.2.1"
     cropperjs: "npm:^1.5.12"
     esbuild: "npm:^0.28.2"
-    fast-xml-parser: "npm:^5.10.1"
+    fast-xml-builder: "npm:^1.3.0"
+    fast-xml-validator: "npm:^1.4.1"
     jose: "npm:^6.1.0"
     kysely: "npm:^0.28.5"
     lucide-react: "npm:^1.27.0"
@@ -11086,7 +11127,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"path-expression-matcher@npm:^1.6.2":
+"path-expression-matcher@npm:^1.6.1, path-expression-matcher@npm:^1.6.2":
   version: 1.6.2
   resolution: "path-expression-matcher@npm:1.6.2"
   checksum: 10/d7786b170933dd82ed897144daed7d54dbe2e7b7d8684182ee9bf51a966cc92548788e2f49280922202a0186409008d816aefa37ed4650e4038184181a73c4bd

@@ -1,5 +1,5 @@
 import semver from "semver";
-import {XMLValidator} from "fast-xml-parser";
+import {SyntaxValidator} from "fast-xml-validator";
 
 import {
   THEME_FILE_KEYS,
@@ -151,13 +151,10 @@ export function validateThemePackage(
       packageId: manifest.packageId,
       version: manifest.version,
     }));
-    const result = XMLValidator.validate(renderedStylesheet);
-    if (result !== true) {
-      diagnostics.push(`bundle.rssStylesheet: Invalid XSL/XML: ${result.err.msg}`);
-    }
+    SyntaxValidator.validate(renderedStylesheet);
   } catch (error) {
     diagnostics.push(
-      `bundle.rssStylesheet: XSL validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      `bundle.rssStylesheet: Invalid XSL/XML: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
   if (diagnostics.length > 0) {

@@ -2,7 +2,7 @@ import {cp, mkdtemp, readFile, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {afterEach, describe, expect, it} from "vitest";
-import {XMLValidator} from "fast-xml-parser";
+import {SyntaxValidator} from "fast-xml-validator";
 import * as z from "zod";
 
 import {loadThemePackage} from "../../packages/theme-kit/src/package";
@@ -70,7 +70,7 @@ describe("@microfeed/theme-kit package loading", () => {
       },
     });
 
-    expect(XMLValidator.validate(rss)).toBe(true);
+    expect(SyntaxValidator.validate(rss)).toBe(true);
     expect(rss).toContain('<atom:link rel="self" href="https://demo.example/rss/"');
     expect(rss).toContain('<atom:link rel="next" href="https://demo.example/json/?next_cursor=next"');
     expect(rss).toContain('<itunes:author>Banana Inc</itunes:author>');

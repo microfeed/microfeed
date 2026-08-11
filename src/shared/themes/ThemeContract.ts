@@ -63,7 +63,7 @@ export const themeManifestV1Schema = z.object({
     webItem: themePathSchema,
   }),
   formatVersion: z.literal(THEME_FORMAT_VERSION),
-  homepage: z.string().url().optional(),
+  homepage: z.url().optional(),
   license: z.string().trim().min(1).max(100),
   microfeed: z.string().trim().min(1).max(100),
   name: z.string().trim().min(1).max(100),
@@ -75,7 +75,7 @@ export const themeManifestV1Schema = z.object({
       /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/u,
       "Use lowercase letters, numbers, dots, underscores, and hyphens.",
     ),
-  repository: z.string().url().optional(),
+  repository: z.url().optional(),
   version: z.string().trim().min(1).max(100),
 });
 

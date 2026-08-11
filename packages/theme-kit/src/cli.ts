@@ -4,7 +4,7 @@ import {cp, mkdir, readFile, readdir, writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import path from "node:path";
 import {fileURLToPath, pathToFileURL} from "node:url";
-import {XMLValidator} from "fast-xml-parser";
+import {SyntaxValidator} from "fast-xml-validator";
 import {parse} from "parse5";
 
 import packageMetadata from "../package.json";
@@ -104,8 +104,13 @@ async function test(args: Arguments): Promise<void> {
         throw new Error(`${name}: rendered ${view} HTML is invalid (${parseErrors.map(({code}) => code).join(", ")}).`);
       }
     }
-    const xml = XMLValidator.validate(first.rss);
-    if (xml !== true) throw new Error(`${name}: rendered RSS stylesheet is invalid XML: ${xml.err.msg}`);
+    try {
+      SyntaxValidator.validate(first.rss);
+    } catch (error) {
+      throw new Error(
+        `${name}: rendered RSS stylesheet is invalid XML: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
     tests.push({fixture: name, ok: true});
   }
   output({ok: true, tests}, args.options.json === true);

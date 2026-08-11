@@ -75,6 +75,10 @@ describe("theme contract", () => {
       {...bundle(), webFeed: "{{#items}}"},
     )).toThrow("Invalid Mustache syntax");
     expect(() => validateThemePackage(
+      manifest(),
+      {...bundle(), rssStylesheet: "<xsl:stylesheet>"},
+    )).toThrow("Invalid XSL/XML: Unclosed tag 'xsl:stylesheet'.");
+    expect(() => validateThemePackage(
       {...manifest(), assets: ["assets/logo.svg"]},
       bundle(),
     )).toThrow("missing from the bundle");

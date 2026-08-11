@@ -1,4 +1,4 @@
-import {XMLBuilder} from "fast-xml-parser";
+import XMLBuilder from "fast-xml-builder";
 import {PUBLIC_URLS, secondsToHHMMSS} from "@/shared/StringUtils";
 import {msToUtcString} from "@/shared/TimeUtils";
 import {OUR_BRAND} from "@/shared/Constants";
