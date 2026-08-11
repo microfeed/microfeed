@@ -20,6 +20,7 @@ import {isDeepStrictEqual} from "node:util";
 
 import type {AdminAuthMode} from "@/shared/AdminAuth";
 import {Miniflare} from "miniflare";
+import DEFAULT_THEME_MANIFEST from "../themes/default/microfeed-theme.json";
 import {
   adminBasePath,
   adminUrl,
@@ -34,6 +35,7 @@ import {
   STATUSES,
 } from "@/shared/Constants";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
+import {DEFAULT_CHANNEL_COPYRIGHT} from "@/shared/TemplateVariables";
 import {accessApplicationDashboardUrl} from "@/shared/CloudflareDashboard";
 import type {Account, CommandRunner, MicrofeedConfig} from "./types";
 import {
@@ -5279,8 +5281,8 @@ function validateRemoteRestoreThemeState(input: {
   const bundledDefaultState = themeCount === 1 && themes.length === 1 &&
     typeof row?.active_theme_id === "string" &&
     row.active_theme_id === theme?.id &&
-    theme?.package_id === "microfeed.default" &&
-    theme?.version === "1.0.0" &&
+    theme?.package_id === DEFAULT_THEME_MANIFEST.packageId &&
+    theme?.version === DEFAULT_THEME_MANIFEST.version &&
     theme?.source_kind === "bundled" &&
     theme?.deleted_at === null;
   if (
@@ -5421,8 +5423,7 @@ function validateRemoteRestoreBootstrapRows(input: {
     !/^[A-Za-z0-9_-]{11}$/u.test(channelRow.id) ||
     Number(channelRow.status) !== STATUSES.PUBLISHED ||
     Number(channelRow.is_primary) !== 1 ||
-    typeof copyright !== "string" ||
-    !/^©\d{4}$/u.test(copyright) ||
+    copyright !== DEFAULT_CHANNEL_COPYRIGHT ||
     !targetBootstrapLink(
       link,
       input.expectedPublicOrigins,

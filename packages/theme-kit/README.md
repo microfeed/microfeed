@@ -228,7 +228,10 @@ microfeed-theme preview <directory> \
 ```
 
 Starts an isolated local server with feed, item, RSS, mobile, and desktop views.
-It uses the production renderer and serves declared assets locally.
+It uses the production renderer and serves declared assets locally. When
+`--feed-url` points to a JSON Feed, the RSS view carries its channel image,
+author, categories, pagination, item images, and media enclosures into the
+representative RSS document before applying the theme's XSL stylesheet.
 
 ### `fixture pull`
 

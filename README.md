@@ -211,8 +211,10 @@ initialize a standalone theme repository, work with fixtures or a live public
 JSON Feed, use tools such as Tailwind CSS, and validate the package before it
 is installed. See [Versioned themes](https://docs.microfeed.org/dashboard/themes/)
 for the complete authoring, preview, installation, and asset workflow.
-New sites start with a modern, responsive Tailwind-based default whose colors
-can be adjusted from a short design-token block in an Admin version draft.
+New sites start with a familiar, responsive Classic-inspired default whose
+colors can be adjusted from a short design-token block in an Admin version
+draft. Its footer stays at the bottom on short or empty pages without becoming
+fixed or covering long content.
 
 Every site also exposes JSON Feed data, so you can use microfeed as a headless
 CMS and build separate websites, apps, automations, or integrations around the

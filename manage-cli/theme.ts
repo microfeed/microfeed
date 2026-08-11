@@ -44,6 +44,7 @@ import {
   loadThemePackage,
   type LoadedThemePackage,
 } from "../packages/theme-kit/src/package";
+import DEFAULT_THEME_MANIFEST from "../themes/default/microfeed-theme.json";
 import type {CommandRunner, MicrofeedConfig} from "./types";
 import type {Flags} from "./commands";
 import {CloudflareClient} from "./lib/cloudflare";
@@ -958,17 +959,26 @@ async function assertPristineThemeInitializationTarget(
     (SELECT count(*) FROM items) AS items,
     (SELECT count(*) FROM theme_drafts) AS drafts,
     (SELECT count(*) FROM themes
-      WHERE package_id != 'microfeed.default' OR version != '1.0.0') AS other_themes`;
+      WHERE package_id != ? OR version != ?) AS other_themes`;
+  const parameters = [
+    DEFAULT_THEME_MANIFEST.packageId,
+    DEFAULT_THEME_MANIFEST.version,
+  ];
   let row: Record<string, unknown> | null;
   if (target.local) {
     const local = await localResources(target);
     try {
-      row = await local.database.prepare(sql).first<Record<string, unknown>>();
+      row = await local.database.prepare(sql).bind(...parameters)
+        .first<Record<string, unknown>>();
     } finally {
       await local.close();
     }
   } else {
-    row = (await target.client.queryD1WithParameters(target.config, sql))[0] ?? null;
+    row = (await target.client.queryD1WithParameters(
+      target.config,
+      sql,
+      parameters,
+    ))[0] ?? null;
   }
   const dirty = ["channels", "settings", "items", "drafts", "other_themes"]
     .some((field) => Number(row?.[field] ?? 0) !== 0);
@@ -992,7 +1002,10 @@ export async function installDefaultThemeForInitialization(
   const state = await initializationThemeState(target);
   if (state.activeThemeId) {
     const active = await themeById(target, state.activeThemeId);
-    if (active?.packageId === "microfeed.default" && active.version === "1.0.0") {
+    if (
+      active?.packageId === DEFAULT_THEME_MANIFEST.packageId &&
+      active.version === DEFAULT_THEME_MANIFEST.version
+    ) {
       return active;
     }
     throw new Error(

@@ -6,7 +6,8 @@ versioned, reviewable inputs used to create those installed copies.
 
 ## `default`
 
-`themes/default` is the modern `microfeed.default@1.0.0` theme. New pristine
+`themes/default` is the familiar, Classic-inspired `microfeed.default@1.0.2`
+theme. New pristine
 local, preview, and production instances install and activate it during
 initialization. It includes the complete authoring workspace:
 
@@ -17,6 +18,9 @@ initialization. It includes the complete authoring workspace:
 
 Its deterministic build inlines compiled CSS and JavaScript into the six-slot
 bundle, so the installed theme does not require R2 or external runtime assets.
+The rendered feed and item pages intentionally stay close to Classic, while a
+flexible page shell keeps the footer at the bottom of short or empty pages and
+allows long pages to push it below the viewport normally.
 Edit the sources under `themes/default/src/`, then regenerate and verify the
 checked-in output:
 

@@ -2,9 +2,11 @@ import {cp, mkdtemp, readFile, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {afterEach, describe, expect, it} from "vitest";
+import {XMLValidator} from "fast-xml-parser";
 import * as z from "zod";
 
 import {loadThemePackage} from "../../packages/theme-kit/src/package";
+import {jsonFeedFixtureToRss} from "../../packages/theme-kit/src/cli";
 import {renderThemeKitHelp} from "../../packages/theme-kit/src/help";
 import {generatedThemeReadme} from "../../packages/theme-kit/src/readme";
 import {
@@ -34,6 +36,52 @@ afterEach(async () => {
 });
 
 describe("@microfeed/theme-kit package loading", () => {
+  it("preserves channel images and media metadata in JSON Feed RSS previews", () => {
+    const rss = jsonFeedFixtureToRss({
+      version: "https://jsonfeed.org/version/1.1",
+      title: "Demo & Friends",
+      description: "A demo feed",
+      home_page_url: "https://demo.example/",
+      feed_url: "https://demo.example/json/",
+      icon: "/assets/channel.png",
+      authors: [{name: "Banana Inc"}],
+      language: "en",
+      items: [{
+        id: "episode-1",
+        title: "An episode",
+        url: "/items/episode-1/",
+        content_html: "<p>Show notes</p>",
+        date_published: "2026-08-10T12:00:00Z",
+        image: "/assets/episode.png",
+        authors: [{name: "Ada"}],
+        attachments: [{
+          duration_in_seconds: 90,
+          mime_type: "audio/mpeg",
+          size_in_bytes: 1234,
+          url: "/media/episode.mp3",
+        }],
+      }],
+      _microfeed: {
+        base_url: "https://demo.example/",
+        categories: [{name: "Technology", categories: [{name: "Tech News"}]}],
+        copyright: "© 2026 Demo",
+        next_url: "/json/?next_cursor=next",
+        subscribe_methods: [{name: "RSS", type: "rss", url: "/rss/"}],
+      },
+    });
+
+    expect(XMLValidator.validate(rss)).toBe(true);
+    expect(rss).toContain('<atom:link rel="self" href="https://demo.example/rss/"');
+    expect(rss).toContain('<atom:link rel="next" href="https://demo.example/json/?next_cursor=next"');
+    expect(rss).toContain('<itunes:author>Banana Inc</itunes:author>');
+    expect(rss).toContain('<itunes:image href="https://demo.example/assets/channel.png"/>');
+    expect(rss).toContain('<image><title>Demo &amp; Friends</title><url>https://demo.example/assets/channel.png</url><link>https://demo.example/</link></image>');
+    expect(rss).toContain('<itunes:category text="Technology"><itunes:category text="Tech News"/></itunes:category>');
+    expect(rss).toContain('<itunes:image href="https://demo.example/assets/episode.png"/>');
+    expect(rss).toContain('<enclosure url="https://demo.example/media/episode.mp3" type="audio/mpeg" length="1234"/>');
+    expect(rss).toContain('<itunes:duration>00:01:30</itunes:duration>');
+  });
+
   it("documents general and command-specific executable usage", () => {
     expect(renderThemeKitHelp()).toContain("microfeed-theme <command>");
     expect(renderThemeKitHelp()).toContain("--version");

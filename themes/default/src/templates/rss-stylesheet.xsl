@@ -1,20 +1,183 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-  <xsl:output method="html" encoding="UTF-8"/>
+<xsl:stylesheet version="1.0"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:atom="http://www.w3.org/2005/Atom"
+                xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+                exclude-result-prefixes="atom itunes">
+  <xsl:output method="html" encoding="UTF-8" indent="yes"/>
+
   <xsl:template match="/">
-    <html>
+    <html class="rss-document" lang="en">
       <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <title><xsl:value-of select="rss/channel/title"/> · RSS</title>
+        <title><xsl:value-of select="rss/channel/title"/> · RSS feed</title>
         <style>
-          :root{color-scheme:light dark;--accent:#e11d48;--bg:#fffdf8;--surface:#fff;--text:#18181b;--muted:#71717a;--border:#e4e4e7}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(100% - 2rem,76rem);margin:auto}.mast{border-bottom:1px solid var(--border);padding:2rem 0}.eyebrow{color:var(--accent);font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(2.6rem,8vw,5.5rem);letter-spacing:-.05em;line-height:.95;margin:.6rem 0 1rem}.intro{color:var(--muted);font-size:1.08rem;line-height:1.7;max-width:45rem}.notice{background:var(--text);color:var(--bg);padding:.9rem 0;text-align:center}.items{display:grid;gap:1rem;padding:2.5rem 0}.item{background:var(--surface);border:1px solid var(--border);border-radius:1rem;padding:1.5rem}.item:hover{border-color:var(--accent)}h2{margin:.4rem 0;font-size:clamp(1.4rem,4vw,2rem);line-height:1.1}.item a{color:inherit;text-decoration:none}.date{color:var(--muted);font-size:.82rem}.description{color:var(--muted);line-height:1.65}@media(prefers-color-scheme:dark){:root{--accent:#fb7185;--bg:#18181b;--surface:#27272a;--text:#fafafa;--muted:#a1a1aa;--border:#3f3f46}}
+          /* microfeed:compiled-tailwind */
         </style>
       </head>
-      <body>
-        <div class="notice">This is a human-friendly RSS feed. Subscribe using the feed URL in your reader.</div>
-        <header class="mast"><div class="shell"><p class="eyebrow">RSS feed</p><h1><xsl:value-of select="rss/channel/title"/></h1><p class="intro"><xsl:value-of select="rss/channel/description"/></p></div></header>
-        <main class="shell items"><xsl:for-each select="rss/channel/item"><article class="item"><p class="date"><xsl:value-of select="pubDate"/></p><h2><a><xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute><xsl:value-of select="title"/></a></h2><p class="description"><xsl:value-of select="description" disable-output-escaping="yes"/></p></article></xsl:for-each></main>
+      <body class="rss-page">
+        <main class="rss-container">
+          <div class="rss-content">
+            <header class="podcast-header">
+              <div class="podcast-header-image-title">
+                <xsl:choose>
+                  <xsl:when test="rss/channel/image/url">
+                    <div class="podcast-image">
+                      <a target="_blank" rel="noopener">
+                        <xsl:attribute name="href"><xsl:value-of select="rss/channel/image/link"/></xsl:attribute>
+                        <img>
+                          <xsl:attribute name="src"><xsl:value-of select="rss/channel/image/url"/></xsl:attribute>
+                          <xsl:attribute name="alt"><xsl:value-of select="rss/channel/image/title"/></xsl:attribute>
+                          <xsl:attribute name="title"><xsl:value-of select="rss/channel/image/title"/></xsl:attribute>
+                        </img>
+                      </a>
+                    </div>
+                  </xsl:when>
+                  <xsl:when test="rss/channel/itunes:image/@href">
+                    <div class="podcast-image">
+                      <img>
+                        <xsl:attribute name="src"><xsl:value-of select="rss/channel/itunes:image/@href"/></xsl:attribute>
+                        <xsl:attribute name="alt"><xsl:value-of select="rss/channel/title"/></xsl:attribute>
+                      </img>
+                    </div>
+                  </xsl:when>
+                </xsl:choose>
+
+                <div>
+                  <h1><xsl:value-of select="rss/channel/title"/></h1>
+                  <xsl:if test="rss/channel/itunes:author">
+                    <p>By <span class="podcast-author"><xsl:value-of select="rss/channel/itunes:author"/></span></p>
+                  </xsl:if>
+
+                  <xsl:if test="rss/channel/itunes:category">
+                    <div class="category-container">
+                      Categories:
+                      <xsl:for-each select="rss/channel/itunes:category">
+                        <span class="category-item"><xsl:value-of select="@text"/></span>
+                        <xsl:if test="itunes:category/@text">
+                          <span class="category-item"><xsl:value-of select="itunes:category/@text"/></span>
+                        </xsl:if>
+                      </xsl:for-each>
+                    </div>
+                  </xsl:if>
+
+                  <xsl:if test="rss/channel/link[1]">
+                    <p>
+                      <a target="_blank" rel="noopener">
+                        <xsl:attribute name="href"><xsl:value-of select="rss/channel/link[1]"/></xsl:attribute>
+                        Website <span class="icon-arrow-right"></span>
+                      </a>
+                    </p>
+                  </xsl:if>
+                </div>
+              </div>
+
+              <xsl:if test="rss/channel/description">
+                <div class="podcast-description">
+                  <xsl:value-of select="rss/channel/description" disable-output-escaping="yes"/>
+                </div>
+              </xsl:if>
+            </header>
+
+            <section aria-label="Feed items">
+              <xsl:for-each select="rss/channel/item">
+                <article class="item">
+                  <xsl:if test="itunes:image/@href">
+                    <a class="episode-image" target="_blank" rel="noopener">
+                      <xsl:attribute name="href"><xsl:value-of select="itunes:image/@href"/></xsl:attribute>
+                      <img alt="">
+                        <xsl:attribute name="src"><xsl:value-of select="itunes:image/@href"/></xsl:attribute>
+                      </img>
+                    </a>
+                  </xsl:if>
+
+                  <h2>
+                    <a target="_blank" rel="noopener">
+                      <xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute>
+                      <xsl:value-of select="title"/> <span class="icon-arrow-right"></span>
+                    </a>
+                  </h2>
+
+                  <div class="episode-time">
+                    <xsl:value-of select="pubDate"/>
+                    <xsl:if test="itunes:duration">
+                      · <xsl:value-of select="itunes:duration"/>
+                    </xsl:if>
+                  </div>
+
+                  <xsl:if test="description">
+                    <div>
+                      <xsl:value-of select="description" disable-output-escaping="yes"/>
+                    </div>
+                  </xsl:if>
+
+                  <xsl:if test="enclosure/@url">
+                    <xsl:choose>
+                      <xsl:when test="starts-with(enclosure/@type, 'audio')">
+                        <audio controls="controls" preload="metadata">
+                          <xsl:attribute name="src"><xsl:value-of select="enclosure/@url"/></xsl:attribute>
+                        </audio>
+                      </xsl:when>
+                      <xsl:when test="starts-with(enclosure/@type, 'video')">
+                        <video controls="controls" preload="metadata">
+                          <xsl:attribute name="src"><xsl:value-of select="enclosure/@url"/></xsl:attribute>
+                        </video>
+                      </xsl:when>
+                      <xsl:when test="starts-with(enclosure/@type, 'image')">
+                        <a class="enclosure-link" target="_blank" rel="noopener">
+                          <xsl:attribute name="href"><xsl:value-of select="enclosure/@url"/></xsl:attribute>
+                          <img alt="">
+                            <xsl:attribute name="src"><xsl:value-of select="enclosure/@url"/></xsl:attribute>
+                          </img>
+                        </a>
+                      </xsl:when>
+                      <xsl:when test="starts-with(enclosure/@type, 'text')">
+                        <a class="enclosure-link" target="_blank" rel="noopener">
+                          <xsl:attribute name="href"><xsl:value-of select="enclosure/@url"/></xsl:attribute>
+                          View <span class="icon-arrow-right"></span>
+                        </a>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <a class="enclosure-link" target="_blank" rel="noopener">
+                          <xsl:attribute name="href"><xsl:value-of select="enclosure/@url"/></xsl:attribute>
+                          Download <span class="icon-arrow-right"></span>
+                        </a>
+                      </xsl:otherwise>
+                    </xsl:choose>
+                  </xsl:if>
+                </article>
+              </xsl:for-each>
+            </section>
+
+            <xsl:if test="rss/channel/atom:link[@rel='prev' or @rel='next']">
+              <nav class="pagination" aria-label="Pagination">
+                <xsl:if test="rss/channel/atom:link[@rel='prev']">
+                  <a>
+                    <xsl:attribute name="href"><xsl:value-of select="rss/channel/atom:link[@rel='prev']/@href"/></xsl:attribute>
+                    <span class="icon-arrow-left"></span> Prev
+                  </a>
+                </xsl:if>
+                <xsl:if test="rss/channel/atom:link[@rel='next']">
+                  <a>
+                    <xsl:attribute name="href"><xsl:value-of select="rss/channel/atom:link[@rel='next']/@href"/></xsl:attribute>
+                    Next <span class="icon-arrow-right"></span>
+                  </a>
+                </xsl:if>
+              </nav>
+            </xsl:if>
+          </div>
+
+          <footer class="text-sm text-center">
+            <xsl:if test="rss/channel/copyright">
+              <div><xsl:value-of select="rss/channel/copyright"/></div>
+            </xsl:if>
+            <div>
+              Powered by <a href="https://www.microfeed.org/">microfeed</a>
+              (a <a href="https://www.listennotes.com/">Listen Notes</a> project)
+            </div>
+          </footer>
+        </main>
       </body>
     </html>
   </xsl:template>

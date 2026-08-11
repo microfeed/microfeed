@@ -5,7 +5,7 @@
   "name": "My microfeed theme",
   "version": "0.1.0",
   "author": "Your name",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "microfeed": ">=1.0.0 <2.0.0",
   "files": {
     "webFeed": "web-feed.mustache",

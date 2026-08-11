@@ -19,7 +19,7 @@
     "directory": "packages/theme-kit"
   },
   "type": "module",
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0",
   "main": "./dist/index.js",
   "types": "./dist/types/packages/theme-kit/src/index.d.ts",
   "exports": {

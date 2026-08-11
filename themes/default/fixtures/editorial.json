@@ -9,8 +9,8 @@
       "id": "welcome",
       "url": "https://example.com/welcome/",
       "title": "A more thoughtful way to follow what matters",
-      "content_text": "A sample story showing the editorial rhythm of the bundled default theme.",
-      "content_html": "<p>A sample story showing the editorial rhythm of the bundled default theme.</p><blockquote>Independent publishing should feel personal.</blockquote>",
+      "content_text": "A sample story showing the familiar rhythm of the bundled default theme.",
+      "content_html": "<p>A sample story showing the familiar rhythm of the bundled default theme.</p><blockquote>Independent publishing should feel personal.</blockquote>",
       "date_published": "2026-08-10T12:00:00Z",
       "_microfeed": {"date_published_short": "Aug 10, 2026"}
     }

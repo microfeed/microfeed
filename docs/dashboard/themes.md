@@ -244,7 +244,7 @@ External HTTPS bundles can also be linked directly and are not stored by
 microfeed, but packaged or inline output makes versions and previews
 reproducible.
 
-### Start from microfeed's modern default source
+### Start from microfeed's bundled default source
 
 The complete source project for the bundled default lives at `themes/default`
 in the microfeed repository. It uses Tailwind CSS v4 through
@@ -252,6 +252,11 @@ in the microfeed repository. It uses Tailwind CSS v4 through
 TypeScript. Its deterministic build places minified CSS in
 `web-header.mustache` and JavaScript in `web-body-end.mustache`; `assets` stays
 empty, so the installed package works when R2 is disabled.
+
+The default intentionally follows the familiar Classic layout and typography.
+Its page shell uses normal document flow: the footer reaches the bottom of the
+viewport when a page is short or empty, while longer content pushes the footer
+down instead of being covered by a fixed element.
 
 Copy or clone that directory into a standalone repository when you want the
 full build toolchain. Run its build script after editing `src/theme.css`,

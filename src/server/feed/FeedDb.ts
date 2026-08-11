@@ -24,6 +24,7 @@ import {
 } from "@/server/cache/public-cache";
 import type {FeedContent, ImageMetadataTarget} from "@/types";
 import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
+import {DEFAULT_CHANNEL_COPYRIGHT} from "@/shared/TemplateVariables";
 
 /**
  * support url query parameters:
@@ -206,7 +207,7 @@ export default class FeedDb {
       'itunes:type': 'episodic',
       'itunes:complete': false,
       'itunes:block': false,
-      'copyright': '©{{current_year}}',
+      'copyright': DEFAULT_CHANNEL_COPYRIGHT,
     };
 
     const batchStatements = [

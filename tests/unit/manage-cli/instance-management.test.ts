@@ -85,7 +85,7 @@ async function freshModules(
     installDefaultThemeForInitialization: vi.fn(async () => ({
       id: "bundled-default-test",
       packageId: "microfeed.default",
-      version: "1.0.0",
+      version: "1.0.2",
     })),
   }));
   vi.resetModules();

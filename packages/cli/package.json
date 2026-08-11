@@ -19,7 +19,7 @@
     "directory": "packages/cli"
   },
   "type": "module",
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0",
   "bin": {
     "microfeed": "dist/index.js"
   },

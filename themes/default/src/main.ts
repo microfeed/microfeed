@@ -1,34 +1,41 @@
 import "./theme.css";
 
-const storageKey = "microfeed-color-mode";
+const placeholder = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP88eNnPQAJQwNqJHSUZQAAAABJRU5ErkJggg==";
 
-function applyColorMode(mode: string | null): void {
-  const dark = mode === "dark" || (
-    mode !== "light" && matchMedia("(prefers-color-scheme: dark)").matches
-  );
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
-  document.querySelectorAll<HTMLElement>("[data-theme-label]").forEach((label) => {
-    label.textContent = dark ? "Light" : "Dark";
+function enableClassicLazyImages(): void {
+  if (!("IntersectionObserver" in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting || !(entry.target instanceof HTMLImageElement)) continue;
+      const lazyImage = entry.target;
+      const source = lazyImage.dataset.src;
+      if (!source) continue;
+      const image = document.createElement("img");
+      image.src = source;
+      image.alt = lazyImage.alt;
+      image.onload = () => {
+        const link = document.createElement("a");
+        link.href = source;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.append(image);
+        lazyImage.replaceWith(link);
+      };
+      observer.unobserve(lazyImage);
+    }
   });
+
+  document.querySelectorAll<HTMLImageElement>('img:not([loading="lazy"])')
+    .forEach((image) => {
+      image.dataset.src = image.src;
+      image.classList.add("loader");
+      image.src = placeholder;
+      observer.observe(image);
+    });
 }
 
-let savedMode: string | null = null;
-try { savedMode = localStorage.getItem(storageKey); } catch { /* Sandboxed previews have no storage origin. */ }
-applyColorMode(savedMode);
-
-document.addEventListener("click", async (event) => {
-  const target = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-action]") : null;
-  if (!target) return;
-  if (target.dataset.action === "theme") {
-    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    try { localStorage.setItem(storageKey, next); } catch { /* Preview-only mode is still applied below. */ }
-    applyColorMode(next);
-  }
-  if (target.dataset.action === "copy") {
-    const url = target.dataset.url || location.href;
-    try { await navigator.clipboard.writeText(url); } catch { /* Clipboard may be unavailable in isolated previews. */ }
-    const original = target.textContent;
-    target.textContent = "Copied";
-    setTimeout(() => { target.textContent = original; }, 1600);
-  }
-});
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", enableClassicLazyImages, {once: true});
+} else {
+  enableClassicLazyImages();
+}

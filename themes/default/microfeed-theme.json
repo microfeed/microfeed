@@ -3,10 +3,10 @@
   "formatVersion": 1,
   "packageId": "microfeed.default",
   "name": "microfeed default",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "microfeed",
   "license": "AGPL-3.0",
-  "description": "A modern, responsive editorial theme bundled with microfeed.",
+  "description": "The familiar microfeed design with a footer that stays at the bottom on short pages.",
   "microfeed": "*",
   "files": {
     "webFeed": "web-feed.mustache",

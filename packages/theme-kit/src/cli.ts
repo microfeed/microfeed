@@ -3,7 +3,7 @@
 import {cp, mkdir, readFile, readdir, writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import path from "node:path";
-import {fileURLToPath} from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 import {XMLValidator} from "fast-xml-parser";
 import {parse} from "parse5";
 
@@ -115,12 +115,112 @@ function escapeXml(value: unknown): string {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-function fixtureRss(fixture: Record<string, unknown>): string {
+function recordValue(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function absoluteUrl(value: unknown, baseUrl: string | undefined): string | undefined {
+  const source = stringValue(value);
+  if (!source) return undefined;
+  try {
+    return new URL(source, baseUrl).toString();
+  } catch {
+    return source;
+  }
+}
+
+function rssDate(entry: Record<string, unknown>, microfeed: Record<string, unknown>): string | undefined {
+  const published = stringValue(entry.date_published);
+  const milliseconds = typeof microfeed.date_published_ms === "number"
+    ? microfeed.date_published_ms
+    : published ? Date.parse(published) : Number.NaN;
+  return Number.isFinite(milliseconds) ? new Date(milliseconds).toUTCString() : published;
+}
+
+function rssDuration(attachment: Record<string, unknown>, microfeed: Record<string, unknown>): string | undefined {
+  const formatted = stringValue(microfeed.duration_hhmmss);
+  if (formatted) return formatted;
+  if (typeof attachment.duration_in_seconds !== "number" || attachment.duration_in_seconds < 0) return undefined;
+  const seconds = Math.floor(attachment.duration_in_seconds);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  return [hours, minutes, remainder].map((value) => String(value).padStart(2, "0")).join(":");
+}
+
+function element(name: string, value: unknown): string {
+  return value === undefined || value === null || value === ""
+    ? ""
+    : `<${name}>${escapeXml(value)}</${name}>`;
+}
+
+function rssLink(rel: string, href: string | undefined): string {
+  return href
+    ? `<atom:link rel="${rel}" href="${escapeXml(href)}" type="application/rss+xml"/>`
+    : "";
+}
+
+function rssCategories(microfeed: Record<string, unknown>): string {
+  if (!Array.isArray(microfeed.categories)) return "";
+  return microfeed.categories.map((value) => {
+    const category = recordValue(value);
+    const name = stringValue(category?.name);
+    if (!name) return "";
+    const nested = Array.isArray(category?.categories)
+      ? recordValue(category.categories[0])
+      : undefined;
+    const nestedName = stringValue(nested?.name);
+    return `<itunes:category text="${escapeXml(name)}">${nestedName ? `<itunes:category text="${escapeXml(nestedName)}"/>` : ""}</itunes:category>`;
+  }).join("");
+}
+
+function rssItem(value: unknown, baseUrl: string | undefined): string {
+  const entry = recordValue(value) ?? {};
+  const microfeed = recordValue(entry._microfeed) ?? {};
+  const attachment = Array.isArray(entry.attachments)
+    ? recordValue(entry.attachments[0])
+    : undefined;
+  const itemUrl = absoluteUrl(entry.url, baseUrl) ?? absoluteUrl(microfeed.web_url, baseUrl);
+  const enclosureUrl = absoluteUrl(attachment?.url, baseUrl);
+  const enclosureType = stringValue(attachment?.mime_type);
+  const enclosureLength = typeof attachment?.size_in_bytes === "number"
+    ? attachment.size_in_bytes
+    : typeof attachment?.size_in_byte === "number" ? attachment.size_in_byte : undefined;
+  const enclosure = enclosureUrl
+    ? `<enclosure url="${escapeXml(enclosureUrl)}"${enclosureType ? ` type="${escapeXml(enclosureType)}"` : ""}${enclosureLength !== undefined ? ` length="${escapeXml(enclosureLength)}"` : ""}/>`
+    : "";
+  const authors = Array.isArray(entry.authors) ? entry.authors : [];
+  const author = stringValue(recordValue(authors[0])?.name);
+  const image = absoluteUrl(entry.image, baseUrl) ?? absoluteUrl(entry.banner_image, baseUrl);
+  return `<item>${element("title", stringValue(entry.title) ?? "untitled")}${element("link", itemUrl)}${element("description", stringValue(entry.content_html) ?? stringValue(entry.content_text))}${element("guid", stringValue(entry.id))}${element("pubDate", rssDate(entry, microfeed))}${author ? element("itunes:author", author) : ""}${image ? `<itunes:image href="${escapeXml(image)}"/>` : ""}${enclosure}${attachment ? element("itunes:duration", rssDuration(attachment, microfeed)) : ""}</item>`;
+}
+
+export function jsonFeedFixtureToRss(fixture: Record<string, unknown>): string {
+  const microfeed = recordValue(fixture._microfeed) ?? {};
+  const homePageUrl = absoluteUrl(fixture.home_page_url, stringValue(microfeed.base_url));
+  const baseUrl = stringValue(microfeed.base_url) ?? homePageUrl;
+  const icon = absoluteUrl(fixture.icon, baseUrl) ?? absoluteUrl(fixture.favicon, baseUrl);
+  const authors = Array.isArray(fixture.authors) ? fixture.authors : [];
+  const author = stringValue(recordValue(authors[0])?.name);
+  const subscribeMethods = Array.isArray(microfeed.subscribe_methods) ? microfeed.subscribe_methods : [];
+  const rssMethod = subscribeMethods.map(recordValue).find((method) =>
+    method && (stringValue(method.type)?.toLowerCase() === "rss" || stringValue(method.name)?.toLowerCase() === "rss")
+  );
+  const rssUrl = absoluteUrl(rssMethod?.url, baseUrl);
+  const nextUrl = absoluteUrl(microfeed.next_url ?? fixture.next_url, baseUrl);
+  const prevUrl = absoluteUrl(microfeed.prev_url, baseUrl);
+  const title = stringValue(fixture.title) ?? "untitled";
   const items = Array.isArray(fixture.items) ? fixture.items : [];
-  return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${escapeXml(fixture.title)}</title><description>${escapeXml(fixture.description)}</description><link>${escapeXml(fixture.home_page_url)}</link>${items.map((item) => {
-    const entry = item && typeof item === "object" ? item as Record<string, unknown> : {};
-    return `<item><title>${escapeXml(entry.title)}</title><link>${escapeXml(entry.url)}</link><description>${escapeXml(entry.content_text)}</description><guid>${escapeXml(entry.id)}</guid></item>`;
-  }).join("")}</channel></rss>`;
+  const image = icon
+    ? `<itunes:image href="${escapeXml(icon)}"/><image>${element("title", title)}${element("url", icon)}${element("link", homePageUrl)}</image>`
+    : "";
+  return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"><channel>${element("title", title)}${element("description", fixture.description)}${element("link", homePageUrl)}${element("language", fixture.language)}${rssLink("self", rssUrl)}${rssLink("prev", prevUrl)}${rssLink("next", nextUrl)}${author ? element("itunes:author", author) : ""}${image}${element("copyright", microfeed.copyright)}${rssCategories(microfeed)}${items.map((item) => rssItem(item, baseUrl)).join("")}</channel></rss>`;
 }
 
 async function preview(args: Arguments): Promise<void> {
@@ -179,7 +279,7 @@ async function preview(args: Arguments): Promise<void> {
     response.setHeader("content-type", "text/html; charset=utf-8");
     if (view === "rss") {
       response.end(themeRssPreviewDocument(
-        fixtureRss(selectedFixture),
+        jsonFeedFixtureToRss(selectedFixture),
         renderThemeTemplate(theme.bundle.rssStylesheet, context),
       ));
       return;
@@ -236,9 +336,11 @@ async function main(): Promise<void> {
   throw new Error(`Unknown command: ${command}\n\n${renderThemeKitHelp()}`);
 }
 
-main().catch((error: unknown) => {
-  const diagnostics = error instanceof ThemeValidationError ? error.diagnostics : [error instanceof Error ? error.message : String(error)];
-  const json = process.argv.includes("--json");
-  process.stderr.write(json ? `${JSON.stringify({diagnostics, ok: false})}\n` : `${diagnostics.join("\n")}\n`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error: unknown) => {
+    const diagnostics = error instanceof ThemeValidationError ? error.diagnostics : [error instanceof Error ? error.message : String(error)];
+    const json = process.argv.includes("--json");
+    process.stderr.write(json ? `${JSON.stringify({diagnostics, ok: false})}\n` : `${diagnostics.join("\n")}\n`);
+    process.exitCode = 1;
+  });
+}

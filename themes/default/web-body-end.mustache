@@ -1,8 +1,16 @@
-<footer class="mt-12 border-t border-mf-border">
-  <div class="mf-shell flex flex-col gap-3 py-8 text-sm text-mf-muted sm:flex-row sm:items-center sm:justify-between">
-    <p>© {{current_year}} {{title}}</p>
-    <p>Published with <a class="font-bold text-mf-text" href="https://microfeed.org/">microfeed</a></p>
+<footer class="text-sm border-t text-center mb-4">
+  <div class="mt-4">
+    {{#_microfeed.copyright}}
+    {{_microfeed.copyright}}
+    {{/_microfeed.copyright}}
+    {{^_microfeed.copyright}}
+    © {{_microfeed.publisher}}
+    {{/_microfeed.copyright}}
+  </div>
+  <div>
+    Powered by <a href="https://www.microfeed.org/" class="text-black">microfeed</a>
+    (a <a class="text-black" href="https://www.listennotes.com/">Listen Notes</a> project)
   </div>
 </footer>
 
-<script>(function(){var e=`microfeed-color-mode`;function t(e){let t=e===`dark`||e!==`light`&&matchMedia(`(prefers-color-scheme: dark)`).matches;document.documentElement.dataset.theme=t?`dark`:`light`,document.querySelectorAll(`[data-theme-label]`).forEach(e=>{e.textContent=t?`Light`:`Dark`})}var n=null;try{n=localStorage.getItem(e)}catch{}t(n),document.addEventListener(`click`,async n=>{let r=n.target instanceof Element?n.target.closest(`[data-action]`):null;if(r){if(r.dataset.action===`theme`){let n=document.documentElement.dataset.theme===`dark`?`light`:`dark`;try{localStorage.setItem(e,n)}catch{}t(n)}if(r.dataset.action===`copy`){let e=r.dataset.url||location.href;try{await navigator.clipboard.writeText(e)}catch{}let t=r.textContent;r.textContent=`Copied`,setTimeout(()=>{r.textContent=t},1600)}}})})();</script>
+<script>(function(){function e(){if(!(`IntersectionObserver`in window))return;let e=new IntersectionObserver(t=>{for(let n of t){if(!n.isIntersecting||!(n.target instanceof HTMLImageElement))continue;let t=n.target,r=t.dataset.src;if(!r)continue;let i=document.createElement(`img`);i.src=r,i.alt=t.alt,i.onload=()=>{let e=document.createElement(`a`);e.href=r,e.target=`_blank`,e.rel=`noopener`,e.append(i),t.replaceWith(e)},e.unobserve(t)}});document.querySelectorAll(`img:not([loading="lazy"])`).forEach(t=>{t.dataset.src=t.src,t.classList.add(`loader`),t.src=`data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP88eNnPQAJQwNqJHSUZQAAAABJRU5ErkJggg==`,e.observe(t)})}document.readyState===`loading`?document.addEventListener(`DOMContentLoaded`,e,{once:!0}):e()})();</script>

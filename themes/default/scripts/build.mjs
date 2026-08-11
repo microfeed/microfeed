@@ -31,35 +31,35 @@ if (!css || typeof css.source !== "string" || !javascript || javascript.type !==
   throw new Error("Vite did not return the expected inline CSS and JavaScript bundles.");
 }
 
-const tokenBlock = `<style id="microfeed-design-tokens">
-/* microfeed design tokens
+const designTokenCss = `/* microfeed design tokens
  * For a quick color change in Admin, edit only the values in this block.
  */
 :root {
-  --mf-accent: #e11d48;
-  --mf-background: #fffdf8;
-  --mf-surface: #ffffff;
-  --mf-text: #18181b;
-  --mf-muted: #71717a;
-  --mf-border: #e4e4e7;
+  --mf-accent: #0997cc;
+  --mf-background: #ffffff;
+  --mf-surface: #f6f8fa;
+  --mf-text: #24292f;
+  --mf-muted: #57606a;
+  --mf-border: #dcdcdc;
 }
-
-[data-theme="dark"] {
-  --mf-accent: #fb7185;
-  --mf-background: #18181b;
-  --mf-surface: #27272a;
-  --mf-text: #fafafa;
-  --mf-muted: #a1a1aa;
-  --mf-border: #3f3f46;
-}
-</style>`;
+`;
+const tokenBlock = `<style id="microfeed-design-tokens">
+${designTokenCss}</style>`;
 
 const sourceDirectory = path.join(root, "src/templates");
+const rssTemplate = await readFile(path.join(sourceDirectory, "rss-stylesheet.xsl"), "utf8");
+const rssStylesMarker = "/* microfeed:compiled-tailwind */";
+if (!rssTemplate.includes(rssStylesMarker)) {
+  throw new Error("The RSS stylesheet is missing its compiled Tailwind marker.");
+}
+const rssStyles = `${designTokenCss}\n${css.source}`
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;");
 const files = new Map([
   ["web-feed.mustache", await readFile(path.join(sourceDirectory, "web-feed.mustache"), "utf8")],
   ["web-item.mustache", await readFile(path.join(sourceDirectory, "web-item.mustache"), "utf8")],
   ["web-body-start.mustache", await readFile(path.join(sourceDirectory, "web-body-start.mustache"), "utf8")],
-  ["rss-stylesheet.xsl", await readFile(path.join(sourceDirectory, "rss-stylesheet.xsl"), "utf8")],
+  ["rss-stylesheet.xsl", rssTemplate.replace(rssStylesMarker, rssStyles)],
   ["web-header.mustache", `${tokenBlock}\n<style id="microfeed-compiled-styles">${css.source}</style>\n${await readFile(path.join(sourceDirectory, "web-header.mustache"), "utf8")}`],
   ["web-body-end.mustache", `${await readFile(path.join(sourceDirectory, "web-body-end.mustache"), "utf8")}\n<script>${javascript.code.replaceAll("</script", "<\\/script")}</script>\n`],
 ]);

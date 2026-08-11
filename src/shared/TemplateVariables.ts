@@ -2,6 +2,8 @@ export interface BuiltInTemplateVariables {
   current_year: number;
 }
 
+export const DEFAULT_CHANNEL_COPYRIGHT = "©{{current_year}}";
+
 const TEMPLATE_VARIABLE_PATTERN =
   /(?<!\{)\{\{\s*([a-z][a-z0-9_]*)\s*\}\}(?!\})/gu;
 
