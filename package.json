@@ -6,7 +6,8 @@
   "license": "AGPL-3.0",
   "packageManager": "yarn@4.18.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "themes/*"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -15,8 +16,8 @@
     "microfeed": "yarn workspace @microfeed/cli microfeed",
     "manage": "tsx manage-cli/index.ts",
     "theme-kit:build": "tsx packages/theme-kit/scripts/build.ts",
-    "theme-kit:test": "yarn theme-kit:build && node packages/theme-kit/dist/cli.js test packages/theme-kit/assets/starter --json",
-    "theme-kit:pack-check": "yarn workspace @microfeed/theme-kit pack --dry-run",
+    "theme-kit:test": "yarn theme-kit:build && yarn workspace @microfeed/default-theme-source check && node packages/theme-kit/dist/cli.js test packages/theme-kit/assets/starter --json && node packages/theme-kit/dist/cli.js test themes/default --json && node packages/theme-kit/dist/cli.js test themes/classic --json",
+    "theme-kit:pack-check": "node --import tsx scripts/check-theme-kit-package.ts",
     "dev": "yarn manage dev",
     "dev:astro": "astro dev",
     "migrate:local": "wrangler d1 migrations apply FEED_DB --local --config wrangler.jsonc",
@@ -84,6 +85,7 @@
     "@redocly/cli": "^2.44.1",
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/postcss": "^4.0.14",
+    "@tailwindcss/vite": "^4.1.14",
     "@types/mustache": "^4.2.6",
     "@types/node": "^24.0.0",
     "@types/react": "^18.3.0",

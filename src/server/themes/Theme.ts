@@ -12,9 +12,9 @@ import {
 import {validateThemePackage} from "@/shared/themes/ThemeValidation";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {
-  BUILT_IN_THEME_BUNDLE,
-  BUILT_IN_THEME_MANIFEST,
-} from "./BuiltInTheme";
+  CLASSIC_THEME_BUNDLE,
+  CLASSIC_THEME_MANIFEST,
+} from "./BundledThemes";
 
 type Settings = Record<string, any> | null;
 
@@ -34,8 +34,8 @@ export default class Theme {
     this.settings = settings;
     let metadata: ThemeRuntimeMetadata = {
       assetBaseUrl: "",
-      packageId: BUILT_IN_THEME_MANIFEST.packageId,
-      version: BUILT_IN_THEME_MANIFEST.version,
+      packageId: CLASSIC_THEME_MANIFEST.packageId,
+      version: CLASSIC_THEME_MANIFEST.version,
     };
 
     if (themeName === CODE_TYPES.SHARED) {
@@ -56,8 +56,8 @@ export default class Theme {
         } catch {
           metadata = {
             assetBaseUrl: "",
-            packageId: BUILT_IN_THEME_MANIFEST.packageId,
-            version: BUILT_IN_THEME_MANIFEST.version,
+            packageId: CLASSIC_THEME_MANIFEST.packageId,
+            version: CLASSIC_THEME_MANIFEST.version,
           };
         }
       }
@@ -81,11 +81,11 @@ export default class Theme {
           message: "Active theme is invalid or incompatible; falling back",
           themeId: installedTheme.id,
         }));
-        this.theme = "default";
+        this.theme = "classic";
         this.themeBundle = null;
       }
     } else {
-      this.theme = "default";
+      this.theme = "classic";
       this.themeBundle = null;
     }
     this.context = themeContext(jsonData, metadata);
@@ -101,7 +101,7 @@ export default class Theme {
 
   private template(file: ThemeFileKey): string {
     if (this.theme === CODE_TYPES.SHARED) return this.sharedTemplate(file);
-    return this.themeBundle?.[file] ?? BUILT_IN_THEME_BUNDLE[file];
+    return this.themeBundle?.[file] ?? CLASSIC_THEME_BUNDLE[file];
   }
 
   getWebHeader(): {html: string} {

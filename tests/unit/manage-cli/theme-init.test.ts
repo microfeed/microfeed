@@ -6,6 +6,7 @@ import path from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import type {ThemeBundleV1, ThemeManifestV1} from "@/shared/themes/ThemeContract";
+import {MICROFEED_VERSION} from "@/shared/Version";
 import type {CommandRunner, MicrofeedConfig} from "../../../manage-cli/types";
 
 const temporaryDirectories: string[] = [];
@@ -102,6 +103,70 @@ afterEach(async () => {
 });
 
 describe("theme repository initialization", () => {
+  it("installs and activates the bundled default only for pristine initialization", async () => {
+    const {theme} = await freshModules();
+    const runner = commandRunner();
+    let stored: Record<string, unknown> | null = null;
+    vi.stubGlobal("fetch", vi.fn(async (_input: URL | RequestInfo, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body)) as {params?: unknown[]; sql: string};
+      if (request.sql.includes("FROM theme_state") && request.sql.includes("LIMIT 1")) {
+        return d1Response([{active_theme_id: null, previous_theme_id: null, updated_at: "2026-08-10"}]);
+      }
+      if (request.sql.startsWith("SELECT\n    (SELECT count(*) FROM channels)")) {
+        return d1Response([{channels: 0, drafts: 0, items: 0, other_themes: 0, settings: 0}]);
+      }
+      if (request.sql.includes("WHERE package_id = ? AND version = ?")) {
+        return d1Response([]);
+      }
+      if (request.sql.includes("INSERT INTO themes")) {
+        const values = request.params!;
+        stored = {
+          asset_owner_theme_id: values[13],
+          bundle_json: values[5],
+          checksum_sha256: values[11],
+          created_at: "2026-08-10T00:00:00.000Z",
+          deleted_at: null,
+          id: values[0],
+          manifest_json: values[4],
+          name: values[3],
+          origin_theme_id: values[12],
+          package_id: values[1],
+          source_commit: values[10],
+          source_kind: values[6],
+          source_path: values[9],
+          source_ref: values[8],
+          source_url: values[7],
+          version: values[2],
+        };
+        return d1Response([{id: values[0]}]);
+      }
+      if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
+        return d1Response(stored ? [stored] : []);
+      }
+      if (request.sql.includes("UPDATE theme_state SET active_theme_id")) {
+        return d1Response([{active_theme_id: request.params?.[0]}]);
+      }
+      throw new Error(`Unexpected D1 query: ${request.sql}`);
+    }));
+
+    await expect(theme.installDefaultThemeForInitialization(
+      savedConfig(),
+      runner,
+      false,
+    )).resolves.toMatchObject({
+      packageId: "microfeed.default",
+      sourceKind: "bundled",
+      sourcePath: "default",
+      version: "1.0.0",
+    });
+    expect(stored).toMatchObject({
+      package_id: "microfeed.default",
+      source_kind: "bundled",
+      source_path: "default",
+      version: "1.0.0",
+    });
+  });
+
   it("creates a new Git-ready package from the active immutable version", async () => {
     const {directory, theme} = await freshModules();
     const output = path.join(directory, "My Active Theme");
@@ -173,8 +238,15 @@ describe("theme repository initialization", () => {
     });
     await expect(readFile(path.join(output, "web-feed.mustache"), "utf8"))
       .resolves.toBe("active feed {{title}}\n");
-    await expect(readFile(path.join(output, "package.json"), "utf8"))
-      .resolves.toContain("@microfeed/theme-kit");
+    const initializedPackage = JSON.parse(
+      await readFile(path.join(output, "package.json"), "utf8"),
+    ) as {devDependencies?: Record<string, string>};
+    expect(initializedPackage.devDependencies?.["@microfeed/theme-kit"])
+      .toBe(`^${MICROFEED_VERSION}`);
+    await expect(readFile(
+      path.join(output, ".agents/skills/develop-microfeed-theme/SKILL.md"),
+      "utf8",
+    )).resolves.toContain("Never create screenshots unless the user explicitly asks");
     await expect(readFile(path.join(output, assetPath), "utf8"))
       .resolves.toContain("<svg");
     expect(runner).toHaveBeenCalledWith(

@@ -2,11 +2,8 @@ import {cache, env} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
 import {jsonResponse} from "@/server/http";
-import {
-  BUILT_IN_THEME_BUNDLE,
-  BUILT_IN_THEME_MANIFEST,
-} from "@/server/themes/BuiltInTheme";
 import ThemeStore from "@/server/themes/ThemeStore";
+import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
 
 function errorResponse(error: unknown): Response {
   return jsonResponse({
@@ -14,14 +11,15 @@ function errorResponse(error: unknown): Response {
   }, {status: 400});
 }
 
-export const GET: APIRoute = async () => {
-  const store = new ThemeStore(env.FEED_DB, cache);
-  const [themes, drafts, state] = await Promise.all([
-    store.listVersions(),
-    store.listDrafts(),
-    store.getState(),
-  ]);
-  return jsonResponse({drafts, state, themes});
+export const GET: APIRoute = async ({request}) => {
+  try {
+    const options = parseThemeListOptions(new URL(request.url).searchParams);
+    return jsonResponse(
+      await new ThemeStore(env.FEED_DB, cache).listSummaries(options),
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
 };
 
 export const POST: APIRoute = async ({request}) => {
@@ -45,15 +43,7 @@ export const POST: APIRoute = async ({request}) => {
         });
         return jsonResponse({draft}, {status: 201});
       }
-      if (originKind === "built-in") {
-        const draft = await store.createDraft({
-          bundle: BUILT_IN_THEME_BUNDLE,
-          manifest: BUILT_IN_THEME_MANIFEST,
-          originKind,
-        });
-        return jsonResponse({draft}, {status: 201});
-      }
-      return jsonResponse({error: "Unknown customization source."}, {status: 400});
+      return jsonResponse({error: "Choose an installed theme version."}, {status: 400});
     }
     if (input.action === "activate" && typeof input.themeId === "string") {
       return jsonResponse({state: await store.activate(input.themeId)});

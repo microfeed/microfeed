@@ -6,6 +6,7 @@ import ThemesApp from "@/components/admin/themes/ThemesApp";
 import {NAV_ITEMS} from "@/shared/Constants";
 import {adminUrl} from "@/shared/AdminPath";
 import ThemeStore from "@/server/themes/ThemeStore";
+import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 
 const {feedContent, onboardingResult} = Astro.locals;
@@ -13,12 +14,9 @@ if (!feedContent || !onboardingResult) {
   throw new Error("Admin feed context was not initialized.");
 }
 const store = new ThemeStore(env.FEED_DB, cache);
-await store.ensureLegacyThemeMigrated(feedContent.settings);
-const [themes, drafts, state] = await Promise.all([
-  store.listVersions(),
-  store.listDrafts(),
-  store.getState(),
-]);
+await store.ensureThemeMigration(feedContent.settings);
+const options = parseThemeListOptions(new URL(Astro.request.url).searchParams);
+const listing = await store.listSummaries(options);
 const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
 ---
 
@@ -38,10 +36,10 @@ const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
 >
   <ThemesApp
     client:only="react"
-    {drafts}
+    initialListing={listing}
+    initialQuery={options.q}
+    initialSort={options.sort}
     {instanceName}
-    {state}
-    {themes}
   >
     <AdminPageFallback slot="fallback" kind="settings" />
   </ThemesApp>

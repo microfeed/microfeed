@@ -1,11 +1,15 @@
 import type {
   StoredThemeVersion,
   ThemeDraft,
+  ThemeDraftSummary,
   ThemeState,
+  ThemeVersionSummary,
 } from "@/shared/themes/ThemeContract";
 import {
   storedThemeVersionSchema,
   themeDraftSchema,
+  themeManifestV1Schema,
+  themeSourceKindSchema,
 } from "@/shared/themes/ThemeContract";
 
 type DatabaseRow = Record<string, unknown>;
@@ -64,6 +68,47 @@ export function themeDraftFromRow(row: DatabaseRow): ThemeDraft {
     updatedAt: requiredString(row.updated_at, "updated_at"),
     version: requiredString(row.version, "version"),
   });
+}
+
+export function storedThemeSummaryFromRow(
+  row: DatabaseRow,
+): ThemeVersionSummary {
+  return {
+    assetCount: Number(row.asset_count ?? 0),
+    assetOwnerThemeId: nullableString(row.asset_owner_theme_id),
+    checksumSha256: requiredString(row.checksum_sha256, "checksum_sha256"),
+    createdAt: requiredString(row.created_at, "created_at"),
+    deletedAt: nullableString(row.deleted_at),
+    id: requiredString(row.id, "id"),
+    manifest: themeManifestV1Schema.parse(parseJson(row.manifest_json, "manifest_json")),
+    name: requiredString(row.name, "name"),
+    originThemeId: nullableString(row.origin_theme_id),
+    originThemeName: nullableString(row.origin_theme_name),
+    originThemeVersion: nullableString(row.origin_theme_version),
+    packageId: requiredString(row.package_id, "package_id"),
+    sourceCommit: nullableString(row.source_commit),
+    sourceKind: themeSourceKindSchema.parse(requiredString(row.source_kind, "source_kind")),
+    sourcePath: nullableString(row.source_path),
+    sourceRef: nullableString(row.source_ref),
+    sourceUrl: nullableString(row.source_url),
+    version: requiredString(row.version, "version"),
+  };
+}
+
+export function themeDraftSummaryFromRow(row: DatabaseRow): ThemeDraftSummary {
+  return {
+    assetCount: Number(row.asset_count ?? 0),
+    assetOwnerThemeId: nullableString(row.asset_owner_theme_id),
+    createdAt: requiredString(row.created_at, "created_at"),
+    id: requiredString(row.id, "id"),
+    manifest: themeManifestV1Schema.parse(parseJson(row.manifest_json, "manifest_json")),
+    name: requiredString(row.name, "name"),
+    originKind: requiredString(row.origin_kind, "origin_kind") as ThemeDraftSummary["originKind"],
+    originThemeId: nullableString(row.origin_theme_id),
+    packageId: requiredString(row.package_id, "package_id"),
+    updatedAt: requiredString(row.updated_at, "updated_at"),
+    version: requiredString(row.version, "version"),
+  };
 }
 
 export function themeStateFromRow(row: DatabaseRow | null): ThemeState {

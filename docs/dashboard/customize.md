@@ -20,15 +20,10 @@ and optional Cloudflare Access protect the admin area itself.
 
 ## Public theme
 
-Use **Settings → Themes** to install, customize, preview, publish, activate, and
+Use **Settings → Themes** to install, create new versions, preview, activate, and
 roll back immutable theme versions. The dashboard’s Light/Dark/System switch
 does not change the public theme. See [Versioned themes](/dashboard/themes/)
 for the Admin draft workflow and the standalone authoring kit.
-
-When an older installation upgrades, its selected custom theme is copied into
-the versioned theme list as **Legacy theme**. The original custom-code data is
-retained unchanged for application rollback, but current releases no longer
-expose the old theme editor or use that data as a rendering fallback.
 
 ## Custom code
 

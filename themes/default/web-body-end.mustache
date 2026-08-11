@@ -1,0 +1,8 @@
+<footer class="mt-12 border-t border-mf-border">
+  <div class="mf-shell flex flex-col gap-3 py-8 text-sm text-mf-muted sm:flex-row sm:items-center sm:justify-between">
+    <p>© {{current_year}} {{title}}</p>
+    <p>Published with <a class="font-bold text-mf-text" href="https://microfeed.org/">microfeed</a></p>
+  </div>
+</footer>
+
+<script>(function(){var e=`microfeed-color-mode`;function t(e){let t=e===`dark`||e!==`light`&&matchMedia(`(prefers-color-scheme: dark)`).matches;document.documentElement.dataset.theme=t?`dark`:`light`,document.querySelectorAll(`[data-theme-label]`).forEach(e=>{e.textContent=t?`Light`:`Dark`})}var n=null;try{n=localStorage.getItem(e)}catch{}t(n),document.addEventListener(`click`,async n=>{let r=n.target instanceof Element?n.target.closest(`[data-action]`):null;if(r){if(r.dataset.action===`theme`){let n=document.documentElement.dataset.theme===`dark`?`light`:`dark`;try{localStorage.setItem(e,n)}catch{}t(n)}if(r.dataset.action===`copy`){let e=r.dataset.url||location.href;try{await navigator.clipboard.writeText(e)}catch{}let t=r.textContent;r.textContent=`Copied`,setTimeout(()=>{r.textContent=t},1600)}}})})();</script>

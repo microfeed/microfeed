@@ -1,0 +1,13 @@
+{
+  "name": "microfeed-theme",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "preview": "microfeed-theme preview .",
+    "test": "microfeed-theme test . --json",
+    "validate": "microfeed-theme validate . --json"
+  },
+  "devDependencies": {
+    "@microfeed/theme-kit": "^1.0.3"
+  }
+}

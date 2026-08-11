@@ -53,14 +53,14 @@ export async function loadFeed(
       const activeTheme = await new ThemeStore(
         runtimeEnv.FEED_DB,
         publicCachePurger,
-      ).ensureLegacyThemeMigrated(content.settings);
+      ).ensureThemeMigration(content.settings);
       if (activeTheme) content.activeTheme = activeTheme;
       else delete content.activeTheme;
       content.themeMigrationCompleted = true;
     } catch (error) {
       console.error(JSON.stringify({
         error: error instanceof Error ? error.message : String(error),
-        message: "Legacy theme migration could not complete; using the built-in theme",
+        message: "Theme appearance migration could not complete; using the bundled classic fallback",
       }));
     }
   }

@@ -128,8 +128,9 @@ reference format synchronized through the shared contract:
 4. Open a draft pull request against the requested base, defaulting to `main`.
    Prefer the connected GitHub integration and use `gh pr create --draft` as a
    fallback. Use the repository PR template and include the change, rationale,
-   developer or user impact, related issue when one exists, validation, risks,
-   and screenshots for visible UI changes.
+   developer or user impact, related issue when one exists, validation, and
+   risks. Do not create or add screenshots unless the user explicitly requests
+   them; otherwise describe visual verification in the pull request.
 5. If authentication, push permission, an existing fork, or a remote base is
    unavailable, keep the validated local commit and report the exact missing
    prerequisite. Do not improvise another remote or expose credentials.

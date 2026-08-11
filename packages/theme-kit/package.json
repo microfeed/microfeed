@@ -1,9 +1,25 @@
 {
   "name": "@microfeed/theme-kit",
-  "version": "0.1.0",
+  "version": "1.0.3",
   "description": "Author, validate, test, and preview microfeed themes.",
+  "keywords": [
+    "microfeed",
+    "theme",
+    "cli",
+    "mustache",
+    "cloudflare"
+  ],
+  "homepage": "https://docs.microfeed.org/dashboard/themes/",
+  "bugs": {
+    "url": "https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microfeed/microfeed.git",
+    "directory": "packages/theme-kit"
+  },
   "type": "module",
-  "license": "AGPL-3.0",
+  "license": "AGPL-3.0-only",
   "main": "./dist/index.js",
   "types": "./dist/types/packages/theme-kit/src/index.d.ts",
   "exports": {
@@ -17,7 +33,9 @@
   },
   "files": [
     "assets",
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsx scripts/build.ts",
@@ -39,7 +57,8 @@
     "typescript": "^6.0.3"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "engines": {
     "node": ">=22.12.0"

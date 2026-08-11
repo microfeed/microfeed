@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop microfeed themes"
+  short_description: "Build and validate microfeed theme packages"
+  default_prompt: "Use $develop-microfeed-theme to create or update this microfeed theme safely."

@@ -364,7 +364,7 @@ export default class FeedDb {
       } else if (thing.table === 'activeTheme' && response.results[0]) {
         const row = response.results[0] as Record<string, unknown>;
         (contentJson as any).themeMigrationCompleted = Boolean(
-          row.legacy_migrated_at,
+          row.legacy_migrated_at && row.appearance_preserved_at,
         );
         if (row.requested_active_theme_id && !row.id) {
           console.error(JSON.stringify({
@@ -407,7 +407,8 @@ export default class FeedDb {
       things.push({
         sql: `SELECT themes.*,
             theme_state.active_theme_id AS requested_active_theme_id,
-            theme_state.legacy_migrated_at
+            theme_state.legacy_migrated_at,
+            theme_state.appearance_preserved_at
           FROM theme_state
           LEFT JOIN themes ON themes.id = theme_state.active_theme_id
             AND themes.deleted_at IS NULL

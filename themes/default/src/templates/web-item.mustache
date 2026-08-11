@@ -1,0 +1,23 @@
+<main class="mf-shell py-10 sm:py-16">
+  <article>
+    <a class="mf-kicker no-underline" href="{{home_page_url}}">← All stories</a>
+    <header class="mx-auto mt-8 max-w-4xl text-center">
+      {{#items.0._microfeed.date_published_short}}<p class="mf-kicker">{{items.0._microfeed.date_published_short}}</p>{{/items.0._microfeed.date_published_short}}
+      <h1 class="mt-4 text-4xl font-black leading-[.98] tracking-[-.045em] sm:text-6xl lg:text-7xl">{{items.0.title}}</h1>
+      {{#items.0.authors}}<p class="mt-6 text-sm font-bold text-mf-muted">By {{name}}</p>{{/items.0.authors}}
+    </header>
+    {{#items.0.image}}<img class="mx-auto mt-10 max-h-[42rem] w-full rounded-2xl object-cover" src="{{items.0.image}}" alt="">{{/items.0.image}}
+    {{^items.0.image}}{{#items.0.banner_image}}<img class="mx-auto mt-10 max-h-[42rem] w-full rounded-2xl object-cover" src="{{items.0.banner_image}}" alt="">{{/items.0.banner_image}}{{/items.0.image}}
+    <div class="mf-rich mx-auto mt-10 max-w-3xl">{{{items.0.content_html}}}</div>
+    {{#items.0.attachments}}
+    <div class="mx-auto mt-8 max-w-3xl rounded-xl border border-mf-border bg-mf-surface p-4">
+      {{#mime_type}}<p class="mb-3 text-sm font-bold text-mf-muted">Attachment · {{mime_type}}</p>{{/mime_type}}
+      <a class="font-bold text-mf-accent" href="{{url}}">Open media</a>
+    </div>
+    {{/items.0.attachments}}
+    <footer class="mx-auto mt-12 flex max-w-3xl flex-wrap items-center justify-between gap-4 border-t border-mf-border pt-7">
+      <a class="font-bold text-mf-accent no-underline" href="{{home_page_url}}">← Back to {{title}}</a>
+      <button class="cursor-pointer rounded-full border border-mf-border bg-mf-surface px-5 py-2.5 text-sm font-bold hover:border-mf-accent hover:text-mf-accent" type="button" data-action="copy" data-url="{{items.0.url}}">Copy link</button>
+    </footer>
+  </article>
+</main>

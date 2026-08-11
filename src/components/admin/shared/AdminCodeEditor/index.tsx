@@ -30,7 +30,7 @@ export default function AdminCodeEditor({
   maxHeight,
   minHeight = "50vh",
   onChange,
-  placeholder = "Please enter code here",
+  placeholder = "Please enter code here, including html, javascript, and css",
 }: Props) {
   const scrollContainerRef = useRef<HTMLLabelElement>(null);
 

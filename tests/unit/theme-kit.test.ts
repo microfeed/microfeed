@@ -5,6 +5,7 @@ import {afterEach, describe, expect, it} from "vitest";
 import * as z from "zod";
 
 import {loadThemePackage} from "../../packages/theme-kit/src/package";
+import {renderThemeKitHelp} from "../../packages/theme-kit/src/help";
 import {generatedThemeReadme} from "../../packages/theme-kit/src/readme";
 import {
   THEME_MAX_TEMPLATE_BYTES,
@@ -33,6 +34,13 @@ afterEach(async () => {
 });
 
 describe("@microfeed/theme-kit package loading", () => {
+  it("documents general and command-specific executable usage", () => {
+    expect(renderThemeKitHelp()).toContain("microfeed-theme <command>");
+    expect(renderThemeKitHelp()).toContain("--version");
+    expect(renderThemeKitHelp("validate")).toContain("[--json]");
+    expect(renderThemeKitHelp("fixture pull")).toContain("--output <file>");
+  });
+
   it("keeps generated schemas and agent instructions synchronized", async () => {
     const starter = new URL(
       "../../packages/theme-kit/assets/starter/",
@@ -53,6 +61,15 @@ describe("@microfeed/theme-kit package loading", () => {
     expect(loaded.manifest.packageId).toBe("example.my-theme");
     expect(loaded.assetFiles).toEqual([]);
     expect(loaded.bundle.webFeed).toContain("{{#items}}");
+    const starterPackage = JSON.parse(await readFile(
+      new URL("../../packages/theme-kit/assets/starter/package.json", import.meta.url),
+      "utf8",
+    )) as {scripts?: Record<string, string>};
+    expect(starterPackage.scripts).toMatchObject({
+      preview: "microfeed-theme preview .",
+      test: "microfeed-theme test . --json",
+      validate: "microfeed-theme validate . --json",
+    });
   });
 
   it("rejects symlinked declared files", async () => {

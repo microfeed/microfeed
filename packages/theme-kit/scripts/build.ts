@@ -17,10 +17,16 @@ const outputDirectory = path.join(packageRoot, "dist");
 await rm(outputDirectory, {force: true, recursive: true});
 const schemaDirectory = path.join(packageRoot, "assets", "starter", ".microfeed", "schemas");
 await mkdir(schemaDirectory, {recursive: true});
+const defaultSchemaDirectory = path.join(repositoryRoot, "themes", "default", ".microfeed", "schemas");
+await mkdir(defaultSchemaDirectory, {recursive: true});
+const manifestSchema = `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), null, 2)}\n`;
+const contextSchema = `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`;
 await Promise.all([
   writeFile(path.join(packageRoot, "assets", "starter", "THEME.md"), generatedThemeReadme()),
-  writeFile(path.join(schemaDirectory, "manifest.schema.json"), `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), null, 2)}\n`),
-  writeFile(path.join(schemaDirectory, "theme-context.schema.json"), `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`),
+  writeFile(path.join(schemaDirectory, "manifest.schema.json"), manifestSchema),
+  writeFile(path.join(schemaDirectory, "theme-context.schema.json"), contextSchema),
+  writeFile(path.join(defaultSchemaDirectory, "manifest.schema.json"), manifestSchema),
+  writeFile(path.join(defaultSchemaDirectory, "theme-context.schema.json"), contextSchema),
 ]);
 await build({
   bundle: true,

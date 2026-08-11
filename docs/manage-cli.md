@@ -400,17 +400,18 @@ Start a new authoring repository from the theme the selected instance is
 actually using:
 
 ```console
-yarn manage theme init ./my-theme --instance <instance-name>
+yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 ```
 
 `init` resolves the same effective selection as the live site: a valid active
-D1 version, then the built-in default. During upgrade, microfeed first imports
-the selected old custom theme into D1 as the ordinary
-`local.legacy-theme@1.0.0` version. The command copies the six theme slots and
-any declared packaged assets into an empty directory, adds the authoring kit,
-schemas, fixture, npm scripts, and instructions, and initializes a Git
-repository on `main`. Globally shared header/body wrappers are site-shell code
-and are intentionally not copied into the theme repository.
+D1 version, then the internal classic fallback. The command copies the six theme slots
+and any declared packaged assets into an empty directory, adds the authoring
+kit, schemas, fixture, npm scripts, and instructions, and initializes a Git
+repository on `main`. It recursively creates the destination and any missing
+parent directories, so `~/microfeed-themes/` does not need to exist first. It
+refuses to write into a non-empty destination. Keeping the generated directory
+outside the microfeed checkout prevents the standalone theme repository from
+being committed to microfeed accidentally.
 
 The derived package receives a separate `local.<directory-name>` package ID
 and starts at `0.1.0`, so edits cannot overwrite the source version. Its source
@@ -419,11 +420,26 @@ license and microfeed compatibility range are preserved. Use `--package-id`,
 initialization, or edit the generated manifest before the first install. Pass
 `--no-git` when another tool will initialize version control.
 
+The generated repository also contains the `develop-microfeed-theme` coding
+agent skill. It exports the rendered six-slot package, not the build sources of
+the original project. To use microfeed's complete Tailwind/Vite starter, copy
+or clone `themes/default` from the microfeed repository instead.
+
 Use this command to install a theme package from a local directory or a public
 GitHub repository, directory, or `microfeed-theme.json` URL. GitHub branches
 and tags are resolved to an exact commit before the manifest and declared files
 are downloaded. V1 does not store GitHub credentials and does not support
 private repositories.
+
+The reserved bundled source installs the rendered modern default from the
+current microfeed checkout:
+
+```console
+yarn manage theme install default --instance <instance-name>
+```
+
+Like every manual install, it remains inactive until explicitly activated.
+`theme update` reloads a bundled default version from the current checkout.
 
 Install and update always create an inactive version. Preview it in
 **Settings → Themes**, then activate it separately. Templates and manifests are
@@ -462,29 +478,33 @@ Common examples:
 
 ```console
 # Start a new repository from this instance's effective active theme.
-yarn manage theme init ./my-theme --instance personal
+yarn manage theme init ~/microfeed-themes/my-theme --instance personal
 
 # Set public package metadata immediately.
-yarn manage theme init ./my-theme --instance personal \
+yarn manage theme init ~/microfeed-themes/my-theme --instance personal \
   --package-id example.my-theme --name "My theme" --author "Your name"
 
 # Install an inactive GitHub version.
 yarn manage theme install https://github.com/example/microfeed-theme \
   --instance personal
 
+# Reinstall the modern bundled default as an inactive version.
+yarn manage theme install default --instance personal
+
 # Exercise a local checkout without changing the deployed site.
-yarn manage theme install ./my-theme --local --instance personal
+yarn manage theme install ~/microfeed-themes/my-theme --local --instance personal
 
 # Inspect and activate an installed version.
 yarn manage theme list --instance personal
 yarn manage theme activate <theme-id> --instance personal
 
-# Return to the previous theme, or deactivate to the built-in default.
+# Return to the previous theme, or deactivate to the internal classic fallback.
 yarn manage theme rollback --instance personal
 yarn manage theme deactivate --instance personal
 
 # Export or explicitly delete an inactive version.
-yarn manage theme export <theme-id> --instance personal --output ./theme-export
+yarn manage theme export <theme-id> --instance personal \
+  --output ~/microfeed-themes/theme-export
 yarn manage theme delete <theme-id> --instance personal --confirm <theme-id>
 ```
 
@@ -496,6 +516,12 @@ and must not be reused. Deletion rejects the active version, soft-deletes D1
 metadata first, and retains an asset owner while any published version or draft
 still references it. Failed asset cleanup remains retryable by repeating the
 same confirmed delete command.
+
+Each environment is limited to 50 non-deleted installed versions and 20
+drafts. An idempotent reinstall of identical content still succeeds at the
+installed-version limit. Delete an inactive version to free a slot; if Admin
+installation reaches the limit, its draft remains available. `theme list`
+selects only package and source metadata, not the six-slot bundles.
 
 ## `yarn manage snapshot`
 

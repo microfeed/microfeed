@@ -6,6 +6,7 @@ import type {
   StoredThemeVersion,
   ThemeDraft,
 } from "@/shared/themes/ThemeContract";
+import {themeRssPreviewDocument} from "@/shared/themes/RssPreview";
 
 type PreviewTheme = StoredThemeVersion | ThemeDraft;
 
@@ -31,28 +32,28 @@ function previewVersion(theme: PreviewTheme): StoredThemeVersion {
   };
 }
 
-function previewHeaders(contentType = "text/html; charset=utf-8"): Headers {
+function previewHeaders(
+  requestUrl: string,
+  contentType = "text/html; charset=utf-8",
+): Headers {
+  // A sandboxed iframe without allow-same-origin receives an opaque origin, so
+  // CSP 'self' does not match even the site's own public images or theme assets.
+  // Allow the exact request origin while keeping the iframe isolated from Admin.
+  const requestOrigin = new URL(requestUrl).origin;
   return new Headers({
     "cache-control": "private, no-store",
     "content-security-policy": [
       "sandbox allow-scripts",
-      "default-src 'self' https: data: blob:",
-      "img-src 'self' https: data: blob:",
-      "font-src 'self' https: data:",
-      "script-src 'self' https: 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' https: data: 'unsafe-inline'",
-      "connect-src https:",
+      `default-src ${requestOrigin} https: data: blob:`,
+      `img-src ${requestOrigin} https: data: blob:`,
+      `font-src ${requestOrigin} https: data:`,
+      `script-src ${requestOrigin} https: 'unsafe-inline' 'unsafe-eval'`,
+      `style-src ${requestOrigin} https: data: 'unsafe-inline'`,
+      `connect-src ${requestOrigin} https:`,
     ].join("; "),
     "content-type": contentType,
     "referrer-policy": "no-referrer",
   });
-}
-
-function base64Utf8(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
 }
 
 export async function themePreviewResponse(
@@ -61,7 +62,7 @@ export async function themePreviewResponse(
   previewTheme: PreviewTheme,
 ): Promise<Response> {
   const view = new URL(request.url).searchParams.get("view") ?? "feed";
-  if (!["feed", "item", "rss"].includes(view)) {
+  if (!["feed", "item", "rss", "rss-stylesheet"].includes(view)) {
     return new Response("Unknown preview view.", {status: 400});
   }
   const loaded = await loadPublishedFeed(runtimeEnv, request, {limit: 20});
@@ -79,20 +80,25 @@ export async function themePreviewResponse(
     storedTheme,
     assetBaseUrl,
   );
+  if (view === "rss-stylesheet") {
+    return new Response(theme.getRssStylesheet().stylesheet, {
+      headers: previewHeaders(request.url, "text/xsl; charset=utf-8"),
+    });
+  }
   if (view === "rss") {
     const stylesheet = theme.getRssStylesheet().stylesheet;
-    const stylesheetUrl = `data:text/xsl;base64,${base64Utf8(stylesheet)}`;
+    const stylesheetUrl = new URL(request.url);
+    stylesheetUrl.search = "?view=rss-stylesheet";
     const rss = new FeedPublicRssBuilder(
       loaded.publicFeed,
       new URL(request.url).origin,
     ).getRssData().replace(
       /<\?xml-stylesheet href="[^"]+" type="text\/xsl"\?>/u,
-      `<?xml-stylesheet href="${stylesheetUrl}" type="text/xsl"?>`,
+      `<?xml-stylesheet href="${stylesheetUrl.href}" type="text/xsl"?>`,
     );
-    return new Response(
-      rss,
-      {headers: previewHeaders("application/rss+xml; charset=utf-8")},
-    );
+    return new Response(themeRssPreviewDocument(rss, stylesheet), {
+      headers: previewHeaders(request.url),
+    });
   }
 
   const shared = new Theme(
@@ -108,6 +114,6 @@ export async function themePreviewResponse(
     : theme.getWebFeed().html;
   return new Response(
     `<!doctype html><html lang="${String(loaded.publicFeed.language ?? "en")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${shared.getWebHeader().html}${theme.getWebHeader().html}</head><body>${shared.getWebBodyStart().html}${theme.getWebBodyStart().html}${body}${shared.getWebBodyEnd().html}${theme.getWebBodyEnd().html}</body></html>`,
-    {headers: previewHeaders()},
+    {headers: previewHeaders(request.url)},
   );
 }

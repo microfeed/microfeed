@@ -6,6 +6,26 @@ export const THEME_MAX_TEXT_BYTES = 512 * 1024;
 export const THEME_MAX_ASSET_BYTES = 5 * 1024 * 1024;
 export const THEME_MAX_TOTAL_ASSET_BYTES = 20 * 1024 * 1024;
 export const THEME_MAX_ASSETS = 100;
+export const THEME_MAX_INSTALLED_VERSIONS = 50;
+export const THEME_MAX_DRAFTS = 20;
+export const THEME_LIST_PAGE_SIZE = 20;
+export const THEME_SEARCH_MAX_LENGTH = 100;
+
+export const THEME_LIST_SORTS = [
+  "status",
+  "installed-desc",
+  "installed-asc",
+  "name-asc",
+  "name-desc",
+] as const;
+
+export type ThemeListSort = typeof THEME_LIST_SORTS[number];
+
+export interface ThemeListOptions {
+  page: number;
+  q: string;
+  sort: ThemeListSort;
+}
 
 export const THEME_FILE_KEYS = [
   "webFeed",
@@ -190,6 +210,7 @@ export const themeContextSchema = z.object({
 
 export const themeSourceKindSchema = z.enum([
   "admin",
+  "bundled",
   "github",
   "local-directory",
   "migration",
@@ -234,6 +255,59 @@ export type ThemeContext = z.infer<typeof themeContextSchema>;
 export type ThemeDraft = z.infer<typeof themeDraftSchema>;
 export type StoredThemeVersion = z.infer<typeof storedThemeVersionSchema>;
 export type ThemeSourceKind = z.infer<typeof themeSourceKindSchema>;
+
+export interface ThemeVersionSummary {
+  assetCount: number;
+  assetOwnerThemeId: string | null;
+  checksumSha256: string;
+  createdAt: string;
+  deletedAt: string | null;
+  id: string;
+  manifest: ThemeManifestV1;
+  name: string;
+  originThemeName: string | null;
+  originThemeId: string | null;
+  originThemeVersion: string | null;
+  packageId: string;
+  sourceCommit: string | null;
+  sourceKind: ThemeSourceKind;
+  sourcePath: string | null;
+  sourceRef: string | null;
+  sourceUrl: string | null;
+  version: string;
+}
+
+export interface ThemeDraftSummary {
+  assetCount: number;
+  assetOwnerThemeId: string | null;
+  createdAt: string;
+  id: string;
+  manifest: ThemeManifestV1;
+  name: string;
+  originKind: "built-in" | "theme";
+  originThemeId: string | null;
+  packageId: string;
+  updatedAt: string;
+  version: string;
+}
+
+export interface ThemeListPagination {
+  page: number;
+  pageSize: typeof THEME_LIST_PAGE_SIZE;
+  total: number;
+  totalPages: number;
+}
+
+export interface ThemeListResponse {
+  drafts: ThemeDraftSummary[];
+  limits: {
+    drafts: typeof THEME_MAX_DRAFTS;
+    installed: typeof THEME_MAX_INSTALLED_VERSIONS;
+  };
+  pagination: ThemeListPagination;
+  state: ThemeState;
+  themes: ThemeVersionSummary[];
+}
 
 export interface ThemeState {
   activeThemeId: string | null;

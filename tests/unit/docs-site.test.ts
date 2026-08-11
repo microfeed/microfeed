@@ -154,7 +154,7 @@ describe("documentation site", () => {
     expect(readme).toContain(
       '<img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">',
     );
-    expect(readme).toContain(
+    expect(readme).not.toContain(
       "](docs/public/images/screenshots/4-code-editor-1.png)",
     );
     expect(readme).not.toContain(
@@ -623,6 +623,19 @@ describe("documentation site", () => {
     expect(documentationSkill).toContain("## Maintain the Starlight site");
     expect(documentationSkill).toContain("## Publish safely");
     expect(documentationSkill).toContain("docs.microfeed.org");
+    expect(documentationSkill).toContain(
+      "Do not create, capture, add, or replace documentation screenshots unless the",
+    );
+    const developmentSkill = await readFile(path.join(
+      repositoryRoot,
+      ".agents",
+      "skills",
+      "develop-microfeed",
+      "SKILL.md",
+    ), "utf8");
+    expect(developmentSkill).toContain(
+      "Do not create or add screenshots unless the user explicitly requests",
+    );
   });
 
   it("preserves the README overview and assigns installation details to docs", async () => {
@@ -636,6 +649,10 @@ describe("documentation site", () => {
     expect(readme).toContain("## ⭐️ How it works");
     expect(readme).toContain("### Quickstarts");
     expect(readme).toContain("## ✍️ Start publishing");
+    expect(readme).toContain("### Change the public theme");
+    expect(readme).toContain("## ✨ Features");
+    expect(readme).toContain("Themes developed by the community");
+    expect(readme).toContain("| Versioned themes |");
     expect(readme).toContain("## 💻 FAQs");
     expect(readme).toContain("## 💪 Contributions");
     expect(readme).toContain("## 🛡️ License");
@@ -737,6 +754,42 @@ describe("documentation site", () => {
     expect(docsConfig).toContain(
       'promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"]',
     );
+  });
+
+  it("documents modern theme authoring without migration internals", async () => {
+    const files = await documentationFiles();
+    for (const file of files) {
+      const source = (await readFile(file, "utf8")).toLowerCase();
+      expect(source, file).not.toContain("settings.customcode");
+      expect(source, file).not.toContain("legacy theme");
+      expect(source, file).not.toContain("legacy-theme");
+    }
+
+    const themes = await readFile(
+      path.join(docsRoot, "dashboard", "themes.md"),
+      "utf8",
+    );
+    expect(themes).toContain("### Develop with an AI coding agent");
+    expect(themes).toContain("### Bundle CSS and JavaScript");
+    expect(themes).toContain("#### Inline compiled output in D1");
+    expect(themes).toContain("#### Emit packaged assets with Vite");
+    expect(themes).toContain("#### Emit packaged assets with Webpack");
+    expect(themes).toContain("microfeed never runs a theme repository's build scripts");
+    expect(themes).toContain(
+      "yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>",
+    );
+    expect(themes).toContain(
+      "You do not need to create `~/microfeed-themes/` first.",
+    );
+    expect(themes).toContain(
+      '"assets": ["assets/theme.css", "assets/theme.js"]',
+    );
+    expect(themes).toContain("{{_theme.asset_base_url}}theme.js");
+    expect(themes).toContain("<asset-owner-theme-id>");
+    expect(themes).toContain(
+      "yarn manage deploy --enable-r2 --instance <instance-name>",
+    );
+    expect(themes).not.toContain("## Upgrade from the old custom theme");
   });
 
   it("advertises agentic content publishing from the main discovery paths", async () => {

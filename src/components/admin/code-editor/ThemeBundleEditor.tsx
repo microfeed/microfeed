@@ -51,12 +51,20 @@ export default function ThemeBundleEditor({bundle, onChange}: Props) {
         for the first item; the <code>item</code> alias remains available for
         compatibility on item pages.
       </p>
+      {file === "webHeader" && bundle.webHeader.includes("microfeed-design-tokens") && (
+        <p className="mb-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+          Quick color changes are at the top of <strong className="text-foreground">Web header</strong>. Edit only the values in the clearly labeled design-token block.
+        </p>
+      )}
       <AdminCodeEditor
         ariaLabel={`${FILE_LABELS[file]} editor`}
         code={bundle[file]}
         language={file === "rssStylesheet" ? "xml" : "html"}
         minHeight="54vh"
         onChange={(event) => onChange({...bundle, [file]: event.target.value})}
+        placeholder={file === "rssStylesheet"
+          ? "Please enter code here, including xsl and css"
+          : "Please enter code here, including html, javascript, and css"}
       />
     </div>
   );

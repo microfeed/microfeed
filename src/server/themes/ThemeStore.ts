@@ -10,9 +10,17 @@ import type {
   StoredThemeVersion,
   ThemeBundleV1,
   ThemeDraft,
+  ThemeListOptions,
+  ThemeListResponse,
+  ThemeListSort,
   ThemeManifestV1,
   ThemeSourceKind,
   ThemeState,
+} from "@/shared/themes/ThemeContract";
+import {
+  THEME_LIST_PAGE_SIZE,
+  THEME_MAX_DRAFTS,
+  THEME_MAX_INSTALLED_VERSIONS,
 } from "@/shared/themes/ThemeContract";
 import {
   canonicalThemePackage,
@@ -21,13 +29,18 @@ import {
 import {validateThemePackage} from "@/shared/themes/ThemeValidation";
 import {
   storedThemeFromRow,
+  storedThemeSummaryFromRow,
   themeDraftFromRow,
+  themeDraftSummaryFromRow,
   themeStateFromRow,
 } from "@/shared/themes/ThemeRows";
 import {
+  CLASSIC_THEME_BUNDLE,
+  CLASSIC_THEME_ID,
+  CLASSIC_THEME_MANIFEST,
   legacyThemeMigrationSource,
   MIGRATED_LEGACY_THEME_ID,
-} from "./BuiltInTheme";
+} from "./BundledThemes";
 
 interface ThemeSource {
   commit?: string | null;
@@ -77,6 +90,27 @@ function nextPatchVersion(versions: string[], sourceVersion: string): string {
   return semver.inc(latest, "patch") ?? "0.0.1";
 }
 
+function escapedLike(value: string): string {
+  return `%${value.toLocaleLowerCase().replace(/[\\%_]/gu, "\\$&")}%`;
+}
+
+const THEME_SUMMARY_COLUMNS = `
+  themes.id, themes.package_id, themes.version, themes.name,
+  themes.manifest_json, themes.source_kind, themes.source_url,
+  themes.source_ref, themes.source_path, themes.source_commit,
+  themes.checksum_sha256, themes.origin_theme_id,
+  origin_themes.name AS origin_theme_name,
+  origin_themes.version AS origin_theme_version,
+  themes.asset_owner_theme_id, themes.created_at, themes.deleted_at,
+  COALESCE(json_array_length(json_extract(themes.manifest_json, '$.assets')), 0)
+    AS asset_count`;
+
+const DRAFT_SUMMARY_COLUMNS = `
+  id, package_id, version, name, manifest_json, origin_kind,
+  origin_theme_id, asset_owner_theme_id, created_at, updated_at,
+  COALESCE(json_array_length(json_extract(manifest_json, '$.assets')), 0)
+    AS asset_count`;
+
 export default class ThemeStore {
   constructor(
     private readonly database: D1Database,
@@ -106,6 +140,71 @@ export default class ThemeStore {
       "SELECT * FROM theme_drafts ORDER BY updated_at DESC",
     ).all();
     return results(result).map(themeDraftFromRow);
+  }
+
+  async listSummaries(options: ThemeListOptions): Promise<ThemeListResponse> {
+    const page = Math.max(1, Math.trunc(options.page));
+    const search = options.q ? escapedLike(options.q) : null;
+    const where = search
+      ? `WHERE themes.deleted_at IS NULL AND (
+          lower(themes.name) LIKE ? ESCAPE '\\' OR
+          lower(themes.package_id) LIKE ? ESCAPE '\\' OR
+          lower(themes.version) LIKE ? ESCAPE '\\' OR
+          lower(COALESCE(json_extract(themes.manifest_json, '$.author'), '')) LIKE ? ESCAPE '\\' OR
+          lower(COALESCE(themes.source_url, '')) LIKE ? ESCAPE '\\'
+        )`
+      : "WHERE themes.deleted_at IS NULL";
+    const sortSql = {
+      "installed-asc": "themes.created_at ASC, themes.id ASC",
+      "installed-desc": "themes.created_at DESC, themes.id ASC",
+      "name-asc": "lower(themes.name) ASC, themes.version ASC, themes.id ASC",
+      "name-desc": "lower(themes.name) DESC, themes.version DESC, themes.id ASC",
+      status: `CASE
+        WHEN themes.id = theme_state.active_theme_id THEN 0
+        WHEN themes.id = theme_state.previous_theme_id THEN 1
+        ELSE 2 END ASC, themes.created_at DESC, themes.id ASC`,
+    } satisfies Record<ThemeListSort, string>;
+    const parameters = search ? [search, search, search, search, search] : [];
+    const [themeRows, countRow, draftRows, state] = await Promise.all([
+      this.database.prepare(
+        `SELECT ${THEME_SUMMARY_COLUMNS}
+         FROM themes
+         LEFT JOIN themes AS origin_themes
+           ON origin_themes.id = themes.origin_theme_id
+         CROSS JOIN theme_state
+         ${where} AND theme_state.id = 'current'
+         ORDER BY ${sortSql[options.sort]}
+         LIMIT ? OFFSET ?`,
+      ).bind(
+        ...parameters,
+        THEME_LIST_PAGE_SIZE,
+        (page - 1) * THEME_LIST_PAGE_SIZE,
+      ).all(),
+      this.database.prepare(
+        `SELECT count(*) AS total FROM themes ${where.replaceAll("themes.", "themes.")}`,
+      ).bind(...parameters).first<{total: number}>(),
+      this.database.prepare(
+        `SELECT ${DRAFT_SUMMARY_COLUMNS}
+         FROM theme_drafts ORDER BY updated_at DESC`,
+      ).all(),
+      this.getState(),
+    ]);
+    const total = Number(countRow?.total ?? 0);
+    return {
+      drafts: results(draftRows).map(themeDraftSummaryFromRow),
+      limits: {
+        drafts: THEME_MAX_DRAFTS,
+        installed: THEME_MAX_INSTALLED_VERSIONS,
+      },
+      pagination: {
+        page,
+        pageSize: THEME_LIST_PAGE_SIZE,
+        total,
+        totalPages: Math.ceil(total / THEME_LIST_PAGE_SIZE),
+      },
+      state,
+      themes: results(themeRows).map(storedThemeSummaryFromRow),
+    };
   }
 
   async getVersion(id: string, includeDeleted = false): Promise<StoredThemeVersion | null> {
@@ -182,7 +281,7 @@ export default class ThemeStore {
       ).bind(message).run();
       console.error(JSON.stringify({
         error: message,
-        message: "Legacy theme migration failed; using the built-in or active D1 theme",
+        message: "Existing theme migration failed; using the classic fallback or active D1 theme",
       }));
       return state.active_theme_id
         ? await this.getVersion(state.active_theme_id)
@@ -222,6 +321,93 @@ export default class ThemeStore {
       : null;
   }
 
+  /**
+   * Preserves the pre-versioned appearance of upgraded sites. Fresh databases
+   * already have the modern bundled default active before their first request.
+   */
+  async ensureAppearancePreserved(): Promise<StoredThemeVersion | null> {
+    const state = await this.database.prepare(
+      `SELECT active_theme_id, appearance_preserved_at
+       FROM theme_state WHERE id = 'current' LIMIT 1`,
+    ).first<{
+      active_theme_id: string | null;
+      appearance_preserved_at: string | null;
+    }>();
+    if (!state) throw new Error("Theme state is unavailable.");
+    if (state.appearance_preserved_at || state.active_theme_id) {
+      if (!state.appearance_preserved_at) {
+        await this.database.prepare(
+          `UPDATE theme_state SET appearance_preserved_at = CURRENT_TIMESTAMP,
+           appearance_preservation_error = NULL, updated_at = CURRENT_TIMESTAMP
+           WHERE id = 'current' AND appearance_preserved_at IS NULL`,
+        ).run();
+      }
+      return state.active_theme_id
+        ? await this.getVersion(state.active_theme_id)
+        : null;
+    }
+
+    const validated = validateThemePackage(
+      CLASSIC_THEME_MANIFEST,
+      CLASSIC_THEME_BUNDLE,
+      MICROFEED_VERSION,
+    );
+    const checksum = await sha256Hex(canonicalThemePackage(
+      validated.manifest,
+      validated.bundle,
+    ));
+    const existingRow = await this.database.prepare(
+      "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
+    ).bind(validated.manifest.packageId, validated.manifest.version)
+      .first<Record<string, unknown>>();
+    const existing = existingRow ? storedThemeFromRow(existingRow) : null;
+    if (existing && (existing.deletedAt || existing.checksumSha256 !== checksum)) {
+      throw new Error(
+        `${validated.manifest.packageId}@${validated.manifest.version} is reserved by content that cannot preserve the classic appearance.`,
+      );
+    }
+    const classicThemeId = existing?.id ?? CLASSIC_THEME_ID;
+    await this.database.batch([
+      this.database.prepare(
+        `INSERT OR IGNORE INTO themes (
+          id, package_id, version, name, manifest_json, bundle_json,
+          source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, 'bundled', ?, NULL, NULL)`,
+      ).bind(
+        classicThemeId,
+        validated.manifest.packageId,
+        validated.manifest.version,
+        validated.manifest.name,
+        JSON.stringify(validated.manifest),
+        JSON.stringify(validated.bundle),
+        checksum,
+      ),
+      this.database.prepare(
+        `UPDATE theme_state SET classic_theme_id = ?,
+         active_theme_id = COALESCE(active_theme_id, ?),
+         appearance_preserved_at = CURRENT_TIMESTAMP,
+         appearance_preservation_error = NULL,
+         updated_at = CURRENT_TIMESTAMP
+         WHERE id = 'current' AND appearance_preserved_at IS NULL`,
+      ).bind(classicThemeId, classicThemeId),
+    ]);
+    const preserved = await this.getState();
+    if (preserved.activeThemeId === classicThemeId) {
+      await this.purgeActiveTheme();
+      return this.getVersion(classicThemeId);
+    }
+    return preserved.activeThemeId
+      ? await this.getVersion(preserved.activeThemeId)
+      : null;
+  }
+
+  async ensureThemeMigration(
+    settings: Record<string, any> | null | undefined,
+  ): Promise<StoredThemeVersion | null> {
+    await this.ensureLegacyThemeMigrated(settings);
+    return this.ensureAppearancePreserved();
+  }
+
   async installVersion(input: InstallThemeInput): Promise<StoredThemeVersion> {
     const {bundle, manifest} = validateThemePackage(
       input.manifest,
@@ -252,12 +438,14 @@ export default class ThemeStore {
     const assetOwnerThemeId = bundle.assets.length > 0
       ? input.assetOwnerThemeId ?? id
       : input.assetOwnerThemeId ?? null;
-    await this.database.prepare(
+    const inserted = await this.database.prepare(
       `INSERT INTO themes (
         id, package_id, version, name, manifest_json, bundle_json,
         source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+      RETURNING id`,
     ).bind(
       id,
       manifest.packageId,
@@ -273,7 +461,13 @@ export default class ThemeStore {
       checksum,
       input.originThemeId ?? null,
       assetOwnerThemeId,
-    ).run();
+      THEME_MAX_INSTALLED_VERSIONS,
+    ).first<{id: string}>();
+    if (!inserted) {
+      throw new Error(
+        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+      );
+    }
     const installed = await this.getVersion(id);
     if (!installed) throw new Error("The installed theme could not be loaded.");
     return installed;
@@ -300,11 +494,13 @@ export default class ThemeStore {
       version,
     } satisfies ThemeManifestV1;
     const id = crypto.randomUUID();
-    await this.database.prepare(
+    const inserted = await this.database.prepare(
       `INSERT INTO theme_drafts (
         id, package_id, version, name, manifest_json, bundle_json,
         origin_kind, origin_theme_id, asset_owner_theme_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE (SELECT count(*) FROM theme_drafts) < ?
+      RETURNING id`,
     ).bind(
       id,
       manifest.packageId,
@@ -315,7 +511,13 @@ export default class ThemeStore {
       input.originKind,
       input.originThemeId ?? null,
       input.assetOwnerThemeId ?? null,
-    ).run();
+      THEME_MAX_DRAFTS,
+    ).first<{id: string}>();
+    if (!inserted) {
+      throw new Error(
+        `This environment already has ${THEME_MAX_DRAFTS} theme drafts. Discard a draft before creating another.`,
+      );
+    }
     const draft = await this.getDraft(id);
     if (!draft) throw new Error("The theme draft could not be loaded.");
     return draft;
@@ -389,12 +591,13 @@ export default class ThemeStore {
     }
 
     const themeId = crypto.randomUUID();
-    await this.database.batch([
-      this.database.prepare(
+    const inserted = await this.database.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
           source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?)`,
+        ) SELECT ?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?
+          WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+        RETURNING id`,
       ).bind(
         themeId,
         draft.packageId,
@@ -405,9 +608,15 @@ export default class ThemeStore {
         checksum,
         draft.originThemeId,
         draft.assetOwnerThemeId,
-      ),
-      this.database.prepare("DELETE FROM theme_drafts WHERE id = ?").bind(id),
-    ]);
+        THEME_MAX_INSTALLED_VERSIONS,
+      ).first<{id: string}>();
+    if (!inserted) {
+      throw new Error(
+        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version, then install this draft again. The draft has been retained.`,
+      );
+    }
+    await this.database.prepare("DELETE FROM theme_drafts WHERE id = ?")
+      .bind(id).run();
     const published = await this.getVersion(themeId);
     if (!published) throw new Error("The published theme could not be loaded.");
     return published;

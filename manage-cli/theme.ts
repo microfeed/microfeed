@@ -15,11 +15,13 @@ import * as z from "zod";
 
 import {
   storedThemeFromRow,
+  storedThemeSummaryFromRow,
   themeStateFromRow,
 } from "@/shared/themes/ThemeRows";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {
   THEME_MAX_ASSET_BYTES,
+  THEME_MAX_INSTALLED_VERSIONS,
   THEME_MAX_TEMPLATE_BYTES,
   THEME_MAX_TOTAL_ASSET_BYTES,
   THEME_FILE_KEYS,
@@ -30,6 +32,7 @@ import {
   type ThemeFileKey,
   type ThemeManifestV1,
   type ThemeState,
+  type ThemeVersionSummary,
 } from "@/shared/themes/ThemeContract";
 import {
   canonicalThemePackage,
@@ -56,7 +59,7 @@ import {repositoryRoot, runCommand} from "./lib/process";
 
 interface ThemeSourceMetadata {
   commit: string | null;
-  kind: "github" | "local-directory";
+  kind: "bundled" | "github" | "local-directory";
   path: string | null;
   ref: string | null;
   url: string | null;
@@ -78,7 +81,7 @@ interface EffectiveTheme {
   bundle: ThemeBundleV1;
   checksumSha256: string | null;
   fallbackReason: string | null;
-  kind: "built-in" | "installed" | "legacy";
+  kind: "bundled-fallback" | "installed" | "legacy";
   manifest: ThemeManifestV1;
   themeId: string | null;
 }
@@ -101,15 +104,6 @@ const CANONICAL_THEME_FILES: ThemeManifestV1["files"] = {
   webFeed: "web-feed.mustache",
   webHeader: "web-header.mustache",
   webItem: "web-item.mustache",
-};
-
-const BUILT_IN_THEME_SOURCES: Record<ThemeFileKey, string> = {
-  rssStylesheet: "src/server/themes/defaults/rss_stylesheet.html",
-  webBodyEnd: "src/server/themes/defaults/web_body_end.html",
-  webBodyStart: "src/server/themes/defaults/web_body_start.html",
-  webFeed: "src/server/themes/defaults/web_feed.html",
-  webHeader: "src/server/themes/defaults/web_header.html",
-  webItem: "src/server/themes/defaults/web_item.html",
 };
 
 function flagString(flags: Flags, name: string): string | undefined {
@@ -154,31 +148,15 @@ function assetKey(environment: string, ownerId: string, assetPath: string): stri
   return `${environment}/themes/${ownerId}/assets/${relative}`;
 }
 
-async function builtInTheme(): Promise<EffectiveTheme> {
-  const entries = await Promise.all(THEME_FILE_KEYS.map(async (key) => [
-    key,
-    await readFile(path.join(repositoryRoot, BUILT_IN_THEME_SOURCES[key]), "utf8"),
-  ] as const));
+async function bundledFallbackTheme(): Promise<EffectiveTheme> {
+  const loaded = await loadThemePackage(path.join(repositoryRoot, "themes/classic"));
   return {
     assetOwnerThemeId: null,
-    bundle: {
-      ...Object.fromEntries(entries) as Record<ThemeFileKey, string>,
-      assets: [],
-    },
+    bundle: loaded.bundle,
     checksumSha256: null,
     fallbackReason: null,
-    kind: "built-in",
-    manifest: {
-      assets: [],
-      author: "microfeed",
-      files: CANONICAL_THEME_FILES,
-      formatVersion: 1,
-      license: "AGPL-3.0",
-      microfeed: `^${MICROFEED_VERSION}`,
-      name: "microfeed default",
-      packageId: "microfeed.default",
-      version: MICROFEED_VERSION,
-    },
+    kind: "bundled-fallback",
+    manifest: loaded.manifest,
     themeId: null,
   };
 }
@@ -288,7 +266,7 @@ function parseCustomCodeRow(
 }
 
 async function effectiveTheme(target: Target): Promise<EffectiveTheme> {
-  const fallback = await builtInTheme();
+  const fallback = await bundledFallbackTheme();
   let activeRow: Record<string, unknown> | null = null;
   let customCodeRow: Record<string, unknown> | null = null;
   if (target.local) {
@@ -608,6 +586,18 @@ async function resolveThemeSource(
   source: string,
   flags: Flags,
 ): Promise<ResolvedThemeSource> {
+  if (source === "default") {
+    return {
+      loaded: await loadThemePackage(path.join(repositoryRoot, "themes/default")),
+      source: {
+        commit: null,
+        kind: "bundled",
+        path: "default",
+        ref: null,
+        url: null,
+      },
+    };
+  }
   if (/^https?:\/\//iu.test(source)) {
     return githubThemeSource(source, flagString(flags, "ref"), flagString(flags, "path"));
   }
@@ -650,11 +640,21 @@ async function localResources(target: Target): Promise<{
   return {bucket, close: () => miniflare.dispose(), database};
 }
 
-async function localVersions(database: D1Database): Promise<StoredThemeVersion[]> {
-  const result = await database.prepare(
-    "SELECT * FROM themes ORDER BY package_id ASC, created_at DESC",
-  ).all<Record<string, unknown>>();
-  return result.results.map(storedThemeFromRow);
+const THEME_SUMMARY_SELECT = `SELECT id, package_id, version, name,
+  manifest_json, source_kind, source_url, source_ref, source_path,
+  source_commit, checksum_sha256, origin_theme_id, asset_owner_theme_id,
+  created_at, deleted_at,
+  COALESCE(json_array_length(json_extract(manifest_json, '$.assets')), 0)
+    AS asset_count
+  FROM themes WHERE deleted_at IS NULL
+  ORDER BY package_id ASC, created_at DESC`;
+
+async function localThemeSummaries(
+  database: D1Database,
+): Promise<ThemeVersionSummary[]> {
+  const result = await database.prepare(THEME_SUMMARY_SELECT)
+    .all<Record<string, unknown>>();
+  return result.results.map(storedThemeSummaryFromRow);
 }
 
 async function localState(database: D1Database): Promise<ThemeState> {
@@ -663,18 +663,45 @@ async function localState(database: D1Database): Promise<ThemeState> {
   ).first<Record<string, unknown>>());
 }
 
-async function remoteVersions(target: Target): Promise<StoredThemeVersion[]> {
+async function themeSummaries(target: Target): Promise<ThemeVersionSummary[]> {
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      return await localThemeSummaries(local.database);
+    } finally {
+      await local.close();
+    }
+  }
   const rows = await target.client.queryD1WithParameters(
     target.config,
-    "SELECT * FROM themes ORDER BY package_id ASC, created_at DESC",
+    THEME_SUMMARY_SELECT,
   );
-  return rows.map(storedThemeFromRow);
+  return rows.map(storedThemeSummaryFromRow);
 }
 
-async function versions(target: Target): Promise<StoredThemeVersion[]> {
-  if (!target.local) return remoteVersions(target);
+async function themeById(
+  target: Target,
+  id: string,
+  includeDeleted = false,
+): Promise<StoredThemeVersion | null> {
+  const sql = `SELECT * FROM themes WHERE id = ?
+    ${includeDeleted ? "" : "AND deleted_at IS NULL"} LIMIT 1`;
+  if (!target.local) {
+    const [row] = await target.client.queryD1WithParameters(
+      target.config,
+      sql,
+      [id],
+    );
+    return row ? storedThemeFromRow(row) : null;
+  }
   const local = await localResources(target);
-  try { return await localVersions(local.database); } finally { await local.close(); }
+  try {
+    const row = await local.database.prepare(sql).bind(id)
+      .first<Record<string, unknown>>();
+    return row ? storedThemeFromRow(row) : null;
+  } finally {
+    await local.close();
+  }
 }
 
 async function installRemote(
@@ -734,13 +761,15 @@ async function installRemote(
         throw new Error(`R2 checksum verification failed for ${asset.path}.`);
       }
     }
-    await target.client.queryD1WithParameters(
+    const inserted = await target.client.queryD1WithParameters(
       target.config,
       `INSERT INTO themes (
         id, package_id, version, name, manifest_json, bundle_json,
         source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+      RETURNING id`,
       [
         id,
         validated.manifest.packageId,
@@ -756,8 +785,14 @@ async function installRemote(
         checksum,
         null,
         bundle.assets.length > 0 ? id : null,
+        THEME_MAX_INSTALLED_VERSIONS,
       ],
     );
+    if (inserted.length === 0) {
+      throw new Error(
+        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+      );
+    }
   } catch (error) {
     await Promise.allSettled(uploaded.map((key) =>
       target.client.deleteR2Object(accountId, target.config.r2.name, key)
@@ -787,10 +822,12 @@ async function installLocal(
     );
     const validated = validateThemePackage(resolved.loaded.manifest, bundle, MICROFEED_VERSION);
     const checksum = await sha256Hex(canonicalThemePackage(validated.manifest, validated.bundle));
-    const existing = (await localVersions(local.database)).find(
-      (theme) => theme.packageId === validated.manifest.packageId && theme.version === validated.manifest.version,
-    );
-    if (existing) {
+    const existingRow = await local.database.prepare(
+      "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
+    ).bind(validated.manifest.packageId, validated.manifest.version)
+      .first<Record<string, unknown>>();
+    if (existingRow) {
+      const existing = storedThemeFromRow(existingRow);
       if (existing.checksumSha256 !== checksum) {
         throw new Error(`${existing.packageId}@${existing.version} already exists with different content; increment the package version.`);
       }
@@ -820,12 +857,14 @@ async function installLocal(
           throw new Error(`R2 checksum verification failed for ${asset.path}.`);
         }
       }
-      await local.database.prepare(
+      const inserted = await local.database.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
           source_kind, source_url, source_ref, source_path, source_commit,
           checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+        RETURNING id`,
       ).bind(
         id,
         validated.manifest.packageId,
@@ -841,7 +880,13 @@ async function installLocal(
         checksum,
         null,
         bundle.assets.length > 0 ? id : null,
-      ).run();
+        THEME_MAX_INSTALLED_VERSIONS,
+      ).first<{id: string}>();
+      if (!inserted) {
+        throw new Error(
+          `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+        );
+      }
       const row = await local.database.prepare(
         "SELECT * FROM themes WHERE id = ? LIMIT 1",
       ).bind(id).first<Record<string, unknown>>();
@@ -858,6 +903,109 @@ async function installLocal(
 
 async function installResolved(target: Target, resolved: ResolvedThemeSource) {
   return target.local ? installLocal(target, resolved) : installRemote(target, resolved);
+}
+
+async function initializationThemeState(target: Target): Promise<ThemeState> {
+  if (target.local) {
+    const local = await localResources(target);
+    try { return await localState(local.database); } finally { await local.close(); }
+  }
+  const [row] = await target.client.queryD1WithParameters(
+    target.config,
+    "SELECT * FROM theme_state WHERE id = 'current' LIMIT 1",
+  );
+  return themeStateFromRow(row ?? null);
+}
+
+async function activateInitializationTheme(
+  target: Target,
+  themeId: string,
+): Promise<void> {
+  const sql = `UPDATE theme_state SET active_theme_id = ?,
+    previous_theme_id = NULL,
+    legacy_migrated_at = COALESCE(legacy_migrated_at, CURRENT_TIMESTAMP),
+    appearance_preserved_at = COALESCE(appearance_preserved_at, CURRENT_TIMESTAMP),
+    updated_at = CURRENT_TIMESTAMP
+    WHERE id = 'current' AND (active_theme_id IS NULL OR active_theme_id = ?)
+    RETURNING active_theme_id`;
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      const updated = await local.database.prepare(sql).bind(themeId, themeId)
+        .first<{active_theme_id: string}>();
+      if (!updated) throw new Error("Another theme became active during initialization.");
+    } finally {
+      await local.close();
+    }
+    return;
+  }
+  const updated = await target.client.queryD1WithParameters(
+    target.config,
+    sql,
+    [themeId, themeId],
+  );
+  if (updated.length === 0) {
+    throw new Error("Another theme became active during initialization.");
+  }
+}
+
+async function assertPristineThemeInitializationTarget(
+  target: Target,
+): Promise<void> {
+  const sql = `SELECT
+    (SELECT count(*) FROM channels) AS channels,
+    (SELECT count(*) FROM settings) AS settings,
+    (SELECT count(*) FROM items) AS items,
+    (SELECT count(*) FROM theme_drafts) AS drafts,
+    (SELECT count(*) FROM themes
+      WHERE package_id != 'microfeed.default' OR version != '1.0.0') AS other_themes`;
+  let row: Record<string, unknown> | null;
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      row = await local.database.prepare(sql).first<Record<string, unknown>>();
+    } finally {
+      await local.close();
+    }
+  } else {
+    row = (await target.client.queryD1WithParameters(target.config, sql))[0] ?? null;
+  }
+  const dirty = ["channels", "settings", "items", "drafts", "other_themes"]
+    .some((field) => Number(row?.[field] ?? 0) !== 0);
+  if (dirty) {
+    throw new Error(
+      "The database contains application data and is not a pristine or partially completed default-theme installation target.",
+    );
+  }
+}
+
+export async function installDefaultThemeForInitialization(
+  config: MicrofeedConfig,
+  runner: CommandRunner = runCommand,
+  local = isLocalOnly(config),
+): Promise<StoredThemeVersion> {
+  const target: Target = {
+    client: new CloudflareClient(runner),
+    config,
+    local,
+  };
+  const state = await initializationThemeState(target);
+  if (state.activeThemeId) {
+    const active = await themeById(target, state.activeThemeId);
+    if (active?.packageId === "microfeed.default" && active.version === "1.0.0") {
+      return active;
+    }
+    throw new Error(
+      "The database already has an active theme and is not a pristine default-theme initialization target.",
+    );
+  }
+  await assertPristineThemeInitializationTarget(target);
+  const installed = await installResolved(
+    target,
+    await resolveThemeSource("default", {}),
+  );
+  await activateInitializationTheme(target, installed.id);
+  return installed;
 }
 
 async function managementAction(
@@ -1109,7 +1257,7 @@ async function writeThemePackage(
     ));
     await writeRelative(".gitignore", "node_modules/\n");
     await writeRelative("package.json", `${JSON.stringify({
-      devDependencies: {"@microfeed/theme-kit": "^0.1.0"},
+      devDependencies: {"@microfeed/theme-kit": `^${MICROFEED_VERSION}`},
       name: theme.manifest.packageId,
       private: true,
       scripts: {
@@ -1127,6 +1275,19 @@ async function writeThemePackage(
         path.join(repositoryRoot, "packages/theme-kit/assets/starter/fixtures/custom.json"),
       ),
     );
+    for (const relativePath of [
+      ".agents/skills/develop-microfeed-theme/SKILL.md",
+      ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+    ]) {
+      await writeRelative(
+        relativePath,
+        await readFile(path.join(
+          repositoryRoot,
+          "packages/theme-kit/assets/starter",
+          relativePath,
+        )),
+      );
+    }
   }
   return output;
 }
@@ -1213,28 +1374,30 @@ export async function themeCommand(
   }
   if (action === "install") {
     const source = flagString(flags, "source");
-    if (!source) throw new Error("theme install requires a GitHub URL or directory.");
+    if (!source) throw new Error("theme install requires default, a GitHub URL, or a directory.");
     const theme = await installResolved(target, await resolveThemeSource(source, flags));
     writeOutput(flags, {theme}, `Installed ${theme.packageId}@${theme.version} as inactive (${theme.id}).`);
     return;
   }
-  const allThemes = await versions(target);
   if (action === "list") {
+    const themes = await themeSummaries(target);
     const state = target.local
       ? await (async () => {const local = await localResources(target); try {return await localState(local.database);} finally {await local.close();}})()
       : themeStateFromRow((await target.client.queryD1WithParameters(target.config, "SELECT * FROM theme_state WHERE id = 'current' LIMIT 1"))[0] ?? null);
-    writeOutput(flags, {state, themes: allThemes}, allThemes.length
-      ? allThemes.map((theme) => `${theme.id}  ${theme.packageId}@${theme.version}${state.activeThemeId === theme.id ? "  active" : state.previousThemeId === theme.id ? "  previous" : theme.deletedAt ? "  deleted" : ""}`).join("\n")
+    writeOutput(flags, {state, themes}, themes.length
+      ? themes.map((theme) => `${theme.id}  ${theme.packageId}@${theme.version}${state.activeThemeId === theme.id ? "  active" : state.previousThemeId === theme.id ? "  previous" : ""}`).join("\n")
       : "No installed theme versions.");
     return;
   }
   const themeId = flagString(flags, "theme-id");
-  const theme = themeId ? allThemes.find((entry) => entry.id === themeId) : undefined;
+  const theme = themeId ? await themeById(target, themeId, action === "delete") : null;
   if (["update", "activate", "export", "delete"].includes(action) && !theme) {
     throw new Error(`Theme ${themeId ?? "<missing>"} was not found.`);
   }
   if (action === "update") {
-    const source = theme!.sourceUrl ?? theme!.sourcePath;
+    const source = theme!.sourceKind === "bundled" && theme!.sourcePath === "default"
+      ? "default"
+      : theme!.sourceUrl ?? theme!.sourcePath;
     if (!source) throw new Error("This theme version has no update source.");
     const updateFlags = {...flags};
     if (!updateFlags.ref && theme!.sourceRef) updateFlags.ref = theme!.sourceRef;

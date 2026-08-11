@@ -7,13 +7,16 @@ import {fileURLToPath} from "node:url";
 import {XMLValidator} from "fast-xml-parser";
 import {parse} from "parse5";
 
+import packageMetadata from "../package.json";
 import {
   renderThemeTemplate,
   themeContext,
 } from "../../../src/shared/themes/ThemeRenderer";
 import {themeContextSchema} from "../../../src/shared/themes/ThemeContract";
+import {themeRssPreviewDocument} from "../../../src/shared/themes/RssPreview";
 import {ThemeValidationError} from "../../../src/shared/themes/ThemeValidation";
 import {BUILT_IN_FIXTURES} from "./fixtures";
+import {renderThemeKitHelp} from "./help";
 import {loadThemePackage} from "./package";
 
 interface Arguments {options: Record<string, string | boolean>; positionals: string[]}
@@ -108,8 +111,16 @@ async function test(args: Arguments): Promise<void> {
   output({ok: true, tests}, args.options.json === true);
 }
 
-function escapeHtml(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+function escapeXml(value: unknown): string {
+  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+}
+
+function fixtureRss(fixture: Record<string, unknown>): string {
+  const items = Array.isArray(fixture.items) ? fixture.items : [];
+  return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${escapeXml(fixture.title)}</title><description>${escapeXml(fixture.description)}</description><link>${escapeXml(fixture.home_page_url)}</link>${items.map((item) => {
+    const entry = item && typeof item === "object" ? item as Record<string, unknown> : {};
+    return `<item><title>${escapeXml(entry.title)}</title><link>${escapeXml(entry.url)}</link><description>${escapeXml(entry.content_text)}</description><guid>${escapeXml(entry.id)}</guid></item>`;
+  }).join("")}</channel></rss>`;
 }
 
 async function preview(args: Arguments): Promise<void> {
@@ -167,7 +178,10 @@ async function preview(args: Arguments): Promise<void> {
     response.setHeader("content-security-policy", "sandbox allow-scripts; default-src 'self' https: data: blob:; img-src 'self' https: data: blob:; font-src 'self' https: data:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: data: 'unsafe-inline'; connect-src https:");
     response.setHeader("content-type", "text/html; charset=utf-8");
     if (view === "rss") {
-      response.end(`<pre>${escapeHtml(renderThemeTemplate(theme.bundle.rssStylesheet, context))}</pre>`);
+      response.end(themeRssPreviewDocument(
+        fixtureRss(selectedFixture),
+        renderThemeTemplate(theme.bundle.rssStylesheet, context),
+      ));
       return;
     }
     const body = renderThemeTemplate(view === "item" ? theme.bundle.webItem : theme.bundle.webFeed, view === "item" ? itemContext : context);
@@ -196,14 +210,30 @@ async function pullFixture(args: Arguments): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const [command = "help", ...rest] = process.argv.slice(2);
+  const values = process.argv.slice(2);
+  const [command = "help", ...rest] = values;
+  if (command === "-v" || command === "--version") {
+    output(packageMetadata.version, false);
+    return;
+  }
+  if (command === "help" || command === "-h" || command === "--help") {
+    output(renderThemeKitHelp(command === "help" ? rest.join(" ") || undefined : undefined), false);
+    return;
+  }
+  if (rest.includes("-h") || rest.includes("--help")) {
+    const topic = command === "fixture" && rest[0] === "pull"
+      ? "fixture pull"
+      : command;
+    output(renderThemeKitHelp(topic), false);
+    return;
+  }
   const args = parseArguments(rest);
   if (command === "init") return init(args);
   if (command === "validate") return validate(args);
   if (command === "test") return test(args);
   if (command === "preview") return preview(args);
   if (command === "fixture" && args.positionals.shift() === "pull") return pullFixture(args);
-  process.stdout.write("microfeed-theme init|validate|test|preview|fixture pull\n");
+  throw new Error(`Unknown command: ${command}\n\n${renderThemeKitHelp()}`);
 }
 
 main().catch((error: unknown) => {

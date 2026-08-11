@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@source "./templates/**/*.mustache";
+
+@theme {
+  --color-mf-accent: var(--mf-accent);
+  --color-mf-background: var(--mf-background);
+  --color-mf-surface: var(--mf-surface);
+  --color-mf-text: var(--mf-text);
+  --color-mf-muted: var(--mf-muted);
+  --color-mf-border: var(--mf-border);
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { background: var(--mf-background); color: var(--mf-text); scroll-behavior: smooth; }
+  body { margin: 0; min-width: 320px; background: var(--mf-background); color: var(--mf-text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  a { color: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--mf-accent) 65%, transparent); outline-offset: 3px; }
+  ::selection { background: color-mix(in srgb, var(--mf-accent) 22%, transparent); }
+}
+
+@layer components {
+  .mf-shell { width: min(100% - 2rem, 76rem); margin-inline: auto; }
+  .mf-kicker { color: var(--mf-accent); font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+  .mf-rich { color: var(--mf-text); font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif; font-size: clamp(1.08rem, 1rem + .35vw, 1.28rem); line-height: 1.85; }
+  .mf-rich :where(h2,h3,h4) { font-family: ui-sans-serif, system-ui, sans-serif; line-height: 1.15; margin: 2.25em 0 .7em; }
+  .mf-rich :where(p,ul,ol,blockquote,pre,figure) { margin-block: 1.35em; }
+  .mf-rich :where(img,video,iframe) { border-radius: 1rem; max-width: 100%; }
+  .mf-rich a { color: var(--mf-accent); text-decoration: underline; text-decoration-thickness: .08em; text-underline-offset: .18em; }
+  .mf-rich blockquote { border-left: .25rem solid var(--mf-accent); color: var(--mf-muted); margin-left: 0; padding-left: 1.25rem; }
+  .mf-rich code { background: color-mix(in srgb, var(--mf-border) 55%, transparent); border-radius: .3rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em; padding: .14em .32em; }
+  .mf-rich pre { background: var(--mf-text); color: var(--mf-background); border-radius: .8rem; overflow-x: auto; padding: 1.15rem; }
+  .mf-rich pre code { background: transparent; color: inherit; padding: 0; }
+}
