@@ -18,7 +18,7 @@
   "_microfeed": {
     "base_url": "https://example.com/",
     "categories": [],
-    "microfeed_version": "1.0.3",
+    "microfeed_version": "1.0.0",
     "subscribe_methods": []
   }
 }

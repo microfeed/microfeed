@@ -1,4 +1,5 @@
 import {readFile} from "node:fs/promises";
+import {satisfies} from "semver";
 import {expect, test} from "vitest";
 
 async function metadata(relativePath: string): Promise<{
@@ -24,7 +25,10 @@ test("keeps published microfeed tools on the application release version", async
   expect(contentCli.version).toBe(application.version);
   expect(themeKit.version).toBe(application.version);
   expect(defaultTheme.devDependencies?.["@microfeed/theme-kit"])
-    .toBe(`^${application.version}`);
-  expect(genericStarter.devDependencies?.["@microfeed/theme-kit"])
-    .toBe(`^${application.version}`);
+    .toBe("workspace:^");
+  expect(defaultTheme.version).toBe("0.0.0-use.local");
+  expect(satisfies(
+    application.version,
+    genericStarter.devDependencies?.["@microfeed/theme-kit"] ?? "",
+  )).toBe(true);
 });

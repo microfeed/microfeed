@@ -8,6 +8,6 @@
     "validate": "theme-kit validate . --json"
   },
   "devDependencies": {
-    "@microfeed/theme-kit": "^1.0.3"
+    "@microfeed/theme-kit": "^1.0.0"
   }
 }

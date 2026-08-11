@@ -2875,7 +2875,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@microfeed/default-theme-source@workspace:themes/default"
   dependencies:
-    "@microfeed/theme-kit": "npm:^1.0.3"
+    "@microfeed/theme-kit": "workspace:^"
     "@tailwindcss/vite": "npm:^4.1.14"
     tailwindcss: "npm:^4.0.14"
     typescript: "npm:^6.0.3"
@@ -2883,7 +2883,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@microfeed/theme-kit@npm:^1.0.3, @microfeed/theme-kit@workspace:packages/theme-kit":
+"@microfeed/theme-kit@workspace:^, @microfeed/theme-kit@workspace:packages/theme-kit":
   version: 0.0.0-use.local
   resolution: "@microfeed/theme-kit@workspace:packages/theme-kit"
   dependencies:

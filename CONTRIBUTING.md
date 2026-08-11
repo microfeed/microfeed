@@ -84,6 +84,19 @@ application, and verifies the Worker bundle with a dry run. Also run
 `git diff --check` and review the complete diff for generated files and
 secrets.
 
+## Prepare release metadata
+
+Set the application, published CLI, theme kit, bundled default theme, and
+compatible starter range with one command:
+
+```console
+yarn version:set 1.2.3
+```
+
+Use an exact semantic version. The command verifies every target before it
+writes anything. Private workspace metadata, examples, fixtures, tests, and the
+lockfile do not need patch-release edits.
+
 ## Open a pull request
 
 - Open the pull request as a draft until the change and validation are ready

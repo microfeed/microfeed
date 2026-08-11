@@ -157,13 +157,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "default",
-      version: "1.0.3",
+      version: MICROFEED_VERSION,
     });
     expect(stored).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "default",
-      version: "1.0.3",
+      version: MICROFEED_VERSION,
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "@microfeed/cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Manage content on a microfeed instance",
   "keywords": [
     "microfeed",
