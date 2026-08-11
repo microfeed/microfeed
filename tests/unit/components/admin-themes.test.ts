@@ -18,6 +18,12 @@ describe("Admin versioned themes", () => {
     expect(preview).toContain('sandbox="allow-scripts"');
     expect(preview).not.toContain("allow-same-origin");
     expect(preview).toContain("h-dvh w-dvw");
+    expect(preview).toContain("Theme is loading…");
+    expect(preview).toContain('aria-live="polite"');
+    expect(preview).toContain('role="status"');
+    expect(preview).toContain("LoaderCircleIcon");
+    expect(preview).toContain("onLoad={() => setLoadedFrameKey(frameKey)}");
+    expect(preview).toContain("const loading = loadedFrameKey !== frameKey");
   });
 
   it("keeps installation separate from activation", async () => {

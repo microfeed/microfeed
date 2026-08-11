@@ -41,6 +41,7 @@ describe("bundled theme packages", () => {
     expect(sourceStyles).toMatch(/body\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*calc\(100dvh - 3em\);[\s\S]*?flex-direction:\s*column;/u);
     expect(sourceStyles).toMatch(/main\s*\{[\s\S]*?flex:\s*1 0 auto;/u);
     expect(sourceStyles).toMatch(/footer\s*\{[\s\S]*?flex:\s*none;/u);
+    expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)\s*\{[\s\S]*?html:not\(\.rss-document\)\s*\{[\s\S]*?padding-right:\s*1em;[\s\S]*?padding-left:\s*1em;/u);
     expect(sourceStyles).not.toContain("position: fixed");
   });
 
@@ -69,7 +70,7 @@ describe("bundled theme packages", () => {
       readFile(path.join(root, "themes/default/microfeed-theme.json"), "utf8").then(JSON.parse),
       readFile(path.join(root, "themes/classic/microfeed-theme.json"), "utf8").then(JSON.parse),
     ]);
-    expect(modern).toMatchObject({assets: [], packageId: "microfeed.default", version: "1.0.2"});
+    expect(modern).toMatchObject({assets: [], packageId: "microfeed.default", version: "1.0.3"});
     expect(classic).toMatchObject({assets: [], packageId: "microfeed.classic", version: "1.0.0"});
   });
 

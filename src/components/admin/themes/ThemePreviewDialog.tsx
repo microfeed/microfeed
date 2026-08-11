@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {ExternalLinkIcon, XIcon} from "lucide-react";
+import {ExternalLinkIcon, LoaderCircleIcon, XIcon} from "lucide-react";
 
 import {Button} from "@/components/ui/button";
 import {
@@ -44,9 +44,17 @@ export default function ThemePreviewDialog({
   const [view, setView] = useState<PreviewView>("feed");
   const [viewport, setViewport] = useState<PreviewViewport>("desktop");
   const renderedUrl = `${previewUrl}?view=${view}`;
+  const frameKey = `${revision}:${view}:${renderedUrl}`;
+  const [loadedFrameKey, setLoadedFrameKey] = useState<string | null>(null);
+  const loading = loadedFrameKey !== frameKey;
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) setLoadedFrameKey(null);
+    onOpenChange(nextOpen);
+  };
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent
         className="inset-0 top-0 left-0 flex h-dvh w-dvw max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-background p-0 ring-0 sm:max-w-none"
         showCloseButton={false}
@@ -107,14 +115,33 @@ export default function ThemePreviewDialog({
           </div>
         </header>
         <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-muted/40 p-3">
-          <iframe
-            className="h-full min-h-[40rem] rounded-xl border bg-white shadow-sm transition-[width]"
-            key={`${revision}:${view}`}
-            sandbox="allow-scripts"
-            src={renderedUrl}
+          <div
+            aria-busy={loading}
+            className="relative h-full min-h-[40rem] overflow-hidden rounded-xl border bg-white shadow-sm transition-[width]"
             style={{width: viewport === "mobile" ? "min(390px, 100%)" : "100%"}}
-            title={`${view} theme preview`}
-          />
+          >
+            {loading && (
+              <div
+                aria-live="polite"
+                className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-background text-sm text-muted-foreground"
+                role="status"
+              >
+                <LoaderCircleIcon
+                  aria-hidden="true"
+                  className="size-5 animate-spin text-primary"
+                />
+                <span>Theme is loading…</span>
+              </div>
+            )}
+            <iframe
+              className="h-full w-full border-0 bg-white"
+              key={frameKey}
+              onLoad={() => setLoadedFrameKey(frameKey)}
+              sandbox="allow-scripts"
+              src={renderedUrl}
+              title={`${view} theme preview`}
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

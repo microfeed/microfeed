@@ -233,6 +233,11 @@ pre code {
 }
 
 @media only screen and (max-width: 600px) {
+  html:not(.rss-document) {
+    padding-right: 1em;
+    padding-left: 1em;
+  }
+
   .hide-mobile {
     display: none;
   }
