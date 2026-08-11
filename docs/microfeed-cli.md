@@ -100,6 +100,14 @@ A coding agent may start login, but must pause for that user-controlled step.
 Login requires HTTPS except for `http://localhost` and `http://127.0.0.1` test
 instances. If a site's public URL changes, log in again.
 
+Browser authorization requires the site's built-in login. Cloudflare Access
+can protect dashboard routes, but it does not create the microfeed application
+session required by OAuth. When the identity document reports that OAuth
+authorization is unavailable, the CLI tells the site owner to enable built-in
+login from the connected repository with `yarn manage auth setup`. Older sites
+without this identity capability receive compatible setup guidance instead of
+an ambiguous discovery error.
+
 New instances keep API access disabled by default. Browser login can be saved
 while access is off, but content commands return `404` until the site owner
 signs in to the admin dashboard, opens **API → API Settings**, and turns on
@@ -170,6 +178,14 @@ the generated `workers.dev` address; do not use a dashboard path such as
 Login requests the official `microfeed-cli` public client with the fixed
 loopback callback. The callback port must be available, and browser approval
 must complete within five minutes.
+
+The site must have built-in login enabled for browser authorization. Cloudflare
+Access is compatible as an outer route protection layer, but it is not a
+microfeed login session and cannot complete OAuth by itself. If built-in login
+is disabled, run `yarn manage auth setup` from the repository connected to the
+site, then retry login. The CLI reads `oauthAuthorizationAvailable` from newer
+identity documents and provides the same fallback guidance for older sites
+that do not publish the field.
 
 The CLI generates a random, non-secret connection ID for each saved site and
 stores it separately from the encrypted token bundle. Logging the same saved
@@ -286,10 +302,24 @@ yarn microfeed item list [options]
 | `--prev-cursor <cursor>` | Continue backward from a response cursor. |
 | `--sort <field>` | Use `created_at`, `updated_at`, `published_at`, `newest_first`, or `oldest_first`. |
 | `--order <direction>` | Use `asc` or `desc`. |
+| `--summary` | Preserve the response envelope but return only compact items plus `next_url` and `prev_url` pagination when present. |
+| `--fields <fields>` | With `--summary`, select comma-separated projected fields. Defaults to `id,title,status,date_published,date_modified,url`. |
 
 ```console
 yarn microfeed item list --instance production --limit 25 --json
+
+yarn microfeed item list --instance production \
+  --summary \
+  --fields id,title,status \
+  --json
 ```
+
+Allowed projected fields are `id`, `title`, `status`, `date_published`,
+`date_modified`, `url`, `image`, `content_text`, `content_html`, and
+`attachments`. Unknown fields are rejected, and `--fields` requires
+`--summary`. Compact output normalizes `status` from either the top-level item
+field or `_microfeed.status`; it omits channel metadata and unrequested item
+content while retaining pagination.
 
 ## `yarn microfeed item search`
 
@@ -344,12 +374,26 @@ Without `--json`, the response body is formatted on standard output. With
 **Changes:** None.
 
 ```console
-yarn microfeed item get <item-id>
+yarn microfeed item get <item-id> [--unwrap] [--fields <fields>]
 ```
+
+| Option | Meaning |
+| --- | --- |
+| `--unwrap` | Preserve the response envelope but replace the one-item feed body with the item itself. |
+| `--fields <fields>` | With `--unwrap`, select comma-separated projected fields from the same allowlist used by `item list --summary`. |
 
 ```console
 yarn microfeed item get 0HGJLSML3P1 --instance production --json
+
+yarn microfeed item get 0HGJLSML3P1 \
+  --unwrap \
+  --fields id,title,status \
+  --instance production \
+  --json
 ```
+
+Unknown fields are rejected, and `--fields` requires `--unwrap`. Without the
+new flags, the existing one-item feed response is unchanged.
 
 ## Item input
 
@@ -370,6 +414,12 @@ Do not combine the two input forms.
 
 JSON input may use the complete item schema documented by the target
 instance, including fields not represented by the common flags.
+
+With `--input -`, the CLI completes as soon as it receives one balanced root
+JSON object. Strings, escapes, nested objects, arrays, chunk boundaries, and
+trailing whitespace are handled without waiting for an interactive input
+stream to close. Non-object roots, invalid JSON, and non-whitespace trailing
+data are rejected. File input behavior is unchanged.
 
 An **item image** is cover art or a thumbnail and uses the top-level `image`
 field. A **media attachment** is the item's one main audio, video, document, or
@@ -417,8 +467,15 @@ Use `category: "external_url"` for a linked web page rather than a file.
 **Changes:** Creates remote content.
 
 ```console
-yarn microfeed item create [item flags | --input <file|->]
+yarn microfeed item create [item flags | --input <file|->] \
+  [--validate-only | [--idempotency-key <key>] [--verify]]
 ```
+
+| Option | Meaning |
+| --- | --- |
+| `--validate-only` | Authenticate to the target and validate against its current create schema without creating an item, uploading files, or invalidating caches. Cannot be combined with `--verify`, `--idempotency-key`, `--attachment-file`, or `--image-file`. |
+| `--idempotency-key <key>` | Make retries of one logical create safe for 24 hours. Use 1–128 printable ASCII characters with no surrounding whitespace, and reuse the same key only with the same payload. |
+| `--verify` | After creation and any attachment update, read the item back and return that unwrapped response. A failed read-back exits unsuccessfully and reports the already-created ID. |
 
 ```console
 yarn microfeed item create \
@@ -431,6 +488,14 @@ yarn microfeed item create \
 yarn microfeed item create \
   --instance production \
   --input item.json \
+  --validate-only \
+  --json
+
+yarn microfeed item create \
+  --instance production \
+  --input item.json \
+  --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc \
+  --verify \
   --json
 
 yarn microfeed item create \
@@ -459,6 +524,23 @@ For `item create --attachment-file`, the item must exist before the instance
 can prepare its attachment upload. The CLI creates the item, uploads the file,
 then updates the new item with `attachments[0]`. If upload or update fails after
 creation, the error reports the new item ID so it can be inspected or repaired.
+
+`--validate-only` sends the assembled JSON to authenticated
+`POST /api/v1/items/validate/`; validation therefore reflects the target
+site's deployed schema and requires that site to be reachable. It never starts
+a local media workflow.
+
+For `--idempotency-key`, the server hashes both the key and a canonical form of
+the validated payload and retains the reservation for 24 hours. The first
+request returns the usual `{id}` create response. A replay of the same key and
+payload returns the same ID with `Idempotency-Replayed: true`; a different
+payload with that key returns `409`. Reuse one generated UUID for every retry
+of the same logical create. Do not generate a different key per network retry.
+
+`--verify` runs after any create-upload-update attachment workflow. It returns
+the normal `{body, headers, ok, status}` envelope with the item itself in
+`body`. If read-back fails, the CLI reports the created ID and exits nonzero so
+an agent can inspect or retry verification without creating a duplicate.
 
 ## `yarn microfeed item update`
 

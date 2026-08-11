@@ -41,6 +41,7 @@ describe("repository management command", () => {
     );
     expect(scripts["test:deploy:unit"]).toBe(
       "TZ=UTC vitest run tests/unit/api-key-migration.test.ts " +
+        "tests/unit/item-idempotency-migration.test.ts " +
         "tests/unit/item-search-migration.test.ts " +
         "tests/unit/item-timestamp-migration.test.ts",
     );
@@ -49,6 +50,7 @@ describe("repository management command", () => {
         "tests/worker/api-item-service.test.ts " +
         "tests/worker/bootstrap-admin.test.ts " +
         "tests/worker/installation-identity.test.ts " +
+        "tests/worker/item-idempotency.test.ts " +
         "tests/worker/item-search.test.ts " +
         "tests/worker/password-setup.test.ts",
     );

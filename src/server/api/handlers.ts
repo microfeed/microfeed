@@ -3,6 +3,7 @@ import type {APIRoute} from "astro";
 
 import {
   apiChannelInputSchema,
+  apiIdempotencyKeySchema,
   apiItemInputSchema,
   apiSearchQuerySchema,
   apiUploadInputSchema,
@@ -21,6 +22,11 @@ import {
   deleteItem as deleteItemRecord,
   updateItem as updateItemRecord,
 } from "@/server/items/service";
+import {
+  claimItemCreateIdempotency,
+  completeItemCreateIdempotency,
+  ItemCreateIdempotencyConflictError,
+} from "@/server/items/idempotency";
 import {
   mediaBucket,
   mediaStorageUnavailableResponse,
@@ -107,8 +113,57 @@ export const createApiItem: APIRoute = async ({locals, request}) => {
   if (!parsed.success) {
     return jsonResponse({error: "Invalid item."}, {status: 400});
   }
-  const id = await createItemRecord(locals.feedCrud, parsed.data);
-  return jsonResponse({id}, {status: 201});
+  const rawIdempotencyKey = request.headers.get("idempotency-key");
+  if (rawIdempotencyKey === null) {
+    const id = await createItemRecord(locals.feedCrud, parsed.data);
+    return jsonResponse({id}, {status: 201});
+  }
+  const idempotencyKey = apiIdempotencyKeySchema.safeParse(
+    rawIdempotencyKey,
+  );
+  if (!idempotencyKey.success) {
+    return jsonResponse({error: "Invalid Idempotency-Key."}, {status: 400});
+  }
+  if (!locals.feedDb) {
+    return new Response("Feed context unavailable", {status: 500});
+  }
+
+  let claim;
+  try {
+    claim = await claimItemCreateIdempotency(
+      locals.feedDb.FEED_DB,
+      idempotencyKey.data,
+      parsed.data,
+    );
+  } catch (error) {
+    if (error instanceof ItemCreateIdempotencyConflictError) {
+      return jsonResponse({error: error.message}, {status: 409});
+    }
+    throw error;
+  }
+
+  if (!claim.completed && !await locals.feedDb.getItemById(claim.itemId)) {
+    await createItemRecord(locals.feedCrud, parsed.data, claim.itemId);
+  }
+  if (!claim.completed) {
+    await completeItemCreateIdempotency(
+      locals.feedDb.FEED_DB,
+      claim.keyHash,
+    );
+  }
+  return jsonResponse({id: claim.itemId}, {
+    headers: claim.replay ? {"Idempotency-Replayed": "true"} : undefined,
+    status: 201,
+  });
+};
+
+export const validateApiItem: APIRoute = async ({request}) => {
+  const parsed = apiItemInputSchema.safeParse(await request.json().catch(
+    () => null,
+  ));
+  return parsed.success
+    ? jsonResponse({valid: true})
+    : jsonResponse({error: "Invalid item."}, {status: 400});
 };
 
 export const getApiItem: APIRoute = ({params, request}) =>

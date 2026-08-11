@@ -27,6 +27,7 @@ The generated OpenAPI 3.1 contract currently includes:
 | --- | --- |
 | `GET /api/v1/feed/` | Read the complete feed with cursor pagination. |
 | `POST /api/v1/items/` | Create an item. |
+| `POST /api/v1/items/validate/` | Validate an item create payload without changing content. |
 | `GET /api/v1/items/{itemId}/` | Read one item. |
 | `PUT /api/v1/items/{itemId}/` | Update provided fields without clearing omitted fields. |
 | `DELETE /api/v1/items/{itemId}/` | Delete one item. |
@@ -37,6 +38,19 @@ The generated OpenAPI 3.1 contract currently includes:
 Each item may have both an `image` for cover art or a thumbnail and one main
 media attachment in `attachments[0]`. The attachment may be audio, video, a
 document, an image, or an external link; it becomes the RSS `<enclosure>`.
+
+Before creating, an authenticated client can send the same JSON payload to
+`POST /api/v1/items/validate/`. A successful response is `{ "valid": true }`;
+the route uses the site's current item schema without creating a record,
+preparing an upload, or invalidating a cache.
+
+For retry-safe creation, send an `Idempotency-Key` header containing 1–128
+printable ASCII characters with no surrounding whitespace. The server retains
+a hashed reservation for 24 hours. The same key and canonical payload return
+the original ID and `Idempotency-Replayed: true`; a different payload with the
+same key returns `409`. Without the header, the existing create response and
+behavior are unchanged. Generate one key per logical item and reuse it for
+every retry rather than generating a key per request attempt.
 
 Search uses the site's D1 database. Terms are combined with AND, the last term
 supports prefix matching, and single or double quotes select an exact phrase.

@@ -69,6 +69,13 @@ action. Never ask for the dashboard password, an API key, or a CLI credential.
 After the owner confirms access is enabled, retry the same content command;
 the saved browser login does not need to be recreated.
 
+Browser OAuth also requires the site's built-in login. Cloudflare Access may
+protect routes, but it does not create the microfeed application session OAuth
+needs. If the CLI reports that OAuth authorization is unavailable, tell the
+owner to run `yarn manage auth setup` from the connected repository, then retry
+login. Newer sites report this capability explicitly; follow the CLI's
+compatible setup guidance for older sites that do not.
+
 When authorization is missing, run:
 
 ```console
@@ -92,9 +99,21 @@ promise that logout removes the App access entry.
 
 - Add `--instance <name>` when the target is not already unambiguous.
 - Add `--json` when an agent or program consumes the result.
+- Prefer `item list --summary` and `item get --unwrap` to avoid loading channel
+  metadata or unrequested content. Add `--fields` only with the corresponding
+  compact flag.
 - Prefer common flags for short, simple values. Prefer `--input <file|->` for a
   complete JSON object or fields that have no flag. Do not combine `--input`
   with item flags.
+- Before a create when server-accurate validation is useful, run the same input
+  with `--validate-only`. It authenticates to the target but does not write an
+  item, upload a file, or invalidate caches.
+- Generate one UUID for each logical item creation, pass it with
+  `--idempotency-key`, and reuse that exact key and payload for every retry.
+  Never generate a new key merely because a network request is retried.
+- Add `--verify` to creates so the completed item is read back after any media
+  workflow. If verification fails, report the already-created ID and inspect or
+  retry the read; do not create another item.
 - Treat `--content-html` as the item's description/body.
 - Use `published`, `unlisted`, or `unpublished` for status.
 - Read response fields rather than scraping dashboard HTML.
@@ -102,11 +121,14 @@ promise that logout removes the App access entry.
 Common operations:
 
 ```console
-yarn microfeed item list --instance <name> --json
+yarn microfeed item list --summary --instance <name> --json
 yarn microfeed item search "hello" --fields title --instance <name> --json
-yarn microfeed item get <item-id> --instance <name> --json
+yarn microfeed item get <item-id> --unwrap --instance <name> --json
+yarn microfeed item create --instance <name> --input item.json \
+  --validate-only --json
 yarn microfeed item create --instance <name> --title "Title" \
-  --content-html "<p>Body</p>" --status unlisted --json
+  --content-html "<p>Body</p>" --status unlisted \
+  --idempotency-key <logical-create-uuid> --verify --json
 yarn microfeed item update <item-id> --instance <name> \
   --status published --json
 ```
@@ -145,8 +167,9 @@ upload URLs and redirects.
 
 Creating with `--attachment-file` is a create-upload-update sequence because
 the attachment requires an item ID. If upload or update fails after creation,
-report the created item ID and inspect it before retrying. Do not create another
-item blindly.
+report the created item ID and inspect it before retrying. Reuse the original
+logical create's idempotency key and payload; do not create another item
+blindly. `--verify` reads the item only after the attachment update succeeds.
 
 ## Protect credentials and destructive actions
 

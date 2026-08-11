@@ -96,6 +96,13 @@ callback uses `127.0.0.1:8977`; if that port is unavailable, close the process
 using it and retry. Browser login can be saved while API access is disabled; the
 first content command then returns `404` with recovery instructions.
 
+OAuth browser authorization also requires microfeed's built-in login.
+Cloudflare Access can protect the routes, but it does not create the microfeed
+application session OAuth needs. If authorization is unavailable, enable
+built-in login from the connected repository with `yarn manage auth setup` and
+retry. Newer identity documents expose this capability directly, and the CLI
+provides compatible guidance for older sites.
+
 Manage saved instances with:
 
 ```console
@@ -112,10 +119,11 @@ instance locally.
 Use `--json` when another program or coding agent will consume the result:
 
 ```console
-yarn microfeed item list --instance production --json
+yarn microfeed item list --summary --instance production --json
 yarn microfeed item search hello --fields title --instance production --json
-yarn microfeed item get <item-id> --instance production --json
-yarn microfeed item create --instance production --input item.json --json
+yarn microfeed item get <item-id> --unwrap --instance production --json
+yarn microfeed item create --instance production --input item.json --validate-only --json
+yarn microfeed item create --instance production --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json
 yarn microfeed item update <item-id> --instance production --input - --json
 yarn microfeed item update <item-id> --instance production --attachment-file ./episode.mp3 --json
 yarn microfeed item update <item-id> --instance production --image-file ./cover.png --json
@@ -125,6 +133,23 @@ yarn microfeed media upload ./inline-image.png --instance production --json
 Create and update accept either a JSON file or standard input with `--input`,
 or common flags such as `--title`, `--content-html`, and `--status`. Do not mix
 JSON input and item flags in one command.
+
+`item list --summary` and `item get --unwrap` preserve the JSON response
+envelope while removing channel metadata. Add `--fields` for an allowlisted
+item projection; summary defaults to
+`id,title,status,date_published,date_modified,url` and preserves pagination.
+
+`item create --validate-only` sends the assembled JSON to the authenticated
+target's current schema without creating content, uploading local files, or
+invalidating caches. For a real create, generate one UUID per logical item,
+pass it as `--idempotency-key`, and reuse the same key and payload for every
+retry within 24 hours. Add `--verify` to return an unwrapped read-back after
+creation and any attachment update. If read-back fails, the CLI exits nonzero
+and reports the item ID that was already created.
+
+With `--input -`, the CLI continues after one complete root JSON object arrives
+without waiting for an interactive input stream to close. File input is
+unchanged.
 
 Search accepts one 1–200 character query and the same filters as the item
 search API. For example, search only titles for an exact phrase:

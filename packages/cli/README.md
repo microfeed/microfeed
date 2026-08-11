@@ -114,6 +114,13 @@ uses the computer hostname or a privacy-neutral platform label. Re-login reuses
 the same random connection ID for that saved site instead of creating a
 duplicate computer entry.
 
+OAuth browser authorization requires the site's built-in login. Cloudflare
+Access can protect routes, but it does not create the microfeed application
+session OAuth needs. If the CLI reports that authorization is unavailable,
+enable built-in login from the connected repository with
+`yarn manage auth setup`, then retry. New sites expose this capability in their
+identity document; the CLI gives compatible guidance for older sites too.
+
 CLI credential bundles are encrypted with AES-256-GCM. Only the encryption key is
 stored in the operating-system keychain; the CLI never falls back to plaintext
 credential storage.
@@ -138,10 +145,11 @@ Use `--json` for deterministic output consumed by another program or coding
 agent:
 
 ```console
-yarn microfeed item list --instance production --json
+yarn microfeed item list --summary --instance production --json
 yarn microfeed item search hello --fields title --instance production --json
-yarn microfeed item get 0HGJLSML3P1 --instance production --json
-yarn microfeed item create --instance production --input item.json --json
+yarn microfeed item get 0HGJLSML3P1 --unwrap --instance production --json
+yarn microfeed item create --instance production --input item.json --validate-only --json
+yarn microfeed item create --instance production --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --input item.json --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./episode.mp3 --json
 yarn microfeed item update 0HGJLSML3P1 --instance production --image-file ./cover.png --json
@@ -151,6 +159,23 @@ yarn microfeed media upload ./inline-image.png --instance production --json
 Create and update accept either a JSON object through `--input` or common flags
 such as `--title`, `--content-html`, and `--status`. Do not mix the two input
 forms.
+
+`item list --summary` and `item get --unwrap` keep the normal response envelope
+but remove feed metadata; add `--fields` to project an allowlisted set of item
+fields. Summary defaults to `id,title,status,date_published,date_modified,url`
+and retains feed pagination.
+
+Use `item create --validate-only` to authenticate to the target and check its
+deployed create schema without writing an item or uploading a local file. For
+creation, generate one UUID per logical item, pass it with `--idempotency-key`,
+and reuse that exact key and payload for every retry within 24 hours. Add
+`--verify` to return an unwrapped read-back after creation and any attachment
+workflow; a verification failure reports the already-created ID and exits
+nonzero.
+
+When `--input -` reads standard input, one complete root JSON object is a
+frame: the command can continue without waiting for an interactive stream to
+close. File input behavior is unchanged.
 
 `item search <query>` searches item titles and stored plain-text content. Use
 `--fields title` for title-only search, `--status` for comma-separated status

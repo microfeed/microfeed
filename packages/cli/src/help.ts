@@ -78,6 +78,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "<computer-name> identifies this computer under Account settings → App access, such as Home Mac or Publishing server. It is separate from the local saved-instance name and accepts 1–64 printable characters.",
       "The CLI creates a random connection ID for this saved site. Logging in again reuses that ID, replaces its token family, and avoids adding a duplicate computer connection.",
       "Login verifies the microfeed site, opens administrator sign-in and consent in a browser, and stores only encrypted credentials. The person using the instance must approve the browser step.",
+      "Browser authorization requires the site's built-in login. Cloudflare Access may protect dashboard routes, but it does not create the microfeed application session required for OAuth. When built-in login is disabled, the owner enables it from the connected repository with `yarn manage auth setup`.",
       "Browser login can be saved while API access is disabled, but content commands return 404 until the site owner enables access.",
       ...apiAccessDetails,
     ],
@@ -212,11 +213,13 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   {
     details: [
       "Reads GET /api/v1/feed/ from the selected instance. It does not change content.",
+      "Use --summary for agent-friendly output containing only items and pagination. It defaults to id,title,status,date_published,date_modified,url; --fields selects another allowlisted projection.",
       "Use a cursor exactly as returned by the API. Do not combine next and previous cursors unless the target API explicitly documents that behavior.",
       ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item list --instance production --limit 25 --json",
+      "yarn microfeed item list --summary --fields id,title,status --instance production --json",
       "yarn microfeed item list --next-cursor eyJpZCI6IjEyMyJ9 --sort published_at --order desc --json",
     ],
     options: [
@@ -228,6 +231,14 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
         "Use created_at, updated_at, published_at, newest_first, or oldest_first.",
       ),
       option("--order <asc|desc>", "Choose ascending or descending order."),
+      option(
+        "--summary",
+        "Replace the full feed body with compact item summaries and pagination.",
+      ),
+      option(
+        "--fields <fields>",
+        "With --summary, select comma-separated item fields from id,title,status,date_published,date_modified,url,image,content_text,content_html,attachments.",
+      ),
       instanceOption,
       jsonOption,
     ],
@@ -279,16 +290,26 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "<item-id> is the ID shown in an item response, for example 0HGJLSML3P1. An item-page slug ending in that ID is also accepted by the API.",
       "Reads GET /api/v1/items/{item-id}/ and does not change content.",
+      "Use --unwrap to replace the one-item feed body with that item while preserving the JSON response envelope. With --unwrap, --fields selects an allowlisted projection.",
       ...apiAccessDetails,
     ],
     examples: [
       "yarn microfeed item get 0HGJLSML3P1 --instance production",
       "yarn microfeed item get release-notes-0HGJLSML3P1 --json",
+      "yarn microfeed item get 0HGJLSML3P1 --unwrap --fields id,title,status --json",
     ],
-    options: [instanceOption, jsonOption],
+    options: [
+      option("--unwrap", "Replace the one-item feed body with the item itself."),
+      option(
+        "--fields <fields>",
+        "With --unwrap, select comma-separated item fields from id,title,status,date_published,date_modified,url,image,content_text,content_html,attachments.",
+      ),
+      instanceOption,
+      jsonOption,
+    ],
     path: ["item", "get"],
     summary: "Read one item by its stable ID or ID-ending slug.",
-    usage: "yarn microfeed item get <item-id> [--instance <name>] [--json]",
+    usage: "yarn microfeed item get <item-id> [--unwrap] [--fields <fields>] [--instance <name>] [--json]",
   },
   {
     details: [
@@ -299,6 +320,10 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Use --image-file only for item cover art or a thumbnail. It does not create a JSON Feed attachment or RSS enclosure.",
       "For either file option, the CLI prepares a same-site upload, sends the bytes without a Bearer credential, never prints the short-lived upload URL, and rejects redirects or another-site upload URLs.",
       "With --input -, the CLI reads UTF-8 JSON from stdin. It never reads a credential from stdin.",
+      "Stdin completes as soon as one complete JSON object is received; an agent does not need to close an interactive terminal stream.",
+      "Use --validate-only to send the assembled JSON fields to the target site's non-mutating schema validator. It never creates an item or uploads a local file, and cannot be combined with --verify, --idempotency-key, --attachment-file, or --image-file.",
+      "Use --idempotency-key with one caller-generated 1–128 character key for a logical creation. Reuse that exact key and payload on every retry for 24 hours; a different payload with the same key is rejected.",
+      "Use --verify to read the item back after creation and any attachment update. If read-back fails, the command reports the already-created item ID and exits unsuccessfully rather than creating another item.",
       ...apiAccessDetails,
     ],
     examples: [
@@ -308,11 +333,29 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "yarn microfeed item create --instance production --title \"Photo\" --image-file ./cover.png --status unlisted --json",
       "yarn microfeed item create --instance production --input item.json --json",
       "yarn microfeed item create --instance production --input - --json < item.json",
+      "yarn microfeed item create --instance production --input item.json --validate-only --json",
+      "yarn microfeed item create --instance production --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json",
     ],
-    options: [...itemInputOptions, instanceOption, jsonOption],
+    options: [
+      ...itemInputOptions,
+      option(
+        "--validate-only",
+        "Validate against the target site's create schema without creating content or uploading files.",
+      ),
+      option(
+        "--idempotency-key <key>",
+        "Make retries of one logical creation safe for 24 hours. Reuse the same key only with the same payload.",
+      ),
+      option(
+        "--verify",
+        "Read the completed item back and return the unwrapped verification response.",
+      ),
+      instanceOption,
+      jsonOption,
+    ],
     path: ["item", "create"],
     summary: "Create an item from common flags or one JSON object.",
-    usage: "yarn microfeed item create [item flags | --input <file|->] [--instance <name>] [--json]",
+    usage: "yarn microfeed item create [item flags | --input <file|->] [--validate-only | [--idempotency-key <key>] [--verify]] [--instance <name>] [--json]",
   },
   {
     details: [

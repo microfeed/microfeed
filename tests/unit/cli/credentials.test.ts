@@ -281,6 +281,42 @@ describe("CLI API diagnostics", () => {
 });
 
 describe("CLI discovery", () => {
+  it("explains why Cloudflare Access cannot replace built-in OAuth login", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = input instanceof Request ? input.url : input.toString();
+      const response = Response.json({
+        instanceId: "id",
+        oauthAuthorizationAvailable: false,
+        product: "microfeed",
+      });
+      Object.defineProperty(response, "url", {value: url});
+      return response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(discoverInstance("https://feed.example"))
+      .rejects.toThrow("Cloudflare Access can protect dashboard routes");
+    await expect(discoverInstance("https://feed.example"))
+      .rejects.toThrow("yarn manage auth setup");
+    await expect(discoverInstance("https://feed.example"))
+      .rejects.toThrow("domains-and-access/#enable-built-in-login");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("gives older sites actionable recovery when OAuth metadata is absent", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) => {
+      const url = input instanceof Request ? input.url : input.toString();
+      const response = url.endsWith("microfeed.json")
+        ? Response.json({instanceId: "id", product: "microfeed"})
+        : new Response("404", {status: 404});
+      Object.defineProperty(response, "url", {value: url});
+      return response;
+    }));
+
+    await expect(discoverInstance("https://feed.example"))
+      .rejects.toThrow("Built-in login may be disabled");
+  });
+
   it("rejects a cross-origin OAuth issuer without exposing identity fields", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) => {
       const url = input instanceof Request ? input.url : input.toString();
