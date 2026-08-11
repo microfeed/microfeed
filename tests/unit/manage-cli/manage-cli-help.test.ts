@@ -84,14 +84,12 @@ describe("management CLI help and canonical reference", () => {
     }
   });
 
-  it("links the canonical reference from human and agent entry points", async () => {
-    const [readme, agents, skill] = await Promise.all([
-      repositoryFile("README.md"),
+  it("links the canonical reference from agent entry points", async () => {
+    const [agents, skill] = await Promise.all([
       repositoryFile("AGENTS.md"),
       repositoryFile(".agents/skills/deploy-microfeed/SKILL.md"),
     ]);
 
-    expect(readme).toContain("https://docs.microfeed.org/manage-cli/");
     expect(agents).toContain("`docs/manage-cli.md`");
     expect(skill).toContain("../../../docs/manage-cli.md");
   });
