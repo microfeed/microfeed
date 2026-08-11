@@ -162,6 +162,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Actions are init, install, list, update, activate, deactivate, rollback, export, and delete.",
       "Init copies the selected instance's active D1 theme, or the internal classic fallback, into a new standalone repository. It creates missing parent directories, assigns a separate local package identity, adds the theme-development skill, and initializes Git unless --no-git is passed.",
+      "Export preserves one exact installed package identity and writes a complete Git-ready authoring scaffold into an empty directory. It never initializes Git or changes the live site.",
       "Install accepts default, a local directory, or a public GitHub repository, directory, or microfeed-theme.json URL. The reserved default source loads the bundled rendered package from themes/default; GitHub refs resolve to an exact commit before any package file is fetched.",
       "Every install is inactive. Activate separately after previewing in Settings → Themes.",
       "An environment can keep 50 non-deleted installed versions and 20 drafts. Deleted inactive versions free installation slots.",

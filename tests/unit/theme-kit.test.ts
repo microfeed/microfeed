@@ -8,7 +8,10 @@ import * as z from "zod";
 import {loadThemePackage} from "../../packages/theme-kit/src/package";
 import {jsonFeedFixtureToRss} from "../../packages/theme-kit/src/cli";
 import {renderThemeKitHelp} from "../../packages/theme-kit/src/help";
-import {generatedThemeReadme} from "../../packages/theme-kit/src/readme";
+import {
+  generatedGenericThemeRepositoryReadme,
+  generatedThemeReadme,
+} from "../../packages/theme-kit/src/readme";
 import {
   THEME_MAX_TEMPLATE_BYTES,
   themeContextSchema,
@@ -97,14 +100,18 @@ describe("@microfeed/theme-kit package loading", () => {
       "../../packages/theme-kit/assets/starter/",
       import.meta.url,
     );
-    const [manifestSchema, contextSchema, readme] = await Promise.all([
+    const [manifestSchema, contextSchema, readme, repositoryReadme, manifest] =
+      await Promise.all([
       readFile(new URL(".microfeed/schemas/manifest.schema.json", starter), "utf8"),
       readFile(new URL(".microfeed/schemas/theme-context.schema.json", starter), "utf8"),
       readFile(new URL("THEME.md", starter), "utf8"),
+      readFile(new URL("README.md", starter), "utf8"),
+      readFile(new URL("microfeed-theme.json", starter), "utf8").then(JSON.parse),
     ]);
     expect(JSON.parse(manifestSchema)).toEqual(z.toJSONSchema(themeManifestV1Schema));
     expect(JSON.parse(contextSchema)).toEqual(z.toJSONSchema(themeContextSchema));
     expect(readme).toBe(generatedThemeReadme());
+    expect(repositoryReadme).toBe(generatedGenericThemeRepositoryReadme(manifest));
   });
 
   it("loads the starter as a complete text-only package", async () => {

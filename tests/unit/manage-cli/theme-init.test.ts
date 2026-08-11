@@ -1,7 +1,9 @@
 import {createHash} from "node:crypto";
+import {execFile} from "node:child_process";
 import {mkdtemp, readFile, rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
+import {promisify} from "node:util";
 
 import {afterEach, describe, expect, it, vi} from "vitest";
 
@@ -10,6 +12,8 @@ import {MICROFEED_VERSION} from "@/shared/Version";
 import type {CommandRunner, MicrofeedConfig} from "../../../manage-cli/types";
 
 const temporaryDirectories: string[] = [];
+const execFileAsync = promisify(execFile);
+const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
 
 const manifest: ThemeManifestV1 = {
   assets: [],
@@ -243,6 +247,12 @@ describe("theme repository initialization", () => {
     ) as {devDependencies?: Record<string, string>};
     expect(initializedPackage.devDependencies?.["@microfeed/theme-kit"])
       .toBe(`^${MICROFEED_VERSION}`);
+    const initializedReadme = await readFile(path.join(output, "README.md"), "utf8");
+    expect(initializedReadme).toContain(
+      "initialized from\n`example.active@2.3.4` (installed)",
+    );
+    expect(initializedReadme).toContain("`local.my-active-theme@0.1.0`");
+    expect(initializedReadme).toContain("yarn validate");
     await expect(readFile(
       path.join(output, ".agents/skills/develop-microfeed-theme/SKILL.md"),
       "utf8",
@@ -261,6 +271,123 @@ describe("theme repository initialization", () => {
       kind: "installed",
       packageId: "example.active",
       themeId: "active-theme-id",
+    });
+  });
+
+  it("exports an installed version as a complete Git-ready repository", async () => {
+    const {directory, theme} = await freshModules();
+    const output = path.join(directory, "exported-theme");
+    const runner = commandRunner();
+    const assetBytes = new TextEncoder().encode(
+      "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>",
+    );
+    const assetPath = "assets/logo.svg";
+    const exportedManifest = {...manifest, assets: [assetPath]};
+    const exportedBundle = {
+      ...bundle,
+      assets: [{
+        contentType: "image/svg+xml",
+        key: "production/themes/export-theme-id/assets/logo.svg",
+        path: assetPath,
+        sha256: createHash("sha256").update(assetBytes).digest("hex"),
+        size: assetBytes.byteLength,
+      }],
+    };
+    vi.stubGlobal("fetch", vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
+      if (String(input).includes("/r2/buckets/feed-media/objects/")) {
+        return new Response(assetBytes, {headers: {"content-type": "image/svg+xml"}});
+      }
+      const request = JSON.parse(String(init?.body)) as {sql: string};
+      if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
+        return d1Response([{
+          asset_owner_theme_id: "export-theme-id",
+          bundle_json: JSON.stringify(exportedBundle),
+          checksum_sha256: "c".repeat(64),
+          created_at: "2026-08-10T00:00:00.000Z",
+          deleted_at: null,
+          id: "export-theme-id",
+          manifest_json: JSON.stringify(exportedManifest),
+          name: manifest.name,
+          origin_theme_id: null,
+          package_id: manifest.packageId,
+          source_commit: "d".repeat(40),
+          source_kind: "github",
+          source_path: null,
+          source_ref: "main",
+          source_url: "https://github.com/example/active",
+          version: manifest.version,
+        }]);
+      }
+      throw new Error(`Unexpected request: ${String(input)}`);
+    }));
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await theme.themeCommand({
+      action: "export",
+      instance: "personal",
+      output,
+      "theme-id": "export-theme-id",
+      json: true,
+    }, runner);
+
+    const writtenManifest = JSON.parse(
+      await readFile(path.join(output, "microfeed-theme.json"), "utf8"),
+    ) as ThemeManifestV1;
+    expect(writtenManifest).toEqual(exportedManifest);
+    await expect(readFile(path.join(output, assetPath), "utf8"))
+      .resolves.toContain("<svg");
+    const repositoryReadme = await readFile(path.join(output, "README.md"), "utf8");
+    expect(repositoryReadme).toContain(
+      "exported from the exact\ninstalled package `example.active@2.3.4`",
+    );
+    expect(repositoryReadme).toContain("yarn preview --feed-url https://example.com/json/");
+    const exportedPackage = JSON.parse(
+      await readFile(path.join(output, "package.json"), "utf8"),
+    ) as {devDependencies?: Record<string, string>; scripts?: Record<string, string>};
+    expect(exportedPackage).toMatchObject({
+      devDependencies: {"@microfeed/theme-kit": `^${MICROFEED_VERSION}`},
+      scripts: {
+        preview: "theme-kit preview .",
+        test: "theme-kit test . --json",
+        validate: "theme-kit validate . --json",
+      },
+    });
+    for (const relativePath of [
+      ".gitignore",
+      ".microfeed/schemas/manifest.schema.json",
+      ".microfeed/schemas/theme-context.schema.json",
+      ".agents/skills/develop-microfeed-theme/SKILL.md",
+      ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+      "fixtures/custom.json",
+      "THEME.md",
+    ]) {
+      await expect(readFile(path.join(output, relativePath), "utf8"))
+        .resolves.not.toHaveLength(0);
+    }
+    const conformance = JSON.parse((await execFileAsync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        path.join(repositoryRoot, "packages/theme-kit/src/cli.ts"),
+        "test",
+        output,
+        "--json",
+      ],
+      {cwd: repositoryRoot},
+    )).stdout) as {ok: boolean; tests: Array<{fixture: string; ok: boolean}>};
+    expect(conformance.ok).toBe(true);
+    expect(conformance.tests).toHaveLength(9);
+    expect(conformance.tests).toContainEqual({fixture: "package:custom.json", ok: true});
+    expect(conformance.tests.every(({ok}) => ok)).toBe(true);
+    expect(runner).not.toHaveBeenCalledWith(
+      "git",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(JSON.parse(stdout.mock.calls.flat().join(""))).toEqual({
+      output,
+      themeId: "export-theme-id",
     });
   });
 

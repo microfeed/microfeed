@@ -9,7 +9,11 @@ import {
   themeContextSchema,
   themeManifestV1Schema,
 } from "../../../src/shared/themes/ThemeContract";
-import {generatedThemeReadme} from "../src/readme";
+import starterManifest from "../assets/starter/microfeed-theme.json";
+import {
+  generatedGenericThemeRepositoryReadme,
+  generatedThemeReadme,
+} from "../src/readme";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryRoot = path.resolve(packageRoot, "../..");
@@ -23,6 +27,10 @@ const manifestSchema = `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), 
 const contextSchema = `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`;
 await Promise.all([
   writeFile(path.join(packageRoot, "assets", "starter", "THEME.md"), generatedThemeReadme()),
+  writeFile(
+    path.join(packageRoot, "assets", "starter", "README.md"),
+    generatedGenericThemeRepositoryReadme(starterManifest),
+  ),
   writeFile(path.join(schemaDirectory, "manifest.schema.json"), manifestSchema),
   writeFile(path.join(schemaDirectory, "theme-context.schema.json"), contextSchema),
   writeFile(path.join(defaultSchemaDirectory, "manifest.schema.json"), manifestSchema),

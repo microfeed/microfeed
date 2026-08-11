@@ -112,11 +112,53 @@ copies the theme's six slots and declared assets and creates a separate
 `--package-id`, `--name`, `--version`, and `--author` to set publish-ready
 metadata, or `--no-git` if another tool owns Git initialization.
 
+Use `theme init` when you want to fork the site's effective appearance under a
+new identity, including an older imported design or the internal fallback. Use
+`theme export` when an exact installed immutable version already exists and its
+package ID and version must be preserved as the development baseline.
+
 This is a rendered-package export: it does not recreate private build tools or
 source files used by the package author. The generated repository includes the
 `develop-microfeed-theme` skill so a coding agent follows the manifest,
 schemas, build scripts when present, validation, tests, and inactive-install
 workflow. The skill never creates screenshots unless explicitly requested.
+
+### Export an installed theme with an AI coding agent
+
+Open the main microfeed checkout in a local coding agent. Replace the instance,
+output directory, and public feed URL in this prompt, then paste it into the
+agent:
+
+```text
+Export an existing installed theme from the saved microfeed instance
+<instance-name> into a verified standalone repository at
+<absolute-empty-directory>.
+
+First run `yarn manage theme list --instance <instance-name> --json` and report
+each plausible theme's ID, package ID, version, and whether it is active. If
+more than one theme is plausible, stop and ask me to choose. Export the selected
+version with `yarn manage theme export <theme-id> --instance <instance-name> --output <absolute-empty-directory>`.
+
+Do not activate, deactivate, install, delete, or otherwise change the live
+site. Keep the output outside the microfeed checkout. In the exported directory,
+read README.md, THEME.md, microfeed-theme.json, and the generated schemas. Run
+`yarn install`, `yarn validate`, and `yarn test`, then start
+`yarn preview --feed-url https://example.com/json/` and report the local preview
+URL. Stop the preview server after verification.
+
+After the baseline checks pass, initialize local Git on main. Show me `git
+status` and a proposed initial commit message, then stop before staging,
+committing, pushing, creating a GitHub repository, or opening a pull request.
+```
+
+The result is a verified local Git repository. Export does not initialize Git,
+publish the repository, install the exported package, or change the active
+theme. Request each of those later actions separately if you want them.
+
+Keep the first verified export unchanged until you review it. After making
+theme edits, increment `microfeed-theme.json` SemVer, validate and test again,
+install the new version as inactive, and preview it before separately approving
+activation. Never reuse one package ID and version for different content.
 
 ### Develop with an AI coding agent
 
@@ -428,10 +470,11 @@ for update, export, rollback, local/preview, and deletion behavior.
 Use `theme update` when an installed version still points to a bundled, local,
 or GitHub source that can provide a newer release. Use `theme export` for an
 Admin-derived version or another installation without an updateable source.
-Export writes the installed six-file package and inherited assets to a
-standalone directory for backup, inspection, or continued development in its
-own repository. It does not install, activate, or otherwise change the public
-site.
+Export preserves the installed package ID and version and writes its templates,
+inherited assets, README, package scripts, fixture, schemas, and agent skill to
+an empty standalone directory. The result is Git-ready but is not initialized
+as a Git repository. Export does not install, activate, or otherwise change the
+public site.
 
 An environment can hold 50 non-deleted installed versions and 20 drafts.
 Deleted inactive versions do not count toward the installed limit. If an Admin
