@@ -9,7 +9,7 @@
   </a>
 </div>
 
-<h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>
+<h1 align="center">microfeed: an agentic cms self-hosted on cloudflare</h1>
 
   <p align="center">
     <a href="https://docs.microfeed.org"><b>Docs</b></a>   
