@@ -39,7 +39,11 @@ import {
   sha256Hex,
 } from "@/shared/themes/ThemeRenderer";
 import {validateThemePackage} from "@/shared/themes/ThemeValidation";
-import {generatedThemeReadme} from "../packages/theme-kit/src/readme";
+import {
+  generatedExportedThemeRepositoryReadme,
+  generatedInitializedThemeRepositoryReadme,
+  generatedThemeReadme,
+} from "../packages/theme-kit/src/readme";
 import {
   loadThemePackage,
   type LoadedThemePackage,
@@ -95,7 +99,7 @@ interface ThemePackageFiles {
 
 interface WriteThemePackageOptions {
   readme?: string;
-  repositoryScaffold?: {source: EffectiveTheme};
+  repositoryScaffold?: {readme: string};
 }
 
 const CANONICAL_THEME_FILES: ThemeManifestV1["files"] = {
@@ -1185,30 +1189,6 @@ function withFinalNewline(value: string): string {
   return value.endsWith("\n") ? value : `${value}\n`;
 }
 
-function initializedRepositoryReadme(
-  manifest: ThemeManifestV1,
-  source: EffectiveTheme,
-): string {
-  return `# ${manifest.name}
-
-This microfeed theme repository was initialized from
-\`${source.manifest.packageId}@${source.manifest.version}\` (${source.kind}).
-It has a separate package identity so edits never overwrite the source version.
-
-## Develop
-
-\`\`\`console
-npm install
-npm run validate
-npm test
-npm run preview
-\`\`\`
-
-Read [THEME.md](./THEME.md) before editing. Increment the semantic version in
-\`microfeed-theme.json\` before installing changed content.
-`;
-}
-
 async function writeThemePackage(
   target: Target,
   theme: ThemePackageFiles,
@@ -1264,10 +1244,7 @@ async function writeThemePackage(
   await writeRelative(".microfeed/schemas/manifest.schema.json", `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), null, 2)}\n`);
   await writeRelative(".microfeed/schemas/theme-context.schema.json", `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`);
   if (options.repositoryScaffold) {
-    await writeRelative("README.md", initializedRepositoryReadme(
-      theme.manifest,
-      options.repositoryScaffold.source,
-    ));
+    await writeRelative("README.md", options.repositoryScaffold.readme);
     await writeRelative(".gitignore", "node_modules/\n");
     await writeRelative("package.json", `${JSON.stringify({
       devDependencies: {"@microfeed/theme-kit": `^${MICROFEED_VERSION}`},
@@ -1346,7 +1323,13 @@ async function initializeThemeRepository(
       manifest: validated.manifest,
     },
     outputDirectory,
-    {repositoryScaffold: {source}},
+    {repositoryScaffold: {
+      readme: generatedInitializedThemeRepositoryReadme(manifest, {
+        kind: source.kind,
+        packageId: source.manifest.packageId,
+        version: source.manifest.version,
+      }),
+    }},
   );
   const gitInitialized = !flagBoolean(flags, "no-git");
   if (gitInitialized) {
@@ -1427,7 +1410,11 @@ export async function themeCommand(
   if (action === "export") {
     const output = flagString(flags, "output");
     if (!output) throw new Error("theme export requires --output <directory>.");
-    await writeThemePackage(target, theme!, output);
+    await writeThemePackage(target, theme!, output, {
+      repositoryScaffold: {
+        readme: generatedExportedThemeRepositoryReadme(theme!.manifest),
+      },
+    });
     writeOutput(flags, {output: path.resolve(output), themeId: theme!.id}, `Exported ${theme!.packageId}@${theme!.version} to ${path.resolve(output)}.`);
     return;
   }

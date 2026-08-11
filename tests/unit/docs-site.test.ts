@@ -749,6 +749,7 @@ describe("documentation site", () => {
       "utf8",
     );
     expect(themes).toContain("### Develop with an AI coding agent");
+    expect(themes).toContain("### Export an installed theme with an AI coding agent");
     expect(themes).toContain("### Bundle CSS and JavaScript");
     expect(themes).toContain("#### Inline compiled output in D1");
     expect(themes).toContain("#### Emit packaged assets with Vite");
@@ -757,6 +758,15 @@ describe("documentation site", () => {
     expect(themes).toContain(
       "yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>",
     );
+    expect(themes).toContain(
+      "yarn manage theme list --instance <instance-name> --json",
+    );
+    expect(themes).toContain(
+      "yarn manage theme export <theme-id> --instance <instance-name>",
+    );
+    expect(themes).toContain("Do not activate, deactivate, install, delete");
+    expect(themes).toContain("stop before staging");
+    expect(themes).toContain("yarn preview --feed-url https://example.com/json/");
     expect(themes).toContain(
       "You do not need to create `~/microfeed-themes/` first.",
     );
@@ -769,6 +779,26 @@ describe("documentation site", () => {
       "yarn manage deploy --enable-r2 --instance <instance-name>",
     );
     expect(themes).not.toContain("## Upgrade from the old custom theme");
+
+    const manageCli = await readFile(
+      path.join(docsRoot, "manage-cli.md"),
+      "utf8",
+    );
+    expect(manageCli).toContain(
+      "Use `init` to derive a new `local.<name>@0.1.0` identity",
+    );
+    expect(manageCli).toContain(
+      "Export writes the templates, inherited assets, README, local package scripts",
+    );
+    expect(manageCli).toContain("It does not initialize Git");
+
+    const themeKitCli = await readFile(
+      path.join(docsRoot, "theme-kit-cli.md"),
+      "utf8",
+    );
+    expect(themeKitCli).toContain(
+      "Creates a generic theme repository scaffold containing `README.md`",
+    );
   });
 
   it("advertises agentic content publishing from the main discovery paths", async () => {

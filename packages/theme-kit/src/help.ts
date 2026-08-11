@@ -1,9 +1,10 @@
 const COMMAND_HELP: Record<string, string> = {
   init: `Usage: theme-kit init <directory>
 
-Create a complete generic theme package in a new or empty directory. Missing
-parent directories are created. The command refuses to overwrite a non-empty
-directory.`,
+Create a complete generic theme repository scaffold, including README,
+package scripts, fixtures, schemas, and agent guidance, in a new or empty
+directory. Missing parent directories are created. The command refuses to
+overwrite a non-empty directory and does not initialize Git.`,
   preview: `Usage: theme-kit preview <directory> [options]
 
 Start an isolated local preview with feed, item, RSS, mobile, and desktop views.

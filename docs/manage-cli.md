@@ -406,7 +406,7 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 `init` resolves the same effective selection as the live site: a valid active
 D1 version, then the internal classic fallback. The command copies the six theme slots
 and any declared packaged assets into an empty directory, adds the authoring
-kit, schemas, fixture, npm scripts, and instructions, and initializes a Git
+kit, schemas, fixture, local package scripts, and instructions, and initializes a Git
 repository on `main`. It recursively creates the destination and any missing
 parent directories, so `~/microfeed-themes/` does not need to exist first. It
 refuses to write into a non-empty destination. Keeping the generated directory
@@ -424,6 +424,25 @@ The generated repository also contains the `develop-microfeed-theme` coding
 agent skill. It exports the rendered six-slot package, not the build sources of
 the original project. To use microfeed's complete Tailwind/Vite starter, copy
 or clone `themes/default` from the microfeed repository instead.
+
+Use `init` to derive a new `local.<name>@0.1.0` identity from the site's
+effective active, imported, or fallback appearance. Use `export` when you want
+an exact installed immutable version and need to preserve its current package
+ID and version:
+
+```console
+yarn manage theme list --instance personal --json
+yarn manage theme export <theme-id> --instance personal \
+  --output ~/microfeed-themes/exported-theme
+```
+
+Export writes the templates, inherited assets, README, local package scripts,
+fixture, schemas, and `develop-microfeed-theme` skill into an empty directory.
+It does not initialize Git, install or activate a theme, or otherwise change
+the public site. Keep the directory outside the microfeed checkout, validate
+the untouched baseline, and initialize Git only after those checks pass. See
+[Export an installed theme with an AI coding agent](/dashboard/themes/#export-an-installed-theme-with-an-ai-coding-agent)
+for a copy-paste prompt that stops before commit or publication.
 
 Use this command to install a theme package from a local directory or a public
 GitHub repository, directory, or `microfeed-theme.json` URL. GitHub branches
@@ -502,7 +521,7 @@ yarn manage theme activate <theme-id> --instance personal
 yarn manage theme rollback --instance personal
 yarn manage theme deactivate --instance personal
 
-# Export or explicitly delete an inactive version.
+# Export one exact installed version as a Git-ready standalone repository, or delete it.
 yarn manage theme export <theme-id> --instance personal \
   --output ~/microfeed-themes/theme-export
 yarn manage theme delete <theme-id> --instance personal --confirm <theme-id>

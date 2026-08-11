@@ -109,9 +109,9 @@ machine-readable success and error output for coding agents and CI.
 theme-kit init <directory>
 ```
 
-Creates a generic theme package containing the manifest, six required theme
-files, schemas, fixtures, local package scripts, `THEME.md`, and the
-`develop-microfeed-theme` agent skill.
+Creates a generic theme repository scaffold containing `README.md`, the
+manifest, six required theme files, schemas, fixtures, local package scripts,
+`THEME.md`, and the `develop-microfeed-theme` agent skill.
 
 - Missing parent directories are created.
 - The destination must be empty; existing files are never overwritten.

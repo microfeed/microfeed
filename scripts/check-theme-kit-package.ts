@@ -74,12 +74,19 @@ try {
     throw new Error("The packed theme kit is missing its npm discovery metadata.");
   }
 
-  const [packedReadme, rootLicense, packedLicense, starterPackage, packedSkill] =
-    await Promise.all([
+  const [
+    packedReadme,
+    rootLicense,
+    packedLicense,
+    starterPackage,
+    starterReadme,
+    packedSkill,
+  ] = await Promise.all([
       readFile(path.join(packageDirectory, "README.md"), "utf8"),
       readFile(path.join(process.cwd(), "LICENSE"), "utf8"),
       readFile(path.join(packageDirectory, "LICENSE"), "utf8"),
       readFile(path.join(packageDirectory, "assets/starter/package.json"), "utf8"),
+      readFile(path.join(packageDirectory, "assets/starter/README.md"), "utf8"),
       readFile(path.join(
         packageDirectory,
         "assets/starter/.agents/skills/develop-microfeed-theme/SKILL.md",
@@ -108,6 +115,8 @@ try {
       !parsedStarterPackage.scripts?.validate ||
       !parsedStarterPackage.scripts?.test ||
       !parsedStarterPackage.scripts?.preview ||
+      !starterReadme.includes("generic standalone microfeed theme repository") ||
+      !starterReadme.includes("yarn preview --feed-url https://example.com/json/") ||
       !packedSkill.includes("Never create screenshots unless the user explicitly asks")) {
     throw new Error("The packed generic theme scaffold is incomplete or stale.");
   }

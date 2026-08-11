@@ -76,6 +76,7 @@ workspace from the microfeed repository into its own repository.
 A theme is a directory with `microfeed-theme.json` and six required text files:
 
 ```text
+README.md
 microfeed-theme.json
 THEME.md
 web-feed.mustache
