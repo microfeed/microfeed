@@ -126,6 +126,7 @@ describe("snapshot migration history", () => {
       "sqlite_sequence",
     ])).toEqual(["channels"]);
     expect(SNAPSHOT_TABLES.internal).toContain("d1_kv");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("item_create_idempotency");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_search_metadata");
   });
 
@@ -1136,11 +1137,12 @@ describe("snapshot archive validation", () => {
     expect(finalization).toContain("target-instance");
     expect(finalization).toContain("'$.publicBucketUrl', '/media/'");
     expect(finalization).toContain('DELETE FROM "auth_session"');
+    expect(finalization).toContain('DELETE FROM "item_create_idempotency"');
     expect(finalization).toContain('DELETE FROM "oauth_access_token"');
     expect(finalization).toContain('INSERT INTO "oauth_client"');
   });
 
-  it("finalizes target identity and clears every ephemeral authentication table", async () => {
+  it("finalizes target identity and clears every ephemeral table", async () => {
     const database = new DatabaseSync(":memory:");
     const migrations = await repositoryMigrations();
     createMigrationLedger(database);
@@ -1162,6 +1164,10 @@ describe("snapshot archive validation", () => {
       VALUES
         ('owner', 'reset', 'owner@example.com', 'owner', 'hash',
          '2026-01-01', '2027-01-01');
+      INSERT INTO item_create_idempotency
+        (key_hash, request_hash, item_id, created_at_ms, completed_at_ms)
+      VALUES
+        ('key-hash', 'request-hash', 'reserved-id', 1, 2);
       INSERT INTO microfeed_installation (id, instanceId)
       VALUES ('installation', 'source-instance');
     `);
@@ -1173,6 +1179,7 @@ describe("snapshot archive validation", () => {
       "auth_verification",
       "auth_rate_limit",
       "auth_password_setup",
+      "item_create_idempotency",
     ]) {
       expect(database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get())
         .toEqual({count: 0});

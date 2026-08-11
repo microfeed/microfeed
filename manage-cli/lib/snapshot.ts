@@ -37,6 +37,7 @@ export const SNAPSHOT_TABLES = {
     "theme_state",
   ],
   ephemeral: [
+    "item_create_idempotency",
     "item_search_metadata",
     "oauth_access_token",
     "oauth_refresh_token",

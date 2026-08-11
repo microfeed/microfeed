@@ -108,6 +108,7 @@ describe("generated API reference", () => {
     expect(Object.keys(OPENAPI_DOCUMENT.paths ?? {})).toEqual([
       "/feed/",
       "/items/",
+      "/items/validate/",
       "/items/{itemId}/",
       "/search/",
       "/channels/{channelId}/",
@@ -161,6 +162,16 @@ describe("generated API reference", () => {
       }],
       image: "https://example.com/cover.png",
     }).success).toBe(true);
+  });
+
+  it("documents safe validation and idempotent item creation", () => {
+    const specification = JSON.stringify(OPENAPI_DOCUMENT);
+    expect(specification).toContain("Idempotency-Key");
+    expect(specification).toContain("Idempotency-Replayed");
+    expect(specification).toContain("/items/validate/");
+    expect(specification).toContain("ItemValidationResponse");
+    expect(OPENAPI_DOCUMENT.paths?.["/items/"]?.post?.responses)
+      .toHaveProperty("409");
   });
 
   it("documents resolved current-year copyright output", () => {

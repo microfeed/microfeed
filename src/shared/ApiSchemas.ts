@@ -71,6 +71,22 @@ export const apiItemInputSchema = z.object({
   url: z.url().optional(),
 }).loose().meta({id: "ItemInput"});
 
+export const apiIdempotencyKeySchema = z.string().min(1).max(128).regex(
+  /^(?:[\x21-\x7e]|[\x21-\x7e][\x20-\x7e]*[\x21-\x7e])$/u,
+  "Use 1–128 printable ASCII characters without surrounding whitespace.",
+).meta({
+  description: "A caller-generated key that makes retries of one logical item creation safe for 24 hours.",
+  example: "8ca861ab-0383-4f10-bbc2-8c80d8ef29dc",
+});
+
+export const apiItemCreateResponseSchema = z.object({
+  id: z.string(),
+}).meta({id: "ItemCreateResponse"});
+
+export const apiItemValidationResponseSchema = z.object({
+  valid: z.literal(true),
+}).meta({id: "ItemValidationResponse"});
+
 export const apiItemOutputSchema = apiItemInputSchema.extend({
   attachments: z.array(apiAttachmentOutputSchema).optional(),
   content_text: z.string(),

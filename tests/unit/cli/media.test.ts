@@ -221,7 +221,7 @@ describe("CLI media attachment uploads", () => {
       .not.toContain("signature=secret");
   });
 
-  it("creates an item before preparing and saving its attachment", async () => {
+  it("creates, attaches, and verifies an item in order", async () => {
     const urls: string[] = [];
     const fetchMock = vi.fn(async (
       input: string | URL | Request,
@@ -244,6 +244,16 @@ describe("CLI media attachment uploads", () => {
         return Response.json({etag: "etag"});
       }
       expect(url).toBe("https://feed.example/api/v1/items/created-id/");
+      if (init?.method === "GET") {
+        return Response.json({
+          items: [{
+            attachments: [{category: "image"}],
+            id: "created-id",
+            title: "New photo",
+          }],
+          version: "https://jsonfeed.org/version/1.1",
+        });
+      }
       expect(JSON.parse(String(init?.body))).toHaveProperty(
         "attachments.0.url",
         "https://feed.example/media/production/media/image.png",
@@ -259,12 +269,14 @@ describe("CLI media attachment uploads", () => {
       "New photo",
       "--attachment-file",
       imagePath,
+      "--verify",
     ], {json: true});
 
     expect(urls).toEqual([
       "https://feed.example/api/v1/items/",
       "https://feed.example/api/v1/media_files/presigned_urls/",
       expect.stringContaining("https://feed.example/media-upload/"),
+      "https://feed.example/api/v1/items/created-id/",
       "https://feed.example/api/v1/items/created-id/",
     ]);
   });

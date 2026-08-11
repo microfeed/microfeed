@@ -34,10 +34,11 @@ function normalizedInput(
 export async function createItem(
   feedCrud: FeedCrudManager,
   input: ItemInput,
+  reservedId?: string,
 ): Promise<string> {
   const {id: _ignored, ...fields} = input;
   return feedCrud.upsertItem(normalizedInput(
-    fields,
+    {...fields, ...(reservedId ? {id: reservedId} : {})},
     STATUSES.PUBLISHED,
     Date.now(),
   ));

@@ -25,6 +25,7 @@ import * as versionedChannel from "@/pages/api/v1/channels/[channelId]/index";
 import * as versionedFeed from "@/pages/api/v1/feed/index";
 import * as versionedItem from "@/pages/api/v1/items/[itemId]/index";
 import * as versionedItems from "@/pages/api/v1/items/index";
+import * as versionedItemValidation from "@/pages/api/v1/items/validate/index";
 import * as versionedMedia from "@/pages/api/v1/media_files/presigned_urls/index";
 import * as versionedSearch from "@/pages/api/v1/search/index";
 import {
@@ -266,6 +267,11 @@ describe("API access decisions", () => {
       kind: "integration",
       legacy: false,
     });
+    expect(apiPathDetails(`${API_BASE_PATH}items/validate/`)).toEqual({
+      canonicalPath: `${API_BASE_PATH}items/validate/`,
+      kind: "integration",
+      legacy: false,
+    });
     expect(apiPathDetails("/api/search/")).toBeNull();
     expect(apiPathDetails("/api/items/item-id/")).toEqual({
       canonicalPath: `${API_BASE_PATH}items/item-id/`,
@@ -325,6 +331,8 @@ describe("API route version aliases", () => {
     expect(legacyChannel.PUT).toBe(versionedChannel.PUT);
     expect(legacyMedia.POST).toBe(versionedMedia.POST);
     expect(versionedSearch.GET).toBeTypeOf("function");
+    expect(versionedItemValidation.POST).toBeTypeOf("function");
+    expect("POST" in legacyItem).toBe(false);
   });
 
   it("redirects compatibility API docs directly to their v1 paths", async () => {

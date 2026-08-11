@@ -19,6 +19,7 @@ const SAFE_RESPONSE_HEADERS = new Set([
   "content-length",
   "content-type",
   "etag",
+  "idempotency-replayed",
   "last-modified",
   "x-request-id",
 ]);
@@ -53,6 +54,100 @@ export async function readInput(filename: string): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
   return Buffer.concat(chunks).toString("utf8");
+}
+
+function jsonObjectEnd(
+  text: string,
+  state: {
+    escaped: boolean;
+    inString: boolean;
+    index: number;
+    stack: string[];
+    started: boolean;
+  },
+): number | undefined {
+  for (; state.index < text.length; state.index += 1) {
+    const character = text[state.index]!;
+    if (!state.started) {
+      if (/\s/u.test(character)) continue;
+      if (character !== "{") {
+        throw new CliError("Item input must be a JSON object.");
+      }
+      state.started = true;
+      state.stack.push("}");
+      continue;
+    }
+    if (state.inString) {
+      if (state.escaped) {
+        state.escaped = false;
+      } else if (character === "\\") {
+        state.escaped = true;
+      } else if (character === '"') {
+        state.inString = false;
+      }
+      continue;
+    }
+    if (character === '"') {
+      state.inString = true;
+    } else if (character === "{") {
+      state.stack.push("}");
+    } else if (character === "[") {
+      state.stack.push("]");
+    } else if (character === "}" || character === "]") {
+      if (state.stack.pop() !== character) {
+        throw new CliError("Item input must be a JSON object.");
+      }
+      if (!state.stack.length) return state.index + 1;
+    }
+  }
+  return undefined;
+}
+
+export async function readJsonObjectInput(
+  filename: string,
+  input: AsyncIterable<Uint8Array | string> = process.stdin,
+): Promise<string> {
+  if (filename !== "-") return await readFile(filename, "utf8");
+  const decoder = new TextDecoder("utf-8", {fatal: true});
+  const encoder = new TextEncoder();
+  let text = "";
+  const state = {
+    escaped: false,
+    inString: false,
+    index: 0,
+    stack: [] as string[],
+    started: false,
+  };
+  try {
+    for await (const chunk of input) {
+      text += decoder.decode(
+        typeof chunk === "string" ? encoder.encode(chunk) : chunk,
+        {stream: true},
+      );
+      const end = jsonObjectEnd(text, state);
+      if (end !== undefined) {
+        if (text.slice(end).trim()) {
+          throw new CliError("Item input must contain exactly one JSON object.");
+        }
+        const framed = text.slice(0, end);
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(framed);
+        } catch {
+          throw new CliError("Item input must be a valid JSON object.");
+        }
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new CliError("Item input must be a JSON object.");
+        }
+        return framed;
+      }
+    }
+    text += decoder.decode();
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    throw new CliError("Item input must be a valid UTF-8 JSON object.");
+  }
+  throw new CliError("Item input ended before one complete JSON object was received.");
 }
 
 function selectedInstance(

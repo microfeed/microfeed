@@ -8,10 +8,12 @@ describe("microfeed identity", () => {
     expect(microfeedIdentity(
       "instance-id",
       "2026-07-30T21:15:42.123Z",
+      true,
     )).toEqual({
       applicationVersion: MICROFEED_VERSION,
       deployedAt: "2026-07-30T21:15:42.123Z",
       instanceId: "instance-id",
+      oauthAuthorizationAvailable: true,
       product: "microfeed",
     });
   });

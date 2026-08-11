@@ -3,9 +3,12 @@ import {
   apiChannelInputSchema,
   apiErrorSchema,
   apiFeedSchema,
+  apiIdempotencyKeySchema,
+  apiItemCreateResponseSchema,
   apiItemIdSchema,
   apiItemInputSchema,
   apiItemOutputSchema,
+  apiItemValidationResponseSchema,
   apiPaginationQuerySchema,
   apiSearchQuerySchema,
   apiSearchResponseSchema,
@@ -29,6 +32,9 @@ const error = (description: string) => ({
 });
 const itemPath = z.object({
   itemId: apiItemIdSchema,
+});
+const itemCreateHeaders = z.object({
+  "Idempotency-Key": apiIdempotencyKeySchema.optional(),
 });
 const channelPath = z.object({
   channelId: z.literal("primary").meta({
@@ -87,12 +93,40 @@ export const OPENAPI_DOCUMENT = createDocument({
           "attachments array holds at most one main media attachment, which is " +
           "published as JSON Feed attachments[0] and the RSS enclosure.",
         tags: ["Items"],
+        requestParams: {header: itemCreateHeaders},
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiItemInputSchema}},
         },
         responses: {
-          "201": success(z.object({id: z.string()})),
+          "201": {
+            ...success(apiItemCreateResponseSchema),
+            headers: {
+              "Idempotency-Replayed": {
+                description: "Present with value true when an earlier request reserved this idempotency key.",
+                schema: {type: "string", enum: ["true"]},
+              },
+            },
+          },
+          "400": error("The request body is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "409": error("The Idempotency-Key was already used with a different item payload."),
+        },
+      },
+    },
+    "/items/validate/": {
+      post: {
+        security: writeSecurity,
+        operationId: "validateItem",
+        summary: "Validate an item",
+        description: "Validates the request with the same schema as item creation without creating content, uploading media, or invalidating caches.",
+        tags: ["Items"],
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiItemInputSchema}},
+        },
+        responses: {
+          "200": success(apiItemValidationResponseSchema),
           "400": error("The request body is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
         },

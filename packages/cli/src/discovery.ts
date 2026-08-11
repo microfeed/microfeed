@@ -2,6 +2,7 @@ import {CliError} from "./errors.js";
 
 interface MicrofeedIdentity {
   instanceId: string;
+  oauthAuthorizationAvailable?: boolean;
   product: string;
 }
 
@@ -58,10 +59,35 @@ export async function discoverInstance(originInput: string): Promise<{
   if (identity.product !== "microfeed" || !identity.instanceId?.trim()) {
     throw new CliError("The target does not identify itself as a microfeed instance.");
   }
-  const metadata = await sameOriginJson<OAuthMetadata>(
-    new URL("/.well-known/oauth-authorization-server/api/auth", origin),
-    origin,
-  );
+  if (identity.oauthAuthorizationAvailable === false) {
+    throw new CliError(
+      "Browser authorization is unavailable because this microfeed site has " +
+      "built-in login disabled. Cloudflare Access can protect dashboard " +
+      "routes, but it does not create the microfeed application session " +
+      "required for OAuth. The site owner can enable built-in login from the " +
+      "connected repository with `yarn manage auth setup`, then retry. Guide: " +
+      "https://docs.microfeed.org/manage/domains-and-access/#enable-built-in-login",
+    );
+  }
+  let metadata: OAuthMetadata;
+  try {
+    metadata = await sameOriginJson<OAuthMetadata>(
+      new URL("/.well-known/oauth-authorization-server/api/auth", origin),
+      origin,
+    );
+  } catch (error) {
+    if (error instanceof CliError && error.message.endsWith("(404).")) {
+      throw new CliError(
+        "The site did not provide OAuth discovery metadata. Built-in login " +
+        "may be disabled, or this microfeed version may not support browser " +
+        "authorization. Cloudflare Access alone does not create a microfeed " +
+        "application session. The site owner can run `yarn manage auth setup` " +
+        "from the connected repository, then retry. Guide: " +
+        "https://docs.microfeed.org/manage/domains-and-access/#enable-built-in-login",
+      );
+    }
+    throw error;
+  }
   const issuer = new URL(metadata.issuer);
   const authorizationEndpoint = new URL(metadata.authorization_endpoint);
   const tokenEndpoint = new URL(metadata.token_endpoint);
