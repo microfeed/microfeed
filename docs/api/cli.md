@@ -8,9 +8,18 @@ The official
 people and coding agents a consistent way to publish and manage content on one
 or more microfeed sites without handling credentials directly. For every
 command, option, output contract, and safety rule, use the canonical
-[`yarn microfeed` command reference](/microfeed-cli/).
+[microfeed cli reference](/microfeed-cli/).
 
 ## Choose an invocation
+
+Choose the form that matches where you are working:
+
+| Where you are working | Recommended command |
+| --- | --- |
+| Inside a microfeed clone | `yarn microfeed …` |
+| Inside another Yarn project | Install `@microfeed/cli` locally, then use `yarn microfeed …` |
+| One command without installation | `yarn dlx @microfeed/cli …` |
+| Regular use across unrelated directories | Install globally, then use `microfeed …` |
 
 Inside a microfeed repository clone, use the local workspace after the normal
 dependency installation:
@@ -35,7 +44,12 @@ For one-off use without installation:
 yarn dlx @microfeed/cli --help
 ```
 
-A global installation is optional and is not required for these workflows.
+A global installation is optional and is not required for these workflows:
+
+```console
+npm install --global @microfeed/cli
+microfeed --help
+```
 
 ## Start with a content goal
 
@@ -56,7 +70,7 @@ browser when required.
 ## Log in to an instance
 
 New microfeed instances keep API access disabled by default. Before content
-commands can succeed, the site owner signs in to the admin dashboard, opens
+commands can succeed, the site owner signs in to the Admin dashboard, opens
 **API → API Settings**, and turns on **Enable API access**. This is a
 browser-only owner action; an agent must pause and ask the owner to complete it
 without requesting a dashboard password, API key, or CLI credential. See

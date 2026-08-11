@@ -140,6 +140,13 @@ export default class SettingsApp extends React.Component<Props, any> {
     const mediaStorageReady = mediaStorage?.ready !== false;
     return (<AdminPageApp>
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5">
+        <section className="scroll-mt-6" id="custom-code">
+          <CustomCodeSettingsApp
+            submitting={submitting}
+            submitForType={submitForType}
+            feed={feed}
+          />
+        </section>
         <section className="scroll-mt-6" id="tracking-urls">
           <TrackingSettingsApp
             submitting={submitting}
@@ -194,13 +201,6 @@ export default class SettingsApp extends React.Component<Props, any> {
             mediaStorageReady={mediaStorageReady}
             onSubmit={this.onSubmit}
             onSettingsChanged={this.updateSettingsState}
-          />
-        </section>
-        <section className="scroll-mt-6" id="custom-code">
-          <CustomCodeSettingsApp
-            submitting={submitting}
-            submitForType={submitForType}
-            feed={feed}
           />
         </section>
         <div aria-hidden="true" className="h-[50vh]" />

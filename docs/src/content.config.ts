@@ -9,6 +9,7 @@ const docs = defineCollection({
       "index.mdx",
       "manage-cli.md",
       "microfeed-cli.md",
+      "theme-kit-cli.md",
       "start-here/**/*.md",
       "dashboard/**/*.{md,mdx}",
       "manage/**/*.md",

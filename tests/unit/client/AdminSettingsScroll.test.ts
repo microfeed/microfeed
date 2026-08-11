@@ -53,11 +53,11 @@ describe("admin settings hash scrolling", () => {
     expect(scrollTo).not.toHaveBeenCalled();
   });
 
-  it("centers Custom code when the trailing page space allows it", () => {
+  it("uses standard top alignment for Website appearance & code", () => {
     const {scrollIntoView, scrollTo} = installElements({scrollable: true});
 
     expect(scrollToAdminSettingsSection("custom-code")).toBe(true);
-    expect(scrollTo).toHaveBeenCalledWith({behavior: "auto", top: 250});
+    expect(scrollTo).toHaveBeenCalledWith({behavior: "auto", top: 376});
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 

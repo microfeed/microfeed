@@ -7,6 +7,10 @@ Start with a named API key created for this integration and the generated
 contract from the exact microfeed instance you will call. Send the key in the
 `Authorization: Bearer` header on every authenticated request.
 
+This page is for developers building a direct API integration. To publish from
+a terminal or coding agent without handling a raw key, use the
+[microfeed CLI guide](../cli/) instead.
+
 ## Test in the dashboard
 
 Open **API → API Explorer**, choose an API key, and select an operation. The
@@ -50,7 +54,7 @@ microfeed distinguishes two item fields:
   link. JSON Feed exposes it as an attachment and RSS exposes it as
   `<enclosure>`.
 
-The REST upload is a three-part flow:
+The REST upload is a three-step flow:
 
 1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
    item ID, MIME type, size, and local filename information required by the
@@ -75,6 +79,6 @@ upload destination. Do not log or persist the short-lived URL.
   at `/api/v1/openapi.yaml`.
 - Treat unknown response fields as forward-compatible additions.
 - Handle documented 400, 401, 403, 404, and 503 responses explicitly.
-- Do not scrape the admin dashboard or reuse its browser session.
+- Do not scrape the Admin dashboard or reuse its browser session.
 - Use a unique named API key so the instance owner can rotate or revoke only
   this integration.

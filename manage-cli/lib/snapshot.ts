@@ -32,6 +32,9 @@ export const SNAPSHOT_TABLES = {
     "auth_user",
     "auth_account",
     "passkey",
+    "themes",
+    "theme_drafts",
+    "theme_state",
   ],
   ephemeral: [
     "item_search_metadata",
@@ -44,6 +47,7 @@ export const SNAPSHOT_TABLES = {
     "auth_verification",
     "auth_rate_limit",
     "auth_password_setup",
+    "theme_management_tokens",
   ],
   internal: ["_cf_KV", "d1_kv"],
   targetSpecific: ["microfeed_installation"],

@@ -87,12 +87,9 @@ export default function AdminSettingsSidebar({data, onNavigate}: Props) {
           ADMIN_SETTINGS_SECTIONS[0].id;
         for (const section of ADMIN_SETTINGS_SECTIONS) {
           const element = document.getElementById(section.id);
-          const sectionThreshold = section.id === "custom-code"
-            ? rootTop + scrollRoot.clientHeight / 2
-            : threshold;
           if (
             element &&
-            element.getBoundingClientRect().top <= sectionThreshold
+            element.getBoundingClientRect().top <= threshold
           ) {
             nextActive = section.id;
           }

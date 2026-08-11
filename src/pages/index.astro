@@ -5,8 +5,11 @@ import {CODE_TYPES} from "@/shared/Constants";
 import Theme from "@/server/themes/Theme";
 import PublicLayout from "../layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
+import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 
-const loaded = await loadPublishedFeed(env, Astro.request);
+const loaded = await loadPublishedFeed(env, Astro.request, {
+  includeActiveTheme: true,
+});
 const unavailable = shouldHidePublicWeb(loaded.content);
 if (!unavailable && !loaded.onboarding.requiredOk) {
   return Astro.redirect(
@@ -17,11 +20,25 @@ if (!unavailable && !loaded.onboarding.requiredOk) {
 if (unavailable) {
   Astro.response.status = 404;
 }
-const theme = new Theme(loaded.publicFeed, loaded.content.settings);
+const assetBaseUrl = themeAssetBaseUrl(
+  env,
+  Astro.request.url,
+  loaded.content.activeTheme?.assetOwnerThemeId,
+  loaded.content.activeTheme?.bundle.assets,
+);
+const theme = new Theme(
+  loaded.publicFeed,
+  loaded.content.settings,
+  null,
+  loaded.content.activeTheme,
+  assetBaseUrl,
+);
 const sharedTheme = new Theme(
   loaded.publicFeed,
   loaded.content.settings,
   CODE_TYPES.SHARED,
+  loaded.content.activeTheme,
+  assetBaseUrl,
 );
 const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 ---

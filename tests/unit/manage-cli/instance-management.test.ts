@@ -81,6 +81,13 @@ async function freshModules(
   } else {
     vi.doUnmock("@clack/prompts");
   }
+  vi.doMock("../../../manage-cli/theme", () => ({
+    installDefaultThemeForInitialization: vi.fn(async () => ({
+      id: "bundled-default-test",
+      packageId: "microfeed.default",
+      version: "1.0.3",
+    })),
+  }));
   vi.resetModules();
   // Import commands first so its config and prompt dependencies populate
   // Vitest's module cache before the test requests those modules directly.

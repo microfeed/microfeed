@@ -1,11 +1,20 @@
 import {describe, expect, it} from "vitest";
 
 import {
+  DEFAULT_CHANNEL_COPYRIGHT,
   getBuiltInTemplateVariables,
   resolveBuiltInTemplateVariables,
 } from "@/shared/TemplateVariables";
 
 describe("built-in template variables", () => {
+  it("defines the default channel copyright with the dynamic UTC year", () => {
+    expect(DEFAULT_CHANNEL_COPYRIGHT).toBe("©{{current_year}}");
+    expect(resolveBuiltInTemplateVariables(
+      DEFAULT_CHANNEL_COPYRIGHT,
+      {current_year: 2027},
+    )).toBe("©2027");
+  });
+
   it("uses the UTC year across the New Year boundary", () => {
     expect(getBuiltInTemplateVariables(
       new Date("2026-12-31T23:59:59.999Z"),

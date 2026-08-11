@@ -3,7 +3,7 @@ title: Dashboard tour
 description: Learn where to publish content, edit channel details, configure settings, and reach public feeds.
 ---
 
-The admin dashboard is the private control room for one microfeed channel. Its
+The Admin dashboard is the private control room for one microfeed channel. Its
 left navigation stays consistent while the main panel changes for each task.
 
 ![The microfeed dashboard home page with public feed links and a completed setup checklist](/images/screenshots/2-dashboard-1-home.png)
@@ -22,9 +22,11 @@ categories, language, and description.
 **API** opens a dedicated area for availability, API keys, an interactive
 browser explorer, and public API documentation formats.
 
-**Settings** manages tracking URLs, subscribe methods, access control, media
-storage, feed ordering, favicon, public themes, and custom code. It does not
-contain the **Edit channel** form.
+**Settings** manages website themes and shared code, tracking URLs, subscribe
+methods, site access, media storage, feed ordering, and favicon. It does not
+contain the **Edit channel** form. See [Themes and website code](/dashboard/themes/)
+and [Site access](/dashboard/customize/) for the two appearance and availability
+workflows.
 
 The channel control at the top of the sidebar links directly to the public
 website, RSS feed, and JSON feed. The top bar also contains item search, theme,
@@ -38,7 +40,7 @@ the sidebar as a drawer.
 
 ## Light and dark dashboard themes
 
-The theme menu offers Light, Dark, and System. This changes only the admin,
+The theme menu offers Light, Dark, and System. This changes only the Admin,
 login, and password-setup experience; the public website uses the public theme
 chosen under **Settings**.
 

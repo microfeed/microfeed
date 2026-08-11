@@ -1,62 +1,55 @@
 ---
-title: Themes, access, and custom code
-description: Control public availability, select a theme, and make careful code-level customizations.
+title: Site access
+description: Choose whether your website and public feeds are available, headless, or offline.
 ---
 
-These settings change the public site. Preview the result before sharing a new
-design or access policy broadly.
+Open **Settings → Access control** to choose how people and software can reach
+your published content. Selecting a mode saves immediately; it does not delete
+content or change individual item visibility.
 
-## Access control
+Choose **Public** for a normal website, **Headless** when another app presents
+your feeds or API content, and **Offline** for a temporary public shutdown.
 
-**Public** makes non-admin web pages and the RSS and JSON feeds available.
-**Headless** keeps RSS, JSON Feed, authenticated APIs, and media available while
-returning not-found responses for the website home page, item pages, and
-sitemap. **Offline** returns not-found responses for public routes while
-keeping the protected dashboard and separately configured authenticated API
-available.
+## Compare access modes
 
-This channel setting is different from dashboard authentication. Built-in login
-and optional Cloudflare Access protect the admin area itself.
+| Mode | What remains available | Use it when |
+| --- | --- | --- |
+| **Public** | Website pages, `sitemap.xml`, RSS, JSON Feed, media, and any separately enabled APIs | You want the normal public website and feeds. |
+| **Headless** | RSS, JSON Feed, media, and any separately enabled APIs; website pages and `sitemap.xml` return 404 | Another website or app presents content from your feeds or API. |
+| **Offline** | The protected dashboard and separately enabled authenticated APIs; public website pages, RSS, and JSON Feed return 404 | You need to take public publishing offline without deleting content. |
 
-## Public theme
+## Public
 
-Choose a built-in theme and save it, then use the public website link to inspect
-desktop and mobile layouts. The dashboard’s Light/Dark/System switch does not
-change the public theme.
+Public is the normal publishing mode. The website home page, item pages, RSS
+feed, JSON Feed, and sitemap can all be opened without signing in. Individual
+draft or hidden items still follow their own visibility rules.
 
-The custom-theme code editor is available from the theme settings when the
-custom option is selected.
+## Headless
 
-![Editing a custom microfeed web theme with raw HTML, CSS classes, Mustache variables, and pagination controls](/images/screenshots/4-code-editor-1.png)
+Headless mode hides microfeed's generated website while leaving structured
+feeds, APIs, and media available. Requests for the website home page, item web
+pages, and `sitemap.xml` return 404. RSS and JSON item endpoints remain
+available, including their normal web-link metadata, so existing integrations
+do not need a different feed shape.
 
-## Custom code
+Use this mode when a separate frontend reads microfeed's JSON Feed or API. The
+separate frontend is not created or hosted by this setting.
 
-Custom code can add markup, CSS, or supported integration snippets to the public
-site. Treat it like source code:
+## Offline
 
-1. Save the current version outside the dashboard before a large change.
-2. Change one concern at a time.
-3. Check public pages at mobile and desktop widths.
-4. Remove the change if it interferes with navigation, readability, or feed
-   metadata.
+Offline mode makes public website pages, RSS, and JSON Feed return 404. The
+protected dashboard remains available so an administrator can edit content and
+switch access back to Public or Headless later. Separately enabled authenticated
+APIs continue to follow their own API availability and credential settings.
 
-Never paste private keys, Cloudflare tokens, dashboard credentials, or other
-secrets into public custom code. Anything sent to a browser can be inspected by
-a visitor.
+## Verify a change
 
-## Dashboard authentication
+After selecting a mode, open the public home page, `/rss/`, `/json/`, and
+`/sitemap.xml` in a private browser window. Confirm that each route is available
+or returns 404 as described above. If the result is unexpected, return to
+**Settings → Access control**, select the intended mode again, and check the
+visibility of the affected item.
 
-For routine email and password changes, open the avatar menu and select
-[**Account settings**](/manage/domains-and-access/#change-your-built-in-login).
-Use `yarn manage auth <action>` from the connected repository clone for initial
-setup, forgotten-password recovery, dashboard-path changes, or disabling the
-built-in login. Running `yarn manage auth` without an action prints help and
-makes no change.
-
-Optional Cloudflare Access is managed through `yarn manage access`. See
-[Domains and authentication](/manage/domains-and-access/) before changing a
-production dashboard.
-
-API access has its own switches and API keys in the dashboard’s **API** area.
-It is not controlled by dashboard login credentials. See
-[API overview](/api/) before sharing access with an integration.
+Site access does not protect the dashboard or grant API credentials. See
+[Domains and authentication](/manage/domains-and-access/) for dashboard login
+and [API overview](/api/) for authenticated integrations.

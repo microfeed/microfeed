@@ -32,8 +32,9 @@ yarn docs:dev
 1. Create a focused branch from the latest `main`.
 2. Keep application code under `src/`, management tooling under `manage-cli/`,
    and documentation-site content under `docs/`.
-3. Preserve `docs/manage-cli.md` as the canonical command contract whenever CLI
-   behavior changes.
+3. Keep the canonical command references synchronized whenever behavior changes:
+   [`yarn manage`](/manage-cli/), the [microfeed CLI](/microfeed-cli/), and the
+   [theme-kit CLI](/theme-kit-cli/).
 4. Add or update tests for observable behavior.
 5. Run `git diff --check` and `yarn check`.
 6. Stop any development server you started.

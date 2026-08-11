@@ -18,15 +18,19 @@ to enabled [`/api/v1/` operations](https://www.microfeed.org/api/v1/). Use a
 separate named key for each integration so it can be rotated or revoked
 independently.
 
+**Bearer authentication**
+An API authentication method in which a request carries a secret credential in
+its `Authorization` header. Whoever holds the credential can use its access.
+
 **Channel**
-The collection identity shared by a public website, RSS feed, and JSON feed.
+The collection identity shared by a public website, RSS feed, and JSON Feed.
 
 **Cloudflare**
 The hosting provider whose account owns a deployed microfeed Worker and its
 data resources.
 
 **Cloudflare Access**
-An optional identity layer that can sit in front of the admin dashboard.
+An optional identity layer that can sit in front of the Admin dashboard.
 
 **D1**
 Cloudflare’s SQL database. microfeed stores channel settings, items, and other
@@ -39,6 +43,11 @@ microfeed in Cloudflare.
 **Feed**
 An ordered collection of published items. microfeed presents the collection as
 Web pages, RSS, and JSON.
+
+**Headless**
+A publishing mode in which software consumes RSS, JSON Feed, or the API while a
+different website or app presents the content. microfeed can hide its generated
+web pages without deleting the content.
 
 **Git clone**
 A local copy of this repository containing the source code and `yarn manage`
@@ -65,6 +74,11 @@ optional for content made only of text and external URLs.
 A portable archive containing D1 schema and data, R2 objects, checksums, and
 migration history for one site.
 
+**Theme version**
+One immutable release of a public-site design. Editing creates a draft and then
+a new installed version; it never changes an existing installed version in
+place.
+
 **Worker**
 The Cloudflare application that handles HTTP requests and runs microfeed
 without a traditional server.
@@ -73,3 +87,7 @@ without a traditional server.
 Cloudflare’s command-line tool. microfeed invokes it behind the supported
 `yarn manage` interface; people and agents should not replace management
 workflows with improvised Wrangler commands.
+
+**workers.dev address**
+The free Cloudflare-provided web address for a Worker. A microfeed site can use
+it directly or attach a custom domain later.

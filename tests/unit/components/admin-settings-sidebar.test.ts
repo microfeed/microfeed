@@ -30,6 +30,8 @@ describe("admin settings sidebar", () => {
     expect(output).toContain("Home");
     expect(output).not.toContain("history.back");
     expect(output).toContain('placeholder="Search settings..."');
+    expect(output).toContain('href="/admin/settings/#custom-code"');
+    expect(output).toContain("Website appearance &amp; code");
     expect(output).toContain('href="/admin/settings/#tracking-urls"');
     expect(output).toContain('href="/admin/settings/#access-control"');
     expect(output).toContain('href="/admin/settings/#subscribe-methods"');
@@ -40,14 +42,13 @@ describe("admin settings sidebar", () => {
     expect(output).toContain('href="/admin/settings/#favicon"');
     expect(output).toContain("Favicon");
     expect(output).not.toContain("Global settings");
-    expect(output).toContain('href="/admin/settings/#custom-code"');
     expect(output).toContain("/assets/brands/microfeed/horizontal-logo.png");
     expect(output).toContain(
       "/assets/brands/microfeed/horizontal-logo-dark.png",
     );
   });
 
-  it("keeps Custom code active on nested editor routes", () => {
+  it("keeps Website appearance & code active on nested editor routes", () => {
     const output = renderToStaticMarkup(
       React.createElement(AdminSettingsSidebar, {
         data: {
@@ -76,14 +77,14 @@ describe("admin settings sidebar", () => {
         },
       }),
     );
-    const trackingLink = output.match(
-      /<a[^>]*href="\/admin\/settings\/#tracking-urls"[^>]*>/u,
+    const appearanceLink = output.match(
+      /<a[^>]*href="\/admin\/settings\/#custom-code"[^>]*>/u,
     )?.[0];
     const faviconLink = output.match(
       /<a[^>]*href="\/admin\/settings\/#favicon"[^>]*>/u,
     )?.[0];
 
-    expect(trackingLink).toContain('aria-current="location"');
+    expect(appearanceLink).toContain('aria-current="location"');
     expect(faviconLink).not.toContain('aria-current="location"');
   });
 });

@@ -418,6 +418,10 @@ export const ADMIN_URLS = {
   apiSettings: () => adminUrl("api/settings", browserAdminPath()),
   codeEditorSettings: () =>
     adminUrl("settings/code-editor", browserAdminPath()),
+  themesSettings: () =>
+    adminUrl("settings/themes", browserAdminPath()),
+  themeDraft: (id: string) =>
+    adminUrl(`settings/themes/drafts/${id}`, browserAdminPath()),
   login: () => adminUrl("login", browserAdminPath()),
   logout: () => adminUrl("logout", browserAdminPath()),
 
@@ -429,6 +433,15 @@ export const ADMIN_URLS = {
     adminUrl(`ajax/api/keys/${id}`, browserAdminPath()),
   ajaxRotateApiKey: (id: string) =>
     adminUrl(`ajax/api/keys/${id}/rotate`, browserAdminPath()),
+  ajaxThemes: () => adminUrl("ajax/themes", browserAdminPath()),
+  ajaxTheme: (id: string) =>
+    adminUrl(`ajax/themes/${id}`, browserAdminPath()),
+  ajaxThemePreview: (id: string) =>
+    adminUrl(`ajax/themes/${id}/preview`, browserAdminPath()),
+  ajaxThemeDraft: (id: string) =>
+    adminUrl(`ajax/themes/drafts/${id}`, browserAdminPath()),
+  ajaxThemeDraftPreview: (id: string) =>
+    adminUrl(`ajax/themes/drafts/${id}/preview`, browserAdminPath()),
 };
 
 /**

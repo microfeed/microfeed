@@ -380,6 +380,50 @@ a {
   --sidebar-ring: #19b7fa;
 }
 
+@property --theme-preview-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0turn;
+}
+
+@keyframes theme-preview-border-flow {
+  to {
+    --theme-preview-angle: 1turn;
+  }
+}
+
+.theme-preview-button {
+  --theme-preview-angle: 0turn;
+  --theme-preview-surface: var(--background);
+
+  border-color: transparent;
+  background:
+    linear-gradient(
+      var(--theme-preview-surface),
+      var(--theme-preview-surface)
+    ) padding-box,
+    conic-gradient(
+      from var(--theme-preview-angle),
+      var(--border) 0deg 245deg,
+      rgb(25 183 250 / 65%) 280deg,
+      rgb(173 231 255 / 100%) 310deg,
+      var(--color-brand-light) 335deg,
+      var(--border) 360deg
+    ) border-box;
+  box-shadow: 0 0 0 1px rgb(25 183 250 / 8%);
+  animation: theme-preview-border-flow 3.6s linear infinite;
+}
+
+.theme-preview-button:hover {
+  --theme-preview-surface: var(--muted);
+}
+
+.theme-preview-button:disabled {
+  --theme-preview-angle: 0.86turn;
+
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
@@ -388,6 +432,10 @@ a {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .theme-preview-button {
+    animation: none !important;
   }
 }
 

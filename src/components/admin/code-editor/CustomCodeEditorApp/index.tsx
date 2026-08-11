@@ -1,168 +1,109 @@
 import React from 'react';
-import {navigate} from 'astro:transitions/client';
 import AdminPageApp from '@/components/admin/shared/AdminPageApp';
-import CodeEditorRouteSelect from '@/components/admin/code-editor/CodeEditorRouteSelect';
-import {ADMIN_URLS, PUBLIC_URLS, escapeHtml} from "@/shared/StringUtils";
-import {showToast} from "@/client/ToastUtils";
-import Requests from "@/client/requests";
-import ExternalLink from "@/components/admin/shared/ExternalLink";
-import AdminCodeEditor from "@/components/admin/shared/AdminCodeEditor";
-import {
-  CODE_TYPES, CODE_FILES,
-  SETTINGS_CATEGORIES,
-} from "@/shared/Constants";
-import {preventCloseWhenChanged} from "@/client/BrowserUtils";
-import type {FeedContent} from "@/types";
-import {Button} from "@/components/ui/button";
+import {ADMIN_URLS, PUBLIC_URLS, escapeHtml} from '@/shared/StringUtils';
+import {showToast} from '@/client/ToastUtils';
+import Requests from '@/client/requests';
+import ExternalLink from '@/components/admin/shared/ExternalLink';
+import AdminCodeEditor from '@/components/admin/shared/AdminCodeEditor';
+import {CODE_FILES, SETTINGS_CATEGORIES} from '@/shared/Constants';
+import {preventCloseWhenChanged} from '@/client/BrowserUtils';
+import type {FeedContent} from '@/types';
+import {Button} from '@/components/ui/button';
 
 const SUBMIT_STATUS__START = 1;
 
-function TabButton({name, onClick, selected}: any) {
-  return (<Button
-    type="button"
-    size="sm"
-    variant={selected ? "default" : "ghost"}
-    onClick={onClick}
-  >{name}</Button>);
+const CODE_BUNDLE = ['webHeader', 'webBodyStart', 'webBodyEnd'] as const;
+
+type SharedCodeFile = (typeof CODE_BUNDLE)[number];
+
+interface SharedCodeFileDetails {
+  description: React.ReactNode;
+  language: string;
+  name: string;
+  viewUrl: () => string;
 }
 
-const CODE_FILES_DICT = {
-  [CODE_FILES.WEB_FEED]: {
-    name: 'Web Feed',
-    language: 'html',
-    viewUrl: () => PUBLIC_URLS.webFeed(),
-    description: (<div>
-      The code is used for <a href={PUBLIC_URLS.webFeed()} target="_blank">the public homepage of this site</a>.
-    </div>),
-  },
-  [CODE_FILES.WEB_ITEM]: {
-    'name': 'Web Item',
-    language: 'html',
-    viewUrl: (feed: any) => getFirstItemUrl(feed),
-    description: <div>The code is used for an item web page, which is good for SEO.</div>,
-  },
-  [CODE_FILES.WEB_HEADER]: {
+const CODE_FILES_DICT: Record<SharedCodeFile, SharedCodeFileDetails> = {
+  webHeader: {
     name: 'Web Header',
     language: 'html',
     viewUrl: () => PUBLIC_URLS.webFeed(),
     description: (<div>
       The code is inserted right before the <span
-        dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom css or javascript code here.
+        dangerouslySetInnerHTML={{__html: escapeHtml('</head>')}} /> tag. You can put custom CSS or JavaScript code here.
     </div>),
   },
-  [CODE_FILES.WEB_BODY_START]: {
-    'name': 'Web Body Start',
+  webBodyStart: {
+    name: 'Web Body Start',
     language: 'html',
     viewUrl: () => PUBLIC_URLS.webFeed(),
     description: (<div>
       The code is inserted right after the <span
-      dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}}/> tag. You can put navigation menus / branding things here.
+        dangerouslySetInnerHTML={{__html: escapeHtml('<body>')}} /> tag. You can put navigation menus or branding here.
     </div>),
   },
-  [CODE_FILES.WEB_BODY_END]: {
-    'name': 'Web Body End',
+  webBodyEnd: {
+    name: 'Web Body End',
     language: 'html',
     viewUrl: () => PUBLIC_URLS.webFeed(),
     description: (<div>
       The code is inserted right before the <span
-      dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links / footer / copyright here.
+        dangerouslySetInnerHTML={{__html: escapeHtml('</body>')}} /> tag. You can put links, a footer, or copyright here.
     </div>),
   },
-  [CODE_FILES.RSS_STYLESHEET]: {
-    name: 'Rss Stylesheet',
-    language: 'css',
-    viewUrl: () => PUBLIC_URLS.rssFeed(),
-    description: (<div>The code is used for <a href={PUBLIC_URLS.rssFeedStylesheet()} target="_blank">
-      {PUBLIC_URLS.rssFeedStylesheet()}</a>, which is included in <a
-      href={PUBLIC_URLS.rssFeed()} target="_blank">the RSS feed</a>.</div>),
-  },
 };
 
-const CODE_BUNDLE = {
-  [CODE_TYPES.SHARED]: [
-    CODE_FILES.WEB_HEADER,
-    CODE_FILES.WEB_BODY_START,
-    CODE_FILES.WEB_BODY_END,
-  ],
-  [CODE_TYPES.THEMES]: [
-    CODE_FILES.WEB_FEED,
-    CODE_FILES.WEB_ITEM,
-    CODE_FILES.WEB_HEADER,
-    CODE_FILES.WEB_BODY_START,
-    CODE_FILES.WEB_BODY_END,
-    CODE_FILES.RSS_STYLESHEET,
-  ],
-};
+function TabButton({name, onClick, selected}: {
+  name: string;
+  onClick: () => void;
+  selected: boolean;
+}) {
+  return (<Button
+    type="button"
+    size="sm"
+    variant={selected ? 'default' : 'ghost'}
+    onClick={onClick}
+  >{name}</Button>);
+}
 
-function CodeTabs({codeFile, codeType, themeName, setState}: any) {
-  const codeFiles = CODE_BUNDLE[codeType];
+function updateUrlHash(codeFile: SharedCodeFile, push = true) {
+  const url = new URL(window.location.href);
+  url.hash = codeFile;
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  if (push) {
+    window.history.pushState(null, '', nextUrl);
+  } else {
+    window.history.replaceState(null, '', nextUrl);
+  }
+}
+
+function chooseFileType(url?: string): SharedCodeFile {
+  const hash = url ? new URL(url).hash : window.location.hash;
+  const requested = hash.startsWith('#') ? hash.substring(1) : hash;
+  if ((CODE_BUNDLE as readonly string[]).includes(requested)) {
+    return requested as SharedCodeFile;
+  }
+  return 'webHeader';
+}
+
+function CodeTabs({codeFile, setCodeFile}: {
+  codeFile: SharedCodeFile;
+  setCodeFile: (codeFile: SharedCodeFile) => void;
+}) {
   return (<div className="mb-4 flex flex-wrap gap-1 rounded-[14px] border bg-card p-3 text-card-foreground shadow-xs">
-    {(codeFiles as any).map((cf: any) => (<TabButton
-      key={`tab-${cf}`}
-      name={(CODE_FILES_DICT[cf] as any).name}
-      selected={codeFile === cf}
-      onClick={() => {
-        setState({codeFile: cf});
-        updateUrlParams(codeType, cf, themeName, true)
-      }}
+    {CODE_BUNDLE.map((file) => (<TabButton
+      key={`tab-${file}`}
+      name={CODE_FILES_DICT[file].name}
+      selected={codeFile === file}
+      onClick={() => setCodeFile(file)}
     />))}
   </div>);
 }
 
-function getFirstItemUrl(feed: any) {
-  const {items} = feed;
-  if (items && items.length > 0) {
-    const item = items[0];
-    return PUBLIC_URLS.webItem(item.id, item.title || 'Untitled');
-  }
-  return '/'
-}
-
-function updateUrlParams(codeType: any, codeFile: any, theme: any = '', push: any = true) {
-  if ('URLSearchParams' in window) {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (codeType !== CODE_TYPES.SHARED || searchParams.has('type')) {
-      searchParams.set('type', codeType);
-    }
-    if (codeType === CODE_TYPES.THEMES) {
-      searchParams.set('theme', theme);
-    }
-    const queryString = searchParams.toString();
-    const newRelativePathQuery = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${codeFile ? `#${codeFile}` : ''}`;
-    void navigate(newRelativePathQuery, {history: push ? 'push' : 'replace'});
-  }
-}
-
-function chooseCodeType() {
-  const urlObj = new URL(location.href);
-  const {searchParams} = urlObj;
-  const codeType = searchParams.get('type') || CODE_TYPES.SHARED;
-  if (Object.values(CODE_TYPES).includes(codeType)) {
-    return codeType;
-  }
-  return CODE_TYPES.SHARED;
-}
-
-function chooseFileType(codeType: any, url: any = null) {
-  const {hash} = url ? new URL(url) : window.location;
-  let codeFile = codeType === CODE_TYPES.THEMES ? CODE_FILES.WEB_FEED : CODE_FILES.WEB_HEADER;
-  if (hash) {
-    const hashValue = hash.substring(1);
-    if (CODE_BUNDLE[codeType] && CODE_BUNDLE[codeType].includes(hashValue)) {
-      codeFile = hashValue;
-    }
-  }
-  return codeFile;
-}
-
 export interface ThemeTemplate {
-  rssStylesheet: string;
-  themeName: string;
   webBodyEnd: string;
   webBodyStart: string;
-  webFeed: string;
   webHeader: string;
-  webItem: string;
 }
 
 interface Props {
@@ -170,51 +111,28 @@ interface Props {
   themeTemplate: ThemeTemplate;
 }
 
-export default class CustomCodeEditorApp extends React.Component<Props, any> {
+interface State extends ThemeTemplate {
+  changed: boolean;
+  codeFile: SharedCodeFile;
+  feed: FeedContent;
+  submitStatus: number | null;
+}
+
+export default class CustomCodeEditorApp extends React.Component<Props, State> {
   private cleanupNavigationGuard?: () => void;
   private readonly onHashChange = (event: HashChangeEvent) => {
-    const {codeType} = this.state;
-    const newCodeFile = chooseFileType(codeType, event.newURL);
-    this.setState({codeFile: newCodeFile});
+    this.setState({codeFile: chooseFileType(event.newURL)});
   };
 
   constructor(props: Props) {
     super(props);
-
     this.onSubmit = this.onSubmit.bind(this);
-    this.onUpdateFeed = this.onUpdateFeed.bind(this);
-    this.setState = this.setState.bind(this);
-
-    const themeTmplJson = props.themeTemplate;
-    const feed = props.feedContent;
-
-    const {
-      themeName,
-      rssStylesheet,
-      webItem,
-      webFeed,
-      webBodyStart,
-      webBodyEnd,
-      webHeader,
-    } = themeTmplJson;
-
-    const codeType = chooseCodeType();
-    const codeFile = chooseFileType(codeType);
 
     this.state = {
-      codeType,
-      codeFile,
+      ...props.themeTemplate,
+      codeFile: chooseFileType(),
       submitStatus: null,
-
-      themeName,
-      rssStylesheet,
-      webItem,
-      webFeed,
-      webBodyStart,
-      webBodyEnd,
-      webHeader,
-
-      feed,
+      feed: props.feedContent,
       changed: false,
     };
   }
@@ -222,8 +140,7 @@ export default class CustomCodeEditorApp extends React.Component<Props, any> {
   componentDidMount() {
     this.cleanupNavigationGuard = preventCloseWhenChanged(() => this.state.changed);
     window.addEventListener('hashchange', this.onHashChange);
-    const {codeType, codeFile, themeName} = this.state;
-    updateUrlParams(codeType, codeFile, themeName, false);
+    updateUrlHash(this.state.codeFile, false);
   }
 
   componentWillUnmount() {
@@ -231,62 +148,69 @@ export default class CustomCodeEditorApp extends React.Component<Props, any> {
     window.removeEventListener('hashchange', this.onHashChange);
   }
 
-  onUpdateFeed(themeTmpls: any, onSucceed: any) {
-    const existingCode = this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE] || {};
-    const existingThemes = existingCode[CODE_TYPES.THEMES] || {};
-
-    const {themeName, codeType} = this.state;
-    let customCode = {};
-    if (codeType === CODE_TYPES.SHARED) {
-      customCode = {
-        ...themeTmpls,
-      };
-    } else if (codeType === CODE_TYPES.THEMES) {
-      customCode = {
-        // TODO: if we support multiple themes, then don't set currentTheme here.
-        currentTheme: themeName,
-        [CODE_TYPES.THEMES]: {
-          ...existingThemes,
-          [themeName]: {
-            ...themeTmpls,
-          }
-        },
-      };
+  codeValue(codeFile: SharedCodeFile) {
+    switch (codeFile) {
+      case 'webBodyEnd':
+        return this.state.webBodyEnd;
+      case 'webBodyStart':
+        return this.state.webBodyStart;
+      case 'webHeader':
+        return this.state.webHeader;
     }
-    this.setState((prevState: any) => ({
-      changed: true,
-      feed: {
-        ...prevState.feed,
-        settings: {
-          ...prevState.feed.settings,
-          [SETTINGS_CATEGORIES.CUSTOM_CODE]: {
-            ...prevState.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE],
-            ...customCode,
-          },
-        }
-      },
-    }), () => onSucceed())
   }
 
-  onSubmit(e: any) {
-    e.preventDefault();
+  updateCode(codeFile: SharedCodeFile, value: string) {
+    switch (codeFile) {
+      case 'webBodyEnd':
+        this.setState({webBodyEnd: value, changed: true});
+        break;
+      case 'webBodyStart':
+        this.setState({webBodyStart: value, changed: true});
+        break;
+      case 'webHeader':
+        this.setState({webHeader: value, changed: true});
+        break;
+    }
+  }
+
+  onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     this.setState({submitStatus: SUBMIT_STATUS__START});
 
-    const {codeType} = this.state;
+    const sharedTemplates = {
+      [CODE_FILES.WEB_HEADER]: this.state.webHeader || '',
+      [CODE_FILES.WEB_BODY_START]: this.state.webBodyStart || '',
+      [CODE_FILES.WEB_BODY_END]: this.state.webBodyEnd || '',
+    };
 
-    const themeTmpls = {};
-    (CODE_BUNDLE[codeType] as any).forEach((codeFile: any) => {
-      (themeTmpls as any)[codeFile] = this.state[codeFile] || '';
-    });
-
-    this.onUpdateFeed(themeTmpls, () => {
+    this.setState((prevState) => {
+      const previousSettings = prevState.feed.settings ?? {};
+      const storedCustomCode = previousSettings[SETTINGS_CATEGORIES.CUSTOM_CODE];
+      const previousCustomCode = storedCustomCode && typeof storedCustomCode === 'object'
+        ? storedCustomCode
+        : {};
+      return {
+        changed: true,
+        feed: {
+          ...prevState.feed,
+          settings: {
+            ...previousSettings,
+            [SETTINGS_CATEGORIES.CUSTOM_CODE]: {
+              ...previousCustomCode,
+              ...sharedTemplates,
+            },
+          },
+        },
+      };
+    }, () => {
+      const settings = this.state.feed.settings ?? {};
       Requests.axiosPost(ADMIN_URLS.ajaxFeed(), {settings: {
-        [SETTINGS_CATEGORIES.CUSTOM_CODE]: this.state.feed.settings[SETTINGS_CATEGORIES.CUSTOM_CODE]}})
-        .then(() => {
-          this.setState({submitStatus: null, changed: false}, () => {
-            showToast('Updated!', 'success');
-          });
-        }).catch((error: any) => {
+        [SETTINGS_CATEGORIES.CUSTOM_CODE]: settings[SETTINGS_CATEGORIES.CUSTOM_CODE],
+      }}).then(() => {
+        this.setState({submitStatus: null, changed: false}, () => {
+          showToast('Updated!', 'success');
+        });
+      }).catch((error: any) => {
         this.setState({submitStatus: null}, () => {
           if (!error.response) {
             showToast('Network error. Please refresh the page and try again.', 'error');
@@ -294,29 +218,35 @@ export default class CustomCodeEditorApp extends React.Component<Props, any> {
             showToast('Failed. Please try again.', 'error');
           }
         });
-        });
+      });
     });
   }
 
   render() {
-    const {codeFile, submitStatus, feed, codeType, themeName, changed} = this.state;
-    const code = this.state[codeFile];
+    const {codeFile, submitStatus, changed} = this.state;
+    const code = this.codeValue(codeFile);
     const codeBundle = CODE_FILES_DICT[codeFile];
-    const language = (codeBundle as any).language;
-    const viewUrl = (codeBundle as any).viewUrl(feed);
-    const description = (codeBundle as any).description;
-
+    const viewUrl = codeBundle.viewUrl();
     const submitting = submitStatus === SUBMIT_STATUS__START;
+
     return (<AdminPageApp>
-      <CodeEditorRouteSelect className="mb-4 lg:hidden" codeType={codeType} />
-      <CodeTabs codeFile={codeFile} setState={this.setState} codeType={codeType} themeName={themeName} />
+      <CodeTabs
+        codeFile={codeFile}
+        setCodeFile={(file) => {
+          this.setState({codeFile: file});
+          updateUrlHash(file);
+        }}
+      />
       <form className="grid grid-cols-1 gap-4 xl:grid-cols-12" onSubmit={this.onSubmit}>
         <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs xl:col-span-9">
-          <div className="mb-4 text-xs text-muted-foreground">{description}</div>
+          <div className="mb-4 text-xs text-muted-foreground">{codeBundle.description}</div>
           <AdminCodeEditor
             code={code}
-            language={language}
-            onChange={(e: any) => this.setState({[codeFile]: e.target.value, changed: true})}
+            language={codeBundle.language}
+            onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => this.updateCode(
+              codeFile,
+              event.target.value,
+            )}
           />
         </div>
         <div className="xl:col-span-3">
@@ -332,17 +262,15 @@ export default class CustomCodeEditorApp extends React.Component<Props, any> {
               </Button>
             </div>
             <div className="flex flex-col items-center rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
-              <ExternalLink url={viewUrl} text="View live page"/>
+              <ExternalLink url={viewUrl} text="View live page" />
               <div className="break-all text-center text-xs text-muted-foreground">{viewUrl}</div>
             </div>
             <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
               <div className="mb-2 text-sm font-semibold">Pro-tips:</div>
               <ul className="text-xs text-muted-foreground">
-                <li className="mb-2">You can use variables from the <a href={PUBLIC_URLS.jsonFeed()}> json feed</a>.</li>
-                <li className="mb-2">The template system is <a href="https://mustache.github.io/">mustache</a>.</li>
-                <li className="mb-2">See the OpenAPI spec for the json feed: <a href={PUBLIC_URLS.jsonFeedOpenApiYaml()}>
-                  YAML</a> or <a href={PUBLIC_URLS.jsonFeedOpenApiHtml()}>HTML</a>.
-                </li>
+                <li className="mb-2">Shared code wraps every installed theme.</li>
+                <li className="mb-2">Save here only changes the three shared HTML slots.</li>
+                <li>Manage page templates and RSS styling in Settings → Themes.</li>
               </ul>
             </div>
           </div>

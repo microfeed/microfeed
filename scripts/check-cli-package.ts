@@ -23,6 +23,9 @@ function run(command: string, args: string[], cwd = process.cwd()): string {
 
 const temporary = await mkdtemp(path.join(tmpdir(), "microfeed-cli-pack-"));
 try {
+  const rootPackage = JSON.parse(
+    await readFile(path.join(process.cwd(), "package.json"), "utf8"),
+  ) as {version: string};
   const archive = path.join(temporary, "microfeed-cli.tgz");
   run("yarn", [
     "workspace",
@@ -42,10 +45,14 @@ try {
     name?: string;
     publishConfig?: {access?: string; registry?: string};
     repository?: {directory?: string; type?: string; url?: string};
+    version?: string;
   };
   if (packedPackage.name !== "@microfeed/cli" ||
+      packedPackage.version !== rootPackage.version ||
       packedPackage.bin?.microfeed !== "dist/index.js") {
-    throw new Error("The packed CLI does not expose the microfeed binary.");
+    throw new Error(
+      "The packed CLI has a stale version or does not expose the microfeed binary.",
+    );
   }
   if (packedPackage.homepage !== "https://docs.microfeed.org/microfeed-cli/" ||
       packedPackage.bugs?.url !==
@@ -64,6 +71,7 @@ try {
     "utf8",
   );
   if (!packedReadme.includes("yarn microfeed login") ||
+      !packedReadme.includes("npm install --global @microfeed/cli") ||
       !packedReadme.includes("Site URLs and instance names") ||
       !packedReadme.includes("GNU Affero General Public License v3.0")) {
     throw new Error("The packed CLI README is incomplete.");

@@ -7,6 +7,14 @@ A microfeed snapshot packages the D1 schema and durable data together with every
 object in the production R2 bucket. The archive also records checksums and the
 ordered migration history needed to validate a restore.
 
+In plain language, one snapshot contains the site’s database and uploaded
+files. Treat it as private: it may include unpublished items, administrator
+account data, and media that is not publicly linked.
+
+The durable D1 set includes installed theme versions, unpublished Admin drafts,
+and active/previous theme state. Because snapshots already include the entire
+R2 bucket, declared theme assets restore in the same archive.
+
 ## Create a backup
 
 ```console
@@ -52,8 +60,14 @@ eligibility checks, resumable maintenance state, and all options.
 yarn manage migrate-pages
 ```
 
-This command will create a new Workers project to connect to the existing d1 database and r2 bucket.
-So the old Pages project and the new Workers project both connect to the same d1 database and r2 bucket.
-You can decide when to switch the custom domain name from the old Pages project to the new Workers project, and vice versa.
+The command creates a new Worker beside the existing Pages project and connects
+the new Worker to the same D1 database and R2 bucket. It does not delete or
+modify the Pages project. Until you move the custom domain, both applications
+can point at the same data, so a content change through either one is visible to
+the other.
+
+Verify the new Worker at its temporary address before moving the custom domain.
+You can move the domain back to Pages if you need to reverse the traffic
+switch; the shared data remains in D1 and R2.
 
 See [the canonical migrate-pages reference](/manage-cli/#yarn-manage-migrate-pages) for all options.

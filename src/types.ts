@@ -40,6 +40,7 @@ export interface FeedItem extends JsonObject {
 }
 
 export interface FeedContent extends JsonObject {
+  activeTheme?: import("@/shared/themes/ThemeContract").StoredThemeVersion;
   channel?: JsonObject;
   deleteImageUrls?: string[];
   item?: FeedItem;
@@ -50,6 +51,7 @@ export interface FeedContent extends JsonObject {
   items_sort?: "created_at" | "published_at" | "updated_at";
   items_sort_order?: string;
   settings?: FeedSettings;
+  themeMigrationCompleted?: boolean;
 }
 
 export interface PublicFeed extends JsonObject {

@@ -6,7 +6,7 @@ description: Publish text, links, images, audio, video, and documents yourself o
 An **item** is one entry in your channel. Publishing it can create a public web
 page and add an entry to both RSS and JSON feeds.
 
-People can use the visual admin dashboard described below. For repeatable or
+You can complete the whole workflow in the visual Admin dashboard. For repeatable or
 agent-driven publishing, the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) manages the
 same channel after its owner enables the authenticated API. Start with
@@ -84,7 +84,7 @@ it can use a project-local installation or `yarn dlx @microfeed/cli`. You sign
 in and approve permissions in the browser; the CLI stores and refreshes the
 credential without printing it. First [enable API access and connect the
 CLI](/api/authentication/), then see the [agent workflow](/api/ai-agents/) and
-complete [`yarn microfeed` command reference](/microfeed-cli/) for media
+complete [microfeed CLI reference](/microfeed-cli/) for media
 vocabulary, deterministic input, and deletion safeguards.
 
 ## Verify distribution

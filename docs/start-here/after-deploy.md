@@ -8,8 +8,8 @@ Use this checklist after `yarn manage init` completes.
 ## Confirm the site is healthy
 
 Run `yarn manage status` from the same repository clone. Confirm the displayed
-Worker, database, media-storage state, and dashboard protection match what you
-expected.
+hosted application, database, media-storage state, and dashboard protection
+match what you expected.
 
 Open these public addresses:
 
@@ -24,14 +24,14 @@ An empty new feed is normal.
 Open the dashboard URL printed by the CLI. Then:
 
 1. Add a channel title, description, image, and publisher details.
-2. Review the access-control choice.
-3. Choose a public theme and inspect the Web, RSS, and JSON links.
+2. Review the **Site access** mode: Public, Headless, or Offline.
+3. Choose a public theme and inspect the website, RSS, and JSON links.
 4. If R2 is enabled, upload a small image to test media storage.
 
 ## Publish a test item
 
 Create a clearly labeled test item, preview its public page, and check the RSS
-and JSON feeds. You can publish it yourself in the admin dashboard. To publish
+and JSON feeds. You can publish it yourself in the Admin dashboard. To publish
 with a coding agent, first [enable API access and connect the CLI](/api/authentication/),
 then ask the agent to use the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside this

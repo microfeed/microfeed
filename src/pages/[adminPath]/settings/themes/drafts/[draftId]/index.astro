@@ -1,0 +1,44 @@
+---
+import {env} from "cloudflare:workers";
+
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import ThemeDraftEditorApp from "@/components/admin/themes/ThemeDraftEditorApp";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {adminUrl} from "@/shared/AdminPath";
+import ThemeStore from "@/server/themes/ThemeStore";
+import AdminShell from "../../../../../../layouts/AdminShell.astro";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const draft = await new ThemeStore(env.FEED_DB).getDraft(
+  Astro.params.draftId ?? "",
+);
+if (!draft) Astro.response.status = 404;
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.SETTINGS}
+  documentTitle={draft ? `Edit ${draft.name} | microfeed.org` : "Theme draft not found | microfeed.org"}
+  {feedContent}
+  {onboardingResult}
+  pageTitle={draft ? `Edit ${draft.name}` : "Theme draft not found"}
+  settingsActiveSection="custom-code"
+  settingsNavigation
+  breadcrumb={{
+    name: "Themes",
+    url: adminUrl("settings/themes", Astro.params.adminPath),
+    childName: "Edit draft",
+  }}
+>
+  {draft ? (
+    <ThemeDraftEditorApp client:only="react" {draft}>
+      <AdminPageFallback slot="fallback" kind="editor" />
+    </ThemeDraftEditorApp>
+  ) : (
+    <section class="rounded-[14px] border bg-card p-5 shadow-xs">
+      <p>The requested theme draft was not found.</p>
+    </section>
+  )}
+</AdminShell>

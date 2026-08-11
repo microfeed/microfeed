@@ -118,7 +118,6 @@ describe("documentation site", () => {
       ["dashboard/edit-channel.md", "2-dashboard-2-edit-channel.png"],
       ["dashboard/publish.md", "2-dashboard-2-add-item.png"],
       ["api/index.md", "3-api-1.png"],
-      ["dashboard/customize.md", "4-code-editor-1.png"],
     ]);
     for (const [file, asset] of placements) {
       const source = await readFile(path.join(docsRoot, file), "utf8");
@@ -155,7 +154,7 @@ describe("documentation site", () => {
     expect(readme).toContain(
       '<img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">',
     );
-    expect(readme).toContain(
+    expect(readme).not.toContain(
       "](docs/public/images/screenshots/4-code-editor-1.png)",
     );
     expect(readme).not.toContain(
@@ -233,6 +232,36 @@ describe("documentation site", () => {
     );
     expect(mediaAndFeedsGuide).not.toContain(
       "## Channel identity",
+    );
+  });
+
+  it("separates themes and shared code from site access guidance", async () => {
+    const [themesGuide, siteAccessGuide, docsConfig] = await Promise.all([
+      readFile(path.join(docsRoot, "dashboard/themes.md"), "utf8"),
+      readFile(path.join(docsRoot, "dashboard/customize.md"), "utf8"),
+      readFile(path.join(docsRoot, "astro.config.ts"), "utf8"),
+    ]);
+
+    expect(themesGuide).toContain("title: Themes and website code");
+    expect(themesGuide).toContain("## Edit shared website code");
+    expect(themesGuide).toContain("Google Analytics, Meta Pixel");
+    expect(themesGuide).toContain("Shared code wraps every installed theme");
+    expect(themesGuide).toContain("## Work with versioned themes");
+    expect(themesGuide).not.toContain("## Access control");
+
+    expect(siteAccessGuide).toContain("title: Site access");
+    expect(siteAccessGuide).toContain("## Compare access modes");
+    expect(siteAccessGuide).toContain("| **Public** |");
+    expect(siteAccessGuide).toContain("| **Headless** |");
+    expect(siteAccessGuide).toContain("| **Offline** |");
+    expect(siteAccessGuide).not.toContain("## Edit shared website code");
+    expect(siteAccessGuide).not.toContain("## Dashboard authentication");
+
+    expect(docsConfig).toContain(
+      '{ label: "Themes and website code", link: "/dashboard/themes/" }',
+    );
+    expect(docsConfig).toContain(
+      '{ label: "Site access", link: "/dashboard/customize/" }',
     );
   });
 
@@ -326,31 +355,30 @@ describe("documentation site", () => {
     const homepage = await readFile(path.join(docsRoot, "index.mdx"), "utf8");
 
     expect(homepage).toContain(
-      "description: Publish on your own domain with a lightweight, open-source, headless CMS that runs entirely on Cloudflare.",
+      "description: Publish a website, RSS feed, and JSON Feed from an open-source CMS in your own Cloudflare account.",
     );
     expect(homepage).toContain(
       '<span class="hero-line hero-topic-line"><span>Publish</span><span class="sr-only">blogs, podcasts, documents, video, audio, and curations</span>',
     );
     expect(homepage).toContain(
-      '<br><span class="hero-line">on your own domain</span><br><span class="hero-line">without hosting fees</span>',
+      '<br><span class="hero-line">on your own domain</span><br><span class="hero-line">without managing servers</span>',
     );
     expect(homepage).toContain(
-      "tagline: A <span class=\"brand-highlight\">lightweight</span>, <span class=\"brand-highlight\">open-source</span> CMS that runs entirely in your <span class=\"cloudflare-brand\">Cloudflare</span> account. Bring a domain you own; microfeed provides a website, RSS and JSON feeds, and a <span class=\"brand-highlight\">headless</span> Admin API. It’s <span class=\"brand-highlight\">serverless</span>!",
+      "tagline: A <span class=\"brand-highlight\">lightweight</span>, <span class=\"brand-highlight\">open-source</span> CMS that runs in your <span class=\"cloudflare-brand\">Cloudflare</span> account. microfeed gives you a website, RSS and JSON feeds, a private dashboard, and an API for integrations or coding agents.",
     );
     expect(homepage).toContain(
       'Own <span class="brand-highlight">your code</span> and <span class="brand-highlight">your data</span>.',
     );
-    expect(homepage.match(/class="brand-highlight"/gu)).toHaveLength(6);
+    expect(homepage.match(/class="brand-highlight"/gu)).toHaveLength(4);
     expect(homepage).toContain(
-      '<aside class="r2-capacity-card" aria-label="10 GB of media storage included">',
+      '<aside class="r2-capacity-card" aria-label="10 GB-month of Standard media storage included each month">',
     );
     expect(homepage).toContain(
-      '<p class="r2-capacity-title">of media storage included</p>',
+      '<p class="r2-capacity-title">of Standard storage in the monthly free tier</p>',
     );
     expect(homepage).toContain(
-      '<span class="r2-capacity-badge">For free!</span>',
+      '<span class="r2-capacity-badge">Included monthly</span>',
     );
-    expect(homepage).not.toContain("Included monthly");
     for (const capacity of [
       "10,000</strong> optimized images",
       "300 hours</strong> of podcast audio",
@@ -360,7 +388,7 @@ describe("documentation site", () => {
       expect(homepage).toContain(capacity);
     }
     expect(homepage).toContain(
-      "Estimates based on typical optimized files. Actual capacity varies.",
+      "File-size estimates vary. Cloudflare bills storage as GB-month and also counts operations.",
     );
     expect(homepage).toContain(
       'class="r2-capacity-link" href="https://developers.cloudflare.com/r2/pricing/" target="_blank" rel="noreferrer"',
@@ -384,8 +412,13 @@ describe("documentation site", () => {
       "https://developers.cloudflare.com/r2/pricing/",
     );
     expect(homepage).toContain(
-      "Standard R2 includes 10 GB-month of storage and free egress",
+      "Many personal and small sites can stay within",
     );
+    for (const pricingUrl of [
+      "https://developers.cloudflare.com/workers/platform/pricing/",
+      "https://developers.cloudflare.com/d1/platform/pricing/",
+      "https://developers.cloudflare.com/r2/pricing/",
+    ]) expect(homepage).toContain(pricingUrl);
     expect(homepage).not.toContain("<h2>Quick start</h2>");
     expect(homepage).not.toContain(
       "git clone https://github.com/microfeed/microfeed.git",
@@ -572,6 +605,13 @@ describe("documentation site", () => {
 
     for (const file of files) {
       const source = await readFile(file, "utf8");
+      const fileRoute = path.relative(docsRoot, file)
+        .replace(/\.mdx?$/u, "")
+        .replace(/(^|\/)index$/u, "");
+      const pageUrl = new URL(
+        `/${fileRoute}${fileRoute ? "/" : ""}`,
+        "https://docs.microfeed.org",
+      );
       const links = [
         ...source.matchAll(/\]\((\/[^)\s#?]+)(?:[?#][^)]*)?\)/gu),
         ...source.matchAll(/\bhref="(\/[^"#?]+)(?:[?#][^"]*)?"/gu),
@@ -580,6 +620,16 @@ describe("documentation site", () => {
       for (const link of links) {
         if (link.startsWith("/images/")) continue;
         expect(routes.has(link), `${file}: ${link}`).toBe(true);
+      }
+
+      const relativeLinks = [
+        ...source.matchAll(
+          /\]\(((?!https?:\/\/|mailto:|#|\/)[^)\s#?]+)(?:[?#][^)]*)?\)/gu,
+        ),
+      ].flatMap((match) => match[1] ? [match[1]] : []);
+      for (const link of relativeLinks) {
+        const resolvedRoute = new URL(link, pageUrl).pathname;
+        expect(routes.has(resolvedRoute), `${file}: ${link}`).toBe(true);
       }
     }
   });
@@ -624,6 +674,19 @@ describe("documentation site", () => {
     expect(documentationSkill).toContain("## Maintain the Starlight site");
     expect(documentationSkill).toContain("## Publish safely");
     expect(documentationSkill).toContain("docs.microfeed.org");
+    expect(documentationSkill).toContain(
+      "Do not create, capture, add, or replace documentation screenshots unless the",
+    );
+    const developmentSkill = await readFile(path.join(
+      repositoryRoot,
+      ".agents",
+      "skills",
+      "develop-microfeed",
+      "SKILL.md",
+    ), "utf8");
+    expect(developmentSkill).toContain(
+      "Do not create or add screenshots unless the user explicitly requests",
+    );
   });
 
   it("preserves the README overview and assigns installation details to docs", async () => {
@@ -637,6 +700,10 @@ describe("documentation site", () => {
     expect(readme).toContain("## ⭐️ How it works");
     expect(readme).toContain("### Quickstarts");
     expect(readme).toContain("## ✍️ Start publishing");
+    expect(readme).toContain("### Change the public theme");
+    expect(readme).toContain("## ✨ Features");
+    expect(readme).toContain("Themes developed by the community");
+    expect(readme).toContain("| Versioned themes |");
     expect(readme).toContain("## 💻 FAQs");
     expect(readme).toContain("## 💪 Contributions");
     expect(readme).toContain("## 🛡️ License");
@@ -692,6 +759,10 @@ describe("documentation site", () => {
     expect(microfeedReference).toContain(
       "This is the canonical capability reference",
     );
+    expect(microfeedReference).toContain("title: microfeed cli reference");
+    expect(microfeedReference).toContain(
+      "npm install --global @microfeed/cli",
+    );
     for (const command of [
       "login",
       "logout",
@@ -733,11 +804,47 @@ describe("documentation site", () => {
       "utf8",
     );
     expect(docsConfig).toContain(
-      '{ label: "yarn microfeed command reference", link: "/microfeed-cli/" }',
+      '{ label: "microfeed cli reference", link: "/microfeed-cli/" }',
     );
     expect(docsConfig).toContain(
-      'promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"]',
+      'promote: ["index", "start-here/**", "manage-cli", "microfeed-cli", "theme-kit-cli"]',
     );
+  });
+
+  it("documents modern theme authoring without migration internals", async () => {
+    const files = await documentationFiles();
+    for (const file of files) {
+      const source = (await readFile(file, "utf8")).toLowerCase();
+      expect(source, file).not.toContain("settings.customcode");
+      expect(source, file).not.toContain("legacy theme");
+      expect(source, file).not.toContain("legacy-theme");
+    }
+
+    const themes = await readFile(
+      path.join(docsRoot, "dashboard", "themes.md"),
+      "utf8",
+    );
+    expect(themes).toContain("### Develop with an AI coding agent");
+    expect(themes).toContain("### Bundle CSS and JavaScript");
+    expect(themes).toContain("#### Inline compiled output in D1");
+    expect(themes).toContain("#### Emit packaged assets with Vite");
+    expect(themes).toContain("#### Emit packaged assets with Webpack");
+    expect(themes).toContain("microfeed never runs a theme repository's build scripts");
+    expect(themes).toContain(
+      "yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>",
+    );
+    expect(themes).toContain(
+      "You do not need to create `~/microfeed-themes/` first.",
+    );
+    expect(themes).toContain(
+      '"assets": ["assets/theme.css", "assets/theme.js"]',
+    );
+    expect(themes).toContain("{{_theme.asset_base_url}}theme.js");
+    expect(themes).toContain("<asset-owner-theme-id>");
+    expect(themes).toContain(
+      "yarn manage deploy --enable-r2 --instance <instance-name>",
+    );
+    expect(themes).not.toContain("## Upgrade from the old custom theme");
   });
 
   it("advertises agentic content publishing from the main discovery paths", async () => {
@@ -771,10 +878,10 @@ describe("documentation site", () => {
       "utf8",
     );
     expect(docsConfig).toContain("Manage content with @microfeed/cli");
-    expect(docsConfig).toContain("yarn microfeed command reference");
+    expect(docsConfig).toContain("microfeed cli reference");
   });
 
-  it("separates direct API integration docs from CLI and AI-agent workflows", async () => {
+  it("keeps direct API and CLI workflows distinct while cross-linking them", async () => {
     const [docsConfig, apiOverview, authentication, integrationGuide, agentGuide] =
       await Promise.all([
         readFile(path.join(docsRoot, "astro.config.ts"), "utf8"),
@@ -808,11 +915,13 @@ describe("documentation site", () => {
     expect(cliSection).toContain("Manage content with AI agents");
     expect(cliSection).not.toContain("command reference");
     expect(referenceSection).toContain("yarn manage command reference");
-    expect(referenceSection).toContain("yarn microfeed command reference");
+    expect(referenceSection).toContain("microfeed cli reference");
+    expect(referenceSection).toContain("theme-kit cli reference");
 
+    expect(apiOverview).toContain("[microfeed CLI guide](./cli/)");
+    expect(integrationGuide).toContain("[microfeed CLI guide](../cli/)");
+    expect(authentication).not.toContain("microfeed CLI");
     for (const apiGuide of [apiOverview, authentication, integrationGuide]) {
-      expect(apiGuide).not.toContain("@microfeed/cli");
-      expect(apiGuide).not.toContain("microfeed CLI");
       expect(apiGuide).not.toContain("browser authorization");
     }
     expect(authentication).toContain("title: Bearer authentication");
@@ -823,6 +932,30 @@ describe("documentation site", () => {
     expect(agentGuide).toContain("title: Manage content with AI agents");
     expect(agentGuide).not.toContain("title: Use the API with AI agents");
     expect(agentGuide).not.toContain("llms-full.txt");
+  });
+
+  it("publishes the standalone theme-kit CLI reference", async () => {
+    const reference = await readFile(
+      path.join(docsRoot, "theme-kit-cli.md"),
+      "utf8",
+    );
+
+    expect(reference).toContain("title: theme-kit cli reference");
+    expect(reference).toContain("npm install --global @microfeed/theme-kit");
+    for (const command of [
+      "## `init`",
+      "## `validate`",
+      "## `test`",
+      "## `preview`",
+      "## `fixture pull`",
+    ]) {
+      expect(reference).toContain(command);
+    }
+    expect(reference).toContain("--fixture <name-or-file>");
+    expect(reference).toContain("--feed-url <url>");
+    expect(reference).toContain("--output <file>");
+    expect(reference).toContain("yarn manage theme");
+    expect(reference).toContain("does not deploy microfeed");
   });
 
   it("isolates the Starlight build and configures asset-only Worker deployment", async () => {

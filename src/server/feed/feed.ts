@@ -11,9 +11,11 @@ import type {
 } from "@/types";
 import type {ItemOrder, ItemSort} from "@/shared/ItemPagination";
 import type {PublicCachePurger} from "@/server/cache/public-cache";
+import ThemeStore from "@/server/themes/ThemeStore";
 
 export interface FeedQuery {
   adminProtection?: AdminProtectionStatus;
+  includeActiveTheme?: boolean;
   itemsOrder?: ItemOrder;
   itemsSort?: ItemSort;
   limit?: number;
@@ -42,7 +44,26 @@ export async function loadFeed(
         query.itemsOrder,
       )
     : null;
-  const content = await database.getContent(fetchItems) as FeedContent;
+  const content = await database.getContent(
+    fetchItems,
+    query?.includeActiveTheme ?? false,
+  ) as FeedContent;
+  if (query?.includeActiveTheme && !content.themeMigrationCompleted) {
+    try {
+      const activeTheme = await new ThemeStore(
+        runtimeEnv.FEED_DB,
+        publicCachePurger,
+      ).ensureThemeMigration(content.settings);
+      if (activeTheme) content.activeTheme = activeTheme;
+      else delete content.activeTheme;
+      content.themeMigrationCompleted = true;
+    } catch (error) {
+      console.error(JSON.stringify({
+        error: error instanceof Error ? error.message : String(error),
+        message: "Theme appearance migration could not complete; using the bundled classic fallback",
+      }));
+    }
+  }
   const onboarding = new OnboardingChecker(
     request,
     query?.adminProtection,

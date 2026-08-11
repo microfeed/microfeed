@@ -20,6 +20,10 @@ administration experience.
 - Keep `docs/microfeed-cli.md` as the canonical command, option, output, and
   safety contract for `@microfeed/cli`. Update it together with the help
   inventory in `packages/cli/src/help.ts` when content CLI behavior changes.
+- Keep `docs/theme-kit-cli.md` as the canonical command, option, output, and
+  failure-behavior reference for `@microfeed/theme-kit`. Update it together
+  with `packages/theme-kit/src/help.ts` and the command implementation when
+  theme-kit CLI behavior changes.
 - Keep agent execution safeguards in repository skills and `AGENTS.md`, not on
   the public documentation site.
 - Derive API references from `src/shared/OpenApiDocument.ts`; do not maintain a
@@ -57,11 +61,14 @@ levels sequential, use descriptive link text, and tag code fences.
 - Keep maintainer-only publishing and writing procedures in this skill rather
   than exposing them as public docs pages.
 
-Store documentation screenshots under `docs/public/images/screenshots/`. Use
-public or demo content, remove private emails, account IDs, credentials, and
-setup links, and give every image a descriptive filename and useful alt text.
-Keep source captures replaceable, optimize generated composites and animation,
-and provide desktop and mobile variants when layout changes materially. Never
+Do not create, capture, add, or replace documentation screenshots unless the
+user explicitly requests screenshots. This keeps the repository small and
+avoids image churn for routine UI and documentation changes. When screenshots
+are explicitly requested, store them under `docs/public/images/screenshots/`,
+use public or demo content, remove private emails, account IDs, credentials,
+and setup links, and give every image a descriptive filename and useful alt
+text. Keep source captures replaceable, optimize generated composites and
+animation, and provide desktop and mobile variants only when requested. Never
 let an image be the only instruction.
 
 ## Validate documentation changes

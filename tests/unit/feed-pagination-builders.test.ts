@@ -99,7 +99,7 @@ describe("public feed pagination links", () => {
 
   it("uses generated pagination URLs in the default web theme", async () => {
     const filename = fileURLToPath(new URL(
-      "../../src/server/themes/defaults/web_feed.html",
+      "../../themes/default/web-feed.mustache",
       import.meta.url,
     ));
     const theme = await readFile(filename, "utf8");

@@ -12,7 +12,8 @@ in control of Cloudflare sign-in and your private dashboard password.
 You need:
 
 - A [Cloudflare account](https://dash.cloudflare.com/sign-up). Cloudflare’s
-  free plans are enough for many personal and small sites.
+  included usage is enough for many personal and small sites; usage above the
+  published limits may require a paid plan.
 - A computer with [Git](https://git-scm.com/downloads) and
   [Node.js 24](https://nodejs.org/) installed.
 - A local coding agent such as OpenAI Codex, Claude Code, or Cursor that can run
@@ -28,7 +29,8 @@ You need:
    cd microfeed
    ```
 
-2. Open the new `microfeed` folder in your coding agent.
+2. Open the new `microfeed` folder in your coding agent. The agent must run on
+   your computer so Cloudflare can hand browser authorization back to it.
 
 3. Ask the agent:
 
@@ -49,7 +51,7 @@ You need:
    agent.
 
 The result is a microfeed site in your Cloudflare account with a public
-website, RSS feed, JSON Feed, and a private admin dashboard.
+website, RSS feed, JSON Feed, and private Admin dashboard.
 
 <video class="docs-walkthrough" controls autoplay muted playsinline preload="metadata" poster="/images/screenshots/1-deploy-1.png" aria-label="A silent Codex deployment walkthrough progressing from the initial request through verification to the ready microfeed dashboard">
   <source src="/images/screenshots/1-deploy-walkthrough.mp4" type="video/mp4">
@@ -58,10 +60,10 @@ website, RSS feed, JSON Feed, and a private admin dashboard.
 
 ## Confirm the installation
 
-Ask the agent to run `yarn manage status`. The report should confirm the Worker,
-dashboard protection, content database, and media storage. If setup stopped
-partway through, ask the agent to continue the same microfeed deployment; the
-installer is designed to resume safely.
+Ask the agent to run `yarn manage status`. The report should confirm the hosted
+application, dashboard protection, content database, and media storage. If
+setup stopped partway through, ask the agent to continue the same microfeed
+deployment; the installer is designed to resume safely.
 
 For screenshots, browser handoffs, and recovery steps, continue to
 [Deploy with an AI coding agent](./ai-agent/).

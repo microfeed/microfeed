@@ -32,8 +32,15 @@ safely. A dry run does not create a backup automatically.
 ## Confirm only the reviewed target
 
 The destructive command requires the exact site name as confirmation. Follow
-the plan’s printed command after you have approved that precise scope. `destroy`
-rejects blanket `--yes` approval and preserves resources recorded as reused.
+the plan’s printed command after you have approved that precise scope:
+
+```console
+yarn manage destroy --instance <name> --confirm <name>
+```
+
+`destroy` rejects blanket `--yes` approval and preserves resources recorded as
+reused. Add `--keep-data` only when you deliberately want to remove the Worker
+and local connection while preserving the site-owned D1 database and R2 bucket.
 
 If removal stops midway, do not delete the remaining resources by hand. Rerun
 the same management command so its saved journal can report or resume the

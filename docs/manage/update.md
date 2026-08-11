@@ -8,21 +8,22 @@ Update from the repository clone connected to the intended site.
 ## Recommended: ask your coding agent
 
 Open the clone in a local coding agent and use a prompt that names the saved
-Worker when you know it:
+site or Worker when you know it:
 
 ```text
 Connect this repository to the microfeed Worker <worker-name>, update microfeed to the latest version, deploy it, and verify the site.
 ```
 
-The agent should inspect local changes, fetch the trusted upstream repository,
-connect only if needed, deploy through `yarn manage`, and run a status check.
+The agent should show you any uncommitted local changes before deployment,
+fetch the trusted upstream repository, connect only if needed, deploy through
+`yarn manage`, and run a status check.
 Complete any Git or Cloudflare browser handoffs it requests.
 
 ## Manual update
 
-First protect any local work. Then fetch and inspect upstream changes using
-your normal Git workflow. Once the clone contains the version you intend to
-run:
+First run `git status` and protect any local work. Then fetch and inspect
+upstream changes using your normal Git workflow. Once the clone contains the
+version you intend to run:
 
 ```console
 yarn install --immutable

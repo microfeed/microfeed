@@ -16,12 +16,13 @@ advertise a destination you have verified.
 
 ## Media file storage
 
-The R2 public bucket URL tells public pages how to reach uploaded files. Change
-it only when the bucket’s public address or custom media domain changes. Select
-**Update** beside the field and verify an existing image afterward.
+The media address tells public pages how to reach uploaded files stored in R2.
+Most sites should leave it unchanged. Update it only when you deliberately
+change the bucket’s public address or add a custom media domain, then open an
+existing image to verify the new address.
 
-The deployment’s R2 binding is managed by `yarn manage`; the dashboard field
-does not create or attach a bucket.
+The deployment’s R2 connection is managed by `yarn manage`; changing this text
+field does not create, attach, or move a bucket or any files.
 
 ## Items settings
 
@@ -37,4 +38,3 @@ Without a separate favicon, public pages use the channel image. Upload, replace,
 or delete the favicon from its settings section; the action saves immediately.
 Browsers cache favicons aggressively, so a replacement may need a hard refresh
 or a new private window before it appears.
-

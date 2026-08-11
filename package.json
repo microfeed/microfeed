@@ -6,7 +6,8 @@
   "license": "AGPL-3.0",
   "packageManager": "yarn@4.18.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "themes/*"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -14,6 +15,10 @@
   "scripts": {
     "microfeed": "yarn workspace @microfeed/cli microfeed",
     "manage": "tsx manage-cli/index.ts",
+    "theme-kit": "yarn workspace @microfeed/theme-kit theme-kit",
+    "theme-kit:build": "tsx packages/theme-kit/scripts/build.ts",
+    "theme-kit:test": "yarn theme-kit:build && yarn workspace @microfeed/default-theme-source check && node packages/theme-kit/dist/cli.js test packages/theme-kit/assets/starter --json && node packages/theme-kit/dist/cli.js test themes/default --json && node packages/theme-kit/dist/cli.js test themes/classic --json",
+    "theme-kit:pack-check": "node --import tsx scripts/check-theme-kit-package.ts",
     "dev": "yarn manage dev",
     "dev:astro": "astro dev",
     "migrate:local": "wrangler d1 migrations apply FEED_DB --local --config wrangler.jsonc",
@@ -31,7 +36,7 @@
     "docs:check": "astro check --root docs && yarn docs:build && node docs/scripts/check-build.mjs",
     "docs:upload-preview": "yarn docs:check && wrangler deploy --strict --env preview --config docs/wrangler.jsonc",
     "docs:deploy": "yarn docs:check && wrangler deploy --strict --env=\"\" --config docs/wrangler.jsonc",
-    "check": "yarn lint:openapi && yarn typecheck && yarn cli:check && yarn test && yarn build && wrangler deploy --dry-run --strict --config dist/server/wrangler.json && yarn docs:check"
+    "check": "yarn theme-kit:test && yarn theme-kit:pack-check && yarn lint:openapi && yarn typecheck && yarn cli:check && yarn test && yarn build && wrangler deploy --dry-run --strict --config dist/server/wrangler.json && yarn docs:check"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.7",
@@ -53,7 +58,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^1.2.1",
     "cropperjs": "^1.5.12",
-    "fast-xml-parser": "^5.10.1",
+    "fast-xml-builder": "^1.3.0",
+    "fast-xml-validator": "^1.4.1",
     "jose": "^6.1.0",
     "kysely": "^0.28.5",
     "lucide-react": "^1.27.0",
@@ -63,6 +69,7 @@
     "quill": "^2.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "semver": "^7.8.5",
     "shadcn": "^4.16.0",
     "slugify": "^1.6.5",
     "sonner": "^2.0.7",
@@ -80,13 +87,16 @@
     "@redocly/cli": "^2.44.1",
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/postcss": "^4.0.14",
+    "@tailwindcss/vite": "^4.1.14",
     "@types/mustache": "^4.2.6",
     "@types/node": "^24.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "@types/semver": "^7.8.0",
     "@vitest/runner": "^4.1.10",
     "@vitest/snapshot": "^4.1.10",
     "astro": "^7.1.6",
+    "esbuild": "^0.28.2",
     "miniflare": "4.20260722.1",
     "postcss": "^8.5.25",
     "starlight-llms-txt": "^0.11.0",

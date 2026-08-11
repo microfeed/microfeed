@@ -822,7 +822,7 @@ describe("remote restore baseline repair", () => {
   const bootstrapChannelRows = [{
     data: JSON.stringify({
       categories: [],
-      copyright: "©2026",
+      copyright: "©{{current_year}}",
       image: "/assets/default/channel-image.png",
       "itunes:block": false,
       "itunes:complete": false,

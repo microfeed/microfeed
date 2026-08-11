@@ -1,0 +1,46 @@
+---
+import {cache, env} from "cloudflare:workers";
+
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import ThemesApp from "@/components/admin/themes/ThemesApp";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {adminUrl} from "@/shared/AdminPath";
+import ThemeStore from "@/server/themes/ThemeStore";
+import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
+import AdminShell from "../../../../layouts/AdminShell.astro";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const store = new ThemeStore(env.FEED_DB, cache);
+await store.ensureThemeMigration(feedContent.settings);
+const options = parseThemeListOptions(new URL(Astro.request.url).searchParams);
+const listing = await store.listSummaries(options);
+const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.SETTINGS}
+  documentTitle="Themes | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Themes"
+  settingsActiveSection="custom-code"
+  settingsNavigation
+  breadcrumb={{
+    name: "Settings",
+    url: adminUrl("settings", Astro.params.adminPath),
+    childName: "Themes",
+  }}
+>
+  <ThemesApp
+    client:only="react"
+    initialListing={listing}
+    initialQuery={options.q}
+    initialSort={options.sort}
+    {instanceName}
+  >
+    <AdminPageFallback slot="fallback" kind="settings" />
+  </ThemesApp>
+</AdminShell>

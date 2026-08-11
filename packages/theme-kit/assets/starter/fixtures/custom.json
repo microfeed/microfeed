@@ -1,0 +1,11 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Package fixture",
+  "items": [
+    {
+      "id": "package-fixture",
+      "title": "A theme-specific example",
+      "content_html": "<p>Edit or remove this fixture.</p>"
+    }
+  ]
+}

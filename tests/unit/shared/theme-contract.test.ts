@@ -1,0 +1,146 @@
+import {describe, expect, it} from "vitest";
+
+import {
+  canonicalThemePackage,
+  renderThemeSlot,
+  themeContext,
+} from "@/shared/themes/ThemeRenderer";
+import type {
+  ThemeBundleV1,
+  ThemeManifestV1,
+} from "@/shared/themes/ThemeContract";
+import {
+  ThemeValidationError,
+  validateThemePackage,
+} from "@/shared/themes/ThemeValidation";
+
+function manifest(): ThemeManifestV1 {
+  return {
+    assets: [],
+    author: "Theme author",
+    files: {
+      rssStylesheet: "rss.xsl",
+      webBodyEnd: "body-end.mustache",
+      webBodyStart: "body-start.mustache",
+      webFeed: "feed.mustache",
+      webHeader: "header.mustache",
+      webItem: "item.mustache",
+    },
+    formatVersion: 1,
+    license: "MIT",
+    microfeed: ">=1.0.0 <2.0.0",
+    name: "Test theme",
+    packageId: "test.theme",
+    version: "1.2.3",
+  };
+}
+
+function bundle(): ThemeBundleV1 {
+  return {
+    assets: [],
+    rssStylesheet: "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\"></xsl:stylesheet>",
+    webBodyEnd: "</footer>",
+    webBodyStart: "<header>{{title}}</header>",
+    webFeed: "{{#items}}<article>{{title}}</article>{{/items}}",
+    webHeader: "<title>{{title}}</title>",
+    webItem: "{{#items.0}}<h1>{{title}}</h1>{{/items.0}}",
+  };
+}
+
+describe("theme contract", () => {
+  it("validates immutable SemVer packages against the running release", () => {
+    expect(validateThemePackage(manifest(), bundle(), "1.0.1")).toEqual({
+      bundle: bundle(),
+      manifest: manifest(),
+    });
+    expect(() => validateThemePackage(
+      {...manifest(), version: "next"},
+      bundle(),
+      "1.0.1",
+    )).toThrow(ThemeValidationError);
+    expect(() => validateThemePackage(
+      {...manifest(), microfeed: ">=2.0.0"},
+      bundle(),
+      "1.0.1",
+    )).toThrow("does not include microfeed 1.0.1");
+  });
+
+  it("rejects traversal, malformed Mustache, and mismatched asset declarations", () => {
+    expect(() => validateThemePackage(
+      {...manifest(), files: {...manifest().files, webFeed: "../feed.mustache"}},
+      bundle(),
+    )).toThrow("Path traversal");
+    expect(() => validateThemePackage(
+      manifest(),
+      {...bundle(), webFeed: "{{#items}}"},
+    )).toThrow("Invalid Mustache syntax");
+    expect(() => validateThemePackage(
+      manifest(),
+      {...bundle(), rssStylesheet: "<xsl:stylesheet>"},
+    )).toThrow("Invalid XSL/XML: Unclosed tag 'xsl:stylesheet'.");
+    expect(() => validateThemePackage(
+      {...manifest(), assets: ["assets/logo.svg"]},
+      bundle(),
+    )).toThrow("missing from the bundle");
+    const declaredAsset = {
+      contentType: "image/svg+xml",
+      key: "assets/logo.svg",
+      path: "assets/logo.svg",
+      sha256: "a".repeat(64),
+      size: 1,
+    };
+    expect(() => validateThemePackage(
+      {...manifest(), assets: ["assets/logo.svg", "assets/logo.svg"]},
+      {...bundle(), assets: [declaredAsset, declaredAsset]},
+    )).toThrow("must be unique");
+    expect(() => validateThemePackage(
+      {...manifest(), assets: [manifest().files.webFeed]},
+      {...bundle(), assets: [{...declaredAsset, key: "feed.mustache", path: "feed.mustache"}]},
+    )).toThrow("cannot also be one of the six template files");
+    expect(() => validateThemePackage(
+      manifest(),
+      {...bundle(), webFeed: "x".repeat(128 * 1024 + 1)},
+    )).toThrow("131072-byte limit");
+  });
+
+  it("injects theme metadata and preserves trusted unescaped rendering", () => {
+    const context = themeContext({
+      items: [{id: "one", title: "One"}],
+      title: "Feed",
+      version: "https://jsonfeed.org/version/1.1",
+    }, {
+      assetBaseUrl: "https://example.test/media/themes/one/assets/",
+      packageId: "test.theme",
+      version: "1.2.3",
+    });
+    expect(context._theme).toEqual({
+      asset_base_url: "https://example.test/media/themes/one/assets/",
+      package_id: "test.theme",
+      version: "1.2.3",
+    });
+    expect(context.current_year).toBe(new Date().getUTCFullYear());
+    expect(renderThemeSlot(
+      {...bundle(), webFeed: "{{{items.0.content_html}}}"},
+      "webFeed",
+      {...context, items: [{content_html: "<script>trusted()</script>"}]},
+    )).toBe("<script>trusted()</script>");
+  });
+
+  it("uses package asset content, not installation-specific R2 keys, in checksums", () => {
+    const asset = {
+      contentType: "image/png",
+      path: "assets/logo.png",
+      sha256: "a".repeat(64),
+      size: 12,
+    };
+    const left = canonicalThemePackage(
+      {...manifest(), assets: [asset.path]},
+      {...bundle(), assets: [{...asset, key: "production/themes/one/assets/logo.png"}]},
+    );
+    const right = canonicalThemePackage(
+      {...manifest(), assets: [asset.path]},
+      {...bundle(), assets: [{...asset, key: "preview/themes/two/assets/logo.png"}]},
+    );
+    expect(left).toBe(right);
+  });
+});

@@ -8,26 +8,38 @@ dashboard to publish content, while coding agents can use the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Visitors use
 the public site or subscribe to its feeds.
 
+You do not need to operate these Cloudflare services separately during normal
+use. The supported `yarn manage` command creates, connects, updates, and checks
+them as one microfeed site.
+
 ## The important words
 
-**Cloudflare** is the hosting provider. A microfeed deployment lives inside
-your Cloudflare account, so you keep control of the site and its data.
+**[Cloudflare](https://www.cloudflare.com/)** provides the infrastructure that
+runs microfeed. The application and its data live in your own Cloudflare
+account—not on a server operated by microfeed—so you control the deployment,
+stored data, and account settings.
 
-**Worker** is Cloudflare’s name for the small web application that receives
-requests and renders microfeed. It replaces a traditional web server you would
-need to maintain.
+**[Worker](https://developers.cloudflare.com/workers/)** is Cloudflare’s name
+for the web application that runs microfeed. It responds when someone opens
+your website, reads a feed, or uses the dashboard, without requiring you to
+maintain a traditional server or operating system.
 
-**D1** is the database that stores channel settings, items, and other structured
-information.
+**[D1](https://developers.cloudflare.com/d1/)** is Cloudflare’s SQL database.
+microfeed uses it for structured records such as channel settings, published
+items, administrator configuration, and installed theme versions. Uploaded
+media file bytes are stored separately.
 
-**R2** is optional media-file storage for images, audio, video, and documents.
-A content-only installation can publish text and external links without R2.
+**[R2](https://developers.cloudflare.com/r2/)** is Cloudflare’s object storage
+for uploaded images, audio, video, documents, and packaged theme assets. It is
+optional: a content-only installation can publish text and link to files hosted
+elsewhere without enabling R2.
 
-**Git clone** means a local copy of this source repository. The copy includes
-both microfeed and the supported `yarn manage` deployment tool.
+**Repository clone** is a local copy of microfeed’s source code. The copy
+includes both microfeed and the supported `yarn manage` deployment tool.
 
-**Instance** is the saved local connection to one microfeed site. You can keep
-several instances in one clone and select them by name.
+**Instance** is the short local name that selects one saved microfeed site. The
+name is not a Cloudflare login or website address. One repository clone can
+remember several instances.
 
 **Admin dashboard** is the private management area where you create items,
 upload media, and customize the channel. It is separate from the public site.
@@ -36,6 +48,10 @@ upload media, and customize the channel. It is separate from the public site.
 `@microfeed/cli` package. After the instance owner enables API access, it lets
 people or coding agents manage the same channel through browser authorization
 without reading or printing the credential.
+
+**Headless** means using microfeed’s feeds or API while another website or app
+presents the content. microfeed can hide its generated web pages without
+deleting the content or structured feeds.
 
 ## One item, three outputs
 

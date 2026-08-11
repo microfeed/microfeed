@@ -48,6 +48,7 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
   * [Details](#details)
   * [Advanced](#advanced)
 * [✍️ Start publishing](#%EF%B8%8F-start-publishing)
+* [✨ Features](#-features)
 * [💻 FAQs](#-faqs)
 * [💪 Contributions](#-contributions)
 * [🛡️ License](#%EF%B8%8F-license)
@@ -66,6 +67,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
 * a headless CMS with a GUI dashboard, JSON Feed, and generated API docs. Explore the public demo’s [interactive API reference](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
+* a themeable publishing platform with immutable D1-backed versions, isolated Admin drafts and previews, GitHub installation through `yarn manage theme`, and the standalone [`@microfeed/theme-kit`](https://www.npmjs.com/package/@microfeed/theme-kit) authoring CLI.
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
 * a website for an entire book (e.g., [The Art of War](https://the-art-of-war.microfeed.org/))
 * a changelog website (e.g., [changelog.listennotes.com](https://changelog.listennotes.com/))
@@ -181,8 +183,9 @@ Choose the publishing workflow that fits the task:
 * **For people:** use the microfeed [admin
   dashboard](https://docs.microfeed.org/dashboard/) to create, edit, or delete
   posts; upload audio, video, images, and other media files when R2 is enabled;
-  use external URLs in content-only mode; and [customize your
-  site](https://docs.microfeed.org/dashboard/customize/).
+  use external URLs in content-only mode; [customize themes and shared website
+  code](https://docs.microfeed.org/dashboard/themes/); and choose [Public,
+  Headless, or Offline site access](https://docs.microfeed.org/dashboard/customize/).
 * **For AI agents:** use the official
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through browser-authorized access after you enable the API. The
@@ -195,13 +198,45 @@ Inside a microfeed clone, ask your agent to use `yarn microfeed`. For one-off
 use elsewhere, it can run `yarn dlx @microfeed/cli`. Never paste an API key or
 CLI credential into an agent conversation.
 
-You can also customize the appearance of the website at Settings / Custom code by editing the raw HTML and CSS:
+### Change the public theme
 
-![Editing a microfeed website with raw HTML, CSS, and dynamic feed variables](docs/public/images/screenshots/4-code-editor-1.png)
+Open **Settings → Themes** in the admin dashboard to change how the public
+website looks. You can create a new version from any installed theme, edit its
+feed, item, shared layout, and RSS stylesheet, and preview it without changing
+the live site. Installing a version and activating it are separate actions, so
+the current design remains available for rollback.
 
-The HTML code is using [mustache.js](https://github.com/janl/mustache.js) as a templating language, where you can access to variables from Feed Json or Item Json. For example, on our marketing website [microfeed.org](https://www.microfeed.org/)'s home page (Feed Web), we use variables in the html code from [microfeed.org/json/](https://www.microfeed.org/json/), and on [an item's page](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/) (Item Web), we use variables from [${item_url}/json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json).
+Themes developed by the community can be installed from public GitHub
+repositories with `yarn manage theme`. Developers and AI coding agents can
+initialize a standalone theme repository, work with fixtures or a live public
+JSON Feed, use tools such as Tailwind CSS, and validate the package before it
+is installed. See [Themes and website code](https://docs.microfeed.org/dashboard/themes/)
+for the complete authoring, preview, installation, and asset workflow.
+New sites start with a familiar, responsive Classic-inspired default whose
+colors can be adjusted from a short design-token block in an Admin version
+draft. Its footer stays at the bottom on short or empty pages without becoming
+fixed or covering long content.
 
-With the easy access to the json data of a microfeed instance (i.e., [Feed Json](https://www.microfeed.org/json/) and [Item Json](https://www.microfeed.org/i/introducing-microfeed-a-self-hosted-open-source-cms-on-cloudflare-open-alpha-uhbQEmArlC2/json), you can use it as a headless CMS and build your own client apps to display the content.
+Every site also exposes JSON Feed data, so you can use microfeed as a headless
+CMS and build separate websites, apps, automations, or integrations around the
+same published content.
+
+[Back to 📚TOC](#-table-of-contents)
+
+## ✨ Features
+
+| Feature | What it gives you |
+| --- | --- |
+| Publish many content types | Share articles, podcasts, videos, images, documents, and curated external links from one feed. |
+| Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
+| Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
+| AI-agent workflows | Deploy and administer sites with `yarn manage`, then manage content through the official `@microfeed/cli` and documented API. |
+| Versioned themes | Edit safely in Admin or install community themes from GitHub, preview inactive versions, and activate or roll back explicitly. |
+| Headless CMS and generated API docs | Use the public JSON Feed or authenticated API with OpenAPI, interactive reference pages, and agent-readable `llms.txt`. |
+| Your data on your Cloudflare account | Keep content metadata in D1 and optional media and theme assets in R2 under infrastructure you control. |
+| Portable backups | Export the database, media bucket, theme versions, and migration history together in an owner-readable snapshot. |
+| Custom domains and access controls | Use your own web address and choose public, headless, or offline delivery while protecting the dashboard separately. |
+| Serverless operation | Run on Cloudflare Workers without maintaining a traditional application server. |
 
 [Back to 📚TOC](#-table-of-contents)
 

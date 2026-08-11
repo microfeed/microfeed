@@ -11,6 +11,10 @@ yarn manage status
 
 For a multi-site clone, add the exact `--instance <name>`.
 
+Read the final recovery message before trying a different command. The
+management CLI is designed to resume interrupted work; creating or deleting a
+similarly named resource by hand can make recovery harder.
+
 ## The wrong Cloudflare account appears
 
 Run `yarn manage accounts`. If you intentionally need another named Wrangler
@@ -45,7 +49,7 @@ also enabled, test each layer and logout flow in a private browser window.
 
 ## The dashboard saves, but public content is missing
 
-Check the channel’s Access control setting, the item’s visibility, and the exact
+Check the channel’s **Site access** setting, the item’s visibility, and the exact
 public hostname. Then inspect `/`, `/rss/`, and `/json/`. An offline channel
 intentionally returns not-found responses for all non-admin routes.
 
@@ -60,5 +64,6 @@ rotated or revoked, update the integration immediately.
 ## Before reporting a bug
 
 Include the failing command, non-secret error text, operating system, and
-microfeed source commit. Remove emails, account IDs, private dashboard URLs,
-tokens, and content that should not be public.
+microfeed source commit. Say what you expected and what happened instead.
+Remove emails, account IDs, private dashboard URLs, tokens, and content that
+should not be public.

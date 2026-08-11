@@ -1,0 +1,560 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "_microfeed": {
+      "type": "object",
+      "properties": {
+        "base_url": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "copyright": {
+          "type": "string"
+        },
+        "description_text": {
+          "type": "string"
+        },
+        "items_next_cursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "items_order": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        },
+        "items_prev_cursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "items_sort": {
+          "type": "string",
+          "enum": [
+            "created_at",
+            "published_at",
+            "updated_at"
+          ]
+        },
+        "items_sort_order": {
+          "type": "string"
+        },
+        "microfeed_version": {
+          "type": "string"
+        },
+        "next_url": {
+          "type": "string"
+        },
+        "prev_url": {
+          "type": "string"
+        },
+        "subscribe_methods": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": ""
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "editable": {
+                    "type": "boolean"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": {}
+              }
+            }
+          ]
+        },
+        "itunes:block": {
+          "type": "boolean"
+        },
+        "itunes:complete": {
+          "type": "boolean"
+        },
+        "itunes:email": {
+          "type": "string"
+        },
+        "itunes:explicit": {
+          "type": "boolean"
+        },
+        "itunes:new-feed-url": {
+          "type": "string"
+        },
+        "itunes:title": {
+          "type": "string"
+        },
+        "itunes:type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_url",
+        "categories",
+        "microfeed_version",
+        "subscribe_methods"
+      ],
+      "additionalProperties": {}
+    },
+    "_theme": {
+      "type": "object",
+      "properties": {
+        "asset_base_url": {
+          "type": "string"
+        },
+        "package_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "asset_base_url",
+        "package_id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "current_year": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "description": {
+      "type": "string"
+    },
+    "expired": {
+      "type": "boolean"
+    },
+    "favicon": {
+      "type": "string"
+    },
+    "feed_url": {
+      "type": "string"
+    },
+    "home_page_url": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "item": {
+      "type": "object",
+      "properties": {
+        "_microfeed": {
+          "type": "object",
+          "properties": {
+            "date_published_ms": {
+              "type": "number"
+            },
+            "date_published_short": {
+              "type": "string"
+            },
+            "duration_hhmmss": {
+              "type": "string"
+            },
+            "guid": {
+              "type": "string"
+            },
+            "is_audio": {
+              "type": "boolean"
+            },
+            "is_document": {
+              "type": "boolean"
+            },
+            "is_external_url": {
+              "type": "boolean"
+            },
+            "is_image": {
+              "type": "boolean"
+            },
+            "is_video": {
+              "type": "boolean"
+            },
+            "json_url": {
+              "type": "string"
+            },
+            "itunes:block": {
+              "type": "boolean"
+            },
+            "itunes:episode": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "itunes:episodeType": {
+              "type": "string"
+            },
+            "itunes:explicit": {
+              "type": "boolean"
+            },
+            "itunes:season": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "itunes:title": {
+              "type": "string"
+            },
+            "rss_url": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "web_url": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": {}
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "duration_in_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "mime_type": {
+                "type": "string"
+              },
+              "size_in_byte": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "size_in_bytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "banner_image": {
+          "type": "string"
+        },
+        "content_html": {
+          "type": "string"
+        },
+        "content_text": {
+          "type": "string"
+        },
+        "date_modified": {
+          "type": "string"
+        },
+        "date_published": {
+          "type": "string"
+        },
+        "external_url": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "additionalProperties": {}
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "_microfeed": {
+            "type": "object",
+            "properties": {
+              "date_published_ms": {
+                "type": "number"
+              },
+              "date_published_short": {
+                "type": "string"
+              },
+              "duration_hhmmss": {
+                "type": "string"
+              },
+              "guid": {
+                "type": "string"
+              },
+              "is_audio": {
+                "type": "boolean"
+              },
+              "is_document": {
+                "type": "boolean"
+              },
+              "is_external_url": {
+                "type": "boolean"
+              },
+              "is_image": {
+                "type": "boolean"
+              },
+              "is_video": {
+                "type": "boolean"
+              },
+              "json_url": {
+                "type": "string"
+              },
+              "itunes:block": {
+                "type": "boolean"
+              },
+              "itunes:episode": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "itunes:episodeType": {
+                "type": "string"
+              },
+              "itunes:explicit": {
+                "type": "boolean"
+              },
+              "itunes:season": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "itunes:title": {
+                "type": "string"
+              },
+              "rss_url": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "web_url": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": {}
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "duration_in_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "mime_type": {
+                  "type": "string"
+                },
+                "size_in_byte": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "size_in_bytes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "url"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "banner_image": {
+            "type": "string"
+          },
+          "content_html": {
+            "type": "string"
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "date_modified": {
+            "type": "string"
+          },
+          "date_published": {
+            "type": "string"
+          },
+          "external_url": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "language": {
+      "type": "string"
+    },
+    "next_url": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "_theme",
+    "current_year",
+    "items",
+    "version"
+  ],
+  "additionalProperties": {}
+}

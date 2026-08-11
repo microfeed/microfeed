@@ -1,5 +1,5 @@
 ---
-title: yarn microfeed command reference
+title: microfeed cli reference
 description: Canonical commands, options, authentication behavior, output, and safety rules for @microfeed/cli.
 ---
 
@@ -8,6 +8,10 @@ This is the canonical capability reference for the official
 including the `yarn microfeed` command available inside a microfeed clone. For
 a shorter workflow, start with
 [Manage content with the microfeed CLI](/api/cli/).
+
+This page is intentionally exhaustive. You do not need to read it from top to
+bottom before publishing; use the contents list or built-in `--help` to jump to
+the command you need.
 
 ## Contents
 
@@ -44,10 +48,22 @@ matches where you are working.
 | Inside a microfeed clone | `yarn microfeed …` | Uses the local workspace after the repository's normal `yarn install`. It does not require a CLI build, registry download, or global installation. |
 | Another Yarn project | `yarn add -D @microfeed/cli`, then `yarn microfeed …` | Uses the project-local package and binary. |
 | One-off use | `yarn dlx @microfeed/cli …` | Downloads a temporary package for this run. |
-| Optional global installation | `microfeed …` | Uses the same published executable, but global installation is not the recommended path. |
+| Global installation | `npm install --global @microfeed/cli`, then `microfeed …` | Installs one shared executable for regular use across directories. |
 
 The examples below use `yarn microfeed`. Replace that prefix with
 `yarn dlx @microfeed/cli` or `microfeed` when using one of the other modes.
+
+To install the command globally and confirm it is available:
+
+```console
+npm install --global @microfeed/cli
+microfeed --help
+```
+
+Modern Yarn does not provide the older `yarn global add` workflow. Prefer a
+project-local dependency when a repository should pin the CLI version; use the
+global installation when you want the same command available across unrelated
+directories.
 
 ## Agent skill
 

@@ -7,11 +7,15 @@ Run management commands from the local microfeed repository clone connected to
 the site. The ignored `.microfeed/` directory stores the instance mapping; the
 Cloudflare resources and content remain in your Cloudflare account.
 
+An **instance name** is only the short local label used to select a saved site.
+If the Cloudflare terms below are unfamiliar, start with
+[How microfeed works](/start-here/concepts/).
+
 ## Common tasks
 
 | Outcome | Start here |
 | --- | --- |
-| Verify the Worker, database, media, and login | `yarn manage status` |
+| Verify the hosted application, database, media, and login | `yarn manage status` |
 | Deploy current repository code | `yarn manage deploy` |
 | Connect a new clone to an existing site | `yarn manage connect` |
 | List or select saved sites | `yarn manage instances` / `yarn manage use` |

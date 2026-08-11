@@ -29,6 +29,8 @@ describe("tracking URL settings", () => {
 
     expect(output).not.toContain('data-slot="card-action"');
     expect(output).not.toContain(">Update</button>");
+    expect(output).toContain("https://op3.dev/e/ or https://pdst.fm/e/");
+    expect(output).not.toContain("chrt.fm");
   });
 
   it("shows the Update action at the bottom after the textarea changes", () => {

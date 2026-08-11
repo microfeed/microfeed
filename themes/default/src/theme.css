@@ -1,0 +1,448 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "./templates/**/*.{mustache,xsl}";
+
+@theme {
+  --color-mf-accent: var(--mf-accent);
+  --color-mf-background: var(--mf-background);
+  --color-mf-surface: var(--mf-surface);
+  --color-mf-text: var(--mf-text);
+  --color-mf-muted: var(--mf-muted);
+  --color-mf-border: var(--mf-border);
+}
+
+/* Keep the bundled default visually aligned with microfeed Classic. */
+html {
+  box-sizing: border-box;
+  max-width: 70ch;
+  min-height: 100%;
+  padding: 1.5em 0.2em;
+  margin: auto;
+  background: var(--mf-background);
+  color: var(--mf-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-size: 1em;
+  line-height: 1.75;
+}
+
+body {
+  display: flex;
+  min-height: calc(100vh - 3em);
+  min-height: calc(100dvh - 3em);
+  flex-direction: column;
+  margin: 0;
+}
+
+main {
+  width: 100%;
+  flex: 1 0 auto;
+}
+
+footer {
+  flex: none;
+}
+
+section {
+  margin-bottom: 4em;
+}
+
+h1 {
+  font-size: 2em;
+}
+
+h2 {
+  font-size: 1.5em;
+}
+
+h3 {
+  font-size: 1.25em;
+}
+
+p,
+ul,
+ol {
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+a,
+a:visited {
+  color: var(--mf-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 65%;
+}
+
+img {
+  max-width: 100%;
+}
+
+:not(pre) > code {
+  padding: 0.1em 0.35em;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.35em;
+  background: var(--mf-surface);
+  box-decoration-break: clone;
+  color: var(--mf-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+}
+
+pre {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 1em;
+  margin: 1em 0;
+  overflow-x: auto;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.5em;
+  background: var(--mf-surface);
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+}
+
+pre code {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mf-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
+  overflow-wrap: normal;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-none {
+  flex: none;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.px-2 {
+  padding-right: 0.5em;
+  padding-left: 0.5em;
+}
+
+.mb-1 {
+  margin-bottom: 0.25em;
+}
+
+.mb-2 {
+  margin-bottom: 0.5em;
+}
+
+.mb-4 {
+  margin-bottom: 1em;
+}
+
+.mt-2 {
+  margin-top: 0.5em;
+}
+
+.mt-4 {
+  margin-top: 1em;
+}
+
+.ml-1 {
+  margin-left: 0.25em;
+}
+
+.mr-4 {
+  margin-right: 1em;
+}
+
+.one-line {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.text-sm {
+  font-size: 0.8em;
+}
+
+.text-lg {
+  font-size: 1.25em;
+}
+
+.text-muted {
+  color: var(--mf-muted);
+}
+
+.img-lg {
+  max-width: 7.5em;
+  border-radius: 0.8em;
+  box-shadow: 0.2em 0.2em 0.2em var(--mf-border);
+}
+
+.img-md {
+  max-width: 3.5em;
+  border-radius: 0.2em;
+  box-shadow: 0.1em 0.1em 0.1em var(--mf-border);
+}
+
+.img-sm {
+  max-width: 1em;
+  border-radius: 0.2em;
+}
+
+.border-t {
+  border-top: 1px solid var(--mf-border);
+}
+
+.border-b {
+  border-bottom: 1px solid var(--mf-border);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+@media only screen and (max-width: 600px) {
+  html:not(.rss-document) {
+    padding-right: 1em;
+    padding-left: 1em;
+  }
+
+  .hide-mobile {
+    display: none;
+  }
+}
+
+.icon-arrow-left::before {
+  content: "←";
+}
+
+.icon-arrow-right::before {
+  content: "→";
+}
+
+@keyframes background-color-palette {
+  0%,
+  100% {
+    background: var(--mf-border);
+  }
+
+  25%,
+  75% {
+    background: color-mix(in srgb, var(--mf-border) 85%, var(--mf-muted));
+  }
+
+  50% {
+    background: var(--mf-muted);
+  }
+}
+
+.loader {
+  width: 100%;
+  height: 20em;
+  background-color: var(--mf-border);
+  animation: background-color-palette 10s infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    animation: none;
+  }
+}
+
+/* RSS keeps the familiar Classic card presentation while sharing this
+ * Tailwind/Vite-generated stylesheet and the same editable design tokens. */
+html.rss-document {
+  max-width: none;
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+  background: color-mix(in srgb, var(--mf-text) 3%, var(--mf-background));
+}
+
+html.rss-document * {
+  box-sizing: border-box;
+}
+
+body.rss-page {
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: none;
+  padding: 1rem;
+  margin: 0;
+  background: color-mix(in srgb, var(--mf-text) 3%, var(--mf-background));
+  color: color-mix(in srgb, var(--mf-text) 80%, transparent);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.rss-page .rss-container {
+  display: flex;
+  min-height: calc(100vh - 2rem);
+  min-height: calc(100dvh - 2rem);
+  max-width: 50rem;
+  flex-direction: column;
+  padding: 1.875rem;
+  border: 1px solid color-mix(in srgb, var(--mf-text) 10%, transparent);
+  border-radius: 0.5rem;
+  margin: 0 auto;
+  background: var(--mf-background);
+  box-shadow: 0 0.125rem 0.1875rem color-mix(in srgb, var(--mf-text) 10%, transparent);
+}
+
+.rss-page .rss-content {
+  flex: 1 0 auto;
+}
+
+.rss-page section {
+  margin-bottom: 0;
+}
+
+.rss-page .podcast-header {
+  margin-bottom: 1.25rem;
+}
+
+.rss-page .podcast-header-image-title {
+  display: flex;
+}
+
+.rss-page .podcast-image {
+  margin-right: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.rss-page .podcast-image img {
+  width: 12.5rem;
+  height: auto;
+  border: 1px solid color-mix(in srgb, var(--mf-text) 10%, transparent);
+  border-radius: 0.25rem;
+  box-shadow: 0 0 1.25rem color-mix(in srgb, var(--mf-text) 10%, transparent);
+}
+
+.rss-page .podcast-author,
+.rss-page .episode-time {
+  color: var(--mf-muted);
+}
+
+.rss-page .category-container {
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+}
+
+.rss-page .category-item {
+  display: inline-block;
+  padding: 0.25rem;
+  border: 1px solid var(--mf-muted);
+  border-radius: 0.25rem;
+  margin: 0.25rem;
+  background: var(--mf-muted);
+  color: var(--mf-background);
+}
+
+.rss-page .item {
+  clear: both;
+  padding: 1.5rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--mf-text) 10%, transparent);
+}
+
+.rss-page .item h2,
+.rss-page .item p,
+.rss-page .item a {
+  line-height: 1.7;
+}
+
+.rss-page .episode-image img {
+  width: 6.25rem;
+  height: auto;
+  margin: 0 1.875rem 0.9375rem 0;
+  border-radius: 0.3125rem;
+}
+
+.rss-page audio,
+.rss-page video {
+  width: 100%;
+  border-radius: 0.25rem;
+}
+
+.rss-page .enclosure-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+}
+
+.rss-page .pagination {
+  display: flex;
+  justify-content: center;
+  padding-top: 2.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--mf-text) 10%, transparent);
+}
+
+.rss-page .pagination a {
+  padding: 0 1rem;
+  border: 1px solid var(--mf-accent);
+  border-radius: 0.25rem;
+  margin: 0 0.5rem;
+}
+
+.rss-page footer {
+  flex: none;
+  padding-top: 1rem;
+  border-top: 0;
+  margin-top: 5rem;
+  color: var(--mf-muted);
+  text-align: center;
+}
+
+@media only screen and (max-width: 600px) {
+  body.rss-page {
+    padding: 0.5rem;
+  }
+
+  .rss-page .rss-container {
+    min-height: calc(100vh - 1rem);
+    min-height: calc(100dvh - 1rem);
+    padding: 1rem;
+  }
+
+  .rss-page .podcast-header-image-title {
+    display: block;
+  }
+
+  .rss-page .podcast-image {
+    margin-right: 0;
+  }
+
+  .rss-page .podcast-image img {
+    width: 9rem;
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "@microfeed/theme-kit",
+  "version": "1.0.3",
+  "description": "Author, validate, test, and preview microfeed themes.",
+  "keywords": [
+    "microfeed",
+    "theme",
+    "cli",
+    "mustache",
+    "cloudflare"
+  ],
+  "homepage": "https://docs.microfeed.org/dashboard/themes/",
+  "bugs": {
+    "url": "https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microfeed/microfeed.git",
+    "directory": "packages/theme-kit"
+  },
+  "type": "module",
+  "license": "AGPL-3.0",
+  "main": "./dist/index.js",
+  "types": "./dist/types/packages/theme-kit/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/packages/theme-kit/src/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "microfeed-theme": "./dist/cli.js",
+    "theme-kit": "./dist/cli.js"
+  },
+  "files": [
+    "assets",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "prepack": "yarn build",
+    "test": "yarn build && node dist/cli.js test assets/starter --json",
+    "theme-kit": "node --import tsx src/cli.ts"
+  },
+  "dependencies": {
+    "fast-xml-validator": "^1.4.1",
+    "mustache": "^4.2.0",
+    "parse5": "^7.3.0",
+    "semver": "^7.8.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/mustache": "^4.2.6",
+    "@types/semver": "^7.8.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.0",
+    "typescript": "^6.0.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "sideEffects": false
+}

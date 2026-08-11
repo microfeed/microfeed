@@ -8,6 +8,10 @@ Every direct REST API request uses a named API key in the standard
 instance, so an administrator must enable it before an integration can connect.
 Never use a Cloudflare token or dashboard password as an API credential.
 
+“Bearer” means the request is allowed because it carries the secret API key.
+Anyone who obtains that key can use its access, so keep it in the integration’s
+secret storage and never place it in public code or documentation.
+
 ## Enable the API
 
 1. Sign in to the microfeed dashboard.

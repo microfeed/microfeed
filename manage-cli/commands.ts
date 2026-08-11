@@ -20,6 +20,7 @@ import {isDeepStrictEqual} from "node:util";
 
 import type {AdminAuthMode} from "@/shared/AdminAuth";
 import {Miniflare} from "miniflare";
+import DEFAULT_THEME_MANIFEST from "../themes/default/microfeed-theme.json";
 import {
   adminBasePath,
   adminUrl,
@@ -34,6 +35,7 @@ import {
   STATUSES,
 } from "@/shared/Constants";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
+import {DEFAULT_CHANNEL_COPYRIGHT} from "@/shared/TemplateVariables";
 import {accessApplicationDashboardUrl} from "@/shared/CloudflareDashboard";
 import type {Account, CommandRunner, MicrofeedConfig} from "./types";
 import {
@@ -1580,6 +1582,7 @@ async function deployConfiguredProject(
   config: MicrofeedConfig,
   includeNewSigningSecret: boolean,
   initializeAdmin = false,
+  initializeDefaultTheme = false,
 ): Promise<MicrofeedConfig> {
   const sourceCommitSha = await repositoryCommitSha(context.runner);
   await configureAdminAuth(context, config);
@@ -1591,6 +1594,12 @@ async function deployConfiguredProject(
   await prepareItemSearch(context.cloudflare, config);
   markStep(config, "migrations-applied");
   await writeConfig(config);
+  if (initializeDefaultTheme) {
+    const {installDefaultThemeForInitialization} = await import("./theme");
+    await installDefaultThemeForInitialization(config, context.runner, false);
+    markStep(config, "default-theme-installed");
+    await writeConfig(config);
+  }
   if (initializeAdmin) {
     await prepareInitialAdminSetup(context, config);
   }
@@ -2009,7 +2018,7 @@ async function initializeProduction(context: CommandContext): Promise<void> {
     );
   }
 
-  await deployConfiguredProject(context, config, true, true);
+  await deployConfiguredProject(context, config, true, true, true);
   if (isR2Ready(config)) {
     await verifyR2Deployment(context, config);
   }
@@ -2221,7 +2230,7 @@ async function initializePreview(context: CommandContext): Promise<void> {
   markStep(config, "d1-ready");
   await writeConfig(config);
 
-  await deployConfiguredProject(context, config, true, true);
+  await deployConfiguredProject(context, config, true, true, true);
   prompts.log.success(
     `microfeed preview is live at ${config.deploymentUrl}`,
   );
@@ -2345,6 +2354,10 @@ async function initializeLocal(context: CommandContext): Promise<void> {
     local: true,
     persistTo: localPersistencePath(config),
   });
+  const {installDefaultThemeForInitialization} = await import("./theme");
+  await installDefaultThemeForInitialization(config, context.runner, true);
+  markStep(config, "default-theme-installed");
+  await writeConfig(config);
 
   const requestedMode = flagString(context.flags, "admin-auth");
   if (
@@ -5160,6 +5173,8 @@ export function validateRemoteRestoreBaselineRepair(input: {
   initialPasswordSetupRows: readonly Record<string, unknown>[];
   installationInstanceIds: readonly string[];
   r2ObjectCount: number;
+  themeRows?: readonly Record<string, unknown>[];
+  themeStateRows?: readonly Record<string, unknown>[];
 }): void {
   assertClassifiedTables(input.applicationTables);
   const expectedTables = [
@@ -5217,7 +5232,9 @@ export function validateRemoteRestoreBaselineRepair(input: {
       count !== 0 &&
       table !== "channels" &&
       table !== "settings" &&
-      table !== "auth_password_setup"
+      table !== "auth_password_setup" &&
+      table !== "theme_state" &&
+      table !== "themes"
     )
     .map(([table]) => table)
     .sort((left, right) => left.localeCompare(right));
@@ -5230,6 +5247,7 @@ export function validateRemoteRestoreBaselineRepair(input: {
   }
   validateRemoteRestoreBootstrapRows(input);
   validateRemoteRestoreInitialPasswordSetup(input);
+  validateRemoteRestoreThemeState(input);
   if (
     input.installationInstanceIds.length !== 1 ||
     input.installationInstanceIds[0] !== input.expectedInstanceId
@@ -5242,6 +5260,40 @@ export function validateRemoteRestoreBaselineRepair(input: {
     throw new Error(
       "The remote R2 bucket is not empty, so it cannot be repaired as a " +
         "fresh snapshot restore target.",
+    );
+  }
+}
+
+function validateRemoteRestoreThemeState(input: {
+  applicationRowCounts: Record<string, number>;
+  themeRows?: readonly Record<string, unknown>[];
+  themeStateRows?: readonly Record<string, unknown>[];
+}): void {
+  const count = input.applicationRowCounts.theme_state ?? 0;
+  const themeCount = input.applicationRowCounts.themes ?? 0;
+  const themes = input.themeRows ?? [];
+  const rows = input.themeStateRows ?? [];
+  if (count === 0 && rows.length === 0 && themeCount === 0 && themes.length === 0) return;
+  const row = rows[0];
+  const theme = themes[0];
+  const oldInactiveState = themeCount === 0 && themes.length === 0 &&
+    row?.active_theme_id === null;
+  const bundledDefaultState = themeCount === 1 && themes.length === 1 &&
+    typeof row?.active_theme_id === "string" &&
+    row.active_theme_id === theme?.id &&
+    theme?.package_id === DEFAULT_THEME_MANIFEST.packageId &&
+    theme?.version === DEFAULT_THEME_MANIFEST.version &&
+    theme?.source_kind === "bundled" &&
+    theme?.deleted_at === null;
+  if (
+    count !== 1 ||
+    rows.length !== 1 ||
+    row?.id !== "current" ||
+    row.previous_theme_id !== null ||
+    (!oldInactiveState && !bundledDefaultState)
+  ) {
+    throw new Error(
+      "The remote D1 theme state is not the automatic inactive state of a fresh instance.",
     );
   }
 }
@@ -5371,8 +5423,7 @@ function validateRemoteRestoreBootstrapRows(input: {
     !/^[A-Za-z0-9_-]{11}$/u.test(channelRow.id) ||
     Number(channelRow.status) !== STATUSES.PUBLISHED ||
     Number(channelRow.is_primary) !== 1 ||
-    typeof copyright !== "string" ||
-    !/^©\d{4}$/u.test(copyright) ||
+    copyright !== DEFAULT_CHANNEL_COPYRIGHT ||
     !targetBootstrapLink(
       link,
       input.expectedPublicOrigins,
@@ -5456,7 +5507,7 @@ async function assertFreshRemoteRestoreBaselineTarget(
     !targetSpecificTables.has(table)
   );
   const [appliedMigrations, currentMigrations, currentIndexes, expectedIndexes,
-    rowCounts, channels, settings, passwordSetups, installations, objects] =
+    rowCounts, channels, settings, passwordSetups, themes, themeState, installations, objects] =
     await Promise.all([
       migrationLedger(context.cloudflare, config),
       repositoryMigrations(),
@@ -5475,6 +5526,14 @@ async function assertFreshRemoteRestoreBaselineTarget(
         config,
         "SELECT id, purpose, email, userId, tokenHash, createdAt, expiresAt " +
           "FROM auth_password_setup ORDER BY id",
+      ),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT id, package_id, version, source_kind, deleted_at FROM themes ORDER BY id",
+      ),
+      context.cloudflare.queryD1(
+        config,
+        "SELECT id, active_theme_id, previous_theme_id FROM theme_state ORDER BY id",
       ),
       context.cloudflare.queryD1(
         config,
@@ -5513,6 +5572,8 @@ async function assertFreshRemoteRestoreBaselineTarget(
       typeof instanceId === "string" ? [instanceId] : []
     ),
     r2ObjectCount: objects.length,
+    themeRows: themes,
+    themeStateRows: themeState,
   });
 }
 
