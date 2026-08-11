@@ -1,6 +1,6 @@
 {
   "name": "@microfeed/default-theme-source",
-  "version": "1.0.3",
+  "version": "0.0.0-use.local",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "preview": "theme-kit preview ."
   },
   "devDependencies": {
-    "@microfeed/theme-kit": "^1.0.3",
+    "@microfeed/theme-kit": "workspace:^",
     "@tailwindcss/vite": "^4.1.14",
     "tailwindcss": "^4.0.14",
     "typescript": "^6.0.3",

@@ -214,7 +214,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
     >
       {helpField && <div className="grid gap-4 py-2 text-sm leading-relaxed text-muted-foreground">
         <p>{THEME_FIELD_HELP[helpField].description}</p>
-        {helpField === "microfeed" && <p>For example, <code className="rounded bg-muted px-1 py-0.5">^1.0.3</code> accepts compatible 1.x releases.</p>}
+        {helpField === "microfeed" && <p>For example, <code className="rounded bg-muted px-1 py-0.5">^1.0.0</code> accepts compatible 1.x releases.</p>}
         <a className="font-medium text-primary hover:underline" href="https://docs.microfeed.org/dashboard/themes/" rel="noopener noreferrer" target="_blank">Read the theme guide</a>
       </div>}
     </AdminDialog>

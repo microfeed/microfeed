@@ -3,6 +3,7 @@ import {tmpdir} from "node:os";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
 
+import {satisfies} from "semver";
 import {x as extractTar} from "tar";
 
 function run(command: string, args: string[], cwd = process.cwd()): string {
@@ -100,8 +101,10 @@ try {
     devDependencies?: Record<string, string>;
     scripts?: Record<string, string>;
   };
-  if (parsedStarterPackage.devDependencies?.["@microfeed/theme-kit"] !==
-        `^${rootPackage.version}` ||
+  if (!satisfies(
+    rootPackage.version,
+    parsedStarterPackage.devDependencies?.["@microfeed/theme-kit"] ?? "",
+  ) ||
       !parsedStarterPackage.scripts?.validate ||
       !parsedStarterPackage.scripts?.test ||
       !parsedStarterPackage.scripts?.preview ||
@@ -169,8 +172,10 @@ try {
   const initializedPackage = JSON.parse(
     await readFile(path.join(initializedTheme, "package.json"), "utf8"),
   ) as {devDependencies?: Record<string, string>};
-  if (initializedPackage.devDependencies?.["@microfeed/theme-kit"] !==
-      `^${rootPackage.version}`) {
+  if (!satisfies(
+    rootPackage.version,
+    initializedPackage.devDependencies?.["@microfeed/theme-kit"] ?? "",
+  )) {
     throw new Error("The packed init command generated a stale local dependency.");
   }
 

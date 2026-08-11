@@ -1,6 +1,6 @@
 {
   "name": "microfeed",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0",
@@ -13,6 +13,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "version:set": "node --import tsx scripts/set-version.ts",
     "microfeed": "yarn workspace @microfeed/cli microfeed",
     "manage": "tsx manage-cli/index.ts",
     "theme-kit": "yarn workspace @microfeed/theme-kit theme-kit",

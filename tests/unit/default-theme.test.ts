@@ -66,11 +66,16 @@ describe("bundled theme packages", () => {
   });
 
   it("ships immutable default and classic package identities without assets", async () => {
-    const [modern, classic] = await Promise.all([
+    const [application, modern, classic] = await Promise.all([
+      readFile(path.join(root, "package.json"), "utf8").then(JSON.parse),
       readFile(path.join(root, "themes/default/microfeed-theme.json"), "utf8").then(JSON.parse),
       readFile(path.join(root, "themes/classic/microfeed-theme.json"), "utf8").then(JSON.parse),
     ]);
-    expect(modern).toMatchObject({assets: [], packageId: "microfeed.default", version: "1.0.3"});
+    expect(modern).toMatchObject({
+      assets: [],
+      packageId: "microfeed.default",
+      version: application.version,
+    });
     expect(classic).toMatchObject({assets: [], packageId: "microfeed.classic", version: "1.0.0"});
   });
 
