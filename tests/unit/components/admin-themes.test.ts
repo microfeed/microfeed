@@ -36,12 +36,20 @@ describe("Admin versioned themes", () => {
     expect(draftEditor).toContain('"Install"');
     expect(draftEditor).not.toContain("Publish inactive version");
     const saveIndex = draftEditor.indexOf('{busy ? "Saving…" : "Save draft"}');
-    const previewIndex = draftEditor.indexOf("setPreviewOpen(true)");
+    const previewIndex = draftEditor.indexOf("onClick={preview}");
     const installIndex = draftEditor.indexOf('{busy ? "Installing…" : "Install"}');
     expect(saveIndex).toBeGreaterThan(draftEditor.indexOf("onClick={discard}"));
     expect(previewIndex).toBeGreaterThan(saveIndex);
     expect(previewIndex).toBeLessThan(installIndex);
     expect(draftEditor).toContain('className="theme-preview-button"');
+    expect(draftEditor).toContain("if (changed) await save({notify: false});");
+    expect(draftEditor).toContain(
+      "Uses the saved draft and current public site data",
+    );
+    expect(draftEditor).toContain(
+      'Discard draft "${draft.name}" (${draft.version})?',
+    );
+    expect(draftEditor).not.toContain("Discard draft ${draft.id}");
     expect(adminStyles).toContain("@keyframes theme-preview-border-flow");
     expect(adminStyles).toContain("conic-gradient(");
     expect(adminStyles).toMatch(

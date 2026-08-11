@@ -88,7 +88,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
     if (!draft.manifest.name.trim()) throw new Error("Theme name is required.");
     if (!draft.manifest.version.trim()) throw new Error("Theme version is required.");
   };
-  const save = async (): Promise<ThemeDraft> => {
+  const save = async ({notify = true}: {notify?: boolean} = {}): Promise<ThemeDraft> => {
     validateRequiredMetadata();
     setBusy(true);
     try {
@@ -100,7 +100,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
       setDraft(saved);
       setChanged(false);
       setPreviewKey((value) => value + 1);
-      showToast("Draft saved.", "success");
+      if (notify) showToast("Draft saved.", "success");
       return saved;
     } finally {
       setBusy(false);
@@ -109,6 +109,10 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
   const run = async (operation: () => Promise<void>) => {
     try { await operation(); } catch (error) { showToast(error instanceof Error ? error.message : "Draft operation failed.", "error"); }
   };
+  const preview = () => run(async () => {
+    if (changed) await save({notify: false});
+    setPreviewOpen(true);
+  });
   const install = () => run(async () => {
     validateRequiredMetadata();
     if (changed) await save();
@@ -124,7 +128,9 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
     } finally { setBusy(false); }
   });
   const discard = () => run(async () => {
-    if (!window.confirm(`Discard draft ${draft.id}? This cannot be undone.`)) return;
+    if (!window.confirm(
+      `Discard draft "${draft.name}" (${draft.version})? This cannot be undone.`,
+    )) return;
     await responseJson(await fetch(ADMIN_URLS.ajaxThemeDraft(draft.id), {method: "DELETE"}));
     setChanged(false);
     window.location.assign(ADMIN_URLS.themesSettings());
@@ -183,7 +189,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
         <Button
           className="theme-preview-button"
           disabled={busy}
-          onClick={() => setPreviewOpen(true)}
+          onClick={preview}
           variant="outline"
         >
           Preview
@@ -194,7 +200,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
       </div>
     </div>
     <ThemePreviewDialog
-      description="Uses the last saved draft and current public site data"
+      description="Uses the saved draft and current public site data"
       label={`${draft.name} ${draft.version}`}
       onOpenChange={setPreviewOpen}
       open={previewOpen}
