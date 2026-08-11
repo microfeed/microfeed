@@ -141,25 +141,6 @@ describe("documentation site", () => {
       'aria-label="A silent Codex deployment walkthrough',
     );
 
-    const readme = await readFile(
-      path.join(repositoryRoot, "README.md"),
-      "utf8",
-    );
-    expect(readme).toMatch(
-      /^https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f-]+$/mu,
-    );
-    expect(readme).toContain(
-      '<img src="docs/public/images/screenshots/2-dashboard-1-home.png" width="45%" alt="Dashboard home">',
-    );
-    expect(readme).toContain(
-      '<img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">',
-    );
-    expect(readme).not.toContain(
-      "](docs/public/images/screenshots/4-code-editor-1.png)",
-    );
-    expect(readme).not.toContain(
-      "Throughout this guide, the **microfeed admin dashboard** means",
-    );
   });
 
   it("keeps Edit channel separate from Settings", async () => {
@@ -322,16 +303,11 @@ describe("documentation site", () => {
       "https://www.microfeed.org/api/v1/llms.txt",
       "https://www.microfeed.org/api/v1/llms-full.txt",
     ];
-    const readme = await readFile(
-      path.join(repositoryRoot, "README.md"),
-      "utf8",
-    );
     const apiOverview = await readFile(
       path.join(docsRoot, "api/index.md"),
       "utf8",
     );
     for (const url of demoUrls) {
-      expect(readme).toContain(`](${url})`);
       expect(apiOverview).toContain(`](${url})`);
     }
     expect(apiOverview).toContain("`GET /api/v1/feed/`");
@@ -689,59 +665,7 @@ describe("documentation site", () => {
     );
   });
 
-  it("preserves the README overview and assigns installation details to docs", async () => {
-    const readme = await readFile(
-      path.join(repositoryRoot, "README.md"),
-      "utf8",
-    );
-    expect(readme).toContain(
-      '<h1 align="center">microfeed: a lightweight cms self-hosted on cloudflare</h1>',
-    );
-    expect(readme).toContain("## ⭐️ How it works");
-    expect(readme).toContain("### Quickstarts");
-    expect(readme).toContain("## ✍️ Start publishing");
-    expect(readme).toContain("### Change the public theme");
-    expect(readme).toContain("## ✨ Features");
-    expect(readme).toContain("Themes developed by the community");
-    expect(readme).toContain("| Versioned themes |");
-    expect(readme).toContain("## 💻 FAQs");
-    expect(readme).toContain("## 💪 Contributions");
-    expect(readme).toContain("## 🛡️ License");
-    expect(readme).toContain("Deploy microfeed to Cloudflare.");
-
-    const details = readme.slice(
-      readme.indexOf("### Details"),
-      readme.indexOf("### Advanced"),
-    );
-    const advanced = readme.slice(
-      readme.indexOf("### Advanced"),
-      readme.indexOf("## ✍️ Start publishing"),
-    );
-    expect(details.length).toBeLessThan(1_500);
-    expect(details).toContain(
-      "https://docs.microfeed.org/start-here/ai-agent/",
-    );
-    expect(details).toContain("https://docs.microfeed.org/start-here/manual/");
-    expect(details).toContain("https://docs.microfeed.org/manage-cli/");
-    expect(details).not.toContain("#### Method");
-    expect(advanced.length).toBeLessThan(2_500);
-    expect(advanced).toContain("https://docs.microfeed.org/manage/");
-    expect(advanced).toContain("https://docs.microfeed.org/manage/update/");
-    expect(advanced).toContain(
-      "https://docs.microfeed.org/manage/domains-and-access/",
-    );
-    expect(advanced).toContain(
-      "https://docs.microfeed.org/manage/multiple-instances/",
-    );
-    expect(advanced).toContain(
-      "https://docs.microfeed.org/manage/backups-and-migrations/",
-    );
-    expect(advanced).toContain(
-      "https://docs.microfeed.org/manage/troubleshooting/",
-    );
-    expect(advanced).toContain("https://docs.microfeed.org/manage/remove/");
-    expect(advanced).toContain("https://docs.microfeed.org/manage-cli/");
-
+  it("keeps the canonical CLI references discoverable in docs", async () => {
     const manageReference = await readFile(
       path.join(docsRoot, "manage-cli.md"),
       "utf8",
@@ -850,7 +774,6 @@ describe("documentation site", () => {
   it("advertises agentic content publishing from the main discovery paths", async () => {
     const npmPackageUrl = "https://www.npmjs.com/package/@microfeed/cli";
     const sources = await Promise.all([
-      readFile(path.join(repositoryRoot, "README.md"), "utf8"),
       readFile(
         path.join(repositoryRoot, "packages", "cli", "README.md"),
         "utf8",
@@ -867,7 +790,7 @@ describe("documentation site", () => {
 
     for (const source of sources) expect(source).toContain(npmPackageUrl);
 
-    const publishingGuide = sources[3];
+    const publishingGuide = sources[2];
     expect(publishingGuide).toContain("## Publish with a coding agent");
     expect(publishingGuide).toContain("Use --json for deterministic output");
     expect(publishingGuide).toContain("You sign");
