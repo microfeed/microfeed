@@ -115,9 +115,6 @@ webpack-stats.json
 .wrangler/
 .vars.toml
 .yarn/*
-!.yarn/releases/
-.yarn/releases/*
-!.yarn/releases/yarn-4.18.0.cjs
 .microfeed/
 !packages/theme-kit/assets/starter/.microfeed/
 !packages/theme-kit/assets/starter/.microfeed/schemas/
