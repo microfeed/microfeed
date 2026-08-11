@@ -1274,9 +1274,9 @@ async function writeThemePackage(
       name: theme.manifest.packageId,
       private: true,
       scripts: {
-        preview: "microfeed-theme preview .",
-        test: "microfeed-theme test . --json",
-        validate: "microfeed-theme validate . --json",
+        preview: "theme-kit preview .",
+        test: "theme-kit test . --json",
+        validate: "theme-kit validate . --json",
       },
     }, null, 2)}\n`);
     if (theme.manifest.assets.length === 0) {

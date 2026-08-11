@@ -5,6 +5,7 @@ description: Install microfeed by running the guided yarn manage commands yourse
 
 This path uses the terminal directly. The prompts explain the available choices
 and the CLI stops before unsafe collisions or ambiguous account selection.
+You do not need prior Cloudflare command-line experience.
 
 ## 1. Install the project
 
@@ -15,7 +16,9 @@ corepack enable
 yarn install --immutable
 ```
 
-Expected result: Yarn completes without changing the lockfile.
+`corepack enable` makes the repository’s declared Yarn version available.
+Expected result: dependency installation completes without changing
+`yarn.lock`.
 
 ## 2. Discover your Cloudflare account
 
@@ -33,7 +36,7 @@ only on list position.
 yarn manage init
 ```
 
-Follow the prompts for the Cloudflare account, globally distinctive site name,
+Follow the prompts for the Cloudflare account, distinctive site name,
 media storage, dashboard address, and login email. Initialization checks the
 requested names before it creates a Worker, D1 database, or R2 bucket.
 
@@ -52,12 +55,12 @@ shared document.
 yarn manage status
 ```
 
-Expected result: a verified Worker and dashboard status, plus the exact D1 and
-R2 resources attached to the saved instance.
+Expected result: a verified hosted application and dashboard status, plus the
+exact D1 and R2 resources attached to the saved instance.
 
 :::tip[Need every option?]
 The [`yarn manage` reference](/manage-cli/) is the canonical contract for all
 commands, options, side effects, and safeguards.
 :::
 
-Next: [complete the post-deployment checklist](./after-deploy/).
+Next: [complete the post-deployment checklist](../after-deploy/).

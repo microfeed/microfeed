@@ -15,6 +15,7 @@
   "scripts": {
     "microfeed": "yarn workspace @microfeed/cli microfeed",
     "manage": "tsx manage-cli/index.ts",
+    "theme-kit": "yarn workspace @microfeed/theme-kit theme-kit",
     "theme-kit:build": "tsx packages/theme-kit/scripts/build.ts",
     "theme-kit:test": "yarn theme-kit:build && yarn workspace @microfeed/default-theme-source check && node packages/theme-kit/dist/cli.js test packages/theme-kit/assets/starter --json && node packages/theme-kit/dist/cli.js test themes/default --json && node packages/theme-kit/dist/cli.js test themes/classic --json",
     "theme-kit:pack-check": "node --import tsx scripts/check-theme-kit-package.ts",

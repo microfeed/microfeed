@@ -20,6 +20,10 @@ administration experience.
 - Keep `docs/microfeed-cli.md` as the canonical command, option, output, and
   safety contract for `@microfeed/cli`. Update it together with the help
   inventory in `packages/cli/src/help.ts` when content CLI behavior changes.
+- Keep `docs/theme-kit-cli.md` as the canonical command, option, output, and
+  failure-behavior reference for `@microfeed/theme-kit`. Update it together
+  with `packages/theme-kit/src/help.ts` and the command implementation when
+  theme-kit CLI behavior changes.
 - Keep agent execution safeguards in repository skills and `AGENTS.md`, not on
   the public documentation site.
 - Derive API references from `src/shared/OpenApiDocument.ts`; do not maintain a

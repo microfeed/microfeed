@@ -296,7 +296,7 @@ async function preview(args: Arguments): Promise<void> {
 async function pullFixture(args: Arguments): Promise<void> {
   const url = args.positionals[0];
   const filename = optionString(args, "output");
-  if (!url || !filename) throw new Error("Usage: microfeed-theme fixture pull <json-feed-url> --output <file>");
+  if (!url || !filename) throw new Error("Usage: theme-kit fixture pull <json-feed-url> --output <file>");
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Feed request failed with HTTP ${response.status}.`);
   const feed = await response.json() as Record<string, unknown>;

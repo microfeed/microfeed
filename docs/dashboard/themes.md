@@ -1,15 +1,58 @@
 ---
-title: Versioned themes
-description: Author, install, derive new versions, preview, activate, and back up microfeed themes.
+title: Themes and website code
+description: Customize public pages with versioned themes and shared HTML, CSS, and JavaScript.
 ---
 
-microfeed themes have six text slots: web feed, web item, web header, web body
+Open **Settings → Website appearance & code** to choose between two tools:
+
+- **Manage versioned themes** controls the complete web feed, item page, shared
+  theme layout, and RSS stylesheet through immutable versions with isolated
+  previews.
+- **Edit shared HTML code across web pages** adds the same code around every
+  active theme for tracking snippets, global branding, JavaScript, or CSS.
+
+For a small visual change, you do not need to create a GitHub repository or
+use a command line. Choose **Create new version** on the active theme, edit the
+color values near the top of **Web header**, preview, save, install, and then
+activate the new version.
+
+## Choose the right tool
+
+| Tool | Best for | How changes reach the live site |
+| --- | --- | --- |
+| Versioned theme | Page structure, visual design, responsive behavior, and RSS styling | Create and preview a draft, install an immutable version, then activate it separately. |
+| Shared website code | Google Analytics, Meta Pixel, global CSS or JavaScript, navigation, branding, and footer snippets that should survive theme changes | Choose **Update** in the code editor; the saved code immediately wraps the active theme. |
+
+## Edit shared website code
+
+The shared code editor has three insertion points:
+
+| Slot | Where it is inserted | Typical uses |
+| --- | --- | --- |
+| **Web Header** | Immediately before `</head>` | Analytics or pixel snippets, `<style>` blocks, metadata, and scripts that belong in the document head. |
+| **Web Body Start** | Immediately after `<body>` | Shared navigation, announcements, or branding above the theme. |
+| **Web Body End** | Immediately before `</body>` | Shared footer content, deferred scripts, or site-wide links. |
+
+Shared code wraps every installed theme and is not part of a theme version.
+Unlike a theme draft, it does not have an isolated preview or automatic version
+history. Save the current code outside the dashboard before a large edit,
+change one concern at a time, choose **Update**, and use **View live page** to
+check feed and item pages at mobile and desktop widths.
+
+Anything placed in shared code is sent to public browsers. Never include API
+keys, Cloudflare tokens, dashboard credentials, private setup links, or other
+secrets. Remove a snippet if it interferes with navigation, readability, feed
+metadata, or the active theme.
+
+## Work with versioned themes
+
+A microfeed theme has six text slots: web feed, web item, web header, web body
 start, web body end, and the complete RSS XSL stylesheet. An installed version
 is immutable. The active version lives in D1 with the other installed versions;
 optional declared assets use immutable R2 keys.
 
 Themes are full-trust, owner-installed code. An activated theme can run the same
-HTML, CSS, and JavaScript as the existing custom-code feature. Install only
+HTML, CSS, and JavaScript as the shared website code feature. Install only
 packages you trust.
 
 ## Create a new version in Admin
@@ -17,13 +60,14 @@ packages you trust.
 Open **Settings → Themes**. Every selectable design appears as an installed
 version. Search by name, package ID, version, author, or source URL; sort by
 status, installation time, or name; and move through 20 results per page.
-Choose **Create new version** on any row to create a separate, Admin-owned
-version draft:
+Choose **Create new version** on any row to create a separate editable draft
+stored by your site:
 
 1. Edit any of the six slots and save repeatedly.
 2. Open the full-screen isolated preview for feed, item, RSS, mobile, and
    desktop views with current public data.
-3. Confirm or change the proposed semantic version.
+3. Confirm or change the proposed semantic version, such as `1.2.1`. This
+   version number identifies the new immutable design.
 4. Choose **Install** to create an immutable, inactive local version.
 5. Preview the installed version, then activate it separately.
 
@@ -40,6 +84,9 @@ inherit packaged assets and edit only the six text slots; add or replace assets
 in the source repository and reinstall with `yarn manage theme`.
 
 ## Start a theme repository
+
+The remaining sections are for theme authors and coding agents. Site owners who
+only edit a version in Admin can skip to [Install and manage versions](#install-and-manage-versions).
 
 The quickest way to begin is to initialize a standalone repository from the
 theme your site is currently using. Keep it outside your microfeed checkout so
@@ -58,7 +105,8 @@ missing parent directories and the `my-theme` directory, but refuses to write
 into a non-empty destination. After it succeeds, the generated directory is an
 independent Git repository on `main`.
 
-The command chooses a valid active D1 theme, then the internal classic fallback. It
+The command chooses the valid active D1 theme, or the internal classic fallback when
+there is no usable active version. It
 copies the theme's six slots and declared assets and creates a separate
 `local.my-theme@0.1.0` identity. Use
 `--package-id`, `--name`, `--version`, and `--author` to set publish-ready
@@ -263,7 +311,7 @@ full build toolchain. Run its build script after editing `src/theme.css`,
 `src/main.ts`, or source templates. The checked-in six-slot files are the
 installable result.
 
-The top of the generated **Web header** contains a readable
+The top of the default theme’s generated **Web header** contains a readable
 `microfeed-design-tokens` block. In Admin, follow **Create new version** → edit
 the token values → **Preview** → **Save draft** → **Install** → **Activate** to
 change accent, background, surface, text, muted, and border colors without
@@ -334,13 +382,17 @@ The standalone preview and installed site use the same URL convention.
 
 ## Validate, test, and preview
 
+The common commands are below. See the
+[complete theme-kit CLI reference](/theme-kit-cli/) for every
+option, default, output format, and failure behavior.
+
 ```console
-microfeed-theme validate . --json
-microfeed-theme test . --json
-microfeed-theme preview .
-microfeed-theme preview . --fixture media
-microfeed-theme preview . --feed-url https://example.com/json/
-microfeed-theme fixture pull https://example.com/json/ --output fixtures/site.json
+yarn validate
+yarn test
+yarn preview
+yarn preview --fixture media
+yarn preview --feed-url https://example.com/json/
+yarn theme-kit fixture pull https://example.com/json/ --output fixtures/site.json
 ```
 
 The test suite covers empty and minimal feeds, long and rich content,
@@ -362,9 +414,9 @@ tight CPU budget downloading and validating a repository:
 
 ```console
 yarn manage theme install https://github.com/owner/theme-repository \
-  --instance <site>
-yarn manage theme list --instance <site>
-yarn manage theme activate <theme-id> --instance <site>
+  --instance <instance-name>
+yarn manage theme list --instance <instance-name>
+yarn manage theme activate <theme-id> --instance <instance-name>
 ```
 
 The installer accepts public repository, directory, and manifest URLs; resolves
@@ -389,7 +441,7 @@ owner can delete an inactive version and try again.
 Install the bundled modern default manually from any current microfeed clone:
 
 ```console
-yarn manage theme install default --instance <site>
+yarn manage theme install default --instance <instance-name>
 ```
 
 The manual install is inactive. A fresh local, production, or preview instance

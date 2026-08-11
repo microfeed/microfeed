@@ -4,7 +4,8 @@ description: Manage several production, preview, or local microfeed sites from o
 ---
 
 An instance name is the local label that selects one site’s saved configuration.
-Give each instance a name that clearly identifies its purpose or hostname.
+It is not a website address, Cloudflare account, or login. Give each instance a
+name that clearly identifies its purpose or hostname.
 
 ## List saved instances
 

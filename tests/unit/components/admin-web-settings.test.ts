@@ -3,6 +3,7 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import Requests from "@/client/requests";
+import CustomCodeSettingsApp from "@/components/admin/settings/CustomCodeSettingsApp";
 import FaviconSettingsApp, {
   FAVICON_SUBMIT_KEY,
 } from "@/components/admin/settings/FaviconSettingsApp";
@@ -90,6 +91,36 @@ describe("split web settings", () => {
     const output = renderToStaticMarkup(app.render());
     expect(output).toContain('class="mt-5 flex justify-end"');
     expect(output).toContain(">Update</button>");
+  });
+
+  it("puts Website appearance & code first and explains its primary actions", () => {
+    const app = new SettingsApp({
+      feedContent: feed(),
+      onboardingResult: {allOk: true, requiredOk: true, result: {}},
+    });
+    const page = app.render();
+    const grid = React.Children.only(page.props.children) as React.ReactElement<any>;
+    const sectionIds = React.Children.toArray(grid.props.children)
+      .filter((child): child is React.ReactElement<any> =>
+        React.isValidElement<any>(child) && child.type === "section"
+      )
+      .map((section) => section.props.id);
+
+    expect(sectionIds[0]).toBe("custom-code");
+
+    const output = renderToStaticMarkup(React.createElement(CustomCodeSettingsApp, {
+      feed: feed(),
+      submitForType: null,
+      submitting: false,
+    }));
+    expect(output).toContain("Website appearance &amp; code");
+    expect(output).toContain("Edit shared HTML code across web pages");
+    expect(output).toContain("Manage versioned themes");
+    expect(output).toContain("Google Analytics and Meta Pixel");
+    expect(output).toContain(
+      "Install, edit, preview, activate, and roll back different versions of themes.",
+    );
+    expect(output).not.toContain(">Themes</div>");
   });
 
   it("places sorting above items per page and autosaves radio changes", async () => {

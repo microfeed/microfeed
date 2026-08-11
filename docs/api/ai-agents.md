@@ -18,6 +18,10 @@ credential safety, and destructive-action confirmation. The published
 that distribute skills with npm packages. The top-level repository copy is the
 source of truth; packaging tests require the bundled copy to match it.
 
+You do not need to read or install that skill manually when the agent is
+already working inside a microfeed clone. Describe the content outcome and the
+site; the agent should discover the repository guidance itself.
+
 ## Start with a content task
 
 Tell the agent what to publish and which site to use. Do not send it a token.
@@ -69,5 +73,5 @@ name and exact item ID. Approve the operation explicitly; the agent can then pas
 the same ID to `--confirm`. The CLI will not accept a generic yes flag.
 
 See [Manage content with the microfeed CLI](../cli/) for the guided workflow
-and the canonical [`yarn microfeed` command reference](/microfeed-cli/) for
+and the canonical [microfeed CLI reference](/microfeed-cli/) for
 every command, option, output contract, and safety rule.

@@ -6,9 +6,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs --check",
-    "validate": "microfeed-theme validate . --json",
-    "test": "microfeed-theme test . --json",
-    "preview": "microfeed-theme preview ."
+    "validate": "theme-kit validate . --json",
+    "test": "theme-kit test . --json",
+    "preview": "theme-kit preview ."
   },
   "devDependencies": {
     "@microfeed/theme-kit": "^1.0.3",

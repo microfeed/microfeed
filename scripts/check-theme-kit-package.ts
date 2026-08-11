@@ -20,7 +20,7 @@ function run(command: string, args: string[], cwd = process.cwd()): string {
 }
 
 interface PackageMetadata {
-  bin?: {"microfeed-theme"?: string};
+  bin?: {"microfeed-theme"?: string; "theme-kit"?: string};
   bugs?: {url?: string};
   exports?: Record<string, {import?: string; types?: string}>;
   homepage?: string;
@@ -52,6 +52,7 @@ try {
 
   if (packedPackage.name !== "@microfeed/theme-kit" ||
       packedPackage.version !== rootPackage.version ||
+      packedPackage.bin?.["theme-kit"] !== "./dist/cli.js" ||
       packedPackage.bin?.["microfeed-theme"] !== "./dist/cli.js" ||
       packedPackage.exports?.["."]?.import !== "./dist/index.js" ||
       !packedPackage.exports?.["."]?.types?.endsWith("/index.d.ts")) {
@@ -84,6 +85,7 @@ try {
       ), "utf8"),
     ]);
   if (!packedReadme.includes("Normal development workflow") ||
+      !packedReadme.includes("npm install --global @microfeed/theme-kit") ||
       !packedReadme.includes("yarn manage theme install") ||
       !packedReadme.includes("immutable D1 theme row") ||
       !packedReadme.includes("immutable R2") ||
@@ -115,19 +117,19 @@ try {
     private: true,
   }), "utf8");
   run("yarn", ["install"], consumer);
-  const help = run("yarn", ["microfeed-theme", "--help"], consumer);
-  if (!help.includes("microfeed-theme <command>") ||
+  const help = run("yarn", ["theme-kit", "--help"], consumer);
+  if (!help.includes("theme-kit <command>") ||
       !help.includes("fixture pull <url>") ||
       !help.includes("--version")) {
     throw new Error("The project-local packed theme-kit help is incomplete.");
   }
-  const version = run("yarn", ["microfeed-theme", "--version"], consumer);
+  const version = run("yarn", ["theme-kit", "--version"], consumer);
   if (version.trim() !== rootPackage.version) {
     throw new Error("The project-local theme-kit executable reports a stale version.");
   }
   const validateHelp = run(
     "yarn",
-    ["microfeed-theme", "validate", "--help"],
+    ["theme-kit", "validate", "--help"],
     consumer,
   );
   if (!validateHelp.includes("Validate the manifest") ||
@@ -137,7 +139,7 @@ try {
   const installedStarter = path.join(packageDirectory, "assets/starter");
   const validation = JSON.parse(run(
     "yarn",
-    ["microfeed-theme", "validate", installedStarter, "--json"],
+    ["theme-kit", "validate", installedStarter, "--json"],
     consumer,
   )) as {ok?: boolean; packageId?: string};
   if (!validation.ok || validation.packageId !== "example.my-theme") {
@@ -145,7 +147,7 @@ try {
   }
   const conformance = JSON.parse(run(
     "yarn",
-    ["microfeed-theme", "test", installedStarter, "--json"],
+    ["theme-kit", "test", installedStarter, "--json"],
     consumer,
   )) as {ok?: boolean; tests?: unknown[]};
   if (!conformance.ok || !conformance.tests || conformance.tests.length < 8) {
@@ -161,7 +163,7 @@ try {
   const initializedTheme = path.join(temporary, "initialized-theme");
   run(
     "yarn",
-    ["microfeed-theme", "init", initializedTheme],
+    ["theme-kit", "init", initializedTheme],
     consumer,
   );
   const initializedPackage = JSON.parse(
@@ -176,11 +178,19 @@ try {
     "dlx",
     "--package",
     `@microfeed/theme-kit@file:${archive}`,
-    "microfeed-theme",
+    "theme-kit",
     "--help",
   ], temporary);
   if (!dlxHelp.endsWith(help)) {
     throw new Error("The yarn dlx @microfeed/theme-kit behavior diverged.");
+  }
+  const compatibilityVersion = run(
+    "yarn",
+    ["microfeed-theme", "--version"],
+    consumer,
+  );
+  if (compatibilityVersion.trim() !== rootPackage.version) {
+    throw new Error("The compatibility theme-kit executable reports a stale version.");
   }
   process.stdout.write(
     "Workspace, packed, project-local, library, scaffold, and yarn dlx theme-kit behavior match.\n",

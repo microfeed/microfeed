@@ -1,11 +1,19 @@
 ---
 title: Domains and authentication
-description: Add a custom hostname and protect the admin dashboard with built-in login or Cloudflare Access.
+description: Add a custom hostname and protect the Admin dashboard with built-in login or Cloudflare Access.
 ---
 
 The public hostname and dashboard authentication solve different problems. A
 custom domain gives the site a memorable address. Authentication protects who
-can open the admin dashboard.
+can open the Admin dashboard.
+
+| Goal | Use |
+| --- | --- |
+| Give the site your own web address | `yarn manage domain` |
+| Use microfeed’s email-and-password login | `yarn manage auth setup` |
+| Change a known password or sign-in email | **Account settings** in the dashboard |
+| Recover a forgotten password or change the dashboard path | `yarn manage auth <action>` |
+| Add Cloudflare’s identity screen in front of the dashboard | `yarn manage access` |
 
 ## Add or inspect a custom domain
 
@@ -15,7 +23,8 @@ From the connected clone, run:
 yarn manage domain
 ```
 
-Follow the prompts for the exact saved instance and hostname. The command
+Follow the prompts for the exact saved instance and hostname. A hostname is the
+domain name without `https://` or a path, such as `feed.example.com`. The command
 checks the relationship between the Worker, Cloudflare zone, and desired route.
 If Cloudflare still needs DNS or certificate time, wait and run the command
 again rather than creating unrelated records by guesswork.

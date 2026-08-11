@@ -24,15 +24,16 @@ are saved.
 ## Keep the copyright year current
 
 In **Podcast-specific fields**, the **Copyright** field accepts the built-in
-`{{current_year}}` variable. For example, enter:
+`{{current_year}}` variable and new channels start with
+`© {{current_year}}`. Add a publisher name after it when appropriate:
 
 ```text
 © {{current_year}} Example Publisher
 ```
 
-microfeed saves that text with the variable intact. When it produces the
+microfeed saves the variable rather than one fixed year. When it produces the
 public website, JSON feed, or RSS feed, it replaces the variable with the
-current UTC year. In 2026, the example publishes as
+current UTC year. During 2026, the example publishes as
 `© 2026 Example Publisher`. The value changes at midnight UTC on January 1;
 the existing public cache can retain the previous year for about five minutes.
 

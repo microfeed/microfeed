@@ -2,11 +2,12 @@
 
 [Package on npm](https://www.npmjs.com/package/@microfeed/theme-kit) ·
 [Theme guide](https://docs.microfeed.org/dashboard/themes/) ·
+[CLI reference](https://docs.microfeed.org/theme-kit-cli/) ·
 [Source repository](https://github.com/microfeed/microfeed/tree/main/packages/theme-kit)
 
 The official, agent-friendly toolkit for creating, validating, testing, and
 previewing versioned [microfeed](https://www.microfeed.org/) themes without
-reading microfeed application internals. It provides the `microfeed-theme`
+reading microfeed application internals. It provides the `theme-kit`
 command and exports the same schemas, types, renderer, and validator used by
 the microfeed Worker and Admin previews.
 
@@ -15,7 +16,7 @@ microfeed site or change an active theme:
 
 | Tool | Purpose |
 | --- | --- |
-| `microfeed-theme` from `@microfeed/theme-kit` | Develop and preview a theme package locally |
+| `theme-kit` from `@microfeed/theme-kit` | Develop and preview a theme package locally |
 | `yarn manage theme …` from a microfeed checkout | Export an instance theme; install, update, activate, or delete versions |
 | `microfeed` from `@microfeed/cli` | Publish and manage feed content through the public API |
 
@@ -186,15 +187,22 @@ Saving, installing, exporting, testing, and previewing never activate a theme.
 Every command supports contextual help:
 
 ```console
-yarn microfeed-theme --help
-yarn microfeed-theme validate --help
-yarn microfeed-theme --version
+yarn theme-kit --help
+yarn theme-kit validate --help
+yarn theme-kit --version
+```
+
+For a global command available across directories:
+
+```console
+npm install --global @microfeed/theme-kit
+theme-kit --help
 ```
 
 ### `init`
 
 ```console
-microfeed-theme init <directory>
+theme-kit init <directory>
 ```
 
 Creates the generic theme package, local scripts, schemas, fixtures, and agent
@@ -204,7 +212,7 @@ rejected.
 ### `validate`
 
 ```console
-microfeed-theme validate <directory> [--json]
+theme-kit validate <directory> [--json]
 ```
 
 Validates the complete installable package. JSON output is suitable for coding
@@ -213,7 +221,7 @@ agents and CI.
 ### `test`
 
 ```console
-microfeed-theme test <directory> [--json]
+theme-kit test <directory> [--json]
 ```
 
 Runs built-in fixtures for empty, minimal, rich, paginated, media, missing-field,
@@ -223,7 +231,7 @@ under the package’s `fixtures/` directory.
 ### `preview`
 
 ```console
-microfeed-theme preview <directory> \
+theme-kit preview <directory> \
   [--fixture <name-or-file> | --feed-url <url>]
 ```
 
@@ -236,7 +244,7 @@ representative RSS document before applying the theme's XSL stylesheet.
 ### `fixture pull`
 
 ```console
-microfeed-theme fixture pull <json-feed-url> --output <file>
+theme-kit fixture pull <json-feed-url> --output <file>
 ```
 
 Downloads and validates a public JSON Feed without contacting an Admin API.

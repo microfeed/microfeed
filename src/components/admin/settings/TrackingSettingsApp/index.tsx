@@ -38,7 +38,7 @@ export default class TrackingSettingsApp extends React.Component<any, any> {
     >
       <div>
         <AdminTextarea
-          placeholder="Put a tracking url on each line, e.g., https://op3.dev/e/, https://pdst.fm/e/, https://chrt.fm/track/..."
+          placeholder="Put a tracking url on each line, e.g., https://op3.dev/e/ or https://pdst.fm/e/"
           value={trackingUrls}
           onChange={(e: any) => this.setState({trackingUrls: e.target.value}, () => setChanged())}
         />

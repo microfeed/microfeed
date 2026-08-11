@@ -29,7 +29,8 @@
     }
   },
   "bin": {
-    "microfeed-theme": "./dist/cli.js"
+    "microfeed-theme": "./dist/cli.js",
+    "theme-kit": "./dist/cli.js"
   },
   "files": [
     "assets",
@@ -40,7 +41,8 @@
   "scripts": {
     "build": "tsx scripts/build.ts",
     "prepack": "yarn build",
-    "test": "yarn build && node dist/cli.js test assets/starter --json"
+    "test": "yarn build && node dist/cli.js test assets/starter --json",
+    "theme-kit": "node --import tsx src/cli.ts"
   },
   "dependencies": {
     "fast-xml-parser": "^5.10.1",

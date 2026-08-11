@@ -1,15 +1,15 @@
 ---
 title: microfeed documentation
-description: Publish on your own domain with a lightweight, open-source, headless CMS that runs entirely on Cloudflare.
+description: Publish a website, RSS feed, and JSON Feed from an open-source CMS in your own Cloudflare account.
 template: doc
 tableOfContents: false
 hero:
   title: >-
-    <span class="hero-line hero-topic-line"><span>Publish</span><span class="sr-only">blogs, podcasts, documents, video, audio, and curations</span><span class="rotating-topic" aria-hidden="true"><span class="rotating-topic-track"><span>blogs</span><span>podcasts</span><span>documents</span><span>video</span><span>audio</span><span>curations</span><span>blogs</span></span></span></span><br><span class="hero-line">on your own domain</span><br><span class="hero-line">without hosting fees</span>
-  tagline: A <span class="brand-highlight">lightweight</span>, <span class="brand-highlight">open-source</span> CMS that runs entirely in your <span class="cloudflare-brand">Cloudflare</span> account. Bring a domain you own; microfeed provides a website, RSS and JSON feeds, and a <span class="brand-highlight">headless</span> Admin API. It’s <span class="brand-highlight">serverless</span>!
+    <span class="hero-line hero-topic-line"><span>Publish</span><span class="sr-only">blogs, podcasts, documents, video, audio, and curations</span><span class="rotating-topic" aria-hidden="true"><span class="rotating-topic-track"><span>blogs</span><span>podcasts</span><span>documents</span><span>video</span><span>audio</span><span>curations</span><span>blogs</span></span></span></span><br><span class="hero-line">on your own domain</span><br><span class="hero-line">without managing servers</span>
+  tagline: A <span class="brand-highlight">lightweight</span>, <span class="brand-highlight">open-source</span> CMS that runs in your <span class="cloudflare-brand">Cloudflare</span> account. microfeed gives you a website, RSS and JSON feeds, a private dashboard, and an API for integrations or coding agents.
   image:
     html: >-
-      <aside class="r2-capacity-card" aria-label="10 GB of media storage included"><div class="r2-capacity-eyebrow"><span class="r2-capacity-provider"><span aria-hidden="true"></span>Cloudflare R2</span><span class="r2-capacity-badge">For free!</span></div><p class="r2-capacity-total"><strong>10</strong><span>GB</span></p><p class="r2-capacity-title">of media storage included</p><p class="r2-capacity-intro">Enough for approximately:</p><ul class="r2-capacity-list" aria-label="Examples of what 10 GB can store"><li><span class="r2-capacity-format" aria-hidden="true">IMG</span><span><strong>10,000</strong> optimized images</span></li><li><span class="r2-capacity-format" aria-hidden="true">MP3</span><span><strong>300 hours</strong> of podcast audio</span></li><li><span class="r2-capacity-format" aria-hidden="true">HD</span><span><strong>5–10 hours</strong> of HD video</span></li><li><span class="r2-capacity-format" aria-hidden="true">PDF</span><span><strong>5,000</strong> typical PDFs</span></li></ul><p class="r2-capacity-note"><em>Estimates based on typical optimized files. Actual capacity varies.</em></p><a class="r2-capacity-link" href="https://developers.cloudflare.com/r2/pricing/" target="_blank" rel="noreferrer">Cloudflare R2 pricing <span aria-hidden="true">↗</span></a></aside>
+      <aside class="r2-capacity-card" aria-label="10 GB-month of Standard media storage included each month"><div class="r2-capacity-eyebrow"><span class="r2-capacity-provider"><span aria-hidden="true"></span>Cloudflare R2</span><span class="r2-capacity-badge">Included monthly</span></div><p class="r2-capacity-total"><strong>10</strong><span>GB</span></p><p class="r2-capacity-title">of Standard storage in the monthly free tier</p><p class="r2-capacity-intro">Enough for approximately:</p><ul class="r2-capacity-list" aria-label="Examples of what 10 GB can store"><li><span class="r2-capacity-format" aria-hidden="true">IMG</span><span><strong>10,000</strong> optimized images</span></li><li><span class="r2-capacity-format" aria-hidden="true">MP3</span><span><strong>300 hours</strong> of podcast audio</span></li><li><span class="r2-capacity-format" aria-hidden="true">HD</span><span><strong>5–10 hours</strong> of HD video</span></li><li><span class="r2-capacity-format" aria-hidden="true">PDF</span><span><strong>5,000</strong> typical PDFs</span></li></ul><p class="r2-capacity-note"><em>File-size estimates vary. Cloudflare bills storage as GB-month and also counts operations.</em></p><a class="r2-capacity-link" href="https://developers.cloudflare.com/r2/pricing/" target="_blank" rel="noreferrer">Cloudflare R2 pricing <span aria-hidden="true">↗</span></a></aside>
   actions:
     - text: Get started
       link: /start-here/
@@ -32,15 +32,15 @@ hero:
     </article>
     <article class="why-card">
       <h3>Serverless</h3>
-      <p><span class="cloudflare-brand">Cloudflare</span> Workers, D1, and optional R2 replace a traditional server stack.</p>
+      <p><span class="cloudflare-brand">Cloudflare</span> Workers, D1, and optional R2 run the site without a server for you to patch or maintain.</p>
     </article>
     <article class="why-card">
       <h3>Free-tier friendly</h3>
-      <p>Many small sites can stay within <span class="cloudflare-brand">Cloudflare’s</span> included usage. <a href="https://developers.cloudflare.com/r2/pricing/">Standard R2 includes 10 GB-month of storage and free egress</a>.</p>
+      <p>Many personal and small sites can stay within <span class="cloudflare-brand">Cloudflare’s</span> included usage. Check the current <a href="https://developers.cloudflare.com/workers/platform/pricing/">Workers</a>, <a href="https://developers.cloudflare.com/d1/platform/pricing/">D1</a>, and <a href="https://developers.cloudflare.com/r2/pricing/">R2</a> allowances as your audience grows.</p>
     </article>
     <article class="why-card">
       <h3>Headless</h3>
-      <p>Publish in the visual dashboard or automate through the authenticated Admin API and the official <a href="https://www.npmjs.com/package/@microfeed/cli"><code>@microfeed/cli</code></a>.</p>
+      <p>Publish in the visual dashboard or connect another app or coding agent through the authenticated API and official <a href="https://www.npmjs.com/package/@microfeed/cli"><code>@microfeed/cli</code></a>.</p>
     </article>
   </div>
 </section>
@@ -52,7 +52,8 @@ hero:
     <li><a href="/dashboard/publish/"><strong>Media publishing</strong></a> — Share text, links, images, audio, video, and documents.</li>
     <li><a href="/dashboard/"><strong>Private dashboard</strong></a> — Create and manage content from a responsive interface.</li>
     <li><a href="/api/cli/"><strong>Agentic content management</strong></a> — Let coding agents publish through <a href="https://www.npmjs.com/package/@microfeed/cli"><code>@microfeed/cli</code></a> while browser consent stays with you.</li>
-    <li><a href="/dashboard/themes/"><strong>Versioned themes</strong></a> — Author in GitHub or Admin, preview safely, and activate immutable versions; configure <a href="/dashboard/customize/">access and shared custom code</a> separately.</li>
+    <li><a href="/dashboard/themes/"><strong>Themes and website code</strong></a> — Author versioned themes in GitHub or Admin, preview safely, and add shared HTML, CSS, or JavaScript.</li>
+    <li><a href="/dashboard/customize/"><strong>Site access</strong></a> — Choose Public, Headless, or Offline delivery without deleting content.</li>
     <li><a href="/api/"><strong>Admin API</strong></a> — Automate publishing with named keys and generated references.</li>
     <li><a href="/manage/"><strong>Site management</strong></a> — Update, inspect, snapshot, and migrate an instance safely.</li>
   </ul>

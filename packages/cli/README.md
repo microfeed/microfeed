@@ -55,7 +55,12 @@ For one-off use without installation:
 yarn dlx @microfeed/cli --help
 ```
 
-A global installation is optional and is not required.
+A global installation is optional and is not required:
+
+```console
+npm install --global @microfeed/cli
+microfeed --help
+```
 
 ## Ask a coding agent
 
@@ -233,7 +238,7 @@ yarn microfeed media upload --help
 yarn microfeed api --help
 ```
 
-Read the complete [`yarn microfeed` command reference](https://docs.microfeed.org/microfeed-cli/)
+Read the complete [microfeed cli reference](https://docs.microfeed.org/microfeed-cli/)
 for every command, option, output contract, and safety rule.
 
 ## Agent skill

@@ -83,8 +83,11 @@ describe("@microfeed/theme-kit package loading", () => {
   });
 
   it("documents general and command-specific executable usage", () => {
-    expect(renderThemeKitHelp()).toContain("microfeed-theme <command>");
+    expect(renderThemeKitHelp()).toContain("theme-kit <command>");
     expect(renderThemeKitHelp()).toContain("--version");
+    expect(renderThemeKitHelp()).toContain(
+      "https://docs.microfeed.org/theme-kit-cli/",
+    );
     expect(renderThemeKitHelp("validate")).toContain("[--json]");
     expect(renderThemeKitHelp("fixture pull")).toContain("--output <file>");
   });
@@ -114,9 +117,9 @@ describe("@microfeed/theme-kit package loading", () => {
       "utf8",
     )) as {scripts?: Record<string, string>};
     expect(starterPackage.scripts).toMatchObject({
-      preview: "microfeed-theme preview .",
-      test: "microfeed-theme test . --json",
-      validate: "microfeed-theme validate . --json",
+      preview: "theme-kit preview .",
+      test: "theme-kit test . --json",
+      validate: "theme-kit validate . --json",
     });
   });
 

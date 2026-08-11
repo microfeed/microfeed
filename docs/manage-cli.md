@@ -7,9 +7,9 @@ This is the canonical capability reference for microfeed's repository-owned
 management CLI. It is written for people and coding agents that need to
 understand what the CLI can do, what it changes, and which safeguards apply.
 
-Use the README for approachable installation workflows. Use this document when
-you need the complete command and option contract. Run `yarn manage help
-<command>` for the corresponding terminal reference.
+For a guided task, start with [Manage your site](/manage/) or the installation
+guides. Use this page when you need the complete command and option contract.
+Run `yarn manage help <command>` for the corresponding terminal reference.
 
 ## Contents
 

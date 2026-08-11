@@ -1,5 +1,10 @@
 export const ADMIN_SETTINGS_SECTIONS = [
   {
+    icon: "code",
+    id: "custom-code",
+    name: "Website appearance & code",
+  },
+  {
     icon: "activity",
     id: "tracking-urls",
     name: "Tracking URLs",
@@ -28,11 +33,6 @@ export const ADMIN_SETTINGS_SECTIONS = [
     icon: "image",
     id: "favicon",
     name: "Favicon",
-  },
-  {
-    icon: "code",
-    id: "custom-code",
-    name: "Custom code",
   },
 ] as const;
 

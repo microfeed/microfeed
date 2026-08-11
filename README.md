@@ -183,8 +183,9 @@ Choose the publishing workflow that fits the task:
 * **For people:** use the microfeed [admin
   dashboard](https://docs.microfeed.org/dashboard/) to create, edit, or delete
   posts; upload audio, video, images, and other media files when R2 is enabled;
-  use external URLs in content-only mode; and [customize your
-  site](https://docs.microfeed.org/dashboard/customize/).
+  use external URLs in content-only mode; [customize themes and shared website
+  code](https://docs.microfeed.org/dashboard/themes/); and choose [Public,
+  Headless, or Offline site access](https://docs.microfeed.org/dashboard/customize/).
 * **For AI agents:** use the official
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through browser-authorized access after you enable the API. The
@@ -209,7 +210,7 @@ Themes developed by the community can be installed from public GitHub
 repositories with `yarn manage theme`. Developers and AI coding agents can
 initialize a standalone theme repository, work with fixtures or a live public
 JSON Feed, use tools such as Tailwind CSS, and validate the package before it
-is installed. See [Versioned themes](https://docs.microfeed.org/dashboard/themes/)
+is installed. See [Themes and website code](https://docs.microfeed.org/dashboard/themes/)
 for the complete authoring, preview, installation, and asset workflow.
 New sites start with a familiar, responsive Classic-inspired default whose
 colors can be adjusted from a short design-token block in an Admin version

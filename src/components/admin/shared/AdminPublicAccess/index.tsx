@@ -20,7 +20,7 @@ export function publicAccessItems(links: AdminPublicLinks) {
       summary: "Share this web link to your audience via social media / email.",
       details: (<div className="grid grid-cols-1 gap-4 py-2">
         <div>
-          You can customize the styling and add some custom code in <a href={ADMIN_URLS.settings()}>Settings / Custom code</a>.
+          You can customize the styling and add shared website code in <a href={ADMIN_URLS.settings()}>Settings / Website appearance &amp; code</a>.
         </div>
         <div>
           You can disable the entire website in <a href={ADMIN_URLS.settings()}>Settings / Access control</a>.

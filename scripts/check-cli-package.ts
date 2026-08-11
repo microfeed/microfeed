@@ -71,6 +71,7 @@ try {
     "utf8",
   );
   if (!packedReadme.includes("yarn microfeed login") ||
+      !packedReadme.includes("npm install --global @microfeed/cli") ||
       !packedReadme.includes("Site URLs and instance names") ||
       !packedReadme.includes("GNU Affero General Public License v3.0")) {
     throw new Error("The packed CLI README is incomplete.");

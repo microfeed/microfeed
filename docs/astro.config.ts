@@ -59,8 +59,8 @@ export default defineConfig({
             { label: "Create and edit items", link: "/dashboard/publish/" },
             { label: "Edit channel", link: "/dashboard/edit-channel/" },
             { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
-            { label: "Versioned themes", link: "/dashboard/themes/" },
-            { label: "Access and custom code", link: "/dashboard/customize/" },
+            { label: "Themes and website code", link: "/dashboard/themes/" },
+            { label: "Site access", link: "/dashboard/customize/" },
           ],
         },
         {
@@ -94,7 +94,8 @@ export default defineConfig({
           label: "Reference",
           items: [
             { label: "yarn manage command reference", link: "/manage-cli/" },
-            { label: "yarn microfeed command reference", link: "/microfeed-cli/" },
+            { label: "microfeed cli reference", link: "/microfeed-cli/" },
+            { label: "theme-kit cli reference", link: "/theme-kit-cli/" },
             { label: "Glossary", link: "/reference/glossary/" },
           ],
         },
@@ -109,10 +110,10 @@ export default defineConfig({
         starlightLlmsTxt({
           projectName: "microfeed",
           description:
-            "microfeed is an open-source, self-hosted CMS that publishes one collection as a website, RSS feed, and JSON feed from Cloudflare.",
+            "microfeed is an open-source CMS that publishes one collection as a website, RSS feed, and JSON Feed from the owner's Cloudflare account.",
           details:
-            "Use the Installation guides for deployment workflows. Use the yarn manage reference for deployment commands and the yarn microfeed reference for content-management commands and safety rules.",
-          promote: ["index", "start-here/**", "manage-cli", "microfeed-cli"],
+            "Use the Installation guides for deployment workflows. Use the yarn manage reference for site-management commands and the microfeed CLI reference for content commands and safety rules.",
+          promote: ["index", "start-here/**", "manage-cli", "microfeed-cli", "theme-kit-cli"],
           demote: ["contribute/**"],
           customSets: [
             {
