@@ -36,7 +36,16 @@ function integrationSuffix(suffix: string, legacy: boolean): boolean {
     /^items\/[^/]+\/$/u.test(suffix) ||
     /^channels\/[^/]+\/$/u.test(suffix) ||
     suffix === "media_files/presigned_urls/" ||
-    (!legacy && suffix === "search/");
+    (!legacy && (
+      suffix === "search/" ||
+      suffix === "pages/" ||
+      suffix === "pages/validate/" ||
+      /^pages\/[^/]+\/$/u.test(suffix) ||
+      suffix === "site-files/" ||
+      suffix === "site-files/validate/" ||
+      /^site-files\/[^/]+\/$/u.test(suffix) ||
+      /^site-files\/[^/]+\/(?:publish|reset)\/$/u.test(suffix)
+    ));
 }
 
 export function apiPathDetails(pathname: string): ApiPathDetails | null {

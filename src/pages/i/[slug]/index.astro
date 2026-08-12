@@ -7,6 +7,7 @@ import Theme from "@/server/themes/Theme";
 import PublicLayout from "../../../layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
+import {navigationPages} from "@/server/pages/service";
 
 const itemId = getIdFromSlug(Astro.params.slug ?? "");
 if (!itemId) {
@@ -41,12 +42,15 @@ const assetBaseUrl = themeAssetBaseUrl(
   loaded.content.activeTheme?.assetOwnerThemeId,
   loaded.content.activeTheme?.bundle.assets,
 );
+const navigation = await navigationPages(loaded.database.FEED_DB, Astro.request);
+const extraContext = {navigation_pages: navigation};
 const theme = new Theme(
   loaded.publicFeed,
   loaded.content.settings,
   null,
   loaded.content.activeTheme,
   assetBaseUrl,
+  extraContext,
 );
 const sharedTheme = new Theme(
   loaded.publicFeed,
@@ -54,6 +58,7 @@ const sharedTheme = new Theme(
   CODE_TYPES.SHARED,
   loaded.content.activeTheme,
   assetBaseUrl,
+  extraContext,
 );
 const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const canonicalUrl = itemId && item
@@ -79,5 +84,6 @@ const canonicalUrl = itemId && item
     bodyHtml={theme.getWebItem(item).html}
     bodyEnd={theme.getWebBodyEnd().html}
     sharedBodyEnd={sharedTheme.getWebBodyEnd().html}
+    searchEnabled={loaded.content.activeTheme?.manifest.formatVersion === 2}
   />
 )}

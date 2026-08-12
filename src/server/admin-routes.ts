@@ -1,5 +1,17 @@
 const RESERVED_ITEM_PATHS = new Set(["list", "new"]);
 
+export function isPublicPageCandidateForDynamicAdminRoute(
+  pathname: string,
+  routeAdminPath: string | undefined,
+  configuredAdminPath: string,
+): boolean {
+  return Boolean(
+    routeAdminPath &&
+      routeAdminPath !== configuredAdminPath &&
+      pathname === `/${routeAdminPath}/`,
+  );
+}
+
 export function isExistingItemEditorPath(
   pathname: string,
   adminPath = "admin",

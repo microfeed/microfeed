@@ -1,0 +1,453 @@
+import {
+  ITEM_STATUSES_DICT,
+  ITEM_STATUSES_STRINGS_DICT,
+  STATUSES,
+} from "@/shared/Constants";
+import {
+  normalizePageSlug,
+  publicPageUrl,
+  slugifyPageTitle,
+  type PageNavigationEntry,
+  type PageRecord,
+  validatePageSlug,
+} from "@/shared/Pages";
+import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
+import type FeedDb from "@/server/feed/FeedDb";
+import {PUBLIC_CACHE_TAGS} from "@/server/cache/public-cache";
+
+export interface PageInput {
+  content_html?: string;
+  meta_description?: string | null;
+  navigation_label?: string;
+  navigation_order?: number;
+  show_in_navigation?: boolean;
+  slug?: string;
+  status?: "published" | "unlisted" | "unpublished" | number;
+  title?: string;
+}
+
+export interface PageListOptions {
+  limit?: number;
+  nextCursor?: string;
+  statuses?: Array<"published" | "unlisted" | "unpublished">;
+}
+
+export interface PageListResponse {
+  items: PageRecord[];
+  next_cursor?: string;
+}
+
+export interface ResolvedPagePath {
+  page: PageRecord;
+  redirect: boolean;
+}
+
+export class PageConflictError extends Error {}
+export class PageRequestError extends Error {}
+export class PageThemeUnsupportedError extends Error {}
+
+interface PageRow extends Record<string, unknown> {
+  content_html: string;
+  content_text: string;
+  created_at: string;
+  id: string;
+  meta_description: string | null;
+  navigation_label: string;
+  navigation_order: number;
+  published_at: string | null;
+  show_in_navigation: number;
+  slug: string;
+  status: number;
+  title: string;
+  updated_at: string;
+}
+
+function statusValue(value: PageInput["status"], fallback: number): number {
+  if (typeof value === "number" && Object.values(STATUSES).includes(value)) {
+    return value;
+  }
+  return (ITEM_STATUSES_STRINGS_DICT as Readonly<Record<string, number>>)[
+    String(value ?? "")
+  ] ?? fallback;
+}
+
+function statusName(value: number): PageRecord["status"] {
+  const status = ITEM_STATUSES_DICT[value]?.name;
+  return status === "published" || status === "unlisted" ||
+      status === "unpublished"
+    ? status
+    : "unpublished";
+}
+
+function isPublicStatus(value: number): boolean {
+  return value === STATUSES.PUBLISHED || value === STATUSES.UNLISTED;
+}
+
+function encodeCursor(row: PageRow): string {
+  const bytes = new TextEncoder().encode(JSON.stringify({
+    id: row.id,
+    updatedAt: row.updated_at,
+    version: 1,
+  }));
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/gu, "-").replace(/\//gu, "_")
+    .replace(/=+$/gu, "");
+}
+
+function decodeCursor(value: string): {id: string; updatedAt: string} {
+  try {
+    const padded = value.replace(/-/gu, "+").replace(/_/gu, "/")
+      .padEnd(Math.ceil(value.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const decoded = new TextDecoder().decode(
+      Uint8Array.from(binary, (character) => character.charCodeAt(0)),
+    );
+    const cursor = JSON.parse(decoded) as Record<string, unknown>;
+    if (
+      cursor.version !== 1 || typeof cursor.id !== "string" ||
+      typeof cursor.updatedAt !== "string" ||
+      !Number.isFinite(Date.parse(cursor.updatedAt))
+    ) {
+      throw new Error("invalid");
+    }
+    return {id: cursor.id, updatedAt: cursor.updatedAt};
+  } catch {
+    throw new PageRequestError("Invalid next_cursor.");
+  }
+}
+
+function pageFromRow(row: PageRow, baseUrl: string): PageRecord {
+  return {
+    content_html: String(row.content_html ?? ""),
+    content_text: String(row.content_text ?? ""),
+    date_created: String(row.created_at),
+    date_modified: String(row.updated_at),
+    ...(row.published_at
+      ? {date_published: String(row.published_at)}
+      : {}),
+    id: String(row.id),
+    ...(row.meta_description
+      ? {meta_description: String(row.meta_description)}
+      : {}),
+    navigation_label: String(row.navigation_label || row.title),
+    navigation_order: Number(row.navigation_order ?? 0),
+    show_in_navigation: Boolean(row.show_in_navigation),
+    slug: String(row.slug),
+    status: statusName(Number(row.status)),
+    title: String(row.title),
+    url: publicPageUrl(String(row.slug), baseUrl),
+  };
+}
+
+function rows(results: Array<Record<string, unknown>>): PageRow[] {
+  return results.map((row) => row as PageRow);
+}
+
+export async function activeThemeSupportsPages(
+  database: D1Database,
+): Promise<boolean> {
+  const row = await database.prepare(`
+    SELECT themes.id
+    FROM theme_state
+    JOIN themes ON themes.id = theme_state.active_theme_id
+      AND themes.deleted_at IS NULL
+    WHERE theme_state.id = 'current'
+      AND json_extract(themes.manifest_json, '$.formatVersion') = 2
+      AND json_type(themes.bundle_json, '$.webPage') = 'text'
+      AND json_type(themes.bundle_json, '$.webSearch') = 'text'
+    LIMIT 1
+  `).first<{id: string}>();
+  return Boolean(row?.id);
+}
+
+async function assertSlugAvailable(
+  database: D1Database,
+  slug: string,
+  pageId?: string,
+): Promise<void> {
+  const row = await database.prepare(
+    "SELECT page_id FROM page_paths WHERE slug = ? COLLATE NOCASE LIMIT 1",
+  ).bind(slug).first<{page_id: string}>();
+  if (row && row.page_id !== pageId) {
+    throw new PageConflictError(`The path /${slug}/ is already reserved.`);
+  }
+}
+
+function validatedSlug(value: string, adminPath?: string | null): string {
+  const slug = normalizePageSlug(value);
+  const error = validatePageSlug(slug, adminPath);
+  if (error) throw new PageRequestError(error);
+  return slug;
+}
+
+async function purgePageCaches(database: FeedDb, pageId: string): Promise<void> {
+  await database.purgePublicCacheTags([
+    PUBLIC_CACHE_TAGS.PAGES,
+    PUBLIC_CACHE_TAGS.page(pageId),
+    PUBLIC_CACHE_TAGS.ITEMS,
+  ]);
+}
+
+export async function listPages(
+  database: FeedDb,
+  request: Request,
+  options: PageListOptions = {},
+): Promise<PageListResponse> {
+  const limit = Math.max(1, Math.min(options.limit ?? 20, 100));
+  const statuses = options.statuses ?? [
+    "published",
+    "unlisted",
+    "unpublished",
+  ];
+  const statusValues = statuses.map((status) =>
+    ITEM_STATUSES_STRINGS_DICT[status]
+  );
+  const clauses = [
+    `status IN (${statusValues.map(() => "?").join(", ")})`,
+  ];
+  const bindings: unknown[] = [...statusValues];
+  if (options.nextCursor) {
+    const cursor = decodeCursor(options.nextCursor);
+    clauses.push("(updated_at < ? OR (updated_at = ? AND id < ?))");
+    bindings.push(cursor.updatedAt, cursor.updatedAt, cursor.id);
+  }
+  const result = await database.FEED_DB.prepare(`
+    SELECT * FROM pages
+    WHERE ${clauses.join(" AND ")}
+    ORDER BY updated_at DESC, id DESC
+    LIMIT ?
+  `).bind(...bindings, limit + 1).all();
+  const pageRows = rows(result.results);
+  const visible = pageRows.slice(0, limit);
+  const baseUrl = new URL(request.url).origin;
+  return {
+    items: visible.map((row) => pageFromRow(row, baseUrl)),
+    ...(pageRows.length > limit && visible.length > 0
+      ? {next_cursor: encodeCursor(visible.at(-1)!)}
+      : {}),
+  };
+}
+
+export async function getPageById(
+  database: D1Database,
+  request: Request,
+  id: string,
+  includeDeleted = false,
+): Promise<PageRecord | null> {
+  const row = await database.prepare(
+    `SELECT * FROM pages WHERE id = ?${includeDeleted ? "" : " AND status != ?"} LIMIT 1`,
+  ).bind(...(includeDeleted ? [id] : [id, STATUSES.DELETED])).first<PageRow>();
+  return row ? pageFromRow(row, new URL(request.url).origin) : null;
+}
+
+export async function createPage(
+  database: FeedDb,
+  request: Request,
+  input: PageInput,
+  options: {adminPath?: string | null; id?: string} = {},
+): Promise<PageRecord> {
+  const title = String(input.title ?? "").trim();
+  if (!title) throw new PageRequestError("A Page title is required.");
+  const slug = validatedSlug(
+    input.slug || slugifyPageTitle(title),
+    options.adminPath,
+  );
+  await assertSlugAvailable(database.FEED_DB, slug);
+  const status = statusValue(input.status, STATUSES.UNPUBLISHED);
+  if (isPublicStatus(status) && !await activeThemeSupportsPages(database.FEED_DB)) {
+    throw new PageThemeUnsupportedError(
+      "Activate a format v2 theme before publishing a Page.",
+    );
+  }
+  const id = options.id ?? randomShortUUID();
+  const now = new Date().toISOString();
+  const contentHtml = String(input.content_html ?? "");
+  const navigationLabel = String(input.navigation_label ?? title).trim() || title;
+  const orderRow = await database.FEED_DB.prepare(
+      "SELECT COALESCE(MAX(navigation_order), 0) + 10 AS value FROM pages WHERE status != ?",
+    ).bind(STATUSES.DELETED).first() as {value?: number} | null;
+  const nextOrder = input.navigation_order ?? Number(orderRow?.value ?? 10);
+  try {
+    await database.FEED_DB.batch([
+      database.FEED_DB.prepare(`
+        INSERT INTO pages (
+          id, slug, title, content_html, content_text, status,
+          meta_description, show_in_navigation, navigation_label,
+          navigation_order, published_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        slug,
+        title,
+        contentHtml,
+        htmlToPlainText(contentHtml),
+        status,
+        input.meta_description?.trim() || null,
+        input.show_in_navigation === false ? 0 : 1,
+        navigationLabel,
+        nextOrder,
+        isPublicStatus(status) ? now : null,
+        now,
+        now,
+      ),
+      database.FEED_DB.prepare(
+        "INSERT INTO page_paths (slug, page_id, is_current, created_at) VALUES (?, ?, 1, ?)",
+      ).bind(slug, id, now),
+    ]);
+  } catch (error) {
+    if (String(error).toLocaleLowerCase().includes("unique")) {
+      throw new PageConflictError(`The path /${slug}/ is already reserved.`);
+    }
+    throw error;
+  }
+  await purgePageCaches(database, id);
+  return (await getPageById(database.FEED_DB, request, id))!;
+}
+
+export async function updatePage(
+  database: FeedDb,
+  request: Request,
+  id: string,
+  input: PageInput,
+  options: {adminPath?: string | null} = {},
+): Promise<PageRecord | null> {
+  const existingRow = await database.FEED_DB.prepare(
+    "SELECT * FROM pages WHERE id = ? AND status != ? LIMIT 1",
+  ).bind(id, STATUSES.DELETED).first() as PageRow | null;
+  if (!existingRow) return null;
+
+  const title = input.title === undefined
+    ? existingRow.title
+    : String(input.title).trim();
+  if (!title) throw new PageRequestError("A Page title is required.");
+  const slug = input.slug === undefined
+    ? existingRow.slug
+    : validatedSlug(input.slug, options.adminPath);
+  const slugChanged = slug !== normalizePageSlug(existingRow.slug);
+  if (slugChanged) await assertSlugAvailable(database.FEED_DB, slug, id);
+  const status = statusValue(input.status, existingRow.status);
+  const becomingPublic = isPublicStatus(status) && !isPublicStatus(existingRow.status);
+  if (becomingPublic && !await activeThemeSupportsPages(database.FEED_DB)) {
+    throw new PageThemeUnsupportedError(
+      "Activate a format v2 theme before publishing a Page.",
+    );
+  }
+  const now = new Date().toISOString();
+  const contentHtml = input.content_html === undefined
+    ? existingRow.content_html
+    : String(input.content_html);
+  const statements = [];
+  if (slugChanged) {
+    statements.push(
+      database.FEED_DB.prepare(
+        "UPDATE page_paths SET is_current = 0 WHERE page_id = ? AND is_current = 1",
+      ).bind(id),
+      database.FEED_DB.prepare(
+        "INSERT INTO page_paths (slug, page_id, is_current, created_at) VALUES (?, ?, 1, ?)",
+      ).bind(slug, id, now),
+    );
+  }
+  statements.push(database.FEED_DB.prepare(`
+    UPDATE pages SET
+      slug = ?, title = ?, content_html = ?, content_text = ?, status = ?,
+      meta_description = ?, show_in_navigation = ?, navigation_label = ?,
+      navigation_order = ?, published_at = ?, updated_at = ?
+    WHERE id = ? AND status != ?
+  `).bind(
+    slug,
+    title,
+    contentHtml,
+    htmlToPlainText(contentHtml),
+    status,
+    input.meta_description === undefined
+      ? existingRow.meta_description
+      : input.meta_description?.trim() || null,
+    input.show_in_navigation === undefined
+      ? existingRow.show_in_navigation
+      : input.show_in_navigation ? 1 : 0,
+    input.navigation_label === undefined
+      ? existingRow.navigation_label
+      : input.navigation_label.trim() || title,
+    input.navigation_order ?? existingRow.navigation_order,
+    existingRow.published_at ?? (isPublicStatus(status) ? now : null),
+    now,
+    id,
+    STATUSES.DELETED,
+  ));
+  try {
+    await database.FEED_DB.batch(statements);
+  } catch (error) {
+    if (String(error).toLocaleLowerCase().includes("unique")) {
+      throw new PageConflictError(`The path /${slug}/ is already reserved.`);
+    }
+    throw error;
+  }
+  await purgePageCaches(database, id);
+  return getPageById(database.FEED_DB, request, id);
+}
+
+export async function deletePage(
+  database: FeedDb,
+  id: string,
+): Promise<boolean> {
+  const result = await database.FEED_DB.prepare(
+    "UPDATE pages SET status = ?, updated_at = ? WHERE id = ? AND status != ?",
+  ).bind(
+    STATUSES.DELETED,
+    new Date().toISOString(),
+    id,
+    STATUSES.DELETED,
+  ).run();
+  if (!result.meta.changes) return false;
+  await purgePageCaches(database, id);
+  return true;
+}
+
+export async function resolvePagePath(
+  database: D1Database,
+  request: Request,
+  slugValue: string,
+): Promise<ResolvedPagePath | null> {
+  const slug = normalizePageSlug(slugValue);
+  const row = await database.prepare(`
+    SELECT pages.*, page_paths.is_current
+    FROM page_paths
+    JOIN pages ON pages.id = page_paths.page_id
+    WHERE page_paths.slug = ? COLLATE NOCASE
+      AND pages.status IN (?, ?)
+    LIMIT 1
+  `).bind(slug, STATUSES.PUBLISHED, STATUSES.UNLISTED).first<
+    PageRow & {is_current: number}
+  >();
+  if (!row) return null;
+  return {
+    page: pageFromRow(row, new URL(request.url).origin),
+    redirect: !Boolean(row.is_current),
+  };
+}
+
+export async function navigationPages(
+  database: D1Database,
+  request: Request,
+): Promise<PageNavigationEntry[]> {
+  const result = await database.prepare(`
+    SELECT * FROM pages
+    WHERE status = ? AND show_in_navigation = 1
+    ORDER BY navigation_order ASC, title COLLATE NOCASE ASC, id ASC
+  `).bind(STATUSES.PUBLISHED).all();
+  const baseUrl = new URL(request.url).origin;
+  return rows(result.results).map((row) => {
+    const page = pageFromRow(row, baseUrl);
+    return {
+      id: page.id,
+      navigation_label: page.navigation_label,
+      navigation_order: page.navigation_order,
+      slug: page.slug,
+      title: page.title,
+      url: page.url,
+    };
+  });
+}

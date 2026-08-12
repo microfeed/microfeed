@@ -1,6 +1,6 @@
 # Develop the bundled default theme
 
-Read `microfeed-theme.json` and the schemas in `.microfeed/schemas/` before editing. The installed package is the six generated files in this directory; source templates, Tailwind CSS, and vanilla TypeScript live under `src/`.
+Read `microfeed-theme.json` and the schemas in `.microfeed/schemas/` before editing. The installed package is the eight generated format v2 files in this directory; source templates, Tailwind CSS, and vanilla TypeScript live under `src/`.
 
 1. Edit `src/templates/`, `src/theme.css`, or `src/main.ts`.
 2. Run `yarn build` from this directory (or `yarn workspace @microfeed/default-theme-source build` from the microfeed repository).

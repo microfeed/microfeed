@@ -43,7 +43,7 @@ async function save(
 beforeEach(async () => {
   await env.FEED_DB.prepare("DELETE FROM items WHERE id LIKE 'search-%'").run();
   await env.FEED_DB.prepare(
-    "UPDATE item_search_metadata SET ready = 1 WHERE id = 1",
+    "UPDATE site_search_metadata SET ready = 1 WHERE id = 1",
   ).run();
 });
 
@@ -284,6 +284,7 @@ describe("D1 item search", () => {
       id: "search-api",
       status: "published",
       title: "API searchable item",
+      type: "item",
       url: `${ORIGIN}/i/api-searchable-item-search-api/`,
     });
 
@@ -294,7 +295,7 @@ describe("D1 item search", () => {
     expect(invalid.status).toBe(400);
 
     await env.FEED_DB.prepare(
-      "UPDATE item_search_metadata SET ready = 0 WHERE id = 1",
+      "UPDATE site_search_metadata SET ready = 0 WHERE id = 1",
     ).run();
     const unavailable = await searchApiItems({
       locals: {feedDb: db},

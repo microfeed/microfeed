@@ -97,20 +97,119 @@ export const apiItemOutputSchema = apiItemInputSchema.extend({
   url: z.string().optional(),
 }).meta({id: "Item"});
 
+export const apiPageInputSchema = z.object({
+  content_html: z.string().optional().meta({
+    description: "The Page body as sanitized rich-text HTML.",
+  }),
+  meta_description: z.string().max(320).nullable().optional(),
+  navigation_label: z.string().max(100).optional(),
+  navigation_order: z.number().int().optional(),
+  show_in_navigation: z.boolean().optional(),
+  slug: z.string().min(1).max(100).optional().meta({
+    description: "A top-level path segment, such as about for /about/.",
+    example: "about",
+  }),
+  status: apiStatusSchema.optional(),
+  title: z.string().min(1).max(200).optional(),
+}).meta({id: "PageInput"});
+
+export const apiPageOutputSchema = apiPageInputSchema.extend({
+  content_html: z.string(),
+  content_text: z.string(),
+  date_created: z.iso.datetime(),
+  date_modified: z.iso.datetime(),
+  date_published: z.iso.datetime().optional(),
+  id: z.string(),
+  navigation_label: z.string(),
+  navigation_order: z.number().int(),
+  show_in_navigation: z.boolean(),
+  slug: z.string(),
+  status: z.enum(["published", "unlisted", "unpublished"]),
+  title: z.string(),
+  url: z.url(),
+}).meta({id: "Page"});
+
+export const apiPageListResponseSchema = z.object({
+  items: z.array(apiPageOutputSchema),
+  next_cursor: z.string().optional(),
+}).meta({id: "PageListResponse"});
+
+export const apiPageCreateResponseSchema = z.object({
+  id: z.string(),
+}).meta({id: "PageCreateResponse"});
+
+export const apiSiteFileMediaTypeSchema = z.enum([
+  "application/json",
+  "application/manifest+json",
+  "application/rss+xml",
+  "application/xml",
+  "text/css",
+  "text/csv",
+  "text/markdown",
+  "text/plain",
+  "text/yaml",
+]);
+
+export const apiSiteFileInputSchema = z.object({
+  content_type: apiSiteFileMediaTypeSchema.optional(),
+  draft_content: z.string().optional(),
+  enabled: z.boolean().optional(),
+  filename: z.string().min(1).max(128).optional().meta({
+    description: "A lowercase root filename with a supported text extension.",
+    example: "security.txt",
+  }),
+}).meta({id: "SiteFileInput"});
+
+export const apiSiteFileOutputSchema = apiSiteFileInputSchema.extend({
+  content_type: apiSiteFileMediaTypeSchema,
+  date_created: z.iso.datetime(),
+  date_modified: z.iso.datetime(),
+  date_published: z.iso.datetime().optional(),
+  draft_content: z.string(),
+  enabled: z.boolean(),
+  filename: z.string(),
+  generator: z.enum(["robots", "llms", "sitemap"]).optional(),
+  id: z.string(),
+  mode: z.enum(["generated", "override"]),
+  published_content: z.string().optional(),
+  system: z.boolean(),
+  url: z.url(),
+}).meta({id: "SiteFile"});
+
+export const apiSiteFileListResponseSchema = z.object({
+  items: z.array(apiSiteFileOutputSchema),
+}).meta({id: "SiteFileListResponse"});
+
+export const apiSiteFileCreateResponseSchema = z.object({
+  id: z.string(),
+}).meta({id: "SiteFileCreateResponse"});
+
 export const apiSearchHighlightSegmentSchema = z.object({
   matched: z.boolean(),
   text: z.string(),
 }).meta({id: "SearchHighlightSegment"});
 
 export const apiSearchItemSchema = apiItemOutputSchema.and(z.object({
+  type: z.literal("item"),
   highlights: z.object({
     content_text: z.array(apiSearchHighlightSegmentSchema),
     title: z.array(apiSearchHighlightSegmentSchema),
   }),
 }).loose()).meta({id: "SearchItem"});
 
+export const apiSearchPageSchema = apiPageOutputSchema.omit({
+  content_html: true,
+  date_created: true,
+}).and(z.object({
+  type: z.literal("page"),
+  highlights: z.object({
+    content_text: z.array(apiSearchHighlightSegmentSchema),
+    title: z.array(apiSearchHighlightSegmentSchema),
+  }),
+}).loose()).meta({id: "SearchPage"});
+
 export const apiSearchResponseSchema = z.object({
-  items: z.array(apiSearchItemSchema),
+  items: z.array(z.union([apiSearchItemSchema, apiSearchPageSchema])),
   next_cursor: z.string().optional(),
 }).meta({id: "SearchResponse"});
 
@@ -138,7 +237,15 @@ export const apiSearchQuerySchema = z.object({
   status: z.string().regex(
     /^(?:published|unlisted|unpublished)(?:,(?:published|unlisted|unpublished))*$/u,
   ).default("published,unlisted,unpublished").meta({
-    description: "Comma-separated item statuses. Deleted items are never searched.",
+    description: "Comma-separated content statuses. Deleted content is never searched.",
+  }),
+  types: z.enum([
+    "items",
+    "pages",
+    "items,pages",
+    "pages,items",
+  ]).default("items").meta({
+    description: "Content types to search. The default preserves item-only behavior.",
   }),
 });
 

@@ -72,7 +72,7 @@ alias, but new repositories and documentation use `theme-kit`.
 | Command | Purpose | Changes the live site? |
 | --- | --- | --- |
 | `init <directory>` | Create a standalone generic theme package | No |
-| `validate <directory>` | Validate the manifest, six theme files, and assets | No |
+| `validate <directory>` | Validate the manifest, required theme files, and assets | No |
 | `test <directory>` | Render and check every built-in and package fixture | No |
 | `preview <directory>` | Start an isolated local preview server | No |
 | `fixture pull <url>` | Save a public JSON Feed as a local fixture | No |
@@ -110,7 +110,7 @@ theme-kit init <directory>
 ```
 
 Creates a generic theme repository scaffold containing `README.md`, the
-manifest, six required theme files, schemas, fixtures, local package scripts,
+manifest, eight required theme files, schemas, fixtures, local package scripts,
 `THEME.md`, an independent empty `yarn.lock`, project-local Yarn settings, and
 the `develop-microfeed-theme` agent skill. The settings preapprove only the
 official `@microfeed/theme-kit` package while retaining Yarn package gates for
@@ -135,7 +135,7 @@ theme-kit validate <directory> [--json]
 Loads the complete installable package and validates:
 
 - Manifest format, semantic version, and microfeed compatibility.
-- The six declared text-file paths and their size limits.
+- The six format-v1 or eight format-v2 declared text-file paths and their size limits.
 - Mustache templates and the complete RSS XSL stylesheet.
 - Declared asset paths, symlinks, file types, per-file limits, and total limits.
 - Missing, undeclared, absolute, or traversing paths.
@@ -169,9 +169,10 @@ Validates the package, then renders these built-in fixtures:
 
 It then renders every `.json` file under the package's `fixtures/` directory.
 Each case is rendered twice to detect nondeterministic output. The command
-parses feed and item HTML and verifies that the rendered RSS stylesheet is
-valid XML. Themes are trusted code, so this command checks output structure and
-determinism rather than sanitizing intentional HTML or JavaScript.
+parses feed and item HTML, parses page and search HTML for format-v2 packages,
+and verifies that the rendered RSS stylesheet is valid XML. Themes are trusted
+code, so this command checks output structure and determinism rather than
+sanitizing intentional HTML or JavaScript.
 
 `<directory>` defaults to the current directory. With `--json`, success output
 contains `ok: true` and one `{fixture, ok}` entry for every completed case.
@@ -183,8 +184,9 @@ theme-kit preview <directory> [options]
 ```
 
 Starts an isolated server on a random local address and prints the URL to open
-in a browser. The preview provides feed, item, and rendered RSS views plus a
-mobile/desktop viewport switch. It uses the production theme renderer, serves
+in a browser. The preview provides feed, item, and rendered RSS views, adds
+page and search views for format-v2 packages, and includes a mobile/desktop
+viewport switch. It uses the production theme renderer, serves
 declared assets from a local `/assets/` route, disables caching, and applies a
 sandboxed content security policy.
 

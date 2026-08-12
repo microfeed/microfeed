@@ -9,9 +9,17 @@ import {
   apiItemInputSchema,
   apiItemOutputSchema,
   apiItemValidationResponseSchema,
+  apiPageCreateResponseSchema,
+  apiPageInputSchema,
+  apiPageListResponseSchema,
+  apiPageOutputSchema,
   apiPaginationQuerySchema,
   apiSearchQuerySchema,
   apiSearchResponseSchema,
+  apiSiteFileCreateResponseSchema,
+  apiSiteFileInputSchema,
+  apiSiteFileListResponseSchema,
+  apiSiteFileOutputSchema,
   apiUploadInputSchema,
   apiUploadOutputSchema,
 } from "./ApiSchemas";
@@ -41,6 +49,19 @@ const channelPath = z.object({
     description: "microfeed currently exposes one primary channel.",
   }),
 });
+const pagePath = z.object({
+  pageId: z.string().min(1).meta({description: "The Page ID."}),
+});
+const pageListQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  next_cursor: z.string().optional(),
+  status: z.string().regex(
+    /^(?:published|unlisted|unpublished)(?:,(?:published|unlisted|unpublished))*$/u,
+  ).default("published,unlisted,unpublished"),
+});
+const siteFilePath = z.object({
+  siteFileId: z.string().min(1).meta({description: "The Site File ID."}),
+});
 
 const apiKeySecurity = {bearerAuth: [] as string[]};
 const readSecurity = [apiKeySecurity];
@@ -65,7 +86,9 @@ export const OPENAPI_DOCUMENT = createDocument({
   tags: [
     {name: "Feed", description: "Read the complete feed."},
     {name: "Items", description: "Create and manage feed items."},
-    {name: "Search", description: "Find items by title or plain-text content."},
+    {name: "Pages", description: "Create and manage standalone public Pages."},
+    {name: "Site Files", description: "Manage editable root-level text files."},
+    {name: "Search", description: "Find items and Pages by title or plain-text content."},
     {name: "Channel", description: "Update the primary channel."},
     {name: "Media", description: "Prepare same-origin media uploads."},
   ],
@@ -181,16 +204,230 @@ export const OPENAPI_DOCUMENT = createDocument({
         },
       },
     },
+    "/pages/": {
+      get: {
+        security: readSecurity,
+        operationId: "listPages",
+        summary: "List Pages",
+        tags: ["Pages"],
+        requestParams: {query: pageListQuery},
+        responses: {
+          "200": success(apiPageListResponseSchema),
+          "400": error("The list query or cursor is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+        },
+      },
+      post: {
+        security: writeSecurity,
+        operationId: "createPage",
+        summary: "Create a Page",
+        description: "Creates a top-level Page. A format v2 theme must be active before the Page can be published.",
+        tags: ["Pages"],
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiPageInputSchema}},
+        },
+        responses: {
+          "201": success(apiPageCreateResponseSchema),
+          "400": error("The Page input or path is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "409": error("The Page path is already reserved."),
+          "422": error("The active theme does not support Pages."),
+        },
+      },
+    },
+    "/pages/validate/": {
+      post: {
+        security: writeSecurity,
+        operationId: "validatePage",
+        summary: "Validate a Page",
+        tags: ["Pages"],
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiPageInputSchema}},
+        },
+        responses: {
+          "200": success(apiItemValidationResponseSchema),
+          "400": error("The Page input is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+        },
+      },
+    },
+    "/pages/{pageId}/": {
+      get: {
+        security: readSecurity,
+        operationId: "getPage",
+        summary: "Get a Page",
+        tags: ["Pages"],
+        requestParams: {path: pagePath},
+        responses: {
+          "200": success(apiPageOutputSchema),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Page does not exist."),
+        },
+      },
+      put: {
+        security: writeSecurity,
+        operationId: "updatePage",
+        summary: "Update a Page",
+        tags: ["Pages"],
+        requestParams: {path: pagePath},
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiPageInputSchema}},
+        },
+        responses: {
+          "200": success(apiPageOutputSchema),
+          "400": error("The Page input or path is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Page does not exist."),
+          "409": error("The Page path is already reserved."),
+          "422": error("The active theme does not support Pages."),
+        },
+      },
+      delete: {
+        security: writeSecurity,
+        operationId: "deletePage",
+        summary: "Delete a Page",
+        tags: ["Pages"],
+        requestParams: {path: pagePath},
+        responses: {
+          "200": success(z.object({})),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Page does not exist."),
+        },
+      },
+    },
+    "/site-files/": {
+      get: {
+        security: readSecurity,
+        operationId: "listSiteFiles",
+        summary: "List Site Files",
+        tags: ["Site Files"],
+        responses: {
+          "200": success(apiSiteFileListResponseSchema),
+          "401": error("The Bearer credential is missing or invalid."),
+        },
+      },
+      post: {
+        security: writeSecurity,
+        operationId: "createSiteFile",
+        summary: "Create a Site File",
+        tags: ["Site Files"],
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiSiteFileInputSchema}},
+        },
+        responses: {
+          "201": success(apiSiteFileCreateResponseSchema),
+          "400": error("The Site File input is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "409": error("The root filename already exists."),
+        },
+      },
+    },
+    "/site-files/validate/": {
+      post: {
+        security: writeSecurity,
+        operationId: "validateSiteFile",
+        summary: "Validate a Site File",
+        tags: ["Site Files"],
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiSiteFileInputSchema}},
+        },
+        responses: {
+          "200": success(apiItemValidationResponseSchema),
+          "400": error("The Site File input is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+        },
+      },
+    },
+    "/site-files/{siteFileId}/": {
+      get: {
+        security: readSecurity,
+        operationId: "getSiteFile",
+        summary: "Get a Site File",
+        tags: ["Site Files"],
+        requestParams: {path: siteFilePath},
+        responses: {
+          "200": success(apiSiteFileOutputSchema),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Site File does not exist."),
+        },
+      },
+      put: {
+        security: writeSecurity,
+        operationId: "updateSiteFile",
+        summary: "Update a Site File draft",
+        tags: ["Site Files"],
+        requestParams: {path: siteFilePath},
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiSiteFileInputSchema}},
+        },
+        responses: {
+          "200": success(apiSiteFileOutputSchema),
+          "400": error("The Site File draft is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Site File does not exist."),
+        },
+      },
+      delete: {
+        security: writeSecurity,
+        operationId: "deleteSiteFile",
+        summary: "Delete a custom Site File",
+        tags: ["Site Files"],
+        requestParams: {path: siteFilePath},
+        responses: {
+          "200": success(z.object({})),
+          "400": error("Generated Site Files cannot be deleted."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Site File does not exist."),
+        },
+      },
+    },
+    "/site-files/{siteFileId}/publish/": {
+      post: {
+        security: writeSecurity,
+        operationId: "publishSiteFile",
+        summary: "Publish a Site File draft",
+        tags: ["Site Files"],
+        requestParams: {path: siteFilePath},
+        responses: {
+          "200": success(apiSiteFileOutputSchema),
+          "400": error("The Site File content is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Site File does not exist."),
+        },
+      },
+    },
+    "/site-files/{siteFileId}/reset/": {
+      post: {
+        security: writeSecurity,
+        operationId: "resetSiteFile",
+        summary: "Reset a generated Site File",
+        tags: ["Site Files"],
+        requestParams: {path: siteFilePath},
+        responses: {
+          "200": success(apiSiteFileOutputSchema),
+          "400": error("Only generated Site Files can be reset."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Site File does not exist."),
+        },
+      },
+    },
     "/search/": {
       get: {
         security: readSecurity,
-        operationId: "searchItems",
-        summary: "Search items",
+        operationId: "searchContent",
+        summary: "Search items and Pages",
         description:
-          "Searches D1 for non-deleted items. Unquoted terms use AND semantics; " +
+          "Searches D1 for non-deleted items and Pages. The types query defaults " +
+          "to items for backward compatibility. Unquoted terms use AND semantics; " +
           "single- and double-quoted clauses require an exact phrase. Exact " +
           "matches rank before typo-tolerant title matches. Each result is an " +
-          "Item with safe title and content highlight segments.",
+          "content record with safe title and content highlight segments.",
         tags: ["Search"],
         requestParams: {query: apiSearchQuerySchema},
         responses: {

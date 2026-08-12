@@ -23,6 +23,7 @@ export default class Theme {
   private readonly settings: Settings;
   private readonly theme: string;
   private readonly themeBundle: ThemeBundleV1 | Record<string, string> | null;
+  private readonly formatVersion: number;
 
   constructor(
     jsonData: Record<string, unknown>,
@@ -30,8 +31,10 @@ export default class Theme {
     themeName: string | null = null,
     installedTheme: StoredThemeVersion | null = null,
     assetBaseUrl = "",
+    extraContext: Record<string, unknown> = {},
   ) {
     this.settings = settings;
+    this.formatVersion = installedTheme?.manifest.formatVersion ?? 1;
     let metadata: ThemeRuntimeMetadata = {
       assetBaseUrl: "",
       packageId: CLASSIC_THEME_MANIFEST.packageId,
@@ -88,7 +91,7 @@ export default class Theme {
       this.theme = "classic";
       this.themeBundle = null;
     }
-    this.context = themeContext(jsonData, metadata);
+    this.context = {...themeContext(jsonData, metadata), ...extraContext};
   }
 
   name(): string {
@@ -101,7 +104,17 @@ export default class Theme {
 
   private template(file: ThemeFileKey): string {
     if (this.theme === CODE_TYPES.SHARED) return this.sharedTemplate(file);
-    return this.themeBundle?.[file] ?? CLASSIC_THEME_BUNDLE[file];
+    const installed = this.themeBundle?.[file];
+    const classic = CLASSIC_THEME_BUNDLE[file];
+    return typeof installed === "string"
+      ? installed
+      : typeof classic === "string" ? classic : "";
+  }
+
+  supportsPagesAndSearch(): boolean {
+    return this.formatVersion >= 2 &&
+      typeof this.themeBundle?.webPage === "string" &&
+      typeof this.themeBundle?.webSearch === "string";
   }
 
   getWebHeader(): {html: string} {
@@ -158,5 +171,38 @@ export default class Theme {
 
   getWebItemTmpl(): string {
     return this.template(CODE_FILES.WEB_ITEM as ThemeFileKey);
+  }
+
+  getWebPage(
+    page: object,
+    navigationPages: object[] = [],
+  ): {html: string} {
+    return {
+      html: renderThemeTemplate(this.getWebPageTmpl(), {
+        ...this.context,
+        navigation_pages: navigationPages,
+        page,
+      }),
+    };
+  }
+
+  getWebPageTmpl(): string {
+    return this.template("webPage");
+  }
+
+  getWebSearch(
+    query = "",
+    results: Array<Record<string, unknown>> = [],
+  ): {html: string} {
+    return {
+      html: renderThemeTemplate(this.getWebSearchTmpl(), {
+        ...this.context,
+        search: {query, results},
+      }),
+    };
+  }
+
+  getWebSearchTmpl(): string {
+    return this.template("webSearch");
   }
 }

@@ -1,0 +1,69 @@
+---
+import {env} from "cloudflare:workers";
+
+import {CODE_TYPES} from "@/shared/Constants";
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
+import {navigationPages} from "@/server/pages/service";
+import Theme from "@/server/themes/Theme";
+import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
+
+const loaded = await loadPublishedFeed(env, Astro.request, {
+  includeActiveTheme: true,
+  limit: 1,
+});
+const navigation = await navigationPages(
+  loaded.database.FEED_DB,
+  Astro.request,
+);
+const unavailable = shouldHidePublicWeb(loaded.content) ||
+  loaded.content.activeTheme?.manifest.formatVersion !== 2;
+if (unavailable) Astro.response.status = 404;
+const assetBaseUrl = themeAssetBaseUrl(
+  env,
+  Astro.request.url,
+  loaded.content.activeTheme?.assetOwnerThemeId,
+  loaded.content.activeTheme?.bundle.assets,
+);
+const extraContext = {navigation_pages: navigation};
+const theme = new Theme(
+  loaded.publicFeed,
+  loaded.content.settings,
+  null,
+  loaded.content.activeTheme,
+  assetBaseUrl,
+  extraContext,
+);
+const sharedTheme = new Theme(
+  loaded.publicFeed,
+  loaded.content.settings,
+  CODE_TYPES.SHARED,
+  loaded.content.activeTheme,
+  assetBaseUrl,
+  extraContext,
+);
+const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
+const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+---
+
+{unavailable ? (
+  <h1>Not Found</h1>
+) : (
+  <PublicLayout
+    title={`Search — ${loaded.publicFeed.title ?? "microfeed"}`}
+    description="Search this site"
+    language={loaded.publicFeed.language}
+    canonicalUrl={new URL("/search/", Astro.url).toString()}
+    channelImage={String(loaded.content.channel?.image ?? "")}
+    favicon={webSettings.favicon}
+    publicBucketUrl={webSettings.publicBucketUrl}
+    headHtml={theme.getWebHeader().html}
+    sharedHeadHtml={sharedTheme.getWebHeader().html}
+    bodyStart={theme.getWebBodyStart().html}
+    sharedBodyStart={sharedTheme.getWebBodyStart().html}
+    bodyHtml={theme.getWebSearch(query).html}
+    bodyEnd={theme.getWebBodyEnd().html}
+    sharedBodyEnd={sharedTheme.getWebBodyEnd().html}
+    searchEnabled={true}
+  />
+)}

@@ -1,0 +1,30 @@
+---
+import {env} from "cloudflare:workers";
+
+import PageEditorApp from "@/components/admin/pages/PageEditorApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {adminUrl} from "@/shared/AdminPath";
+import {NAV_ITEMS, NAV_ITEMS_DICT} from "@/shared/Constants";
+import {activeThemeSupportsPages, getPageById} from "@/server/pages/service";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const page = Astro.params.pageId
+  ? await getPageById(env.FEED_DB, Astro.request, Astro.params.pageId)
+  : null;
+if (!page) Astro.response.status = 404;
+const themeSupportsPages = await activeThemeSupportsPages(env.FEED_DB);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.PAGES}
+  documentTitle={page ? `Edit ${page.title} | microfeed.org` : "Page not found | microfeed.org"}
+  {feedContent}
+  {onboardingResult}
+  pageTitle={page ? "Edit Page" : "Page not found"}
+  breadcrumb={{kind: "back", name: NAV_ITEMS_DICT[NAV_ITEMS.PAGES].name, url: adminUrl("pages", Astro.params.adminPath)}}
+>
+  {page ? <PageEditorApp client:only="react" {page} {themeSupportsPages} /> : <section class="rounded-[14px] border bg-card p-5 shadow-xs"><h1 class="font-semibold">Page not found</h1></section>}
+</AdminShell>

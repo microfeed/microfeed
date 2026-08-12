@@ -1,9 +1,9 @@
 {
   "$schema": "./.microfeed/schemas/manifest.schema.json",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "packageId": "microfeed.default",
   "name": "microfeed default",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "author": "microfeed",
   "license": "AGPL-3.0",
   "description": "The familiar microfeed design with a footer that stays at the bottom on short pages.",
@@ -11,6 +11,8 @@
   "files": {
     "webFeed": "web-feed.mustache",
     "webItem": "web-item.mustache",
+    "webPage": "web-page.mustache",
+    "webSearch": "web-search.mustache",
     "webHeader": "web-header.mustache",
     "webBodyStart": "web-body-start.mustache",
     "webBodyEnd": "web-body-end.mustache",

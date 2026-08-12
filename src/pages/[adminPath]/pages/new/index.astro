@@ -1,0 +1,29 @@
+---
+import {env} from "cloudflare:workers";
+
+import PageEditorApp from "@/components/admin/pages/PageEditorApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {adminUrl} from "@/shared/AdminPath";
+import {NAV_ITEMS, NAV_ITEMS_DICT} from "@/shared/Constants";
+import {activeThemeSupportsPages} from "@/server/pages/service";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const themeSupportsPages = await activeThemeSupportsPages(env.FEED_DB);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.PAGES}
+  documentTitle="New Page | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Add Page"
+  breadcrumb={{kind: "back", name: NAV_ITEMS_DICT[NAV_ITEMS.PAGES].name, url: adminUrl("pages", Astro.params.adminPath)}}
+>
+  <PageEditorApp client:only="react" {themeSupportsPages}>
+    <AdminPageFallback slot="fallback" kind="form" />
+  </PageEditorApp>
+</AdminShell>

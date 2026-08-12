@@ -60,6 +60,7 @@ export default defineConfig({
             { label: "Edit channel", link: "/dashboard/edit-channel/" },
             { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
             { label: "Themes and website code", link: "/dashboard/themes/" },
+            { label: "Pages, search, and Site Files", link: "/dashboard/pages-search-and-site-files/" },
             { label: "Site access", link: "/dashboard/customize/" },
           ],
         },

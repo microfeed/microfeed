@@ -82,6 +82,7 @@ async function freshModules(
     vi.doUnmock("@clack/prompts");
   }
   vi.doMock("../../../manage-cli/theme", () => ({
+    installDefaultThemeForV1Appearance: vi.fn(async () => null),
     installDefaultThemeForInitialization: vi.fn(async () => ({
       id: "bundled-default-test",
       packageId: "microfeed.default",
@@ -96,7 +97,8 @@ async function freshModules(
   const commands = await import("../../../manage-cli/commands");
   const config = await import("../../../manage-cli/lib/config");
   const promptModule = await import("../../../manage-cli/lib/prompts");
-  return {commands, config, directory, prompts: promptModule.prompts};
+  const theme = await import("../../../manage-cli/theme");
+  return {commands, config, directory, prompts: promptModule.prompts, theme};
 }
 
 function commandResult(
@@ -120,11 +122,11 @@ function itemSearchCommandResult(args: readonly string[]) {
   }
   const commandIndex = args.indexOf("--command");
   const sql = args[commandIndex + 1] ?? "";
-  if (!sql.includes("item_search") && !sql.includes("content_text_updated_at")) {
+  if (!sql.includes("site_search") && !sql.includes("content_text_updated_at")) {
     return undefined;
   }
   const results = sql.includes("sqlite_schema")
-    ? [{name: "item_search_exact"}, {name: "item_search_title_trigram"}]
+    ? [{name: "site_search_exact"}, {name: "site_search_title_trigram"}]
     : sql.includes("COUNT(*)")
     ? [{count: 0}]
     : [];
@@ -679,7 +681,7 @@ describe("first-class local instances", () => {
   });
 
   it("creates a content-only local instance and enables simulated R2 later", async () => {
-    const {commands, config} = await freshModules();
+    const {commands, config, theme} = await freshModules();
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
       const itemSearch = itemSearchCommandResult(args);
@@ -734,6 +736,12 @@ describe("first-class local instances", () => {
       instance: "content-only",
       local: true,
     }, runner);
+
+    expect(theme.installDefaultThemeForV1Appearance).toHaveBeenCalledWith(
+      expect.objectContaining({instanceName: "content-only"}),
+      runner,
+      true,
+    );
 
     const enabled = await config.readConfig(false, "content-only");
     expect(enabled?.r2.setupMode).toBe("automatic");

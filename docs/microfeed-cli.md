@@ -132,7 +132,7 @@ For every authenticated REST request, the CLI:
 | `instances use <name>` | Select the default saved instance. | Changes only the local current-instance pointer. |
 | `instances remove <name>` | Remove a saved instance locally without contacting the site. | Changes only the local instance store. |
 | `item list` | Read a page of the feed. | Read-only. |
-| `item search <query>` | Search item titles or stored plain-text content. | Read-only. |
+| `item search <query>` | Search item and Page titles or stored plain-text content. | Read-only. |
 | `item get <item-id>` | Read one item. | Read-only. |
 | `item create` | Create an item from flags or JSON. | Creates remote content. |
 | `item update <item-id>` | Update an item from flags or JSON. | Changes remote content. |
@@ -323,7 +323,7 @@ content while retaining pagination.
 
 ## `yarn microfeed item search`
 
-**Purpose:** Search items through `GET /api/v1/search/`.
+**Purpose:** Search items and Pages through `GET /api/v1/search/`.
 
 **Changes:** None.
 
@@ -339,6 +339,7 @@ matched.
 
 | Option | Meaning |
 | --- | --- |
+| `--types <types>` | Search `items`, `pages`, or `items,pages`. The default remains `items` for compatibility. |
 | `--fields <fields>` | Search `title`, `content`, or `title,content`. The default searches both. |
 | `--status <statuses>` | Filter by a comma-separated list of `published`, `unlisted`, or `unpublished`. The default includes all three. |
 | `--date-published-ms-gt <milliseconds>` | Return items published strictly after this Unix timestamp in milliseconds. |
@@ -350,6 +351,12 @@ Search only titles for `hello`:
 
 ```console
 yarn microfeed item search hello --fields title --instance production --json
+```
+
+Search both items and Pages:
+
+```console
+yarn microfeed item search hello --types items,pages --instance production --json
 ```
 
 Keep the shell's outer quotes separate from the exact phrase quotes that the

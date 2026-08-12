@@ -52,8 +52,9 @@ describe("item search migration and normalization", () => {
       "2026-08-01T00:00:00.000Z",
     );
     database.exec(await migration("0009_item_search.sql"));
+    database.exec(await migration("0013_pages_search_site_files.sql"));
     expect(database.prepare(
-      "SELECT ready FROM item_search_metadata WHERE id = 1",
+      "SELECT ready FROM site_search_metadata WHERE id = 1",
     ).get()).toEqual({ready: 0});
 
     expect(await normalizeItemSearchContent(
@@ -71,12 +72,12 @@ describe("item search migration and normalization", () => {
     });
     expect(database.prepare(
       "SELECT ready, normalized_at IS NOT NULL AS normalized " +
-        "FROM item_search_metadata WHERE id = 1",
+        "FROM site_search_metadata WHERE id = 1",
     ).get()).toEqual({normalized: 1, ready: 1});
     expect(database.prepare(
-      "SELECT item_id FROM item_search_exact " +
-        "WHERE item_search_exact MATCH 'world'",
-    ).all()).toEqual([{item_id: "legacy-item"}]);
+      "SELECT content_id FROM site_search_exact " +
+        "WHERE site_search_exact MATCH 'world'",
+    ).all()).toEqual([{content_id: "legacy-item"}]);
   });
 
   it("reconciles old-writer updates and outdated normalization revisions", async () => {
@@ -90,6 +91,7 @@ describe("item search migration and normalization", () => {
       "2026-08-01T00:00:00.000Z",
     );
     database.exec(await migration("0009_item_search.sql"));
+    database.exec(await migration("0013_pages_search_site_files.sql"));
     const cloudflare = testCloudflare(database);
     await normalizeItemSearchContent(cloudflare, config);
 
@@ -120,22 +122,23 @@ describe("item search migration and normalization", () => {
     const database = new DatabaseSync(":memory:");
     database.exec(await migration("0001_initial.sql"));
     database.exec(await migration("0009_item_search.sql"));
+    database.exec(await migration("0013_pages_search_site_files.sql"));
     const cloudflare = testCloudflare(database);
     const result = await withItemSearchIndexesSuspended(
       cloudflare,
       config,
       async () => database.prepare(
         "SELECT COUNT(*) AS count FROM sqlite_schema " +
-          "WHERE name LIKE 'item_search_%' AND type = 'table'",
+          "WHERE name LIKE 'site_search_%' AND type = 'table'",
       ).get() as {count: number},
     );
-    expect(result).toEqual({count: 1});
+    expect(result).toEqual({count: 2});
     expect(database.prepare(
       "SELECT COUNT(*) AS count FROM sqlite_schema " +
-        "WHERE name IN ('item_search_exact', 'item_search_title_trigram')",
+        "WHERE name IN ('site_search_exact', 'site_search_title_trigram')",
     ).get()).toEqual({count: 2});
     expect(database.prepare(
-      "SELECT ready FROM item_search_metadata WHERE id = 1",
+      "SELECT ready FROM site_search_metadata WHERE id = 1",
     ).get()).toEqual({ready: 1});
   });
 });

@@ -27,6 +27,9 @@ export const SNAPSHOT_TABLES = {
   durable: [
     "channels",
     "items",
+    "pages",
+    "page_paths",
+    "site_files",
     "settings",
     "api_keys",
     "auth_user",
@@ -39,6 +42,8 @@ export const SNAPSHOT_TABLES = {
   ephemeral: [
     "item_create_idempotency",
     "item_search_metadata",
+    "site_search_documents",
+    "site_search_metadata",
     "oauth_access_token",
     "oauth_refresh_token",
     "oauth_consent",

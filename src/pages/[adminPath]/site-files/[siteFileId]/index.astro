@@ -1,0 +1,20 @@
+---
+import {env} from "cloudflare:workers";
+
+import SiteFileEditorApp from "@/components/admin/site-files/SiteFileEditorApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {adminUrl} from "@/shared/AdminPath";
+import {NAV_ITEMS, NAV_ITEMS_DICT} from "@/shared/Constants";
+import {getSiteFileById} from "@/server/site-files/service";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+const file = Astro.params.siteFileId
+  ? await getSiteFileById(env.FEED_DB, Astro.request, Astro.params.siteFileId)
+  : null;
+if (!file) Astro.response.status = 404;
+---
+
+<AdminShell activeNavItem={NAV_ITEMS.SITE_FILES} documentTitle={file ? `Edit /${file.filename} | microfeed.org` : "Site File not found | microfeed.org"} {feedContent} {onboardingResult} pageTitle={file ? `Edit /${file.filename}` : "Site File not found"} breadcrumb={{kind: "back", name: NAV_ITEMS_DICT[NAV_ITEMS.SITE_FILES].name, url: adminUrl("site-files", Astro.params.adminPath)}}>
+  {file ? <SiteFileEditorApp client:load file={file} /> : <section class="rounded-[14px] border bg-card p-5 shadow-xs"><h1 class="font-semibold">Site File not found</h1></section>}
+</AdminShell>

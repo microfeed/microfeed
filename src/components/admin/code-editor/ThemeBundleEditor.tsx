@@ -15,6 +15,8 @@ const FILE_LABELS: Record<ThemeFileKey, string> = {
   webFeed: "Web feed",
   webHeader: "Web header",
   webItem: "Web item",
+  webPage: "Web Page",
+  webSearch: "Web search",
 };
 
 interface Props {
@@ -23,6 +25,9 @@ interface Props {
 }
 
 export default function ThemeBundleEditor({bundle, onChange}: Props) {
+  const fileKeys = THEME_FILE_KEYS.filter((key) =>
+    typeof bundle[key] === "string"
+  );
   const hash = typeof window === "undefined" ? "" : window.location.hash.slice(1);
   const initial = THEME_FILE_KEYS.includes(hash as ThemeFileKey)
     ? hash as ThemeFileKey
@@ -31,7 +36,7 @@ export default function ThemeBundleEditor({bundle, onChange}: Props) {
   return (
     <div>
       <div className="mb-4 flex flex-wrap gap-1 rounded-[14px] border bg-card p-3 shadow-xs">
-        {THEME_FILE_KEYS.map((key) => (
+        {fileKeys.map((key) => (
           <Button
             key={key}
             size="sm"
@@ -58,7 +63,7 @@ export default function ThemeBundleEditor({bundle, onChange}: Props) {
       )}
       <AdminCodeEditor
         ariaLabel={`${FILE_LABELS[file]} editor`}
-        code={bundle[file]}
+        code={bundle[file] ?? ""}
         language={file === "rssStylesheet" ? "xml" : "html"}
         minHeight="54vh"
         onChange={(event) => onChange({...bundle, [file]: event.target.value})}

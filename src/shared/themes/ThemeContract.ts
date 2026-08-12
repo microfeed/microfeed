@@ -1,6 +1,8 @@
 import * as z from "zod";
 
-export const THEME_FORMAT_VERSION = 1 as const;
+export const THEME_FORMAT_VERSION_V1 = 1 as const;
+export const THEME_FORMAT_VERSION_V2 = 2 as const;
+export const THEME_FORMAT_VERSION = THEME_FORMAT_VERSION_V2;
 export const THEME_MAX_TEMPLATE_BYTES = 128 * 1024;
 export const THEME_MAX_TEXT_BYTES = 512 * 1024;
 export const THEME_MAX_ASSET_BYTES = 5 * 1024 * 1024;
@@ -27,13 +29,19 @@ export interface ThemeListOptions {
   sort: ThemeListSort;
 }
 
-export const THEME_FILE_KEYS = [
+export const THEME_FILE_KEYS_V1 = [
   "webFeed",
   "webItem",
   "webHeader",
   "webBodyStart",
   "webBodyEnd",
   "rssStylesheet",
+] as const;
+
+export const THEME_FILE_KEYS = [
+  ...THEME_FILE_KEYS_V1,
+  "webPage",
+  "webSearch",
 ] as const;
 
 export type ThemeFileKey = typeof THEME_FILE_KEYS[number];
@@ -49,20 +57,11 @@ const themePathSchema = z.string()
     "Path traversal is not allowed.",
   );
 
-export const themeManifestV1Schema = z.object({
+const themeManifestBaseSchema = z.object({
   $schema: z.string().trim().min(1).max(240).optional(),
   assets: z.array(themePathSchema).max(THEME_MAX_ASSETS).default([]),
   author: z.string().trim().min(1).max(160),
   description: z.string().trim().max(500).optional(),
-  files: z.object({
-    rssStylesheet: themePathSchema,
-    webBodyEnd: themePathSchema,
-    webBodyStart: themePathSchema,
-    webFeed: themePathSchema,
-    webHeader: themePathSchema,
-    webItem: themePathSchema,
-  }),
-  formatVersion: z.literal(THEME_FORMAT_VERSION),
   homepage: z.url().optional(),
   license: z.string().trim().min(1).max(100),
   microfeed: z.string().trim().min(1).max(100),
@@ -78,6 +77,35 @@ export const themeManifestV1Schema = z.object({
   repository: z.url().optional(),
   version: z.string().trim().min(1).max(100),
 });
+
+const themeManifestFilesV1Schema = z.object({
+    rssStylesheet: themePathSchema,
+    webBodyEnd: themePathSchema,
+    webBodyStart: themePathSchema,
+    webFeed: themePathSchema,
+    webHeader: themePathSchema,
+    webItem: themePathSchema,
+});
+
+export const themeManifestFormatV1Schema = themeManifestBaseSchema.extend({
+  files: themeManifestFilesV1Schema,
+  formatVersion: z.literal(THEME_FORMAT_VERSION_V1),
+});
+
+export const themeManifestV2Schema = themeManifestBaseSchema.extend({
+  files: themeManifestFilesV1Schema.extend({
+    webPage: themePathSchema,
+    webSearch: themePathSchema,
+  }),
+  formatVersion: z.literal(THEME_FORMAT_VERSION_V2),
+});
+
+// Compatibility export retained for theme-kit and management callers. It now
+// accepts both the original six-slot format and the eight-slot v2 format.
+export const themeManifestV1Schema = z.discriminatedUnion("formatVersion", [
+  themeManifestFormatV1Schema,
+  themeManifestV2Schema,
+]);
 
 export const themeAssetSchema = z.object({
   contentType: z.string().min(1),
@@ -95,6 +123,8 @@ export const themeBundleV1Schema = z.object({
   webFeed: z.string(),
   webHeader: z.string(),
   webItem: z.string(),
+  webPage: z.string().optional(),
+  webSearch: z.string().optional(),
 });
 
 export const themeRuntimeMetadataSchema = z.object({
@@ -202,6 +232,24 @@ export const themeContextSchema = z.object({
   icon: z.string().optional(),
   item: themeItemSchema.optional(),
   items: z.array(themeItemSchema),
+  navigation_pages: z.array(z.object({
+    navigation_label: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    url: z.string(),
+  }).loose()).optional(),
+  page: z.object({
+    content_html: z.string(),
+    content_text: z.string(),
+    id: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    url: z.string(),
+  }).loose().optional(),
+  search: z.object({
+    query: z.string(),
+    results: z.array(z.record(z.string(), z.unknown())),
+  }).loose().optional(),
   language: z.string().optional(),
   next_url: z.string().optional(),
   title: z.string().optional(),

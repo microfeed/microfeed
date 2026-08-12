@@ -19,17 +19,16 @@ describe("bundled theme packages", () => {
   });
 
   it("keeps the default familiar while anchoring its footer on short pages", async () => {
-    const sharedFiles = [
-      "web-body-start.mustache",
-      "web-feed.mustache",
-      "web-item.mustache",
-    ];
-    for (const filename of sharedFiles) {
-      const [modern, classic] = await Promise.all([
-        readFile(path.join(root, "themes/default", filename), "utf8"),
-        readFile(path.join(root, "themes/classic", filename), "utf8"),
-      ]);
-      expect(modern, filename).toBe(classic);
+    const [bodyStart, classicBodyStart, feed, item] = await Promise.all([
+      readFile(path.join(root, "themes/default/web-body-start.mustache"), "utf8"),
+      readFile(path.join(root, "themes/classic/web-body-start.mustache"), "utf8"),
+      readFile(path.join(root, "themes/default/web-feed.mustache"), "utf8"),
+      readFile(path.join(root, "themes/default/web-item.mustache"), "utf8"),
+    ]);
+    expect(bodyStart).toBe(classicBodyStart);
+    for (const template of [feed, item]) {
+      expect(template).toContain('class="mf-site-nav"');
+      expect(template).toContain("data-microfeed-search-open");
     }
 
     const [bodyEnd, classicBodyEnd, sourceStyles] = await Promise.all([
@@ -73,9 +72,11 @@ describe("bundled theme packages", () => {
     ]);
     expect(modern).toMatchObject({
       assets: [],
+      formatVersion: 2,
       packageId: "microfeed.default",
-      version: application.version,
+      version: "1.1.0",
     });
+    expect(application.version).toBe("1.0.4");
     expect(classic).toMatchObject({assets: [], packageId: "microfeed.classic", version: "1.0.0"});
   });
 

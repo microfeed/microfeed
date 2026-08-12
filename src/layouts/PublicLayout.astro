@@ -5,6 +5,7 @@ import {
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
 import {resolveEffectiveFavicon} from "@/shared/Favicon";
+import PublicSearch from "@/components/public/PublicSearch.astro";
 import "../styles/interactive.css";
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
   sharedBodyEnd: string;
   sharedBodyStart: string;
   sharedHeadHtml: string;
+  searchEnabled?: boolean;
   title?: string;
 }
 
@@ -41,6 +43,7 @@ const {
   sharedBodyEnd,
   sharedBodyStart,
   sharedHeadHtml,
+  searchEnabled = false,
   title = "microfeed",
 } = Astro.props;
 const effectivePublicBucketUrl = resolvePublicBucketUrl(
@@ -75,5 +78,6 @@ const faviconUrl = effectiveFavicon?.url
     <Fragment set:html={bodyHtml} />
     <Fragment set:html={sharedBodyEnd} />
     <Fragment set:html={bodyEnd} />
+    {searchEnabled && <PublicSearch />}
   </body>
 </html>

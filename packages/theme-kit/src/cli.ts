@@ -70,7 +70,22 @@ async function validate(args: Arguments): Promise<void> {
 
 function contexts(fixture: Record<string, unknown>, packageId: string, version: string) {
   const context = themeContext(fixture, {assetBaseUrl: "/assets/", packageId, version});
-  return {context, itemContext: {...context, item: (fixture.items as Array<Record<string, unknown>> | undefined)?.[0]}};
+  const page = {
+    content_html: "<p>Standalone Page content.</p>",
+    content_text: "Standalone Page content.",
+    id: "page-about",
+    navigation_label: "About",
+    slug: "about",
+    title: "About",
+    url: "https://example.test/about/",
+  };
+  const navigation_pages = [page];
+  return {
+    context: {...context, navigation_pages},
+    itemContext: {...context, navigation_pages, item: (fixture.items as Array<Record<string, unknown>> | undefined)?.[0]},
+    pageContext: {...context, navigation_pages, page},
+    searchContext: {...context, navigation_pages, search: {query: "hello", results: []}},
+  };
 }
 
 async function fixtureEntries(directory: string): Promise<Array<[string, Record<string, unknown>]>> {
@@ -89,21 +104,25 @@ async function test(args: Arguments): Promise<void> {
   );
   const tests: Array<{fixture: string; ok: boolean}> = [];
   for (const [name, fixture] of await fixtureEntries(theme.directory)) {
-    const {context, itemContext} = contexts(fixture, theme.manifest.packageId, theme.manifest.version);
+    const {context, itemContext, pageContext, searchContext} = contexts(fixture, theme.manifest.packageId, theme.manifest.version);
     const first = {
       feed: renderThemeTemplate(theme.bundle.webFeed, context),
       header: renderThemeTemplate(theme.bundle.webHeader, context),
       item: renderThemeTemplate(theme.bundle.webItem, itemContext),
+      ...(theme.bundle.webPage ? {page: renderThemeTemplate(theme.bundle.webPage, pageContext)} : {}),
+      ...(theme.bundle.webSearch ? {search: renderThemeTemplate(theme.bundle.webSearch, searchContext)} : {}),
       rss: renderThemeTemplate(theme.bundle.rssStylesheet, context),
     };
     const second = {
       feed: renderThemeTemplate(theme.bundle.webFeed, context),
       header: renderThemeTemplate(theme.bundle.webHeader, context),
       item: renderThemeTemplate(theme.bundle.webItem, itemContext),
+      ...(theme.bundle.webPage ? {page: renderThemeTemplate(theme.bundle.webPage, pageContext)} : {}),
+      ...(theme.bundle.webSearch ? {search: renderThemeTemplate(theme.bundle.webSearch, searchContext)} : {}),
       rss: renderThemeTemplate(theme.bundle.rssStylesheet, context),
     };
     if (JSON.stringify(first) !== JSON.stringify(second)) throw new Error(`${name}: rendering is not deterministic.`);
-    for (const [view, content] of [["feed", first.feed], ["item", first.item]] as const) {
+    for (const [view, content] of Object.entries(first).filter(([view]) => view !== "header" && view !== "rss")) {
       const parseErrors: Array<{code: string}> = [];
       parse(
         `<!doctype html><html><head>${first.header}</head><body>${renderThemeTemplate(theme.bundle.webBodyStart, context)}${content}${renderThemeTemplate(theme.bundle.webBodyEnd, context)}</body></html>`,
@@ -287,11 +306,11 @@ async function preview(args: Arguments): Promise<void> {
     }
     if (url.pathname === "/") {
       response.setHeader("content-type", "text/html; charset=utf-8");
-      response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>microfeed theme preview</title><style>body{font:14px system-ui;margin:0;background:#eee}header{display:flex;gap:.5rem;padding:.75rem;background:#111;color:#fff;position:sticky;top:0}button{cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 54px);border:0;margin:auto;background:#fff}</style></head><body><header><button data-view="feed">Feed</button><button data-view="item">Item</button><button data-view="rss">RSS</button><button id="viewport">Mobile</button></header><iframe sandbox="allow-scripts" src="/render?view=feed"></iframe><script>const frame=document.querySelector('iframe');document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>frame.src='/render?view='+button.dataset.view);document.querySelector('#viewport').onclick=event=>{const mobile=frame.style.width!=='390px';frame.style.width=mobile?'390px':'100%';event.target.textContent=mobile?'Desktop':'Mobile'}</script></body></html>`);
+      response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>microfeed theme preview</title><style>body{font:14px system-ui;margin:0;background:#eee}header{display:flex;gap:.5rem;padding:.75rem;background:#111;color:#fff;position:sticky;top:0}button{cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 54px);border:0;margin:auto;background:#fff}</style></head><body><header><button data-view="feed">Feed</button><button data-view="item">Item</button>${theme.bundle.webPage ? '<button data-view="page">Page</button><button data-view="search">Search</button>' : ''}<button data-view="rss">RSS</button><button id="viewport">Mobile</button></header><iframe sandbox="allow-scripts" src="/render?view=feed"></iframe><script>const frame=document.querySelector('iframe');document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>frame.src='/render?view='+button.dataset.view);document.querySelector('#viewport').onclick=event=>{const mobile=frame.style.width!=='390px';frame.style.width=mobile?'390px':'100%';event.target.textContent=mobile?'Desktop':'Mobile'}</script></body></html>`);
       return;
     }
     const view = url.searchParams.get("view") ?? "feed";
-    const {context, itemContext} = contexts(selectedFixture, theme.manifest.packageId, theme.manifest.version);
+    const {context, itemContext, pageContext, searchContext} = contexts(selectedFixture, theme.manifest.packageId, theme.manifest.version);
     response.setHeader("cache-control", "no-store");
     response.setHeader("content-security-policy", "sandbox allow-scripts; default-src 'self' https: data: blob:; img-src 'self' https: data: blob:; font-src 'self' https: data:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: data: 'unsafe-inline'; connect-src https:");
     response.setHeader("content-type", "text/html; charset=utf-8");
@@ -302,7 +321,14 @@ async function preview(args: Arguments): Promise<void> {
       ));
       return;
     }
-    const body = renderThemeTemplate(view === "item" ? theme.bundle.webItem : theme.bundle.webFeed, view === "item" ? itemContext : context);
+    const templates = {
+      feed: [theme.bundle.webFeed, context],
+      item: [theme.bundle.webItem, itemContext],
+      page: [theme.bundle.webPage ?? theme.bundle.webFeed, pageContext],
+      search: [theme.bundle.webSearch ?? theme.bundle.webFeed, searchContext],
+    } as const;
+    const selected = templates[view as keyof typeof templates] ?? templates.feed;
+    const body = renderThemeTemplate(selected[0], selected[1]);
     response.end(`<!doctype html><html><head>${renderThemeTemplate(theme.bundle.webHeader, context)}</head><body>${renderThemeTemplate(theme.bundle.webBodyStart, context)}${body}${renderThemeTemplate(theme.bundle.webBodyEnd, context)}</body></html>`);
   });
   await new Promise<void>((resolve, reject) => server.listen(0, "127.0.0.1", resolve).once("error", reject));

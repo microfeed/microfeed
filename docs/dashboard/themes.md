@@ -5,9 +5,9 @@ description: Customize public pages with versioned themes and shared HTML, CSS, 
 
 Open **Settings → Website appearance & code** to choose between two tools:
 
-- **Manage versioned themes** controls the complete web feed, item page, shared
-  theme layout, and RSS stylesheet through immutable versions with isolated
-  previews.
+- **Manage versioned themes** controls the complete web feed, item page, public
+  Page, search page, shared theme layout, and RSS stylesheet through immutable
+  versions with isolated previews.
 - **Edit shared HTML code across web pages** adds the same code around every
   active theme for tracking snippets, global branding, JavaScript, or CSS.
 
@@ -37,7 +37,7 @@ Shared code wraps every installed theme and is not part of a theme version.
 Unlike a theme draft, it does not have an isolated preview or automatic version
 history. Save the current code outside the dashboard before a large edit,
 change one concern at a time, choose **Update**, and use **View live page** to
-check feed and item pages at mobile and desktop widths.
+check feed, item, page, and search views at mobile and desktop widths.
 
 Anything placed in shared code is sent to public browsers. Never include API
 keys, Cloudflare tokens, dashboard credentials, private setup links, or other
@@ -46,10 +46,17 @@ metadata, or the active theme.
 
 ## Work with versioned themes
 
-A microfeed theme has six text slots: web feed, web item, web header, web body
-start, web body end, and the complete RSS XSL stylesheet. An installed version
-is immutable. The active version lives in D1 with the other installed versions;
-optional declared assets use immutable R2 keys.
+A format-v1 microfeed theme has six text slots: web feed, web item, web header,
+web body start, web body end, and the complete RSS XSL stylesheet. Format v2
+adds web page and web search slots. Those slots enable public Pages, page
+navigation, typeahead, and the <kbd>Command</kbd>/<kbd>Ctrl</kbd>+<kbd>K</kbd>
+search dialog. An installed version is immutable. The active version lives in
+D1 with the other installed versions; optional declared assets use immutable
+R2 keys.
+
+Existing format-v1 themes remain valid and continue rendering feeds and items
+unchanged. While one is active, Page publishing and public search are disabled,
+and Admin explains that a format-v2 theme must be activated first.
 
 Themes are full-trust, owner-installed code. An activated theme can run the same
 HTML, CSS, and JavaScript as the shared website code feature. Install only
@@ -63,9 +70,10 @@ status, installation time, or name; and move through 20 results per page.
 Choose **Create new version** on any row to create a separate editable draft
 stored by your site:
 
-1. Edit any of the six slots and save repeatedly.
-2. Open the full-screen isolated preview for feed, item, RSS, mobile, and
-   desktop views with current public data.
+1. Edit any of the theme's six or eight slots and save repeatedly.
+2. Open the full-screen isolated preview for feed, item, page, search, RSS,
+   mobile, and desktop views with current public data. Page and search previews
+   are present for format-v2 themes.
 3. Confirm or change the proposed semantic version, such as `1.2.1`. This
    version number identifies the new immutable design.
 4. Choose **Install** to create an immutable, inactive local version.
@@ -79,9 +87,9 @@ commit when present, and checksum.
 
 Admin editing never modifies an imported or active row. A derived imported
 theme receives a `local.` package identity and records its origin. Upstream
-updates can therefore be installed alongside the derived version. V1 drafts
-inherit packaged assets and edit only the six text slots; add or replace assets
-in the source repository and reinstall with `yarn manage theme`.
+updates can therefore be installed alongside the derived version. Dashboard
+drafts inherit packaged assets and edit only the theme's text slots; add or
+replace assets in the source repository and reinstall with `yarn manage theme`.
 
 ## Start a theme repository
 
@@ -107,7 +115,7 @@ independent Git repository on `main`.
 
 The command chooses the valid active D1 theme, or the internal classic fallback when
 there is no usable active version. It
-copies the theme's six slots and declared assets and creates a separate
+copies the theme's six or eight slots and declared assets and creates a separate
 `local.my-theme@0.1.0` identity. Use
 `--package-id`, `--name`, `--version`, and `--author` to set publish-ready
 metadata, or `--no-git` if another tool owns Git initialization.
@@ -181,9 +189,9 @@ Open the generated directory in your coding agent and ask it to read
 `THEME.md`, `microfeed-theme.json`, and the schemas under `.microfeed/schemas/`
 before editing. A useful first request is:
 
-> Build a responsive editorial theme from this starter. Keep the six declared
+> Build a responsive editorial theme from this starter. Keep the eight declared
 > theme files valid, use the provided fixtures, run validation and tests, then
-> preview the feed, item, and RSS views at desktop and mobile sizes.
+> preview the feed, item, page, search, and RSS views at desktop and mobile sizes.
 
 The agent can edit Mustache, HTML, CSS, JavaScript, XSL, fixtures, and declared
 assets without inspecting microfeed's application source. Its normal loop is:
@@ -208,14 +216,14 @@ The generated output can be stored in one of two ways:
 
 | Output | Installed storage | R2 required? | Referenced from |
 | --- | --- | --- | --- |
-| CSS inside `<style>` and JavaScript inside `<script>` | The immutable six-slot bundle in D1 | No | `web-header.mustache` and `web-body-end.mustache` |
+| CSS inside `<style>` and JavaScript inside `<script>` | The immutable theme bundle in D1 | No | `web-header.mustache` and `web-body-end.mustache` |
 | Generated `.css` and `.js` files declared in `assets` | File bytes in R2; path, checksum, size, content type, and immutable owner recorded in D1 | Yes | `{{_theme.asset_base_url}}` |
 | TypeScript, source CSS, Vite/Webpack configuration, and `node_modules` | Source repository only | No | Never loaded by the installed theme |
 
 Inline output is convenient for a small, self-contained theme and remains
 editable in an Admin version draft. It counts toward the 128 KiB per-slot and
 512 KiB total text limits. Declared assets are better for larger bundles and
-browser-cacheable files, but V1 Admin drafts inherit them unchanged; rebuild
+browser-cacheable files, but Admin drafts inherit them unchanged; rebuild
 and install a new repository version to replace one.
 
 #### Inline compiled output in D1
@@ -241,7 +249,7 @@ const result = await build({
 Keep `assets: []` in `microfeed-theme.json`. The complete example is
 `themes/default/scripts/build.mjs` in the microfeed repository. It compiles
 Tailwind through `@tailwindcss/vite`, compiles vanilla TypeScript, escapes a
-possible closing `</script>` sequence, and deterministically checks the six
+possible closing `</script>` sequence, and deterministically checks the eight
 generated files. Once installed, the generated CSS and JavaScript are text in
 the immutable D1 theme row; Vite and Tailwind are not runtime dependencies.
 
@@ -333,7 +341,7 @@ The preview server makes that base URL point to its local `/assets/` handler.
 During installation, the management CLI validates the generated files, uploads
 their bytes to immutable R2 keys shaped like
 `<environment>/themes/<asset-owner-theme-id>/assets/<relative-file>`, verifies the
-uploads, then writes the normalized manifest, six text slots, and asset
+uploads, then writes the normalized manifest, theme text slots, and asset
 metadata to D1. The live `_theme.asset_base_url` points through microfeed's
 public `/media/` route to those same objects. The Worker never contacts GitHub
 or invokes Vite or Webpack while rendering a page.
@@ -365,7 +373,7 @@ down instead of being covered by a fixed element.
 
 Copy or clone that directory into a standalone repository when you want the
 full build toolchain. Run its build script after editing `src/theme.css`,
-`src/main.ts`, or source templates. The checked-in six-slot files are the
+`src/main.ts`, or source templates. The checked-in eight-slot files are the
 installable result.
 
 The top of the default theme’s generated **Web header** contains a readable
@@ -507,12 +515,14 @@ Install the bundled modern default manually from any current microfeed clone:
 yarn manage theme install default --instance <instance-name>
 ```
 
-The manual install is inactive. A fresh local, production, or preview instance
-is the only case where initialization installs and activates it automatically.
-Upgrades preserve the site's current appearance: an existing active D1 version
-is kept, an older selected custom design is imported as an ordinary version,
-and a site with neither receives the frozen `microfeed.classic@1.0.0` design.
-An ordinary `yarn manage deploy` never installs or updates a theme.
+The manual install is inactive. Fresh local, production, and preview instances
+install and activate it during initialization. Upgrades preserve the site's
+current appearance: an existing active D1 version is kept, an older selected
+custom design is imported as an ordinary version, and a site with neither
+receives the frozen `microfeed.classic@1.0.0` design. When that effective
+appearance is format v1, `yarn manage deploy` idempotently installs the current
+bundled format-v2 default as an inactive version. It never activates the new
+version or updates another installed theme.
 
 ## Storage and backups
 
@@ -526,7 +536,7 @@ the complete R2 bucket, so installed versions, unpublished drafts, inherited
 assets, migration state, and active/previous state restore together.
 
 `themes/default` and `themes/classic` are bundled source packages in the
-microfeed checkout. Once installed, their normalized manifests and six-slot
+microfeed checkout. Once installed, their normalized manifests and theme
 bundles live in D1 exactly like community themes. Listing pages and
 `theme list` read metadata-only projections; full bundle rows are loaded only
 for preview, editing, export, validation, update, activation, or cleanup.

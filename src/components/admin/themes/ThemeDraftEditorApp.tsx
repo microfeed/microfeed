@@ -80,8 +80,8 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
   const [previewKey, setPreviewKey] = useState(0);
   useEffect(() => preventCloseWhenChanged(() => changed), [changed]);
 
-  const updateManifest = (updates: Partial<ThemeManifestV1>) => {
-    setDraft({...draft, manifest: {...draft.manifest, ...updates}, ...("name" in updates ? {name: updates.name!} : {}), ...("version" in updates ? {version: updates.version!} : {})});
+  const updateManifest = (updates: Partial<Record<ThemeFieldKey, string>>) => {
+    setDraft({...draft, manifest: {...draft.manifest, ...updates} as ThemeManifestV1, ...("name" in updates ? {name: updates.name!} : {}), ...("version" in updates ? {version: updates.version!} : {})});
     setChanged(true);
   };
   const validateRequiredMetadata = () => {
@@ -206,6 +206,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
       open={previewOpen}
       previewUrl={ADMIN_URLS.ajaxThemeDraftPreview(draft.id)}
       revision={previewKey}
+      supportsPagesAndSearch={draft.manifest.formatVersion === 2}
     />
     <AdminDialog
       onOpenChange={(open) => {if (!open) setHelpField(null);}}

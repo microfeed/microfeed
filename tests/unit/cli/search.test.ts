@@ -45,6 +45,7 @@ describe("microfeed item search", () => {
         next_cursor: "opaque-cursor",
         q: "hello",
         status: "published,unlisted",
+        types: "items,pages",
       });
 
       return Response.json({
@@ -62,6 +63,8 @@ describe("microfeed item search", () => {
       "title",
       "--status",
       "published,unlisted",
+      "--types",
+      "items,pages",
       "--date-published-ms-gt",
       "1767225600000",
       "--date-published-ms-lt",

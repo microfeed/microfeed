@@ -62,7 +62,11 @@ export async function themePreviewResponse(
   previewTheme: PreviewTheme,
 ): Promise<Response> {
   const view = new URL(request.url).searchParams.get("view") ?? "feed";
-  if (!["feed", "item", "rss", "rss-stylesheet"].includes(view)) {
+  const supportsPagesAndSearch = previewTheme.manifest.formatVersion === 2;
+  if (
+    !["feed", "item", "rss", "rss-stylesheet", "page", "search"].includes(view) ||
+    (!supportsPagesAndSearch && (view === "page" || view === "search"))
+  ) {
     return new Response("Unknown preview view.", {status: 400});
   }
   const loaded = await loadPublishedFeed(runtimeEnv, request, {limit: 20});
@@ -73,12 +77,26 @@ export async function themePreviewResponse(
     storedTheme.assetOwnerThemeId,
     storedTheme.bundle.assets,
   );
+  const page = {
+    content_html: "<p>This is a standalone Page preview.</p>",
+    content_text: "This is a standalone Page preview.",
+    id: "preview-page",
+    navigation_label: "About",
+    navigation_order: 10,
+    show_in_navigation: true,
+    slug: "about",
+    status: "published",
+    title: "About",
+    url: new URL("/about/", request.url).toString(),
+  };
+  const extraContext = {navigation_pages: [page]};
   const theme = new Theme(
     loaded.publicFeed,
     loaded.content.settings,
     null,
     storedTheme,
     assetBaseUrl,
+    extraContext,
   );
   if (view === "rss-stylesheet") {
     return new Response(theme.getRssStylesheet().stylesheet, {
@@ -107,10 +125,15 @@ export async function themePreviewResponse(
     "shared",
     storedTheme,
     assetBaseUrl,
+    extraContext,
   );
   const item = loaded.publicFeed.items[0] ?? {};
   const body = view === "item"
     ? theme.getWebItem(item).html
+    : view === "page"
+    ? theme.getWebPage(page, [page]).html
+    : view === "search"
+    ? theme.getWebSearch("preview").html
     : theme.getWebFeed().html;
   return new Response(
     `<!doctype html><html lang="${String(loaded.publicFeed.language ?? "en")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${shared.getWebHeader().html}${theme.getWebHeader().html}</head><body>${shared.getWebBodyStart().html}${theme.getWebBodyStart().html}${body}${shared.getWebBodyEnd().html}${theme.getWebBodyEnd().html}</body></html>`,

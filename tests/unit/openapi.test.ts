@@ -110,6 +110,14 @@ describe("generated API reference", () => {
       "/items/",
       "/items/validate/",
       "/items/{itemId}/",
+      "/pages/",
+      "/pages/validate/",
+      "/pages/{pageId}/",
+      "/site-files/",
+      "/site-files/validate/",
+      "/site-files/{siteFileId}/",
+      "/site-files/{siteFileId}/publish/",
+      "/site-files/{siteFileId}/reset/",
       "/search/",
       "/channels/{channelId}/",
       "/media_files/presigned_urls/",
@@ -194,7 +202,7 @@ describe("generated API reference", () => {
           required: ["content_text", "title"],
         },
       },
-      required: ["highlights"],
+      required: ["type", "highlights"],
     });
   });
 });

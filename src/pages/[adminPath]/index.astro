@@ -1,23 +1,48 @@
 ---
+import {env} from "cloudflare:workers";
+
 import AdminHomeApp from "@/components/admin/home/AdminHomeApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import PublicLayout from "@/layouts/PublicLayout.astro";
 import {NAV_ITEMS} from "@/shared/Constants";
+import {normalizeAdminPath} from "@/shared/AdminPath";
+import {loadPublicPageRoute} from "@/server/pages/public";
 import AdminShell from "../../layouts/AdminShell.astro";
 
+const routeAdminPath = Astro.params.adminPath ?? "";
+const adminRequest = routeAdminPath === normalizeAdminPath(
+  env.MICROFEED_ADMIN_PATH,
+);
 const {feedContent, onboardingResult} = Astro.locals;
-if (!feedContent || !onboardingResult) {
+let publicPage;
+if (adminRequest && (!feedContent || !onboardingResult)) {
   throw new Error("Admin feed context was not initialized.");
+}
+if (!adminRequest) {
+  publicPage = await loadPublicPageRoute(env, Astro.request, routeAdminPath);
+  if (publicPage.kind === "redirect") {
+    return Astro.redirect(publicPage.location, 301);
+  }
+  if (publicPage.kind === "not-found") {
+    Astro.response.status = 404;
+  }
 }
 ---
 
-<AdminShell
-  activeNavItem={NAV_ITEMS.ADMIN_HOME}
-  documentTitle="Admin | microfeed.org"
-  {feedContent}
-  {onboardingResult}
-  pageTitle="Home"
->
-  <AdminHomeApp client:only="react" {feedContent} {onboardingResult}>
-    <AdminPageFallback slot="fallback" kind="home" />
-  </AdminHomeApp>
-</AdminShell>
+{adminRequest ? (
+  <AdminShell
+    activeNavItem={NAV_ITEMS.ADMIN_HOME}
+    documentTitle="Admin | microfeed.org"
+    feedContent={feedContent!}
+    onboardingResult={onboardingResult!}
+    pageTitle="Home"
+  >
+    <AdminHomeApp client:only="react" feedContent={feedContent!} onboardingResult={onboardingResult!}>
+      <AdminPageFallback slot="fallback" kind="home" />
+    </AdminHomeApp>
+  </AdminShell>
+) : publicPage?.kind === "page" ? (
+  <PublicLayout {...publicPage.layout} />
+) : (
+  <h1>Not Found</h1>
+)}

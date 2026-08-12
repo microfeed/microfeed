@@ -1,0 +1,14 @@
+<main>
+  <nav class="mf-site-nav" aria-label="Site navigation">
+    <a href="/">Home</a>
+    {{#navigation_pages}}
+    <a href="{{url}}">{{navigation_label}}</a>
+    {{/navigation_pages}}
+  </nav>
+  <section class="mf-search-page">
+    <h1>Search</h1>
+    <label for="microfeed-search-page-input">Search this site</label>
+    <input id="microfeed-search-page-input" type="search" value="{{search.query}}" autocomplete="off" data-microfeed-search-input />
+    <div aria-live="polite" data-microfeed-search-results></div>
+  </section>
+</main>

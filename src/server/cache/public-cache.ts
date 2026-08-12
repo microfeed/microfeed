@@ -19,9 +19,13 @@ export const PRIVATE_CACHE_CONTROL = "private, no-store";
 export const PUBLIC_CACHE_TAGS = {
   CHANNEL_PRIMARY: "mf:channel:primary",
   ITEMS: "mf:items",
+  PAGES: "mf:pages",
   PUBLIC: "mf:public",
+  SITE_FILES: "mf:site-files",
   THEME_CURRENT: "mf:theme:current",
   item: (itemId: string) => `mf:item:${itemId}`,
+  page: (pageId: string) => `mf:page:${pageId}`,
+  siteFile: (siteFileId: string) => `mf:site-file:${siteFileId}`,
 } as const;
 
 export type PublicCachePurger = Pick<CacheContext, "purge">;
@@ -39,6 +43,9 @@ const PUBLIC_PAGE_PATHS = new Set([
   "/rss/",
   "/rss/stylesheet/",
   "/sitemap.xml",
+  "/robots.txt",
+  "/llms.txt",
+  "/search/",
 ]);
 const PAGINATION_PARAMETERS = new Set([
   "next_cursor",
@@ -64,8 +71,19 @@ function isItemPath(pathname: string): boolean {
   return /^\/i\/[^/]+\/(?:json\/|rss\/)?$/u.test(pathname);
 }
 
+function isStandalonePagePath(pathname: string): boolean {
+  return /^\/[a-z0-9]+(?:-[a-z0-9]+)*\/$/u.test(pathname) &&
+    pathname !== "/json/" && pathname !== "/rss/" &&
+    pathname !== "/search/";
+}
+
+function isSiteFilePath(pathname: string): boolean {
+  return /^\/[a-z0-9][a-z0-9._-]*\.[a-z0-9]+$/u.test(pathname);
+}
+
 function isPublicPagePath(pathname: string): boolean {
-  return PUBLIC_PAGE_PATHS.has(pathname) || isItemPath(pathname);
+  return PUBLIC_PAGE_PATHS.has(pathname) || isItemPath(pathname) ||
+    isStandalonePagePath(pathname) || isSiteFilePath(pathname);
 }
 
 function isPublicAssetPath(pathname: string): boolean {
@@ -80,12 +98,15 @@ function itemIdForPath(pathname: string): string | undefined {
 }
 
 function isFeedContentPath(pathname: string): boolean {
-  return FEED_CONTENT_PATHS.has(pathname) || isItemPath(pathname);
+  return FEED_CONTENT_PATHS.has(pathname) || isItemPath(pathname) ||
+    isStandalonePagePath(pathname) || pathname === "/search/" ||
+    pathname === "/robots.txt" || pathname === "/llms.txt";
 }
 
 function isThemePath(pathname: string): boolean {
   return pathname === "/" || pathname === "/rss/stylesheet/" ||
-    /^\/i\/[^/]+\/$/u.test(pathname);
+    /^\/i\/[^/]+\/$/u.test(pathname) ||
+    isStandalonePagePath(pathname) || pathname === "/search/";
 }
 
 function validPaginationQuery(url: URL): boolean {
@@ -154,9 +175,19 @@ export function publicCacheTagsForPath(pathname: string): string[] {
   }
   if (
     pathname === "/" || pathname === "/json/" || pathname === "/rss/" ||
-    pathname === "/sitemap.xml"
+    pathname === "/sitemap.xml" || pathname === "/llms.txt"
   ) {
     tags.add(PUBLIC_CACHE_TAGS.ITEMS);
+  }
+  if (
+    pathname === "/" || /^\/i\/[^/]+\/$/u.test(pathname) ||
+    isStandalonePagePath(pathname) || pathname === "/search/" ||
+    pathname === "/llms.txt" || pathname === "/sitemap.xml"
+  ) {
+    tags.add(PUBLIC_CACHE_TAGS.PAGES);
+  }
+  if (isSiteFilePath(pathname)) {
+    tags.add(PUBLIC_CACHE_TAGS.SITE_FILES);
   }
   if (isThemePath(pathname)) {
     tags.add(PUBLIC_CACHE_TAGS.THEME_CURRENT);

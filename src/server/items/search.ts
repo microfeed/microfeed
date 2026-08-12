@@ -13,6 +13,7 @@ import {
   STATUSES,
 } from "@/shared/Constants";
 import {API_BASE_PATH} from "@/shared/ApiVersion";
+import {publicPageUrl} from "@/shared/Pages";
 import {
   PUBLIC_URLS,
   urlJoin,
@@ -24,29 +25,54 @@ const HIGHLIGHT_START = "\u0001";
 const HIGHLIGHT_END = "\u0002";
 const FUZZY_CANDIDATE_LIMIT = 250;
 
+export type SearchContentType = "item" | "page";
+
 export interface SearchHighlightSegment {
   matched: boolean;
   text: string;
 }
 
-export interface ItemSearchResult {
+interface BaseSearchResult {
   api_url: string;
   content_text: string;
   date_modified: string;
   date_modified_ms: number;
-  date_published: string;
-  date_published_ms: number;
+  date_published?: string;
+  date_published_ms?: number;
   highlights: {
     content_text: SearchHighlightSegment[];
     title: SearchHighlightSegment[];
   };
   id: string;
-  image?: string;
   match_type: "exact" | "fuzzy";
   relevance_score: number;
   status: ItemSearchStatus;
   title: string;
+  type: SearchContentType;
   web_url: string;
+}
+
+export interface ItemSearchResult extends BaseSearchResult {
+  date_published: string;
+  date_published_ms: number;
+  image?: string;
+  type: "item";
+}
+
+export interface PageSearchResult extends BaseSearchResult {
+  meta_description?: string;
+  navigation_label: string;
+  navigation_order: number;
+  show_in_navigation: boolean;
+  slug: string;
+  type: "page";
+}
+
+export type ContentSearchResult = ItemSearchResult | PageSearchResult;
+
+export interface ContentSearchResponse {
+  items: ContentSearchResult[];
+  next_cursor?: string;
 }
 
 export interface ItemSearchResponse {
@@ -63,25 +89,34 @@ export interface ItemSearchOptions {
   publicBucketUrl?: string;
   query: string;
   statuses: ItemSearchStatus[];
+  types?: SearchContentType[];
 }
 
 interface SearchCursor {
   fingerprint: string;
   id: string;
   phase: "exact" | "fuzzy";
-  publishedAt: string;
   rank: number;
-  version: 1;
+  sortAt: string;
+  type: SearchContentType;
+  version: 2;
 }
 
 interface SearchRow extends Record<string, unknown> {
   content_text: string;
+  content_type: SearchContentType;
   highlighted_content: string;
   highlighted_title: string;
   id: string;
   image: string | null;
+  meta_description: string | null;
+  navigation_label: string;
+  navigation_order: number;
   pub_date: string;
   search_rank: number;
+  show_in_navigation: number;
+  slug: string;
+  sort_at: string;
   status: number;
   title: string;
   updated_at: string;
@@ -121,6 +156,7 @@ async function searchFingerprint(options: ItemSearchOptions): Promise<string> {
     fields: [...options.fields].sort(),
     query: options.query,
     statuses: [...options.statuses].sort(),
+    types: [...(options.types ?? ["item"])].sort(),
   });
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -145,11 +181,12 @@ function decodeSearchCursor(
   try {
     const cursor = JSON.parse(decoded) as Partial<SearchCursor>;
     if (
-      cursor.version !== 1 || cursor.fingerprint !== fingerprint ||
+      cursor.version !== 2 || cursor.fingerprint !== fingerprint ||
       (cursor.phase !== "exact" && cursor.phase !== "fuzzy") ||
+      (cursor.type !== "item" && cursor.type !== "page") ||
       typeof cursor.rank !== "number" || !Number.isFinite(cursor.rank) ||
-      typeof cursor.publishedAt !== "string" ||
-      !Number.isFinite(Date.parse(cursor.publishedAt)) ||
+      typeof cursor.sortAt !== "string" ||
+      !Number.isFinite(Date.parse(cursor.sortAt)) ||
       typeof cursor.id !== "string" || !cursor.id
     ) {
       throw new Error("invalid");
@@ -206,26 +243,40 @@ function statusName(value: number): ItemSearchStatus {
     : "unpublished";
 }
 
+function optionalDate(value: string): {iso: string; milliseconds: number} | null {
+  const milliseconds = rfc3399ToMs(value);
+  return Number.isFinite(milliseconds)
+    ? {iso: msToRFC3339(milliseconds), milliseconds}
+    : null;
+}
+
 function resultFromRow(
   row: SearchRow,
   request: Request,
   publicBucketUrl: string | undefined,
   matchType: "exact" | "fuzzy",
   titleSegments?: SearchHighlightSegment[],
-): ItemSearchResult {
+): ContentSearchResult {
   const baseUrl = new URL(request.url).origin;
-  const image = row.image
-    ? urlJoinWithRelative(publicBucketUrl ?? "/media/", row.image, baseUrl)
-    : undefined;
-  const modifiedAtMs = rfc3399ToMs(row.updated_at);
-  const publishedAtMs = rfc3399ToMs(row.pub_date);
-  return {
-    api_url: urlJoin(baseUrl, `${API_BASE_PATH}items/${row.id}/`),
+  const modified = optionalDate(row.updated_at) ?? {
+    iso: new Date(0).toISOString(),
+    milliseconds: 0,
+  };
+  const published = optionalDate(row.pub_date);
+  const common: BaseSearchResult = {
+    api_url: urlJoin(
+      baseUrl,
+      `${API_BASE_PATH}${row.content_type === "item" ? "items" : "pages"}/${row.id}/`,
+    ),
     content_text: row.content_text,
-    date_modified: msToRFC3339(modifiedAtMs),
-    date_modified_ms: modifiedAtMs,
-    date_published: msToRFC3339(publishedAtMs),
-    date_published_ms: publishedAtMs,
+    date_modified: modified.iso,
+    date_modified_ms: modified.milliseconds,
+    ...(published
+      ? {
+          date_published: published.iso,
+          date_published_ms: published.milliseconds,
+        }
+      : {}),
     highlights: {
       content_text: matchType === "exact"
         ? segmentsFromMarked(row.highlighted_content)
@@ -233,47 +284,93 @@ function resultFromRow(
       title: titleSegments ?? segmentsFromMarked(row.highlighted_title),
     },
     id: row.id,
-    ...(image ? {image} : {}),
     match_type: matchType,
     relevance_score: Number(Math.max(0, -row.search_rank).toPrecision(8)),
     status: statusName(row.status),
     title: row.title,
-    web_url: PUBLIC_URLS.webItem(row.id, row.title, baseUrl),
+    type: row.content_type,
+    web_url: row.content_type === "item"
+      ? PUBLIC_URLS.webItem(row.id, row.title, baseUrl)
+      : publicPageUrl(row.slug, baseUrl),
+  };
+  if (row.content_type === "page") {
+    return {
+      ...common,
+      ...(row.meta_description
+        ? {meta_description: row.meta_description}
+        : {}),
+      navigation_label: row.navigation_label || row.title,
+      navigation_order: row.navigation_order,
+      show_in_navigation: Boolean(row.show_in_navigation),
+      slug: row.slug,
+      type: "page",
+    };
+  }
+  const image = row.image
+    ? urlJoinWithRelative(publicBucketUrl ?? "/media/", row.image, baseUrl)
+    : undefined;
+  const itemPublished = published ?? {
+    iso: new Date(0).toISOString(),
+    milliseconds: 0,
+  };
+  return {
+    ...common,
+    date_published: itemPublished.iso,
+    date_published_ms: itemPublished.milliseconds,
+    ...(image ? {image} : {}),
+    type: "item",
   };
 }
 
 function parsedRows(rows: Array<Record<string, unknown>>): SearchRow[] {
   return rows.map((row) => ({
     content_text: String(row.content_text ?? ""),
+    content_type: row.content_type === "page" ? "page" : "item",
     highlighted_content: String(row.highlighted_content ?? ""),
     highlighted_title: String(row.highlighted_title ?? row.title ?? ""),
     id: String(row.id ?? ""),
     image: typeof row.image === "string" ? row.image : null,
+    meta_description: typeof row.meta_description === "string"
+      ? row.meta_description
+      : null,
+    navigation_label: String(row.navigation_label ?? ""),
+    navigation_order: Number(row.navigation_order ?? 0),
     pub_date: String(row.pub_date ?? ""),
     search_rank: Number(row.search_rank),
+    show_in_navigation: Number(row.show_in_navigation ?? 0),
+    slug: String(row.slug ?? ""),
+    sort_at: String(row.sort_at ?? row.updated_at ?? ""),
     status: Number(row.status),
     title: String(row.title ?? ""),
     updated_at: String(row.updated_at ?? ""),
   }));
 }
 
-function itemFilters(options: ItemSearchOptions): {
+function contentFilters(options: ItemSearchOptions): {
   bindings: unknown[];
   sql: string;
 } {
   const statusValues = options.statuses.map((status) =>
     ITEM_STATUSES_STRINGS_DICT[status]
   );
+  const types = [...new Set(options.types ?? ["item"])]
+    .filter((type): type is SearchContentType =>
+      type === "item" || type === "page"
+    );
+  if (types.length === 0) {
+    throw new ItemSearchRequestError("Select at least one search type.");
+  }
   const clauses = [
-    `i.status IN (${statusValues.map(() => "?").join(", ")})`,
+    `d.status IN (${statusValues.map(() => "?").join(", ")})`,
+    `d.content_type IN (${types.map(() => "?").join(", ")})`,
   ];
-  const bindings: unknown[] = [...statusValues];
+  const bindings: unknown[] = [...statusValues, ...types];
   if (options.datePublishedMsGt !== undefined) {
-    clauses.push("i.pub_date > ?");
+    clauses.push("d.published_at > ?");
     bindings.push(msToRFC3339(options.datePublishedMsGt));
   }
   if (options.datePublishedMsLt !== undefined) {
-    clauses.push("i.pub_date < ?");
+    clauses.push("d.published_at < ?");
     bindings.push(msToRFC3339(options.datePublishedMsLt));
   }
   return {bindings, sql: clauses.join(" AND ")};
@@ -284,19 +381,26 @@ function cursorFilter(
   rankExpression: string,
 ): {bindings: unknown[]; sql: string} {
   if (!cursor) return {bindings: [], sql: ""};
+  const sortAt = "COALESCE(d.published_at, d.updated_at)";
   return {
     bindings: [
       cursor.rank,
       cursor.rank,
-      cursor.publishedAt,
+      cursor.sortAt,
       cursor.rank,
-      cursor.publishedAt,
+      cursor.sortAt,
+      cursor.type,
+      cursor.rank,
+      cursor.sortAt,
+      cursor.type,
       cursor.id,
     ],
     sql: " AND (" +
       `${rankExpression} > ? OR (` +
-      `${rankExpression} = ? AND i.pub_date < ?) OR (` +
-      `${rankExpression} = ? AND i.pub_date = ? AND i.id > ?))`,
+      `${rankExpression} = ? AND ${sortAt} < ?) OR (` +
+      `${rankExpression} = ? AND ${sortAt} = ? AND d.content_type > ?) OR (` +
+      `${rankExpression} = ? AND ${sortAt} = ? AND d.content_type = ? ` +
+      "AND d.content_id > ?))",
   };
 }
 
@@ -309,18 +413,35 @@ function cursorForRow(
     fingerprint,
     id: row.id,
     phase,
-    publishedAt: row.pub_date,
     rank: row.search_rank,
-    version: 1,
+    sortAt: row.sort_at,
+    type: row.content_type,
+    version: 2,
   };
 }
 
 async function searchReady(database: D1Database): Promise<boolean> {
   const row = await database.prepare(
-    "SELECT ready FROM item_search_metadata WHERE id = 1",
+    "SELECT ready FROM site_search_metadata WHERE id = 1",
   ).first<{ready: number}>();
   return row?.ready === 1;
 }
+
+const SEARCH_SELECT = `
+  d.content_id AS id,
+  d.content_type,
+  d.status,
+  d.title,
+  d.content_text,
+  COALESCE(d.published_at, '') AS pub_date,
+  d.updated_at,
+  COALESCE(d.published_at, d.updated_at) AS sort_at,
+  d.image,
+  COALESCE(p.slug, '') AS slug,
+  p.meta_description,
+  COALESCE(p.show_in_navigation, 0) AS show_in_navigation,
+  COALESCE(p.navigation_label, '') AS navigation_label,
+  COALESCE(p.navigation_order, 0) AS navigation_order`;
 
 async function exactRows(
   database: D1Database,
@@ -329,26 +450,22 @@ async function exactRows(
   cursor: SearchCursor | undefined,
   limit: number,
 ): Promise<SearchRow[]> {
-  const filters = itemFilters(options);
-  const rank = "bm25(item_search_exact, 0.0, 5.0, 1.0)";
+  const filters = contentFilters(options);
+  const rank = "bm25(site_search_exact, 0.0, 0.0, 5.0, 1.0)";
   const after = cursorFilter(cursor, rank);
   const sql = `
     SELECT
-      i.id,
-      i.status,
-      COALESCE(json_extract(i.data, '$.title'), '') AS title,
-      i.content_text,
-      i.pub_date,
-      i.updated_at,
-      json_extract(i.data, '$.image') AS image,
+      ${SEARCH_SELECT},
       ${rank} AS search_rank,
-      highlight(item_search_exact, 1, char(1), char(2)) AS highlighted_title,
-      snippet(item_search_exact, 2, char(1), char(2), ' … ', 24)
+      highlight(site_search_exact, 2, char(1), char(2)) AS highlighted_title,
+      snippet(site_search_exact, 3, char(1), char(2), ' … ', 24)
         AS highlighted_content
-    FROM item_search_exact
-    JOIN items i ON i.rowid = item_search_exact.rowid
-    WHERE item_search_exact MATCH ? AND ${filters.sql}${after.sql}
-    ORDER BY search_rank ASC, i.pub_date DESC, i.id ASC
+    FROM site_search_exact
+    JOIN site_search_documents d ON d.id = site_search_exact.rowid
+    LEFT JOIN pages p
+      ON d.content_type = 'page' AND p.id = d.content_id
+    WHERE site_search_exact MATCH ? AND ${filters.sql}${after.sql}
+    ORDER BY search_rank ASC, sort_at DESC, d.content_type ASC, d.content_id ASC
     LIMIT ?
   `;
   const response = await database.prepare(sql).bind(
@@ -367,29 +484,26 @@ async function fuzzyRows(
   exactQuery: string,
   cursor: SearchCursor | undefined,
 ): Promise<SearchRow[]> {
-  const filters = itemFilters(options);
-  const rank = "bm25(item_search_title_trigram)";
+  const filters = contentFilters(options);
+  const rank = "bm25(site_search_title_trigram, 0.0, 0.0, 1.0)";
   const after = cursorFilter(cursor, rank);
   const sql = `
     SELECT
-      i.id,
-      i.status,
-      COALESCE(json_extract(i.data, '$.title'), '') AS title,
-      i.content_text,
-      i.pub_date,
-      i.updated_at,
-      json_extract(i.data, '$.image') AS image,
+      ${SEARCH_SELECT},
       ${rank} AS search_rank,
-      COALESCE(json_extract(i.data, '$.title'), '') AS highlighted_title,
+      d.title AS highlighted_title,
       '' AS highlighted_content
-    FROM item_search_title_trigram
-    JOIN items i ON i.rowid = item_search_title_trigram.rowid
-    WHERE item_search_title_trigram MATCH ?
-      AND item_search_title_trigram.rowid NOT IN (
-        SELECT rowid FROM item_search_exact WHERE item_search_exact MATCH ?
+    FROM site_search_title_trigram
+    JOIN site_search_documents d
+      ON d.id = site_search_title_trigram.rowid
+    LEFT JOIN pages p
+      ON d.content_type = 'page' AND p.id = d.content_id
+    WHERE site_search_title_trigram MATCH ?
+      AND site_search_title_trigram.rowid NOT IN (
+        SELECT rowid FROM site_search_exact WHERE site_search_exact MATCH ?
       )
       AND ${filters.sql}${after.sql}
-    ORDER BY search_rank ASC, i.pub_date DESC, i.id ASC
+    ORDER BY search_rank ASC, sort_at DESC, d.content_type ASC, d.content_id ASC
     LIMIT ?
   `;
   const response = await database.prepare(sql).bind(
@@ -402,14 +516,14 @@ async function fuzzyRows(
   return parsedRows(response.results);
 }
 
-export async function searchItems(
+export async function searchContent(
   database: D1Database,
   request: Request,
   options: ItemSearchOptions,
-): Promise<ItemSearchResponse> {
+): Promise<ContentSearchResponse> {
   if (!await searchReady(database)) {
     throw new ItemSearchUnavailableError(
-      "Item search is being prepared. Retry after deployment finishes.",
+      "Search is being prepared. Retry after deployment finishes.",
     );
   }
   if (
@@ -431,7 +545,7 @@ export async function searchItems(
     : null;
   const fingerprint = await searchFingerprint(options);
   const cursor = decodeSearchCursor(options.nextCursor, fingerprint);
-  const results: ItemSearchResult[] = [];
+  const results: ContentSearchResult[] = [];
 
   if (!cursor || cursor.phase === "exact") {
     const rows = await exactRows(
@@ -489,13 +603,14 @@ export async function searchItems(
     ));
     if (results.length === options.limit) break;
   }
+  const lastIndex = lastScanned ? scannable.indexOf(lastScanned) : -1;
   const hasUnscannedCandidates = Boolean(lastScanned) && (
-    candidates.length > scannable.indexOf(lastScanned!) + 1 ||
-    scannable.at(-1) !== lastScanned
+    candidates.length > lastIndex + 1 || scannable.at(-1) !== lastScanned
   );
   return {
     items: results,
-    ...(lastScanned && (hasUnscannedCandidates || candidates.length > FUZZY_CANDIDATE_LIMIT)
+    ...(lastScanned &&
+        (hasUnscannedCandidates || candidates.length > FUZZY_CANDIDATE_LIMIT)
       ? {
           next_cursor: encodeSearchCursor(cursorForRow(
             lastScanned,
@@ -507,6 +622,23 @@ export async function searchItems(
   };
 }
 
+export async function searchItems(
+  database: D1Database,
+  request: Request,
+  options: ItemSearchOptions,
+): Promise<ItemSearchResponse> {
+  const response = await searchContent(database, request, {
+    ...options,
+    types: ["item"],
+  });
+  return {
+    items: response.items.filter(
+      (item): item is ItemSearchResult => item.type === "item",
+    ),
+    ...(response.next_cursor ? {next_cursor: response.next_cursor} : {}),
+  };
+}
+
 export async function latestItems(
   database: D1Database,
   request: Request,
@@ -514,18 +646,25 @@ export async function latestItems(
 ): Promise<ItemSearchResult[]> {
   if (!await searchReady(database)) {
     throw new ItemSearchUnavailableError(
-      "Item search is being prepared. Retry after deployment finishes.",
+      "Search is being prepared. Retry after deployment finishes.",
     );
   }
   const response = await database.prepare(`
     SELECT
       id,
+      'item' AS content_type,
       status,
       COALESCE(json_extract(data, '$.title'), '') AS title,
       content_text,
       pub_date,
       updated_at,
+      COALESCE(pub_date, updated_at) AS sort_at,
       json_extract(data, '$.image') AS image,
+      '' AS slug,
+      NULL AS meta_description,
+      0 AS show_in_navigation,
+      '' AS navigation_label,
+      0 AS navigation_order,
       0 AS search_rank,
       COALESCE(json_extract(data, '$.title'), '') AS highlighted_title,
       '' AS highlighted_content
@@ -536,5 +675,5 @@ export async function latestItems(
   `).bind(STATUSES.DELETED, limit).all();
   return parsedRows(response.results).map((row) =>
     resultFromRow(row, request, undefined, "exact")
-  );
+  ).filter((item): item is ItemSearchResult => item.type === "item");
 }

@@ -115,6 +115,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
       "Runs type checks, focused deployment smoke tests, and a build before deploying, then verifies the public site and protected admin route. The complete repository test suite remains part of yarn check and continuous integration.",
       "Normalizes stored item plain text before deployment and reconciles it after the Worker switch; search remains unavailable if either validation pass is incomplete.",
+      "When the current public appearance uses a v1 theme, installs the bundled default v2 theme as an inactive version. Deployment never activates or replaces the current theme.",
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",

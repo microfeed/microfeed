@@ -3,6 +3,7 @@ import {SyntaxValidator} from "fast-xml-validator";
 
 import {
   THEME_FILE_KEYS,
+  THEME_FILE_KEYS_V1,
   THEME_MAX_ASSET_BYTES,
   THEME_MAX_ASSETS,
   THEME_MAX_TEMPLATE_BYTES,
@@ -62,6 +63,9 @@ export function validateThemePackage(
 
   const {data: manifest} = manifestResult;
   const {data: bundle} = bundleResult;
+  const fileKeys = manifest.formatVersion === 2
+    ? THEME_FILE_KEYS
+    : THEME_FILE_KEYS_V1;
   if (!semver.valid(manifest.version)) {
     diagnostics.push("manifest.version: Use a valid semantic version.");
   }
@@ -79,8 +83,13 @@ export function validateThemePackage(
   }
 
   let totalTemplateBytes = 0;
-  for (const key of THEME_FILE_KEYS) {
-    const size = byteLength(bundle[key]);
+  for (const key of fileKeys) {
+    const template = bundle[key];
+    if (typeof template !== "string") {
+      diagnostics.push(`bundle.${key}: A format v2 theme must provide this template.`);
+      continue;
+    }
+    const size = byteLength(template);
     totalTemplateBytes += size;
     if (size > THEME_MAX_TEMPLATE_BYTES) {
       diagnostics.push(
@@ -106,10 +115,11 @@ export function validateThemePackage(
     diagnostics.push("bundle.assets: Asset paths must be unique.");
   }
   const templatePaths = new Set(Object.values(manifest.files));
+  const templateCount = fileKeys.length === 6 ? "six" : "eight";
   for (const path of manifestAssets) {
     if (templatePaths.has(path)) {
       diagnostics.push(
-        `manifest.assets: ${path} cannot also be one of the six template files.`,
+        `manifest.assets: ${path} cannot also be one of the ${templateCount} template files.`,
       );
     }
     if (!bundleAssets.has(path)) {

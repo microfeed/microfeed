@@ -1,0 +1,13 @@
+<main>
+  <nav class="mf-site-nav" aria-label="Site navigation">
+    <a href="/">Home</a>
+    {{#navigation_pages}}
+    <a href="{{url}}">{{navigation_label}}</a>
+    {{/navigation_pages}}
+    <button type="button" class="mf-search-button" data-microfeed-search-open>Search <kbd>⌘K</kbd></button>
+  </nav>
+  <article class="mf-page">
+    <h1>{{page.title}}</h1>
+    <div>{{{page.content_html}}}</div>
+  </article>
+</main>

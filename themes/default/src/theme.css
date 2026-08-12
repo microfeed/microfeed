@@ -43,6 +43,42 @@ footer {
   flex: none;
 }
 
+.mf-site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--mf-border);
+  margin-bottom: 2rem;
+}
+
+.mf-search-button {
+  margin-left: auto;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.4rem;
+  background: var(--mf-surface);
+  color: var(--mf-text);
+  cursor: pointer;
+  padding: 0.3rem 0.55rem;
+}
+
+.mf-search-button kbd {
+  color: var(--mf-muted);
+  font: inherit;
+  font-size: 0.8em;
+}
+
+.mf-search-page input[type="search"] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.45rem;
+  background: var(--mf-background);
+  color: var(--mf-text);
+  font: inherit;
+}
+
 section {
   margin-bottom: 4em;
 }

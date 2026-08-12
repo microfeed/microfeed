@@ -537,6 +537,88 @@
         "additionalProperties": {}
       }
     },
+    "navigation_pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "navigation_label": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "navigation_label",
+          "slug",
+          "title",
+          "url"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "page": {
+      "type": "object",
+      "properties": {
+        "content_html": {
+          "type": "string"
+        },
+        "content_text": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "content_html",
+        "content_text",
+        "id",
+        "slug",
+        "title",
+        "url"
+      ],
+      "additionalProperties": {}
+    },
+    "search": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        }
+      },
+      "required": [
+        "query",
+        "results"
+      ],
+      "additionalProperties": {}
+    },
     "language": {
       "type": "string"
     },

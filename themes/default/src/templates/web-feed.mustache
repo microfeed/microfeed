@@ -1,4 +1,10 @@
 <main>
+  <nav class="mf-site-nav" aria-label="Site navigation">
+    {{#navigation_pages}}
+    <a href="{{url}}">{{navigation_label}}</a>
+    {{/navigation_pages}}
+    <button type="button" class="mf-search-button" data-microfeed-search-open>Search <kbd>⌘K</kbd></button>
+  </nav>
   <section>
     <h1>{{title}}</h1>
     <div class="flex">

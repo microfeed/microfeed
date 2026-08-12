@@ -1,0 +1,16 @@
+---
+import SiteFileEditorApp from "@/components/admin/site-files/SiteFileEditorApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {adminUrl} from "@/shared/AdminPath";
+import {NAV_ITEMS, NAV_ITEMS_DICT} from "@/shared/Constants";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+---
+
+<AdminShell activeNavItem={NAV_ITEMS.SITE_FILES} documentTitle="New Site File | microfeed.org" {feedContent} {onboardingResult} pageTitle="Add Site File" breadcrumb={{kind: "back", name: NAV_ITEMS_DICT[NAV_ITEMS.SITE_FILES].name, url: adminUrl("site-files", Astro.params.adminPath)}}>
+  <SiteFileEditorApp client:load>
+    <AdminPageFallback slot="fallback" kind="form" />
+  </SiteFileEditorApp>
+</AdminShell>

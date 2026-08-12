@@ -96,7 +96,7 @@ workspace from the microfeed repository into its own repository.
 
 ## How a theme works
 
-A theme is a directory with `microfeed-theme.json` and six required text files:
+A format v2 theme is a directory with `microfeed-theme.json` and eight required text files. Format v1 themes with the original six slots remain compatible:
 
 ```text
 README.md
@@ -104,6 +104,8 @@ microfeed-theme.json
 THEME.md
 web-feed.mustache
 web-item.mustache
+web-page.mustache
+web-search.mustache
 web-header.mustache
 web-body-start.mustache
 web-body-end.mustache
@@ -119,6 +121,8 @@ The slots have distinct jobs:
 | --- | --- |
 | Web feed | The public feed index and pagination |
 | Web item | A single item page |
+| Web Page | A standalone public Page such as `/about/` |
+| Web search | The dedicated public Search page; microfeed owns the modal and typeahead behavior |
 | Web header | Shared `<head>` markup, styles, metadata, and optional scripts |
 | Web body start | Shared markup immediately after `<body>` |
 | Web body end | Shared markup immediately before `</body>` |
@@ -142,7 +146,7 @@ avoid activation or screenshots without explicit permission.
 Installation never runs repository build scripts. Build and commit every
 runtime file before installing a version.
 
-- The normalized manifest and six text slots are stored together in one
+- The normalized manifest and declared text slots are stored together in one
   immutable D1 theme row.
 - Small compiled CSS can be placed in `<style>` in `web-header.mustache`, and
   small compiled JavaScript can be placed in `<script>` in

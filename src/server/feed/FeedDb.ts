@@ -597,6 +597,10 @@ export default class FeedDb {
     await purgePublicCache(tags, this.publicCachePurger);
   }
 
+  async purgePublicCacheTags(tags: string[]) {
+    await this._purgePublicCacheTags(tags);
+  }
+
   async putContent(feed: FeedContent) {
     const {channel, settings, item} = feed;
     const cacheTags = publicCacheTagsForFeedUpdate(feed);
