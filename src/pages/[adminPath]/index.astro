@@ -7,12 +7,14 @@ import PublicLayout from "@/layouts/PublicLayout.astro";
 import {NAV_ITEMS} from "@/shared/Constants";
 import {normalizeAdminPath} from "@/shared/AdminPath";
 import {loadPublicPageRoute} from "@/server/pages/public";
-import AdminShell from "../../layouts/AdminShell.astro";
 
 const routeAdminPath = Astro.params.adminPath ?? "";
 const adminRequest = routeAdminPath === normalizeAdminPath(
   env.MICROFEED_ADMIN_PATH,
 );
+const AdminShell = adminRequest
+  ? (await import("../../layouts/AdminShell.astro")).default
+  : undefined;
 const {feedContent, onboardingResult} = Astro.locals;
 let publicPage;
 if (adminRequest && (!feedContent || !onboardingResult)) {
@@ -25,11 +27,13 @@ if (!adminRequest) {
   }
   if (publicPage.kind === "not-found") {
     Astro.response.status = 404;
+  } else if (publicPage.kind === "page") {
+    Astro.response.status = publicPage.status;
   }
 }
 ---
 
-{adminRequest ? (
+{adminRequest && AdminShell ? (
   <AdminShell
     activeNavItem={NAV_ITEMS.ADMIN_HOME}
     documentTitle="Admin | microfeed.org"

@@ -58,6 +58,9 @@ describe("Workers Caching response policy", () => {
     expect(policy("/security.txt").headers.get("cache-tag")?.split(","))
       .toEqual([
         PUBLIC_CACHE_TAGS.PUBLIC,
+        PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY,
+        PUBLIC_CACHE_TAGS.ITEMS,
+        PUBLIC_CACHE_TAGS.PAGES,
         PUBLIC_CACHE_TAGS.SITE_FILES,
       ]);
   });

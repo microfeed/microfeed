@@ -42,8 +42,27 @@ describe("admin UI controls", () => {
     expect(output).toMatch(
       /^<label[^>]+overflow-auto[^>]+style="max-height:32rem"/u,
     );
+    expect(output).toContain(
+      'class="block w-full min-w-0 max-w-full overflow-auto',
+    );
+    expect(output).toContain(
+      "admin-code-editor w-full min-w-0 max-w-full",
+    );
     expect(output).toContain("min-height:16rem");
     expect(output).not.toContain("max-height:32rem;min-height:16rem");
+  });
+
+  it("supports a read-only highlighted code preview", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminCodeEditor, {
+        code: "{\"ok\":true}",
+        language: "json",
+        readOnly: true,
+      }),
+    );
+
+    expect(output).toContain("readonly=\"\"");
+    expect(output).toContain('aria-label="Code editor"');
   });
 
   it("renders the rich HTML source editor at 120% of its base font size", () => {
@@ -222,6 +241,10 @@ describe("admin UI controls", () => {
     expect(output).toContain('role="switch"');
     expect(output).toContain('aria-checked="true"');
     expect(output).toContain("API Enabled");
+    expect(output).toContain("data-checked:bg-brand-light");
+    expect(output).toContain("focus-visible:ring-brand-light/40");
+    expect(output).toContain("bg-white");
+    expect(output).not.toContain("data-checked:bg-primary");
     expect(output).toMatch(/<label[^>]+for="[^"]+"/u);
   });
 

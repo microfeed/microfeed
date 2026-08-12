@@ -434,10 +434,13 @@ export const ADMIN_URLS = {
 
   ajaxFeed: () => adminUrl("ajax/feed", browserAdminPath()),
   ajaxPages: () => adminUrl("ajax/pages", browserAdminPath()),
+  ajaxPageOrder: () => adminUrl("ajax/pages/order", browserAdminPath()),
   ajaxPage: (id: string) => adminUrl(`ajax/pages/${id}`, browserAdminPath()),
   ajaxSiteFiles: () => adminUrl("ajax/site-files", browserAdminPath()),
   ajaxSiteFile: (id: string) =>
     adminUrl(`ajax/site-files/${id}`, browserAdminPath()),
+  ajaxPreviewSiteFile: () =>
+    adminUrl("ajax/site-files/preview", browserAdminPath()),
   ajaxPublishSiteFile: (id: string) =>
     adminUrl(`ajax/site-files/${id}/publish`, browserAdminPath()),
   ajaxResetSiteFile: (id: string) =>

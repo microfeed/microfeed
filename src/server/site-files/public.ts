@@ -1,7 +1,10 @@
 import {escapeHtml} from "@/shared/StringUtils";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {listPages} from "@/server/pages/service";
-import {getSiteFileByName} from "./service";
+import {defaultSiteFileTemplate} from "@/shared/SiteFileTemplates";
+import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
+import {getRuntimeSiteFileByName} from "./service";
+import {renderSiteFileForRequest} from "./templates";
 
 function notFound(): Response {
   return new Response("Not Found", {status: 404, statusText: "Not Found"});
@@ -30,9 +33,10 @@ async function llmsContent(
     `- JSON Feed: ${new URL("/json/", request.url)}`,
     `- RSS Feed: ${new URL("/rss/", request.url)}`,
   ];
-  if (pages.items.length > 0) {
+  const publicPages = pages.items.filter((page) => !page.is_not_found_page);
+  if (publicPages.length > 0) {
     lines.push("", "## Pages", "");
-    for (const page of pages.items) {
+    for (const page of publicPages) {
       lines.push(`- [${page.title}](${page.url})${page.meta_description ? `: ${page.meta_description}` : ""}`);
     }
   }
@@ -66,7 +70,7 @@ async function sitemapContent(
     xml += `<image:image><image:loc>${escapeHtml(feed.icon)}</image:loc></image:image>`;
   }
   xml += "</url>";
-  for (const page of pages.items) {
+  for (const page of pages.items.filter((page) => !page.is_not_found_page)) {
     xml += `<url><loc>${escapeHtml(page.url)}</loc>`;
     xml += `<lastmod>${escapeHtml(page.date_modified)}</lastmod></url>`;
   }
@@ -103,30 +107,63 @@ export async function publicSiteFileResponse(
   request: Request,
   filename: string,
 ): Promise<Response> {
-  const loaded = await loadPublishedFeed(runtimeEnv, request, {
-    includeActiveTheme: true,
-    limit: filename === "sitemap.xml" ? -1 : 20,
-  });
-  const siteFile = await getSiteFileByName(
-    loaded.database.FEED_DB,
+  const runtimeFile = await getRuntimeSiteFileByName(
+    runtimeEnv.FEED_DB,
     request,
     filename,
   );
+  const siteFile = runtimeFile?.siteFile;
   if (!siteFile?.enabled) return notFound();
+  const loaded = await loadPublishedFeed(runtimeEnv, request, {
+    includeActiveTheme: true,
+    itemsOrder: ITEM_ORDERS.DESC,
+    itemsSort: ITEM_SORTS.PUBLISHED_AT,
+    limit: siteFile.generator === "sitemap" ? -1 : 20,
+  });
   const hidden = shouldHidePublicWeb(loaded.content);
   let content: string | undefined;
   if (filename === "robots.txt" && hidden) {
     content = robotsContent(request, true);
   } else if (hidden) {
     return notFound();
-  } else if (siteFile.mode === "override") {
-    content = siteFile.published_content;
-  } else if (siteFile.generator === "robots") {
-    content = robotsContent(request, false);
-  } else if (siteFile.generator === "llms") {
-    content = await llmsContent(loaded, request);
-  } else if (siteFile.generator === "sitemap") {
-    content = await sitemapContent(loaded, request);
+  } else {
+    const template = siteFile.mode === "override"
+      ? siteFile.published_content
+      : defaultSiteFileTemplate(siteFile.generator);
+    if (template !== undefined) {
+      try {
+        content = (await renderSiteFileForRequest(
+          loaded.database,
+          request,
+          {
+            allowLargeGeneratedSitemap:
+              siteFile.mode === "generated" && siteFile.generator === "sitemap",
+            contentType: siteFile.content_type,
+            filename: siteFile.filename,
+            ...(siteFile.generator ? {generator: siteFile.generator} : {}),
+            template,
+          },
+          {feedContent: loaded.content, publicFeed: loaded.publicFeed},
+        )).content;
+      } catch (error) {
+        console.error(JSON.stringify({
+          error: error instanceof Error ? error.message : String(error),
+          filename: siteFile.filename,
+          message: "Site File render failed; serving the last valid snapshot",
+          siteFileId: siteFile.id,
+        }));
+        content = runtimeFile?.publishedRenderedContent;
+      }
+    }
+    if (content === undefined && siteFile.mode === "generated") {
+      if (siteFile.generator === "robots") {
+        content = robotsContent(request, false);
+      } else if (siteFile.generator === "llms") {
+        content = await llmsContent(loaded, request);
+      } else if (siteFile.generator === "sitemap") {
+        content = await sitemapContent(loaded, request);
+      }
+    }
   }
   if (content === undefined) return notFound();
   return new Response(content, {

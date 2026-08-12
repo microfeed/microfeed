@@ -170,23 +170,24 @@ function isSensitivePath(pathname: string, adminPath: string): boolean {
 
 export function publicCacheTagsForPath(pathname: string): string[] {
   const tags = new Set<string>([PUBLIC_CACHE_TAGS.PUBLIC]);
-  if (isFeedContentPath(pathname)) {
+  const siteFilePath = isSiteFilePath(pathname);
+  if (isFeedContentPath(pathname) || siteFilePath) {
     tags.add(PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY);
   }
   if (
     pathname === "/" || pathname === "/json/" || pathname === "/rss/" ||
-    pathname === "/sitemap.xml" || pathname === "/llms.txt"
+    pathname === "/sitemap.xml" || pathname === "/llms.txt" || siteFilePath
   ) {
     tags.add(PUBLIC_CACHE_TAGS.ITEMS);
   }
   if (
     pathname === "/" || /^\/i\/[^/]+\/$/u.test(pathname) ||
     isStandalonePagePath(pathname) || pathname === "/search/" ||
-    pathname === "/llms.txt" || pathname === "/sitemap.xml"
+    pathname === "/llms.txt" || pathname === "/sitemap.xml" || siteFilePath
   ) {
     tags.add(PUBLIC_CACHE_TAGS.PAGES);
   }
-  if (isSiteFilePath(pathname)) {
+  if (siteFilePath) {
     tags.add(PUBLIC_CACHE_TAGS.SITE_FILES);
   }
   if (isThemePath(pathname)) {

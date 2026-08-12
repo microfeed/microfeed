@@ -165,13 +165,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "default",
-      version: "1.1.0",
+      version: "1.1.4",
     });
     expect(stored).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "default",
-      version: "1.1.0",
+      version: "1.1.4",
     });
   });
 
@@ -260,7 +260,7 @@ describe("theme repository initialization", () => {
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
         sourceKind: "bundled",
-        version: "1.1.0",
+        version: "1.1.4",
       });
       await expect(theme.installDefaultThemeForV1Appearance(
         savedConfig(),
@@ -268,12 +268,12 @@ describe("theme repository initialization", () => {
         false,
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
-        version: "1.1.0",
+        version: "1.1.4",
       });
       expect(stored).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.0",
+        version: "1.1.4",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(1);

@@ -1,5 +1,3 @@
-import {SyntaxValidator} from "fast-xml-validator";
-
 import {
   normalizeSiteFilename,
   publicSiteFilePath,
@@ -9,18 +7,32 @@ import {
   SITE_FILE_GENERATORS,
   SITE_FILE_MEDIA_TYPES,
   siteFileMediaTypeForName,
-  validateSiteFileContent,
   validateSiteFilename,
 } from "@/shared/SiteFiles";
+import {
+  defaultSiteFileTemplate,
+  validateSiteFileTemplateSource,
+} from "@/shared/SiteFileTemplates";
 import {randomShortUUID} from "@/shared/StringUtils";
 import type FeedDb from "@/server/feed/FeedDb";
 import {PUBLIC_CACHE_TAGS} from "@/server/cache/public-cache";
+import {renderSiteFileForRequest} from "./templates";
 
 export interface SiteFileInput {
   content_type?: SiteFileMediaType;
   draft_content?: string;
   enabled?: boolean;
   filename?: string;
+}
+
+export interface SiteFilePreviewInput extends SiteFileInput {
+  site_file_id?: string;
+}
+
+export interface SiteFilePreview {
+  content_type: SiteFileMediaType;
+  rendered_content: string;
+  valid: true;
 }
 
 export class SiteFileConflictError extends Error {}
@@ -37,6 +49,7 @@ interface SiteFileRow extends Record<string, unknown> {
   mode: "generated" | "override";
   published_at: string | null;
   published_content: string | null;
+  published_rendered_content: string | null;
   updated_at: string;
 }
 
@@ -48,7 +61,9 @@ function recordFromRow(row: SiteFileRow, baseUrl: string): SiteFileRecord {
     ...(row.published_at
       ? {date_published: String(row.published_at)}
       : {}),
-    draft_content: String(row.draft_content ?? ""),
+    draft_content: row.mode === "generated" && !row.draft_content
+      ? defaultSiteFileTemplate(row.generator ?? undefined) ?? ""
+      : String(row.draft_content ?? ""),
     enabled: Boolean(row.enabled),
     filename: String(row.filename),
     ...(row.generator ? {generator: row.generator} : {}),
@@ -69,22 +84,9 @@ function validatedMediaType(value: unknown): SiteFileMediaType {
   return value as SiteFileMediaType;
 }
 
-function assertPublishableContent(
-  content: string,
-  contentType: SiteFileMediaType,
-): void {
-  const error = validateSiteFileContent(content, contentType);
+function assertValidTemplateSource(content: string): void {
+  const error = validateSiteFileTemplateSource(content);
   if (error) throw new SiteFileRequestError(error);
-  if (
-    (contentType === "application/xml" ||
-      contentType === "application/rss+xml")
-  ) {
-    try {
-      SyntaxValidator.validate(content);
-    } catch {
-      throw new SiteFileRequestError("Publish valid XML content.");
-    }
-  }
 }
 
 async function purgeSiteFileCaches(
@@ -133,6 +135,27 @@ export async function getSiteFileByName(
   return row ? recordFromRow(row, new URL(request.url).origin) : null;
 }
 
+export async function getRuntimeSiteFileByName(
+  database: D1Database,
+  request: Request,
+  filename: string,
+): Promise<{
+  publishedRenderedContent?: string;
+  siteFile: SiteFileRecord;
+} | null> {
+  const row = await database.prepare(
+    "SELECT * FROM site_files WHERE filename = ? COLLATE NOCASE LIMIT 1",
+  ).bind(normalizeSiteFilename(filename)).first<SiteFileRow>();
+  return row
+    ? {
+        ...(row.published_rendered_content !== null
+          ? {publishedRenderedContent: String(row.published_rendered_content)}
+          : {}),
+        siteFile: recordFromRow(row, new URL(request.url).origin),
+      }
+    : null;
+}
+
 export async function createSiteFile(
   database: FeedDb,
   request: Request,
@@ -145,8 +168,7 @@ export async function createSiteFile(
     input.content_type ?? siteFileMediaTypeForName(filename),
   );
   const draftContent = String(input.draft_content ?? "");
-  const contentError = validateSiteFileContent(draftContent, contentType);
-  if (contentError) throw new SiteFileRequestError(contentError);
+  assertValidTemplateSource(draftContent);
   const id = randomShortUUID();
   const now = new Date().toISOString();
   try {
@@ -196,8 +218,7 @@ export async function updateSiteFile(
   const draftContent = input.draft_content === undefined
     ? row.draft_content
     : String(input.draft_content);
-  const contentError = validateSiteFileContent(draftContent, contentType);
-  if (contentError) throw new SiteFileRequestError(contentError);
+  assertValidTemplateSource(draftContent);
   await database.FEED_DB.prepare(`
     UPDATE site_files SET
       draft_content = ?, content_type = ?, enabled = ?, updated_at = ?
@@ -222,14 +243,30 @@ export async function publishSiteFile(
     "SELECT * FROM site_files WHERE id = ? LIMIT 1",
   ).bind(id).first() as SiteFileRow | null;
   if (!row) return null;
-  assertPublishableContent(row.draft_content, row.content_type);
+  const template = row.draft_content ||
+    defaultSiteFileTemplate(row.generator ?? undefined) || "";
+  assertValidTemplateSource(template);
+  let renderedContent: string;
+  try {
+    renderedContent = (await renderSiteFileForRequest(database, request, {
+      contentType: row.content_type,
+      filename: row.filename,
+      ...(row.generator ? {generator: row.generator} : {}),
+      template,
+    })).content;
+  } catch (error) {
+    throw new SiteFileRequestError(
+      error instanceof Error ? error.message : String(error),
+    );
+  }
   const now = new Date().toISOString();
   await database.FEED_DB.prepare(`
     UPDATE site_files SET
-      mode = 'override', published_content = draft_content,
+      mode = 'override', published_content = ?,
+      published_rendered_content = ?,
       published_at = ?, updated_at = ?
     WHERE id = ?
-  `).bind(now, now, id).run();
+  `).bind(template, renderedContent, now, now, id).run();
   await purgeSiteFileCaches(database, id);
   return getSiteFileById(database.FEED_DB, request, id);
 }
@@ -246,14 +283,58 @@ export async function resetSiteFile(
   if (!row.generator || !SITE_FILE_GENERATORS.includes(row.generator)) {
     throw new SiteFileRequestError("Only generated Site Files can be reset.");
   }
-  const recoverable = row.published_content ?? row.draft_content;
   await database.FEED_DB.prepare(`
     UPDATE site_files SET
-      mode = 'generated', draft_content = ?, updated_at = ?
+      mode = 'generated', draft_content = '', published_content = NULL,
+      published_rendered_content = NULL, published_at = NULL, updated_at = ?
     WHERE id = ?
-  `).bind(recoverable, new Date().toISOString(), id).run();
+  `).bind(new Date().toISOString(), id).run();
   await purgeSiteFileCaches(database, id);
   return getSiteFileById(database.FEED_DB, request, id);
+}
+
+export async function previewSiteFile(
+  database: FeedDb,
+  request: Request,
+  input: SiteFilePreviewInput,
+): Promise<SiteFilePreview | null> {
+  const row = input.site_file_id
+    ? await database.FEED_DB.prepare(
+        "SELECT * FROM site_files WHERE id = ? LIMIT 1",
+      ).bind(input.site_file_id).first() as SiteFileRow | null
+    : null;
+  if (input.site_file_id && !row) return null;
+  const filename = normalizeSiteFilename(input.filename ?? row?.filename ?? "");
+  const filenameError = validateSiteFilename(filename);
+  if (filenameError) throw new SiteFileRequestError(filenameError);
+  const contentType = validatedMediaType(
+    input.content_type ?? row?.content_type ?? siteFileMediaTypeForName(filename),
+  );
+  const template = String(
+    input.draft_content ?? row?.draft_content ??
+      defaultSiteFileTemplate(row?.generator ?? undefined) ?? "",
+  );
+  assertValidTemplateSource(template);
+  try {
+    const rendered = await renderSiteFileForRequest(database, request, {
+      allowLargeGeneratedSitemap: row?.generator === "sitemap" &&
+        row.mode === "generated" &&
+        template === defaultSiteFileTemplate("sitemap"),
+      contentType,
+      filename,
+      ...(row?.generator ? {generator: row.generator} : {}),
+      template,
+    });
+    return {
+      content_type: contentType,
+      rendered_content: rendered.content,
+      valid: true,
+    };
+  } catch (error) {
+    throw new SiteFileRequestError(
+      error instanceof Error ? error.message : String(error),
+    );
+  }
 }
 
 export async function deleteSiteFile(

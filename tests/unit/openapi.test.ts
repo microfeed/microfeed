@@ -115,6 +115,7 @@ describe("generated API reference", () => {
       "/pages/{pageId}/",
       "/site-files/",
       "/site-files/validate/",
+      "/site-files/preview/",
       "/site-files/{siteFileId}/",
       "/site-files/{siteFileId}/publish/",
       "/site-files/{siteFileId}/reset/",
@@ -180,6 +181,16 @@ describe("generated API reference", () => {
     expect(specification).toContain("ItemValidationResponse");
     expect(OPENAPI_DOCUMENT.paths?.["/items/"]?.post?.responses)
       .toHaveProperty("409");
+  });
+
+  it("keeps Page navigation order out of individual Page inputs", () => {
+    const createInput = OPENAPI_DOCUMENT.components?.schemas
+      ?.PageCreateInput as {properties?: Record<string, unknown>};
+    const pageOutput = OPENAPI_DOCUMENT.components?.schemas
+      ?.Page as {properties?: Record<string, unknown>};
+
+    expect(createInput.properties).not.toHaveProperty("navigation_order");
+    expect(pageOutput.properties).toHaveProperty("navigation_order");
   });
 
   it("documents resolved current-year copyright output", () => {

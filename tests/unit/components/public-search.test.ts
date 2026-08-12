@@ -1,30 +1,104 @@
-import {readFile} from "node:fs/promises";
 import {describe, expect, it} from "vitest";
 
-const component = readFile(
-  new URL("../../../src/components/public/PublicSearch.astro", import.meta.url),
-  "utf8",
-);
+import {
+  PUBLIC_SEARCH_PREVIEW_WARNING,
+  publicSearchHtml,
+} from "@/shared/PublicSearch";
 
 describe("public search modal", () => {
-  it("submits Enter to the full search page", async () => {
-    const source = await component;
+  it("submits Enter to the full search page", () => {
+    const source = publicSearchHtml();
 
     expect(source).toContain('<form action="/search/" method="get"');
     expect(source).toContain('name="q"');
-    expect(source).toContain('<button type="submit">Search</button>');
+    expect(source).toContain('<button type="submit">');
+    expect(source).toContain("<span>Search</span>");
     expect(source).toContain('event.key !== "Enter" || event.isComposing');
     expect(source).toContain(
-      "(event.currentTarget as HTMLInputElement).form?.requestSubmit()",
+      "event.currentTarget.form?.requestSubmit()",
     );
     expect(source).not.toContain('method="dialog"');
   });
 
-  it("closes without submitting the search form", async () => {
-    const source = await component;
+  it("closes without submitting the search form", () => {
+    const source = publicSearchHtml();
 
-    expect(source).toContain('type="button" aria-label="Close search"');
+    expect(source).toContain('type="button" class="mf-public-search__close"');
+    expect(source).toContain('aria-label="Close search"');
+    expect(source).toContain('class="mf-public-search__close"');
+    expect(source).toContain('aria-hidden="true"');
     expect(source).toContain('[data-microfeed-search-close]');
     expect(source).toContain('addEventListener("click", () => dialog.close())');
+  });
+
+  it("opens from the platform keyboard shortcut", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain("event.metaKey || event.ctrlKey");
+    expect(source).toContain('event.key.toLowerCase() === "k"');
+    expect(source).toContain("dialog.showModal()");
+  });
+
+  it("opens from pointer and keyboard-activated search fields", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain('id="microfeed-search-dialog"');
+    expect(source).toContain('trigger.addEventListener("click", openSearch)');
+    expect(source).toContain("trigger instanceof HTMLButtonElement");
+    expect(source).toContain('event.key !== "Enter" && event.key !== " "');
+  });
+
+  it("centers the modal without relying on browser dialog defaults", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toMatch(/\.mf-public-search\s*\{[\s\S]*?position: fixed;[\s\S]*?inset: 0;[\s\S]*?margin: auto;/u);
+  });
+
+  it("uses a polished attached search control", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain('placeholder="Search items and pages"');
+    expect(source).toMatch(/\.mf-public-search__input-row\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?overflow: hidden;/u);
+    expect(source).toMatch(/\.mf-public-search__input-row button\[type="submit"\]\s*\{[\s\S]*?background: var\(--mf-accent, #0969da\);/u);
+    expect(source).toMatch(/\.mf-public-search__results\s*\{[\s\S]*?margin-top: 1rem;/u);
+  });
+
+  it("finds results outside a nested search form", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain('input.closest("form")');
+    expect(source).toContain('input.closest("section")');
+    expect(source).toContain("for (const scope of scopes)");
+    expect(source).toContain("if (container) return container");
+  });
+
+  it("uses embedded results and a warning in isolated previews", () => {
+    const source = publicSearchHtml({
+      previewResults: [{
+        content_text: "Representative body",
+        id: "preview-item",
+        title: "Preview item",
+        type: "item",
+        url: "https://feed.example.com/i/preview-item/",
+      }],
+    });
+
+    expect(source).toContain(PUBLIC_SEARCH_PREVIEW_WARNING);
+    expect(source).toContain(
+      '<script type="application/json" data-microfeed-search-preview-results>',
+    );
+    expect(source).toContain("data-microfeed-search-preview-initial");
+    expect(source).toContain('"title":"Preview item"');
+    expect(source).toContain("if (previewResults !== null)");
+    expect(source).toContain("event.preventDefault()");
+  });
+
+  it("does not show preview messaging on the live site", () => {
+    const source = publicSearchHtml();
+
+    expect(source).not.toContain(PUBLIC_SEARCH_PREVIEW_WARNING);
+    expect(source).not.toContain(
+      '<script type="application/json" data-microfeed-search-preview-results>',
+    );
   });
 });

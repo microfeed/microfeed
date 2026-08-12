@@ -18,8 +18,9 @@ interface Props {
   language: string;
   maxHeight?: string;
   minHeight?: string;
-  onChange: ChangeEventHandler<HTMLTextAreaElement>;
+  onChange?: ChangeEventHandler<HTMLTextAreaElement>;
   placeholder?: string;
+  readOnly?: boolean;
 }
 
 export default function AdminCodeEditor({
@@ -31,6 +32,7 @@ export default function AdminCodeEditor({
   minHeight = "50vh",
   onChange,
   placeholder = "Please enter code here, including html, javascript, and css",
+  readOnly = false,
 }: Props) {
   const scrollContainerRef = useRef<HTMLLabelElement>(null);
 
@@ -57,7 +59,7 @@ export default function AdminCodeEditor({
   };
 
   return (<label
-    className="block overflow-auto rounded-[10px] border bg-muted/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30"
+    className="block w-full min-w-0 max-w-full overflow-auto rounded-[10px] border bg-muted/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30"
     ref={scrollContainerRef}
     style={{maxHeight}}
   >
@@ -68,8 +70,9 @@ export default function AdminCodeEditor({
       placeholder={placeholder}
       onChange={onChange}
       onKeyDown={onKeyDown}
+      readOnly={readOnly}
       spellCheck={false}
-      className="admin-code-editor"
+      className="admin-code-editor w-full min-w-0 max-w-full"
       style={{
         minHeight,
         fontSize,

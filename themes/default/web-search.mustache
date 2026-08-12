@@ -1,14 +1,52 @@
 <main>
-  <nav class="mf-site-nav" aria-label="Site navigation">
-    <a href="/">Home</a>
+  <nav class="mf-site-nav" aria-label="Site navigation" data-microfeed-site-nav>
+  <div class="mf-site-search" role="search">
+    <label class="mf-visually-hidden" for="microfeed-site-search">Search this site</label>
+    <svg class="mf-search-icon-graphic" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+    </svg>
+    <input id="microfeed-site-search" type="search" placeholder="Search" autocomplete="off" readonly aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open />
+    <kbd aria-hidden="true">⌘K</kbd>
+  </div>
+
+  <button type="button" class="mf-search-icon-button" aria-label="Search this site" data-microfeed-search-open>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+      <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+    </svg>
+  </button>
+
+  <div class="mf-nav-links">
     {{#navigation_pages}}
-    <a href="{{url}}">{{navigation_label}}</a>
+    <a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>
     {{/navigation_pages}}
-  </nav>
+    <details class="mf-nav-overflow" data-microfeed-nav-overflow hidden>
+      <summary aria-label="More pages" aria-expanded="false">
+        More
+        <svg aria-hidden="true" viewBox="0 0 20 20" width="14" height="14">
+          <path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+        </svg>
+      </summary>
+      <div class="mf-nav-overflow-menu" data-microfeed-nav-overflow-menu></div>
+    </details>
+  </div>
+</nav>
+  <section class="mf-back-link">
+    <a href="/">
+      <div class="icon-arrow-left">{{title}}</div>
+    </a>
+  </section>
   <section class="mf-search-page">
     <h1>Search</h1>
-    <label for="microfeed-search-page-input">Search this site</label>
-    <input id="microfeed-search-page-input" type="search" value="{{search.query}}" autocomplete="off" data-microfeed-search-input />
-    <div aria-live="polite" data-microfeed-search-results></div>
+    <form action="/search/" method="get" class="mf-search-page-form" role="search">
+      <label class="mf-visually-hidden" for="microfeed-search-page-input">Search this site</label>
+      <div class="mf-search-control">
+        <input id="microfeed-search-page-input" name="q" type="search" placeholder="Search items and pages" value="{{search.query}}" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
+        <button type="submit">
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          <span>Search</span>
+        </button>
+      </div>
+      <div class="mf-search-page-results" aria-live="polite" data-microfeed-search-results></div>
+    </form>
   </section>
 </main>

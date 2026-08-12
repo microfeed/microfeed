@@ -1,10 +1,14 @@
 import {normalizeAdminPath} from "./AdminPath";
 
 export const PAGE_SLUG_MAX_LENGTH = 100;
+export const PAGE_META_DESCRIPTION_MAX_LENGTH = 155;
+export const DEFAULT_NOT_FOUND_PAGE_ID = "system-404";
+export const DEFAULT_NOT_FOUND_PAGE_SLUG = "404";
 
 const RESERVED_PAGE_SLUGS = new Set([
   ".well-known",
   "_astro",
+  DEFAULT_NOT_FOUND_PAGE_SLUG,
   "api",
   "assets",
   "cdn-cgi",
@@ -26,6 +30,7 @@ export interface PageRecord {
   date_modified: string;
   date_published?: string;
   id: string;
+  is_not_found_page: boolean;
   meta_description?: string;
   navigation_label: string;
   navigation_order: number;
@@ -34,6 +39,10 @@ export interface PageRecord {
   status: "published" | "unlisted" | "unpublished";
   title: string;
   url: string;
+}
+
+export function isNotFoundPageSlug(value: string): boolean {
+  return normalizePageSlug(value) === DEFAULT_NOT_FOUND_PAGE_SLUG;
 }
 
 export interface PageNavigationEntry {
@@ -49,14 +58,9 @@ export function normalizePageSlug(value: string): string {
   return value.trim().toLocaleLowerCase("en-US").replace(/^\/+|\/+$/gu, "");
 }
 
-export function slugifyPageTitle(value: string): string {
-  return value.normalize("NFKD")
-    .replace(/\p{M}+/gu, "")
-    .toLocaleLowerCase("en-US")
-    .replace(/[^a-z0-9]+/gu, "-")
-    .replace(/^-+|-+$/gu, "")
-    .slice(0, PAGE_SLUG_MAX_LENGTH)
-    .replace(/-+$/gu, "");
+export function normalizePageSlugInput(value: string): string {
+  return normalizePageSlug(value.replace(/\//gu, ""))
+    .slice(0, PAGE_SLUG_MAX_LENGTH);
 }
 
 export function validatePageSlug(
@@ -64,8 +68,11 @@ export function validatePageSlug(
   adminPath?: string | null,
 ): string | undefined {
   const slug = normalizePageSlug(value);
-  if (!slug || slug.length > PAGE_SLUG_MAX_LENGTH) {
-    return `Use 1–${PAGE_SLUG_MAX_LENGTH} characters.`;
+  if (!slug) {
+    return "Enter a URL path, such as about.";
+  }
+  if (slug.length > PAGE_SLUG_MAX_LENGTH) {
+    return `Use no more than ${PAGE_SLUG_MAX_LENGTH} characters.`;
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug)) {
     return "Use lowercase letters, numbers, and single hyphens.";

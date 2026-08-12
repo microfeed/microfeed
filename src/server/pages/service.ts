@@ -4,9 +4,10 @@ import {
   STATUSES,
 } from "@/shared/Constants";
 import {
+  DEFAULT_NOT_FOUND_PAGE_SLUG,
+  isNotFoundPageSlug,
   normalizePageSlug,
   publicPageUrl,
-  slugifyPageTitle,
   type PageNavigationEntry,
   type PageRecord,
   validatePageSlug,
@@ -19,7 +20,6 @@ export interface PageInput {
   content_html?: string;
   meta_description?: string | null;
   navigation_label?: string;
-  navigation_order?: number;
   show_in_navigation?: boolean;
   slug?: string;
   status?: "published" | "unlisted" | "unpublished" | number;
@@ -129,10 +129,11 @@ function pageFromRow(row: PageRow, baseUrl: string): PageRecord {
       ? {date_published: String(row.published_at)}
       : {}),
     id: String(row.id),
+    is_not_found_page: isNotFoundPageSlug(row.slug),
     ...(row.meta_description
       ? {meta_description: String(row.meta_description)}
       : {}),
-    navigation_label: String(row.navigation_label || row.title),
+    navigation_label: String(row.navigation_label ?? ""),
     navigation_order: Number(row.navigation_order ?? 0),
     show_in_navigation: Boolean(row.show_in_navigation),
     slug: String(row.slug),
@@ -189,6 +190,22 @@ async function purgePageCaches(database: FeedDb, pageId: string): Promise<void> 
     PUBLIC_CACHE_TAGS.page(pageId),
     PUBLIC_CACHE_TAGS.ITEMS,
   ]);
+}
+
+async function nextNavigationOrder(
+  database: D1Database,
+  excludePageId?: string,
+): Promise<number> {
+  const row = await database.prepare(`
+    SELECT COALESCE(MAX(navigation_order), 0) + 10 AS value
+    FROM pages
+    WHERE status != ? AND show_in_navigation = 1
+      ${excludePageId ? "AND id != ?" : ""}
+  `).bind(
+    STATUSES.DELETED,
+    ...(excludePageId ? [excludePageId] : []),
+  ).first<{value?: number}>();
+  return Number(row?.value ?? 10);
 }
 
 export async function listPages(
@@ -251,10 +268,7 @@ export async function createPage(
 ): Promise<PageRecord> {
   const title = String(input.title ?? "").trim();
   if (!title) throw new PageRequestError("A Page title is required.");
-  const slug = validatedSlug(
-    input.slug || slugifyPageTitle(title),
-    options.adminPath,
-  );
+  const slug = validatedSlug(input.slug ?? "", options.adminPath);
   await assertSlugAvailable(database.FEED_DB, slug);
   const status = statusValue(input.status, STATUSES.UNPUBLISHED);
   if (isPublicStatus(status) && !await activeThemeSupportsPages(database.FEED_DB)) {
@@ -265,11 +279,16 @@ export async function createPage(
   const id = options.id ?? randomShortUUID();
   const now = new Date().toISOString();
   const contentHtml = String(input.content_html ?? "");
-  const navigationLabel = String(input.navigation_label ?? title).trim() || title;
-  const orderRow = await database.FEED_DB.prepare(
-      "SELECT COALESCE(MAX(navigation_order), 0) + 10 AS value FROM pages WHERE status != ?",
-    ).bind(STATUSES.DELETED).first() as {value?: number} | null;
-  const nextOrder = input.navigation_order ?? Number(orderRow?.value ?? 10);
+  const showInNavigation = input.show_in_navigation !== false;
+  const navigationLabel = String(input.navigation_label ?? "").trim();
+  if (showInNavigation && !navigationLabel) {
+    throw new PageRequestError(
+      "Enter a navigation label, or turn off Show in navigation.",
+    );
+  }
+  const nextOrder = showInNavigation
+    ? await nextNavigationOrder(database.FEED_DB)
+    : 0;
   try {
     await database.FEED_DB.batch([
       database.FEED_DB.prepare(`
@@ -286,7 +305,7 @@ export async function createPage(
         htmlToPlainText(contentHtml),
         status,
         input.meta_description?.trim() || null,
-        input.show_in_navigation === false ? 0 : 1,
+        showInNavigation ? 1 : 0,
         navigationLabel,
         nextOrder,
         isPublicStatus(status) ? now : null,
@@ -323,12 +342,38 @@ export async function updatePage(
     ? existingRow.title
     : String(input.title).trim();
   if (!title) throw new PageRequestError("A Page title is required.");
-  const slug = input.slug === undefined
+  const notFoundPage = isNotFoundPageSlug(existingRow.slug);
+  if (
+    notFoundPage && input.slug !== undefined &&
+    !isNotFoundPageSlug(input.slug)
+  ) {
+    throw new PageRequestError(
+      "The default 404 Page always uses the /404/ path.",
+    );
+  }
+  if (
+    notFoundPage && input.status !== undefined &&
+    statusValue(input.status, existingRow.status) !== STATUSES.PUBLISHED
+  ) {
+    throw new PageRequestError(
+      "The default 404 Page is always published.",
+    );
+  }
+  if (notFoundPage && input.show_in_navigation === true) {
+    throw new PageRequestError(
+      "The default 404 Page cannot be shown in navigation.",
+    );
+  }
+  const slug = notFoundPage
+    ? DEFAULT_NOT_FOUND_PAGE_SLUG
+    : input.slug === undefined
     ? existingRow.slug
     : validatedSlug(input.slug, options.adminPath);
   const slugChanged = slug !== normalizePageSlug(existingRow.slug);
   if (slugChanged) await assertSlugAvailable(database.FEED_DB, slug, id);
-  const status = statusValue(input.status, existingRow.status);
+  const status = notFoundPage
+    ? STATUSES.PUBLISHED
+    : statusValue(input.status, existingRow.status);
   const becomingPublic = isPublicStatus(status) && !isPublicStatus(existingRow.status);
   if (becomingPublic && !await activeThemeSupportsPages(database.FEED_DB)) {
     throw new PageThemeUnsupportedError(
@@ -339,6 +384,26 @@ export async function updatePage(
   const contentHtml = input.content_html === undefined
     ? existingRow.content_html
     : String(input.content_html);
+  const showInNavigation = notFoundPage
+    ? false
+    : input.show_in_navigation === undefined
+    ? Boolean(existingRow.show_in_navigation)
+    : input.show_in_navigation;
+  const navigationLabel = notFoundPage
+    ? title
+    : input.navigation_label === undefined
+    ? String(existingRow.navigation_label ?? "")
+    : input.navigation_label.trim();
+  if (showInNavigation && !navigationLabel) {
+    throw new PageRequestError(
+      "Enter a navigation label, or turn off Show in navigation.",
+    );
+  }
+  const navigationOrder = notFoundPage
+    ? 0
+    : showInNavigation && !Boolean(existingRow.show_in_navigation)
+    ? await nextNavigationOrder(database.FEED_DB, id)
+    : existingRow.navigation_order;
   const statements = [];
   if (slugChanged) {
     statements.push(
@@ -365,13 +430,9 @@ export async function updatePage(
     input.meta_description === undefined
       ? existingRow.meta_description
       : input.meta_description?.trim() || null,
-    input.show_in_navigation === undefined
-      ? existingRow.show_in_navigation
-      : input.show_in_navigation ? 1 : 0,
-    input.navigation_label === undefined
-      ? existingRow.navigation_label
-      : input.navigation_label.trim() || title,
-    input.navigation_order ?? existingRow.navigation_order,
+    showInNavigation ? 1 : 0,
+    navigationLabel,
+    navigationOrder,
     existingRow.published_at ?? (isPublicStatus(status) ? now : null),
     now,
     id,
@@ -389,10 +450,56 @@ export async function updatePage(
   return getPageById(database.FEED_DB, request, id);
 }
 
+export async function reorderPageNavigation(
+  database: FeedDb,
+  pageIds: string[],
+): Promise<void> {
+  if (new Set(pageIds).size !== pageIds.length) {
+    throw new PageRequestError("Each navigation Page can appear only once.");
+  }
+  const result = await database.FEED_DB.prepare(`
+    SELECT id FROM pages
+    WHERE status != ? AND show_in_navigation = 1
+    ORDER BY navigation_order ASC, title COLLATE NOCASE ASC, id ASC
+  `).bind(STATUSES.DELETED).all();
+  const currentIds = (result.results as Array<{id: string}>).map(({id}) =>
+    String(id)
+  );
+  const requestedIds = new Set(pageIds);
+  if (
+    currentIds.length !== pageIds.length ||
+    currentIds.some((id) => !requestedIds.has(id))
+  ) {
+    throw new PageConflictError(
+      "Page navigation changed. Refresh the Pages screen and try again.",
+    );
+  }
+  if (pageIds.length === 0) return;
+
+  const now = new Date().toISOString();
+  await database.FEED_DB.batch(pageIds.map((id, index) =>
+    database.FEED_DB.prepare(`
+      UPDATE pages SET navigation_order = ?, updated_at = ?
+      WHERE id = ? AND status != ? AND show_in_navigation = 1
+    `).bind((index + 1) * 10, now, id, STATUSES.DELETED)
+  ));
+  await database.purgePublicCacheTags([
+    PUBLIC_CACHE_TAGS.PAGES,
+    PUBLIC_CACHE_TAGS.ITEMS,
+    ...pageIds.map((id) => PUBLIC_CACHE_TAGS.page(id)),
+  ]);
+}
+
 export async function deletePage(
   database: FeedDb,
   id: string,
 ): Promise<boolean> {
+  const existing = await database.FEED_DB.prepare(
+    "SELECT slug FROM pages WHERE id = ? AND status != ? LIMIT 1",
+  ).bind(id, STATUSES.DELETED).first() as {slug: string} | null;
+  if (existing && isNotFoundPageSlug(existing.slug)) {
+    throw new PageRequestError("The default 404 Page cannot be deleted.");
+  }
   const result = await database.FEED_DB.prepare(
     "UPDATE pages SET status = ?, updated_at = ? WHERE id = ? AND status != ?",
   ).bind(

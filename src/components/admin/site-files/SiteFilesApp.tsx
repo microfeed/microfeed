@@ -10,7 +10,7 @@ export default function SiteFilesApp({files}: {files: SiteFileRecord[]}) {
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Root-level plain-text files are published without a theme. Defaults stay generated until you override them.
+          Root-level text files use Mustache templates and are published without a theme. Defaults stay generated until you override them.
         </p>
         <a className={cn(buttonVariants(), "!text-white hover:!text-white")} href={ADMIN_URLS.newSiteFile()}>
           <PlusIcon aria-hidden="true" /> Add Site File

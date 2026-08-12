@@ -1,6 +1,11 @@
 import * as z from "zod";
 import "zod-openapi";
 
+import {
+  PAGE_META_DESCRIPTION_MAX_LENGTH,
+  PAGE_SLUG_MAX_LENGTH,
+} from "./Pages";
+
 export const apiItemIdSchema = z.string().min(1).meta({
   description: "The microfeed item ID or an item-page slug ending in that ID.",
   example: "0HGJLSML3P1",
@@ -101,17 +106,66 @@ export const apiPageInputSchema = z.object({
   content_html: z.string().optional().meta({
     description: "The Page body as sanitized rich-text HTML.",
   }),
-  meta_description: z.string().max(320).nullable().optional(),
-  navigation_label: z.string().max(100).optional(),
-  navigation_order: z.number().int().optional(),
+  meta_description: z.string().max(PAGE_META_DESCRIPTION_MAX_LENGTH)
+    .nullable().optional().meta({
+      description: `An optional plain-text summary used in the Page's HTML meta description. Maximum ${PAGE_META_DESCRIPTION_MAX_LENGTH} characters.`,
+    }),
+  navigation_label: z.string().max(100).optional().meta({
+    description: "The manually chosen text used for this Page in website navigation. Required when show_in_navigation is true.",
+    example: "About",
+  }),
   show_in_navigation: z.boolean().optional(),
-  slug: z.string().min(1).max(100).optional().meta({
+  slug: z.string().min(1).max(PAGE_SLUG_MAX_LENGTH).optional().meta({
     description: "A top-level path segment, such as about for /about/.",
     example: "about",
   }),
   status: apiStatusSchema.optional(),
   title: z.string().min(1).max(200).optional(),
 }).meta({id: "PageInput"});
+
+export const apiPageCreateInputSchema = apiPageInputSchema.extend({
+  slug: z.string().trim().min(1).max(PAGE_SLUG_MAX_LENGTH).meta({
+    description: "The required, manually chosen top-level path segment, such as about for /about/.",
+    example: "about",
+  }),
+  title: z.string().trim().min(1).max(200),
+}).superRefine((input, context) => {
+  if (
+    input.show_in_navigation !== false &&
+    !input.navigation_label?.trim()
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "Enter a navigation label, or turn off Show in navigation.",
+      path: ["navigation_label"],
+    });
+  }
+}).meta({id: "PageCreateInput"});
+
+export function pageInputErrorMessage(error: z.ZodError): string {
+  const issue = error.issues[0];
+  const field = String(issue?.path[0] ?? "");
+  if (issue?.code === "custom") return issue.message;
+  if (field === "title") {
+    return issue?.code === "too_big"
+      ? "Page title must be 200 characters or fewer."
+      : "Give the Page a title.";
+  }
+  if (field === "slug") {
+    return issue?.code === "too_big"
+      ? `URL path must be ${PAGE_SLUG_MAX_LENGTH} characters or fewer.`
+      : "Enter a URL path, such as about.";
+  }
+  if (field === "navigation_label") {
+    return issue?.code === "too_big"
+      ? "Navigation label must be 100 characters or fewer."
+      : "Enter a navigation label, or turn off Show in navigation.";
+  }
+  if (field === "meta_description") {
+    return `Search and social description must be ${PAGE_META_DESCRIPTION_MAX_LENGTH} characters or fewer.`;
+  }
+  return "Check the Page fields and try again.";
+}
 
 export const apiPageOutputSchema = apiPageInputSchema.extend({
   content_html: z.string(),
@@ -120,6 +174,9 @@ export const apiPageOutputSchema = apiPageInputSchema.extend({
   date_modified: z.iso.datetime(),
   date_published: z.iso.datetime().optional(),
   id: z.string(),
+  is_not_found_page: z.boolean().meta({
+    description: "Whether this is the protected Page used for public 404 responses.",
+  }),
   navigation_label: z.string(),
   navigation_order: z.number().int(),
   show_in_navigation: z.boolean(),
@@ -152,7 +209,10 @@ export const apiSiteFileMediaTypeSchema = z.enum([
 
 export const apiSiteFileInputSchema = z.object({
   content_type: apiSiteFileMediaTypeSchema.optional(),
-  draft_content: z.string().optional(),
+  draft_content: z.string().optional().meta({
+    description:
+      "A Mustache template. It is rendered with the public feed, Pages, items, and _site helpers when previewed or served.",
+  }),
   enabled: z.boolean().optional(),
   filename: z.string().min(1).max(128).optional().meta({
     description: "A lowercase root filename with a supported text extension.",
@@ -171,7 +231,9 @@ export const apiSiteFileOutputSchema = apiSiteFileInputSchema.extend({
   generator: z.enum(["robots", "llms", "sitemap"]).optional(),
   id: z.string(),
   mode: z.enum(["generated", "override"]),
-  published_content: z.string().optional(),
+  published_content: z.string().optional().meta({
+    description: "The currently published Mustache template.",
+  }),
   system: z.boolean(),
   url: z.url(),
 }).meta({id: "SiteFile"});
@@ -183,6 +245,20 @@ export const apiSiteFileListResponseSchema = z.object({
 export const apiSiteFileCreateResponseSchema = z.object({
   id: z.string(),
 }).meta({id: "SiteFileCreateResponse"});
+
+export const apiSiteFilePreviewInputSchema = apiSiteFileInputSchema.extend({
+  draft_content: z.string(),
+  site_file_id: z.string().min(1).optional().meta({
+    description:
+      "The existing Site File ID, used to preserve its built-in generator context.",
+  }),
+}).meta({id: "SiteFilePreviewInput"});
+
+export const apiSiteFilePreviewResponseSchema = z.object({
+  content_type: apiSiteFileMediaTypeSchema,
+  rendered_content: z.string(),
+  valid: z.literal(true),
+}).meta({id: "SiteFilePreviewResponse"});
 
 export const apiSearchHighlightSegmentSchema = z.object({
   matched: z.boolean(),

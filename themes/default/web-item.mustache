@@ -1,14 +1,38 @@
 <main>
-  <nav class="mf-site-nav" aria-label="Site navigation">
-    <a href="/">Home</a>
+  <nav class="mf-site-nav" aria-label="Site navigation" data-microfeed-site-nav>
+  <div class="mf-site-search" role="search">
+    <label class="mf-visually-hidden" for="microfeed-site-search">Search this site</label>
+    <svg class="mf-search-icon-graphic" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+    </svg>
+    <input id="microfeed-site-search" type="search" placeholder="Search" autocomplete="off" readonly aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open />
+    <kbd aria-hidden="true">⌘K</kbd>
+  </div>
+
+  <button type="button" class="mf-search-icon-button" aria-label="Search this site" data-microfeed-search-open>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+      <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+    </svg>
+  </button>
+
+  <div class="mf-nav-links">
     {{#navigation_pages}}
-    <a href="{{url}}">{{navigation_label}}</a>
+    <a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>
     {{/navigation_pages}}
-    <button type="button" class="mf-search-button" data-microfeed-search-open>Search <kbd>⌘K</kbd></button>
-  </nav>
-  <section class="mb-4">
+    <details class="mf-nav-overflow" data-microfeed-nav-overflow hidden>
+      <summary aria-label="More pages" aria-expanded="false">
+        More
+        <svg aria-hidden="true" viewBox="0 0 20 20" width="14" height="14">
+          <path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+        </svg>
+      </summary>
+      <div class="mf-nav-overflow-menu" data-microfeed-nav-overflow-menu></div>
+    </details>
+  </div>
+</nav>
+  <section class="mf-back-link">
     <a href="/">
-      <div class="icon-arrow-left">{{items.0.title}}</div>
+      <div class="icon-arrow-left">{{title}}</div>
     </a>
   </section>
 

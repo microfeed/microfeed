@@ -462,6 +462,18 @@ describe("versioned theme storage", () => {
   it("consumes one-time management grants and isolates preview responses", async () => {
     const store = new ThemeStore(env.FEED_DB);
     const source = packageData(`worker.management.${crypto.randomUUID()}`);
+    source.bundle.webPage = "<main>Page preview</main>";
+    source.bundle.webSearch =
+      '<main>Search preview {{#search.results}}<span class="preview-result">{{title}}</span>{{/search.results}}</main>';
+    source.manifest = {
+      ...source.manifest,
+      files: {
+        ...source.manifest.files,
+        webPage: "page.mustache",
+        webSearch: "search.mustache",
+      },
+      formatVersion: 2,
+    };
     source.bundle.webHeader = "<script>document.body.dataset.theme='ran'</script>";
     const theme = await store.installVersion({
       ...source,
@@ -492,7 +504,26 @@ describe("versioned theme storage", () => {
     expect(preview.headers.get("content-security-policy")).toContain(
       "img-src http://localhost:4321 https: data: blob:",
     );
-    expect(await preview.text()).toContain("document.body.dataset.theme='ran'");
+    const previewHtml = await preview.text();
+    expect(previewHtml).toContain("document.body.dataset.theme='ran'");
+    expect(previewHtml).toContain("data-microfeed-search-dialog");
+    expect(previewHtml).toContain("data-microfeed-search-preview-results");
+    expect(previewHtml).toContain(
+      "Live search is unavailable in preview. Showing preview results instead.",
+    );
+    expect(previewHtml).toContain("event.metaKey || event.ctrlKey");
+    expect(previewHtml).toContain("dialog.showModal()");
+
+    const searchPreview = await themePreviewResponse(
+      env,
+      new Request(
+        "http://localhost:4321/admin/ajax/themes/id/preview?view=search",
+      ),
+      theme,
+    );
+    const searchPreviewHtml = await searchPreview.text();
+    expect(searchPreviewHtml).toContain('class="preview-result"');
+    expect(searchPreviewHtml).toContain("About");
 
     source.bundle.rssStylesheet = [
       '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">',

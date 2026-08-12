@@ -7,6 +7,10 @@ import type {
   ThemeDraft,
 } from "@/shared/themes/ThemeContract";
 import {themeRssPreviewDocument} from "@/shared/themes/RssPreview";
+import {
+  publicSearchHtml,
+  type PublicSearchResult,
+} from "@/shared/PublicSearch";
 
 type PreviewTheme = StoredThemeVersion | ThemeDraft;
 
@@ -90,6 +94,38 @@ export async function themePreviewResponse(
     url: new URL("/about/", request.url).toString(),
   };
   const extraContext = {navigation_pages: [page]};
+  const previewSearchResults: PublicSearchResult[] = loaded.publicFeed.items
+    .slice(0, 5)
+    .map((item, index) => {
+      const microfeed = item._microfeed as Record<string, unknown> | undefined;
+      return {
+        content_text: String(item.content_text ?? "Published item preview"),
+        id: typeof item.id === "string" ? item.id : `preview-item-${index + 1}`,
+        title: typeof item.title === "string" && item.title.trim()
+          ? item.title
+          : `Preview item ${index + 1}`,
+        type: "item" as const,
+        url: typeof microfeed?.web_url === "string"
+          ? microfeed.web_url
+          : new URL(`/i/preview-item-${index + 1}/`, request.url).toString(),
+      };
+    });
+  if (previewSearchResults.length === 0) {
+    previewSearchResults.push({
+      content_text: "This representative item shows how a search result is styled.",
+      id: "preview-item",
+      title: "Preview item",
+      type: "item",
+      url: new URL("/i/preview-item/", request.url).toString(),
+    });
+  }
+  previewSearchResults.push({
+    content_text: page.content_text,
+    id: page.id,
+    title: page.title,
+    type: "page",
+    url: page.url,
+  });
   const theme = new Theme(
     loaded.publicFeed,
     loaded.content.settings,
@@ -133,10 +169,13 @@ export async function themePreviewResponse(
     : view === "page"
     ? theme.getWebPage(page, [page]).html
     : view === "search"
-    ? theme.getWebSearch("preview").html
+    ? theme.getWebSearch("", previewSearchResults).html
     : theme.getWebFeed().html;
+  const publicSearch = supportsPagesAndSearch
+    ? publicSearchHtml({previewResults: previewSearchResults})
+    : "";
   return new Response(
-    `<!doctype html><html lang="${String(loaded.publicFeed.language ?? "en")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${shared.getWebHeader().html}${theme.getWebHeader().html}</head><body>${shared.getWebBodyStart().html}${theme.getWebBodyStart().html}${body}${shared.getWebBodyEnd().html}${theme.getWebBodyEnd().html}</body></html>`,
+    `<!doctype html><html lang="${String(loaded.publicFeed.language ?? "en")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${shared.getWebHeader().html}${theme.getWebHeader().html}</head><body>${shared.getWebBodyStart().html}${theme.getWebBodyStart().html}${body}${shared.getWebBodyEnd().html}${theme.getWebBodyEnd().html}${publicSearch}</body></html>`,
     {headers: previewHeaders(request.url)},
   );
 }

@@ -1,7 +1,10 @@
 import {cache, env} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
-import {apiSiteFileInputSchema} from "@/shared/ApiSchemas";
+import {
+  apiSiteFileInputSchema,
+  apiSiteFilePreviewInputSchema,
+} from "@/shared/ApiSchemas";
 import FeedDb from "@/server/feed/FeedDb";
 import {jsonResponse} from "@/server/http";
 import {
@@ -9,6 +12,7 @@ import {
   deleteSiteFile,
   getSiteFileById,
   listSiteFiles,
+  previewSiteFile,
   publishSiteFile,
   resetSiteFile,
   SiteFileConflictError,
@@ -77,6 +81,31 @@ export const updateAdminSiteFile: APIRoute = async ({params, request}) => {
     );
     return siteFile
       ? jsonResponse(siteFile)
+      : jsonResponse({error: "Site File not found."}, {status: 404});
+  } catch (error) {
+    const response = serviceError(error);
+    if (response) return response;
+    throw error;
+  }
+};
+
+export const previewAdminSiteFile: APIRoute = async ({request}) => {
+  const parsed = apiSiteFilePreviewInputSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success || (!parsed.data.filename && !parsed.data.site_file_id)) {
+    return jsonResponse({error: "Invalid Site File."}, {status: 400});
+  }
+  try {
+    const preview = await previewSiteFile(
+      database(request),
+      request,
+      parsed.data,
+    );
+    return preview
+      ? jsonResponse(preview, {
+          headers: {"cache-control": "private, no-store"},
+        })
       : jsonResponse({error: "Site File not found."}, {status: 404});
   } catch (error) {
     const response = serviceError(error);

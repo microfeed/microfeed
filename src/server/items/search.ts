@@ -13,7 +13,7 @@ import {
   STATUSES,
 } from "@/shared/Constants";
 import {API_BASE_PATH} from "@/shared/ApiVersion";
-import {publicPageUrl} from "@/shared/Pages";
+import {DEFAULT_NOT_FOUND_PAGE_SLUG, publicPageUrl} from "@/shared/Pages";
 import {
   PUBLIC_URLS,
   urlJoin,
@@ -60,6 +60,7 @@ export interface ItemSearchResult extends BaseSearchResult {
 }
 
 export interface PageSearchResult extends BaseSearchResult {
+  is_not_found_page: false;
   meta_description?: string;
   navigation_label: string;
   navigation_order: number;
@@ -296,10 +297,11 @@ function resultFromRow(
   if (row.content_type === "page") {
     return {
       ...common,
+      is_not_found_page: false,
       ...(row.meta_description
         ? {meta_description: row.meta_description}
         : {}),
-      navigation_label: row.navigation_label || row.title,
+      navigation_label: row.navigation_label,
       navigation_order: row.navigation_order,
       show_in_navigation: Boolean(row.show_in_navigation),
       slug: row.slug,
@@ -363,8 +365,13 @@ function contentFilters(options: ItemSearchOptions): {
   const clauses = [
     `d.status IN (${statusValues.map(() => "?").join(", ")})`,
     `d.content_type IN (${types.map(() => "?").join(", ")})`,
+    "NOT (d.content_type = 'page' AND p.slug = ? COLLATE NOCASE)",
   ];
-  const bindings: unknown[] = [...statusValues, ...types];
+  const bindings: unknown[] = [
+    ...statusValues,
+    ...types,
+    DEFAULT_NOT_FOUND_PAGE_SLUG,
+  ];
   if (options.datePublishedMsGt !== undefined) {
     clauses.push("d.published_at > ?");
     bindings.push(msToRFC3339(options.datePublishedMsGt));

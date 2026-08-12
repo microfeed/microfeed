@@ -51,6 +51,8 @@ Button labels and icons must always use a high-contrast semantic foreground for 
 - Sidebar navigation, mobile navigation, channel links, and the About dialog share one typed data model.
 - The About dialog gives authenticated Cloudflare production deployments a Worker-specific connect-and-deploy prompt; local, preview, legacy, and unprotected dashboards use the generic prompt.
 - Use `Button`, `Card`, `Field`, `Input`, `Textarea`, dialogs, alert dialogs, and Sonner rather than legacy CSS controls or native confirmation prompts.
+- Use the shared Base UI `Switch` for boolean controls, or `AdminSwitch` when the control needs its own adjacent label. Enabled switches use brand sky with a white thumb in both Light and Dark modes; do not override them with the primary button color or a one-off checked-state color.
+- When an input label opens explanatory help, make the full label the dialog trigger and place a `CircleArrowRightIcon` immediately after its text. Use `AdminHelpLabel` so this affordance stays consistent across edit screens; do not add a detached question-mark button beside the label. Associate the input with the trigger through `aria-labelledby`.
 - Generic icons come from static named `lucide-react` imports. Never use wildcard imports, registries, or `lucide-react/dynamic`.
 - Keep brand artwork as the repository’s image assets. Use the original microfeed horizontal logo on light surfaces and its transparent white variant on dark surfaces; never add a background container around either logo.
 

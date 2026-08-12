@@ -9,6 +9,7 @@ import {
   apiItemInputSchema,
   apiItemOutputSchema,
   apiItemValidationResponseSchema,
+  apiPageCreateInputSchema,
   apiPageCreateResponseSchema,
   apiPageInputSchema,
   apiPageListResponseSchema,
@@ -20,6 +21,8 @@ import {
   apiSiteFileInputSchema,
   apiSiteFileListResponseSchema,
   apiSiteFileOutputSchema,
+  apiSiteFilePreviewInputSchema,
+  apiSiteFilePreviewResponseSchema,
   apiUploadInputSchema,
   apiUploadOutputSchema,
 } from "./ApiSchemas";
@@ -225,7 +228,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         tags: ["Pages"],
         requestBody: {
           required: true,
-          content: {"application/json": {schema: apiPageInputSchema}},
+          content: {"application/json": {schema: apiPageCreateInputSchema}},
         },
         responses: {
           "201": success(apiPageCreateResponseSchema),
@@ -244,7 +247,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         tags: ["Pages"],
         requestBody: {
           required: true,
-          content: {"application/json": {schema: apiPageInputSchema}},
+          content: {"application/json": {schema: apiPageCreateInputSchema}},
         },
         responses: {
           "200": success(apiItemValidationResponseSchema),
@@ -270,6 +273,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         security: writeSecurity,
         operationId: "updatePage",
         summary: "Update a Page",
+        description: "Updates a Page. The built-in 404 Page allows content edits, but its path, published state, navigation exclusion, and existence are protected.",
         tags: ["Pages"],
         requestParams: {path: pagePath},
         requestBody: {
@@ -293,6 +297,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         requestParams: {path: pagePath},
         responses: {
           "200": success(z.object({})),
+          "400": error("The built-in 404 Page cannot be deleted."),
           "401": error("The Bearer credential is missing or invalid."),
           "404": error("The Page does not exist."),
         },
@@ -340,6 +345,26 @@ export const OPENAPI_DOCUMENT = createDocument({
           "200": success(apiItemValidationResponseSchema),
           "400": error("The Site File input is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
+        },
+      },
+    },
+    "/site-files/preview/": {
+      post: {
+        security: writeSecurity,
+        operationId: "previewSiteFile",
+        summary: "Render a Site File preview",
+        description:
+          "Renders an unsaved Mustache template with current public feed, Page, item, and _site data. Preview responses are never publicly cached.",
+        tags: ["Site Files"],
+        requestBody: {
+          required: true,
+          content: {"application/json": {schema: apiSiteFilePreviewInputSchema}},
+        },
+        responses: {
+          "200": success(apiSiteFilePreviewResponseSchema),
+          "400": error("The template or rendered output is invalid."),
+          "401": error("The Bearer credential is missing or invalid."),
+          "404": error("The Site File does not exist."),
         },
       },
     },

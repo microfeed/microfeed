@@ -75,6 +75,11 @@ export default function ThemePreviewDialog({
             <p className="truncate text-xs text-muted-foreground">
               {label}{description ? ` · ${description}` : ""}
             </p>
+            {view === "search" && supportsPagesAndSearch && (
+              <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                Live search is unavailable in preview. Showing preview results instead.
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {(["feed", "item", ...(supportsPagesAndSearch ? ["page", "search"] as const : []), "rss"] as PreviewView[]).map((candidate) => (

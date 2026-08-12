@@ -24,6 +24,9 @@ describe("Admin versioned themes", () => {
     expect(preview).toContain("LoaderCircleIcon");
     expect(preview).toContain("onLoad={() => setLoadedFrameKey(frameKey)}");
     expect(preview).toContain("const loading = loadedFrameKey !== frameKey");
+    expect(preview).toContain(
+      "Live search is unavailable in preview. Showing preview results instead.",
+    );
   });
 
   it("keeps installation separate from activation", async () => {
@@ -50,6 +53,9 @@ describe("Admin versioned themes", () => {
       'Discard draft "${draft.name}" (${draft.version})?',
     );
     expect(draftEditor).not.toContain("Discard draft ${draft.id}");
+    expect(draftEditor).toContain(
+      'className="sticky bottom-4 mx-4 flex',
+    );
     expect(adminStyles).toContain("@keyframes theme-preview-border-flow");
     expect(adminStyles).toContain("conic-gradient(");
     expect(adminStyles).toMatch(
@@ -128,6 +134,65 @@ describe("Admin versioned themes", () => {
     expect(themeEditor).toContain(
       "Please enter code here, including xsl and css",
     );
+  });
+
+  it("explains every theme file and links its live template context", async () => {
+    const [themeEditor, draftEditor, draftRoute] = await Promise.all([
+      source("components/admin/code-editor/ThemeBundleEditor.tsx"),
+      source("components/admin/themes/ThemeDraftEditorApp.tsx"),
+      source("pages/[adminPath]/settings/themes/drafts/[draftId]/index.astro"),
+    ]);
+    expect(themeEditor).toContain('href="https://mustache.github.io/"');
+    expect(themeEditor).toContain("href={links.jsonFeedUrl}");
+    expect(themeEditor).not.toContain("Use <code>items.0</code>");
+    expect(themeEditor).not.toContain(
+      "the <code>item</code> alias remains available",
+    );
+    for (const key of [
+      "rssStylesheet",
+      "webBodyEnd",
+      "webBodyStart",
+      "webFeed",
+      "webHeader",
+      "webItem",
+      "webPage",
+      "webSearch",
+    ]) {
+      expect(themeEditor).toContain(`${key}: {`);
+    }
+    expect(themeEditor).toContain("individual public item pages");
+    expect(themeEditor).toContain("standalone Pages");
+    expect(themeEditor).toContain("dedicated public search-results page");
+    expect(themeEditor).toContain("every public HTML page");
+    expect(themeEditor).toContain("public RSS feed");
+    expect(themeEditor).toContain(
+      "md:grid-cols-[12rem_minmax(0,1fr)]",
+    );
+    expect(themeEditor).toContain("flex-nowrap");
+    expect(themeEditor).toContain("md:flex-col");
+    expect(themeEditor).toContain("md:w-full md:justify-start");
+    expect(themeEditor).toContain('aria-label="Theme files"');
+    const menuOrder = [
+      '"webFeed",',
+      '"webItem",',
+      '"webPage",',
+      '"webSearch",',
+      '"webHeader",',
+      '"webBodyStart",',
+      '"webBodyEnd",',
+      '"rssStylesheet",',
+    ].map((key) => themeEditor.indexOf(key));
+    expect(menuOrder.every((position) => position >= 0)).toBe(true);
+    expect(menuOrder).toEqual([...menuOrder].sort((a, b) => a - b));
+    expect(draftEditor).toContain("links={themeEditorLinks}");
+    expect(draftEditor).toContain(
+      '<section className="min-w-0 rounded-[14px]',
+    );
+    expect(draftRoute).toContain("publicFeed.feed_url");
+    expect(draftRoute).toContain("webItemUrl");
+    expect(draftRoute).toContain("webPageUrl");
+    expect(draftRoute).toContain("webSearchUrl");
+    expect(draftRoute).toContain("activeThemeSupportsPages");
   });
 
   it("treats migrated legacy code as an ordinary installed version", async () => {

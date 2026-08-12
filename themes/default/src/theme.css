@@ -32,6 +32,7 @@ body {
   min-height: calc(100dvh - 3em);
   flex-direction: column;
   margin: 0;
+  background: var(--mf-background);
 }
 
 main {
@@ -45,38 +46,258 @@ footer {
 
 .mf-site-nav {
   display: flex;
+  position: relative;
   align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--mf-border);
   margin-bottom: 2rem;
 }
 
-.mf-search-button {
-  margin-left: auto;
+.mf-site-search {
+  display: grid;
+  position: relative;
+  width: min(16rem, 42vw);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
   border: 1px solid var(--mf-border);
-  border-radius: 0.4rem;
-  background: var(--mf-surface);
+  border-radius: 0.55rem;
+  background: var(--mf-background);
+  color: var(--mf-text);
+  padding: 0.28rem 0.55rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.mf-site-search:focus-within {
+  border-color: var(--mf-accent);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--mf-accent) 20%, transparent);
+}
+
+.mf-site-search input[type="search"] {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
   color: var(--mf-text);
   cursor: pointer;
-  padding: 0.3rem 0.55rem;
+  font: inherit;
 }
 
-.mf-search-button kbd {
+.mf-site-search input[type="search"]::placeholder {
+  color: var(--mf-muted);
+}
+
+.mf-site-search kbd {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.3rem;
+  background: var(--mf-surface);
   color: var(--mf-muted);
   font: inherit;
-  font-size: 0.8em;
+  font-size: 0.72em;
+  line-height: 1.4;
 }
 
-.mf-search-page input[type="search"] {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 0.65rem 0.75rem;
+.mf-search-icon-graphic {
+  color: var(--mf-muted);
+}
+
+.mf-search-icon-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
   border: 1px solid var(--mf-border);
-  border-radius: 0.45rem;
+  border-radius: 0.5rem;
+  background: var(--mf-background);
+  color: var(--mf-text);
+  cursor: pointer;
+}
+
+.mf-nav-links {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.mf-nav-links > a {
+  display: block;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mf-nav-overflow {
+  position: relative;
+}
+
+.mf-nav-overflow summary {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--mf-accent);
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+}
+
+.mf-nav-overflow summary::-webkit-details-marker {
+  display: none;
+}
+
+.mf-nav-overflow[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.mf-nav-overflow-menu {
+  display: grid;
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  min-width: 10rem;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.55rem;
+  background: var(--mf-background);
+  box-shadow: 0 0.7rem 2rem rgb(0 0 0 / 14%);
+}
+
+.mf-nav-overflow-menu a {
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.35rem;
+  white-space: nowrap;
+}
+
+.mf-nav-overflow-menu a:hover,
+.mf-nav-overflow-menu a:focus-visible {
+  background: var(--mf-surface);
+  opacity: 1;
+}
+
+.mf-back-link {
+  margin-bottom: 1rem;
+}
+
+.mf-page {
+  margin-bottom: 4em;
+}
+
+.mf-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Preview iframes do not consistently apply the browser's default dialog
+ * centering. Keep the public search modal centered on the theme surface. */
+html .mf-public-search {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  background: var(--mf-background);
+  color: var(--mf-text);
+}
+
+html .mf-public-search::backdrop {
+  background: rgb(15 23 42 / 45%);
+}
+
+.mf-search-page h1 {
+  margin-bottom: 1.25rem;
+}
+
+.mf-search-page-form {
+  margin: 0;
+}
+
+.mf-search-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.7rem;
+  overflow: hidden;
+  background: var(--mf-background);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.mf-search-control:focus-within {
+  border-color: var(--mf-accent);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--mf-accent) 20%, transparent);
+}
+
+.mf-search-control input[type="search"] {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
   background: var(--mf-background);
   color: var(--mf-text);
   font: inherit;
+}
+
+.mf-search-control input[type="search"]::placeholder {
+  color: var(--mf-muted);
+}
+
+.mf-search-control button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-left: 1px solid var(--mf-accent);
+  background: var(--mf-accent);
+  color: var(--mf-background);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  transition: filter 120ms ease;
+}
+
+.mf-search-control button:hover {
+  filter: brightness(0.92);
+}
+
+.mf-search-control button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--mf-accent) 28%, transparent);
+  outline-offset: -4px;
+}
+
+.mf-search-page-results {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1.25rem;
+}
+
+.mf-search-page-results .mf-public-search-result {
+  border-color: var(--mf-border);
+  background: var(--mf-background);
+}
+
+.mf-search-page-results .mf-public-search-result:hover,
+.mf-search-page-results .mf-public-search-result:focus-visible {
+  background: var(--mf-surface);
+  opacity: 1;
 }
 
 section {
@@ -275,6 +496,35 @@ pre code {
   }
 
   .hide-mobile {
+    display: none;
+  }
+
+  .mf-site-nav {
+    gap: 0.6rem;
+  }
+
+  .mf-site-search {
+    display: none;
+  }
+
+  .mf-search-icon-button {
+    display: inline-flex;
+  }
+
+  .mf-nav-links {
+    gap: 0.6rem;
+    font-size: 0.9em;
+  }
+
+  .mf-nav-links > a {
+    max-width: 6.5rem;
+  }
+
+  .mf-search-control button {
+    padding-inline: 0.85rem;
+  }
+
+  .mf-search-control button span {
     display: none;
   }
 }

@@ -8,19 +8,14 @@ import PublicLayout from "../../../layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 import {navigationPages} from "@/server/pages/service";
+import {loadPublicNotFoundPageRoute} from "@/server/pages/public";
 
 const itemId = getIdFromSlug(Astro.params.slug ?? "");
-if (!itemId) {
-  return new Response("Not Found", {
-    status: 404,
-    statusText: "Not Found",
-  });
-}
 const loaded = await loadPublishedFeed(env, Astro.request, {
   includeActiveTheme: true,
   limit: 1,
   queryKwargs: {
-    id: itemId,
+    id: itemId ?? "__missing_item__",
     "status__in": [STATUSES.PUBLISHED, STATUSES.UNLISTED],
   },
 });
@@ -36,6 +31,9 @@ const unavailable = !item || hidePublicWeb;
 if (unavailable) {
   Astro.response.status = 404;
 }
+const notFoundPage = unavailable
+  ? await loadPublicNotFoundPageRoute(env, Astro.request)
+  : undefined;
 const assetBaseUrl = themeAssetBaseUrl(
   env,
   Astro.request.url,
@@ -66,7 +64,9 @@ const canonicalUrl = itemId && item
   : undefined;
 ---
 
-{unavailable || !item ? (
+{notFoundPage?.kind === "page" ? (
+  <PublicLayout {...notFoundPage.layout} />
+) : unavailable || !item ? (
   <h1>Not Found</h1>
 ) : (
   <PublicLayout

@@ -95,9 +95,13 @@ export function validateSiteFilename(value: string): string | undefined {
 export function validateSiteFileContent(
   content: string,
   contentType: SiteFileMediaType,
+  options: {allowLargeGeneratedSitemap?: boolean} = {},
 ): string | undefined {
   if (content.includes("\0")) return "NUL bytes are not allowed.";
-  if (new TextEncoder().encode(content).byteLength > SITE_FILE_MAX_BYTES) {
+  if (
+    !options.allowLargeGeneratedSitemap &&
+    new TextEncoder().encode(content).byteLength > SITE_FILE_MAX_BYTES
+  ) {
     return `Content must be ${SITE_FILE_MAX_BYTES} bytes or smaller.`;
   }
   if (

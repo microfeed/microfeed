@@ -1,14 +1,19 @@
 import {CODE_TYPES} from "@/shared/Constants";
+import {DEFAULT_NOT_FOUND_PAGE_SLUG} from "@/shared/Pages";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import Theme from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
-import {navigationPages, resolvePagePath} from "./service";
+import {
+  navigationPages,
+  resolvePagePath,
+  type ResolvedPagePath,
+} from "./service";
 
 interface PublicPageLayoutData {
   bodyEnd: string;
   bodyHtml: string;
   bodyStart: string;
-  canonicalUrl: string;
+  canonicalUrl?: string;
   channelImage: string;
   description: string;
   favicon?: {
@@ -28,7 +33,7 @@ interface PublicPageLayoutData {
 export type PublicPageRouteResult =
   | {kind: "not-found"}
   | {kind: "redirect"; location: string}
-  | {kind: "page"; layout: PublicPageLayoutData};
+  | {kind: "page"; layout: PublicPageLayoutData; status: 200 | 404};
 
 export async function loadPublicPageRoute(
   runtimeEnv: Env,
@@ -39,19 +44,26 @@ export async function loadPublicPageRoute(
     includeActiveTheme: true,
     limit: 1,
   });
-  const resolved = slug && !slug.includes("/")
+  const requested = slug.length > 0 && !slug.includes("/")
     ? await resolvePagePath(loaded.database.FEED_DB, request, slug)
     : null;
   if (
     shouldHidePublicWeb(loaded.content) ||
-    loaded.content.activeTheme?.manifest.formatVersion !== 2 ||
-    !resolved
+    loaded.content.activeTheme?.manifest.formatVersion !== 2
   ) {
     return {kind: "not-found"};
   }
-  if (resolved.redirect) {
-    return {kind: "redirect", location: resolved.page.url};
+  if (requested?.redirect) {
+    return {kind: "redirect", location: requested.page.url};
   }
+  const resolved: ResolvedPagePath | null = requested ??
+    await resolvePagePath(
+      loaded.database.FEED_DB,
+      request,
+      DEFAULT_NOT_FOUND_PAGE_SLUG,
+    );
+  if (!resolved) return {kind: "not-found"};
+  const fallback = !requested;
 
   const navigation = await navigationPages(loaded.database.FEED_DB, request);
   const assetBaseUrl = themeAssetBaseUrl(
@@ -85,7 +97,7 @@ export async function loadPublicPageRoute(
       bodyEnd: theme.getWebBodyEnd().html,
       bodyHtml: theme.getWebPage(resolved.page, navigation).html,
       bodyStart: theme.getWebBodyStart().html,
-      canonicalUrl: resolved.page.url,
+      ...(fallback ? {} : {canonicalUrl: resolved.page.url}),
       channelImage: String(loaded.content.channel?.image ?? ""),
       description: resolved.page.meta_description ?? resolved.page.content_text,
       favicon: webSettings.favicon,
@@ -98,5 +110,13 @@ export async function loadPublicPageRoute(
       sharedHeadHtml: sharedTheme.getWebHeader().html,
       title: resolved.page.title,
     },
+    status: fallback || resolved.page.is_not_found_page ? 404 : 200,
   };
+}
+
+export async function loadPublicNotFoundPageRoute(
+  runtimeEnv: Env,
+  request: Request,
+): Promise<PublicPageRouteResult> {
+  return loadPublicPageRoute(runtimeEnv, request, "");
 }

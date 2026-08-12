@@ -34,8 +34,52 @@ function enableClassicLazyImages(): void {
     });
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", enableClassicLazyImages, {once: true});
-} else {
+function enableOverflowNavigation(): void {
+  for (const navigation of document.querySelectorAll<HTMLElement>(
+    "[data-microfeed-site-nav]",
+  )) {
+    const links = Array.from(
+      navigation.querySelectorAll<HTMLAnchorElement>("[data-microfeed-nav-item]"),
+    );
+    if (links.length <= 2) continue;
+
+    const overflow = navigation.querySelector<HTMLDetailsElement>(
+      "[data-microfeed-nav-overflow]",
+    );
+    const menu = overflow?.querySelector<HTMLElement>(
+      "[data-microfeed-nav-overflow-menu]",
+    );
+    const summary = overflow?.querySelector<HTMLElement>("summary");
+    if (!overflow || !menu || !summary) continue;
+
+    for (const link of links.slice(2)) menu.append(link);
+    overflow.hidden = false;
+    const updateExpandedState = () => {
+      summary.setAttribute("aria-expanded", String(overflow.open));
+    };
+    overflow.addEventListener("toggle", updateExpandedState);
+    menu.addEventListener("click", () => {
+      overflow.open = false;
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (event.target instanceof Node && !overflow.contains(event.target)) {
+        overflow.open = false;
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overflow.open = false;
+    });
+    updateExpandedState();
+  }
+}
+
+function enableTheme(): void {
   enableClassicLazyImages();
+  enableOverflowNavigation();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", enableTheme, {once: true});
+} else {
+  enableTheme();
 }

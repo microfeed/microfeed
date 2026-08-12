@@ -5,9 +5,12 @@ import {
   apiChannelInputSchema,
   apiIdempotencyKeySchema,
   apiItemInputSchema,
+  apiPageCreateInputSchema,
   apiPageInputSchema,
+  pageInputErrorMessage,
   apiSearchQuerySchema,
   apiSiteFileInputSchema,
+  apiSiteFilePreviewInputSchema,
   apiUploadInputSchema,
 } from "@/shared/ApiSchemas";
 import {STATUSES} from "@/shared/Constants";
@@ -44,10 +47,9 @@ import type {
   ItemSearchField,
   ItemSearchStatus,
 } from "@/shared/ItemSearch";
-import {slugifyPageTitle, validatePageSlug} from "@/shared/Pages";
+import {validatePageSlug} from "@/shared/Pages";
 import {
   siteFileMediaTypeForName,
-  validateSiteFileContent,
   validateSiteFilename,
 } from "@/shared/SiteFiles";
 import {
@@ -65,6 +67,7 @@ import {
   deleteSiteFile,
   getSiteFileById,
   listSiteFiles,
+  previewSiteFile,
   publishSiteFile,
   resetSiteFile,
   SiteFileConflictError,
@@ -88,6 +91,7 @@ function publicSearchResponse(response: ContentSearchResponse) {
             : {}),
           highlights: item.highlights,
           id: item.id,
+          is_not_found_page: item.is_not_found_page,
           ...(item.meta_description
             ? {meta_description: item.meta_description}
             : {}),
@@ -205,11 +209,14 @@ export const createApiPage: APIRoute = async ({locals, request}) => {
   if (!locals.feedDb) {
     return new Response("Feed context unavailable", {status: 500});
   }
-  const parsed = apiPageInputSchema.safeParse(await request.json().catch(
+  const parsed = apiPageCreateInputSchema.safeParse(await request.json().catch(
     () => null,
   ));
   if (!parsed.success) {
-    return jsonResponse({error: "Invalid Page."}, {status: 400});
+    return jsonResponse(
+      {error: pageInputErrorMessage(parsed.error)},
+      {status: 400},
+    );
   }
   try {
     const page = await createPage(locals.feedDb, request, parsed.data, {
@@ -224,18 +231,21 @@ export const createApiPage: APIRoute = async ({locals, request}) => {
 };
 
 export const validateApiPage: APIRoute = async ({request}) => {
-  const parsed = apiPageInputSchema.safeParse(await request.json().catch(
+  const parsed = apiPageCreateInputSchema.safeParse(await request.json().catch(
     () => null,
   ));
-  const title = parsed.success ? parsed.data.title?.trim() : "";
-  const slug = parsed.success && title
-    ? parsed.data.slug || slugifyPageTitle(title)
-    : "";
-  if (
-    !parsed.success || !title ||
-    validatePageSlug(slug, env.MICROFEED_ADMIN_PATH)
-  ) {
-    return jsonResponse({error: "Invalid Page."}, {status: 400});
+  if (!parsed.success) {
+    return jsonResponse(
+      {error: pageInputErrorMessage(parsed.error)},
+      {status: 400},
+    );
+  }
+  const slugError = validatePageSlug(
+    parsed.data.slug,
+    env.MICROFEED_ADMIN_PATH,
+  );
+  if (slugError) {
+    return jsonResponse({error: slugError}, {status: 400});
   }
   return jsonResponse({valid: true});
 };
@@ -258,7 +268,10 @@ export const updateApiPage: APIRoute = async ({locals, params, request}) => {
     () => null,
   ));
   if (!parsed.success) {
-    return jsonResponse({error: "Invalid Page."}, {status: 400});
+    return jsonResponse(
+      {error: pageInputErrorMessage(parsed.error)},
+      {status: 400},
+    );
   }
   try {
     const page = await updatePage(
@@ -282,9 +295,15 @@ export const deleteApiPage: APIRoute = async ({locals, params}) => {
   if (!locals.feedDb || !params.pageId) {
     return new Response("Feed context unavailable", {status: 500});
   }
-  return await deletePage(locals.feedDb, params.pageId)
-    ? jsonResponse({})
-    : jsonResponse({error: "Page not found."}, {status: 404});
+  try {
+    return await deletePage(locals.feedDb, params.pageId)
+      ? jsonResponse({})
+      : jsonResponse({error: "Page not found."}, {status: 404});
+  } catch (error) {
+    const response = pageServiceError(error);
+    if (response) return response;
+    throw error;
+  }
 };
 
 function siteFileServiceError(error: unknown): Response | undefined {
@@ -326,7 +345,10 @@ export const createApiSiteFile: APIRoute = async ({locals, request}) => {
   }
 };
 
-export const validateApiSiteFile: APIRoute = async ({request}) => {
+export const validateApiSiteFile: APIRoute = async ({locals, request}) => {
+  if (!locals.feedDb) {
+    return new Response("Feed context unavailable", {status: 500});
+  }
   const parsed = apiSiteFileInputSchema.safeParse(await request.json().catch(
     () => null,
   ));
@@ -335,13 +357,49 @@ export const validateApiSiteFile: APIRoute = async ({request}) => {
   }
   const contentType = parsed.data.content_type ??
     siteFileMediaTypeForName(parsed.data.filename);
-  if (
-    validateSiteFilename(parsed.data.filename) || !contentType ||
-    validateSiteFileContent(parsed.data.draft_content ?? "", contentType)
-  ) {
+  if (validateSiteFilename(parsed.data.filename) || !contentType) {
     return jsonResponse({error: "Invalid Site File."}, {status: 400});
   }
-  return jsonResponse({valid: true});
+  try {
+    await previewSiteFile(locals.feedDb, request, {
+      ...parsed.data,
+      content_type: contentType,
+      draft_content: parsed.data.draft_content ?? "",
+    });
+    return jsonResponse({valid: true});
+  } catch (error) {
+    const response = siteFileServiceError(error);
+    if (response) return response;
+    throw error;
+  }
+};
+
+export const previewApiSiteFile: APIRoute = async ({locals, request}) => {
+  if (!locals.feedDb) {
+    return new Response("Feed context unavailable", {status: 500});
+  }
+  const parsed = apiSiteFilePreviewInputSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success || (!parsed.data.filename && !parsed.data.site_file_id)) {
+    return jsonResponse({error: "Invalid Site File."}, {status: 400});
+  }
+  try {
+    const preview = await previewSiteFile(
+      locals.feedDb,
+      request,
+      parsed.data,
+    );
+    return preview
+      ? jsonResponse(preview, {
+          headers: {"cache-control": "private, no-store"},
+        })
+      : jsonResponse({error: "Site File not found."}, {status: 404});
+  } catch (error) {
+    const response = siteFileServiceError(error);
+    if (response) return response;
+    throw error;
+  }
 };
 
 export const getApiSiteFile: APIRoute = async ({locals, params, request}) => {

@@ -2,7 +2,7 @@
 import "@fontsource-variable/geist";
 import AdminThemeMenu from "@/components/admin/AdminThemeMenu";
 import AdminThemeScript from "@/components/admin/AdminThemeScript.astro";
-import "@/styles/admin.css";
+import adminStylesheetUrl from "@/styles/admin-stylesheet";
 import "../styles/interactive.css";
 
 interface Props {
@@ -21,6 +21,7 @@ const {adminPath, title} = Astro.props;
     <meta name="microfeed-admin-path" content={adminPath} />
     <title>{title}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png" />
+    <link rel="stylesheet" href={adminStylesheetUrl} />
     <AdminThemeScript />
   </head>
   <body>

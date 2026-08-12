@@ -117,7 +117,7 @@ BEGIN
 END;
 CREATE TRIGGER IF NOT EXISTS pages_site_search_after_insert
 AFTER INSERT ON pages
-WHEN NEW.status != 3
+WHEN NEW.status != 3 AND NEW.slug != '404' COLLATE NOCASE
 BEGIN
   INSERT INTO site_search_documents (
     content_type, content_id, status, title, content_text,
@@ -139,7 +139,7 @@ BEGIN
   SELECT
     'page', NEW.id, NEW.status, NEW.title, NEW.content_text,
     NEW.published_at, NEW.updated_at, NULL
-  WHERE NEW.status != 3;
+  WHERE NEW.status != 3 AND NEW.slug != '404' COLLATE NOCASE;
 END;
 CREATE TRIGGER IF NOT EXISTS pages_site_search_after_delete
 AFTER DELETE ON pages
@@ -165,7 +165,7 @@ SELECT
   'page', id, status, title, content_text,
   published_at, updated_at, NULL
 FROM pages
-WHERE status != 3;
+WHERE status != 3 AND slug != '404' COLLATE NOCASE;
 `;
 
 // Keep the old names while deployment and snapshot callers migrate. Their

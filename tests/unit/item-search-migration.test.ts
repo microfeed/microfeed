@@ -53,6 +53,7 @@ describe("item search migration and normalization", () => {
     );
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
+    database.exec(await migration("0014_default_not_found_page.sql"));
     expect(database.prepare(
       "SELECT ready FROM site_search_metadata WHERE id = 1",
     ).get()).toEqual({ready: 0});
@@ -92,6 +93,7 @@ describe("item search migration and normalization", () => {
     );
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
+    database.exec(await migration("0014_default_not_found_page.sql"));
     const cloudflare = testCloudflare(database);
     await normalizeItemSearchContent(cloudflare, config);
 
@@ -123,6 +125,7 @@ describe("item search migration and normalization", () => {
     database.exec(await migration("0001_initial.sql"));
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
+    database.exec(await migration("0014_default_not_found_page.sql"));
     const cloudflare = testCloudflare(database);
     const result = await withItemSearchIndexesSuspended(
       cloudflare,
@@ -140,5 +143,67 @@ describe("item search migration and normalization", () => {
     expect(database.prepare(
       "SELECT ready FROM site_search_metadata WHERE id = 1",
     ).get()).toEqual({ready: 1});
+  });
+
+  it("creates an editable 404 Page outside the public search corpus", async () => {
+    const database = new DatabaseSync(":memory:");
+    database.exec(await migration("0001_initial.sql"));
+    database.exec(await migration("0009_item_search.sql"));
+    database.exec(await migration("0013_pages_search_site_files.sql"));
+    database.exec(await migration("0014_default_not_found_page.sql"));
+
+    expect(database.prepare(
+      "SELECT id, slug, title, status, show_in_navigation " +
+        "FROM pages WHERE slug = '404'",
+    ).get()).toEqual({
+      id: "system-404",
+      show_in_navigation: 0,
+      slug: "404",
+      status: 1,
+      title: "Page not found",
+    });
+    expect(database.prepare(
+      "SELECT content_id FROM site_search_exact " +
+        "WHERE site_search_exact MATCH 'page not found'",
+    ).all()).toEqual([]);
+
+    database.prepare(
+      "UPDATE pages SET title = 'Nothing here', " +
+        "content_text = 'A friendlier missing page' WHERE slug = '404'",
+    ).run();
+    expect(database.prepare(
+      "SELECT content_id FROM site_search_exact " +
+        "WHERE site_search_exact MATCH 'friendlier'",
+    ).all()).toEqual([]);
+  });
+
+  it("preserves an existing current /404/ Page during migration", async () => {
+    const database = new DatabaseSync(":memory:");
+    database.exec(await migration("0001_initial.sql"));
+    database.exec(await migration("0009_item_search.sql"));
+    database.exec(await migration("0013_pages_search_site_files.sql"));
+    database.prepare(
+      "INSERT INTO pages (id, slug, title, status, show_in_navigation) " +
+        "VALUES ('custom-404', '404', 'Custom missing', 2, 1)",
+    ).run();
+    database.prepare(
+      "INSERT INTO page_paths (slug, page_id, is_current) " +
+        "VALUES ('404', 'custom-404', 1)",
+    ).run();
+
+    database.exec(await migration("0014_default_not_found_page.sql"));
+
+    expect(database.prepare(
+      "SELECT id, title, status, show_in_navigation " +
+        "FROM pages WHERE slug = '404'",
+    ).get()).toEqual({
+      id: "custom-404",
+      show_in_navigation: 0,
+      status: 1,
+      title: "Custom missing",
+    });
+    expect(database.prepare(
+      "SELECT COUNT(*) AS count FROM pages WHERE id = 'system-404'",
+    ).get()).toEqual({count: 0});
   });
 });
