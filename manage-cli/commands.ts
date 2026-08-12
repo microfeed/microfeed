@@ -4567,30 +4567,44 @@ export async function instancesCommand(
     ensureGroup(worker.accountId, worker.accountName).available.push(worker);
   }
 
-  const lines: string[] = [];
-  appendSection(lines, [
-    "=== Local ===",
-    ...(local.length > 0
-      ? instanceRecordLines(local.map(({active, config, name}) =>
-          connectedInstanceLines(active, config, name)
-        ))
-      : ["No local-only instances."]),
-  ]);
   const sortedGroups = [...groups.values()].sort((left, right) =>
     left.accountName.localeCompare(right.accountName) ||
     left.accountId.localeCompare(right.accountId)
   );
+  const sortedLocal = local.sort((left, right) =>
+    left.name.localeCompare(right.name)
+  );
+  for (const group of sortedGroups) {
+    group.managed.sort((left, right) => left.name.localeCompare(right.name));
+    group.available.sort((left, right) =>
+      left.workerName.localeCompare(right.workerName)
+    );
+  }
+  if (flagBoolean(flags, "json")) {
+    process.stdout.write(`${JSON.stringify({
+      accounts: sortedGroups,
+      local: sortedLocal,
+      messages: discovery.messages,
+    })}\n`);
+    return;
+  }
+
+  const lines: string[] = [];
+  appendSection(lines, [
+    "=== Local ===",
+    ...(sortedLocal.length > 0
+      ? instanceRecordLines(sortedLocal.map(({active, config, name}) =>
+          connectedInstanceLines(active, config, name)
+        ))
+      : ["No local-only instances."]),
+  ]);
   for (const group of sortedGroups) {
     const records = [
       ...group.managed
-        .sort((left, right) => left.name.localeCompare(right.name))
         .map(({active, config, name}) =>
           connectedInstanceLines(active, config, name)
         ),
       ...group.available
-        .sort((left, right) =>
-          left.workerName.localeCompare(right.workerName)
-        )
         .map(availableInstanceLines),
     ];
     appendSection(lines, [

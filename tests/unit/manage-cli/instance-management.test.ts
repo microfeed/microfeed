@@ -632,6 +632,23 @@ describe("first-class local instances", () => {
     expect(text).toContain("personal (active)");
     expect(text).toContain("Type: Local only");
     expect(text).toContain("Cloudflare discovery skipped");
+
+    output.mockClear();
+    await commands.instancesCommand({json: true}, signedOutRunner);
+    const result = JSON.parse(
+      output.mock.calls.map(([value]) => String(value)).join(""),
+    ) as {
+      accounts: unknown[];
+      local: Array<{active: boolean; name: string}>;
+      messages: string[];
+    };
+    expect(result.accounts).toEqual([]);
+    expect(result.local).toEqual([
+      expect.objectContaining({active: true, name: "personal"}),
+    ]);
+    expect(result.messages).toEqual([
+      expect.stringContaining("Cloudflare discovery skipped"),
+    ]);
   });
 
   it("rejects Cloudflare operations for a local-only instance", async () => {

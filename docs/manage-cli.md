@@ -431,16 +431,41 @@ an exact installed immutable version and need to preserve its current package
 ID and version:
 
 ```console
-yarn manage theme list --instance personal --json
+yarn manage theme export --active --instance personal --git --json
+
+# Or export one explicit immutable version.
 yarn manage theme export <theme-id> --instance personal \
-  --output ~/microfeed-themes/exported-theme
+  --output .microfeed/themes/example-theme-1.0.0 --git
 ```
 
 Export writes the templates, inherited assets, README, local package scripts,
-fixture, schemas, and `develop-microfeed-theme` skill into an empty directory.
-It does not initialize Git, install or activate a theme, or otherwise change
-the public site. Keep the directory outside the microfeed checkout, validate
-the untouched baseline, and initialize Git only after those checks pass. See
+fixture, schemas, an independent `yarn.lock`, a pinned Yarn version, and a
+project-local `.yarnrc.yml` into an empty directory. The local Yarn
+configuration preapproves only `@microfeed/theme-kit`, so a newly published
+official toolkit can pass Yarn's package-age gate without weakening the gate
+for other packages. The generated dependency uses the compatible major range
+rather than requiring the application checkout's exact patch version.
+
+Choose exactly one immutable theme ID or `--active`. When `--output` is
+omitted, export uses
+`.microfeed/themes/<package-id>-<version>/`. The scaffold also includes the
+`develop-microfeed-theme` skill. With `--git`, it also
+initializes a local Git repository on `main`; without that flag, Git behavior
+is unchanged. It never stages, commits, creates a remote, pushes, installs,
+activates, or otherwise changes the public site.
+
+With `--json`, a successful export returns `packageId`, `version`, `themeId`,
+`selection`, `output`, and `gitInitialized`. If Git initialization fails, the
+command exits unsuccessfully but retains the completed scaffold for inspection;
+do not rerun export into that now-non-empty directory.
+
+The ignored `.microfeed/themes/` directory keeps the standalone repository in
+the same checkout and coding-agent workspace without exposing it to the parent
+repository. Do not use `dist/themes/`: `dist/` is disposable application build
+output and a normal build may replace it. The ignored repository remains local
+until you commit and push it from inside its own directory, and cleanup that
+removes ignored files can still delete it. Validate the untouched baseline
+before making the first commit. See
 [Export an installed theme with an AI coding agent](/dashboard/themes/#export-an-installed-theme-with-an-ai-coding-agent)
 for a copy-paste prompt that stops before commit or publication.
 
@@ -482,11 +507,13 @@ yarn manage theme <init|install|list|update|activate|deactivate|rollback|export|
 | `--instance <name>` | Select the saved site. |
 | `--ref <ref>` | Select a Git branch, tag, or commit for install or update. |
 | `--path <directory>` | Select the theme directory inside a GitHub repository. |
-| `--output <directory>` | Choose the empty directory used by init or export. |
+| `--output <directory>` | Choose the empty directory used by init or export; export defaults under `.microfeed/themes/`. |
 | `--package-id <id>` | Set the new package ID created by init. |
 | `--name <name>` | Set the new theme name created by init. |
 | `--version <semver>` | Set the initial semantic version created by init. |
 | `--author <name>` | Set the new theme author created by init. |
+| `--active` | Export the active installed immutable theme version. |
+| `--git` | Initialize an exported theme as a local Git repository on `main`. |
 | `--no-git` | Create init files without initializing a Git repository. |
 | `--local` | Use the selected instance's isolated local D1/R2 simulation. |
 | `--preview` | Use the deployed preview environment. |
@@ -522,8 +549,8 @@ yarn manage theme rollback --instance personal
 yarn manage theme deactivate --instance personal
 
 # Export one exact installed version as a Git-ready standalone repository, or delete it.
-yarn manage theme export <theme-id> --instance personal \
-  --output ~/microfeed-themes/theme-export
+yarn manage theme export --active --instance personal --git --json
+yarn manage theme export <theme-id> --instance personal --git
 yarn manage theme delete <theme-id> --instance personal --confirm <theme-id>
 ```
 
@@ -1028,12 +1055,13 @@ includes each media-storage state and ready-to-run `connect` commands. No
 Cloudflare resources are changed.
 
 ```console
-yarn manage instances [--account-id <id>]
+yarn manage instances [--account-id <id>] [--json]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--account-id <id>` | Limit Cloudflare discovery to one available account. |
+| `--json` | Print machine-readable `local`, `accounts`, and discovery `messages` groups. |
 
 ## `yarn manage use`
 

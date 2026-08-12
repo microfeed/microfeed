@@ -6,10 +6,10 @@ description: Develop, revise, build, validate, test, and preview a microfeed the
 # Develop a microfeed theme
 
 1. Read `THEME.md`, `microfeed-theme.json`, and the schemas under `.microfeed/schemas/` completely before editing.
-2. Inspect package scripts and source directories. If the repository has build sources, edit those sources and regenerate the six declared output files; do not hand-edit generated bundles.
-3. Keep all files inside the package directory and modify only declared templates, declared assets, build sources, fixtures, and documentation.
-4. Run the package build when present, then run `theme-kit validate . --json` and `theme-kit test . --json`. Repair every diagnostic.
-5. Run `theme-kit preview .` for visual review. Use supplied fixtures first; use a public JSON feed only when real content is needed.
+2. Inspect package scripts and source directories. Run `yarn install` before the baseline checks when the repository has a Yarn package. Do not rely on dependencies from a parent workspace.
+3. If the repository has build sources, edit those sources and regenerate the six declared output files; do not hand-edit generated bundles. Keep all files inside the package directory and modify only declared templates, declared assets, build sources, fixtures, and documentation.
+4. Run the package build when present, then prefer the repository scripts `yarn validate` and `yarn test`. Fall back to `theme-kit validate . --json` and `theme-kit test . --json` only when those scripts are absent. Repair every diagnostic.
+5. Prefer `yarn preview` for visual review, falling back to `theme-kit preview .` only when needed. Use supplied fixtures first; use a public JSON feed only when real content is needed. Stop the preview server after verification.
 6. Increment the manifest SemVer before installing changed content. Never reuse a published package ID and version for different content.
 7. Install as inactive. Do not activate a theme or change a live site without explicit permission.
 

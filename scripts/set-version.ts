@@ -2,7 +2,11 @@ import {readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
 import {fileURLToPath, pathToFileURL} from "node:url";
 
-import {major, prerelease, valid} from "semver";
+import {valid} from "semver";
+
+import {themeKitCompatibilityRange} from "../src/shared/ThemeKitVersion";
+
+export {themeKitCompatibilityRange} from "../src/shared/ThemeKitVersion";
 
 interface JsonObject {
   [key: string]: JsonObject | string | number | boolean | null | undefined;
@@ -55,17 +59,6 @@ const RELEASE_VERSION_TARGETS: VersionTarget[] = [
     },
   },
 ];
-
-export function themeKitCompatibilityRange(version: string): string {
-  const releaseMajor = major(version);
-  if (releaseMajor === 0) {
-    return `^${version}`;
-  }
-  if (prerelease(version)) {
-    return `>=${version} <${releaseMajor + 1}.0.0`;
-  }
-  return `^${releaseMajor}.0.0`;
-}
 
 export function validateReleaseVersion(input: string | undefined): string {
   if (!input || valid(input) !== input) {

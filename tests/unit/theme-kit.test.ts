@@ -1,6 +1,8 @@
+import {execFile} from "node:child_process";
 import {cp, mkdtemp, readFile, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
+import {promisify} from "node:util";
 import {afterEach, describe, expect, it} from "vitest";
 import {SyntaxValidator} from "fast-xml-validator";
 import * as z from "zod";
@@ -19,6 +21,8 @@ import {
 } from "@/shared/themes/ThemeContract";
 
 const temporaryDirectories: string[] = [];
+const execFileAsync = promisify(execFile);
+const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 
 async function themeDirectory(): Promise<string> {
   const directory = await mkdtemp(path.join(tmpdir(), "microfeed-theme-kit-test-"));
@@ -127,6 +131,57 @@ describe("@microfeed/theme-kit package loading", () => {
       preview: "theme-kit preview .",
       test: "theme-kit test . --json",
       validate: "theme-kit validate . --json",
+    });
+  });
+
+  it("creates an independent Yarn project boundary for new repositories", async () => {
+    const parent = await mkdtemp(path.join(tmpdir(), "microfeed-theme-kit-init-"));
+    temporaryDirectories.push(parent);
+    const output = path.join(parent, ".microfeed", "themes", "example-theme");
+    await execFileAsync(process.execPath, [
+      "--import",
+      "tsx",
+      path.join(repositoryRoot, "packages/theme-kit/src/cli.ts"),
+      "init",
+      output,
+    ], {cwd: repositoryRoot});
+
+    await expect(readFile(path.join(output, "yarn.lock"), "utf8"))
+      .resolves.toBe("");
+    await expect(readFile(path.join(output, "package.json"), "utf8"))
+      .resolves.toContain("@microfeed/theme-kit");
+    const packageJson = JSON.parse(
+      await readFile(path.join(output, "package.json"), "utf8"),
+    ) as {packageManager?: string};
+    const rootPackageJson = JSON.parse(
+      await readFile(path.join(repositoryRoot, "package.json"), "utf8"),
+    ) as {packageManager?: string};
+    expect(packageJson.packageManager).toBe(rootPackageJson.packageManager);
+    await expect(readFile(path.join(output, ".yarnrc.yml"), "utf8"))
+      .resolves.toBe(
+        "nodeLinker: node-modules\n" +
+          "npmPreapprovedPackages:\n" +
+          "  - \"@microfeed/theme-kit\"\n",
+      );
+    await expect(readFile(path.join(output, ".gitignore"), "utf8"))
+      .resolves.toBe(".yarn/\nnode_modules/\n");
+  });
+
+  it("resolves checkout-level relative paths from the Yarn project root", async () => {
+    const result = await execFileAsync(process.execPath, [
+      "--import",
+      "tsx",
+      path.join(repositoryRoot, "packages/theme-kit/src/cli.ts"),
+      "validate",
+      "packages/theme-kit/assets/starter",
+      "--json",
+    ], {
+      cwd: path.join(repositoryRoot, "packages/theme-kit"),
+      env: {...process.env, PROJECT_CWD: repositoryRoot},
+    });
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      packageId: "example.my-theme",
     });
   });
 

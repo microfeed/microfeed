@@ -111,7 +111,10 @@ theme-kit init <directory>
 
 Creates a generic theme repository scaffold containing `README.md`, the
 manifest, six required theme files, schemas, fixtures, local package scripts,
-`THEME.md`, and the `develop-microfeed-theme` agent skill.
+`THEME.md`, an independent empty `yarn.lock`, project-local Yarn settings, and
+the `develop-microfeed-theme` agent skill. The settings preapprove only the
+official `@microfeed/theme-kit` package while retaining Yarn package gates for
+every other dependency.
 
 - Missing parent directories are created.
 - The destination must be empty; existing files are never overwritten.
