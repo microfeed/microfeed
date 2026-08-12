@@ -85,13 +85,17 @@ describe("management CLI help and canonical reference", () => {
   });
 
   it("links the canonical reference from agent entry points", async () => {
-    const [agents, skill] = await Promise.all([
+    const [agents, deploymentSkill, exportSkill] = await Promise.all([
       repositoryFile("AGENTS.md"),
       repositoryFile(".agents/skills/deploy-microfeed/SKILL.md"),
+      repositoryFile(".agents/skills/export-microfeed-theme/SKILL.md"),
     ]);
 
     expect(agents).toContain("`docs/manage-cli.md`");
-    expect(skill).toContain("../../../docs/manage-cli.md");
+    expect(agents).toContain("`export-microfeed-theme` skill");
+    expect(deploymentSkill).toContain("../../../docs/manage-cli.md");
+    expect(exportSkill).toContain("../../../docs/manage-cli.md");
+    expect(exportSkill).toContain("theme export --active");
   });
 
   it("keeps the canonical dashboard login guidance action-oriented", async () => {

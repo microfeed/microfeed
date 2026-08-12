@@ -1,0 +1,4 @@
+interface:
+  display_name: "Export microfeed themes"
+  short_description: "Export and verify installed microfeed themes"
+  default_prompt: "Use $export-microfeed-theme to export my active installed theme into a verified local repository."

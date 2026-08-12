@@ -4,7 +4,9 @@ import {
   mkdtemp,
   readFile,
   readdir,
+  rename,
   rm,
+  rmdir,
   writeFile,
 } from "node:fs/promises";
 import {tmpdir} from "node:os";
@@ -18,7 +20,11 @@ import {
   storedThemeSummaryFromRow,
   themeStateFromRow,
 } from "@/shared/themes/ThemeRows";
-import {MICROFEED_VERSION} from "@/shared/Version";
+import {themeKitCompatibilityRange} from "@/shared/ThemeKitVersion";
+import {
+  MICROFEED_PACKAGE_MANAGER,
+  MICROFEED_VERSION,
+} from "@/shared/Version";
 import {
   THEME_MAX_ASSET_BYTES,
   THEME_MAX_INSTALLED_VERSIONS,
@@ -684,6 +690,21 @@ async function themeSummaries(target: Target): Promise<ThemeVersionSummary[]> {
   return rows.map(storedThemeSummaryFromRow);
 }
 
+async function currentThemeState(target: Target): Promise<ThemeState> {
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      return await localState(local.database);
+    } finally {
+      await local.close();
+    }
+  }
+  return themeStateFromRow((await target.client.queryD1WithParameters(
+    target.config,
+    "SELECT * FROM theme_state WHERE id = 'current' LIMIT 1",
+  ))[0] ?? null);
+}
+
 async function themeById(
   target: Target,
   id: string,
@@ -1189,6 +1210,13 @@ function withFinalNewline(value: string): string {
   return value.endsWith("\n") ? value : `${value}\n`;
 }
 
+async function initializeGitRepository(
+  output: string,
+  runner: CommandRunner,
+): Promise<void> {
+  await runner("git", ["init", "--initial-branch", "main"], {cwd: output});
+}
+
 async function writeThemePackage(
   target: Target,
   theme: ThemePackageFiles,
@@ -1196,12 +1224,25 @@ async function writeThemePackage(
   options: WriteThemePackageOptions = {},
 ): Promise<string> {
   const output = path.resolve(outputDirectory);
-  await mkdir(output, {recursive: true});
-  if ((await readdir(output)).length > 0) throw new Error(`Refusing to export into non-empty directory ${output}.`);
+  const outputExists = await readdir(output).then(
+    (entries) => {
+      if (entries.length > 0) {
+        throw new Error(`Refusing to export into non-empty directory ${output}.`);
+      }
+      return true;
+    },
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    },
+  );
+  const parent = path.dirname(output);
+  await mkdir(parent, {recursive: true});
+  const staging = await mkdtemp(path.join(parent, `.${path.basename(output)}.tmp-`));
   const writtenPaths = new Set<string>();
   const writeRelative = async (relativePath: string, value: string | Uint8Array) => {
-    const filename = path.resolve(output, relativePath);
-    const resolvedRelative = path.relative(output, filename);
+    const filename = path.resolve(staging, relativePath);
+    const resolvedRelative = path.relative(staging, filename);
     if (
       !resolvedRelative || resolvedRelative.startsWith("..") ||
       path.isAbsolute(resolvedRelative)
@@ -1215,69 +1256,82 @@ async function writeThemePackage(
     await mkdir(path.dirname(filename), {recursive: true});
     await writeFile(filename, value);
   };
-  await writeRelative("microfeed-theme.json", `${JSON.stringify(theme.manifest, null, 2)}\n`);
-  for (const [key, relativePath] of Object.entries(theme.manifest.files)) {
-    await writeRelative(
-      relativePath,
-      withFinalNewline(theme.bundle[key as keyof typeof theme.manifest.files]),
-    );
-  }
-  if (theme.bundle.assets.length > 0) {
-    if (target.local) {
-      const local = await localResources(target);
-      try {
-        for (const asset of theme.bundle.assets) {
-          const object = await local.bucket.get(asset.key);
-          if (!object) throw new Error(`Theme asset is missing: ${asset.path}`);
-          await writeRelative(asset.path, new Uint8Array(await object.arrayBuffer()));
-        }
-      } finally { await local.close(); }
-    } else {
-      const accountId = cloudflareAccountId(target.config);
-      for (const asset of theme.bundle.assets) {
-        const response = await target.client.r2ObjectResponse(accountId, target.config.r2.name, asset.key);
-        await writeRelative(asset.path, new Uint8Array(await response.arrayBuffer()));
-      }
-    }
-  }
-  await writeRelative("THEME.md", options.readme ?? generatedThemeReadme());
-  await writeRelative(".microfeed/schemas/manifest.schema.json", `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), null, 2)}\n`);
-  await writeRelative(".microfeed/schemas/theme-context.schema.json", `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`);
-  if (options.repositoryScaffold) {
-    await writeRelative("README.md", options.repositoryScaffold.readme);
-    await writeRelative(".gitignore", "node_modules/\n");
-    await writeRelative("package.json", `${JSON.stringify({
-      devDependencies: {"@microfeed/theme-kit": `^${MICROFEED_VERSION}`},
-      name: theme.manifest.packageId,
-      private: true,
-      scripts: {
-        preview: "theme-kit preview .",
-        test: "theme-kit test . --json",
-        validate: "theme-kit validate . --json",
-      },
-    }, null, 2)}\n`);
-    if (theme.manifest.assets.length === 0) {
-      await writeRelative("assets/.gitkeep", "");
-    }
-    await writeRelative(
-      "fixtures/custom.json",
-      await readFile(
-        path.join(repositoryRoot, "packages/theme-kit/assets/starter/fixtures/custom.json"),
-      ),
-    );
-    for (const relativePath of [
-      ".agents/skills/develop-microfeed-theme/SKILL.md",
-      ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
-    ]) {
+  try {
+    await writeRelative("microfeed-theme.json", `${JSON.stringify(theme.manifest, null, 2)}\n`);
+    for (const [key, relativePath] of Object.entries(theme.manifest.files)) {
       await writeRelative(
         relativePath,
-        await readFile(path.join(
-          repositoryRoot,
-          "packages/theme-kit/assets/starter",
-          relativePath,
-        )),
+        withFinalNewline(theme.bundle[key as keyof typeof theme.manifest.files]),
       );
     }
+    if (theme.bundle.assets.length > 0) {
+      if (target.local) {
+        const local = await localResources(target);
+        try {
+          for (const asset of theme.bundle.assets) {
+            const object = await local.bucket.get(asset.key);
+            if (!object) throw new Error(`Theme asset is missing: ${asset.path}`);
+            await writeRelative(asset.path, new Uint8Array(await object.arrayBuffer()));
+          }
+        } finally { await local.close(); }
+      } else {
+        const accountId = cloudflareAccountId(target.config);
+        for (const asset of theme.bundle.assets) {
+          const response = await target.client.r2ObjectResponse(accountId, target.config.r2.name, asset.key);
+          await writeRelative(asset.path, new Uint8Array(await response.arrayBuffer()));
+        }
+      }
+    }
+    await writeRelative("THEME.md", options.readme ?? generatedThemeReadme());
+    await writeRelative(".microfeed/schemas/manifest.schema.json", `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), null, 2)}\n`);
+    await writeRelative(".microfeed/schemas/theme-context.schema.json", `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`);
+    if (options.repositoryScaffold) {
+      await writeRelative("README.md", options.repositoryScaffold.readme);
+      await writeRelative(".gitignore", ".yarn/\nnode_modules/\n");
+      await writeRelative(".yarnrc.yml", `nodeLinker: node-modules\nnpmPreapprovedPackages:\n  - "@microfeed/theme-kit"\n`);
+      await writeRelative("yarn.lock", "");
+      await writeRelative("package.json", `${JSON.stringify({
+        devDependencies: {
+          "@microfeed/theme-kit": themeKitCompatibilityRange(MICROFEED_VERSION),
+        },
+        name: theme.manifest.packageId,
+        packageManager: MICROFEED_PACKAGE_MANAGER,
+        private: true,
+        scripts: {
+          preview: "theme-kit preview .",
+          test: "theme-kit test . --json",
+          validate: "theme-kit validate . --json",
+        },
+      }, null, 2)}\n`);
+      if (theme.manifest.assets.length === 0) {
+        await writeRelative("assets/.gitkeep", "");
+      }
+      await writeRelative(
+        "fixtures/custom.json",
+        await readFile(path.join(
+          repositoryRoot,
+          "packages/theme-kit/assets/starter/fixtures/custom.json",
+        )),
+      );
+      for (const relativePath of [
+        ".agents/skills/develop-microfeed-theme/SKILL.md",
+        ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+      ]) {
+        await writeRelative(
+          relativePath,
+          await readFile(path.join(
+            repositoryRoot,
+            "packages/theme-kit/assets/starter",
+            relativePath,
+          )),
+        );
+      }
+    }
+    if (outputExists) await rmdir(output);
+    await rename(staging, output);
+  } catch (error) {
+    await rm(staging, {force: true, recursive: true});
+    throw error;
   }
   return output;
 }
@@ -1333,7 +1387,7 @@ async function initializeThemeRepository(
   );
   const gitInitialized = !flagBoolean(flags, "no-git");
   if (gitInitialized) {
-    await runner("git", ["init", "--initial-branch", "main"], {cwd: output});
+    await initializeGitRepository(output, runner);
   }
   return {
     gitInitialized,
@@ -1358,6 +1412,22 @@ export async function themeCommand(
   if (!action || !["init", "install", "list", "update", "activate", "deactivate", "rollback", "export", "delete"].includes(action)) {
     throw new Error("Theme action must be init, install, list, update, activate, deactivate, rollback, export, or delete.");
   }
+  if (flagBoolean(flags, "git") && action !== "export") {
+    throw new Error("--git is supported only by theme export.");
+  }
+  if (flagBoolean(flags, "active") && action !== "export") {
+    throw new Error("--active is supported only by theme export.");
+  }
+  const requestedThemeId = flagString(flags, "theme-id");
+  const requestedActiveTheme = flagBoolean(flags, "active");
+  if (
+    action === "export" &&
+    Boolean(requestedThemeId) === requestedActiveTheme
+  ) {
+    throw new Error(
+      "theme export requires exactly one of <theme-id> or --active.",
+    );
+  }
   const target = await resolveTarget(flags, runner);
   if (action === "init") {
     const result = await initializeThemeRepository(target, flags, runner);
@@ -1377,18 +1447,31 @@ export async function themeCommand(
   }
   if (action === "list") {
     const themes = await themeSummaries(target);
-    const state = target.local
-      ? await (async () => {const local = await localResources(target); try {return await localState(local.database);} finally {await local.close();}})()
-      : themeStateFromRow((await target.client.queryD1WithParameters(target.config, "SELECT * FROM theme_state WHERE id = 'current' LIMIT 1"))[0] ?? null);
+    const state = await currentThemeState(target);
     writeOutput(flags, {state, themes}, themes.length
       ? themes.map((theme) => `${theme.id}  ${theme.packageId}@${theme.version}${state.activeThemeId === theme.id ? "  active" : state.previousThemeId === theme.id ? "  previous" : ""}`).join("\n")
       : "No installed theme versions.");
     return;
   }
-  const themeId = flagString(flags, "theme-id");
-  const theme = themeId ? await themeById(target, themeId, action === "delete") : null;
+  let themeId = requestedThemeId;
+  if (action === "export" && requestedActiveTheme) {
+    const state = await currentThemeState(target);
+    if (!state.activeThemeId) {
+      throw new Error(
+        "No installed theme version is active. Use theme init to derive a " +
+          "repository from the effective fallback theme.",
+      );
+    }
+    themeId = state.activeThemeId;
+  }
+  const theme = themeId
+    ? await themeById(target, themeId, action === "delete")
+    : null;
   if (["update", "activate", "export", "delete"].includes(action) && !theme) {
-    throw new Error(`Theme ${themeId ?? "<missing>"} was not found.`);
+    const guidance = action === "export" && requestedActiveTheme
+      ? " Use theme init to derive a repository from the effective fallback theme."
+      : "";
+    throw new Error(`Theme ${themeId ?? "<missing>"} was not found.${guidance}`);
   }
   if (action === "update") {
     const source = theme!.sourceKind === "bundled" && theme!.sourcePath === "default"
@@ -1408,14 +1491,32 @@ export async function themeCommand(
     return;
   }
   if (action === "export") {
-    const output = flagString(flags, "output");
-    if (!output) throw new Error("theme export requires --output <directory>.");
-    await writeThemePackage(target, theme!, output, {
+    const output = flagString(flags, "output") ?? path.join(
+      ".microfeed",
+      "themes",
+      `${theme!.packageId}-${theme!.version}`,
+    );
+    const resolvedOutput = await writeThemePackage(target, theme!, output, {
       repositoryScaffold: {
         readme: generatedExportedThemeRepositoryReadme(theme!.manifest),
       },
     });
-    writeOutput(flags, {output: path.resolve(output), themeId: theme!.id}, `Exported ${theme!.packageId}@${theme!.version} to ${path.resolve(output)}.`);
+    const gitInitialized = flagBoolean(flags, "git");
+    if (gitInitialized) {
+      await initializeGitRepository(resolvedOutput, runner);
+    }
+    writeOutput(
+      flags,
+      {
+        gitInitialized,
+        output: resolvedOutput,
+        packageId: theme!.packageId,
+        selection: requestedActiveTheme ? "active" : "theme-id",
+        themeId: theme!.id,
+        version: theme!.version,
+      },
+      `Exported ${theme!.packageId}@${theme!.version} to ${resolvedOutput}${gitInitialized ? " and initialized Git." : "."}`,
+    );
     return;
   }
   if (action === "delete") {

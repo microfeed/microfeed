@@ -77,6 +77,18 @@
 - Keep stable, unprocessed public assets in `public/`; do not move them into the
   source bundle or change their public URLs without an explicit migration.
 
+## Theme export
+
+- When a user asks Codex to export, copy, fork, inspect, or begin developing an
+  installed theme from a saved instance, use the repository's
+  `export-microfeed-theme` skill.
+- Prefer `yarn manage theme export --active --instance <name> --git --json` and
+  its default `.microfeed/themes/<package-id>-<version>/` destination. Use an
+  explicit immutable theme ID when the user selects one.
+- Export and verify only. Do not install, activate, deactivate, delete, stage,
+  commit, create a remote, or push unless the user separately requests that
+  action. Stop every preview server started for verification.
+
 ## API contracts and documentation
 
 - Treat `src/shared/ApiSchemas.ts` and `src/shared/OpenApiDocument.ts` as the

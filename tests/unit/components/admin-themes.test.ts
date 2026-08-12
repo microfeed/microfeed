@@ -98,6 +98,9 @@ describe("Admin versioned themes", () => {
     expect(themes).not.toContain("Origin theme: ${theme.originThemeId}");
     expect(themes).toContain("Export this version");
     expect(themes).toContain("for backup or continued development");
+    expect(themes).toContain(
+      ".microfeed/themes/${theme.packageId}-${theme.version} --git",
+    );
   });
 
   it("keeps required draft identity prominent and explains optional metadata", async () => {

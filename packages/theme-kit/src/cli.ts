@@ -45,18 +45,25 @@ function output(value: unknown, json: boolean): void {
   process.stdout.write(json ? `${JSON.stringify(value)}\n` : `${String(value)}\n`);
 }
 
+function resolveInvocationPath(value: string): string {
+  return path.resolve(process.env.PROJECT_CWD ?? process.cwd(), value);
+}
+
 async function init(args: Arguments): Promise<void> {
-  const directory = path.resolve(args.positionals[0] ?? "microfeed-theme");
+  const directory = resolveInvocationPath(
+    args.positionals[0] ?? "microfeed-theme",
+  );
   await mkdir(directory, {recursive: true});
   const entries = await readdir(directory);
   if (entries.length > 0) throw new Error(`Refusing to scaffold into non-empty directory ${directory}.`);
   const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   await cp(path.join(packageRoot, "assets", "starter"), directory, {recursive: true});
+  await writeFile(path.join(directory, "yarn.lock"), "");
   output(`Created theme in ${directory}`, false);
 }
 
 async function validate(args: Arguments): Promise<void> {
-  const source = args.positionals[0] ?? ".";
+  const source = resolveInvocationPath(args.positionals[0] ?? ".");
   const theme = await loadThemePackage(source);
   output({assets: theme.assetFiles.length, ok: true, packageId: theme.manifest.packageId, version: theme.manifest.version}, args.options.json === true);
 }
@@ -77,7 +84,9 @@ async function fixtureEntries(directory: string): Promise<Array<[string, Record<
 }
 
 async function test(args: Arguments): Promise<void> {
-  const theme = await loadThemePackage(args.positionals[0] ?? ".");
+  const theme = await loadThemePackage(
+    resolveInvocationPath(args.positionals[0] ?? "."),
+  );
   const tests: Array<{fixture: string; ok: boolean}> = [];
   for (const [name, fixture] of await fixtureEntries(theme.directory)) {
     const {context, itemContext} = contexts(fixture, theme.manifest.packageId, theme.manifest.version);
@@ -229,7 +238,9 @@ export function jsonFeedFixtureToRss(fixture: Record<string, unknown>): string {
 }
 
 async function preview(args: Arguments): Promise<void> {
-  const theme = await loadThemePackage(args.positionals[0] ?? ".");
+  const theme = await loadThemePackage(
+    resolveInvocationPath(args.positionals[0] ?? "."),
+  );
   let selectedFixture: Record<string, unknown> = BUILT_IN_FIXTURES.minimal!;
   const fixture = optionString(args, "fixture");
   const feedUrl = optionString(args, "feed-url");
@@ -238,7 +249,9 @@ async function preview(args: Arguments): Promise<void> {
     if (!response.ok) throw new Error(`Feed request failed with HTTP ${response.status}.`);
     selectedFixture = await response.json() as Record<string, unknown>;
   } else if (fixture) {
-    selectedFixture = BUILT_IN_FIXTURES[fixture] ?? JSON.parse(await readFile(path.resolve(fixture), "utf8"));
+    selectedFixture = BUILT_IN_FIXTURES[fixture] ?? JSON.parse(
+      await readFile(resolveInvocationPath(fixture), "utf8"),
+    );
   }
   themeContextSchema.parse(themeContext(selectedFixture, {
     assetBaseUrl: "/assets/",
@@ -310,7 +323,11 @@ async function pullFixture(args: Arguments): Promise<void> {
     packageId: "fixture",
     version: "0.0.0",
   }));
-  await writeFile(path.resolve(filename), `${JSON.stringify(feed, null, 2)}\n`, {flag: "wx"});
+  await writeFile(
+    resolveInvocationPath(filename),
+    `${JSON.stringify(feed, null, 2)}\n`,
+    {flag: "wx"},
+  );
   output(`Saved public feed fixture to ${filename}. Review it before committing copied content.`, false);
 }
 

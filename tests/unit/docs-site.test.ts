@@ -759,11 +759,15 @@ describe("documentation site", () => {
       "yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>",
     );
     expect(themes).toContain(
-      "yarn manage theme list --instance <instance-name> --json",
+      "yarn manage instances --json",
     );
     expect(themes).toContain(
-      "yarn manage theme export <theme-id> --instance <instance-name>",
+      "yarn manage theme export\n--active --instance <instance-name> --git --json",
     );
+    expect(themes).toContain(
+      ".microfeed/themes/<package-id>-<version>/",
+    );
+    expect(themes).toContain("Do not\nuse `dist/themes/`");
     expect(themes).toContain("Do not activate, deactivate, install, delete");
     expect(themes).toContain("stop before staging");
     expect(themes).toContain("yarn preview --feed-url https://example.com/json/");
@@ -790,7 +794,12 @@ describe("documentation site", () => {
     expect(manageCli).toContain(
       "Export writes the templates, inherited assets, README, local package scripts",
     );
-    expect(manageCli).toContain("It does not initialize Git");
+    expect(manageCli).toContain(
+      "yarn manage theme export --active --instance personal --git --json",
+    );
+    expect(manageCli).toContain(
+      "With `--git`, it also\ninitializes a local Git repository on `main`",
+    );
 
     const themeKitCli = await readFile(
       path.join(docsRoot, "theme-kit-cli.md"),
@@ -799,6 +808,15 @@ describe("documentation site", () => {
     expect(themeKitCli).toContain(
       "Creates a generic theme repository scaffold containing `README.md`",
     );
+
+    const themeKitReadme = await readFile(
+      path.join(repositoryRoot, "packages", "theme-kit", "README.md"),
+      "utf8",
+    );
+    expect(themeKitReadme).toContain(
+      "`.microfeed/themes/<package-id>-<version>/`",
+    );
+    expect(themeKitReadme).toContain("Do not use `dist/themes/`");
   });
 
   it("advertises agentic content publishing from the main discovery paths", async () => {

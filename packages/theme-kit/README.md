@@ -29,8 +29,14 @@ microfeed site or change an active theme:
 
 ## Start a standalone theme repository
 
-Keep theme repositories outside the microfeed checkout so generated files are
-not accidentally committed to the application repository.
+Keep initialized and generic theme repositories outside the microfeed checkout
+by default so generated files are not accidentally committed to the
+application repository. When an exact installed version should stay in the
+same coding-agent workspace, export it to the ignored
+`.microfeed/themes/<package-id>-<version>/` directory with
+`yarn manage theme export --active ... --git`.
+Do not use `dist/themes/`; application builds may replace that disposable
+output.
 
 ### Start from your site’s current theme
 
@@ -51,6 +57,23 @@ yarn preview
 
 You do not need to create `~/microfeed-themes/` first. The command creates
 missing parents and refuses to overwrite a non-empty destination.
+
+To preserve the active installed package ID and version instead of creating a
+new identity, keep it inside the checkout with:
+
+```console
+yarn manage theme export --active --instance <instance-name> --git --json
+cd .microfeed/themes/<package-id>-<version>
+yarn install
+yarn validate
+yarn test
+yarn preview
+```
+
+The export starts an independent Yarn project. It requests the compatible
+theme-kit major range and preapproves only the official
+`@microfeed/theme-kit` package, so Yarn's package-age gate continues to apply
+to every other dependency.
 
 ### Start from the generic starter
 

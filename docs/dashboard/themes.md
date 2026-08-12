@@ -125,35 +125,50 @@ workflow. The skill never creates screenshots unless explicitly requested.
 
 ### Export an installed theme with an AI coding agent
 
-Open the main microfeed checkout in a local coding agent. Replace the instance,
-output directory, and public feed URL in this prompt, then paste it into the
-agent:
+Open the main microfeed checkout in a local coding agent. Replace the instance
+and public feed URL in this prompt, then paste it into the agent. The CLI uses
+the ignored `.microfeed/themes/<package-id>-<version>/` directory by default so
+the standalone repository stays inside the same coding-agent workspace. Do not
+use `dist/themes/`; application builds may replace that disposable output.
 
 ```text
 Export an existing installed theme from the saved microfeed instance
-<instance-name> into a verified standalone repository at
-<absolute-empty-directory>.
+<instance-name> into a verified standalone repository.
 
-First run `yarn manage theme list --instance <instance-name> --json` and report
-each plausible theme's ID, package ID, version, and whether it is active. If
-more than one theme is plausible, stop and ask me to choose. Export the selected
-version with `yarn manage theme export <theme-id> --instance <instance-name> --output <absolute-empty-directory>`.
+First run `yarn manage instances --json` and verify the exact saved instance.
+Export its active installed immutable version with `yarn manage theme export
+--active --instance <instance-name> --git --json`. Let the CLI use its default
+`.microfeed/themes/<package-id>-<version>/` directory. If no installed version
+is active, explain the `theme init` alternative and stop rather than changing
+the package identity silently.
 
 Do not activate, deactivate, install, delete, or otherwise change the live
-site. Keep the output outside the microfeed checkout. In the exported directory,
-read README.md, THEME.md, microfeed-theme.json, and the generated schemas. Run
-`yarn install`, `yarn validate`, and `yarn test`, then start
+site. In the exported directory, read README.md, THEME.md,
+microfeed-theme.json, and the generated schemas. Run `yarn install`, `yarn
+validate`, and `yarn test`, then start
 `yarn preview --feed-url https://example.com/json/` and report the local preview
 URL. Stop the preview server after verification.
 
-After the baseline checks pass, initialize local Git on main. Show me `git
-status` and a proposed initial commit message, then stop before staging,
-committing, pushing, creating a GitHub repository, or opening a pull request.
+After the baseline checks pass, show me `git status` and a proposed initial
+commit message, then stop before staging, committing, pushing, creating a
+GitHub repository, or opening a pull request.
 ```
 
-The result is a verified local Git repository. Export does not initialize Git,
-publish the repository, install the exported package, or change the active
-theme. Request each of those later actions separately if you want them.
+The JSON result identifies the package ID, version, immutable theme ID,
+selection method, output directory, and Git state. The result is a verified
+local Git repository on `main`. The `--git` flag only
+initializes it: export does not stage, commit, create a remote, push, install
+the package, or change the active theme. The parent microfeed repository ignores
+`.microfeed/`, but cleanup that removes ignored files can still delete this
+local repository. Commit and push it from inside its own directory when you are
+ready to preserve it elsewhere.
+
+The generated repository pins Yarn 4, starts with an empty independent
+`yarn.lock`, and requests the compatible `@microfeed/theme-kit` major range.
+Its local Yarn configuration preapproves only that official toolkit, allowing
+a freshly published toolkit release through Yarn's package-age gate without
+weakening the gate for other dependencies. `yarn install` populates the
+lockfile before validation.
 
 Keep the first verified export unchanged until you review it. After making
 theme edits, increment `microfeed-theme.json` SemVer, validate and test again,
@@ -374,11 +389,13 @@ yarn test
 yarn preview
 ```
 
-The scaffold includes a local `package.json`, so people, coding agents, and CI
-all use the same installed CLI and scripts. Initialize Git after reviewing the
-files. The `@microfeed/theme-kit` release number follows the microfeed
-application release; the new theme starts at its own independent `0.1.0`
-manifest version.
+The scaffold includes a local `package.json`, empty `yarn.lock`, and Yarn
+configuration, so people, coding agents, and CI all use the same independent
+CLI and scripts. It preapproves only the official `@microfeed/theme-kit`
+package while retaining Yarn package gates for every other dependency.
+Initialize Git after reviewing the files. The compatible
+`@microfeed/theme-kit` major range follows the microfeed application release;
+the new theme starts at its own independent `0.1.0` manifest version.
 
 ### Understand the generated contract
 
@@ -387,6 +404,8 @@ The generated repository contains:
 ```text
 package.json
 .gitignore
+.yarnrc.yml
+yarn.lock
 microfeed-theme.json
 THEME.md
 web-feed.mustache
@@ -472,9 +491,10 @@ or GitHub source that can provide a newer release. Use `theme export` for an
 Admin-derived version or another installation without an updateable source.
 Export preserves the installed package ID and version and writes its templates,
 inherited assets, README, package scripts, fixture, schemas, and agent skill to
-an empty standalone directory. The result is Git-ready but is not initialized
-as a Git repository. Export does not install, activate, or otherwise change the
-public site.
+an empty standalone directory. Pass `--git` to initialize the result as a local
+Git repository on `main`; without that flag, it remains only Git-ready. Export
+does not stage, commit, create a remote, push, install, activate, or otherwise
+change the public site.
 
 An environment can hold 50 non-deleted installed versions and 20 drafts.
 Deleted inactive versions do not count toward the installed limit. If an Admin

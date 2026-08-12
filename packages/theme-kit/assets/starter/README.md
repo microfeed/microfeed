@@ -17,6 +17,11 @@ yarn test
 yarn preview
 ```
 
+The empty initial `yarn.lock` makes this directory independent from any
+parent workspace; `yarn install` populates it. The local Yarn configuration
+preapproves only the official `@microfeed/theme-kit` package, leaving package
+gates in place for every other dependency.
+
 To preview against a public microfeed JSON Feed instead of a bundled fixture:
 
 ```console
@@ -25,8 +30,8 @@ yarn preview --feed-url https://example.com/json/
 
 Read [THEME.md](./THEME.md), `microfeed-theme.json`, and the schemas under
 `.microfeed/schemas/` before editing. Establish a clean validation and test
-baseline first. If this directory is not already a Git repository, initialize
-it only after those checks pass:
+baseline before the first commit. If this directory is not already a Git
+repository, initialize it after those checks pass:
 
 ```console
 git init --initial-branch main
