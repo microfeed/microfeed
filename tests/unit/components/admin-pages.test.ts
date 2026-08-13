@@ -131,6 +131,26 @@ describe("admin Page editor routes", () => {
     expect(editor).toContain('showToast("Page created.", "success")');
   });
 
+  it("updates the View action from the last saved visibility and URL", async () => {
+    const editor = await readFile(
+      new URL(
+        "../../../src/components/admin/pages/PageEditorApp.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(editor).toContain(
+      "const [savedPage, setSavedPage] = useState<PageRecord | undefined>(page)",
+    );
+    expect(editor).toContain("setSavedPage(saved)");
+    expect(editor).toContain(
+      'savedPage && savedPage.status !== "unpublished"',
+    );
+    expect(editor).toContain('href={savedPage.url}');
+    expect(editor).not.toContain('page.status !== "unpublished"');
+  });
+
   it("explains and disables Page navigation details when it is off", async () => {
     const editor = await readFile(
       new URL(

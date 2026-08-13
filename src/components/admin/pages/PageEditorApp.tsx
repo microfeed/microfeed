@@ -181,6 +181,7 @@ export default function PageEditorApp({
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null);
+  const [savedPage, setSavedPage] = useState<PageRecord | undefined>(page);
   const changedRef = useRef(false);
   const isNotFoundPage = Boolean(page?.is_not_found_page);
   useEffect(() => preventCloseWhenChanged(() => changedRef.current), []);
@@ -243,6 +244,7 @@ export default function PageEditorApp({
       } else {
         showToast("Page saved.", "success");
         setDraft(saved);
+        setSavedPage(saved);
       }
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Page operation failed.", "error");
@@ -417,7 +419,7 @@ export default function PageEditorApp({
           <Button disabled={busy || !changed && Boolean(page)} onClick={() => void save()}>
             <SaveIcon aria-hidden="true" /> {page ? "Save Page" : "Create Page"}
           </Button>
-          {page && page.status !== "unpublished" && <Button render={<a href={page.url} target="_blank" rel="noreferrer" />} variant="outline"><ExternalLinkIcon aria-hidden="true" /> View</Button>}
+          {savedPage && savedPage.status !== "unpublished" && <Button render={<a href={savedPage.url} target="_blank" rel="noreferrer" />} variant="outline"><ExternalLinkIcon aria-hidden="true" /> View</Button>}
           {page && !isNotFoundPage && <Button disabled={busy} onClick={() => void remove()} variant="destructive"><Trash2Icon aria-hidden="true" /> Delete</Button>}
         </div>
       </aside>

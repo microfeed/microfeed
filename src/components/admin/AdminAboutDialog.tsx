@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {
+  BookOpenIcon,
   CheckIcon,
   CopyIcon,
   ExternalLinkIcon,
@@ -12,12 +13,12 @@ import {Button} from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {OUR_BRAND} from "@/shared/Constants";
+import {MICROFEED_VERSION} from "@/shared/Version";
 import type {AdminDeploymentSummary} from "./admin-shell-types";
 
 export const ADMIN_UPDATE_PROMPT = "Update this microfeed site to the latest version and deploy it.";
@@ -99,15 +100,12 @@ export default function AdminAboutDialog({defaultOpen = false, deployment}: Prop
           src="/assets/brands/microfeed/horizontal-logo-dark.png"
         />
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl">About this microfeed</DialogTitle>
-          <DialogDescription>
-            Product links, deployment details, and the shortest safe update path.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <a
             className="flex items-center gap-3 rounded-xl border bg-card p-3 text-card-foreground hover:border-brand-light hover:text-card-foreground"
             href={OUR_BRAND.whatsnewWebsite}
@@ -116,8 +114,21 @@ export default function AdminAboutDialog({defaultOpen = false, deployment}: Prop
           >
             <GlobeIcon aria-hidden="true" className="size-5 text-brand-light" />
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">microfeed.org</span>
-              <span className="block text-xs font-normal text-muted-foreground">Project website</span>
+              <span className="block text-sm font-semibold">Project website</span>
+              <span className="block text-xs font-normal text-muted-foreground">www.microfeed.org</span>
+            </span>
+            <ExternalLinkIcon aria-hidden="true" className="size-4 text-muted-foreground" />
+          </a>
+          <a
+            className="flex items-center gap-3 rounded-xl border bg-card p-3 text-card-foreground hover:border-brand-light hover:text-card-foreground"
+            href={OUR_BRAND.documentationWebsite}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <BookOpenIcon aria-hidden="true" className="size-5 text-brand-light" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Documentation</span>
+              <span className="block text-xs font-normal text-muted-foreground">docs.microfeed.org</span>
             </span>
             <ExternalLinkIcon aria-hidden="true" className="size-4 text-muted-foreground" />
           </a>
@@ -129,8 +140,8 @@ export default function AdminAboutDialog({defaultOpen = false, deployment}: Prop
           >
             <GitForkIcon aria-hidden="true" className="size-5 text-brand-light" />
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">GitHub repository</span>
-              <span className="block text-xs font-normal text-muted-foreground">Source and releases</span>
+              <span className="block text-sm font-semibold">Github repo</span>
+              <span className="block text-xs font-normal text-muted-foreground">github.com/microfeed</span>
             </span>
             <ExternalLinkIcon aria-hidden="true" className="size-4 text-muted-foreground" />
           </a>
@@ -139,6 +150,10 @@ export default function AdminAboutDialog({defaultOpen = false, deployment}: Prop
         <section className="rounded-xl border bg-muted/30 p-4" aria-labelledby="deployment-details-title">
           <h3 className="text-sm font-semibold" id="deployment-details-title">Deployment details</h3>
           <dl className="mt-3 grid gap-3 text-sm">
+            <div className="grid gap-1 sm:grid-cols-[8rem_1fr] sm:items-center">
+              <dt className="text-muted-foreground">Version</dt>
+              <dd><code>{MICROFEED_VERSION}</code></dd>
+            </div>
             <div className="grid gap-1 sm:grid-cols-[8rem_1fr] sm:items-center">
               <dt className="text-muted-foreground">Deployed</dt>
               <dd>
