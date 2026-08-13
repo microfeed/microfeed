@@ -222,6 +222,15 @@ a {
 
 .admin-rich-editor .ql-container .ql-editor {
   font-size: 120%;
+  line-height: 1.6;
+}
+
+.admin-rich-editor .ql-container .ql-editor p {
+  margin: 0;
+}
+
+.admin-rich-editor .ql-container .ql-editor p + p {
+  margin-top: 1em;
 }
 
 .ql-editor img,

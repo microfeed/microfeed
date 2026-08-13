@@ -202,10 +202,20 @@ CLI credential into an agent conversation.
 ### Change the public theme
 
 Open **Settings → Themes** in the admin dashboard to change how the public
-website looks. You can create a new version from any installed theme, edit its
-feed, item, shared layout, and RSS stylesheet, and preview it without changing
-the live site. Installing a version and activating it are separate actions, so
-the current design remains available for rollback.
+website looks. New sites install and activate the bundled
+`microfeed.default` theme. Its eight Mustache templates cover the feed, item,
+standalone Page, Search page, web header, body start, body end, and RSS
+stylesheet. Page navigation comes from `navigation_pages`; theme controls marked
+with `data-microfeed-search-open` use microfeed's shared search dialog,
+typeahead results, and Command/Ctrl-K behavior.
+
+Installed theme versions are immutable and stored in D1. Create an editable
+draft from any installed version, preview feed, item, Page, Search, and RSS
+views, then install the draft as a new inactive version. Installation never
+changes the public site: activation is a separate action, and the previous
+version remains available for rollback. Existing installed themes continue to
+work after an upgrade because their complete manifests and templates are
+already stored with the site.
 
 Themes developed by the community can be installed from public GitHub
 repositories with `yarn manage theme`. Developers and AI coding agents can
@@ -213,10 +223,11 @@ initialize a standalone theme repository, work with fixtures or a live public
 JSON Feed, use tools such as Tailwind CSS, and validate the package before it
 is installed. See [Themes and website code](https://docs.microfeed.org/dashboard/themes/)
 for the complete authoring, preview, installation, and asset workflow.
-New sites start with a familiar, responsive Classic-inspired default whose
-colors can be adjusted from a short design-token block in an Admin version
-draft. Its footer stays at the bottom on short or empty pages without becoming
-fixed or covering long content.
+The only bundled source project is [`themes/default`](themes/default). It is a
+complete standalone Theme Kit workspace with Tailwind CSS, TypeScript,
+fixtures, validation, tests, and `yarn preview`. Its generated package has no
+runtime dependency or required R2 assets, and its design tokens can be adjusted
+from an Admin version draft.
 
 Every site also exposes JSON Feed data, so you can use microfeed as a headless
 CMS and build separate websites, apps, automations, or integrations around the

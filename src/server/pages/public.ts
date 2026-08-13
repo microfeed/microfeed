@@ -1,7 +1,7 @@
 import {CODE_TYPES} from "@/shared/Constants";
 import {DEFAULT_NOT_FOUND_PAGE_SLUG} from "@/shared/Pages";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
-import Theme from "@/server/themes/Theme";
+import Theme, {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 import {
   navigationPages,
@@ -49,7 +49,7 @@ export async function loadPublicPageRoute(
     : null;
   if (
     shouldHidePublicWeb(loaded.content) ||
-    loaded.content.activeTheme?.manifest.formatVersion !== 2
+    !themeSupportsPagesAndSearch(loaded.content.activeTheme)
   ) {
     return {kind: "not-found"};
   }
@@ -69,8 +69,8 @@ export async function loadPublicPageRoute(
   const assetBaseUrl = themeAssetBaseUrl(
     runtimeEnv,
     request.url,
-    loaded.content.activeTheme.assetOwnerThemeId,
-    loaded.content.activeTheme.bundle.assets,
+    loaded.content.activeTheme?.assetOwnerThemeId,
+    loaded.content.activeTheme?.bundle.assets,
   );
   const extraContext = {navigation_pages: navigation};
   const theme = new Theme(

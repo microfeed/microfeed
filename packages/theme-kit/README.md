@@ -113,6 +113,7 @@ rss-stylesheet.xsl
 assets/
 fixtures/
 .microfeed/schemas/
+.agents/skills/develop-microfeed-theme/
 ```
 
 The slots have distinct jobs:
@@ -139,7 +140,11 @@ for compatibility.
 `THEME.md` is the package-local contract for a person or coding agent. The
 generated `develop-microfeed-theme` skill teaches agents to read the manifest
 and schemas, preserve build sources, validate every change, bump SemVer, and
-avoid activation or screenshots without explicit permission.
+avoid activation or screenshots without explicit permission. Its bundled
+`references/public-site.md` explains how to migrate an exported format v1
+theme, compose all eight format v2 slots, render Page navigation, connect and
+style the platform-owned search popup and Search page, and preview those
+features without duplicating microfeed's runtime behavior.
 
 ## Where code and assets are stored
 

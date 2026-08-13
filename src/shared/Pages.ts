@@ -1,4 +1,5 @@
 import {normalizeAdminPath} from "./AdminPath";
+import {STATUSES} from "./Constants";
 
 export const PAGE_SLUG_MAX_LENGTH = 100;
 export const PAGE_META_DESCRIPTION_MAX_LENGTH = 155;
@@ -52,6 +53,14 @@ export interface PageNavigationEntry {
   slug: string;
   title: string;
   url: string;
+}
+
+export function pageNavigationEnabledForStatus(
+  status: PageRecord["status"] | number,
+  showInNavigation: boolean,
+): boolean {
+  return status !== "unlisted" && status !== STATUSES.UNLISTED &&
+    showInNavigation;
 }
 
 export function normalizePageSlug(value: string): string {

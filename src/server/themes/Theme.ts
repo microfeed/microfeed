@@ -12,11 +12,28 @@ import {
 import {validateThemePackage} from "@/shared/themes/ThemeValidation";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {
-  CLASSIC_THEME_BUNDLE,
-  CLASSIC_THEME_MANIFEST,
+  BUNDLED_DEFAULT_THEME_BUNDLE,
+  BUNDLED_DEFAULT_THEME_MANIFEST,
 } from "./BundledThemes";
 
 type Settings = Record<string, any> | null;
+
+export function themeSupportsPagesAndSearch(
+  installedTheme: StoredThemeVersion | null | undefined,
+): boolean {
+  if (!installedTheme) {
+    return BUNDLED_DEFAULT_THEME_MANIFEST.formatVersion >= 2;
+  }
+  try {
+    return validateThemePackage(
+      installedTheme.manifest,
+      installedTheme.bundle,
+      MICROFEED_VERSION,
+    ).manifest.formatVersion >= 2;
+  } catch {
+    return BUNDLED_DEFAULT_THEME_MANIFEST.formatVersion >= 2;
+  }
+}
 
 export default class Theme {
   private readonly context: Record<string, unknown>;
@@ -34,11 +51,11 @@ export default class Theme {
     extraContext: Record<string, unknown> = {},
   ) {
     this.settings = settings;
-    this.formatVersion = installedTheme?.manifest.formatVersion ?? 1;
+    this.formatVersion = themeSupportsPagesAndSearch(installedTheme) ? 2 : 1;
     let metadata: ThemeRuntimeMetadata = {
       assetBaseUrl: "",
-      packageId: CLASSIC_THEME_MANIFEST.packageId,
-      version: CLASSIC_THEME_MANIFEST.version,
+      packageId: BUNDLED_DEFAULT_THEME_MANIFEST.packageId,
+      version: BUNDLED_DEFAULT_THEME_MANIFEST.version,
     };
 
     if (themeName === CODE_TYPES.SHARED) {
@@ -59,8 +76,8 @@ export default class Theme {
         } catch {
           metadata = {
             assetBaseUrl: "",
-            packageId: CLASSIC_THEME_MANIFEST.packageId,
-            version: CLASSIC_THEME_MANIFEST.version,
+            packageId: BUNDLED_DEFAULT_THEME_MANIFEST.packageId,
+            version: BUNDLED_DEFAULT_THEME_MANIFEST.version,
           };
         }
       }
@@ -84,11 +101,11 @@ export default class Theme {
           message: "Active theme is invalid or incompatible; falling back",
           themeId: installedTheme.id,
         }));
-        this.theme = "classic";
+        this.theme = "default";
         this.themeBundle = null;
       }
     } else {
-      this.theme = "classic";
+      this.theme = "default";
       this.themeBundle = null;
     }
     this.context = {...themeContext(jsonData, metadata), ...extraContext};
@@ -105,16 +122,17 @@ export default class Theme {
   private template(file: ThemeFileKey): string {
     if (this.theme === CODE_TYPES.SHARED) return this.sharedTemplate(file);
     const installed = this.themeBundle?.[file];
-    const classic = CLASSIC_THEME_BUNDLE[file];
+    const fallback = BUNDLED_DEFAULT_THEME_BUNDLE[file];
     return typeof installed === "string"
       ? installed
-      : typeof classic === "string" ? classic : "";
+      : typeof fallback === "string" ? fallback : "";
   }
 
   supportsPagesAndSearch(): boolean {
+    const bundle = this.themeBundle ?? BUNDLED_DEFAULT_THEME_BUNDLE;
     return this.formatVersion >= 2 &&
-      typeof this.themeBundle?.webPage === "string" &&
-      typeof this.themeBundle?.webSearch === "string";
+      typeof bundle.webPage === "string" &&
+      typeof bundle.webSearch === "string";
   }
 
   getWebHeader(): {html: string} {

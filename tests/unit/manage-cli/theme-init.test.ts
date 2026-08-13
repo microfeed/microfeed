@@ -165,13 +165,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "default",
-      version: "1.1.4",
+      version: "1.1.7",
     });
     expect(stored).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "default",
-      version: "1.1.4",
+      version: "1.1.7",
     });
   });
 
@@ -260,7 +260,7 @@ describe("theme repository initialization", () => {
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
         sourceKind: "bundled",
-        version: "1.1.4",
+        version: "1.1.7",
       });
       await expect(theme.installDefaultThemeForV1Appearance(
         savedConfig(),
@@ -268,12 +268,12 @@ describe("theme repository initialization", () => {
         false,
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
-        version: "1.1.4",
+        version: "1.1.7",
       });
       expect(stored).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.4",
+        version: "1.1.7",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(1);
@@ -439,6 +439,13 @@ describe("theme repository initialization", () => {
       path.join(output, ".agents/skills/develop-microfeed-theme/SKILL.md"),
       "utf8",
     )).resolves.toContain("Never create screenshots unless the user explicitly asks");
+    await expect(readFile(
+      path.join(
+        output,
+        ".agents/skills/develop-microfeed-theme/references/public-site.md",
+      ),
+      "utf8",
+    )).resolves.toContain("Theme and platform responsibilities");
     await expect(readFile(path.join(output, assetPath), "utf8"))
       .resolves.toContain("<svg");
     expect(runner).toHaveBeenCalledWith(
@@ -555,12 +562,20 @@ describe("theme repository initialization", () => {
       ".microfeed/schemas/theme-context.schema.json",
       ".agents/skills/develop-microfeed-theme/SKILL.md",
       ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+      ".agents/skills/develop-microfeed-theme/references/public-site.md",
       "fixtures/custom.json",
       "THEME.md",
     ]) {
       await expect(readFile(path.join(output, relativePath), "utf8"))
         .resolves.not.toHaveLength(0);
     }
+    const publicSiteReference = await readFile(path.join(
+      output,
+      ".agents/skills/develop-microfeed-theme/references/public-site.md",
+    ), "utf8");
+    expect(publicSiteReference).toContain("data-microfeed-search-open");
+    expect(publicSiteReference).toContain("navigation_pages");
+    expect(publicSiteReference).toContain("special 404 Page");
     const conformance = JSON.parse((await execFileAsync(
       process.execPath,
       [
@@ -880,8 +895,8 @@ describe("theme repository initialization", () => {
       if (request.sql.includes("sqlite_master")) return d1Response([]);
       if (request.sql.includes("FROM settings")) {
         return d1Response([{data: JSON.stringify({
-          currentTheme: "Owner Classic",
-          themes: {"Owner Classic": {webFeed: "legacy active feed"}},
+          currentTheme: "Owner Legacy",
+          themes: {"Owner Legacy": {webFeed: "legacy active feed"}},
         })}]);
       }
       throw new Error(`Unexpected D1 query: ${request.sql}`);
@@ -904,7 +919,7 @@ describe("theme repository initialization", () => {
     };
     expect(result).toMatchObject({
       gitInitialized: false,
-      source: {kind: "legacy", packageId: "legacy.owner-classic"},
+      source: {kind: "legacy", packageId: "legacy.owner-legacy"},
     });
     expect(runner).not.toHaveBeenCalledWith("git", expect.anything(), expect.anything());
   });

@@ -74,6 +74,10 @@ export async function themePreviewResponse(
     return new Response("Unknown preview view.", {status: 400});
   }
   const loaded = await loadPublishedFeed(runtimeEnv, request, {limit: 20});
+  const previewPublishedAt = loaded.publicFeed.items
+    .map((item) => item.date_published)
+    .find((value): value is string => typeof value === "string") ??
+    new Date().toISOString();
   const storedTheme = previewVersion(previewTheme);
   const assetBaseUrl = themeAssetBaseUrl(
     runtimeEnv,
@@ -84,7 +88,12 @@ export async function themePreviewResponse(
   const page = {
     content_html: "<p>This is a standalone Page preview.</p>",
     content_text: "This is a standalone Page preview.",
+    date_created: previewPublishedAt,
+    date_modified: previewPublishedAt,
+    date_published: previewPublishedAt,
     id: "preview-page",
+    is_not_found_page: false,
+    meta_description: "Learn more about this site.",
     navigation_label: "About",
     navigation_order: 10,
     show_in_navigation: true,
@@ -93,13 +102,35 @@ export async function themePreviewResponse(
     title: "About",
     url: new URL("/about/", request.url).toString(),
   };
-  const extraContext = {navigation_pages: [page]};
+  const navigationPages = [
+    page,
+    {
+      id: "preview-contact-page",
+      navigation_label: "Contact",
+      navigation_order: 20,
+      slug: "contact",
+      title: "Contact",
+      url: new URL("/contact/", request.url).toString(),
+    },
+    {
+      id: "preview-projects-page",
+      navigation_label: "Projects",
+      navigation_order: 30,
+      slug: "projects",
+      title: "Projects",
+      url: new URL("/projects/", request.url).toString(),
+    },
+  ];
+  const extraContext = {navigation_pages: navigationPages};
   const previewSearchResults: PublicSearchResult[] = loaded.publicFeed.items
     .slice(0, 5)
     .map((item, index) => {
       const microfeed = item._microfeed as Record<string, unknown> | undefined;
       return {
         content_text: String(item.content_text ?? "Published item preview"),
+        date_published: typeof item.date_published === "string"
+          ? item.date_published
+          : previewPublishedAt,
         id: typeof item.id === "string" ? item.id : `preview-item-${index + 1}`,
         title: typeof item.title === "string" && item.title.trim()
           ? item.title
@@ -113,19 +144,25 @@ export async function themePreviewResponse(
   if (previewSearchResults.length === 0) {
     previewSearchResults.push({
       content_text: "This representative item shows how a search result is styled.",
+      date_published: previewPublishedAt,
       id: "preview-item",
       title: "Preview item",
       type: "item",
       url: new URL("/i/preview-item/", request.url).toString(),
     });
   }
-  previewSearchResults.push({
-    content_text: page.content_text,
-    id: page.id,
-    title: page.title,
-    type: "page",
-    url: page.url,
-  });
+  for (const navigationPage of navigationPages) {
+    previewSearchResults.push({
+      content_text: navigationPage.id === page.id
+        ? page.content_text
+        : `Representative content for the ${navigationPage.title} Page.`,
+      date_published: previewPublishedAt,
+      id: navigationPage.id,
+      title: navigationPage.title,
+      type: "page",
+      url: navigationPage.url,
+    });
+  }
   const theme = new Theme(
     loaded.publicFeed,
     loaded.content.settings,
@@ -167,7 +204,7 @@ export async function themePreviewResponse(
   const body = view === "item"
     ? theme.getWebItem(item).html
     : view === "page"
-    ? theme.getWebPage(page, [page]).html
+    ? theme.getWebPage(page, navigationPages).html
     : view === "search"
     ? theme.getWebSearch("", previewSearchResults).html
     : theme.getWebFeed().html;

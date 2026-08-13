@@ -9,6 +9,10 @@ import {parse} from "parse5";
 
 import packageMetadata from "../package.json";
 import {
+  publicSearchHtml,
+  type PublicSearchResult,
+} from "../../../src/shared/PublicSearch";
+import {
   renderThemeTemplate,
   themeContext,
 } from "../../../src/shared/themes/ThemeRenderer";
@@ -17,7 +21,10 @@ import {themeRssPreviewDocument} from "../../../src/shared/themes/RssPreview";
 import {ThemeValidationError} from "../../../src/shared/themes/ThemeValidation";
 import {BUILT_IN_FIXTURES} from "./fixtures";
 import {renderThemeKitHelp} from "./help";
-import {loadThemePackage} from "./package";
+import {
+  loadThemePackage,
+  type LoadedThemePackage,
+} from "./package";
 
 interface Arguments {options: Record<string, string | boolean>; positionals: string[]}
 
@@ -46,7 +53,7 @@ function output(value: unknown, json: boolean): void {
 }
 
 function resolveInvocationPath(value: string): string {
-  return path.resolve(process.env.PROJECT_CWD ?? process.cwd(), value);
+  return path.resolve(process.cwd(), value);
 }
 
 async function init(args: Arguments): Promise<void> {
@@ -70,22 +77,123 @@ async function validate(args: Arguments): Promise<void> {
 
 function contexts(fixture: Record<string, unknown>, packageId: string, version: string) {
   const context = themeContext(fixture, {assetBaseUrl: "/assets/", packageId, version});
+  const items = Array.isArray(fixture.items)
+    ? fixture.items.map(recordValue).filter((item): item is Record<string, unknown> => item !== undefined)
+    : [];
+  const previewPublishedAt = items
+    .map((item) => stringValue(item.date_published))
+    .find((value): value is string => value !== undefined) ??
+    new Date().toISOString();
   const page = {
     content_html: "<p>Standalone Page content.</p>",
     content_text: "Standalone Page content.",
+    date_created: previewPublishedAt,
+    date_modified: previewPublishedAt,
+    date_published: previewPublishedAt,
     id: "page-about",
+    is_not_found_page: false,
+    meta_description: "Learn more about this site.",
     navigation_label: "About",
+    navigation_order: 10,
+    show_in_navigation: true,
     slug: "about",
+    status: "published",
     title: "About",
     url: "https://example.test/about/",
   };
-  const navigation_pages = [page];
+  const navigation_pages = [
+    page,
+    {
+      id: "page-contact",
+      navigation_label: "Contact",
+      navigation_order: 20,
+      slug: "contact",
+      title: "Contact",
+      url: "https://example.test/contact/",
+    },
+    {
+      id: "page-projects",
+      navigation_label: "Projects",
+      navigation_order: 30,
+      slug: "projects",
+      title: "Projects",
+      url: "https://example.test/projects/",
+    },
+  ];
+  const baseUrl = absoluteUrl(
+    recordValue(fixture._microfeed)?.base_url ?? fixture.home_page_url,
+    "https://example.test/",
+  ) ?? "https://example.test/";
+  const previewResults: PublicSearchResult[] = items.slice(0, 5).map(
+    (item, index) => {
+      const id = stringValue(item.id) ?? `preview-item-${index + 1}`;
+      const microfeed = recordValue(item._microfeed);
+      return {
+        content_text: stringValue(item.content_text) ?? "Published item preview",
+        date_published: stringValue(item.date_published) ?? previewPublishedAt,
+        id,
+        title: stringValue(item.title) ?? `Preview item ${index + 1}`,
+        type: "item" as const,
+        url: absoluteUrl(microfeed?.web_url ?? item.url, baseUrl) ??
+          new URL(`/i/${encodeURIComponent(id)}/`, baseUrl).toString(),
+      };
+    },
+  );
+  if (previewResults.length === 0) {
+    previewResults.push({
+      content_text: "This representative item shows how a search result is styled.",
+      date_published: previewPublishedAt,
+      id: "preview-item",
+      title: "Preview item",
+      type: "item",
+      url: new URL("/i/preview-item/", baseUrl).toString(),
+    });
+  }
+  for (const navigationPage of navigation_pages) {
+    previewResults.push({
+      content_text: navigationPage.id === page.id
+        ? page.content_text
+        : `Representative content for the ${navigationPage.title} Page.`,
+      date_published: previewPublishedAt,
+      id: navigationPage.id,
+      title: navigationPage.title,
+      type: "page",
+      url: navigationPage.url,
+    });
+  }
   return {
     context: {...context, navigation_pages},
     itemContext: {...context, navigation_pages, item: (fixture.items as Array<Record<string, unknown>> | undefined)?.[0]},
     pageContext: {...context, navigation_pages, page},
-    searchContext: {...context, navigation_pages, search: {query: "hello", results: []}},
+    previewResults,
+    searchContext: {...context, navigation_pages, search: {query: "hello", results: previewResults}},
   };
+}
+
+export function standaloneThemePreviewDocument(
+  theme: LoadedThemePackage,
+  fixture: Record<string, unknown>,
+  view: string,
+): string {
+  const {
+    context,
+    itemContext,
+    pageContext,
+    previewResults,
+    searchContext,
+  } = contexts(fixture, theme.manifest.packageId, theme.manifest.version);
+  const templates = {
+    feed: [theme.bundle.webFeed, context],
+    item: [theme.bundle.webItem, itemContext],
+    page: [theme.bundle.webPage ?? theme.bundle.webFeed, pageContext],
+    search: [theme.bundle.webSearch ?? theme.bundle.webFeed, searchContext],
+  } as const;
+  const selected = templates[view as keyof typeof templates] ?? templates.feed;
+  const body = renderThemeTemplate(selected[0], selected[1]);
+  const publicSearch = theme.manifest.formatVersion === 2
+    ? publicSearchHtml({previewResults})
+    : "";
+  return `<!doctype html><html><head>${renderThemeTemplate(theme.bundle.webHeader, context)}</head><body>${renderThemeTemplate(theme.bundle.webBodyStart, context)}${body}${renderThemeTemplate(theme.bundle.webBodyEnd, context)}${publicSearch}</body></html>`;
 }
 
 async function fixtureEntries(directory: string): Promise<Array<[string, Record<string, unknown>]>> {
@@ -310,7 +418,7 @@ async function preview(args: Arguments): Promise<void> {
       return;
     }
     const view = url.searchParams.get("view") ?? "feed";
-    const {context, itemContext, pageContext, searchContext} = contexts(selectedFixture, theme.manifest.packageId, theme.manifest.version);
+    const {context} = contexts(selectedFixture, theme.manifest.packageId, theme.manifest.version);
     response.setHeader("cache-control", "no-store");
     response.setHeader("content-security-policy", "sandbox allow-scripts; default-src 'self' https: data: blob:; img-src 'self' https: data: blob:; font-src 'self' https: data:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: data: 'unsafe-inline'; connect-src https:");
     response.setHeader("content-type", "text/html; charset=utf-8");
@@ -321,15 +429,7 @@ async function preview(args: Arguments): Promise<void> {
       ));
       return;
     }
-    const templates = {
-      feed: [theme.bundle.webFeed, context],
-      item: [theme.bundle.webItem, itemContext],
-      page: [theme.bundle.webPage ?? theme.bundle.webFeed, pageContext],
-      search: [theme.bundle.webSearch ?? theme.bundle.webFeed, searchContext],
-    } as const;
-    const selected = templates[view as keyof typeof templates] ?? templates.feed;
-    const body = renderThemeTemplate(selected[0], selected[1]);
-    response.end(`<!doctype html><html><head>${renderThemeTemplate(theme.bundle.webHeader, context)}</head><body>${renderThemeTemplate(theme.bundle.webBodyStart, context)}${body}${renderThemeTemplate(theme.bundle.webBodyEnd, context)}</body></html>`);
+    response.end(standaloneThemePreviewDocument(theme, selectedFixture, view));
   });
   await new Promise<void>((resolve, reject) => server.listen(0, "127.0.0.1", resolve).once("error", reject));
   const address = server.address();

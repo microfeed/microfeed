@@ -271,7 +271,10 @@ export function publicCacheTagsForFeedUpdate(
     tags.add(PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY);
   }
   for (const category of Object.keys(feed.settings ?? {})) {
-    if (category === SETTINGS_CATEGORIES.API_SETTINGS) continue;
+    if (category === SETTINGS_CATEGORIES.API_SETTINGS) {
+      tags.add(PUBLIC_CACHE_TAGS.SITE_FILES);
+      continue;
+    }
     tags.add(
       category === SETTINGS_CATEGORIES.CUSTOM_CODE
         ? PUBLIC_CACHE_TAGS.THEME_CURRENT

@@ -63,6 +63,31 @@ describe("public search modal", () => {
     expect(source).toMatch(/\.mf-public-search__results\s*\{[\s\S]*?margin-top: 1rem;/u);
   });
 
+  it("uses one accent color for visited and unvisited result titles", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toMatch(/\.mf-public-search-result\s*\{[\s\S]*?color: var\(--mf-accent, #0969da\);/u);
+    expect(source).toMatch(/\.mf-public-search-result:visited\s*\{[\s\S]*?color: var\(--mf-accent, #0969da\);/u);
+    expect(source).toContain(
+      'title.className = "mf-public-search-result__title"',
+    );
+  });
+
+  it("renders dated, highlighted excerpts only for detailed result lists", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain("function formatShortDate(value)");
+    expect(source).toContain('new Intl.DateTimeFormat(undefined, {');
+    expect(source).toContain("function appendExcerpt(element, item)");
+    expect(source).toContain('document.createElement("mark")');
+    expect(source).toContain(
+      'container.hasAttribute("data-microfeed-search-details")',
+    );
+    expect(source).toContain(
+      'details.className = "mf-public-search-result__details"',
+    );
+  });
+
   it("finds results outside a nested search form", () => {
     const source = publicSearchHtml();
 
@@ -76,6 +101,14 @@ describe("public search modal", () => {
     const source = publicSearchHtml({
       previewResults: [{
         content_text: "Representative body",
+        date_published: "2026-08-13T10:00:00.000Z",
+        highlights: {
+          content_text: [
+            {matched: false, text: "Representative "},
+            {matched: true, text: "body"},
+          ],
+          title: [],
+        },
         id: "preview-item",
         title: "Preview item",
         type: "item",
@@ -89,6 +122,8 @@ describe("public search modal", () => {
     );
     expect(source).toContain("data-microfeed-search-preview-initial");
     expect(source).toContain('"title":"Preview item"');
+    expect(source).toContain('"date_published":"2026-08-13T10:00:00.000Z"');
+    expect(source).toContain('"matched":true');
     expect(source).toContain("if (previewResults !== null)");
     expect(source).toContain("event.preventDefault()");
   });

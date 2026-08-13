@@ -84,6 +84,6 @@ const canonicalUrl = itemId && item
     bodyHtml={theme.getWebItem(item).html}
     bodyEnd={theme.getWebBodyEnd().html}
     sharedBodyEnd={sharedTheme.getWebBodyEnd().html}
-    searchEnabled={loaded.content.activeTheme?.manifest.formatVersion === 2}
+    searchEnabled={theme.supportsPagesAndSearch()}
   />
 )}

@@ -17,8 +17,8 @@ import {
   LANGUAGE_CODES_LIST,
   ONBOARDING_TYPES,
 } from "@/shared/Constants";
-import ExplainText from "@/components/admin/shared/ExplainText";
-import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./FormExplainTexts";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
+import {CHANNEL_CONTROLS, CONTROLS_TEXTS_DICT} from "./AdminHelpContent";
 import {
   preventCloseWhenChanged,
 } from "@/client/BrowserUtils";
@@ -182,7 +182,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
           <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <div className="flex flex-col gap-5 md:flex-row">
               <div className="flex-none">
-                <ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.IMAGE]}/>
+                <AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.IMAGE]}/>
                 <AdminImageUploaderApp
                   mediaType="channel"
                   feed={feed}
@@ -215,18 +215,18 @@ export default class EditChannelApp extends React.Component<Props, any> {
               </div>
               <div className="grid flex-1 grid-cols-1 gap-3">
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.TITLE]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.TITLE]}/>}
                   value={channel.title}
                   onChange={(e: any) => this.onUpdateChannelMeta('title', e.target.value)}
                 />
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <AdminInput
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.PUBLISHER]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.PUBLISHER]}/>}
                     value={channel.publisher}
                     onChange={(e: any) => this.onUpdateChannelMeta('publisher', e.target.value)}
                   />
                   <AdminInput
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.WEBSITE]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.WEBSITE]}/>}
                     value={channel.link}
                     onChange={(e: any) => this.onUpdateChannelMeta('link', e.target.value)}
                   />
@@ -235,7 +235,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   <AdminSelect
                     value={categories.map((c: any) => ((CATEGORIES_DICT as any)[c]))}
                     ariaLabel="Categories"
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.CATEGORIES]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.CATEGORIES]}/>}
                     options={CATEGORIES_SELECT_OPTIONS}
                     onChange={(selectedOptions: any) => {
                       this.onUpdateChannelMeta(
@@ -249,7 +249,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   <AdminSelect
                     value={(LANGUAGE_CODES_DICT as any)[channel.language]}
                     ariaLabel="Language"
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.LANGUAGE]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.LANGUAGE]}/>}
                     options={LANGUAGE_CODES_SELECT_OPTIONS}
                     onChange={(selected: any) => {
                       this.onUpdateChannelMeta('language', selected.code);
@@ -260,7 +260,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
             </div>
             <div className="mt-8 pt-8 border-t">
               <AdminRichEditor
-                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.DESCRIPTION]}/>}
+                labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.DESCRIPTION]}/>}
                 value={channel.description}
                 onChange={(value: any) => {
                   this.onUpdateChannelMeta('description', value);
@@ -280,7 +280,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
             <div className="mt-8 grid grid-cols-1 gap-8">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AdminRadioGroup
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EXPLICIT]}/>}
                   name="lh-explicit"
                   value={channel['itunes:explicit'] ? 'yes' : 'no'}
                   options={[{
@@ -293,19 +293,19 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   onValueChange={(value) => this.onUpdateChannelMeta('itunes:explicit', value === 'yes')}
                 />
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.COPYRIGHT]}/>}
                   value={channel.copyright}
                   onChange={(e: any) => this.onUpdateChannelMeta('copyright', e.target.value)}
                 />
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TITLE]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TITLE]}/>}
                   value={channel['itunes:title']}
                   onChange={(e: any) => this.onUpdateChannelMeta('itunes:title', e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AdminRadioGroup
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TYPE]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_TYPE]}/>}
                   name="feed-itunes-type"
                   value={channel['itunes:type']}
                   options={[{
@@ -318,13 +318,13 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   onValueChange={(value) => this.onUpdateChannelMeta('itunes:type', value)}
                 />
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EMAIL]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_EMAIL]}/>}
                   type="email"
                   value={channel['itunes:email']}
                   onChange={(e: any) => this.onUpdateChannelMeta('itunes:email', e.target.value)}
                 />
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_NEW_RSS_URL]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_NEW_RSS_URL]}/>}
                   type="url"
                   value={channel['itunes:new-feed-url']}
                   onChange={(e: any) => this.onUpdateChannelMeta('itunes:new-feed-url', e.target.value)}
@@ -332,7 +332,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
               </div>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AdminRadioGroup
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_BLOCK]}/>}
                   name="feed-itunes-block"
                   value={channel['itunes:block'] ? 'yes' : 'no'}
                   options={[{
@@ -345,7 +345,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   onValueChange={(value) => this.onUpdateChannelMeta('itunes:block', value === 'yes')}
                 />
                 <AdminRadioGroup
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_COMPLETE]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.ITUNES_COMPLETE]}/>}
                   name="feed-itunes-complete"
                   value={channel['itunes:complete'] ? 'yes' : 'no'}
                   options={[{

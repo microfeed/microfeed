@@ -3,7 +3,7 @@ import {describe, expect, it} from "vitest";
 import {
   CHANNEL_CONTROLS,
   CONTROLS_TEXTS_DICT,
-} from "@/components/admin/channel/EditChannelApp/FormExplainTexts";
+} from "@/components/admin/channel/EditChannelApp/AdminHelpContent";
 
 describe("Edit Channel copyright explanation", () => {
   it("explains current_year and shows its resolved output", () => {

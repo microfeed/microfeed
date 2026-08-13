@@ -14,6 +14,15 @@ const DEFAULT_LLMS_TEMPLATE = `# {{{title}}}
 
 {{{_microfeed.description_text}}}
 
+This site is powered by [microfeed](https://github.com/microfeed/microfeed), an agentic CMS on Cloudflare.
+
+{{#_site.api_llms_full_url}}
+This site's API is enabled. Learn how to use it at <{{{_site.api_llms_full_url}}}>.
+{{/_site.api_llms_full_url}}
+Learn all the ins and outs of microfeed at <https://docs.microfeed.org/>.
+
+## Site feeds
+
 - Website: {{{home_page_url}}}
 - JSON Feed: {{{_site.json_feed_url}}}
 - RSS Feed: {{{_site.rss_feed_url}}}

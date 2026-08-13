@@ -1,7 +1,9 @@
+import type {AdminHelpContent} from "@/components/admin/shared/AdminHelpLabel";
+
 export const SETTINGS_CONTROLS = {
   SUBSCRIBE_METHODS: 'subscribe_methods',
   ITEMS_SORT_ORDER: 'items_sort_order',
-};
+} as const;
 
 export const CONTROLS_TEXTS_DICT = {
   [SETTINGS_CONTROLS.SUBSCRIBE_METHODS]: {
@@ -18,4 +20,7 @@ export const CONTROLS_TEXTS_DICT = {
     rss: null,
     json: '{ "_microfeed": { "items_sort": "published_at", "items_order": "desc" } }',
   },
-};
+} satisfies Record<
+  typeof SETTINGS_CONTROLS[keyof typeof SETTINGS_CONTROLS],
+  AdminHelpContent
+>;

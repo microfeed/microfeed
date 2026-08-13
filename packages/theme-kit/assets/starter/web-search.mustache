@@ -1,8 +1,11 @@
 <main>
   <section>
     <h1>Search</h1>
-    <label for="microfeed-search-page-input">Search this site</label>
-    <input id="microfeed-search-page-input" type="search" value="{{search.query}}" autocomplete="off" data-microfeed-search-input />
-    <div aria-live="polite" data-microfeed-search-results></div>
+    <form action="/search/" method="get" role="search" data-microfeed-search-scope>
+      <label for="microfeed-search-page-input">Search this site</label>
+      <input id="microfeed-search-page-input" name="q" type="search" value="{{search.query}}" autocomplete="off" data-microfeed-search-input />
+      <button type="submit">Search</button>
+      <div aria-live="polite" data-microfeed-search-results data-microfeed-search-details></div>
+    </form>
   </section>
 </main>

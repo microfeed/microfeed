@@ -7,14 +7,17 @@ import {
   DEFAULT_NOT_FOUND_PAGE_SLUG,
   isNotFoundPageSlug,
   normalizePageSlug,
+  pageNavigationEnabledForStatus,
   publicPageUrl,
   type PageNavigationEntry,
   type PageRecord,
   validatePageSlug,
 } from "@/shared/Pages";
 import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
+import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
 import type FeedDb from "@/server/feed/FeedDb";
 import {PUBLIC_CACHE_TAGS} from "@/server/cache/public-cache";
+import {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
 
 export interface PageInput {
   content_html?: string;
@@ -27,6 +30,7 @@ export interface PageInput {
 }
 
 export interface PageListOptions {
+  excludeNotFoundPage?: boolean;
   limit?: number;
   nextCursor?: string;
   statuses?: Array<"published" | "unlisted" | "unpublished">;
@@ -120,6 +124,7 @@ function decodeCursor(value: string): {id: string; updatedAt: string} {
 }
 
 function pageFromRow(row: PageRow, baseUrl: string): PageRecord {
+  const status = statusName(Number(row.status));
   return {
     content_html: String(row.content_html ?? ""),
     content_text: String(row.content_text ?? ""),
@@ -135,9 +140,12 @@ function pageFromRow(row: PageRow, baseUrl: string): PageRecord {
       : {}),
     navigation_label: String(row.navigation_label ?? ""),
     navigation_order: Number(row.navigation_order ?? 0),
-    show_in_navigation: Boolean(row.show_in_navigation),
+    show_in_navigation: pageNavigationEnabledForStatus(
+      status,
+      Boolean(row.show_in_navigation),
+    ),
     slug: String(row.slug),
-    status: statusName(Number(row.status)),
+    status,
     title: String(row.title),
     url: publicPageUrl(String(row.slug), baseUrl),
   };
@@ -151,17 +159,21 @@ export async function activeThemeSupportsPages(
   database: D1Database,
 ): Promise<boolean> {
   const row = await database.prepare(`
-    SELECT themes.id
+    SELECT themes.*, theme_state.active_theme_id AS requested_active_theme_id
     FROM theme_state
-    JOIN themes ON themes.id = theme_state.active_theme_id
+    LEFT JOIN themes ON themes.id = theme_state.active_theme_id
       AND themes.deleted_at IS NULL
     WHERE theme_state.id = 'current'
-      AND json_extract(themes.manifest_json, '$.formatVersion') = 2
-      AND json_type(themes.bundle_json, '$.webPage') = 'text'
-      AND json_type(themes.bundle_json, '$.webSearch') = 'text'
     LIMIT 1
-  `).first<{id: string}>();
-  return Boolean(row?.id);
+  `).first<Record<string, unknown>>();
+  if (!row?.requested_active_theme_id || !row.id) {
+    return themeSupportsPagesAndSearch(null);
+  }
+  try {
+    return themeSupportsPagesAndSearch(storedThemeFromRow(row));
+  } catch {
+    return themeSupportsPagesAndSearch(null);
+  }
 }
 
 async function assertSlugAvailable(
@@ -226,6 +238,10 @@ export async function listPages(
     `status IN (${statusValues.map(() => "?").join(", ")})`,
   ];
   const bindings: unknown[] = [...statusValues];
+  if (options.excludeNotFoundPage) {
+    clauses.push("slug != ? COLLATE NOCASE");
+    bindings.push(DEFAULT_NOT_FOUND_PAGE_SLUG);
+  }
   if (options.nextCursor) {
     const cursor = decodeCursor(options.nextCursor);
     clauses.push("(updated_at < ? OR (updated_at = ? AND id < ?))");
@@ -279,7 +295,10 @@ export async function createPage(
   const id = options.id ?? randomShortUUID();
   const now = new Date().toISOString();
   const contentHtml = String(input.content_html ?? "");
-  const showInNavigation = input.show_in_navigation !== false;
+  const showInNavigation = pageNavigationEnabledForStatus(
+    status,
+    input.show_in_navigation !== false,
+  );
   const navigationLabel = String(input.navigation_label ?? "").trim();
   if (showInNavigation && !navigationLabel) {
     throw new PageRequestError(
@@ -384,10 +403,16 @@ export async function updatePage(
   const contentHtml = input.content_html === undefined
     ? existingRow.content_html
     : String(input.content_html);
+  const previousShowInNavigation = pageNavigationEnabledForStatus(
+    existingRow.status,
+    Boolean(existingRow.show_in_navigation),
+  );
   const showInNavigation = notFoundPage
     ? false
+    : status === STATUSES.UNLISTED
+    ? false
     : input.show_in_navigation === undefined
-    ? Boolean(existingRow.show_in_navigation)
+    ? previousShowInNavigation
     : input.show_in_navigation;
   const navigationLabel = notFoundPage
     ? title
@@ -401,7 +426,7 @@ export async function updatePage(
   }
   const navigationOrder = notFoundPage
     ? 0
-    : showInNavigation && !Boolean(existingRow.show_in_navigation)
+    : showInNavigation && !previousShowInNavigation
     ? await nextNavigationOrder(database.FEED_DB, id)
     : existingRow.navigation_order;
   const statements = [];

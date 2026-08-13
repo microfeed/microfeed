@@ -12,11 +12,11 @@ import AdminSwitch from "@/components/admin/shared/AdminSwitch";
 import ExternalLink from "@/components/admin/shared/ExternalLink";
 import {PREDEFINED_SUBSCRIBE_METHODS, SETTINGS_CATEGORIES} from '@/shared/Constants';
 import NewSubscribeDialog from "./components/NewSubscribeDialog";
-import ExplainText from "@/components/admin/shared/ExplainText";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import {
   SETTINGS_CONTROLS,
   CONTROLS_TEXTS_DICT
-} from "../FormExplainTexts";
+} from "../AdminHelpContent";
 import {Button} from "@/components/ui/button";
 
 function initMethodsDict() {
@@ -533,7 +533,7 @@ export default class SubscribeSettingsApp extends React.Component<any, any> {
       ? methods.find(({id}: any) => id === draggedMethodId)
       : null;
     return (<SettingsBase
-      titleComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.SUBSCRIBE_METHODS]}/>}
+      titleComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.SUBSCRIBE_METHODS]}/>}
       currentType={currentType}
     >
       <div className="mb-4">

@@ -5,7 +5,7 @@ import {CODE_TYPES} from "@/shared/Constants";
 import PublicLayout from "@/layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {navigationPages} from "@/server/pages/service";
-import Theme from "@/server/themes/Theme";
+import Theme, {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 
 const loaded = await loadPublishedFeed(env, Astro.request, {
@@ -17,7 +17,7 @@ const navigation = await navigationPages(
   Astro.request,
 );
 const unavailable = shouldHidePublicWeb(loaded.content) ||
-  loaded.content.activeTheme?.manifest.formatVersion !== 2;
+  !themeSupportsPagesAndSearch(loaded.content.activeTheme);
 if (unavailable) Astro.response.status = 404;
 const assetBaseUrl = themeAssetBaseUrl(
   env,

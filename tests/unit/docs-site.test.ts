@@ -340,20 +340,20 @@ describe("documentation site", () => {
       '<br><span class="hero-line">on your own domain</span><br><span class="hero-line">without managing servers</span>',
     );
     expect(homepage).toContain(
-      "tagline: A <span class=\"brand-highlight\">lightweight</span>, <span class=\"brand-highlight\">open-source</span> CMS that runs in your <span class=\"cloudflare-brand\">Cloudflare</span> account. microfeed gives you a website, RSS and JSON feeds, a private dashboard, and an API for integrations or coding agents.",
+      "tagline: An <span class=\"brand-highlight\">agentic</span>, <span class=\"brand-highlight\">lightweight</span>, <span class=\"brand-highlight\">open-source</span> CMS that runs in your <span class=\"cloudflare-brand\">Cloudflare</span> account. microfeed gives you a website, RSS and JSON feeds, a private dashboard, and an API for integrations or coding agents.",
     );
     expect(homepage).toContain(
       'Own <span class="brand-highlight">your code</span> and <span class="brand-highlight">your data</span>.',
     );
-    expect(homepage.match(/class="brand-highlight"/gu)).toHaveLength(4);
+    expect(homepage.match(/class="brand-highlight"/gu)).toHaveLength(5);
     expect(homepage).toContain(
-      '<aside class="r2-capacity-card" aria-label="10 GB-month of Standard media storage included each month">',
+      '<aside class="r2-capacity-card" aria-label="10 GB-month of free Standard media storage">',
     );
     expect(homepage).toContain(
       '<p class="r2-capacity-title">of Standard storage in the monthly free tier</p>',
     );
     expect(homepage).toContain(
-      '<span class="r2-capacity-badge">Included monthly</span>',
+      '<span class="r2-capacity-badge">Free</span>',
     );
     for (const capacity of [
       "10,000</strong> optimized images",
@@ -779,10 +779,33 @@ describe("documentation site", () => {
     );
     expect(themes).toContain("{{_theme.asset_base_url}}theme.js");
     expect(themes).toContain("<asset-owner-theme-id>");
+    expect(themes).toContain("### Render navigation items");
+    expect(themes).toContain("{{#navigation_pages}}");
+    expect(themes).toContain("additional Pages into its\n**More** menu");
+    expect(themes).toContain("### Connect the search popup and Search page");
+    expect(themes).toContain("data-microfeed-search-open");
+    expect(themes).toContain("data-microfeed-search-input");
+    expect(themes).toContain("data-microfeed-search-results");
+    expect(themes).toContain("data-microfeed-search-details");
+    expect(themes).toContain("submitting it opens `/search/?q=...`");
+    expect(themes).toContain("Public typeahead calls `/search.json`");
+    expect(themes).toContain("Authenticated integrations use `GET /api/v1/search/`");
+    expect(themes).toContain("and is never cached");
+    expect(themes).toContain("web-page.mustache");
+    expect(themes).toContain("web-search.mustache");
+    expect(themes.toLowerCase()).not.toContain("format v1");
+    expect(themes.toLowerCase()).not.toContain("v1 theme");
     expect(themes).toContain(
       "yarn manage deploy --enable-r2 --instance <instance-name>",
     );
     expect(themes).not.toContain("## Upgrade from the old custom theme");
+
+    const pagesAndSiteFiles = await readFile(
+      path.join(docsRoot, "dashboard", "pages-search-and-site-files.md"),
+      "utf8",
+    );
+    expect(pagesAndSiteFiles).toContain("title: Pages and Site Files");
+    expect(pagesAndSiteFiles).not.toContain("## Public search");
 
     const manageCli = await readFile(
       path.join(docsRoot, "manage-cli.md"),

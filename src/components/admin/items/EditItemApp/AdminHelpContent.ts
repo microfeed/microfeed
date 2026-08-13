@@ -1,3 +1,4 @@
+import type {AdminHelpContent} from "@/components/admin/shared/AdminHelpLabel";
 import {ITEM_STATUSES_DICT} from "@/shared/Constants";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 
@@ -16,7 +17,7 @@ export const ITEM_CONTROLS = {
   ITUNES_EPISODE: 'item_itunes_episode',
   ITUNES_BLOCK: 'item_itunes_block',
   STATUS: 'item_status',
-};
+} as const;
 
 export const CONTROLS_TEXTS_DICT = {
   [ITEM_CONTROLS.TITLE]: {
@@ -154,4 +155,7 @@ export const CONTROLS_TEXTS_DICT = {
         `<li>${(ITEM_STATUSES_DICT[k] as any).name}: ${(ITEM_STATUSES_DICT[k] as any).description}</li>`)).join('')}` +
       "</ul>",
   },
-};
+} satisfies Record<
+  typeof ITEM_CONTROLS[keyof typeof ITEM_CONTROLS],
+  AdminHelpContent
+>;

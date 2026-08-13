@@ -409,8 +409,8 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 ```
 
 `init` resolves the same effective selection as the live site: a valid active
-D1 version, then the internal classic fallback. The command copies the source
-theme's six format-v1 or eight format-v2 slots
+D1 version, then the bundled default fallback. The command copies the source
+theme's available slots
 and any declared packaged assets into an empty directory, adds the authoring
 kit, schemas, fixture, local package scripts, and instructions, and initializes a Git
 repository on `main`. It recursively creates the destination and any missing
@@ -550,7 +550,7 @@ yarn manage theme install ~/microfeed-themes/my-theme --local --instance persona
 yarn manage theme list --instance personal
 yarn manage theme activate <theme-id> --instance personal
 
-# Return to the previous theme, or deactivate to the internal classic fallback.
+# Return to the previous theme, or deactivate to the bundled default fallback.
 yarn manage theme rollback --instance personal
 yarn manage theme deactivate --instance personal
 

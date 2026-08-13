@@ -3,7 +3,7 @@ import React from "react";
 import {showToast} from "@/client/ToastUtils";
 import AdminInput from "@/components/admin/shared/AdminInput";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
-import ExplainText from "@/components/admin/shared/ExplainText";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import {Button} from "@/components/ui/button";
 import {
   DEFAULT_ITEMS_PER_PAGE,
@@ -17,7 +17,7 @@ import {
   type ItemSort,
   resolveItemPaginationSettings,
 } from "@/shared/ItemPagination";
-import {CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS} from "../FormExplainTexts";
+import {CONTROLS_TEXTS_DICT, SETTINGS_CONTROLS} from "../AdminHelpContent";
 import SettingsBase from "../SettingsBase";
 
 export const ITEMS_ORDERING_SUBMIT_KEY = "items-ordering";
@@ -84,9 +84,9 @@ export default class ItemsSettingsApp extends React.Component<any, any> {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <AdminRadioGroup
             disabled={submitting}
-            labelComponent={<ExplainText
-              bundle={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.ITEMS_SORT_ORDER]}
-              customClass="m-input-label-small"
+            labelComponent={<AdminHelpLabel
+              help={CONTROLS_TEXTS_DICT[SETTINGS_CONTROLS.ITEMS_SORT_ORDER]}
+              className="m-input-label-small"
             />}
             name="items-sort"
             options={[

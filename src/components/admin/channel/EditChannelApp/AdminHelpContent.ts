@@ -1,3 +1,4 @@
+import type {AdminHelpContent} from "@/components/admin/shared/AdminHelpLabel";
 import {getBuiltInTemplateVariables} from "@/shared/TemplateVariables";
 
 const {current_year: currentYear} = getBuiltInTemplateVariables();
@@ -18,7 +19,7 @@ export const CHANNEL_CONTROLS = {
   ITUNES_BLOCK: 'channel_itunes_block',
   ITUNES_NEW_RSS_URL: 'channel_itunes_new_rss_url',
   ITUNES_COMPLETE: 'channel_itunes_complete',
-};
+} as const;
 
 export const CONTROLS_TEXTS_DICT = {
   [CHANNEL_CONTROLS.TITLE]: {
@@ -161,4 +162,7 @@ export const CONTROLS_TEXTS_DICT = {
     rss: '<channel><itunes:new-rss-url>https://a-new-rss-url.com/feed</itunes:new-rss-url></channel>',
     json: '{ "_microfeed": {"itunes:new-rss-url": "https://a-new-rss-url.com/feed"} }',
   },
-};
+} satisfies Record<
+  typeof CHANNEL_CONTROLS[keyof typeof CHANNEL_CONTROLS],
+  AdminHelpContent
+>;

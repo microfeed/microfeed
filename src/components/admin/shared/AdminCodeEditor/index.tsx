@@ -2,6 +2,8 @@ import CodeEditor from "@uiw/react-textarea-code-editor";
 import {useRef} from "react";
 import type {ChangeEventHandler, KeyboardEvent} from "react";
 
+import {cn} from "@/lib/utils";
+
 export function isCaretOnLastLine(
   value: string,
   selectionStart: number,
@@ -59,7 +61,10 @@ export default function AdminCodeEditor({
   };
 
   return (<label
-    className="block w-full min-w-0 max-w-full overflow-auto rounded-[10px] border bg-muted/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30"
+    className={cn(
+      "block w-full min-w-0 max-w-full overflow-auto rounded-[10px] border focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30",
+      readOnly ? "bg-muted/60" : "bg-background",
+    )}
     ref={scrollContainerRef}
     style={{maxHeight}}
   >

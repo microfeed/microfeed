@@ -10,7 +10,7 @@ export default function SiteFilesApp({files}: {files: SiteFileRecord[]}) {
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Root-level text files use Mustache templates and are published without a theme. Defaults stay generated until you override them.
+          Root-level text files use Mustache templates and are published without a theme. You can customize built-in files or add your own.
         </p>
         <a className={cn(buttonVariants(), "!text-white hover:!text-white")} href={ADMIN_URLS.newSiteFile()}>
           <PlusIcon aria-hidden="true" /> Add Site File
@@ -29,8 +29,12 @@ export default function SiteFilesApp({files}: {files: SiteFileRecord[]}) {
                 <div><h2 className="font-semibold">/{file.filename}</h2><p className="text-xs text-muted-foreground">{file.content_type}</p></div>
               </div>
               <div className="flex gap-2 text-xs">
-                <span className="rounded-full border px-2.5 py-1 capitalize">{file.mode}</span>
-                <span className="rounded-full border px-2.5 py-1">{file.enabled ? "Enabled" : "Disabled"}</span>
+                <span className={cn(
+                  "rounded-full px-2.5 py-1 font-medium",
+                  file.enabled
+                    ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+                    : "bg-muted text-muted-foreground",
+                )}>{file.enabled ? "Published" : "Draft"}</span>
               </div>
             </div>
           </a>

@@ -7,6 +7,7 @@ import AdminCodeEditor, {
   isCaretOnLastLine,
 } from "@/components/admin/shared/AdminCodeEditor";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import AdminImagePreviewDialog from "@/components/admin/shared/AdminImagePreviewDialog";
 import AdminHtmlEditor from "@/components/admin/shared/AdminHtmlEditor";
 import AdminPublicAccess, {
@@ -19,6 +20,23 @@ import SettingsBase from "@/components/admin/settings/SettingsBase";
 import {Input} from "@/components/ui/input";
 
 describe("admin UI controls", () => {
+  it("uses brand-sky hover and focus styling for explanation labels", () => {
+    const label = renderToStaticMarkup(React.createElement(AdminHelpLabel, {
+      children: "Description",
+      onClick: vi.fn(),
+    }));
+    const labelWithDialog = renderToStaticMarkup(React.createElement(AdminHelpLabel, {
+      help: {linkName: "Title", text: "Help text"},
+    }));
+
+    for (const output of [label, labelWithDialog]) {
+      expect(output).toContain("hover:text-brand-light");
+      expect(output).toContain("focus-visible:text-brand-light");
+      expect(output).not.toContain("hover:text-primary");
+    }
+    expect(labelWithDialog).not.toContain('href="#"');
+  });
+
   it("only auto-scrolls a code editor when its caret is on the final line", () => {
     const value = "first line\nsecond line\nlast line";
 
@@ -63,6 +81,7 @@ describe("admin UI controls", () => {
 
     expect(output).toContain("readonly=\"\"");
     expect(output).toContain('aria-label="Code editor"');
+    expect(output).toContain("bg-muted/60");
   });
 
   it("renders the rich HTML source editor at 120% of its base font size", () => {

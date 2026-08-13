@@ -2,7 +2,10 @@ import {readFile} from "node:fs/promises";
 import {describe, expect, it} from "vitest";
 
 import {reorderNavigationPageList} from "@/components/admin/pages/PagesApp";
-import type {PageRecord} from "@/shared/Pages";
+import {
+  pageNavigationEnabledForStatus,
+  type PageRecord,
+} from "@/shared/Pages";
 
 const routeSource = (path: string) => readFile(
   new URL(`../../../src/pages/[adminPath]/pages/${path}/index.astro`, import.meta.url),
@@ -103,6 +106,29 @@ describe("admin Page editor routes", () => {
     expect(editor).toContain("changedRef.current = value");
     expect(editor.indexOf("markChanged(false)"))
       .toBeLessThan(editor.indexOf("window.location.assign(ADMIN_URLS.editPage(saved.id))"));
+    expect(editor.indexOf(
+      "window.sessionStorage.setItem(PAGE_CREATED_TOAST_KEY, saved.id)",
+    )).toBeLessThan(editor.indexOf(
+      "window.location.assign(ADMIN_URLS.editPage(saved.id))",
+    ));
+  });
+
+  it("shows a one-time success toast after opening a created Page", async () => {
+    const editor = await readFile(
+      new URL(
+        "../../../src/components/admin/pages/PageEditorApp.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(editor).toContain(
+      "window.sessionStorage.getItem(PAGE_CREATED_TOAST_KEY) !== page.id",
+    );
+    expect(editor).toContain(
+      "window.sessionStorage.removeItem(PAGE_CREATED_TOAST_KEY)",
+    );
+    expect(editor).toContain('showToast("Page created.", "success")');
   });
 
   it("explains and disables Page navigation details when it is off", async () => {
@@ -125,10 +151,21 @@ describe("admin Page editor routes", () => {
     expect(editor).toContain("Enter a URL path, such as about.");
     expect(editor).toContain("Enter a navigation label, or turn off Show in navigation.");
     expect(editor).toContain("Page navigation is website-only");
+    expect(editor).toContain("Choose how people can find and open this Page.");
+    expect(editor).toContain("turns off and disables Show in navigation.");
     expect(editor).toContain("return to the Pages screen and drag");
     expect(editor).not.toContain("Navigation order");
     expect(editor).not.toContain("navigation_order");
     expect(editor).toContain("disabled={!draft.show_in_navigation}");
+    expect(editor).toContain('disabled={draft.status === "unlisted"}');
+  });
+
+  it("always turns navigation off for Unlisted Pages", () => {
+    expect(pageNavigationEnabledForStatus("published", true)).toBe(true);
+    expect(pageNavigationEnabledForStatus("unpublished", true)).toBe(true);
+    expect(pageNavigationEnabledForStatus("unlisted", true)).toBe(false);
+    expect(pageNavigationEnabledForStatus("unlisted", false)).toBe(false);
+    expect(pageNavigationEnabledForStatus(4, true)).toBe(false);
   });
 
   it("reorders website navigation before or after the hovered Page", () => {

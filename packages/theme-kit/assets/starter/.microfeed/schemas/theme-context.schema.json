@@ -538,12 +538,21 @@
       }
     },
     "navigation_pages": {
+      "description": "Ordered website navigation entries available to every public HTML theme slot. This array contains only Published Pages whose Show in navigation setting is enabled, in the order chosen in Admin. Draft and Unlisted Pages and the special 404 Page never appear. Navigation is website-only and does not add Pages to RSS or JSON Feed.",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
           "navigation_label": {
             "type": "string"
+          },
+          "navigation_order": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "slug": {
             "type": "string"
@@ -556,7 +565,9 @@
           }
         },
         "required": [
+          "id",
           "navigation_label",
+          "navigation_order",
           "slug",
           "title",
           "url"
@@ -573,11 +584,45 @@
         "content_text": {
           "type": "string"
         },
+        "date_created": {
+          "type": "string"
+        },
+        "date_modified": {
+          "type": "string"
+        },
+        "date_published": {
+          "type": "string"
+        },
         "id": {
           "type": "string"
         },
+        "is_not_found_page": {
+          "type": "boolean"
+        },
+        "meta_description": {
+          "type": "string"
+        },
+        "navigation_label": {
+          "type": "string"
+        },
+        "navigation_order": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "show_in_navigation": {
+          "type": "boolean"
+        },
         "slug": {
           "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "published",
+            "unlisted",
+            "unpublished"
+          ]
         },
         "title": {
           "type": "string"
@@ -589,28 +634,109 @@
       "required": [
         "content_html",
         "content_text",
+        "date_created",
+        "date_modified",
         "id",
+        "is_not_found_page",
+        "navigation_label",
+        "navigation_order",
+        "show_in_navigation",
         "slug",
+        "status",
         "title",
         "url"
       ],
-      "additionalProperties": {}
+      "additionalProperties": {},
+      "description": "The current standalone Page. This object is available only while rendering the Page template, including the editable special 404 Page when it handles a missing URL."
     },
     "search": {
+      "description": "Dedicated Search-page state. The theme owns page structure and styling; microfeed owns the public endpoint, popup dialog, keyboard behavior, typeahead, cancellation, highlighting, and safe result hydration.",
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "The q query parameter used to render the dedicated Search page."
         },
         "results": {
           "type": "array",
           "items": {
             "type": "object",
-            "propertyNames": {
-              "type": "string"
+            "properties": {
+              "content_text": {
+                "type": "string"
+              },
+              "date_published": {
+                "type": "string"
+              },
+              "highlights": {
+                "type": "object",
+                "properties": {
+                  "content_text": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "matched": {
+                          "type": "boolean"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "matched",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "title": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "matched": {
+                          "type": "boolean"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "matched",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "item",
+                  "page"
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
             },
+            "required": [
+              "title",
+              "type",
+              "url"
+            ],
             "additionalProperties": {}
-          }
+          },
+          "description": "Representative results in previews. Live public Search results are safely rendered by microfeed into the documented data-microfeed-search-* hooks."
         }
       },
       "required": [

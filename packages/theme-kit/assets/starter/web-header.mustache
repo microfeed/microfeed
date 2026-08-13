@@ -1,8 +1,34 @@
 <title>{{title}}</title>
 <style>
-  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-  body { margin: 0; }
+  :root {
+    --mf-accent: #0969da;
+    --mf-background: Canvas;
+    --mf-surface: color-mix(in srgb, CanvasText 5%, Canvas);
+    --mf-text: CanvasText;
+    --mf-muted: GrayText;
+    --mf-border: color-mix(in srgb, CanvasText 20%, transparent);
+    color-scheme: light dark;
+    font-family: system-ui, sans-serif;
+  }
+  body { margin: 0; background: var(--mf-background); color: var(--mf-text); }
+  .mf-site-header { display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--mf-border); }
+  .mf-site-title { margin-right: auto; font-weight: 700; }
+  .mf-site-navigation { display: flex; flex-wrap: wrap; gap: 0.75rem; }
   main { margin: auto; max-width: 48rem; padding: 2rem 1rem; }
-  article { border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent); padding: 1rem 0; }
+  article { border-bottom: 1px solid var(--mf-border); padding: 1rem 0; }
   img, video { height: auto; max-width: 100%; }
+  [data-microfeed-search-scope] { display: grid; gap: 0.75rem; }
+  .mf-public-search-result__details {
+    display: -webkit-box;
+    margin: 0.25rem 0 0;
+    overflow: hidden;
+    color: var(--mf-muted);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .mf-public-search-result__details mark { background: color-mix(in srgb, var(--mf-accent) 18%, transparent); color: inherit; }
+  @media (max-width: 40rem) {
+    .mf-site-header { align-items: flex-start; flex-wrap: wrap; }
+    .mf-site-navigation { flex-basis: 100%; }
+  }
 </style>

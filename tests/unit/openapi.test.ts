@@ -32,6 +32,12 @@ describe("generated API reference", () => {
     }]);
     expect(Number(MICROFEED_VERSION.split(".")[0])).toBe(API_MAJOR_VERSION);
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_CREDENTIAL");
+    expect(
+      OPENAPI_DOCUMENT.paths?.["/site-files/preview/"]?.post?.description,
+    ).toContain("up to 100 newest Published items");
+    expect(
+      OPENAPI_DOCUMENT.paths?.["/site-files/preview/"]?.post?.description,
+    ).toContain("up to 100 most recently updated Published Pages");
 
     const embeddedContract = API_LLMS_FULL_TEXT.match(
       /```yaml\n([\s\S]+)\n```/u,
@@ -191,6 +197,24 @@ describe("generated API reference", () => {
 
     expect(createInput.properties).not.toHaveProperty("navigation_order");
     expect(pageOutput.properties).toHaveProperty("navigation_order");
+  });
+
+  it("documents when Page navigation settings take effect", () => {
+    const pageInput = OPENAPI_DOCUMENT.components?.schemas?.PageInput as {
+      properties?: Record<string, {description?: string}>;
+    };
+    const pageOutput = OPENAPI_DOCUMENT.components?.schemas?.Page as {
+      properties?: Record<string, {description?: string}>;
+    };
+
+    for (const schema of [pageInput, pageOutput]) {
+      expect(schema.properties?.show_in_navigation?.description)
+        .toContain("only active when status is published");
+      expect(schema.properties?.show_in_navigation?.description)
+        .toContain("stored but ignored until the Page is published");
+      expect(schema.properties?.show_in_navigation?.description)
+        .toContain("unlisted Page, it is always forced to false");
+    }
   });
 
   it("documents resolved current-year copyright output", () => {

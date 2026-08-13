@@ -2,7 +2,9 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 import Theme from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
-import {CLASSIC_THEME_BUNDLE} from "@/server/themes/BundledThemes";
+import {
+  BUNDLED_DEFAULT_THEME_BUNDLE,
+} from "@/server/themes/BundledThemes";
 import type {
   StoredThemeVersion,
   ThemeBundleV1,
@@ -133,24 +135,25 @@ describe("production theme selection", () => {
 
   it("does not select retained legacy theme data after migration", () => {
     const theme = new Theme(feed, settings);
-    expect(theme.getWebFeedTmpl()).toBe(CLASSIC_THEME_BUNDLE.webFeed);
-    expect(theme.name()).toBe("classic");
+    expect(theme.getWebFeedTmpl()).toBe(BUNDLED_DEFAULT_THEME_BUNDLE.webFeed);
+    expect(theme.name()).toBe("default");
+    expect(theme.supportsPagesAndSearch()).toBe(true);
   });
 
   it("falls back safely when the active row is malformed or incompatible", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const malformed = stored({bundle: {...bundle, webFeed: "{{#broken}}"}});
     expect(new Theme(feed, settings, null, malformed).getWebFeedTmpl()).toBe(
-      CLASSIC_THEME_BUNDLE.webFeed,
+      BUNDLED_DEFAULT_THEME_BUNDLE.webFeed,
     );
     const incompatible = stored({
       manifest: {...manifest, microfeed: ">=99.0.0"},
     });
     expect(new Theme(feed, settings, null, incompatible).getWebFeedTmpl()).toBe(
-      CLASSIC_THEME_BUNDLE.webFeed,
+      BUNDLED_DEFAULT_THEME_BUNDLE.webFeed,
     );
     expect(new Theme(feed, settings, "shared", incompatible).getWebHeader().html)
-      .toBe("shared microfeed.classic");
+      .toBe("shared microfeed.default");
     expect(error).toHaveBeenCalledTimes(2);
     error.mockRestore();
   });

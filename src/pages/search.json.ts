@@ -8,6 +8,7 @@ import {
   ItemSearchUnavailableError,
   searchContent,
 } from "@/server/items/search";
+import {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
 
 export const GET: APIRoute = async ({request}) => {
   const url = new URL(request.url);
@@ -24,7 +25,7 @@ export const GET: APIRoute = async ({request}) => {
   });
   if (
     shouldHidePublicWeb(loaded.content) ||
-    loaded.content.activeTheme?.manifest.formatVersion !== 2
+    !themeSupportsPagesAndSearch(loaded.content.activeTheme)
   ) {
     return jsonResponse({error: "Not found."}, {status: 404});
   }
@@ -41,6 +42,7 @@ export const GET: APIRoute = async ({request}) => {
     return jsonResponse({
       items: response.items.map((item) => ({
         content_text: item.content_text,
+        date_published: item.date_published,
         highlights: item.highlights,
         id: item.id,
         title: item.title,

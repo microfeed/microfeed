@@ -26,6 +26,7 @@ import {
   normalizePageSlugInput,
   PAGE_META_DESCRIPTION_MAX_LENGTH,
   PAGE_SLUG_MAX_LENGTH,
+  pageNavigationEnabledForStatus,
   type PageRecord,
 } from "@/shared/Pages";
 
@@ -44,7 +45,9 @@ const EMPTY_PAGE: Draft = {
   title: "",
 };
 
-type HelpTopic = "description" | "navigation";
+const PAGE_CREATED_TOAST_KEY = "microfeed.page-created";
+
+type HelpTopic = "description" | "navigation" | "visibility";
 
 function PageHelpDialog({
   onOpenChange,
@@ -57,6 +60,11 @@ function PageHelpDialog({
     ? {
         description: "How this optional summary is published.",
         title: "Search and social description",
+      }
+    : topic === "visibility"
+    ? {
+        description: "Choose how people can find and open this Page.",
+        title: "Page visibility",
       }
     : {
         description: "Choose whether your active theme can include this Page in website navigation.",
@@ -87,6 +95,35 @@ function PageHelpDialog({
               </p>
             </section>
           </div>
+        ) : topic === "visibility" ? (
+          <div className="grid gap-4 text-sm leading-relaxed">
+            <section className="grid gap-1">
+              <h3 className="font-medium">Published</h3>
+              <p className="text-muted-foreground">
+                Anyone can open the Page. microfeed includes it in public
+                search and generated discovery files such as sitemap.xml and
+                llms.txt. It can also appear in website navigation when Show
+                in navigation is on.
+              </p>
+            </section>
+            <section className="grid gap-1 border-t pt-4">
+              <h3 className="font-medium">Unlisted</h3>
+              <p className="text-muted-foreground">
+                Anyone with the direct URL can open the Page, but microfeed
+                excludes it from website navigation, public search, and
+                generated sitemap.xml and llms.txt files. Selecting Unlisted
+                turns off Show in navigation.
+              </p>
+            </section>
+            <section className="grid gap-1 border-t pt-4">
+              <h3 className="font-medium">Draft</h3>
+              <p className="text-muted-foreground">
+                The Page is saved in the admin dashboard but is not available
+                on the public website. Its navigation choice is kept for when
+                you publish it.
+              </p>
+            </section>
+          </div>
         ) : (
           <div className="grid gap-5 text-sm leading-relaxed">
             <section className="grid gap-2">
@@ -96,6 +133,10 @@ function PageHelpDialog({
                 <code className="mx-1 rounded bg-muted px-1 py-0.5">navigation_pages</code>
                 data available to format v2 themes. The active theme decides
                 where to display it; the default theme uses the site header.
+              </p>
+              <p className="text-muted-foreground">
+                Unlisted Pages cannot appear in navigation. Selecting
+                Unlisted turns off and disables Show in navigation.
               </p>
               <p className="text-muted-foreground">
                 To change link order, return to the Pages screen and drag this
@@ -129,13 +170,27 @@ export default function PageEditorApp({
   page?: PageRecord;
   themeSupportsPages: boolean;
 }) {
-  const [draft, setDraft] = useState<Draft>(page ?? EMPTY_PAGE);
+  const initialDraft = page ?? EMPTY_PAGE;
+  const [draft, setDraft] = useState<Draft>({
+    ...initialDraft,
+    show_in_navigation: pageNavigationEnabledForStatus(
+      initialDraft.status,
+      initialDraft.show_in_navigation,
+    ),
+  });
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null);
   const changedRef = useRef(false);
   const isNotFoundPage = Boolean(page?.is_not_found_page);
   useEffect(() => preventCloseWhenChanged(() => changedRef.current), []);
+  useEffect(() => {
+    if (!page || window.sessionStorage.getItem(PAGE_CREATED_TOAST_KEY) !== page.id) {
+      return;
+    }
+    window.sessionStorage.removeItem(PAGE_CREATED_TOAST_KEY);
+    showToast("Page created.", "success");
+  }, [page]);
   const markChanged = (value: boolean) => {
     changedRef.current = value;
     setChanged(value);
@@ -182,9 +237,13 @@ export default function PageEditorApp({
         },
       )) as PageRecord;
       markChanged(false);
-      showToast(page ? "Page saved." : "Page created.", "success");
-      if (!page) window.location.assign(ADMIN_URLS.editPage(saved.id));
-      else setDraft(saved);
+      if (!page) {
+        window.sessionStorage.setItem(PAGE_CREATED_TOAST_KEY, saved.id);
+        window.location.assign(ADMIN_URLS.editPage(saved.id));
+      } else {
+        showToast("Page saved.", "success");
+        setDraft(saved);
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Page operation failed.", "error");
     } finally {
@@ -257,12 +316,27 @@ export default function PageEditorApp({
             ) : (
               <>
                 <div className="grid gap-2">
-                  <Label htmlFor="page-status">Visibility</Label>
+                  <AdminHelpLabel
+                    id="page-status-label"
+                    onClick={() => setHelpTopic("visibility")}
+                  >
+                    Visibility
+                  </AdminHelpLabel>
                   <select
+                    aria-labelledby="page-status-label"
                     className="h-10 cursor-pointer rounded-md border bg-background px-3 text-sm"
                     id="page-status"
                     value={draft.status}
-                    onChange={(event) => update({status: event.target.value as Draft["status"]})}
+                    onChange={(event) => {
+                      const status = event.target.value as Draft["status"];
+                      update({
+                        show_in_navigation: pageNavigationEnabledForStatus(
+                          status,
+                          draft.show_in_navigation,
+                        ),
+                        status,
+                      });
+                    }}
                   >
                     <option value="published" disabled={!themeSupportsPages}>Published</option>
                     <option value="unlisted" disabled={!themeSupportsPages}>Unlisted</option>
@@ -309,10 +383,16 @@ export default function PageEditorApp({
                 <Label htmlFor="page-navigation">Show in navigation</Label>
                 <Switch
                   checked={draft.show_in_navigation}
+                  disabled={draft.status === "unlisted"}
                   id="page-navigation"
                   onCheckedChange={(checked) => update({show_in_navigation: checked})}
                 />
               </div>
+              {draft.status === "unlisted" && (
+                <p className="text-xs text-muted-foreground">
+                  Unlisted Pages never appear in website navigation.
+                </p>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="page-navigation-label">
                   Navigation label

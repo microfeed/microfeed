@@ -166,7 +166,7 @@ function assetKey(environment: string, ownerId: string, assetPath: string): stri
 }
 
 async function bundledFallbackTheme(): Promise<EffectiveTheme> {
-  const loaded = await loadThemePackage(path.join(repositoryRoot, "themes/classic"));
+  const loaded = await loadThemePackage(path.join(repositoryRoot, "themes/default"));
   return {
     assetOwnerThemeId: null,
     bundle: loaded.bundle,
@@ -217,14 +217,24 @@ function legacyTheme(
     checksumSha256: null,
     fallbackReason: null,
     kind: "legacy",
-    manifest: {
+    manifest: themeManifestV1Schema.parse({
       ...fallback.manifest,
+      assets: [],
       author: "Site owner",
+      files: {
+        rssStylesheet: fallback.manifest.files.rssStylesheet,
+        webBodyEnd: fallback.manifest.files.webBodyEnd,
+        webBodyStart: fallback.manifest.files.webBodyStart,
+        webFeed: fallback.manifest.files.webFeed,
+        webHeader: fallback.manifest.files.webHeader,
+        webItem: fallback.manifest.files.webItem,
+      },
+      formatVersion: 1,
       microfeed: "*",
       name: `${currentTheme} (legacy)`,
       packageId: `legacy.${normalizedId}`.slice(0, 120),
       version: "0.0.0",
-    },
+    }),
     themeId: null,
   };
 }
@@ -1057,7 +1067,7 @@ export async function installDefaultThemeForInitialization(
 /**
  * Makes the current bundled v2 theme available to an upgraded site without
  * changing its public appearance. The effective-theme lookup also recognizes
- * pre-versioning custom themes and the classic fallback as v1 appearances.
+ * pre-versioning custom themes as v1 appearances.
  */
 export async function installDefaultThemeForV1Appearance(
   config: MicrofeedConfig,
@@ -1352,6 +1362,7 @@ async function writeThemePackage(
       for (const relativePath of [
         ".agents/skills/develop-microfeed-theme/SKILL.md",
         ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+        ".agents/skills/develop-microfeed-theme/references/public-site.md",
       ]) {
         await writeRelative(
           relativePath,

@@ -219,6 +219,53 @@ const themeFeedExtraSchema = z.object({
   "itunes:type": z.string().optional(),
 }).loose();
 
+const themeNavigationPageSchema = z.object({
+  id: z.string(),
+  navigation_label: z.string(),
+  navigation_order: z.number().int(),
+  slug: z.string(),
+  title: z.string(),
+  url: z.string(),
+}).loose();
+
+const themePageSchema = z.object({
+  content_html: z.string(),
+  content_text: z.string(),
+  date_created: z.string(),
+  date_modified: z.string(),
+  date_published: z.string().optional(),
+  id: z.string(),
+  is_not_found_page: z.boolean(),
+  meta_description: z.string().optional(),
+  navigation_label: z.string(),
+  navigation_order: z.number().int(),
+  show_in_navigation: z.boolean(),
+  slug: z.string(),
+  status: z.enum(["published", "unlisted", "unpublished"]),
+  title: z.string(),
+  url: z.string(),
+}).loose().meta({
+  description: "The current standalone Page. This object is available only while rendering the Page template, including the editable special 404 Page when it handles a missing URL.",
+});
+
+const themeSearchHighlightSegmentSchema = z.object({
+  matched: z.boolean(),
+  text: z.string(),
+});
+
+const themeSearchResultSchema = z.object({
+  content_text: z.string().optional(),
+  date_published: z.string().optional(),
+  highlights: z.object({
+    content_text: z.array(themeSearchHighlightSegmentSchema).optional(),
+    title: z.array(themeSearchHighlightSegmentSchema).optional(),
+  }).optional(),
+  id: z.string().optional(),
+  title: z.string(),
+  type: z.enum(["item", "page"]),
+  url: z.string(),
+}).loose();
+
 export const themeContextSchema = z.object({
   _microfeed: themeFeedExtraSchema.optional(),
   _theme: themeRuntimeMetadataSchema,
@@ -232,24 +279,20 @@ export const themeContextSchema = z.object({
   icon: z.string().optional(),
   item: themeItemSchema.optional(),
   items: z.array(themeItemSchema),
-  navigation_pages: z.array(z.object({
-    navigation_label: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    url: z.string(),
-  }).loose()).optional(),
-  page: z.object({
-    content_html: z.string(),
-    content_text: z.string(),
-    id: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    url: z.string(),
-  }).loose().optional(),
+  navigation_pages: z.array(themeNavigationPageSchema).optional().meta({
+    description: "Ordered website navigation entries available to every public HTML theme slot. This array contains only Published Pages whose Show in navigation setting is enabled, in the order chosen in Admin. Draft and Unlisted Pages and the special 404 Page never appear. Navigation is website-only and does not add Pages to RSS or JSON Feed.",
+  }),
+  page: themePageSchema.optional(),
   search: z.object({
-    query: z.string(),
-    results: z.array(z.record(z.string(), z.unknown())),
-  }).loose().optional(),
+    query: z.string().meta({
+      description: "The q query parameter used to render the dedicated Search page.",
+    }),
+    results: z.array(themeSearchResultSchema).meta({
+      description: "Representative results in previews. Live public Search results are safely rendered by microfeed into the documented data-microfeed-search-* hooks.",
+    }),
+  }).loose().optional().meta({
+    description: "Dedicated Search-page state. The theme owns page structure and styling; microfeed owns the public endpoint, popup dialog, keyboard behavior, typeahead, cancellation, highlighting, and safe result hydration.",
+  }),
   language: z.string().optional(),
   next_url: z.string().optional(),
   title: z.string().optional(),

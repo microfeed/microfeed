@@ -1,5 +1,6 @@
 export const SITE_FILE_MAX_BYTES = 256 * 1024;
 export const SITE_FILE_MAX_NAME_LENGTH = 128;
+export const SITE_FILE_TEMPLATE_COLLECTION_LIMIT = 100;
 
 export const SITE_FILE_GENERATORS = [
   "robots",
@@ -61,6 +62,11 @@ export interface SiteFileRecord {
 
 export function normalizeSiteFilename(value: string): string {
   return value.trim().toLocaleLowerCase("en-US").replace(/^\/+|\/+$/gu, "");
+}
+
+export function normalizeSiteFilenameInput(value: string): string {
+  return normalizeSiteFilename(value.replace(/[\\/]/gu, ""))
+    .slice(0, SITE_FILE_MAX_NAME_LENGTH);
 }
 
 export function siteFileMediaTypeForName(

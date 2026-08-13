@@ -47,11 +47,6 @@ const tokenBlock = `<style id="microfeed-design-tokens">
 ${designTokenCss}</style>`;
 
 const sourceDirectory = path.join(root, "src/templates");
-const siteNavigation = await readFile(path.join(sourceDirectory, "site-nav.mustache"), "utf8");
-async function webTemplate(filename) {
-  return (await readFile(path.join(sourceDirectory, filename), "utf8"))
-    .replace("<!-- microfeed:site-nav -->", siteNavigation.trim());
-}
 const rssTemplate = await readFile(path.join(sourceDirectory, "rss-stylesheet.xsl"), "utf8");
 const rssStylesMarker = "/* microfeed:compiled-tailwind */";
 if (!rssTemplate.includes(rssStylesMarker)) {
@@ -61,10 +56,10 @@ const rssStyles = `${designTokenCss}\n${css.source}`
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;");
 const files = new Map([
-  ["web-feed.mustache", await webTemplate("web-feed.mustache")],
-  ["web-item.mustache", await webTemplate("web-item.mustache")],
-  ["web-page.mustache", await webTemplate("web-page.mustache")],
-  ["web-search.mustache", await webTemplate("web-search.mustache")],
+  ["web-feed.mustache", await readFile(path.join(sourceDirectory, "web-feed.mustache"), "utf8")],
+  ["web-item.mustache", await readFile(path.join(sourceDirectory, "web-item.mustache"), "utf8")],
+  ["web-page.mustache", await readFile(path.join(sourceDirectory, "web-page.mustache"), "utf8")],
+  ["web-search.mustache", await readFile(path.join(sourceDirectory, "web-search.mustache"), "utf8")],
   ["web-body-start.mustache", await readFile(path.join(sourceDirectory, "web-body-start.mustache"), "utf8")],
   ["rss-stylesheet.xsl", rssTemplate.replace(rssStylesMarker, rssStyles)],
   ["web-header.mustache", `${tokenBlock}\n<style id="microfeed-compiled-styles">${css.source}</style>\n${await readFile(path.join(sourceDirectory, "web-header.mustache"), "utf8")}`],

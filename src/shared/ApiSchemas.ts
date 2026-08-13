@@ -1,6 +1,7 @@
 import * as z from "zod";
 import "zod-openapi";
 
+import {STATUSES} from "./Constants";
 import {
   PAGE_META_DESCRIPTION_MAX_LENGTH,
   PAGE_SLUG_MAX_LENGTH,
@@ -102,6 +103,12 @@ export const apiItemOutputSchema = apiItemInputSchema.extend({
   url: z.string().optional(),
 }).meta({id: "Item"});
 
+const PAGE_NAVIGATION_VISIBILITY_DESCRIPTION =
+  "Whether the Page is eligible for website navigation. This setting is only active when status is published. For an unpublished Draft, it is stored but ignored until the Page is published. For an unlisted Page, it is always forced to false.";
+
+const PAGE_VISIBILITY_DESCRIPTION =
+  "The Page visibility: published is public and discoverable; unlisted remains public at its direct URL but cannot appear in navigation; unpublished is a private Draft.";
+
 export const apiPageInputSchema = z.object({
   content_html: z.string().optional().meta({
     description: "The Page body as sanitized rich-text HTML.",
@@ -111,15 +118,19 @@ export const apiPageInputSchema = z.object({
       description: `An optional plain-text summary used in the Page's HTML meta description. Maximum ${PAGE_META_DESCRIPTION_MAX_LENGTH} characters.`,
     }),
   navigation_label: z.string().max(100).optional().meta({
-    description: "The manually chosen text used for this Page in website navigation. Required when show_in_navigation is true.",
+    description: "The manually chosen text used for this Page in website navigation. Required when show_in_navigation is true unless the Page is Unlisted.",
     example: "About",
   }),
-  show_in_navigation: z.boolean().optional(),
+  show_in_navigation: z.boolean().optional().meta({
+    description: PAGE_NAVIGATION_VISIBILITY_DESCRIPTION,
+  }),
   slug: z.string().min(1).max(PAGE_SLUG_MAX_LENGTH).optional().meta({
     description: "A top-level path segment, such as about for /about/.",
     example: "about",
   }),
-  status: apiStatusSchema.optional(),
+  status: apiStatusSchema.optional().meta({
+    description: PAGE_VISIBILITY_DESCRIPTION,
+  }),
   title: z.string().min(1).max(200).optional(),
 }).meta({id: "PageInput"});
 
@@ -131,6 +142,7 @@ export const apiPageCreateInputSchema = apiPageInputSchema.extend({
   title: z.string().trim().min(1).max(200),
 }).superRefine((input, context) => {
   if (
+    input.status !== "unlisted" && input.status !== STATUSES.UNLISTED &&
     input.show_in_navigation !== false &&
     !input.navigation_label?.trim()
   ) {
@@ -179,9 +191,13 @@ export const apiPageOutputSchema = apiPageInputSchema.extend({
   }),
   navigation_label: z.string(),
   navigation_order: z.number().int(),
-  show_in_navigation: z.boolean(),
+  show_in_navigation: z.boolean().meta({
+    description: PAGE_NAVIGATION_VISIBILITY_DESCRIPTION,
+  }),
   slug: z.string(),
-  status: z.enum(["published", "unlisted", "unpublished"]),
+  status: z.enum(["published", "unlisted", "unpublished"]).meta({
+    description: PAGE_VISIBILITY_DESCRIPTION,
+  }),
   title: z.string(),
   url: z.url(),
 }).meta({id: "Page"});

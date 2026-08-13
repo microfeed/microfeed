@@ -65,6 +65,6 @@ const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
     bodyHtml={theme.getWebFeed().html}
     bodyEnd={theme.getWebBodyEnd().html}
     sharedBodyEnd={sharedTheme.getWebBodyEnd().html}
-    searchEnabled={loaded.content.activeTheme?.manifest.formatVersion === 2}
+    searchEnabled={theme.supportsPagesAndSearch()}
   />
 )}

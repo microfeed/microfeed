@@ -2,6 +2,8 @@
 
 Read `microfeed-theme.json` and the schemas in `.microfeed/schemas/` before editing. The installed package is the eight generated format v2 files in this directory; source templates, Tailwind CSS, and vanilla TypeScript live under `src/`.
 
+Before changing Pages, shared navigation, or public search, read the bundled [public-site contract](./.agents/skills/develop-microfeed-theme/references/public-site.md). It documents the platform/theme ownership boundary, all stable hooks and styling tokens, and the required desktop, mobile, Search, and 404 preview checks.
+
 1. Edit `src/templates/`, `src/theme.css`, or `src/main.ts`.
 2. Run `yarn build` from this directory (or `yarn workspace @microfeed/default-theme-source build` from the microfeed repository).
 3. Run `yarn validate`, `yarn test`, and `yarn preview` from this directory.

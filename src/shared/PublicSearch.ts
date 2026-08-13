@@ -1,10 +1,20 @@
 export type PublicSearchResult = Record<string, unknown> & {
   content_text?: string;
+  date_published?: string;
+  highlights?: {
+    content_text?: PublicSearchHighlightSegment[];
+    title?: PublicSearchHighlightSegment[];
+  };
   id?: string;
   title: string;
   type: "item" | "page";
   url: string;
 };
+
+export interface PublicSearchHighlightSegment {
+  matched: boolean;
+  text: string;
+}
 
 export const PUBLIC_SEARCH_PREVIEW_WARNING =
   "Live search is unavailable in preview. Showing preview results instead.";
@@ -166,9 +176,12 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     padding: 0.7rem 0.8rem;
     border: 1px solid transparent;
     border-radius: 0.65rem;
-    color: inherit;
+    color: var(--mf-accent, #0969da);
     text-decoration: none;
     transition: background 120ms ease, border-color 120ms ease;
+  }
+  .mf-public-search-result:visited {
+    color: var(--mf-accent, #0969da);
   }
   .mf-public-search-result:hover,
   .mf-public-search-result:focus-visible {
@@ -240,6 +253,57 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     container.appendChild(element);
   }
 
+  function formatShortDate(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    return new Intl.DateTimeFormat(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  }
+
+  function appendExcerpt(element, item) {
+    const segments = item.highlights?.content_text;
+    const hasMatchedExcerpt = Array.isArray(segments) &&
+      segments.some((segment) => segment?.matched && segment.text);
+    if (!hasMatchedExcerpt) {
+      element.append(document.createTextNode(item.content_text ?? ""));
+      return;
+    }
+    for (const segment of segments) {
+      const text = String(segment?.text ?? "");
+      if (!text) continue;
+      if (!segment?.matched) {
+        element.append(document.createTextNode(text));
+        continue;
+      }
+      const mark = document.createElement("mark");
+      mark.textContent = text;
+      element.appendChild(mark);
+    }
+  }
+
+  function appendResultDetails(link, item) {
+    const publishedDate = formatShortDate(item.date_published);
+    const content = String(item.content_text ?? "").trim();
+    if (!publishedDate && !content) return;
+    const details = document.createElement("p");
+    details.className = "mf-public-search-result__details";
+    if (publishedDate) {
+      const time = document.createElement("time");
+      time.dateTime = item.date_published;
+      time.textContent = publishedDate;
+      details.appendChild(time);
+    }
+    if (publishedDate && content) {
+      details.append(document.createTextNode(" · "));
+    }
+    if (content) appendExcerpt(details, item);
+    link.appendChild(details);
+  }
+
   function showResults(container, items) {
     container.replaceChildren();
     if (items.length === 0) {
@@ -251,12 +315,16 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       link.className = "mf-public-search-result";
       link.href = item.url;
       const title = document.createElement("strong");
+      title.className = "mf-public-search-result__title";
       title.textContent = item.title || "Untitled";
       const type = document.createElement("span");
       type.className = "mf-public-search-result__type";
       type.textContent = item.type;
       link.appendChild(title);
       link.appendChild(type);
+      if (container.hasAttribute("data-microfeed-search-details")) {
+        appendResultDetails(link, item);
+      }
       container.appendChild(link);
     }
   }

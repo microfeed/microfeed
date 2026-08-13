@@ -125,7 +125,7 @@ describe("versioned theme storage", () => {
     await store.deleteVersion("legacy-theme-v1", env.MEDIA_BUCKET);
   });
 
-  it("installs classic to preserve an upgraded site with no selected version", async () => {
+  it("installs the bundled default for an upgraded site with no selected version", async () => {
     const database = new FeedDb(env, new Request("https://example.test/"));
     await database.getContent();
     const loaded = await loadPublishedFeed(
@@ -134,10 +134,10 @@ describe("versioned theme storage", () => {
       {includeActiveTheme: true},
     );
     expect(loaded.content.activeTheme).toMatchObject({
-      id: "bundled-classic-v1",
-      packageId: "microfeed.classic",
+      id: "bundled-default-v2",
+      packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.0.0",
+      version: "1.1.7",
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });
@@ -508,6 +508,7 @@ describe("versioned theme storage", () => {
     expect(previewHtml).toContain("document.body.dataset.theme='ran'");
     expect(previewHtml).toContain("data-microfeed-search-dialog");
     expect(previewHtml).toContain("data-microfeed-search-preview-results");
+    expect(previewHtml).toContain('"date_published":');
     expect(previewHtml).toContain(
       "Live search is unavailable in preview. Showing preview results instead.",
     );

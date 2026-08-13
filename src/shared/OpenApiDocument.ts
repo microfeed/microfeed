@@ -354,7 +354,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "previewSiteFile",
         summary: "Render a Site File preview",
         description:
-          "Renders an unsaved Mustache template with current public feed, Page, item, and _site data. Preview responses are never publicly cached.",
+          "Renders an unsaved Mustache template with current public feed, _site helpers, up to 100 newest Published items, and up to 100 most recently updated Published Pages. The special 404 Page is excluded. Preview responses are never publicly cached.",
         tags: ["Site Files"],
         requestBody: {
           required: true,

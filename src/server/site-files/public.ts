@@ -2,9 +2,13 @@ import {escapeHtml} from "@/shared/StringUtils";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {listPages} from "@/server/pages/service";
 import {defaultSiteFileTemplate} from "@/shared/SiteFileTemplates";
+import {SITE_FILE_TEMPLATE_COLLECTION_LIMIT} from "@/shared/SiteFiles";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import {getRuntimeSiteFileByName} from "./service";
-import {renderSiteFileForRequest} from "./templates";
+import {
+  renderSiteFileForRequest,
+  siteFileApiLlmsFullUrl,
+} from "./templates";
 
 function notFound(): Response {
   return new Response("Not Found", {status: 404, statusText: "Not Found"});
@@ -20,20 +24,34 @@ async function llmsContent(
   request: Request,
 ): Promise<string> {
   const pages = await listPages(loaded.database, request, {
-    limit: 100,
+    excludeNotFoundPage: true,
+    limit: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
     statuses: ["published"],
   });
   const feed = loaded.publicFeed;
+  const apiLlmsFullUrl = siteFileApiLlmsFullUrl(loaded.content, request);
   const lines = [
     `# ${String(feed.title ?? "microfeed")}`,
     "",
     String(feed._microfeed?.description_text ?? feed.description ?? "").trim(),
     "",
+    "This site is powered by [microfeed](https://github.com/microfeed/microfeed), an agentic CMS on Cloudflare.",
+    "",
+    ...(apiLlmsFullUrl
+      ? [
+          `This site's API is enabled. Learn how to use it at <${apiLlmsFullUrl}>.`,
+          "",
+        ]
+      : []),
+    "Learn all the ins and outs of microfeed at <https://docs.microfeed.org/>.",
+    "",
+    "## Site feeds",
+    "",
     `- Website: ${new URL("/", request.url)}`,
     `- JSON Feed: ${new URL("/json/", request.url)}`,
     `- RSS Feed: ${new URL("/rss/", request.url)}`,
   ];
-  const publicPages = pages.items.filter((page) => !page.is_not_found_page);
+  const publicPages = pages.items;
   if (publicPages.length > 0) {
     lines.push("", "## Pages", "");
     for (const page of publicPages) {
@@ -42,7 +60,7 @@ async function llmsContent(
   }
   if (feed.items.length > 0) {
     lines.push("", "## Recent items", "");
-    for (const item of feed.items.slice(0, 20)) {
+    for (const item of feed.items.slice(0, SITE_FILE_TEMPLATE_COLLECTION_LIMIT)) {
       const extra = item._microfeed ?? {};
       const title = String(item.title ?? "Untitled");
       const url = String(extra.web_url ?? item.url ?? "");
@@ -57,7 +75,8 @@ async function sitemapContent(
   request: Request,
 ): Promise<string> {
   const pages = await listPages(loaded.database, request, {
-    limit: 100,
+    excludeNotFoundPage: true,
+    limit: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
     statuses: ["published"],
   });
   const feed = loaded.publicFeed;
@@ -70,11 +89,11 @@ async function sitemapContent(
     xml += `<image:image><image:loc>${escapeHtml(feed.icon)}</image:loc></image:image>`;
   }
   xml += "</url>";
-  for (const page of pages.items.filter((page) => !page.is_not_found_page)) {
+  for (const page of pages.items) {
     xml += `<url><loc>${escapeHtml(page.url)}</loc>`;
     xml += `<lastmod>${escapeHtml(page.date_modified)}</lastmod></url>`;
   }
-  for (const item of feed.items) {
+  for (const item of feed.items.slice(0, SITE_FILE_TEMPLATE_COLLECTION_LIMIT)) {
     const extra = item._microfeed ?? {};
     xml += `<url><loc>${escapeHtml(String(extra.web_url ?? ""))}</loc>`;
     if (item.date_published) {
@@ -118,7 +137,7 @@ export async function publicSiteFileResponse(
     includeActiveTheme: true,
     itemsOrder: ITEM_ORDERS.DESC,
     itemsSort: ITEM_SORTS.PUBLISHED_AT,
-    limit: siteFile.generator === "sitemap" ? -1 : 20,
+    limit: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
   });
   const hidden = shouldHidePublicWeb(loaded.content);
   let content: string | undefined;

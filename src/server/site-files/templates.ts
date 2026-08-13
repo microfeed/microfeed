@@ -1,11 +1,13 @@
 import {SyntaxValidator} from "fast-xml-validator";
 
+import {resolveApiAccessSettings} from "@/shared/Api";
 import {STATUSES} from "@/shared/Constants";
 import {getFetchItemsParams} from "@/server/feed/FeedDb";
 import type FeedDb from "@/server/feed/FeedDb";
 import {listPages} from "@/server/pages/service";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import {
+  SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
   type SiteFileGenerator,
   type SiteFileMediaType,
   validateSiteFileContent,
@@ -33,6 +35,18 @@ export interface SiteFileRenderResult {
 interface Attachment extends Record<string, unknown> {
   mime_type?: unknown;
   url?: unknown;
+}
+
+export function siteFileApiLlmsFullUrl(
+  feedContent: FeedContent,
+  request: Request,
+): string | undefined {
+  const settings = resolveApiAccessSettings(
+    feedContent.settings?.apiSettings,
+  );
+  return settings.enabled && settings.publicDocsEnabled
+    ? new URL("/api/llms-full.txt", request.url).toString()
+    : undefined;
 }
 
 function loopMetadata(index: number, length: number) {
@@ -115,45 +129,49 @@ export async function renderSiteFileForRequest(
 ): Promise<SiteFileRenderResult> {
   const sourceError = validateSiteFileTemplateSource(input.template);
   if (sourceError) throw new Error(sourceError);
-  const itemLimit = input.generator === "sitemap" ? -1 : 20;
   const feedContent = loadedFeed?.feedContent ??
     await database.getContent(getFetchItemsParams(
       request,
       {status: STATUSES.PUBLISHED},
-      itemLimit,
+      SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
       ITEM_SORTS.PUBLISHED_AT,
       ITEM_ORDERS.DESC,
     )) as FeedContent;
   const publicFeed = loadedFeed?.publicFeed ??
     await database.getPublicJsonData(feedContent) as PublicFeed;
   const pagesResponse = await listPages(database, request, {
-    limit: 100,
+    excludeNotFoundPage: true,
+    limit: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
     statuses: ["published"],
   });
-  const publicPages = pagesResponse.items.filter((page) =>
-    !page.is_not_found_page
-  );
+  const publicPages = pagesResponse.items;
   const pages = publicPages.map((page, index) => ({
     ...page,
     _loop: loopMetadata(index, publicPages.length),
   }));
-  const feedItems = publicFeed.items ?? [];
+  const feedItems = (publicFeed.items ?? []).slice(
+    0,
+    SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+  );
+  const limitedPublicFeed = {...publicFeed, items: feedItems};
   const items = feedItems.map((item, index) =>
     itemTemplateContext(item, index, feedItems.length)
   );
   const origin = new URL(request.url).origin;
   const homePageUrl = publicFeed.home_page_url ?? new URL("/", origin).toString();
+  const apiLlmsFullUrl = siteFileApiLlmsFullUrl(feedContent, request);
   const context: Record<string, unknown> = {
-    ...publicFeed,
+    ...limitedPublicFeed,
     home_page_url: homePageUrl,
     items,
     pages,
     _site: {
+      ...(apiLlmsFullUrl ? {api_llms_full_url: apiLlmsFullUrl} : {}),
       filename: input.filename,
       generated_at: new Date().toISOString(),
       has_items: items.length > 0,
       has_pages: pages.length > 0,
-      json_feed: () => JSON.stringify(publicFeed),
+      json_feed: () => JSON.stringify(limitedPublicFeed),
       json_feed_url: new URL("/json/", origin).toString(),
       origin,
       rss_feed_url: new URL("/rss/", origin).toString(),

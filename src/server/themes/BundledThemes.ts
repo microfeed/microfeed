@@ -4,28 +4,32 @@ import {
   type ThemeManifestV1,
 } from "@/shared/themes/ThemeContract";
 import {SETTINGS_CATEGORIES} from "@/shared/Constants";
-import CLASSIC_MANIFEST from "../../../themes/classic/microfeed-theme.json";
-import CLASSIC_WEB_HEADER from "../../../themes/classic/web-header.mustache?raw";
-import CLASSIC_WEB_BODY_END from "../../../themes/classic/web-body-end.mustache?raw";
-import CLASSIC_WEB_BODY_START from "../../../themes/classic/web-body-start.mustache?raw";
-import CLASSIC_RSS_STYLESHEET from "../../../themes/classic/rss-stylesheet.xsl?raw";
-import CLASSIC_WEB_FEED from "../../../themes/classic/web-feed.mustache?raw";
-import CLASSIC_WEB_ITEM from "../../../themes/classic/web-item.mustache?raw";
+import DEFAULT_MANIFEST from "../../../themes/default/microfeed-theme.json";
+import DEFAULT_WEB_HEADER from "../../../themes/default/web-header.mustache?raw";
+import DEFAULT_WEB_BODY_END from "../../../themes/default/web-body-end.mustache?raw";
+import DEFAULT_WEB_BODY_START from "../../../themes/default/web-body-start.mustache?raw";
+import DEFAULT_RSS_STYLESHEET from "../../../themes/default/rss-stylesheet.xsl?raw";
+import DEFAULT_WEB_FEED from "../../../themes/default/web-feed.mustache?raw";
+import DEFAULT_WEB_ITEM from "../../../themes/default/web-item.mustache?raw";
+import DEFAULT_WEB_PAGE from "../../../themes/default/web-page.mustache?raw";
+import DEFAULT_WEB_SEARCH from "../../../themes/default/web-search.mustache?raw";
 
-export const CLASSIC_THEME_ID = "bundled-classic-v1";
+export const BUNDLED_DEFAULT_THEME_ID = "bundled-default-v2";
 
-export const CLASSIC_THEME_BUNDLE: ThemeBundleV1 = {
+export const BUNDLED_DEFAULT_THEME_BUNDLE: ThemeBundleV1 = {
   assets: [],
-  rssStylesheet: CLASSIC_RSS_STYLESHEET,
-  webBodyEnd: CLASSIC_WEB_BODY_END,
-  webBodyStart: CLASSIC_WEB_BODY_START,
-  webFeed: CLASSIC_WEB_FEED,
-  webHeader: CLASSIC_WEB_HEADER,
-  webItem: CLASSIC_WEB_ITEM,
+  rssStylesheet: DEFAULT_RSS_STYLESHEET,
+  webBodyEnd: DEFAULT_WEB_BODY_END,
+  webBodyStart: DEFAULT_WEB_BODY_START,
+  webFeed: DEFAULT_WEB_FEED,
+  webHeader: DEFAULT_WEB_HEADER,
+  webItem: DEFAULT_WEB_ITEM,
+  webPage: DEFAULT_WEB_PAGE,
+  webSearch: DEFAULT_WEB_SEARCH,
 };
 
-export const CLASSIC_THEME_MANIFEST = themeManifestV1Schema.parse(
-  CLASSIC_MANIFEST,
+export const BUNDLED_DEFAULT_THEME_MANIFEST = themeManifestV1Schema.parse(
+  DEFAULT_MANIFEST,
 );
 
 export const MIGRATED_LEGACY_THEME_ID = "legacy-theme-v1";
@@ -41,18 +45,33 @@ export function legacyThemeMigrationSource(
   if (!legacy) return null;
   return {
     bundle: {
-      ...CLASSIC_THEME_BUNDLE,
+      rssStylesheet: BUNDLED_DEFAULT_THEME_BUNDLE.rssStylesheet,
+      webBodyEnd: BUNDLED_DEFAULT_THEME_BUNDLE.webBodyEnd,
+      webBodyStart: BUNDLED_DEFAULT_THEME_BUNDLE.webBodyStart,
+      webFeed: BUNDLED_DEFAULT_THEME_BUNDLE.webFeed,
+      webHeader: BUNDLED_DEFAULT_THEME_BUNDLE.webHeader,
+      webItem: BUNDLED_DEFAULT_THEME_BUNDLE.webItem,
       ...legacy,
       assets: [],
     },
-    manifest: {
-      ...CLASSIC_THEME_MANIFEST,
+    manifest: themeManifestV1Schema.parse({
+      ...BUNDLED_DEFAULT_THEME_MANIFEST,
+      assets: [],
       author: "Site owner",
       description: `Automatically migrated from the previous custom theme “${String(themeName)}”.`,
+      files: {
+        rssStylesheet: BUNDLED_DEFAULT_THEME_MANIFEST.files.rssStylesheet,
+        webBodyEnd: BUNDLED_DEFAULT_THEME_MANIFEST.files.webBodyEnd,
+        webBodyStart: BUNDLED_DEFAULT_THEME_MANIFEST.files.webBodyStart,
+        webFeed: BUNDLED_DEFAULT_THEME_MANIFEST.files.webFeed,
+        webHeader: BUNDLED_DEFAULT_THEME_MANIFEST.files.webHeader,
+        webItem: BUNDLED_DEFAULT_THEME_MANIFEST.files.webItem,
+      },
+      formatVersion: 1,
       license: "Unspecified",
       name: "Imported site theme",
       packageId: MIGRATED_LEGACY_THEME_PACKAGE_ID,
       version: MIGRATED_LEGACY_THEME_VERSION,
-    },
+    }),
   };
 }

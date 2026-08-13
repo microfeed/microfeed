@@ -3,10 +3,12 @@ import type {APIContext, APIRoute} from "astro";
 import {beforeEach, describe, expect, it} from "vitest";
 
 import FeedDb from "@/server/feed/FeedDb";
+import {updateApiAccessSettings} from "@/server/api/api-keys";
 import {
   createPage,
   deletePage,
   getPageById,
+  listPages,
   navigationPages,
   PageConflictError,
   PageRequestError,
@@ -26,7 +28,9 @@ import {
   updateSiteFile,
 } from "@/server/site-files/service";
 import {publicSiteFileResponse} from "@/server/site-files/public";
+import {renderSiteFileForRequest} from "@/server/site-files/templates";
 import ThemeStore from "@/server/themes/ThemeStore";
+import {GET as searchJson} from "@/pages/search.json";
 import {
   createApiPage,
   createApiSiteFile,
@@ -45,6 +49,8 @@ import {
   validateApiSiteFile,
 } from "@/server/api/handlers";
 import {DEFAULT_NOT_FOUND_PAGE_ID} from "@/shared/Pages";
+import {STATUSES} from "@/shared/Constants";
+import {SITE_FILE_TEMPLATE_COLLECTION_LIMIT} from "@/shared/SiteFiles";
 import type {
   ThemeBundleV1,
   ThemeManifestV1,
@@ -107,6 +113,33 @@ async function activateV2(): Promise<void> {
   await store.activate(installed.id);
 }
 
+async function activateV1(): Promise<void> {
+  const store = new ThemeStore(env.FEED_DB);
+  const source = v2Theme();
+  const {webPage: _webPage, webSearch: _webSearch, ...bundle} = source.bundle;
+  const files = {
+    rssStylesheet: source.manifest.files.rssStylesheet,
+    webBodyEnd: source.manifest.files.webBodyEnd,
+    webBodyStart: source.manifest.files.webBodyStart,
+    webFeed: source.manifest.files.webFeed,
+    webHeader: source.manifest.files.webHeader,
+    webItem: source.manifest.files.webItem,
+  };
+  const installed = await store.installVersion({
+    bundle,
+    id: "tests-pages-v1",
+    manifest: {
+      ...source.manifest,
+      files,
+      formatVersion: 1,
+      name: "Test v1",
+      packageId: "tests.pages-v1",
+    },
+    source: {kind: "admin"},
+  });
+  await store.activate(installed.id);
+}
+
 async function apiContext(
   handler: APIRoute,
   database: FeedDb,
@@ -158,7 +191,10 @@ beforeEach(async () => {
       "UPDATE theme_state SET active_theme_id = NULL, previous_theme_id = NULL",
     ),
     env.FEED_DB.prepare(
-      "DELETE FROM themes WHERE id = 'tests-pages-v2'",
+      "DELETE FROM themes WHERE id IN ('tests-pages-v1', 'tests-pages-v2')",
+    ),
+    env.FEED_DB.prepare(
+      "DELETE FROM settings WHERE category = 'apiSettings'",
     ),
   ]);
 });
@@ -249,6 +285,7 @@ describe("public Pages", () => {
   });
 
   it("keeps v1 installations compatible and requires v2 only for publication", async () => {
+    await activateV1();
     const request = new Request(`${ORIGIN}/about/`);
     const db = await database("/about/");
     await expect(createPage(db, request, {
@@ -315,6 +352,84 @@ describe("public Pages", () => {
     expect(await resolvePagePath(env.FEED_DB, request, "about-us")).toBeNull();
   });
 
+  it("serves dates and highlighted excerpts to the public search interface", async () => {
+    await activateV2();
+    const request = new Request(`${ORIGIN}/search-result-page/`);
+    const db = await database("/search-result-page/");
+    const page = await createPage(db, request, {
+      content_html: "<p>An introduction with a searchable needle inside.</p>",
+      navigation_label: "Search result",
+      slug: "search-result-page",
+      status: "published",
+      title: "Public search result",
+    });
+
+    const response = await apiContext(
+      searchJson,
+      db,
+      new Request(`${ORIGIN}/search.json?q=needle`),
+    );
+    expect(response.status).toBe(200);
+    const data = await response.json() as {
+      items: Array<{
+        date_published?: string;
+        highlights?: {content_text?: Array<{matched: boolean}>};
+        id: string;
+      }>;
+    };
+    const result = data.items.find(({id}) => id === page.id);
+    expect(result?.date_published).toEqual(expect.any(String));
+    expect(result?.highlights?.content_text?.some(({matched}) => matched))
+      .toBe(true);
+  });
+
+  it("keeps Unlisted Pages public only at their direct URL", async () => {
+    await activateV2();
+    const request = new Request(`${ORIGIN}/private-link/`);
+    const db = await database("/private-link/");
+    const unlisted = await createPage(db, request, {
+      content_html: "<p>Shared by direct link</p>",
+      show_in_navigation: true,
+      slug: "private-link",
+      status: "unlisted",
+      title: "Private link",
+    });
+
+    expect(unlisted).toMatchObject({
+      show_in_navigation: false,
+      status: "unlisted",
+    });
+    expect(await resolvePagePath(env.FEED_DB, request, "private-link"))
+      .toMatchObject({page: {id: unlisted.id}, redirect: false});
+    expect(await navigationPages(env.FEED_DB, request)).toEqual([]);
+    expect((await searchContent(env.FEED_DB, request, {
+      fields: ["title", "content"],
+      limit: 10,
+      query: "shared direct link",
+      statuses: ["published"],
+      types: ["page"],
+    })).items).toEqual([]);
+
+    const published = await updatePage(db, request, unlisted.id, {
+      status: "published",
+    });
+    expect(published).toMatchObject({show_in_navigation: false});
+    const shown = await updatePage(db, request, unlisted.id, {
+      navigation_label: "Private link",
+      show_in_navigation: true,
+    });
+    expect(shown).toMatchObject({show_in_navigation: true});
+    const hiddenAgain = await updatePage(db, request, unlisted.id, {
+      show_in_navigation: true,
+      status: "unlisted",
+    });
+    expect(hiddenAgain).toMatchObject({
+      show_in_navigation: false,
+      status: "unlisted",
+    });
+    expect(await navigationPages(env.FEED_DB, request)).toEqual([]);
+  });
+
   it("orders website navigation in one validated batch", async () => {
     await activateV2();
     const request = new Request(`${ORIGIN}/pages/`);
@@ -355,6 +470,237 @@ describe("public Pages", () => {
 });
 
 describe("editable Site Files", () => {
+  it("identifies microfeed and advertises only an available API guide", async () => {
+    const request = new Request(`${ORIGIN}/llms.txt`);
+    const render = async () => (await publicSiteFileResponse(
+      env,
+      request,
+      "llms.txt",
+    )).text();
+
+    const disabledContent = await render();
+    expect(disabledContent).toContain(
+      "[microfeed](https://github.com/microfeed/microfeed), an agentic CMS on Cloudflare",
+    );
+    expect(disabledContent).toContain("<https://docs.microfeed.org/>");
+    expect(disabledContent).not.toContain(`${ORIGIN}/api/llms-full.txt`);
+
+    await updateApiAccessSettings(env.FEED_DB, {
+      enabled: true,
+      publicDocsEnabled: false,
+    });
+    expect(await render()).not.toContain(`${ORIGIN}/api/llms-full.txt`);
+
+    await updateApiAccessSettings(env.FEED_DB, {
+      enabled: true,
+      publicDocsEnabled: true,
+    });
+    expect(await render()).toContain(
+      `<${ORIGIN}/api/llms-full.txt>`,
+    );
+  });
+
+  it("limits every template to 100 Published items and ordinary Pages", async () => {
+    const request = new Request(`${ORIGIN}/limits.txt`);
+    const timestamps = Array.from(
+      {length: SITE_FILE_TEMPLATE_COLLECTION_LIMIT + 1},
+      (_, index) => new Date(Date.UTC(2099, 0, 1, 0, index)).toISOString(),
+    );
+    await env.FEED_DB.batch([
+      env.FEED_DB.prepare(
+        "DELETE FROM items WHERE id LIKE 'site-limit-item-%'",
+      ),
+      env.FEED_DB.prepare(
+        "DELETE FROM pages WHERE id LIKE 'site-limit-page-%'",
+      ),
+      env.FEED_DB.prepare(
+        "UPDATE pages SET status = ?, updated_at = ? WHERE id = ?",
+      ).bind(
+        STATUSES.PUBLISHED,
+        "2100-01-01T00:00:00.000Z",
+        DEFAULT_NOT_FOUND_PAGE_ID,
+      ),
+    ]);
+    await env.FEED_DB.batch(timestamps.map((timestamp, index) =>
+      env.FEED_DB.prepare(`
+        INSERT INTO items (
+          id, status, data, pub_date, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        `site-limit-item-${index}`,
+        STATUSES.PUBLISHED,
+        JSON.stringify({title: `Limit item ${index}`}),
+        timestamp,
+        timestamp,
+        timestamp,
+      )
+    ));
+    await env.FEED_DB.batch(timestamps.map((timestamp, index) =>
+      env.FEED_DB.prepare(`
+        INSERT INTO pages (
+          id, slug, title, status, navigation_label,
+          published_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        `site-limit-page-${index}`,
+        `limit-page-${index}`,
+        `Limit Page ${index}`,
+        STATUSES.PUBLISHED,
+        `Limit Page ${index}`,
+        timestamp,
+        timestamp,
+        timestamp,
+      )
+    ));
+    await env.FEED_DB.batch([
+      env.FEED_DB.prepare(`
+        INSERT INTO items (
+          id, status, data, pub_date, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        "site-limit-item-unpublished",
+        STATUSES.UNPUBLISHED,
+        JSON.stringify({title: "Unpublished limit item"}),
+        "2200-01-01T00:00:00.000Z",
+        "2200-01-01T00:00:00.000Z",
+        "2200-01-01T00:00:00.000Z",
+      ),
+      env.FEED_DB.prepare(`
+        INSERT INTO pages (
+          id, slug, title, status, navigation_label,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        "site-limit-page-unpublished",
+        "limit-page-unpublished",
+        "Unpublished limit Page",
+        STATUSES.UNPUBLISHED,
+        "Unpublished limit Page",
+        "2200-01-01T00:00:00.000Z",
+        "2200-01-01T00:00:00.000Z",
+      ),
+    ]);
+
+    const db = await database("/limits.txt");
+    try {
+      const template =
+        "{{#items}}{{id}}:{{_loop.index}}:{{_loop.first}}:{{_loop.last}}\n{{/items}}" +
+        "{{#pages}}{{slug}}:{{_loop.index}}:{{_loop.first}}:{{_loop.last}}\n{{/pages}}";
+      const custom = await renderSiteFileForRequest(db, request, {
+        contentType: "text/plain",
+        filename: "limits.txt",
+        template,
+      });
+      const sitemap = await renderSiteFileForRequest(db, request, {
+        contentType: "text/plain",
+        filename: "sitemap.xml",
+        generator: "sitemap",
+        template,
+      });
+      const items = custom.context.items as Array<{
+        _loop: {first: boolean; index: number; last: boolean};
+        id: string;
+      }>;
+      const pages = custom.context.pages as Array<{
+        _loop: {first: boolean; index: number; last: boolean};
+        id: string;
+        slug: string;
+      }>;
+
+      expect(items).toHaveLength(SITE_FILE_TEMPLATE_COLLECTION_LIMIT);
+      expect(items[0]).toMatchObject({
+        _loop: {first: true, index: 1, last: false},
+        id: `site-limit-item-${SITE_FILE_TEMPLATE_COLLECTION_LIMIT}`,
+      });
+      expect(items.at(-1)).toMatchObject({
+        _loop: {
+          first: false,
+          index: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+          last: true,
+        },
+        id: "site-limit-item-1",
+      });
+      expect(items.map(({id}) => id)).not.toContain(
+        "site-limit-item-unpublished",
+      );
+      expect(pages).toHaveLength(SITE_FILE_TEMPLATE_COLLECTION_LIMIT);
+      expect(pages[0]).toMatchObject({
+        _loop: {first: true, index: 1, last: false},
+        slug: `limit-page-${SITE_FILE_TEMPLATE_COLLECTION_LIMIT}`,
+      });
+      expect(pages.at(-1)).toMatchObject({
+        _loop: {
+          first: false,
+          index: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+          last: true,
+        },
+        slug: "limit-page-1",
+      });
+      expect(pages.map(({id}) => id)).not.toContain(
+        DEFAULT_NOT_FOUND_PAGE_ID,
+      );
+      expect(pages.map(({id}) => id)).not.toContain(
+        "site-limit-page-unpublished",
+      );
+      expect(sitemap.context.items).toHaveLength(
+        SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+      );
+      expect(sitemap.context.pages).toHaveLength(
+        SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+      );
+
+      const listedPages = await listPages(db, request, {
+        excludeNotFoundPage: true,
+        limit: SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+        statuses: ["published"],
+      });
+      expect(listedPages.items).toHaveLength(
+        SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
+      );
+
+      const generatedSitemap = await publicSiteFileResponse(
+        env,
+        new Request(`${ORIGIN}/sitemap.xml`),
+        "sitemap.xml",
+      );
+      const generatedContent = await generatedSitemap.text();
+      expect(generatedContent).toContain("limit-page-100");
+      expect(generatedContent).not.toContain("limit-page-0");
+      expect(generatedContent).toContain("site-limit-item-100");
+      expect(generatedContent).not.toContain("site-limit-item-0");
+
+      await updateSiteFile(db, request, "system-sitemap", {
+        draft_content:
+          "<urls>{{#items}}<item>{{id}}</item>{{/items}}" +
+          "{{#pages}}<page>{{slug}}</page>{{/pages}}</urls>",
+      });
+      await publishSiteFile(db, request, "system-sitemap");
+      const overriddenContent = await (await publicSiteFileResponse(
+        env,
+        new Request(`${ORIGIN}/sitemap.xml`),
+        "sitemap.xml",
+      )).text();
+      expect(overriddenContent).toContain("site-limit-item-100");
+      expect(overriddenContent).not.toContain("site-limit-item-0");
+      expect(overriddenContent).toContain("limit-page-100");
+      expect(overriddenContent).not.toContain("limit-page-0");
+    } finally {
+      await env.FEED_DB.batch([
+        env.FEED_DB.prepare(
+          "DELETE FROM items WHERE id LIKE 'site-limit-item-%'",
+        ),
+        env.FEED_DB.prepare(
+          "DELETE FROM pages WHERE id LIKE 'site-limit-page-%'",
+        ),
+        env.FEED_DB.prepare(
+          "UPDATE site_files SET mode = 'generated', draft_content = '', " +
+            "published_content = NULL, published_rendered_content = NULL " +
+            "WHERE id = 'system-sitemap'",
+        ),
+      ]);
+    }
+  });
+
   it("serves generated defaults, published overrides, reset, and custom files", async () => {
     const request = new Request(`${ORIGIN}/robots.txt`);
     const generated = await publicSiteFileResponse(env, request, "robots.txt");
@@ -473,6 +819,15 @@ describe("Pages and Site Files API handlers", () => {
       }),
     } as APIContext);
     expect(validation.status).toBe(200);
+    const unlistedValidation = await validateApiPage({
+      request: jsonRequest("/api/v1/pages/validate/", "POST", {
+        show_in_navigation: true,
+        slug: "api-unlisted",
+        status: "unlisted",
+        title: "API Unlisted",
+      }),
+    } as APIContext);
+    expect(unlistedValidation.status).toBe(200);
 
     const created = await apiContext(
       createApiPage,
@@ -502,6 +857,29 @@ describe("Pages and Site Files API handlers", () => {
     expect((await listed.json() as {items: Array<{id: string}>}).items)
       .toEqual(expect.arrayContaining([expect.objectContaining({id})]));
 
+    const unlistedCreated = await apiContext(
+      createApiPage,
+      db,
+      jsonRequest("/api/v1/pages/", "POST", {
+        show_in_navigation: true,
+        slug: "api-unlisted",
+        status: "unlisted",
+        title: "API Unlisted",
+      }),
+    );
+    expect(unlistedCreated.status).toBe(201);
+    const {id: unlistedId} = await unlistedCreated.json() as {id: string};
+    expect(await (await apiContext(
+      getApiPage,
+      db,
+      new Request(`${ORIGIN}/api/v1/pages/${unlistedId}/`),
+      {pageId: unlistedId},
+    )).json()).toMatchObject({
+      id: unlistedId,
+      show_in_navigation: false,
+      status: "unlisted",
+    });
+
     const updated = await apiContext(
       updateApiPage,
       db,
@@ -524,6 +902,12 @@ describe("Pages and Site Files API handlers", () => {
       ),
       {pageId: DEFAULT_NOT_FOUND_PAGE_ID},
     )).status).toBe(400);
+    expect((await apiContext(
+      deleteApiPage,
+      db,
+      new Request(`${ORIGIN}/api/v1/pages/${unlistedId}/`, {method: "DELETE"}),
+      {pageId: unlistedId},
+    )).status).toBe(200);
   });
 
   it("validates and runs Site File draft, publish, reset, and delete contracts", async () => {

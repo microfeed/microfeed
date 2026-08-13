@@ -1,6 +1,6 @@
 ---
-title: Pages, search, and Site Files
-description: Publish standalone Pages, enable public search, and customize root-level text files.
+title: Pages and Site Files
+description: Publish standalone Pages and customize root-level text files.
 ---
 
 microfeed separates website-only content from feed items. Use **Pages** for
@@ -61,35 +61,16 @@ The 404 uses the ordinary `webPage` slot, so existing format v2 themes work
 without another template file. A theme can check `page.is_not_found_page` when
 it wants distinct styling or structure for the 404 experience.
 
-The original six slots remain unchanged. The bundled Classic theme stays at
-format v1 for exact appearance compatibility; the bundled Default theme is a
-format v2 reference implementation.
-
-## Public search
-
-With a format v2 theme active, visitors can open search from a theme control or
-press Command-K on macOS and Ctrl-K elsewhere. microfeed owns the accessible
-dialog, keyboard behavior, request cancellation, 150 ms typeahead debounce,
-and safe result DOM. The theme owns the dedicated `webSearch` layout and may
-style the stable `data-microfeed-search-*` hooks and `mf-public-search*`
-classes.
-
-The system script is appended at the end of `<body>`, after shared and theme
-body-end markup. Theme authors should add `data-microfeed-search-open` to any
-button that opens the dialog, and use `data-microfeed-search-input` with a
-nearby `data-microfeed-search-results` container on the Search page.
-
-Public typeahead calls `/search.json` without exposing an API credential. It
-returns only Published items and Published Pages, uses safe highlight segments,
-and is never cached. Authenticated integrations use `GET /api/v1/search/`;
-`types=items` remains the default, while `types=items,pages` searches both.
+Older installed six-slot themes remain self-contained in D1 and continue to
+render feed and item pages. The bundled Default theme is the current eight-slot
+reference implementation for Pages and Search.
 
 ## Edit Site Files
 
-Open **Site Files** in Admin. Every file has a private draft, an explicit
-Publish action, an Enabled switch, a validated text content type, and a 256 KiB
-template limit. Site Files use Mustache but never pass through the active
-theme, so they work the same with format v1 and v2 themes.
+Open **Site Files** in Admin. Every file has a private draft, a Draft or
+Published visibility setting, a validated text content type, and a 256 KiB
+template limit. Site Files use Mustache but never pass through the active theme,
+so they work the same with format v1 and v2 themes.
 
 The editor offers **Source** and **Preview** tabs. JSON, XML, RSS, Markdown,
 YAML, CSS, and CSV templates use syntax highlighting; plain text uses a normal
@@ -98,29 +79,32 @@ shows the exact response bytes instead of interpreting HTML or Markdown.
 
 Templates receive JSON Feed fields at the top level, plus `pages`, `items`, and
 `_site`. For example, use `{{title}}`, loop through
-`{{#pages}}...{{/pages}}`, or reference `_site.json_feed_url`. Custom files and
-`llms.txt` receive the 20 newest Published items. The built-in sitemap receives
-the complete Published item catalog. Mustache escapes values by default;
-triple braces opt into unescaped output.
+`{{#pages}}...{{/pages}}`, or reference `_site.json_feed_url`. Every Site File
+receives up to 100 newest Published items and up to 100 most recently
+updated Published Pages. The special 404 Page is excluded before the Page limit
+is applied. Mustache escapes values by default; triple braces opt into unescaped
+output.
 
 microfeed creates three generated defaults:
 
 - `robots.txt` advertises the generated sitemap. Offline or headless sites
   always return a crawler-wide disallow rule.
-- `llms.txt` summarizes the site, Published Pages, and recent Published items.
+- `llms.txt` identifies microfeed and its documentation, summarizes the site,
+  Published Pages, and recent Published items, and links to the instance API
+  guide when API access and public API docs are enabled.
 - `sitemap.xml` contains the home page, Published Pages, Published items, and
   supported image/video metadata.
 
-Editing and publishing a generated file switches it to an override. **Restore
-generated** returns it to the current microfeed default. Generated files cannot
-be deleted, but they can be disabled. Custom supported root files can be
-created and deleted.
+Saving a generated file with Published visibility switches it to an override.
+**Restore default file** returns it to the current microfeed default. Generated
+files cannot be deleted, but they can be saved as Draft. Custom supported root
+files can be created and deleted.
 
-Publish validates both the Mustache source and its rendered format. JSON and
-XML templates must render as valid JSON or XML. microfeed also stores the last
-valid rendered result at publish time. If later channel, Page, or item data
-would make an override invalid, the public route logs the failure and serves
-that snapshot instead.
+Saving with Published visibility validates both the Mustache source and its
+rendered format. JSON and XML templates must render as valid JSON or XML.
+microfeed also stores the last valid rendered result at publish time. If later
+channel, Page, or item data would make an override invalid, the public route
+logs the failure and serves that snapshot instead.
 
 Successful Page, search, and Site File responses keep the standard public cache
 policy: browsers revalidate while the edge may cache for five minutes and use

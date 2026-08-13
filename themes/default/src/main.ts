@@ -2,7 +2,7 @@ import "./theme.css";
 
 const placeholder = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP88eNnPQAJQwNqJHSUZQAAAABJRU5ErkJggg==";
 
-function enableClassicLazyImages(): void {
+function enableLazyImages(): void {
   if (!("IntersectionObserver" in window)) return;
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
@@ -74,7 +74,7 @@ function enableOverflowNavigation(): void {
 }
 
 function enableTheme(): void {
-  enableClassicLazyImages();
+  enableLazyImages();
   enableOverflowNavigation();
 }
 

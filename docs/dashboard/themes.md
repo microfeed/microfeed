@@ -46,21 +46,100 @@ metadata, or the active theme.
 
 ## Work with versioned themes
 
-A format-v1 microfeed theme has six text slots: web feed, web item, web header,
-web body start, web body end, and the complete RSS XSL stylesheet. Format v2
-adds web page and web search slots. Those slots enable public Pages, page
-navigation, typeahead, and the <kbd>Command</kbd>/<kbd>Ctrl</kbd>+<kbd>K</kbd>
-search dialog. An installed version is immutable. The active version lives in
-D1 with the other installed versions; optional declared assets use immutable
-R2 keys.
-
-Existing format-v1 themes remain valid and continue rendering feeds and items
-unchanged. While one is active, Page publishing and public search are disabled,
-and Admin explains that a format-v2 theme must be activated first.
+A microfeed theme controls eight templates: feed, item, Page, Search, web
+header, web body start, web body end, and the complete RSS XSL stylesheet. An
+installed version is immutable. The active version lives in D1 with the other
+installed versions; optional declared assets use immutable R2 keys.
 
 Themes are full-trust, owner-installed code. An activated theme can run the same
 HTML, CSS, and JavaScript as the shared website code feature. Install only
 packages you trust.
+
+### Render navigation items
+
+The `navigation_pages` array contains Published Pages whose **Show in
+navigation** setting is enabled, in the order chosen by dragging them on
+**Pages → Website navigation**. Draft, Unlisted, and the special 404 Page are
+not included. Navigation is website-only: it does not add those Pages to RSS or
+the public JSON Feed.
+
+Render the same navigation in the feed, item, Page, and Search templates so
+visitors do not lose it as they move around the site:
+
+```html
+<nav aria-label="Site navigation">
+  {{#navigation_pages}}
+    <a href="{{url}}">{{navigation_label}}</a>
+  {{/navigation_pages}}
+</nav>
+```
+
+The theme owns responsive behavior and overflow. For example, the bundled
+default keeps the first two links visible and moves additional Pages into its
+**More** menu.
+
+### Connect the search popup and Search page
+
+microfeed injects one accessible search dialog into every public HTML page and
+owns its keyboard handling, request cancellation, 150 ms typeahead debounce,
+and safe result rendering. The system markup and script are appended at the end
+of `<body>`, after shared and theme body-end markup. Do not copy the dialog or
+its JavaScript into **Web body end**. Add `data-microfeed-search-open` to any
+theme control that should open it:
+
+```html
+<button
+  type="button"
+  aria-haspopup="dialog"
+  aria-controls="microfeed-search-dialog"
+  data-microfeed-search-open
+>
+  Search
+</button>
+```
+
+Visitors can also open the dialog with <kbd>Command</kbd>+<kbd>K</kbd> on macOS
+or <kbd>Ctrl</kbd>+<kbd>K</kbd> elsewhere. The dialog performs typeahead search;
+submitting it opens `/search/?q=...` for the complete results page.
+
+Public typeahead calls `/search.json` without exposing an API credential. It
+returns only Published items and Published Pages, uses safe highlight segments,
+and is never cached. Authenticated integrations use `GET /api/v1/search/`;
+`types=items` remains the default, while `types=items,pages` searches both.
+
+The **Search** template owns that page's surrounding layout. Use
+`search.query` for its current value and provide the stable input and results
+hooks so microfeed can render results. The optional
+`data-microfeed-search-details` hook adds each result's short publication date
+and two-line excerpt, including highlighted matched text:
+
+```html
+<form action="/search/" method="get" role="search">
+  <label for="site-search">Search this site</label>
+  <input
+    id="site-search"
+    name="q"
+    type="search"
+    value="{{search.query}}"
+    data-microfeed-search-input
+  >
+  <button type="submit">Search</button>
+  <div
+    aria-live="polite"
+    data-microfeed-search-results
+    data-microfeed-search-details
+  ></div>
+</form>
+```
+
+The injected popup reads the theme's `--mf-accent`, `--mf-background`,
+`--mf-surface`, `--mf-text`, `--mf-muted`, and `--mf-border` color tokens. Use
+the same tokens on the Search page to keep both views aligned. A theme can add
+more specific CSS through the stable
+`data-microfeed-search-*` hooks and `mf-public-search*` classes. Search preview
+uses embedded representative results and clearly warns that live search is
+unavailable. See [Pages and Site Files](/dashboard/pages-search-and-site-files/)
+for Page visibility and the content included in public search.
 
 ## Create a new version in Admin
 
@@ -70,10 +149,9 @@ status, installation time, or name; and move through 20 results per page.
 Choose **Create new version** on any row to create a separate editable draft
 stored by your site:
 
-1. Edit any of the theme's six or eight slots and save repeatedly.
+1. Edit any of the theme's eight slots and save repeatedly.
 2. Open the full-screen isolated preview for feed, item, page, search, RSS,
-   mobile, and desktop views with current public data. Page and search previews
-   are present for format-v2 themes.
+   mobile, and desktop views with current public data.
 3. Confirm or change the proposed semantic version, such as `1.2.1`. This
    version number identifies the new immutable design.
 4. Choose **Install** to create an immutable, inactive local version.
@@ -113,16 +191,14 @@ missing parent directories and the `my-theme` directory, but refuses to write
 into a non-empty destination. After it succeeds, the generated directory is an
 independent Git repository on `main`.
 
-The command chooses the valid active D1 theme, or the internal classic fallback when
-there is no usable active version. It
-copies the theme's six or eight slots and declared assets and creates a separate
-`local.my-theme@0.1.0` identity. Use
+The command chooses the site's effective theme, copies its available templates
+and declared assets, and creates a separate `local.my-theme@0.1.0` identity. Use
 `--package-id`, `--name`, `--version`, and `--author` to set publish-ready
 metadata, or `--no-git` if another tool owns Git initialization.
 
 Use `theme init` when you want to fork the site's effective appearance under a
-new identity, including an older imported design or the internal fallback. Use
-`theme export` when an exact installed immutable version already exists and its
+new identity. Use `theme export` when an exact installed immutable version
+already exists and its
 package ID and version must be preserved as the development baseline.
 
 This is a rendered-package export: it does not recreate private build tools or
@@ -366,8 +442,8 @@ TypeScript. Its deterministic build places minified CSS in
 `web-header.mustache` and JavaScript in `web-body-end.mustache`; `assets` stays
 empty, so the installed package works when R2 is disabled.
 
-The default intentionally follows the familiar Classic layout and typography.
-Its page shell uses normal document flow: the footer reaches the bottom of the
+The default uses a clean, responsive layout and typography. Its page shell uses
+normal document flow: the footer reaches the bottom of the
 viewport when a page is short or empty, while longer content pushes the footer
 down instead of being covered by a fixed element.
 
@@ -418,6 +494,8 @@ microfeed-theme.json
 THEME.md
 web-feed.mustache
 web-item.mustache
+web-page.mustache
+web-search.mustache
 web-header.mustache
 web-body-start.mustache
 web-body-end.mustache
@@ -438,8 +516,8 @@ public JSON Feed plus:
 - `_theme.asset_base_url`
 
 The package root also exports the canonical Zod schemas, renderer, validator,
-and inferred `ThemeManifestV1`, `ThemeContext`, `ThemeBundleV1`, `ThemeDraft`,
-and `StoredThemeVersion` TypeScript types.
+and inferred manifest, context, bundle, draft, and stored-version TypeScript
+types.
 
 On item pages, use `items.0`. The `item` alias remains available only for
 compatibility with existing themes. Mustache remains logicless: variables,
@@ -478,7 +556,7 @@ microfeed ranges, and invalid semantic versions are rejected.
 
 ## Install and manage versions
 
-V1 GitHub installation runs locally so a Worker request does not spend its
+GitHub theme installation runs locally so a Worker request does not spend its
 tight CPU budget downloading and validating a repository:
 
 ```console
@@ -517,12 +595,9 @@ yarn manage theme install default --instance <instance-name>
 
 The manual install is inactive. Fresh local, production, and preview instances
 install and activate it during initialization. Upgrades preserve the site's
-current appearance: an existing active D1 version is kept, an older selected
-custom design is imported as an ordinary version, and a site with neither
-receives the frozen `microfeed.classic@1.0.0` design. When that effective
-appearance is format v1, `yarn manage deploy` idempotently installs the current
-bundled format-v2 default as an inactive version. It never activates the new
-version or updates another installed theme.
+current active selection. Installing or updating microfeed never silently
+activates a different theme; activate a newly installed version only after you
+preview and approve it.
 
 ## Storage and backups
 
@@ -535,8 +610,8 @@ Portable snapshots include all three theme tables. A snapshot already archives
 the complete R2 bucket, so installed versions, unpublished drafts, inherited
 assets, migration state, and active/previous state restore together.
 
-`themes/default` and `themes/classic` are bundled source packages in the
-microfeed checkout. Once installed, their normalized manifests and theme
-bundles live in D1 exactly like community themes. Listing pages and
+`themes/default` is the only bundled source package in the microfeed checkout.
+Once installed, its normalized manifest and theme bundle live in D1 exactly
+like community themes. Listing pages and
 `theme list` read metadata-only projections; full bundle rows are loaded only
 for preview, editing, export, validation, update, activation, or cleanup.
