@@ -270,6 +270,10 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
         "Filter by a comma-separated list of published, unlisted, or unpublished. Defaults to all three.",
       ),
       option(
+        "--types <types>",
+        "Search items, pages, or items,pages. Defaults to items for compatibility.",
+      ),
+      option(
         "--date-published-ms-gt <milliseconds>",
         "Return items published strictly after this Unix timestamp in milliseconds.",
       ),

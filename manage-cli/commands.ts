@@ -1599,6 +1599,9 @@ async function deployConfiguredProject(
     await installDefaultThemeForInitialization(config, context.runner, false);
     markStep(config, "default-theme-installed");
     await writeConfig(config);
+  } else {
+    const {installDefaultThemeForV1Appearance} = await import("./theme");
+    await installDefaultThemeForV1Appearance(config, context.runner, false);
   }
   if (initializeAdmin) {
     await prepareInitialAdminSetup(context, config);
@@ -2763,6 +2766,8 @@ export async function deployCommand(
       local: true,
       persistTo: localPersistencePath(config),
     });
+    const {installDefaultThemeForV1Appearance} = await import("./theme");
+    await installDefaultThemeForV1Appearance(config, context.runner, true);
     markStep(config, "migrations-applied");
     await writeConfig(config);
     await runChecks(context.runner, config);

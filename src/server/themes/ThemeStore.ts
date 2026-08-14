@@ -35,9 +35,9 @@ import {
   themeStateFromRow,
 } from "@/shared/themes/ThemeRows";
 import {
-  CLASSIC_THEME_BUNDLE,
-  CLASSIC_THEME_ID,
-  CLASSIC_THEME_MANIFEST,
+  BUNDLED_DEFAULT_THEME_BUNDLE,
+  BUNDLED_DEFAULT_THEME_ID,
+  BUNDLED_DEFAULT_THEME_MANIFEST,
   legacyThemeMigrationSource,
   MIGRATED_LEGACY_THEME_ID,
 } from "./BundledThemes";
@@ -281,7 +281,7 @@ export default class ThemeStore {
       ).bind(message).run();
       console.error(JSON.stringify({
         error: message,
-        message: "Existing theme migration failed; using the classic fallback or active D1 theme",
+        message: "Existing theme migration failed; using the bundled default or active D1 theme",
       }));
       return state.active_theme_id
         ? await this.getVersion(state.active_theme_id)
@@ -322,8 +322,8 @@ export default class ThemeStore {
   }
 
   /**
-   * Preserves the pre-versioned appearance of upgraded sites. Fresh databases
-   * already have the modern bundled default active before their first request.
+   * Gives an upgraded site with no selected version the same bundled default
+   * used for pristine initialization. Existing active D1 themes are unchanged.
    */
   async ensureAppearancePreserved(): Promise<StoredThemeVersion | null> {
     const state = await this.database.prepare(
@@ -348,8 +348,8 @@ export default class ThemeStore {
     }
 
     const validated = validateThemePackage(
-      CLASSIC_THEME_MANIFEST,
-      CLASSIC_THEME_BUNDLE,
+      BUNDLED_DEFAULT_THEME_MANIFEST,
+      BUNDLED_DEFAULT_THEME_BUNDLE,
       MICROFEED_VERSION,
     );
     const checksum = await sha256Hex(canonicalThemePackage(
@@ -363,10 +363,10 @@ export default class ThemeStore {
     const existing = existingRow ? storedThemeFromRow(existingRow) : null;
     if (existing && (existing.deletedAt || existing.checksumSha256 !== checksum)) {
       throw new Error(
-        `${validated.manifest.packageId}@${validated.manifest.version} is reserved by content that cannot preserve the classic appearance.`,
+        `${validated.manifest.packageId}@${validated.manifest.version} is reserved by different bundled-default content.`,
       );
     }
-    const classicThemeId = existing?.id ?? CLASSIC_THEME_ID;
+    const defaultThemeId = existing?.id ?? BUNDLED_DEFAULT_THEME_ID;
     await this.database.batch([
       this.database.prepare(
         `INSERT OR IGNORE INTO themes (
@@ -374,7 +374,7 @@ export default class ThemeStore {
           source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
         ) VALUES (?, ?, ?, ?, ?, ?, 'bundled', ?, NULL, NULL)`,
       ).bind(
-        classicThemeId,
+        defaultThemeId,
         validated.manifest.packageId,
         validated.manifest.version,
         validated.manifest.name,
@@ -383,18 +383,17 @@ export default class ThemeStore {
         checksum,
       ),
       this.database.prepare(
-        `UPDATE theme_state SET classic_theme_id = ?,
-         active_theme_id = COALESCE(active_theme_id, ?),
+        `UPDATE theme_state SET active_theme_id = COALESCE(active_theme_id, ?),
          appearance_preserved_at = CURRENT_TIMESTAMP,
          appearance_preservation_error = NULL,
          updated_at = CURRENT_TIMESTAMP
          WHERE id = 'current' AND appearance_preserved_at IS NULL`,
-      ).bind(classicThemeId, classicThemeId),
+      ).bind(defaultThemeId),
     ]);
     const preserved = await this.getState();
-    if (preserved.activeThemeId === classicThemeId) {
+    if (preserved.activeThemeId === defaultThemeId) {
       await this.purgeActiveTheme();
-      return this.getVersion(classicThemeId);
+      return this.getVersion(defaultThemeId);
     }
     return preserved.activeThemeId
       ? await this.getVersion(preserved.activeThemeId)

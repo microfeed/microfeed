@@ -1,0 +1,28 @@
+---
+import {env} from "cloudflare:workers";
+
+import PagesApp from "@/components/admin/pages/PagesApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {activeThemeSupportsPages, listPages} from "@/server/pages/service";
+
+const {feedContent, feedDb, onboardingResult} = Astro.locals;
+if (!feedContent || !feedDb || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const pages = await listPages(feedDb, Astro.request, {limit: 100});
+const themeSupportsPages = await activeThemeSupportsPages(env.FEED_DB);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.PAGES}
+  documentTitle="Pages | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Pages"
+>
+  <PagesApp client:load pages={pages.items} {themeSupportsPages}>
+    <AdminPageFallback slot="fallback" kind="list" />
+  </PagesApp>
+</AdminShell>

@@ -1,6 +1,8 @@
 import * as z from "zod";
 
-export const THEME_FORMAT_VERSION = 1 as const;
+export const THEME_FORMAT_VERSION_V1 = 1 as const;
+export const THEME_FORMAT_VERSION_V2 = 2 as const;
+export const THEME_FORMAT_VERSION = THEME_FORMAT_VERSION_V2;
 export const THEME_MAX_TEMPLATE_BYTES = 128 * 1024;
 export const THEME_MAX_TEXT_BYTES = 512 * 1024;
 export const THEME_MAX_ASSET_BYTES = 5 * 1024 * 1024;
@@ -27,13 +29,19 @@ export interface ThemeListOptions {
   sort: ThemeListSort;
 }
 
-export const THEME_FILE_KEYS = [
+export const THEME_FILE_KEYS_V1 = [
   "webFeed",
   "webItem",
   "webHeader",
   "webBodyStart",
   "webBodyEnd",
   "rssStylesheet",
+] as const;
+
+export const THEME_FILE_KEYS = [
+  ...THEME_FILE_KEYS_V1,
+  "webPage",
+  "webSearch",
 ] as const;
 
 export type ThemeFileKey = typeof THEME_FILE_KEYS[number];
@@ -49,20 +57,11 @@ const themePathSchema = z.string()
     "Path traversal is not allowed.",
   );
 
-export const themeManifestV1Schema = z.object({
+const themeManifestBaseSchema = z.object({
   $schema: z.string().trim().min(1).max(240).optional(),
   assets: z.array(themePathSchema).max(THEME_MAX_ASSETS).default([]),
   author: z.string().trim().min(1).max(160),
   description: z.string().trim().max(500).optional(),
-  files: z.object({
-    rssStylesheet: themePathSchema,
-    webBodyEnd: themePathSchema,
-    webBodyStart: themePathSchema,
-    webFeed: themePathSchema,
-    webHeader: themePathSchema,
-    webItem: themePathSchema,
-  }),
-  formatVersion: z.literal(THEME_FORMAT_VERSION),
   homepage: z.url().optional(),
   license: z.string().trim().min(1).max(100),
   microfeed: z.string().trim().min(1).max(100),
@@ -78,6 +77,35 @@ export const themeManifestV1Schema = z.object({
   repository: z.url().optional(),
   version: z.string().trim().min(1).max(100),
 });
+
+const themeManifestFilesV1Schema = z.object({
+    rssStylesheet: themePathSchema,
+    webBodyEnd: themePathSchema,
+    webBodyStart: themePathSchema,
+    webFeed: themePathSchema,
+    webHeader: themePathSchema,
+    webItem: themePathSchema,
+});
+
+export const themeManifestFormatV1Schema = themeManifestBaseSchema.extend({
+  files: themeManifestFilesV1Schema,
+  formatVersion: z.literal(THEME_FORMAT_VERSION_V1),
+});
+
+export const themeManifestV2Schema = themeManifestBaseSchema.extend({
+  files: themeManifestFilesV1Schema.extend({
+    webPage: themePathSchema,
+    webSearch: themePathSchema,
+  }),
+  formatVersion: z.literal(THEME_FORMAT_VERSION_V2),
+});
+
+// Compatibility export retained for theme-kit and management callers. It now
+// accepts both the original six-slot format and the eight-slot v2 format.
+export const themeManifestV1Schema = z.discriminatedUnion("formatVersion", [
+  themeManifestFormatV1Schema,
+  themeManifestV2Schema,
+]);
 
 export const themeAssetSchema = z.object({
   contentType: z.string().min(1),
@@ -95,6 +123,8 @@ export const themeBundleV1Schema = z.object({
   webFeed: z.string(),
   webHeader: z.string(),
   webItem: z.string(),
+  webPage: z.string().optional(),
+  webSearch: z.string().optional(),
 });
 
 export const themeRuntimeMetadataSchema = z.object({
@@ -189,6 +219,53 @@ const themeFeedExtraSchema = z.object({
   "itunes:type": z.string().optional(),
 }).loose();
 
+const themeNavigationPageSchema = z.object({
+  id: z.string(),
+  navigation_label: z.string(),
+  navigation_order: z.number().int(),
+  slug: z.string(),
+  title: z.string(),
+  url: z.string(),
+}).loose();
+
+const themePageSchema = z.object({
+  content_html: z.string(),
+  content_text: z.string(),
+  date_created: z.string(),
+  date_modified: z.string(),
+  date_published: z.string().optional(),
+  id: z.string(),
+  is_not_found_page: z.boolean(),
+  meta_description: z.string().optional(),
+  navigation_label: z.string(),
+  navigation_order: z.number().int(),
+  show_in_navigation: z.boolean(),
+  slug: z.string(),
+  status: z.enum(["published", "unlisted", "unpublished"]),
+  title: z.string(),
+  url: z.string(),
+}).loose().meta({
+  description: "The current standalone Page. This object is available only while rendering the Page template, including the editable special 404 Page when it handles a missing URL.",
+});
+
+const themeSearchHighlightSegmentSchema = z.object({
+  matched: z.boolean(),
+  text: z.string(),
+});
+
+const themeSearchResultSchema = z.object({
+  content_text: z.string().optional(),
+  date_published: z.string().optional(),
+  highlights: z.object({
+    content_text: z.array(themeSearchHighlightSegmentSchema).optional(),
+    title: z.array(themeSearchHighlightSegmentSchema).optional(),
+  }).optional(),
+  id: z.string().optional(),
+  title: z.string(),
+  type: z.enum(["item", "page"]),
+  url: z.string(),
+}).loose();
+
 export const themeContextSchema = z.object({
   _microfeed: themeFeedExtraSchema.optional(),
   _theme: themeRuntimeMetadataSchema,
@@ -202,6 +279,20 @@ export const themeContextSchema = z.object({
   icon: z.string().optional(),
   item: themeItemSchema.optional(),
   items: z.array(themeItemSchema),
+  navigation_pages: z.array(themeNavigationPageSchema).optional().meta({
+    description: "Ordered website navigation entries available to every public HTML theme slot. This array contains only Published Pages whose Show in navigation setting is enabled, in the order chosen in Admin. Draft and Unlisted Pages and the special 404 Page never appear. Navigation is website-only and does not add Pages to RSS or JSON Feed.",
+  }),
+  page: themePageSchema.optional(),
+  search: z.object({
+    query: z.string().meta({
+      description: "The q query parameter used to render the dedicated Search page.",
+    }),
+    results: z.array(themeSearchResultSchema).meta({
+      description: "Representative results in previews. Live public Search results are safely rendered by microfeed into the documented data-microfeed-search-* hooks.",
+    }),
+  }).loose().optional().meta({
+    description: "Dedicated Search-page state. The theme owns page structure and styling; microfeed owns the public endpoint, popup dialog, keyboard behavior, typeahead, cancellation, highlighting, and safe result hydration.",
+  }),
   language: z.string().optional(),
   next_url: z.string().optional(),
   title: z.string().optional(),

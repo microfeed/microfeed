@@ -24,11 +24,11 @@ import {
 } from "@/shared/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "@/components/admin/shared/AdminSideQuickLinks";
 import AdminRichEditor from "@/components/admin/shared/AdminRichEditor";
-import ExplainText from "@/components/admin/shared/ExplainText";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import {
   ITEM_CONTROLS,
   CONTROLS_TEXTS_DICT
-} from "./FormExplainTexts";
+} from "./AdminHelpContent";
 import {
   preventCloseWhenChanged,
 } from "@/client/BrowserUtils";
@@ -286,7 +286,7 @@ export default class EditItemApp extends React.Component<Props, any> {
         <div className="grid grid-cols-1 gap-4 xl:col-span-9">
           <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <MediaManager
-              labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.MEDIA_FILE]}/>}
+              labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.MEDIA_FILE]}/>}
               feed={feed}
               mediaStorage={mediaStorage}
               mediaStorageReady={mediaStorageReady}
@@ -304,7 +304,7 @@ export default class EditItemApp extends React.Component<Props, any> {
           <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <div className="flex">
               <div>
-                <ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IMAGE]}/>
+                <AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.IMAGE]}/>
                 <AdminImageUploaderApp
                   mediaType="item"
                   feed={feed}
@@ -342,7 +342,7 @@ export default class EditItemApp extends React.Component<Props, any> {
               </div>
               <div className="ml-8 flex-1">
                 <AdminInput
-                  labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.TITLE]}/>}
+                  labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.TITLE]}/>}
                   value={item.title}
                   onChange={(e: any) => {
                     const nextTitle = e.target.value;
@@ -359,7 +359,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                 />
                 <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <AdminDatetimePicker
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.PUB_DATE]}/>}
                     value={item.pubDateMs}
                     onChange={(e: any) => {
                       this.onUpdateItemMeta({
@@ -369,14 +369,14 @@ export default class EditItemApp extends React.Component<Props, any> {
                     }}
                   />
                   <AdminInput
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.LINK]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.LINK]}/>}
                     value={item.link}
                     onChange={(e: any) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-2 mt-4">
                   <AdminRadioGroup
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.STATUS]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.STATUS]}/>}
                     name="item-status"
                     value={String(status)}
                     options={[
@@ -401,7 +401,7 @@ export default class EditItemApp extends React.Component<Props, any> {
             </div>
             <div className="mt-8 pt-8 border-t">
               <AdminRichEditor
-                labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.DESCRIPTION]}/>}
+                labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.DESCRIPTION]}/>}
                 value={item.description}
                 onChange={(value: any) => this.onUpdateItemMeta({'description': value})}
                 extra={{
@@ -418,7 +418,7 @@ export default class EditItemApp extends React.Component<Props, any> {
               <div className="grid grid-cols-1 gap-8">
                 <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <AdminRadioGroup
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EXPLICIT]}/>}
                     name="lh-explicit"
                     value={item['itunes:explicit'] ? 'yes' : 'no'}
                     options={[{
@@ -431,19 +431,19 @@ export default class EditItemApp extends React.Component<Props, any> {
                     onValueChange={(value) => this.onUpdateItemMeta({'itunes:explicit': value === 'yes'})}
                   />
                   <AdminInput
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.GUID]}/>}
                     value={item.guid || itemId}
                     onChange={(e: any) => this.onUpdateItemMeta({'guid': e.target.value})}
                   />
                   <AdminInput
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_TITLE]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_TITLE]}/>}
                     value={item['itunes:title']}
                     onChange={(e: any) => this.onUpdateItemMeta({'itunes:title': e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <AdminRadioGroup
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE_TYPE]}/>}
                     name="feed-itunes-episodetype"
                     value={item['itunes:episodeType']}
                     options={[{
@@ -461,14 +461,14 @@ export default class EditItemApp extends React.Component<Props, any> {
                   />
                   <AdminInput
                     type="number"
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_SEASON]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_SEASON]}/>}
                     value={item['itunes:season']}
                     extraParams={{min: "1"}}
                     onChange={(e: any) => this.onUpdateItemMeta({'itunes:season': e.target.value})}
                   />
                   <AdminInput
                     type="number"
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_EPISODE]}/>}
                     value={item['itunes:episode']}
                     extraParams={{min: "1"}}
                     onChange={(e: any) => this.onUpdateItemMeta({'itunes:episode': e.target.value})}
@@ -476,7 +476,7 @@ export default class EditItemApp extends React.Component<Props, any> {
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <AdminRadioGroup
-                    labelComponent={<ExplainText bundle={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_BLOCK]}/>}
+                    labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.ITUNES_BLOCK]}/>}
                     name="feed-itunes-block"
                     value={item['itunes:block'] ? 'yes' : 'no'}
                     options={[{

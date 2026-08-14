@@ -3,19 +3,64 @@ import {env} from "cloudflare:workers";
 
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import ThemeDraftEditorApp from "@/components/admin/themes/ThemeDraftEditorApp";
-import {NAV_ITEMS} from "@/shared/Constants";
+import type {ThemeEditorLinks} from "@/components/admin/code-editor/ThemeBundleEditor";
+import {NAV_ITEMS, STATUSES} from "@/shared/Constants";
 import {adminUrl} from "@/shared/AdminPath";
+import {getFetchItemsParams} from "@/server/feed/FeedDb";
+import {activeThemeSupportsPages, listPages} from "@/server/pages/service";
 import ThemeStore from "@/server/themes/ThemeStore";
+import type {PublicFeed} from "@/types";
 import AdminShell from "../../../../../../layouts/AdminShell.astro";
 
-const {feedContent, onboardingResult} = Astro.locals;
-if (!feedContent || !onboardingResult) {
+const {feedContent, feedDb, onboardingResult} = Astro.locals;
+if (!feedContent || !feedDb || !onboardingResult) {
   throw new Error("Admin feed context was not initialized.");
 }
 const draft = await new ThemeStore(env.FEED_DB).getDraft(
   Astro.params.draftId ?? "",
 );
 if (!draft) Astro.response.status = 404;
+
+let themeEditorLinks: ThemeEditorLinks | undefined;
+if (draft) {
+  const [exampleFeedContent, supportsPagesAndSearch] = await Promise.all([
+    feedDb.getContent(getFetchItemsParams(
+      Astro.request,
+      {status: STATUSES.PUBLISHED},
+      1,
+    )),
+    activeThemeSupportsPages(env.FEED_DB),
+  ]);
+  const publicFeed = await feedDb.getPublicJsonData(
+    exampleFeedContent,
+  ) as PublicFeed;
+  const publishedPages = supportsPagesAndSearch
+    ? await listPages(feedDb, Astro.request, {
+        limit: 100,
+        statuses: ["published"],
+      })
+    : undefined;
+  const exampleItemUrl = publicFeed.items[0]?._microfeed?.web_url;
+  const examplePageUrl = publishedPages?.items.find(
+    (page) => !page.is_not_found_page,
+  )?.url ?? (supportsPagesAndSearch
+    ? new URL("/404/", Astro.url).toString()
+    : undefined);
+  themeEditorLinks = {
+    jsonFeedUrl: typeof publicFeed.feed_url === "string"
+      ? publicFeed.feed_url
+      : new URL("/json/", Astro.url).toString(),
+    rssFeedUrl: new URL("/rss/", Astro.url).toString(),
+    webFeedUrl: new URL("/", Astro.url).toString(),
+    ...(typeof exampleItemUrl === "string"
+      ? {webItemUrl: exampleItemUrl}
+      : {}),
+    ...(examplePageUrl ? {webPageUrl: examplePageUrl} : {}),
+    ...(supportsPagesAndSearch
+      ? {webSearchUrl: new URL("/search/", Astro.url).toString()}
+      : {}),
+  };
+}
 ---
 
 <AdminShell
@@ -33,7 +78,7 @@ if (!draft) Astro.response.status = 404;
   }}
 >
   {draft ? (
-    <ThemeDraftEditorApp client:only="react" {draft}>
+    <ThemeDraftEditorApp client:only="react" {draft} themeEditorLinks={themeEditorLinks!}>
       <AdminPageFallback slot="fallback" kind="editor" />
     </ThemeDraftEditorApp>
   ) : (

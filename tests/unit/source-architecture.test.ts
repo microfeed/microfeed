@@ -43,6 +43,18 @@ async function contentsUnder(directory: string): Promise<string> {
 }
 
 describe("source architecture", () => {
+  it("does not let a static asset shadow the editable robots Site File", async () => {
+    await expect(access(path.join(repositoryRoot, "public", "robots.txt")))
+      .rejects.toMatchObject({code: "ENOENT"});
+    await expect(access(path.join(
+      repositoryRoot,
+      "src",
+      "pages",
+      "robots.txt.ts",
+    )))
+      .resolves.toBeUndefined();
+  });
+
   it("generates the canonical OpenAPI contract from shared schemas", () => {
     const openApi = JSON.stringify(OPENAPI_DOCUMENT);
 

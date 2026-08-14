@@ -60,7 +60,7 @@ export async function loadFeed(
     } catch (error) {
       console.error(JSON.stringify({
         error: error instanceof Error ? error.message : String(error),
-        message: "Theme appearance migration could not complete; using the bundled classic fallback",
+        message: "Theme migration could not complete; using the bundled default fallback",
       }));
     }
   }

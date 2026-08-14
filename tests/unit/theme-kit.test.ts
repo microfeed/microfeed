@@ -2,13 +2,17 @@ import {execFile} from "node:child_process";
 import {cp, mkdtemp, readFile, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
+import {fileURLToPath} from "node:url";
 import {promisify} from "node:util";
 import {afterEach, describe, expect, it} from "vitest";
 import {SyntaxValidator} from "fast-xml-validator";
 import * as z from "zod";
 
 import {loadThemePackage} from "../../packages/theme-kit/src/package";
-import {jsonFeedFixtureToRss} from "../../packages/theme-kit/src/cli";
+import {
+  jsonFeedFixtureToRss,
+  standaloneThemePreviewDocument,
+} from "../../packages/theme-kit/src/cli";
 import {renderThemeKitHelp} from "../../packages/theme-kit/src/help";
 import {
   generatedGenericThemeRepositoryReadme,
@@ -118,6 +122,124 @@ describe("@microfeed/theme-kit package loading", () => {
     expect(repositoryReadme).toBe(generatedGenericThemeRepositoryReadme(manifest));
   });
 
+  it("documents which Pages are available to theme navigation", () => {
+    type ObjectSchema = {
+      description?: string;
+      items?: ObjectSchema;
+      properties?: Record<string, ObjectSchema>;
+      required?: string[];
+    };
+    const contextSchema = z.toJSONSchema(themeContextSchema) as ObjectSchema;
+    const description = contextSchema.properties?.navigation_pages?.description;
+
+    expect(description).toContain("only Published Pages");
+    expect(description).toContain("Show in navigation setting is enabled");
+    expect(description).toContain("in the order chosen in Admin");
+    expect(description).toContain("Draft and Unlisted Pages");
+    expect(description).toContain("special 404 Page never appear");
+    expect(description).toContain("website-only");
+    expect(contextSchema.properties?.navigation_pages?.items?.required)
+      .toEqual([
+        "id",
+        "navigation_label",
+        "navigation_order",
+        "slug",
+        "title",
+        "url",
+      ]);
+    expect(contextSchema.properties?.page?.required).toEqual(expect.arrayContaining([
+      "content_html",
+      "date_created",
+      "date_modified",
+      "is_not_found_page",
+      "status",
+    ]));
+    expect(contextSchema.properties?.page?.properties)
+      .toHaveProperty("meta_description");
+    expect(contextSchema.properties?.search?.description)
+      .toContain("microfeed owns the public endpoint");
+    expect(
+      contextSchema.properties?.search?.properties?.results?.items?.properties,
+    ).toMatchObject({
+      content_text: expect.any(Object),
+      date_published: expect.any(Object),
+      highlights: expect.any(Object),
+      title: expect.any(Object),
+      type: expect.any(Object),
+      url: expect.any(Object),
+    });
+  });
+
+  it("gives new theme repositories a complete public-site contract", async () => {
+    const starter = new URL(
+      "../../packages/theme-kit/assets/starter/",
+      import.meta.url,
+    );
+    const [skill, reference, bodyStart, search, header, fixture] = await Promise.all([
+      readFile(new URL(".agents/skills/develop-microfeed-theme/SKILL.md", starter), "utf8"),
+      readFile(new URL(".agents/skills/develop-microfeed-theme/references/public-site.md", starter), "utf8"),
+      readFile(new URL("web-body-start.mustache", starter), "utf8"),
+      readFile(new URL("web-search.mustache", starter), "utf8"),
+      readFile(new URL("web-header.mustache", starter), "utf8"),
+      readFile(new URL("fixtures/custom.json", starter), "utf8").then(JSON.parse),
+    ]);
+
+    expect(skill).toContain("migrating a theme to v2");
+    expect(skill).toContain("references/public-site.md");
+    expect(reference).toContain("Theme and platform responsibilities");
+    expect(reference).toContain("Do not copy the search dialog");
+    expect(reference).toContain("special 404 Page");
+    expect(reference).toContain("data-microfeed-search-details");
+    expect(reference).toContain("at least three entries");
+    expect(bodyStart).toContain("{{#navigation_pages}}");
+    expect(bodyStart).toContain("data-microfeed-nav-item");
+    expect(bodyStart).toContain("data-microfeed-search-open");
+    expect(search).toContain('action="/search/"');
+    expect(search).toContain('method="get"');
+    expect(search).toContain('name="q"');
+    expect(search).toContain("data-microfeed-search-input");
+    expect(search).toContain("data-microfeed-search-results");
+    expect(search).toContain("data-microfeed-search-details");
+    expect(header).toContain("--mf-accent:");
+    expect(header).toContain("--mf-background:");
+    expect(header).toContain("-webkit-line-clamp: 2");
+    expect(fixture.items).toHaveLength(2);
+
+    const theme = await loadThemePackage(fileURLToPath(starter));
+    const feedHtml = standaloneThemePreviewDocument(theme, fixture, "feed");
+    const searchHtml = standaloneThemePreviewDocument(theme, fixture, "search");
+    for (const label of ["About", "Contact", "Projects"]) {
+      expect(feedHtml).toContain(`>${label}</a>`);
+    }
+    expect(feedHtml).toContain("data-microfeed-search-dialog");
+    expect(searchHtml).toContain("data-microfeed-search-details");
+    expect(searchHtml).toContain('"type":"item"');
+    expect(searchHtml).toContain('"type":"page"');
+  });
+
+  it("keeps every bundled theme-development skill copy synchronized", async () => {
+    const paths = [
+      path.join(repositoryRoot, ".agents/skills/develop-microfeed-theme"),
+      path.join(
+        repositoryRoot,
+        "packages/theme-kit/assets/starter/.agents/skills/develop-microfeed-theme",
+      ),
+      path.join(
+        repositoryRoot,
+        "themes/default/.agents/skills/develop-microfeed-theme",
+      ),
+    ];
+    const skills = await Promise.all(paths.map((directory) =>
+      readFile(path.join(directory, "SKILL.md"), "utf8")
+    ));
+    const references = await Promise.all(paths.map((directory) =>
+      readFile(path.join(directory, "references/public-site.md"), "utf8")
+    ));
+
+    expect(new Set(skills).size).toBe(1);
+    expect(new Set(references).size).toBe(1);
+  });
+
   it("loads the starter as a complete text-only package", async () => {
     const loaded = await loadThemePackage(await themeDirectory());
     expect(loaded.manifest.packageId).toBe("example.my-theme");
@@ -167,22 +289,50 @@ describe("@microfeed/theme-kit package loading", () => {
       .resolves.toBe(".yarn/\nnode_modules/\n");
   });
 
-  it("resolves checkout-level relative paths from the Yarn project root", async () => {
+  it("resolves relative paths from the invoking workspace directory", async () => {
     const result = await execFileAsync(process.execPath, [
       "--import",
       "tsx",
       path.join(repositoryRoot, "packages/theme-kit/src/cli.ts"),
       "validate",
-      "packages/theme-kit/assets/starter",
+      ".",
       "--json",
     ], {
-      cwd: path.join(repositoryRoot, "packages/theme-kit"),
+      cwd: path.join(repositoryRoot, "themes/default"),
       env: {...process.env, PROJECT_CWD: repositoryRoot},
     });
     expect(JSON.parse(result.stdout)).toMatchObject({
       ok: true,
-      packageId: "example.my-theme",
+      packageId: "microfeed.default",
     });
+  });
+
+  it("injects the shared public search component into standalone previews", async () => {
+    const theme = await loadThemePackage(
+      path.join(repositoryRoot, "themes/default"),
+    );
+    const html = standaloneThemePreviewDocument(theme, {
+      home_page_url: "https://example.test/",
+      items: [{
+        _microfeed: {web_url: "https://example.test/i/searchable/"},
+        content_text: "A searchable preview excerpt.",
+        date_published: "2026-08-13T10:00:00.000Z",
+        id: "searchable",
+        title: "Searchable preview item",
+      }],
+      title: "Search preview fixture",
+      version: "https://jsonfeed.org/version/1.1",
+    }, "feed");
+
+    expect(html).toContain("data-microfeed-search-open");
+    expect(html).toContain("data-microfeed-search-dialog");
+    expect(html).toContain(
+      "Live search is unavailable in preview. Showing preview results instead.",
+    );
+    expect(html).toContain('"title":"Searchable preview item"');
+    expect(html).toContain('"date_published":"2026-08-13T10:00:00.000Z"');
+    expect(html).toContain("if (!dialog.open) dialog.showModal()");
+    expect(html).toContain("(event.metaKey || event.ctrlKey)");
   });
 
   it("rejects symlinked declared files", async () => {

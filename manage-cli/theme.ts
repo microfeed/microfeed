@@ -30,7 +30,7 @@ import {
   THEME_MAX_INSTALLED_VERSIONS,
   THEME_MAX_TEMPLATE_BYTES,
   THEME_MAX_TOTAL_ASSET_BYTES,
-  THEME_FILE_KEYS,
+  THEME_FILE_KEYS_V1,
   themeContextSchema,
   themeManifestV1Schema,
   type StoredThemeVersion,
@@ -108,13 +108,19 @@ interface WriteThemePackageOptions {
   repositoryScaffold?: {readme: string};
 }
 
-const CANONICAL_THEME_FILES: ThemeManifestV1["files"] = {
+const CANONICAL_THEME_FILES_V1 = {
   rssStylesheet: "rss-stylesheet.xsl",
   webBodyEnd: "web-body-end.mustache",
   webBodyStart: "web-body-start.mustache",
   webFeed: "web-feed.mustache",
   webHeader: "web-header.mustache",
   webItem: "web-item.mustache",
+};
+
+const CANONICAL_THEME_FILES_V2 = {
+  ...CANONICAL_THEME_FILES_V1,
+  webPage: "web-page.mustache",
+  webSearch: "web-search.mustache",
 };
 
 function flagString(flags: Flags, name: string): string | undefined {
@@ -160,7 +166,7 @@ function assetKey(environment: string, ownerId: string, assetPath: string): stri
 }
 
 async function bundledFallbackTheme(): Promise<EffectiveTheme> {
-  const loaded = await loadThemePackage(path.join(repositoryRoot, "themes/classic"));
+  const loaded = await loadThemePackage(path.join(repositoryRoot, "themes/default"));
   return {
     assetOwnerThemeId: null,
     bundle: loaded.bundle,
@@ -194,7 +200,7 @@ function legacyTheme(
   }
   const selectedFiles = selected as Record<string, unknown>;
   const bundle = {
-    ...Object.fromEntries(THEME_FILE_KEYS.map((key) => [
+    ...Object.fromEntries(THEME_FILE_KEYS_V1.map((key) => [
       key,
       typeof selectedFiles[key] === "string"
         ? selectedFiles[key]
@@ -211,14 +217,24 @@ function legacyTheme(
     checksumSha256: null,
     fallbackReason: null,
     kind: "legacy",
-    manifest: {
+    manifest: themeManifestV1Schema.parse({
       ...fallback.manifest,
+      assets: [],
       author: "Site owner",
+      files: {
+        rssStylesheet: fallback.manifest.files.rssStylesheet,
+        webBodyEnd: fallback.manifest.files.webBodyEnd,
+        webBodyStart: fallback.manifest.files.webBodyStart,
+        webFeed: fallback.manifest.files.webFeed,
+        webHeader: fallback.manifest.files.webHeader,
+        webItem: fallback.manifest.files.webItem,
+      },
+      formatVersion: 1,
       microfeed: "*",
       name: `${currentTheme} (legacy)`,
       packageId: `legacy.${normalizedId}`.slice(0, 120),
       version: "0.0.0",
-    },
+    }),
     themeId: null,
   };
 }
@@ -362,8 +378,10 @@ export function initializedThemeManifest(
     assets: source.manifest.assets,
     author: overrides.author ?? "Site owner",
     description,
-    files: CANONICAL_THEME_FILES,
-    formatVersion: 1,
+    files: source.manifest.formatVersion === 2
+      ? CANONICAL_THEME_FILES_V2
+      : CANONICAL_THEME_FILES_V1,
+    formatVersion: source.manifest.formatVersion,
     license: source.manifest.license,
     microfeed: source.manifest.microfeed,
     name: overrides.name ?? `${displayName} theme`,
@@ -1046,6 +1064,34 @@ export async function installDefaultThemeForInitialization(
   return installed;
 }
 
+/**
+ * Makes the current bundled v2 theme available to an upgraded site without
+ * changing its public appearance. The effective-theme lookup also recognizes
+ * pre-versioning custom themes as v1 appearances.
+ */
+export async function installDefaultThemeForV1Appearance(
+  config: MicrofeedConfig,
+  runner: CommandRunner = runCommand,
+  local = isLocalOnly(config),
+): Promise<StoredThemeVersion | null> {
+  const target: Target = {
+    client: new CloudflareClient(runner),
+    config,
+    local,
+  };
+  const active = await effectiveTheme(target);
+  if (active.manifest.formatVersion !== 1) return null;
+  if (DEFAULT_THEME_MANIFEST.formatVersion !== 2) {
+    throw new Error(
+      "The bundled default must use theme format v2 before it can be installed for a v1 site.",
+    );
+  }
+  return installResolved(
+    target,
+    await resolveThemeSource("default", {}),
+  );
+}
+
 async function managementAction(
   target: Target,
   action: "activate" | "deactivate" | "rollback" | "delete",
@@ -1316,6 +1362,7 @@ async function writeThemePackage(
       for (const relativePath of [
         ".agents/skills/develop-microfeed-theme/SKILL.md",
         ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+        ".agents/skills/develop-microfeed-theme/references/public-site.md",
       ]) {
         await writeRelative(
           relativePath,

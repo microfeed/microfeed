@@ -15,7 +15,10 @@ import {
   canonicalPathname,
   resolvePublicBucketUrl,
 } from "@/shared/StringUtils";
-import {isExistingItemEditorPath} from "./server/admin-routes";
+import {
+  isExistingItemEditorPath,
+  isPublicPageCandidateForDynamicAdminRoute,
+} from "./server/admin-routes";
 import {adminProtectionStatus} from "@/server/auth/admin-protection";
 import {
   createMicrofeedAuth,
@@ -32,6 +35,7 @@ import {
 } from "@/server/api/access";
 import {createFeedCrud, loadFeed} from "@/server/feed/feed";
 import {applyWorkerCachePolicy} from "@/server/cache/public-cache";
+import {publicSiteFileResponse} from "@/server/site-files/public";
 
 const AUTH_BASE_PATH = "/api/auth";
 function apiNotFoundResponse(): Response {
@@ -69,6 +73,15 @@ function isBetterAuthPath(pathname: string): boolean {
     pathname.startsWith(`${AUTH_BASE_PATH}/`);
 }
 
+function rootSiteFilename(pathname: string): string | undefined {
+  const match = /^\/([a-z0-9][a-z0-9._-]*\.(?:atom|css|csv|json|md|rss|txt|webmanifest|xml|ya?ml))$/u
+    .exec(pathname);
+  const filename = match?.[1];
+  return filename && filename !== "search.json" && filename !== "favicon.ico"
+    ? filename
+    : undefined;
+}
+
 function isAdminAjax(pathname: string, adminPath: string): boolean {
   return pathname.startsWith(adminUrl("ajax", adminPath));
 }
@@ -103,9 +116,19 @@ const handleRequest = defineMiddleware(async (context, next) => {
     return Response.redirect(canonicalUrl, 308);
   }
 
+  const siteFilename = rootSiteFilename(pathname);
+  if (siteFilename) {
+    return publicSiteFileResponse(env, context.request, siteFilename);
+  }
+
   if (
     context.params.adminPath !== undefined &&
-    context.params.adminPath !== adminPath
+    context.params.adminPath !== adminPath &&
+    !isPublicPageCandidateForDynamicAdminRoute(
+      pathname,
+      context.params.adminPath,
+      adminPath,
+    )
   ) {
     return new Response("404", {
       headers: {"content-type": "text/plain; charset=utf-8"},

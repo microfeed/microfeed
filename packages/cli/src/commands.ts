@@ -71,6 +71,7 @@ const ITEM_SEARCH_VALUE_FLAGS = new Set([
   "limit",
   "next-cursor",
   "status",
+  "types",
 ]);
 
 function instanceName(siteUrl: string): string {

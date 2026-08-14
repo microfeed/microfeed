@@ -58,6 +58,8 @@ const rssStyles = `${designTokenCss}\n${css.source}`
 const files = new Map([
   ["web-feed.mustache", await readFile(path.join(sourceDirectory, "web-feed.mustache"), "utf8")],
   ["web-item.mustache", await readFile(path.join(sourceDirectory, "web-item.mustache"), "utf8")],
+  ["web-page.mustache", await readFile(path.join(sourceDirectory, "web-page.mustache"), "utf8")],
+  ["web-search.mustache", await readFile(path.join(sourceDirectory, "web-search.mustache"), "utf8")],
   ["web-body-start.mustache", await readFile(path.join(sourceDirectory, "web-body-start.mustache"), "utf8")],
   ["rss-stylesheet.xsl", rssTemplate.replace(rssStylesMarker, rssStyles)],
   ["web-header.mustache", `${tokenBlock}\n<style id="microfeed-compiled-styles">${css.source}</style>\n${await readFile(path.join(sourceDirectory, "web-header.mustache"), "utf8")}`],

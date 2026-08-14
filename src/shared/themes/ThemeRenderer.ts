@@ -7,6 +7,7 @@ import type {
   ThemeManifestV1,
 } from "./ThemeContract";
 import {THEME_FILE_KEYS} from "./ThemeContract";
+import {THEME_FILE_KEYS_V1} from "./ThemeContract";
 
 export interface ThemeRuntimeMetadata {
   assetBaseUrl: string;
@@ -32,8 +33,11 @@ export function themeContext(
 }
 
 export function parseThemeBundle(bundle: ThemeBundleV1): void {
-  for (const key of THEME_FILE_KEYS) {
-    Mustache.parse(bundle[key]);
+  const keys = bundle.webPage !== undefined || bundle.webSearch !== undefined
+    ? THEME_FILE_KEYS
+    : THEME_FILE_KEYS_V1;
+  for (const key of keys) {
+    Mustache.parse(bundle[key] ?? "");
   }
 }
 
@@ -49,7 +53,7 @@ export function renderThemeSlot(
   slot: Exclude<keyof ThemeBundleV1, "assets">,
   context: Record<string, unknown>,
 ): string {
-  return renderThemeTemplate(bundle[slot], context);
+  return renderThemeTemplate(bundle[slot] ?? "", context);
 }
 
 export function canonicalThemePackage(

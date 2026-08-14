@@ -1,17 +1,22 @@
 import {useEffect, useState} from "react";
-import {CircleArrowRightIcon} from "lucide-react";
 
 import {preventCloseWhenChanged} from "@/client/BrowserUtils";
 import {showToast} from "@/client/ToastUtils";
-import ThemeBundleEditor from "@/components/admin/code-editor/ThemeBundleEditor";
+import ThemeBundleEditor, {
+  type ThemeEditorLinks,
+} from "@/components/admin/code-editor/ThemeBundleEditor";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import ThemePreviewDialog from "@/components/admin/themes/ThemePreviewDialog";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 import type {ThemeDraft, ThemeManifestV1} from "@/shared/themes/ThemeContract";
 
-interface Props {draft: ThemeDraft}
+interface Props {
+  draft: ThemeDraft;
+  themeEditorLinks: ThemeEditorLinks;
+}
 
 type ThemeFieldKey = "author" | "license" | "microfeed" | "name" | "packageId" | "version";
 
@@ -53,15 +58,13 @@ function ThemeFieldLabel({
 }) {
   const {label} = THEME_FIELD_HELP[field];
   return (
-    <button
-      className="mb-1 flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground hover:text-primary"
+    <AdminHelpLabel
       id={`theme-${field}-label`}
       onClick={() => onExplain(field)}
-      type="button"
+      required={required}
     >
-      <span>{label}{required && <span aria-hidden="true" className="text-destructive"> *</span>}</span>
-      <CircleArrowRightIcon aria-hidden="true" className="size-4" />
-    </button>
+      {label}
+    </AdminHelpLabel>
   );
 }
 
@@ -71,7 +74,10 @@ async function responseJson(response: Response): Promise<any> {
   return data;
 }
 
-export default function ThemeDraftEditorApp({draft: initial}: Props) {
+export default function ThemeDraftEditorApp({
+  draft: initial,
+  themeEditorLinks,
+}: Props) {
   const [draft, setDraft] = useState(initial);
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -80,8 +86,8 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
   const [previewKey, setPreviewKey] = useState(0);
   useEffect(() => preventCloseWhenChanged(() => changed), [changed]);
 
-  const updateManifest = (updates: Partial<ThemeManifestV1>) => {
-    setDraft({...draft, manifest: {...draft.manifest, ...updates}, ...("name" in updates ? {name: updates.name!} : {}), ...("version" in updates ? {version: updates.version!} : {})});
+  const updateManifest = (updates: Partial<Record<ThemeFieldKey, string>>) => {
+    setDraft({...draft, manifest: {...draft.manifest, ...updates} as ThemeManifestV1, ...("name" in updates ? {name: updates.name!} : {}), ...("version" in updates ? {version: updates.version!} : {})});
     setChanged(true);
   };
   const validateRequiredMetadata = () => {
@@ -136,7 +142,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
     window.location.assign(ADMIN_URLS.themesSettings());
   });
 
-  return <div className="grid gap-5">
+  return <div className="grid min-w-0 gap-5">
     <section className="rounded-[14px] border bg-card p-5 shadow-xs">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
@@ -173,8 +179,8 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
         </div>
       </details>
     </section>
-    <section className="rounded-[14px] border bg-card p-5 shadow-xs"><ThemeBundleEditor bundle={draft.bundle} onChange={(bundle) => {setDraft({...draft, bundle}); setChanged(true);}} /></section>
-    <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-2 rounded-[14px] border bg-card/95 p-4 shadow-lg backdrop-blur">
+    <section className="min-w-0 rounded-[14px] border bg-card p-5 shadow-xs"><ThemeBundleEditor bundle={draft.bundle} links={themeEditorLinks} onChange={(bundle) => {setDraft({...draft, bundle}); setChanged(true);}} /></section>
+    <div className="sticky bottom-4 mx-4 flex flex-wrap items-center justify-between gap-2 rounded-[14px] border bg-card/95 p-4 shadow-lg backdrop-blur">
       <Button disabled={busy} variant="destructive" onClick={discard}>
         Discard draft
       </Button>
@@ -206,6 +212,7 @@ export default function ThemeDraftEditorApp({draft: initial}: Props) {
       open={previewOpen}
       previewUrl={ADMIN_URLS.ajaxThemeDraftPreview(draft.id)}
       revision={previewKey}
+      supportsPagesAndSearch={draft.manifest.formatVersion === 2}
     />
     <AdminDialog
       onOpenChange={(open) => {if (!open) setHelpField(null);}}

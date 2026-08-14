@@ -10,12 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type PreviewView = "feed" | "item" | "rss";
+type PreviewView = "feed" | "item" | "page" | "search" | "rss";
 type PreviewViewport = "mobile" | "desktop";
 
 const VIEW_LABELS: Record<PreviewView, string> = {
   feed: "Feed",
   item: "Item",
+  page: "Page",
+  search: "Search",
   rss: "RSS",
 };
 
@@ -31,6 +33,7 @@ interface Props {
   open: boolean;
   previewUrl: string;
   revision?: number;
+  supportsPagesAndSearch?: boolean;
 }
 
 export default function ThemePreviewDialog({
@@ -40,6 +43,7 @@ export default function ThemePreviewDialog({
   open,
   previewUrl,
   revision = 0,
+  supportsPagesAndSearch = false,
 }: Props) {
   const [view, setView] = useState<PreviewView>("feed");
   const [viewport, setViewport] = useState<PreviewViewport>("desktop");
@@ -71,9 +75,14 @@ export default function ThemePreviewDialog({
             <p className="truncate text-xs text-muted-foreground">
               {label}{description ? ` · ${description}` : ""}
             </p>
+            {view === "search" && supportsPagesAndSearch && (
+              <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                Live search is unavailable in preview. Showing preview results instead.
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {(["feed", "item", "rss"] as const).map((candidate) => (
+            {(["feed", "item", ...(supportsPagesAndSearch ? ["page", "search"] as const : []), "rss"] as PreviewView[]).map((candidate) => (
               <Button
                 key={candidate}
                 onClick={() => setView(candidate)}

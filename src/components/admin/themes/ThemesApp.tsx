@@ -21,7 +21,7 @@ interface Props {
   instanceName: string;
 }
 
-interface Preview {label: string; url: string}
+interface Preview {label: string; supportsPagesAndSearch: boolean; url: string}
 
 async function requestJson(url: string, init?: RequestInit): Promise<any> {
   const response = await fetch(url, {
@@ -176,7 +176,7 @@ export default function ThemesApp({
             ? `yarn manage theme update ${theme.id} --instance ${instanceName}`
             : `yarn manage theme export ${theme.id} --instance ${instanceName} --output .microfeed/themes/${theme.packageId}-${theme.version} --git`;
           return <article className="rounded-xl border p-4" key={theme.id}>
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><h3 className="font-medium">{theme.name}</h3><Status theme={theme} state={listing.state}/></div><code className="text-xs text-muted-foreground">{theme.packageId}@{theme.version}</code><InstalledAt value={theme.createdAt}/></div><div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => createVersion(theme.id)} variant="outline">Create new version</Button><Button onClick={() => setPreview({label: `${theme.name} ${theme.version}`, url: ADMIN_URLS.ajaxThemePreview(theme.id)})} variant="outline">Preview</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => activate(theme)}>Activate</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => deleteTheme(theme)} variant="destructive">Delete</Button></div></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><h3 className="font-medium">{theme.name}</h3><Status theme={theme} state={listing.state}/></div><code className="text-xs text-muted-foreground">{theme.packageId}@{theme.version}</code><InstalledAt value={theme.createdAt}/></div><div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => createVersion(theme.id)} variant="outline">Create new version</Button><Button onClick={() => setPreview({label: `${theme.name} ${theme.version}`, supportsPagesAndSearch: theme.manifest.formatVersion === 2, url: ADMIN_URLS.ajaxThemePreview(theme.id)})} variant="outline">Preview</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => activate(theme)}>Activate</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => deleteTheme(theme)} variant="destructive">Delete</Button></div></div>
             <details className="mt-3 border-t pt-3 text-xs">
               <summary className="cursor-pointer font-medium text-muted-foreground">Details</summary>
               <dl className="mt-3 grid gap-1 text-muted-foreground md:grid-cols-2">
@@ -219,6 +219,7 @@ export default function ThemesApp({
       onOpenChange={(open) => {if (!open) setPreview(null);}}
       open
       previewUrl={preview.url}
+      supportsPagesAndSearch={preview.supportsPagesAndSearch}
     />}
   </div>;
 }

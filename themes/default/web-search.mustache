@@ -1,0 +1,21 @@
+<main>
+  <section class="mf-back-link">
+    <a href="/">
+      <div class="icon-arrow-left">{{title}}</div>
+    </a>
+  </section>
+  <section class="mf-search-page">
+    <h1>Search</h1>
+    <form action="/search/" method="get" class="mf-search-page-form" role="search">
+      <label class="mf-visually-hidden" for="microfeed-search-page-input">Search this site</label>
+      <div class="mf-search-control">
+        <input id="microfeed-search-page-input" name="q" type="search" placeholder="Search items and pages" value="{{search.query}}" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
+        <button type="submit">
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          <span>Search</span>
+        </button>
+      </div>
+      <div class="mf-search-page-results" aria-live="polite" data-microfeed-search-results data-microfeed-search-details></div>
+    </form>
+  </section>
+</main>

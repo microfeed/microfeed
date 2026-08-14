@@ -1,8 +1,18 @@
 ---
-return new Response("404", {
-  status: 404,
-  headers: {
-    "content-type": "text/plain; charset=utf-8",
-  },
-});
+import {env} from "cloudflare:workers";
+
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import {loadPublicPageRoute} from "@/server/pages/public";
+
+const publicPage = await loadPublicPageRoute(env, Astro.request, "404");
+if (publicPage.kind === "redirect") {
+  return Astro.redirect(publicPage.location, 301);
+}
+Astro.response.status = 404;
 ---
+
+{publicPage.kind === "page" ? (
+  <PublicLayout {...publicPage.layout} />
+) : (
+  <h1>Not Found</h1>
+)}

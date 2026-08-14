@@ -7,6 +7,7 @@ import AdminCodeEditor, {
   isCaretOnLastLine,
 } from "@/components/admin/shared/AdminCodeEditor";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
+import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import AdminImagePreviewDialog from "@/components/admin/shared/AdminImagePreviewDialog";
 import AdminHtmlEditor from "@/components/admin/shared/AdminHtmlEditor";
 import AdminPublicAccess, {
@@ -19,6 +20,23 @@ import SettingsBase from "@/components/admin/settings/SettingsBase";
 import {Input} from "@/components/ui/input";
 
 describe("admin UI controls", () => {
+  it("uses brand-sky hover and focus styling for explanation labels", () => {
+    const label = renderToStaticMarkup(React.createElement(AdminHelpLabel, {
+      children: "Description",
+      onClick: vi.fn(),
+    }));
+    const labelWithDialog = renderToStaticMarkup(React.createElement(AdminHelpLabel, {
+      help: {linkName: "Title", text: "Help text"},
+    }));
+
+    for (const output of [label, labelWithDialog]) {
+      expect(output).toContain("hover:text-brand-light");
+      expect(output).toContain("focus-visible:text-brand-light");
+      expect(output).not.toContain("hover:text-primary");
+    }
+    expect(labelWithDialog).not.toContain('href="#"');
+  });
+
   it("only auto-scrolls a code editor when its caret is on the final line", () => {
     const value = "first line\nsecond line\nlast line";
 
@@ -42,8 +60,28 @@ describe("admin UI controls", () => {
     expect(output).toMatch(
       /^<label[^>]+overflow-auto[^>]+style="max-height:32rem"/u,
     );
+    expect(output).toContain(
+      'class="block w-full min-w-0 max-w-full overflow-auto',
+    );
+    expect(output).toContain(
+      "admin-code-editor w-full min-w-0 max-w-full",
+    );
     expect(output).toContain("min-height:16rem");
     expect(output).not.toContain("max-height:32rem;min-height:16rem");
+  });
+
+  it("supports a read-only highlighted code preview", () => {
+    const output = renderToStaticMarkup(
+      React.createElement(AdminCodeEditor, {
+        code: "{\"ok\":true}",
+        language: "json",
+        readOnly: true,
+      }),
+    );
+
+    expect(output).toContain("readonly=\"\"");
+    expect(output).toContain('aria-label="Code editor"');
+    expect(output).toContain("bg-muted/60");
   });
 
   it("renders the rich HTML source editor at 120% of its base font size", () => {
@@ -222,6 +260,10 @@ describe("admin UI controls", () => {
     expect(output).toContain('role="switch"');
     expect(output).toContain('aria-checked="true"');
     expect(output).toContain("API Enabled");
+    expect(output).toContain("data-checked:bg-brand-light");
+    expect(output).toContain("focus-visible:ring-brand-light/40");
+    expect(output).toContain("bg-white");
+    expect(output).not.toContain("data-checked:bg-primary");
     expect(output).toMatch(/<label[^>]+for="[^"]+"/u);
   });
 

@@ -165,15 +165,191 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "default",
-      version: MICROFEED_VERSION,
+      version: "1.1.7",
     });
     expect(stored).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "default",
-      version: MICROFEED_VERSION,
+      version: "1.1.7",
     });
   });
+
+  it(
+    "idempotently installs the bundled v2 default without activating it for a v1 appearance",
+    async () => {
+      const {theme} = await freshModules();
+      const runner = commandRunner();
+      const queries: string[] = [];
+      let stored: Record<string, unknown> | null = null;
+      const active = {
+        asset_owner_theme_id: null,
+        bundle_json: JSON.stringify(bundle),
+        checksum_sha256: "a".repeat(64),
+        created_at: "2026-08-10T00:00:00.000Z",
+        deleted_at: null,
+        id: "active-v1-theme",
+        manifest_json: JSON.stringify(manifest),
+        name: manifest.name,
+        origin_theme_id: null,
+        package_id: manifest.packageId,
+        requested_active_theme_id: "active-v1-theme",
+        source_commit: null,
+        source_kind: "migration",
+        source_path: null,
+        source_ref: null,
+        source_url: null,
+        version: manifest.version,
+      };
+      vi.stubGlobal("fetch", vi.fn(async (
+        _input: URL | RequestInfo,
+        init?: RequestInit,
+      ) => {
+        const request = JSON.parse(String(init?.body)) as {
+          params?: unknown[];
+          sql: string;
+        };
+        queries.push(request.sql);
+        if (request.sql.includes("sqlite_master")) {
+          return d1Response([{name: "themes"}, {name: "theme_state"}]);
+        }
+        if (
+          request.sql.includes("FROM theme_state") &&
+          request.sql.includes("LEFT JOIN themes")
+        ) {
+          return d1Response([active]);
+        }
+        if (request.sql.includes("FROM settings")) {
+          return d1Response([]);
+        }
+        if (request.sql.includes("WHERE package_id = ? AND version = ?")) {
+          return d1Response(stored ? [stored] : []);
+        }
+        if (request.sql.includes("INSERT INTO themes")) {
+          const values = request.params!;
+          stored = {
+            asset_owner_theme_id: values[13],
+            bundle_json: values[5],
+            checksum_sha256: values[11],
+            created_at: "2026-08-10T00:00:00.000Z",
+            deleted_at: null,
+            id: values[0],
+            manifest_json: values[4],
+            name: values[3],
+            origin_theme_id: values[12],
+            package_id: values[1],
+            source_commit: values[10],
+            source_kind: values[6],
+            source_path: values[9],
+            source_ref: values[8],
+            source_url: values[7],
+            version: values[2],
+          };
+          return d1Response([{id: values[0]}]);
+        }
+        if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
+          return d1Response(stored ? [stored] : []);
+        }
+        throw new Error(`Unexpected D1 query: ${request.sql}`);
+      }));
+
+      await expect(theme.installDefaultThemeForV1Appearance(
+        savedConfig(),
+        runner,
+        false,
+      )).resolves.toMatchObject({
+        packageId: "microfeed.default",
+        sourceKind: "bundled",
+        version: "1.1.7",
+      });
+      await expect(theme.installDefaultThemeForV1Appearance(
+        savedConfig(),
+        runner,
+        false,
+      )).resolves.toMatchObject({
+        packageId: "microfeed.default",
+        version: "1.1.7",
+      });
+      expect(stored).toMatchObject({
+        package_id: "microfeed.default",
+        source_kind: "bundled",
+        version: "1.1.7",
+      });
+      expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
+        .toHaveLength(1);
+      expect(queries.some((sql) => sql.includes("UPDATE theme_state")))
+        .toBe(false);
+    },
+  );
+
+  it(
+    "does not install another default when the effective theme is already v2",
+    async () => {
+      const {theme} = await freshModules();
+      const runner = commandRunner();
+      const queries: string[] = [];
+      const v2Manifest = {
+        ...manifest,
+        files: {
+          ...manifest.files,
+          webPage: "source/page.mustache",
+          webSearch: "source/search.mustache",
+        },
+        formatVersion: 2 as const,
+      };
+      const v2Bundle = {
+        ...bundle,
+        webPage: "page {{page.title}}",
+        webSearch: "search {{search.query}}",
+      };
+      vi.stubGlobal("fetch", vi.fn(async (
+        _input: URL | RequestInfo,
+        init?: RequestInit,
+      ) => {
+        const request = JSON.parse(String(init?.body)) as {sql: string};
+        queries.push(request.sql);
+        if (request.sql.includes("sqlite_master")) {
+          return d1Response([{name: "themes"}, {name: "theme_state"}]);
+        }
+        if (
+          request.sql.includes("FROM theme_state") &&
+          request.sql.includes("LEFT JOIN themes")
+        ) {
+          return d1Response([{
+            asset_owner_theme_id: null,
+            bundle_json: JSON.stringify(v2Bundle),
+            checksum_sha256: "a".repeat(64),
+            created_at: "2026-08-10T00:00:00.000Z",
+            deleted_at: null,
+            id: "active-v2-theme",
+            manifest_json: JSON.stringify(v2Manifest),
+            name: v2Manifest.name,
+            origin_theme_id: null,
+            package_id: v2Manifest.packageId,
+            requested_active_theme_id: "active-v2-theme",
+            source_commit: null,
+            source_kind: "github",
+            source_path: null,
+            source_ref: "main",
+            source_url: "https://github.com/example/active",
+            version: v2Manifest.version,
+          }]);
+        }
+        if (request.sql.includes("FROM settings")) {
+          return d1Response([]);
+        }
+        throw new Error(`Unexpected D1 query: ${request.sql}`);
+      }));
+
+      await expect(theme.installDefaultThemeForV1Appearance(
+        savedConfig(),
+        runner,
+        false,
+      )).resolves.toBeNull();
+      expect(queries.some((sql) => sql.includes("INSERT INTO themes")))
+        .toBe(false);
+    },
+  );
 
   it("creates a new Git-ready package from the active immutable version", async () => {
     const {directory, theme} = await freshModules();
@@ -263,6 +439,13 @@ describe("theme repository initialization", () => {
       path.join(output, ".agents/skills/develop-microfeed-theme/SKILL.md"),
       "utf8",
     )).resolves.toContain("Never create screenshots unless the user explicitly asks");
+    await expect(readFile(
+      path.join(
+        output,
+        ".agents/skills/develop-microfeed-theme/references/public-site.md",
+      ),
+      "utf8",
+    )).resolves.toContain("Theme and platform responsibilities");
     await expect(readFile(path.join(output, assetPath), "utf8"))
       .resolves.toContain("<svg");
     expect(runner).toHaveBeenCalledWith(
@@ -379,12 +562,20 @@ describe("theme repository initialization", () => {
       ".microfeed/schemas/theme-context.schema.json",
       ".agents/skills/develop-microfeed-theme/SKILL.md",
       ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
+      ".agents/skills/develop-microfeed-theme/references/public-site.md",
       "fixtures/custom.json",
       "THEME.md",
     ]) {
       await expect(readFile(path.join(output, relativePath), "utf8"))
         .resolves.not.toHaveLength(0);
     }
+    const publicSiteReference = await readFile(path.join(
+      output,
+      ".agents/skills/develop-microfeed-theme/references/public-site.md",
+    ), "utf8");
+    expect(publicSiteReference).toContain("data-microfeed-search-open");
+    expect(publicSiteReference).toContain("navigation_pages");
+    expect(publicSiteReference).toContain("special 404 Page");
     const conformance = JSON.parse((await execFileAsync(
       process.execPath,
       [
@@ -704,8 +895,8 @@ describe("theme repository initialization", () => {
       if (request.sql.includes("sqlite_master")) return d1Response([]);
       if (request.sql.includes("FROM settings")) {
         return d1Response([{data: JSON.stringify({
-          currentTheme: "Owner Classic",
-          themes: {"Owner Classic": {webFeed: "legacy active feed"}},
+          currentTheme: "Owner Legacy",
+          themes: {"Owner Legacy": {webFeed: "legacy active feed"}},
         })}]);
       }
       throw new Error(`Unexpected D1 query: ${request.sql}`);
@@ -728,7 +919,7 @@ describe("theme repository initialization", () => {
     };
     expect(result).toMatchObject({
       gitInitialized: false,
-      source: {kind: "legacy", packageId: "legacy.owner-classic"},
+      source: {kind: "legacy", packageId: "legacy.owner-legacy"},
     });
     expect(runner).not.toHaveBeenCalledWith("git", expect.anything(), expect.anything());
   });

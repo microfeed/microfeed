@@ -52,6 +52,7 @@ describe("repository management command", () => {
         "tests/worker/installation-identity.test.ts " +
         "tests/worker/item-idempotency.test.ts " +
         "tests/worker/item-search.test.ts " +
+        "tests/worker/pages-site-files.test.ts " +
         "tests/worker/password-setup.test.ts",
     );
     expect(scripts["test:deploy"]).not.toBe(scripts.test);

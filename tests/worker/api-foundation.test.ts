@@ -272,6 +272,18 @@ describe("API access decisions", () => {
       kind: "integration",
       legacy: false,
     });
+    expect(apiPathDetails(`${API_BASE_PATH}pages/page-id/`)).toEqual({
+      canonicalPath: `${API_BASE_PATH}pages/page-id/`,
+      kind: "integration",
+      legacy: false,
+    });
+    expect(apiPathDetails(`${API_BASE_PATH}site-files/file-id/publish/`))
+      .toEqual({
+        canonicalPath: `${API_BASE_PATH}site-files/file-id/publish/`,
+        kind: "integration",
+        legacy: false,
+      });
+    expect(apiPathDetails("/api/pages/page-id/")).toBeNull();
     expect(apiPathDetails("/api/search/")).toBeNull();
     expect(apiPathDetails("/api/items/item-id/")).toEqual({
       canonicalPath: `${API_BASE_PATH}items/item-id/`,

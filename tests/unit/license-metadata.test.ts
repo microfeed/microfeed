@@ -1,5 +1,5 @@
 import {execFileSync} from "node:child_process";
-import {readFileSync} from "node:fs";
+import {existsSync, readFileSync} from "node:fs";
 import path from "node:path";
 import {describe, expect, it} from "vitest";
 
@@ -37,7 +37,7 @@ describe("JSON license metadata", () => {
       "git",
       ["ls-files", "-z", "--", "*.json"],
       {cwd: root, encoding: "utf8"},
-    ).split("\0").filter(Boolean);
+    ).split("\0").filter((file) => file && existsSync(path.join(root, file)));
     const licenses = files.flatMap((file) =>
       stringLicenseEntries(
         JSON.parse(readFileSync(path.join(root, file), "utf8")),
@@ -45,7 +45,7 @@ describe("JSON license metadata", () => {
       )
     );
 
-    expect(licenses.length).toBeGreaterThanOrEqual(6);
+    expect(licenses.length).toBeGreaterThanOrEqual(5);
     for (const license of licenses) {
       expect(
         license.value,

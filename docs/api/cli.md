@@ -162,6 +162,9 @@ yarn microfeed item search '"season finale"' \
   --json
 ```
 
+Pass `--types items,pages` to search both items and Pages. The default remains
+`items`, preserving the behavior of existing scripts.
+
 Unquoted terms use AND matching, the final unquoted term supports prefix
 matching, and exact results rank before typo-tolerant title results. Use
 `--next-cursor` with the same query and filters to continue forward.

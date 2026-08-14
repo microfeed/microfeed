@@ -15,6 +15,8 @@ describe("getAdminNavigationItems", () => {
       [NAV_ITEMS.ADMIN_HOME, "/studio/"],
       [NAV_ITEMS.EDIT_CHANNEL, "/studio/channels/primary/"],
       [NAV_ITEMS.ALL_ITEMS, "/studio/items/list/"],
+      [NAV_ITEMS.PAGES, "/studio/pages/"],
+      [NAV_ITEMS.SITE_FILES, "/studio/site-files/"],
       [NAV_ITEMS.API, "/studio/api/"],
       [NAV_ITEMS.SETTINGS, "/studio/settings/"],
     ]);

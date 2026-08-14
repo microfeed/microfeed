@@ -1,3 +1,4 @@
+import {readFile} from "node:fs/promises";
 import React from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
@@ -139,6 +140,9 @@ describe("admin dashboard shell models", () => {
 
   it("keeps About links and the agent update prompt exact", () => {
     expect(OUR_BRAND.whatsnewWebsite).toBe("https://www.microfeed.org");
+    expect(OUR_BRAND.documentationWebsite).toBe(
+      "https://docs.microfeed.org/",
+    );
     expect(OUR_BRAND.githubRepository).toBe(
       "https://github.com/microfeed/microfeed",
     );
@@ -168,5 +172,44 @@ describe("admin dashboard shell models", () => {
       productionWorkerName: "worker; deploy-something-else",
       protected: true,
     })).toBe(ADMIN_UPDATE_PROMPT);
+  });
+
+  it("shows the canonical application version in deployment details", async () => {
+    const dialog = await readFile(
+      new URL(
+        "../../../src/components/admin/AdminAboutDialog.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(dialog).toContain('import {MICROFEED_VERSION} from "@/shared/Version"');
+    expect(dialog).toContain(
+      '<dt className="text-muted-foreground">Version</dt>',
+    );
+    expect(dialog).toContain("<dd><code>{MICROFEED_VERSION}</code></dd>");
+  });
+
+  it("shows all product links without the former About subtitle", async () => {
+    const dialog = await readFile(
+      new URL(
+        "../../../src/components/admin/AdminAboutDialog.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(dialog).toContain("sm:grid-cols-3");
+    expect(dialog).toContain("href={OUR_BRAND.documentationWebsite}");
+    expect(dialog).toContain(">Project website</span>");
+    expect(dialog).toContain(">www.microfeed.org</span>");
+    expect(dialog).toContain(">Documentation</span>");
+    expect(dialog).toContain(">docs.microfeed.org</span>");
+    expect(dialog).toContain(">Github repo</span>");
+    expect(dialog).toContain(">github.com/microfeed</span>");
+    expect(dialog).not.toContain(
+      "Product links, deployment details, and the shortest safe update path.",
+    );
+    expect(dialog).not.toContain("DialogDescription");
   });
 });

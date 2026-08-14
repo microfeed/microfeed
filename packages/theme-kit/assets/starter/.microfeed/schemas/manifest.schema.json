@@ -1,124 +1,263 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "$schema": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 240
-    },
-    "assets": {
-      "default": [],
-      "maxItems": 100,
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 240
-      }
-    },
-    "author": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 160
-    },
-    "description": {
-      "type": "string",
-      "maxLength": 500
-    },
-    "files": {
+  "oneOf": [
+    {
       "type": "object",
       "properties": {
-        "rssStylesheet": {
+        "$schema": {
           "type": "string",
           "minLength": 1,
           "maxLength": 240
         },
-        "webBodyEnd": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 240
+        "assets": {
+          "default": [],
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          }
         },
-        "webBodyStart": {
+        "author": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 240
+          "maxLength": 160
         },
-        "webFeed": {
+        "description": {
           "type": "string",
-          "minLength": 1,
-          "maxLength": 240
+          "maxLength": 500
         },
-        "webHeader": {
+        "homepage": {
           "type": "string",
-          "minLength": 1,
-          "maxLength": 240
+          "format": "uri"
         },
-        "webItem": {
+        "license": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 240
+          "maxLength": 100
+        },
+        "microfeed": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "packageId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "files": {
+          "type": "object",
+          "properties": {
+            "rssStylesheet": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webBodyEnd": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webBodyStart": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webFeed": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webHeader": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webItem": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "required": [
+            "rssStylesheet",
+            "webBodyEnd",
+            "webBodyStart",
+            "webFeed",
+            "webHeader",
+            "webItem"
+          ],
+          "additionalProperties": false
+        },
+        "formatVersion": {
+          "type": "number",
+          "const": 1
         }
       },
       "required": [
-        "rssStylesheet",
-        "webBodyEnd",
-        "webBodyStart",
-        "webFeed",
-        "webHeader",
-        "webItem"
+        "assets",
+        "author",
+        "license",
+        "microfeed",
+        "name",
+        "packageId",
+        "version",
+        "files",
+        "formatVersion"
       ],
       "additionalProperties": false
     },
-    "formatVersion": {
-      "type": "number",
-      "const": 1
-    },
-    "homepage": {
-      "type": "string",
-      "format": "uri"
-    },
-    "license": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100
-    },
-    "microfeed": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100
-    },
-    "name": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100
-    },
-    "packageId": {
-      "type": "string",
-      "minLength": 3,
-      "maxLength": 120,
-      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
-    },
-    "repository": {
-      "type": "string",
-      "format": "uri"
-    },
-    "version": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "assets": {
+          "default": [],
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          }
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri"
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "microfeed": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "packageId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "files": {
+          "type": "object",
+          "properties": {
+            "rssStylesheet": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webBodyEnd": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webBodyStart": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webFeed": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webHeader": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webItem": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webPage": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webSearch": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "required": [
+            "rssStylesheet",
+            "webBodyEnd",
+            "webBodyStart",
+            "webFeed",
+            "webHeader",
+            "webItem",
+            "webPage",
+            "webSearch"
+          ],
+          "additionalProperties": false
+        },
+        "formatVersion": {
+          "type": "number",
+          "const": 2
+        }
+      },
+      "required": [
+        "assets",
+        "author",
+        "license",
+        "microfeed",
+        "name",
+        "packageId",
+        "version",
+        "files",
+        "formatVersion"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "assets",
-    "author",
-    "files",
-    "formatVersion",
-    "license",
-    "microfeed",
-    "name",
-    "packageId",
-    "version"
-  ],
-  "additionalProperties": false
+  ]
 }

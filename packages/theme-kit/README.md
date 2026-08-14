@@ -96,7 +96,7 @@ workspace from the microfeed repository into its own repository.
 
 ## How a theme works
 
-A theme is a directory with `microfeed-theme.json` and six required text files:
+A format v2 theme is a directory with `microfeed-theme.json` and eight required text files. Format v1 themes with the original six slots remain compatible:
 
 ```text
 README.md
@@ -104,6 +104,8 @@ microfeed-theme.json
 THEME.md
 web-feed.mustache
 web-item.mustache
+web-page.mustache
+web-search.mustache
 web-header.mustache
 web-body-start.mustache
 web-body-end.mustache
@@ -111,6 +113,7 @@ rss-stylesheet.xsl
 assets/
 fixtures/
 .microfeed/schemas/
+.agents/skills/develop-microfeed-theme/
 ```
 
 The slots have distinct jobs:
@@ -119,6 +122,8 @@ The slots have distinct jobs:
 | --- | --- |
 | Web feed | The public feed index and pagination |
 | Web item | A single item page |
+| Web Page | A standalone public Page such as `/about/` |
+| Web search | The dedicated public Search page; microfeed owns the modal and typeahead behavior |
 | Web header | Shared `<head>` markup, styles, metadata, and optional scripts |
 | Web body start | Shared markup immediately after `<body>` |
 | Web body end | Shared markup immediately before `</body>` |
@@ -135,14 +140,18 @@ for compatibility.
 `THEME.md` is the package-local contract for a person or coding agent. The
 generated `develop-microfeed-theme` skill teaches agents to read the manifest
 and schemas, preserve build sources, validate every change, bump SemVer, and
-avoid activation or screenshots without explicit permission.
+avoid activation or screenshots without explicit permission. Its bundled
+`references/public-site.md` explains how to migrate an exported format v1
+theme, compose all eight format v2 slots, render Page navigation, connect and
+style the platform-owned search popup and Search page, and preview those
+features without duplicating microfeed's runtime behavior.
 
 ## Where code and assets are stored
 
 Installation never runs repository build scripts. Build and commit every
 runtime file before installing a version.
 
-- The normalized manifest and six text slots are stored together in one
+- The normalized manifest and declared text slots are stored together in one
   immutable D1 theme row.
 - Small compiled CSS can be placed in `<style>` in `web-header.mustache`, and
   small compiled JavaScript can be placed in `<script>` in

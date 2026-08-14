@@ -322,11 +322,16 @@ release with `--local`.
 Regenerate configuration, apply D1 migrations, run type checks and focused
 deployment smoke tests, and build. The smoke tests cover migration compatibility,
 core item and feed operations, installation identity, and administrator setup.
-When a release introduces or repairs item search, deployment strips saved item
-HTML into D1's stored plain-text column in resumable batches and validates the
-search index before it becomes available. A second pass after the Worker switch
+When a release introduces or repairs search, deployment strips saved item HTML
+into D1's stored plain-text column in resumable batches and validates the
+unified item-and-Page search index before it becomes available. A second pass
+after the Worker switch
 captures any item write completed by the previous Worker version. An incomplete
 pass stops deployment instead of serving partially normalized search data.
+When the site's current public appearance uses a format-v1 theme, deployment
+also installs the bundled default format-v2 theme as an inactive version. It
+never activates that version or changes the site's current appearance; preview
+and activation remain explicit actions in **Settings → Themes**.
 The complete repository test suite remains part of `yarn check` and continuous
 integration. Cloudflare mode then tags the Worker version with the current Git
 commit, deploys it, and verifies the Worker. The protected dashboard uses that
@@ -404,7 +409,8 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 ```
 
 `init` resolves the same effective selection as the live site: a valid active
-D1 version, then the internal classic fallback. The command copies the six theme slots
+D1 version, then the bundled default fallback. The command copies the source
+theme's available slots
 and any declared packaged assets into an empty directory, adds the authoring
 kit, schemas, fixture, local package scripts, and instructions, and initializes a Git
 repository on `main`. It recursively creates the destination and any missing
@@ -421,7 +427,7 @@ initialization, or edit the generated manifest before the first install. Pass
 `--no-git` when another tool will initialize version control.
 
 The generated repository also contains the `develop-microfeed-theme` coding
-agent skill. It exports the rendered six-slot package, not the build sources of
+agent skill. It exports the rendered theme package, not the build sources of
 the original project. To use microfeed's complete Tailwind/Vite starter, copy
 or clone `themes/default` from the microfeed repository instead.
 
@@ -544,7 +550,7 @@ yarn manage theme install ~/microfeed-themes/my-theme --local --instance persona
 yarn manage theme list --instance personal
 yarn manage theme activate <theme-id> --instance personal
 
-# Return to the previous theme, or deactivate to the internal classic fallback.
+# Return to the previous theme, or deactivate to the bundled default fallback.
 yarn manage theme rollback --instance personal
 yarn manage theme deactivate --instance personal
 
@@ -567,7 +573,7 @@ Each environment is limited to 50 non-deleted installed versions and 20
 drafts. An idempotent reinstall of identical content still succeeds at the
 installed-version limit. Delete an inactive version to free a slot; if Admin
 installation reaches the limit, its draft remains available. `theme list`
-selects only package and source metadata, not the six-slot bundles.
+selects only package and source metadata, not the full theme bundles.
 
 ## `yarn manage snapshot`
 
@@ -582,9 +588,9 @@ manifest records SHA-256 checksums, object metadata, table classifications, row
 counts, and the exact ordered D1 migration filenames and hashes.
 
 D1 cannot export FTS5 virtual tables. Snapshot creation therefore removes only
-the rebuildable item-search indexes and triggers while the D1 schema and data
+the rebuildable unified-search indexes and triggers while the D1 schema and data
 are exported, then recreates and validates them in a `finally` recovery step.
-Item content remains durable and unchanged; item search can briefly return an
+Item and Page content remains durable and unchanged; search can briefly return an
 unavailable response during that D1 export window. Restores likewise recreate
 the derived indexes from the restored `items` table rather than archiving FTS
 shadow data.
@@ -705,13 +711,13 @@ list must be an exact filename-and-hash prefix of the current checkout:
 - An older snapshot restores its original schema and durable data, recreates
   its `d1_migrations` ledger, and then applies only newer migrations.
 - A snapshot at the current head needs no forward migrations.
-- Derived item-search virtual tables are recreated and repopulated after the
-  durable data is imported.
+- Derived unified-search virtual tables are recreated and repopulated after the
+  durable item and Page data is imported.
 - A newer, missing, reordered, edited, or divergent migration history is
   rejected before mutation.
 
-Durable tables currently include channels, items, settings, users, and login
-accounts. Sessions, verification records, rate-limit state, and password
+Durable tables currently include channels, items, Pages, Site Files, settings,
+users, and login accounts. Sessions, verification records, rate-limit state, and password
 setup/reset records are recreated empty. The target installation identity is
 rewritten, while the administrator email and password hash are preserved.
 `publicBucketUrl` is reset to `/media/`.

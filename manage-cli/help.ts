@@ -115,6 +115,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
       "Runs type checks, focused deployment smoke tests, and a build before deploying, then verifies the public site and protected admin route. The complete repository test suite remains part of yarn check and continuous integration.",
       "Normalizes stored item plain text before deployment and reconciles it after the Worker switch; search remains unavailable if either validation pass is incomplete.",
+      "When the current public appearance uses a v1 theme, installs the bundled default v2 theme as an inactive version. Deployment never activates or replaces the current theme.",
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
@@ -161,7 +162,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     changes: "Initializes a local authoring repository, installs immutable theme versions in D1, optionally writes declared assets to R2, or changes the active theme through a one-time authenticated Worker operation.",
     details: [
       "Actions are init, install, list, update, activate, deactivate, rollback, export, and delete.",
-      "Init copies the selected instance's active D1 theme, or the internal classic fallback, into a new standalone repository. It creates missing parent directories, assigns a separate local package identity, adds the theme-development skill, and initializes Git unless --no-git is passed.",
+      "Init copies the selected instance's active D1 theme, or the bundled default fallback, into a new standalone repository. It creates missing parent directories, assigns a separate local package identity, adds the theme-development skill, and initializes Git unless --no-git is passed.",
       "Export preserves one exact installed package identity and writes a complete Git-ready authoring scaffold into an empty directory. Choose one immutable ID or --active; omitted --output defaults to .microfeed/themes/<package-id>-<version>. Pass --git to initialize a local repository on main; export never changes the live site.",
       "Install accepts default, a local directory, or a public GitHub repository, directory, or microfeed-theme.json URL. The reserved default source loads the bundled rendered package from themes/default; GitHub refs resolve to an exact commit before any package file is fetched.",
       "Every install is inactive. Activate separately after previewing in Settings → Themes.",

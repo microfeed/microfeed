@@ -1,6 +1,31 @@
 import {describe, expect, it} from "vitest";
 
-import {isExistingItemEditorPath} from "@/server/admin-routes";
+import {
+  isExistingItemEditorPath,
+  isPublicPageCandidateForDynamicAdminRoute,
+} from "@/server/admin-routes";
+
+describe("dynamic admin route collisions", () => {
+  it("lets a one-segment public Page use the dynamic admin index route", () => {
+    expect(isPublicPageCandidateForDynamicAdminRoute(
+      "/about/",
+      "about",
+      "admin",
+    )).toBe(true);
+  });
+
+  it.each([
+    ["/admin/", "admin"],
+    ["/about/pages/", "about"],
+    ["/about", "about"],
+  ])("does not treat %s as a public Page collision", (pathname, routePath) => {
+    expect(isPublicPageCandidateForDynamicAdminRoute(
+      pathname,
+      routePath,
+      "admin",
+    )).toBe(false);
+  });
+});
 
 describe("admin item routes", () => {
   it.each([

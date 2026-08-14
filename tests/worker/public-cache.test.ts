@@ -42,8 +42,27 @@ describe("Workers Caching response policy", () => {
       PUBLIC_CACHE_TAGS.PUBLIC,
       PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY,
       PUBLIC_CACHE_TAGS.ITEMS,
+      PUBLIC_CACHE_TAGS.PAGES,
       PUBLIC_CACHE_TAGS.THEME_CURRENT,
     ]);
+  });
+
+  it("caches Page and Site File routes with their invalidation groups", () => {
+    expect(policy("/about/").headers.get("cache-tag")?.split(","))
+      .toEqual([
+        PUBLIC_CACHE_TAGS.PUBLIC,
+        PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY,
+        PUBLIC_CACHE_TAGS.PAGES,
+        PUBLIC_CACHE_TAGS.THEME_CURRENT,
+      ]);
+    expect(policy("/security.txt").headers.get("cache-tag")?.split(","))
+      .toEqual([
+        PUBLIC_CACHE_TAGS.PUBLIC,
+        PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY,
+        PUBLIC_CACHE_TAGS.ITEMS,
+        PUBLIC_CACHE_TAGS.PAGES,
+        PUBLIC_CACHE_TAGS.SITE_FILES,
+      ]);
   });
 
   it("tags item representations independently from aggregate pages", () => {
@@ -135,6 +154,7 @@ describe("Workers cache invalidation", () => {
       PUBLIC_CACHE_TAGS.ITEMS,
       PUBLIC_CACHE_TAGS.item(ITEM_ID),
       PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY,
+      PUBLIC_CACHE_TAGS.SITE_FILES,
       PUBLIC_CACHE_TAGS.THEME_CURRENT,
       PUBLIC_CACHE_TAGS.PUBLIC,
     ]);

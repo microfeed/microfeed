@@ -33,6 +33,7 @@ import {
   writeSnapshotManifest,
 } from "../../../manage-cli/lib/snapshot";
 import {repositoryRoot} from "../../../manage-cli/lib/process";
+import {ITEM_SEARCH_VIRTUAL_TABLE_PREFIXES} from "../../../src/shared/ItemSearchSql";
 import {
   canRepairRemoteRestoreBaseline,
   formatSnapshotBytes,
@@ -120,14 +121,17 @@ describe("snapshot migration history", () => {
       "channels",
       "d1_kv",
       "d1_migrations",
-      "item_search_exact",
-      "item_search_exact_data",
-      "item_search_title_trigram_idx",
+      "site_search_exact",
+      "site_search_exact_data",
+      "site_search_title_trigram_idx",
       "sqlite_sequence",
     ])).toEqual(["channels"]);
     expect(SNAPSHOT_TABLES.internal).toContain("d1_kv");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_create_idempotency");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_search_metadata");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("site_search_documents");
+    expect(SNAPSHOT_TABLES.durable).toContain("pages");
+    expect(SNAPSHOT_TABLES.durable).toContain("site_files");
   });
 
   it("extracts explicit index definitions without matching comments or data", () => {
@@ -287,7 +291,13 @@ function snapshotSql(
   }>).filter(({name, tbl_name, type}) =>
     exportedTables.has(type === "table" ? name : tbl_name) &&
     !name.startsWith("item_search_") &&
-    !name.startsWith("items_search_")
+    !name.startsWith("items_search_") &&
+    !name.startsWith("items_site_search_") &&
+    !name.startsWith("pages_site_search_") &&
+    !name.startsWith("site_search_documents_after_") &&
+    !ITEM_SEARCH_VIRTUAL_TABLE_PREFIXES.some((prefix) =>
+      name === prefix || name.startsWith(`${prefix}_`)
+    )
   );
   const data: string[] = [];
   for (const name of exportedTables) {

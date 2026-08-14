@@ -1,6 +1,12 @@
 import * as z from "zod";
 import "zod-openapi";
 
+import {STATUSES} from "./Constants";
+import {
+  PAGE_META_DESCRIPTION_MAX_LENGTH,
+  PAGE_SLUG_MAX_LENGTH,
+} from "./Pages";
+
 export const apiItemIdSchema = z.string().min(1).meta({
   description: "The microfeed item ID or an item-page slug ending in that ID.",
   example: "0HGJLSML3P1",
@@ -97,20 +103,205 @@ export const apiItemOutputSchema = apiItemInputSchema.extend({
   url: z.string().optional(),
 }).meta({id: "Item"});
 
+const PAGE_NAVIGATION_VISIBILITY_DESCRIPTION =
+  "Whether the Page is eligible for website navigation. This setting is only active when status is published. For an unpublished Draft, it is stored but ignored until the Page is published. For an unlisted Page, it is always forced to false.";
+
+const PAGE_VISIBILITY_DESCRIPTION =
+  "The Page visibility: published is public and discoverable; unlisted remains public at its direct URL but cannot appear in navigation; unpublished is a private Draft.";
+
+export const apiPageInputSchema = z.object({
+  content_html: z.string().optional().meta({
+    description: "The Page body as sanitized rich-text HTML.",
+  }),
+  meta_description: z.string().max(PAGE_META_DESCRIPTION_MAX_LENGTH)
+    .nullable().optional().meta({
+      description: `An optional plain-text summary used in the Page's HTML meta description. Maximum ${PAGE_META_DESCRIPTION_MAX_LENGTH} characters.`,
+    }),
+  navigation_label: z.string().max(100).optional().meta({
+    description: "The manually chosen text used for this Page in website navigation. Required when show_in_navigation is true unless the Page is Unlisted.",
+    example: "About",
+  }),
+  show_in_navigation: z.boolean().optional().meta({
+    description: PAGE_NAVIGATION_VISIBILITY_DESCRIPTION,
+  }),
+  slug: z.string().min(1).max(PAGE_SLUG_MAX_LENGTH).optional().meta({
+    description: "A top-level path segment, such as about for /about/.",
+    example: "about",
+  }),
+  status: apiStatusSchema.optional().meta({
+    description: PAGE_VISIBILITY_DESCRIPTION,
+  }),
+  title: z.string().min(1).max(200).optional(),
+}).meta({id: "PageInput"});
+
+export const apiPageCreateInputSchema = apiPageInputSchema.extend({
+  slug: z.string().trim().min(1).max(PAGE_SLUG_MAX_LENGTH).meta({
+    description: "The required, manually chosen top-level path segment, such as about for /about/.",
+    example: "about",
+  }),
+  title: z.string().trim().min(1).max(200),
+}).superRefine((input, context) => {
+  if (
+    input.status !== "unlisted" && input.status !== STATUSES.UNLISTED &&
+    input.show_in_navigation !== false &&
+    !input.navigation_label?.trim()
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "Enter a navigation label, or turn off Show in navigation.",
+      path: ["navigation_label"],
+    });
+  }
+}).meta({id: "PageCreateInput"});
+
+export function pageInputErrorMessage(error: z.ZodError): string {
+  const issue = error.issues[0];
+  const field = String(issue?.path[0] ?? "");
+  if (issue?.code === "custom") return issue.message;
+  if (field === "title") {
+    return issue?.code === "too_big"
+      ? "Page title must be 200 characters or fewer."
+      : "Give the Page a title.";
+  }
+  if (field === "slug") {
+    return issue?.code === "too_big"
+      ? `URL path must be ${PAGE_SLUG_MAX_LENGTH} characters or fewer.`
+      : "Enter a URL path, such as about.";
+  }
+  if (field === "navigation_label") {
+    return issue?.code === "too_big"
+      ? "Navigation label must be 100 characters or fewer."
+      : "Enter a navigation label, or turn off Show in navigation.";
+  }
+  if (field === "meta_description") {
+    return `Search and social description must be ${PAGE_META_DESCRIPTION_MAX_LENGTH} characters or fewer.`;
+  }
+  return "Check the Page fields and try again.";
+}
+
+export const apiPageOutputSchema = apiPageInputSchema.extend({
+  content_html: z.string(),
+  content_text: z.string(),
+  date_created: z.iso.datetime(),
+  date_modified: z.iso.datetime(),
+  date_published: z.iso.datetime().optional(),
+  id: z.string(),
+  is_not_found_page: z.boolean().meta({
+    description: "Whether this is the protected Page used for public 404 responses.",
+  }),
+  navigation_label: z.string(),
+  navigation_order: z.number().int(),
+  show_in_navigation: z.boolean().meta({
+    description: PAGE_NAVIGATION_VISIBILITY_DESCRIPTION,
+  }),
+  slug: z.string(),
+  status: z.enum(["published", "unlisted", "unpublished"]).meta({
+    description: PAGE_VISIBILITY_DESCRIPTION,
+  }),
+  title: z.string(),
+  url: z.url(),
+}).meta({id: "Page"});
+
+export const apiPageListResponseSchema = z.object({
+  items: z.array(apiPageOutputSchema),
+  next_cursor: z.string().optional(),
+}).meta({id: "PageListResponse"});
+
+export const apiPageCreateResponseSchema = z.object({
+  id: z.string(),
+}).meta({id: "PageCreateResponse"});
+
+export const apiSiteFileMediaTypeSchema = z.enum([
+  "application/json",
+  "application/manifest+json",
+  "application/rss+xml",
+  "application/xml",
+  "text/css",
+  "text/csv",
+  "text/markdown",
+  "text/plain",
+  "text/yaml",
+]);
+
+export const apiSiteFileInputSchema = z.object({
+  content_type: apiSiteFileMediaTypeSchema.optional(),
+  draft_content: z.string().optional().meta({
+    description:
+      "A Mustache template. It is rendered with the public feed, Pages, items, and _site helpers when previewed or served.",
+  }),
+  enabled: z.boolean().optional(),
+  filename: z.string().min(1).max(128).optional().meta({
+    description: "A lowercase root filename with a supported text extension.",
+    example: "security.txt",
+  }),
+}).meta({id: "SiteFileInput"});
+
+export const apiSiteFileOutputSchema = apiSiteFileInputSchema.extend({
+  content_type: apiSiteFileMediaTypeSchema,
+  date_created: z.iso.datetime(),
+  date_modified: z.iso.datetime(),
+  date_published: z.iso.datetime().optional(),
+  draft_content: z.string(),
+  enabled: z.boolean(),
+  filename: z.string(),
+  generator: z.enum(["robots", "llms", "sitemap"]).optional(),
+  id: z.string(),
+  mode: z.enum(["generated", "override"]),
+  published_content: z.string().optional().meta({
+    description: "The currently published Mustache template.",
+  }),
+  system: z.boolean(),
+  url: z.url(),
+}).meta({id: "SiteFile"});
+
+export const apiSiteFileListResponseSchema = z.object({
+  items: z.array(apiSiteFileOutputSchema),
+}).meta({id: "SiteFileListResponse"});
+
+export const apiSiteFileCreateResponseSchema = z.object({
+  id: z.string(),
+}).meta({id: "SiteFileCreateResponse"});
+
+export const apiSiteFilePreviewInputSchema = apiSiteFileInputSchema.extend({
+  draft_content: z.string(),
+  site_file_id: z.string().min(1).optional().meta({
+    description:
+      "The existing Site File ID, used to preserve its built-in generator context.",
+  }),
+}).meta({id: "SiteFilePreviewInput"});
+
+export const apiSiteFilePreviewResponseSchema = z.object({
+  content_type: apiSiteFileMediaTypeSchema,
+  rendered_content: z.string(),
+  valid: z.literal(true),
+}).meta({id: "SiteFilePreviewResponse"});
+
 export const apiSearchHighlightSegmentSchema = z.object({
   matched: z.boolean(),
   text: z.string(),
 }).meta({id: "SearchHighlightSegment"});
 
 export const apiSearchItemSchema = apiItemOutputSchema.and(z.object({
+  type: z.literal("item"),
   highlights: z.object({
     content_text: z.array(apiSearchHighlightSegmentSchema),
     title: z.array(apiSearchHighlightSegmentSchema),
   }),
 }).loose()).meta({id: "SearchItem"});
 
+export const apiSearchPageSchema = apiPageOutputSchema.omit({
+  content_html: true,
+  date_created: true,
+}).and(z.object({
+  type: z.literal("page"),
+  highlights: z.object({
+    content_text: z.array(apiSearchHighlightSegmentSchema),
+    title: z.array(apiSearchHighlightSegmentSchema),
+  }),
+}).loose()).meta({id: "SearchPage"});
+
 export const apiSearchResponseSchema = z.object({
-  items: z.array(apiSearchItemSchema),
+  items: z.array(z.union([apiSearchItemSchema, apiSearchPageSchema])),
   next_cursor: z.string().optional(),
 }).meta({id: "SearchResponse"});
 
@@ -138,7 +329,15 @@ export const apiSearchQuerySchema = z.object({
   status: z.string().regex(
     /^(?:published|unlisted|unpublished)(?:,(?:published|unlisted|unpublished))*$/u,
   ).default("published,unlisted,unpublished").meta({
-    description: "Comma-separated item statuses. Deleted items are never searched.",
+    description: "Comma-separated content statuses. Deleted content is never searched.",
+  }),
+  types: z.enum([
+    "items",
+    "pages",
+    "items,pages",
+    "pages,items",
+  ]).default("items").meta({
+    description: "Content types to search. The default preserves item-only behavior.",
   }),
 });
 

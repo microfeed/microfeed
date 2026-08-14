@@ -109,7 +109,7 @@ export async function itemSearchIndexesExist(
   const rows = await cloudflare.queryD1(
     config,
     "SELECT name FROM sqlite_schema WHERE type = 'table' AND name IN " +
-      "('item_search_exact', 'item_search_title_trigram') ORDER BY name",
+      "('site_search_exact', 'site_search_title_trigram') ORDER BY name",
     options,
   );
   return rows.length === 2;
@@ -146,7 +146,7 @@ export async function normalizeItemSearchContent(
 ): Promise<number> {
   await cloudflare.queryD1(
     config,
-    "UPDATE item_search_metadata SET ready = 0, normalized_at = NULL " +
+    "UPDATE site_search_metadata SET ready = 0, normalized_at = NULL " +
       "WHERE id = 1",
     options,
   );
@@ -188,7 +188,7 @@ export async function normalizeItemSearchContent(
     const normalizedAt = new Date().toISOString();
     await cloudflare.queryD1(
       config,
-      "INSERT INTO item_search_metadata (id, ready, normalized_at) VALUES " +
+      "INSERT INTO site_search_metadata (id, ready, normalized_at) VALUES " +
         `(1, 1, ${sqlString(normalizedAt)}) ON CONFLICT(id) DO UPDATE SET ` +
         "ready = 1, normalized_at = excluded.normalized_at",
       options,
@@ -205,7 +205,7 @@ export async function setItemSearchReady(
 ): Promise<void> {
   await cloudflare.queryD1(
     config,
-    "UPDATE item_search_metadata SET " +
+    "UPDATE site_search_metadata SET " +
       `ready = ${ready ? 1 : 0}, ` +
       `${ready ? "normalized_at = CURRENT_TIMESTAMP" : "normalized_at = NULL"} ` +
       "WHERE id = 1",

@@ -411,6 +411,13 @@ export const ADMIN_URLS = {
   newItem: (baseUrl: any = '/') =>
     urlJoin(baseUrl, adminUrl("items/new", browserAdminPath())),
   allItems: () => adminUrl("items/list", browserAdminPath()),
+  pages: () => adminUrl("pages", browserAdminPath()),
+  newPage: () => adminUrl("pages/new", browserAdminPath()),
+  editPage: (id: string) => adminUrl(`pages/${id}`, browserAdminPath()),
+  siteFiles: () => adminUrl("site-files", browserAdminPath()),
+  newSiteFile: () => adminUrl("site-files/new", browserAdminPath()),
+  editSiteFile: (id: string) =>
+    adminUrl(`site-files/${id}`, browserAdminPath()),
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
@@ -426,6 +433,18 @@ export const ADMIN_URLS = {
   logout: () => adminUrl("logout", browserAdminPath()),
 
   ajaxFeed: () => adminUrl("ajax/feed", browserAdminPath()),
+  ajaxPages: () => adminUrl("ajax/pages", browserAdminPath()),
+  ajaxPageOrder: () => adminUrl("ajax/pages/order", browserAdminPath()),
+  ajaxPage: (id: string) => adminUrl(`ajax/pages/${id}`, browserAdminPath()),
+  ajaxSiteFiles: () => adminUrl("ajax/site-files", browserAdminPath()),
+  ajaxSiteFile: (id: string) =>
+    adminUrl(`ajax/site-files/${id}`, browserAdminPath()),
+  ajaxPreviewSiteFile: () =>
+    adminUrl("ajax/site-files/preview", browserAdminPath()),
+  ajaxPublishSiteFile: (id: string) =>
+    adminUrl(`ajax/site-files/${id}/publish`, browserAdminPath()),
+  ajaxResetSiteFile: (id: string) =>
+    adminUrl(`ajax/site-files/${id}/reset`, browserAdminPath()),
   ajaxR2Ops: () => adminUrl("ajax/r2-ops", browserAdminPath()),
   ajaxApiSettings: () => adminUrl("ajax/api/settings", browserAdminPath()),
   ajaxApiKeys: () => adminUrl("ajax/api/keys", browserAdminPath()),

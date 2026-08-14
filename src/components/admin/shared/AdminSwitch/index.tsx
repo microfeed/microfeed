@@ -30,10 +30,7 @@ export default function AdminSwitch({
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}
-        className={cn(
-          "data-checked:bg-brand-light data-unchecked:bg-muted-foreground/35",
-          className,
-        )}
+        className={className}
       />
       {label && (
         <Label

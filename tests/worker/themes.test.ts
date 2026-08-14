@@ -125,7 +125,7 @@ describe("versioned theme storage", () => {
     await store.deleteVersion("legacy-theme-v1", env.MEDIA_BUCKET);
   });
 
-  it("installs classic to preserve an upgraded site with no selected version", async () => {
+  it("installs the bundled default for an upgraded site with no selected version", async () => {
     const database = new FeedDb(env, new Request("https://example.test/"));
     await database.getContent();
     const loaded = await loadPublishedFeed(
@@ -134,10 +134,10 @@ describe("versioned theme storage", () => {
       {includeActiveTheme: true},
     );
     expect(loaded.content.activeTheme).toMatchObject({
-      id: "bundled-classic-v1",
-      packageId: "microfeed.classic",
+      id: "bundled-default-v2",
+      packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.0.0",
+      version: "1.1.7",
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });
@@ -462,6 +462,18 @@ describe("versioned theme storage", () => {
   it("consumes one-time management grants and isolates preview responses", async () => {
     const store = new ThemeStore(env.FEED_DB);
     const source = packageData(`worker.management.${crypto.randomUUID()}`);
+    source.bundle.webPage = "<main>Page preview</main>";
+    source.bundle.webSearch =
+      '<main>Search preview {{#search.results}}<span class="preview-result">{{title}}</span>{{/search.results}}</main>';
+    source.manifest = {
+      ...source.manifest,
+      files: {
+        ...source.manifest.files,
+        webPage: "page.mustache",
+        webSearch: "search.mustache",
+      },
+      formatVersion: 2,
+    };
     source.bundle.webHeader = "<script>document.body.dataset.theme='ran'</script>";
     const theme = await store.installVersion({
       ...source,
@@ -492,7 +504,27 @@ describe("versioned theme storage", () => {
     expect(preview.headers.get("content-security-policy")).toContain(
       "img-src http://localhost:4321 https: data: blob:",
     );
-    expect(await preview.text()).toContain("document.body.dataset.theme='ran'");
+    const previewHtml = await preview.text();
+    expect(previewHtml).toContain("document.body.dataset.theme='ran'");
+    expect(previewHtml).toContain("data-microfeed-search-dialog");
+    expect(previewHtml).toContain("data-microfeed-search-preview-results");
+    expect(previewHtml).toContain('"date_published":');
+    expect(previewHtml).toContain(
+      "Live search is unavailable in preview. Showing preview results instead.",
+    );
+    expect(previewHtml).toContain("event.metaKey || event.ctrlKey");
+    expect(previewHtml).toContain("dialog.showModal()");
+
+    const searchPreview = await themePreviewResponse(
+      env,
+      new Request(
+        "http://localhost:4321/admin/ajax/themes/id/preview?view=search",
+      ),
+      theme,
+    );
+    const searchPreviewHtml = await searchPreview.text();
+    expect(searchPreviewHtml).toContain('class="preview-result"');
+    expect(searchPreviewHtml).toContain("About");
 
     source.bundle.rssStylesheet = [
       '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">',

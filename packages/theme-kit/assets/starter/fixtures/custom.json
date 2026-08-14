@@ -1,11 +1,27 @@
 {
   "version": "https://jsonfeed.org/version/1.1",
-  "title": "Package fixture",
+  "title": "Theme feature fixture",
+  "description": "Representative content for Feed, Item, Page, navigation, and Search previews.",
+  "home_page_url": "https://example.test/",
   "items": [
     {
       "id": "package-fixture",
       "title": "A theme-specific example",
-      "content_html": "<p>Edit or remove this fixture.</p>"
+      "content_html": "<p>Edit or remove this fixture.</p>",
+      "content_text": "Edit or remove this fixture.",
+      "date_published": "2026-08-13T10:00:00.000Z",
+      "_microfeed": {
+        "web_url": "https://example.test/i/package-fixture/"
+      }
+    },
+    {
+      "id": "searchable-fixture",
+      "title": "Searchable Page and Item styles",
+      "content_text": "Use this longer description to verify excerpts, wrapping, and matched-text highlighting.",
+      "date_published": "2026-08-12T09:00:00.000Z",
+      "_microfeed": {
+        "web_url": "https://example.test/i/searchable-fixture/"
+      }
     }
   ]
 }
