@@ -40,6 +40,8 @@ export const SNAPSHOT_TABLES = {
     "theme_state",
     "categories",
     "item_categories",
+    "series",
+    "item_series",
   ],
   ephemeral: [
     "item_create_idempotency",

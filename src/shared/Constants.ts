@@ -183,6 +183,7 @@ export const NAV_ITEMS = {
   PAGES: 'pages',
   SITE_FILES: 'site_files',
   CATEGORIES: 'categories',
+  SERIES: 'series',
   API: 'api',
   SETTINGS: 'settings',
 } as const;
@@ -205,6 +206,9 @@ export const NAV_ITEMS_DICT = {
   },
   [NAV_ITEMS.CATEGORIES]: {
     name: 'Categories',
+  },
+  [NAV_ITEMS.SERIES]: {
+    name: 'Series',
   },
   [NAV_ITEMS.API]: {
     name: 'API',

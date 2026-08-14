@@ -21,6 +21,7 @@ import {
   ONBOARDING_TYPES,
   STATUSES,
   ITEM_STATUSES_DICT,
+  ENCLOSURE_CATEGORIES,
 } from "@/shared/Constants";
 import {AdminSideQuickLinks, SideQuickLink} from "@/components/admin/shared/AdminSideQuickLinks";
 import AdminRichEditor from "@/components/admin/shared/AdminRichEditor";
@@ -53,6 +54,11 @@ import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 import {cn} from "@/lib/utils";
 import {MAX_CATEGORIES_PER_ITEM, type CategoryRecord} from "@/shared/Categories";
+import {
+  SERIES_KINDS,
+  type SeriesKind,
+  type SeriesRecord,
+} from "@/shared/Series";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -64,6 +70,28 @@ function itemCategoryIds(item: Record<string, unknown>): string[] {
       ? entry
       : (entry as {id?: unknown})?.id
   ).filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
+function itemKind(item: Record<string, unknown>): SeriesKind {
+  const category = (item.mediaFile as {category?: unknown})?.category;
+  return category === ENCLOSURE_CATEGORIES.AUDIO
+    ? SERIES_KINDS.PODCAST
+    : SERIES_KINDS.POST;
+}
+
+function itemSeriesId(item: Record<string, unknown>): string | null {
+  const series = item.series;
+  if (typeof series === "string") return series;
+  const id = (series as {id?: unknown})?.id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+function itemSeriesNumber(item: Record<string, unknown>): string {
+  const series = item.series;
+  const number = (series as {series_number?: unknown})?.series_number;
+  return number === null || number === undefined || number === ""
+    ? ""
+    : String(number);
 }
 
 function initItem(itemId: string) {
@@ -83,6 +111,7 @@ interface Props {
   feedContent: FeedContent;
   itemId?: string;
   onboardingResult: OnboardingResult;
+  series: SeriesRecord[];
 }
 
 interface ItemSnapshot {
@@ -467,6 +496,85 @@ export default class EditItemApp extends React.Component<Props, any> {
                 })}
               </div>
             )}
+          </div>
+          <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+            <div className="mb-2 text-sm font-semibold text-foreground">Series</div>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Group this {itemKind(item)} into a series. Posts and podcasts
+              keep separate series.
+            </p>
+            {(() => {
+              const kind = itemKind(item);
+              const kindSeries = (this.props.series ?? []).filter(
+                (entry) => entry.kind === kind,
+              );
+              const selectedId = itemSeriesId(item);
+              return (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium" htmlFor="item-series">
+                      Series
+                    </label>
+                    <select
+                      className="rounded-[10px] border bg-card px-3 py-2 text-sm"
+                      id="item-series"
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const current = item.series as Record<string, unknown> | null;
+                        this.onUpdateItemMeta({
+                          series: value
+                            ? {
+                                ...(current && typeof current === "object"
+                                  ? current
+                                  : {}),
+                                id: value,
+                              }
+                            : null,
+                        });
+                      }}
+                      value={selectedId ?? ""}
+                    >
+                      <option value="">No series</option>
+                      {kindSeries.map((entry) => (
+                        <option key={entry.id} value={entry.id}>
+                          {entry.name}
+                        </option>
+                      ))}
+                    </select>
+                    {kindSeries.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        No {kind} series yet. Add one in the Series page first.
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium" htmlFor="item-series-number">
+                      Series number
+                    </label>
+                    <input
+                      className="rounded-[10px] border bg-card px-3 py-2 text-sm"
+                      id="item-series-number"
+                      min="1"
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const current = item.series as Record<string, unknown> | null;
+                        this.onUpdateItemMeta({
+                          series: {
+                            ...(current && typeof current === "object"
+                              ? current
+                              : {}),
+                            series_number: value === "" ? null : Number(value),
+                          },
+                        });
+                      }}
+                      placeholder="Optional"
+                      type="number"
+                      value={itemSeriesNumber(item)}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <details>

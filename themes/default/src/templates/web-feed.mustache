@@ -72,6 +72,14 @@
           {{#categories}}<span class="mr-2">{{name}}</span>{{/categories}}
         </div>
         {{/categories.length}}
+        {{#series}}
+        <div class="text-xs">
+          {{#series_number}}
+          Part {{series_number}} of
+          {{/series_number}}
+          {{name}}
+        </div>
+        {{/series}}
       </div>
       {{/items}}
     </div>

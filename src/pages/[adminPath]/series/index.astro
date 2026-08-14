@@ -1,0 +1,21 @@
+---
+import {env} from "cloudflare:workers";
+
+import SeriesApp from "@/components/admin/series/SeriesApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {listSeries} from "@/server/series/service";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const series = await listSeries(env.FEED_DB);
+---
+
+<AdminShell activeNavItem={NAV_ITEMS.SERIES} documentTitle="Series | microfeed.org" {feedContent} {onboardingResult} pageTitle="Series">
+  <SeriesApp client:load series={series}>
+    <AdminPageFallback slot="fallback" kind="list" />
+  </SeriesApp>
+</AdminShell>

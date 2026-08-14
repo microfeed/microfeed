@@ -18,6 +18,7 @@ describe("getAdminNavigationItems", () => {
       [NAV_ITEMS.PAGES, "/studio/pages/"],
       [NAV_ITEMS.SITE_FILES, "/studio/site-files/"],
       [NAV_ITEMS.CATEGORIES, "/studio/categories/"],
+      [NAV_ITEMS.SERIES, "/studio/series/"],
       [NAV_ITEMS.API, "/studio/api/"],
       [NAV_ITEMS.SETTINGS, "/studio/settings/"],
     ]);

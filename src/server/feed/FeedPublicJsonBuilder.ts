@@ -293,6 +293,30 @@ export default class FeedPublicJsonBuilder {
         slug: String(category.slug),
       }));
     }
+    if (item.series && typeof item.series === 'object') {
+      const series = item.series as {
+        description?: unknown;
+        id?: unknown;
+        kind?: unknown;
+        name?: unknown;
+        series_number?: unknown;
+        slug?: unknown;
+      };
+      if (series.id && series.name) {
+        (newItem as any)['series'] = {
+          id: String(series.id),
+          kind: String(series.kind),
+          name: String(series.name),
+          slug: String(series.slug),
+          ...(series.description
+            ? {description: String(series.description)}
+            : {}),
+          ...(series.series_number === null || series.series_number === undefined
+            ? {}
+            : {series_number: Number(series.series_number)}),
+        };
+      }
+    }
     if (mediaFile.isImage && mediaFile.url) {
       (newItem as any)['banner_image'] = mediaFile.url;
     }
