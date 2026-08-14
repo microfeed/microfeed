@@ -90,12 +90,15 @@ export async function loadPublicPageRoute(
     extraContext,
   );
   const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
+  const contactSent = new URL(request.url).searchParams.get("sent") === "1";
 
   return {
     kind: "page",
     layout: {
       bodyEnd: theme.getWebBodyEnd().html,
-      bodyHtml: theme.getWebPage(resolved.page, navigation).html,
+      bodyHtml: theme.getWebPage(resolved.page, navigation, {
+        contact_sent: contactSent,
+      }).html,
       bodyStart: theme.getWebBodyStart().html,
       ...(fallback ? {} : {canonicalUrl: resolved.page.url}),
       channelImage: String(loaded.content.channel?.image ?? ""),

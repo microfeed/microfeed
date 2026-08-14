@@ -8,4 +8,29 @@
     <h1>{{page.title}}</h1>
     <div class="mf-rich-content">{{{page.content_html}}}</div>
   </article>
+  {{#is_contact_page}}
+  <section class="mf-contact" aria-labelledby="mf-contact-title">
+    <h2 id="mf-contact-title">Contact</h2>
+    {{#contact_sent}}
+    <p class="mf-contact-success" role="status">Thanks! Your message has been sent.</p>
+    {{/contact_sent}}
+    {{^contact_sent}}
+    <form action="/contact/submit/" class="mf-contact-form" method="post">
+      <label class="mf-contact-field">
+        <span>Name</span>
+        <input autocomplete="name" maxlength="100" name="name" required type="text">
+      </label>
+      <label class="mf-contact-field">
+        <span>Email</span>
+        <input autocomplete="email" maxlength="254" name="email" required type="email">
+      </label>
+      <label class="mf-contact-field">
+        <span>Message</span>
+        <textarea maxlength="5000" name="message" required rows="5"></textarea>
+      </label>
+      <button class="mf-contact-submit" type="submit">Send</button>
+    </form>
+    {{/contact_sent}}
+  </section>
+  {{/is_contact_page}}
 </main>

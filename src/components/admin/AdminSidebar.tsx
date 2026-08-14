@@ -10,6 +10,7 @@ import {
   SettingsIcon,
   TagsIcon,
   LayersIcon,
+  MailIcon,
 } from "lucide-react";
 
 import {
@@ -40,6 +41,7 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.SITE_FILES]: FileCode2Icon,
   [NAV_ITEMS.CATEGORIES]: TagsIcon,
   [NAV_ITEMS.SERIES]: LayersIcon,
+  [NAV_ITEMS.CONTACT_MESSAGES]: MailIcon,
   [NAV_ITEMS.API]: Code2Icon,
   [NAV_ITEMS.SETTINGS]: SettingsIcon,
 };

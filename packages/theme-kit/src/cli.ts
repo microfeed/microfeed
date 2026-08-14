@@ -164,7 +164,13 @@ function contexts(fixture: Record<string, unknown>, packageId: string, version: 
   return {
     context: {...context, navigation_pages},
     itemContext: {...context, navigation_pages, item: (fixture.items as Array<Record<string, unknown>> | undefined)?.[0]},
-    pageContext: {...context, navigation_pages, page},
+    pageContext: {
+      ...context,
+      navigation_pages,
+      page,
+      is_contact_page: page.slug === "contact",
+      contact_sent: false,
+    },
     previewResults,
     searchContext: {...context, navigation_pages, search: {query: "hello", results: previewResults}},
   };
