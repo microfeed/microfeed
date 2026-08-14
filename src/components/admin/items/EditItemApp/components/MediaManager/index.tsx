@@ -215,19 +215,23 @@ export default class MediaManager extends React.Component<any, any> {
     }
     const cdnFilename = `media/${newFilename}`;
 
-    const updateState = (cdnUrl: any) => {
+    const updateState = (cdnUrl: any, uploadedBlob: any) => {
+      // Use the blob actually uploaded: images are converted to AVIF by
+      // Requests.upload, so the original file's type/size may be stale.
+      const contentType = uploadedBlob?.type || type;
+      const sizeByte = uploadedBlob?.size ?? size;
       this.setState({
         progressText: null,
         uploadStatus: null,
 
         url: cdnUrl,
-        contentType: type,
-        sizeByte: size,
+        contentType,
+        sizeByte,
       }, () => {
         this.props.onMediaFileUpdated({
           url: cdnUrl,
-          sizeByte: size,
-          contentType: type,
+          sizeByte,
+          contentType,
           category,
         }, {immediate: true});
         if (this.audioRef && category === ENCLOSURE_CATEGORIES.AUDIO) {
@@ -242,8 +246,8 @@ export default class MediaManager extends React.Component<any, any> {
 
     Requests.upload(file, cdnFilename, (percentage: any) => {
       this.setState({progressText: `${Number(percentage * 100.0).toFixed(2)}%`});
-    }, (cdnUrl: any) => {
-        updateState(cdnUrl);
+    }, (cdnUrl: any, uploadedBlob: any) => {
+        updateState(cdnUrl, uploadedBlob);
     }, () => {
       showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
       this.setState({...this.initState});

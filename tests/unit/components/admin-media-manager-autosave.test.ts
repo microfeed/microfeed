@@ -79,7 +79,7 @@ describe("item media autosave timing", () => {
       url: "",
     });
 
-    vi.spyOn(Requests, "upload").mockImplementation((...args: any[]) => {
+    vi.spyOn(Requests, "upload").mockImplementation(async (...args: any[]) => {
       args[3]("media/video-upload.mp4");
     });
     manager.onFileUpload({
