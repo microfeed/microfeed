@@ -359,4 +359,3 @@ features or architectural changes, please open an
 ## 🛡️ License
 microfeed is licensed under the [AGPL-3.0](https://github.com/microfeed/microfeed/blob/main/LICENSE) license. Please see [the LICENSE file](https://github.com/microfeed/microfeed/blob/main/LICENSE) for more information.
 
-[Back to 📚TOC](#-table-of-contents)
