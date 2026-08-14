@@ -1,0 +1,20 @@
+---
+import {env} from "cloudflare:workers";
+
+import PublicLayout from "../../../../layouts/PublicLayout.astro";
+import {loadSeriesLandingPage} from "@/server/taxonomy/public";
+import {normalizeSeriesKind} from "@/shared/Series";
+
+const kind = normalizeSeriesKind(Astro.params.kind) ?? "post";
+const slug = Astro.params.slug ?? "";
+const result = await loadSeriesLandingPage(env, Astro.request, kind, slug);
+if (result.kind === "not-found") {
+  Astro.response.status = 404;
+}
+---
+
+{result.kind === "not-found" ? (
+  <h1>Not Found</h1>
+) : (
+  <PublicLayout {...result.layout} />
+)}

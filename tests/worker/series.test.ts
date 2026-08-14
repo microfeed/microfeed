@@ -15,6 +15,7 @@ import {
 } from "@/server/series/service";
 import {SERIES_KINDS} from "@/shared/Series";
 import {STATUSES} from "@/shared/Constants";
+import {loadSeriesLandingPage} from "@/server/taxonomy/public";
 
 const ORIGIN = "https://feed.example.com";
 
@@ -242,8 +243,52 @@ describe("item series persistence", () => {
       kind: SERIES_KINDS.POST,
       name: "Essays",
       slug: "essays",
+      url: "https://feed.example.com/series/post/essays/",
       description: "A series about writing.",
       series_number: 4,
     });
+  });
+
+  it("builds a series landing page with only its items", async () => {
+    const db = await database();
+    const series = await createSeries(db.FEED_DB, {
+      description: "A series about writing.",
+      kind: SERIES_KINDS.POST,
+      name: "Essays",
+    });
+    await saveItem(db, "ser-item-6", "In series", {id: series.id});
+    await saveItem(db, "ser-item-7", "Not in series");
+
+    const result = await loadSeriesLandingPage(
+      env,
+      new Request(`${ORIGIN}/series/post/essays/`),
+      SERIES_KINDS.POST,
+      "essays",
+    );
+
+    expect(result.kind).toBe("page");
+    if (result.kind !== "page") return;
+    expect(result.layout.title).toBe("Essays");
+    expect(result.layout.canonicalUrl).toBe(
+      "https://feed.example.com/series/post/essays/",
+    );
+    expect(result.layout.bodyHtml).toContain("In series");
+    expect(result.layout.bodyHtml).not.toContain("Not in series");
+  });
+
+  it("returns not-found for an unknown series slug", async () => {
+    const db = await database();
+    await createSeries(db.FEED_DB, {
+      kind: SERIES_KINDS.POST,
+      name: "Essays",
+    });
+
+    const result = await loadSeriesLandingPage(
+      env,
+      new Request(`${ORIGIN}/series/post/missing/`),
+      SERIES_KINDS.POST,
+      "missing",
+    );
+    expect(result.kind).toBe("not-found");
   });
 });

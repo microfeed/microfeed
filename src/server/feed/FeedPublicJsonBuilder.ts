@@ -291,6 +291,7 @@ export default class FeedPublicJsonBuilder {
         id: String(category.id),
         name: String(category.name),
         slug: String(category.slug),
+        url: PUBLIC_URLS.webCategory(category.slug, this.baseUrl),
       }));
     }
     if (item.series && typeof item.series === 'object') {
@@ -308,6 +309,11 @@ export default class FeedPublicJsonBuilder {
           kind: String(series.kind),
           name: String(series.name),
           slug: String(series.slug),
+          url: PUBLIC_URLS.webSeries(
+            String(series.kind),
+            String(series.slug),
+            this.baseUrl,
+          ),
           ...(series.description
             ? {description: String(series.description)}
             : {}),

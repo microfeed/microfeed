@@ -545,6 +545,12 @@ export const PUBLIC_URLS = {
   apiLlmsFull: (baseUrl: any = '/') =>
     urlJoin(baseUrl, `${API_BASE_PATH}llms-full.txt`),
   webItem,
+  webCategory: (slug: string, baseUrl: any = '/') => {
+    return urlJoin(baseUrl, `/category/${slug}/`);
+  },
+  webSeries: (kind: string, slug: string, baseUrl: any = '/') => {
+    return urlJoin(baseUrl, `/series/${kind}/${slug}/`);
+  },
   jsonItem: (itemId: any, itemTitle: any = null, baseUrl: any = '/', locale: any = 'en') => {
     return urlJoin(webItem(itemId, itemTitle, baseUrl, locale), 'json/');
   },

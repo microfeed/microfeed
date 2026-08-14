@@ -91,6 +91,17 @@ export async function getSeriesById(
   return row ? recordFromRow(row) : null;
 }
 
+export async function getSeriesBySlug(
+  database: D1Database,
+  kind: SeriesKind,
+  slug: string,
+): Promise<SeriesRecord | null> {
+  const row = await database.prepare(
+    "SELECT * FROM series WHERE kind = ? AND slug = ? COLLATE NOCASE LIMIT 1",
+  ).bind(kind, slug).first<SeriesRow>();
+  return row ? recordFromRow(row) : null;
+}
+
 async function assertSlugAvailable(
   database: D1Database,
   kind: SeriesKind,

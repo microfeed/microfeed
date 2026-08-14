@@ -26,13 +26,13 @@
           <div class="mf-feed-meta">
             {{#categories.length}}
             {{#categories}}
-            <span class="mf-chip">{{name}}</span>
+            <a class="mf-chip" href="{{url}}">{{name}}</a>
             {{/categories}}
             {{/categories.length}}
             {{#series}}
-            <span class="mf-series-note">
+            <a class="mf-series-note" href="{{url}}">
               {{#series_number}}Part {{series_number}} of {{/series_number}}{{name}}
-            </span>
+            </a>
             {{/series}}
             {{#_microfeed.duration_hhmmss}}
             <span class="mf-series-note">{{_microfeed.duration_hhmmss}}</span>

@@ -1,0 +1,18 @@
+---
+import {env} from "cloudflare:workers";
+
+import PublicLayout from "../../../layouts/PublicLayout.astro";
+import {loadCategoryLandingPage} from "@/server/taxonomy/public";
+
+const slug = Astro.params.slug ?? "";
+const result = await loadCategoryLandingPage(env, Astro.request, slug);
+if (result.kind === "not-found") {
+  Astro.response.status = 404;
+}
+---
+
+{result.kind === "not-found" ? (
+  <h1>Not Found</h1>
+) : (
+  <PublicLayout {...result.layout} />
+)}

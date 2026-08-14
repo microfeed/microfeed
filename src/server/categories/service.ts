@@ -96,6 +96,16 @@ export async function getCategoryById(
   return row ? recordFromRow(row) : null;
 }
 
+export async function getCategoryBySlug(
+  database: D1Database,
+  slug: string,
+): Promise<CategoryRecord | null> {
+  const row = await database.prepare(
+    "SELECT * FROM categories WHERE slug = ? COLLATE NOCASE LIMIT 1",
+  ).bind(slug).first<CategoryRow>();
+  return row ? recordFromRow(row) : null;
+}
+
 export async function createCategory(
   database: D1Database,
   input: CategoryInput,

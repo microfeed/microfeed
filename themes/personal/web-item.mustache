@@ -18,7 +18,7 @@
     {{#categories.length}}
     <div class="mf-item-meta">
       {{#categories}}
-      <span class="mf-chip">{{name}}</span>
+      <a class="mf-chip" href="{{url}}">{{name}}</a>
       {{/categories}}
     </div>
     {{/categories.length}}
@@ -26,7 +26,7 @@
     {{#series}}
     <p class="mf-item-series">
       {{#series_number}}Part {{series_number}} of {{/series_number}}
-      <strong>{{name}}</strong>
+      <a href="{{url}}"><strong>{{name}}</strong></a>
     </p>
     {{/series}}
 

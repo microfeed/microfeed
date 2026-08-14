@@ -15,6 +15,7 @@ import {
 } from "@/server/categories/service";
 import {MAX_CATEGORIES_PER_ITEM} from "@/shared/Categories";
 import {STATUSES} from "@/shared/Constants";
+import {loadCategoryLandingPage} from "@/server/taxonomy/public";
 
 const ORIGIN = "https://feed.example.com";
 
@@ -165,7 +166,46 @@ describe("item category persistence", () => {
     );
     const item = publicFeed.items?.[0];
     expect(item.categories).toEqual([
-      {id: a.id, name: "Essays", slug: "essays"},
+      {
+        id: a.id,
+        name: "Essays",
+        slug: "essays",
+        url: "https://feed.example.com/category/essays/",
+      },
     ]);
+  });
+
+  it("builds a category landing page with only its items", async () => {
+    const db = await database();
+    const a = await createCategory(db.FEED_DB, {name: "Essays"});
+    await saveItem(db, "cat-item-6", "In category", [a.id]);
+    await saveItem(db, "cat-item-7", "Not in category");
+
+    const result = await loadCategoryLandingPage(
+      env,
+      new Request(`${ORIGIN}/category/essays/`),
+      "essays",
+    );
+
+    expect(result.kind).toBe("page");
+    if (result.kind !== "page") return;
+    expect(result.layout.title).toBe("Essays");
+    expect(result.layout.canonicalUrl).toBe(
+      "https://feed.example.com/category/essays/",
+    );
+    expect(result.layout.bodyHtml).toContain("In category");
+    expect(result.layout.bodyHtml).not.toContain("Not in category");
+  });
+
+  it("returns not-found for an unknown category slug", async () => {
+    const db = await database();
+    await createCategory(db.FEED_DB, {name: "Essays"});
+
+    const result = await loadCategoryLandingPage(
+      env,
+      new Request(`${ORIGIN}/category/missing/`),
+      "missing",
+    );
+    expect(result.kind).toBe("not-found");
   });
 });

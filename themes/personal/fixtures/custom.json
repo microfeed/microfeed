@@ -12,14 +12,15 @@
       "content_text": "This essay belongs to a series and carries two categories.",
       "date_published": "2026-08-13T10:00:00.000Z",
       "categories": [
-        {"id": "cat-writing", "name": "Writing", "slug": "writing"},
-        {"id": "cat-notes", "name": "Notes", "slug": "notes"}
+        {"id": "cat-writing", "name": "Writing", "slug": "writing", "url": "https://example.test/category/writing/"},
+        {"id": "cat-notes", "name": "Notes", "slug": "notes", "url": "https://example.test/category/notes/"}
       ],
       "series": {
         "id": "series-essays",
         "kind": "post",
         "name": "Field Notes",
         "slug": "field-notes",
+        "url": "https://example.test/series/post/field-notes/",
         "series_number": 2
       },
       "_microfeed": {
@@ -40,13 +41,14 @@
         }
       ],
       "categories": [
-        {"id": "cat-podcast", "name": "Podcast", "slug": "podcast"}
+        {"id": "cat-podcast", "name": "Podcast", "slug": "podcast", "url": "https://example.test/category/podcast/"}
       ],
       "series": {
         "id": "series-podcast",
         "kind": "podcast",
         "name": "The Show",
         "slug": "the-show",
+        "url": "https://example.test/series/podcast/the-show/",
         "series_number": 5
       },
       "_microfeed": {
