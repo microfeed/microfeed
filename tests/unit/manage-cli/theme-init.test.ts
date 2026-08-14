@@ -111,6 +111,60 @@ afterEach(async () => {
 });
 
 describe("theme repository initialization", () => {
+  it("sends a JSON content-type on the theme-management activation request", async () => {
+    const {theme} = await freshModules();
+    const runner = commandRunner();
+    const themeRow = {
+      asset_owner_theme_id: null,
+      bundle_json: JSON.stringify(bundle),
+      checksum_sha256: "a".repeat(64),
+      created_at: "2026-08-10T00:00:00.000Z",
+      deleted_at: null,
+      id: "theme-id",
+      manifest_json: JSON.stringify(manifest),
+      name: manifest.name,
+      origin_theme_id: null,
+      package_id: manifest.packageId,
+      source_commit: null,
+      source_kind: "local-directory",
+      source_path: "/tmp/theme",
+      source_ref: null,
+      source_url: null,
+      version: manifest.version,
+    };
+    let managementHeaders: Headers | undefined;
+    vi.stubGlobal("fetch", vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/d1/database/")) {
+        const request = JSON.parse(String(init?.body)) as {sql: string};
+        if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
+          return d1Response([themeRow]);
+        }
+        if (request.sql.includes("INSERT INTO theme_management_tokens")) {
+          return d1Response([]);
+        }
+        if (request.sql.includes("DELETE FROM theme_management_tokens")) {
+          return d1Response([]);
+        }
+        throw new Error(`Unexpected D1 query: ${request.sql}`);
+      }
+      if (url.includes("/.well-known/microfeed/theme-management/")) {
+        managementHeaders = new Headers(init?.headers);
+        return Response.json({state: {active_theme_id: "theme-id"}});
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+
+    await theme.themeCommand({
+      action: "activate",
+      instance: "personal",
+      "theme-id": "theme-id",
+    }, runner);
+
+    expect(managementHeaders?.get("content-type")).toBe("application/json");
+    expect(managementHeaders?.get("authorization")).toMatch(/^Bearer /u);
+  });
+
   it("installs and activates the bundled default only for pristine initialization", async () => {
     const {theme} = await freshModules();
     const runner = commandRunner();
