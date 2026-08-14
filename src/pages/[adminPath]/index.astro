@@ -7,6 +7,7 @@ import PublicLayout from "@/layouts/PublicLayout.astro";
 import {NAV_ITEMS} from "@/shared/Constants";
 import {normalizeAdminPath} from "@/shared/AdminPath";
 import {loadPublicPageRoute} from "@/server/pages/public";
+import {listContactMessages} from "@/server/contact/service";
 
 const routeAdminPath = Astro.params.adminPath ?? "";
 const adminRequest = routeAdminPath === normalizeAdminPath(
@@ -16,6 +17,9 @@ const AdminShell = adminRequest
   ? (await import("../../layouts/AdminShell.astro")).default
   : undefined;
 const {feedContent, onboardingResult} = Astro.locals;
+const contactMessages = adminRequest
+  ? await listContactMessages(env.FEED_DB)
+  : [];
 let publicPage;
 if (adminRequest && (!feedContent || !onboardingResult)) {
   throw new Error("Admin feed context was not initialized.");
@@ -41,7 +45,7 @@ if (!adminRequest) {
     onboardingResult={onboardingResult!}
     pageTitle="Home"
   >
-    <AdminHomeApp client:only="react" feedContent={feedContent!} onboardingResult={onboardingResult!}>
+    <AdminHomeApp client:only="react" contactMessages={contactMessages} feedContent={feedContent!} onboardingResult={onboardingResult!}>
       <AdminPageFallback slot="fallback" kind="home" />
     </AdminHomeApp>
   </AdminShell>

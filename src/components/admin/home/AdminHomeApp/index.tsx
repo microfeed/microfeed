@@ -4,13 +4,16 @@ import AdminPageApp from "@/components/admin/shared/AdminPageApp";
 import WhatsNewApp from "./component/WhatsNewApp";
 import DistributionApp from "./component/DistributionApp";
 import SetupChecklistApp from "./component/SetupChecklistApp";
+import ContactMessagesHomeApp from "./component/ContactMessagesHomeApp";
+import type {ContactMessageRecord} from "@/shared/ContactMessage";
 
 interface Props {
+  contactMessages: ContactMessageRecord[];
   feedContent: FeedContent;
   onboardingResult: OnboardingResult;
 }
 
-export default function AdminHomeApp({feedContent, onboardingResult}: Props) {
+export default function AdminHomeApp({contactMessages, feedContent, onboardingResult}: Props) {
   const [checklistComplete, setChecklistComplete] = useState(
     onboardingResult.allOk,
   );
@@ -39,6 +42,9 @@ export default function AdminHomeApp({feedContent, onboardingResult}: Props) {
           {primarySections}
         </div>
         <div className="grid grid-cols-1 gap-4 xl:col-span-4">
+          <div>
+            <ContactMessagesHomeApp messages={contactMessages} />
+          </div>
           <div>
             <WhatsNewApp />
           </div>
