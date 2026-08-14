@@ -120,3 +120,6 @@ webpack-stats.json
 !packages/theme-kit/assets/starter/.microfeed/schemas/
 !packages/theme-kit/assets/starter/.microfeed/schemas/*.json
 src/worker-configuration.d.ts
+
+# Agent runtime artifacts
+.pi-subagents/

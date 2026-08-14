@@ -67,6 +67,11 @@
           <i>{{_microfeed.duration_hhmmss}}</i>
           {{/_microfeed.duration_hhmmss}}
         </div>
+        {{#categories.length}}
+        <div class="text-xs">
+          {{#categories}}<span class="mr-2">{{name}}</span>{{/categories}}
+        </div>
+        {{/categories.length}}
       </div>
       {{/items}}
     </div>

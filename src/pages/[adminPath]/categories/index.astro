@@ -1,0 +1,21 @@
+---
+import {env} from "cloudflare:workers";
+
+import CategoriesApp from "@/components/admin/categories/CategoriesApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {listCategories} from "@/server/categories/service";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const categories = await listCategories(env.FEED_DB);
+---
+
+<AdminShell activeNavItem={NAV_ITEMS.CATEGORIES} documentTitle="Categories | microfeed.org" {feedContent} {onboardingResult} pageTitle="Categories">
+  <CategoriesApp client:load categories={categories}>
+    <AdminPageFallback slot="fallback" kind="list" />
+  </CategoriesApp>
+</AdminShell>

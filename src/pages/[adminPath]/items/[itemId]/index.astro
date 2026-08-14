@@ -7,6 +7,7 @@ import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 import {loadFeed} from "@/server/feed/feed";
+import {listCategories} from "@/server/categories/service";
 
 const itemId = Astro.params.itemId ?? "";
 const loaded = await loadFeed(env, Astro.request, {
@@ -14,6 +15,7 @@ const loaded = await loadFeed(env, Astro.request, {
   limit: 1,
   queryKwargs: {id: itemId},
 });
+const categories = await listCategories(env.FEED_DB);
 const item = loaded.content.items?.[0];
 const missing = !item || item.status === STATUSES.DELETED;
 if (missing) {
@@ -44,6 +46,7 @@ if (missing) {
     ) : (
       <EditItemApp
         client:only="react"
+        categories={categories}
         feedContent={loaded.content}
         onboardingResult={loaded.onboarding}
         {itemId}

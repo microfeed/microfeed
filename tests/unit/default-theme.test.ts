@@ -170,7 +170,7 @@ describe("bundled theme packages", () => {
       assets: [],
       formatVersion: 2,
       packageId: "microfeed.default",
-      version: "1.1.7",
+      version: "1.1.8",
     });
     expect(application.version).toBe("1.0.4");
   });

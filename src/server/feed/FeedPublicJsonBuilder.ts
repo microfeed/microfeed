@@ -286,6 +286,13 @@ export default class FeedPublicJsonBuilder {
     if (item.image) {
       (newItem as any)['image'] = item.image;
     }
+    if (Array.isArray(item.categories) && item.categories.length > 0) {
+      (newItem as any)['categories'] = item.categories.map((category: any) => ({
+        id: String(category.id),
+        name: String(category.name),
+        slug: String(category.slug),
+      }));
+    }
     if (mediaFile.isImage && mediaFile.url) {
       (newItem as any)['banner_image'] = mediaFile.url;
     }

@@ -418,6 +418,7 @@ export const ADMIN_URLS = {
   newSiteFile: () => adminUrl("site-files/new", browserAdminPath()),
   editSiteFile: (id: string) =>
     adminUrl(`site-files/${id}`, browserAdminPath()),
+  categories: () => adminUrl("categories", browserAdminPath()),
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
@@ -439,6 +440,9 @@ export const ADMIN_URLS = {
   ajaxSiteFiles: () => adminUrl("ajax/site-files", browserAdminPath()),
   ajaxSiteFile: (id: string) =>
     adminUrl(`ajax/site-files/${id}`, browserAdminPath()),
+  ajaxCategories: () => adminUrl("ajax/categories", browserAdminPath()),
+  ajaxCategory: (id: string) =>
+    adminUrl(`ajax/categories/${id}`, browserAdminPath()),
   ajaxPreviewSiteFile: () =>
     adminUrl("ajax/site-files/preview", browserAdminPath()),
   ajaxPublishSiteFile: (id: string) =>

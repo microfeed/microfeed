@@ -7,7 +7,7 @@ runtime fallback when no valid active version is available.
 
 ## `default`
 
-`themes/default` is the format-v2 `microfeed.default@1.1.7` theme. New pristine
+`themes/default` is the format-v2 `microfeed.default@1.1.8` theme. New pristine
 local, preview, and production instances install and activate it during
 initialization. It includes the complete authoring workspace:
 

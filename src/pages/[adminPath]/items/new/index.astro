@@ -2,11 +2,14 @@
 import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import AdminShell from "../../../../layouts/AdminShell.astro";
+import {env} from "cloudflare:workers";
+import {listCategories} from "@/server/categories/service";
 
 const {feedContent, onboardingResult} = Astro.locals;
 if (!feedContent || !onboardingResult) {
   throw new Error("Admin feed context was not initialized.");
 }
+const categories = await listCategories(env.FEED_DB);
 ---
 
 <AdminShell
@@ -16,7 +19,7 @@ if (!feedContent || !onboardingResult) {
   {onboardingResult}
   pageTitle="Add new item"
 >
-  <EditItemApp client:only="react" {feedContent} {onboardingResult}>
+  <EditItemApp client:only="react" categories={categories} {feedContent} {onboardingResult}>
     <AdminPageFallback slot="fallback" kind="form" />
   </EditItemApp>
 </AdminShell>
