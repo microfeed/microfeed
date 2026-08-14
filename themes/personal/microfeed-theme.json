@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "personal.minimal",
   "name": "Personal",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Kiran Brahma",
   "license": "AGPL-3.0",
   "description": "A clean, minimal, writing-first personal website theme. Editorial serif typography, generous whitespace, podcast support, categories, series, and a contact form.",
