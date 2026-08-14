@@ -419,6 +419,7 @@ export const ADMIN_URLS = {
   editSiteFile: (id: string) =>
     adminUrl(`site-files/${id}`, browserAdminPath()),
   categories: () => adminUrl("categories", browserAdminPath()),
+  series: () => adminUrl("series", browserAdminPath()),
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
@@ -443,6 +444,9 @@ export const ADMIN_URLS = {
   ajaxCategories: () => adminUrl("ajax/categories", browserAdminPath()),
   ajaxCategory: (id: string) =>
     adminUrl(`ajax/categories/${id}`, browserAdminPath()),
+  ajaxSeriesList: () => adminUrl("ajax/series", browserAdminPath()),
+  ajaxSeries: (id: string) =>
+    adminUrl(`ajax/series/${id}`, browserAdminPath()),
   ajaxPreviewSiteFile: () =>
     adminUrl("ajax/site-files/preview", browserAdminPath()),
   ajaxPublishSiteFile: (id: string) =>

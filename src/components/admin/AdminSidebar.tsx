@@ -9,6 +9,7 @@ import {
   PlusIcon,
   SettingsIcon,
   TagsIcon,
+  LayersIcon,
 } from "lucide-react";
 
 import {
@@ -38,6 +39,7 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.PAGES]: FileTextIcon,
   [NAV_ITEMS.SITE_FILES]: FileCode2Icon,
   [NAV_ITEMS.CATEGORIES]: TagsIcon,
+  [NAV_ITEMS.SERIES]: LayersIcon,
   [NAV_ITEMS.API]: Code2Icon,
   [NAV_ITEMS.SETTINGS]: SettingsIcon,
 };

@@ -23,6 +23,15 @@
     </div>
     {{/items.0.categories.length}}
 
+    {{#items.0.series}}
+    <div class="mb-4 text-sm">
+      {{#items.0.series.series_number}}
+      Part {{items.0.series.series_number}} of
+      {{/items.0.series.series_number}}
+      <span class="font-bold">{{items.0.series.name}}</span>
+    </div>
+    {{/items.0.series}}
+
     <div>
       {{#items.0._microfeed.is_audio}}
       <div class="text-sm mb-4">

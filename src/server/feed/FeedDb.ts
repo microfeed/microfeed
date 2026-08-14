@@ -29,6 +29,10 @@ import {
   assignItemCategories,
   categoriesForItems,
 } from "@/server/categories/service";
+import {
+  assignItemSeries,
+  seriesForItems,
+} from "@/server/series/service";
 
 /**
  * support url query parameters:
@@ -399,6 +403,13 @@ export default class FeedDb {
         for (const item of (contentJson as any).items) {
           item.categories = categoriesByItem.get(String(item.id)) ?? [];
         }
+        const seriesByItem = await seriesForItems(this.FEED_DB, itemIds);
+        for (const item of (contentJson as any).items) {
+          const assignment = seriesByItem.get(String(item.id));
+          item.series = assignment
+            ? {...assignment.series, series_number: assignment.series_number}
+            : null;
+        }
       }
     }
     return contentJson;
@@ -537,6 +548,11 @@ export default class FeedDb {
     const item = getItemJson(row);
     const categoriesByItem = await categoriesForItems(this.FEED_DB, [id]);
     item.categories = categoriesByItem.get(id) ?? [];
+    const seriesByItem = await seriesForItems(this.FEED_DB, [id]);
+    const assignment = seriesByItem.get(id);
+    item.series = assignment
+      ? {...assignment.series, series_number: assignment.series_number}
+      : null;
     return item;
   }
 
@@ -610,6 +626,7 @@ export default class FeedDb {
       throw error;
     }
     await assignItemCategories(this.FEED_DB, id, data.categories);
+    await assignItemSeries(this.FEED_DB, id, data.series);
     console.log('Done!', res);
   }
 
