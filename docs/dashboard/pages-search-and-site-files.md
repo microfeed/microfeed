@@ -10,6 +10,12 @@ root-level text such as `robots.txt`, `llms.txt`, `sitemap.xml`, or a custom
 
 ## Create a Page
 
+New installations include a Published **About** Page at `/about/`, with
+**Show in navigation** enabled. Edit this starter Page to introduce your site,
+publication, or project, or delete it when you no longer need it. When an
+existing site updates, microfeed creates the same starter only if `/about/` is
+still available; an existing or previously used About path is never replaced.
+
 Open **Pages → Add Page** in Admin. The editor deliberately resembles the item
 editor: it has the same visual/HTML content editor, plus website-specific
 controls for the URL path, visibility, navigation label, and meta description.
