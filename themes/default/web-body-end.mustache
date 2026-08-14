@@ -7,10 +7,6 @@
     © {{_microfeed.publisher}}
     {{/_microfeed.copyright}}
   </div>
-  <div>
-    Powered by <a href="https://www.microfeed.org/" class="text-black">microfeed</a>
-    (a <a class="text-black" href="https://www.listennotes.com/">Listen Notes</a> project)
-  </div>
 </footer>
 
 <script>(function(){function e(){if(!(`IntersectionObserver`in window))return;let e=new IntersectionObserver(t=>{for(let n of t){if(!n.isIntersecting||!(n.target instanceof HTMLImageElement))continue;let t=n.target,r=t.dataset.src;if(!r)continue;let i=document.createElement(`img`);i.src=r,i.alt=t.alt,i.onload=()=>{let e=document.createElement(`a`);e.href=r,e.target=`_blank`,e.rel=`noopener`,e.append(i),t.replaceWith(e)},e.unobserve(t)}});document.querySelectorAll(`img:not([loading="lazy"])`).forEach(t=>{t.dataset.src=t.src,t.classList.add(`loader`),t.src=`data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP88eNnPQAJQwNqJHSUZQAAAABJRU5ErkJggg==`,e.observe(t)})}function t(){for(let e of document.querySelectorAll(`[data-microfeed-site-nav]`)){let t=Array.from(e.querySelectorAll(`[data-microfeed-nav-item]`));if(t.length<=2)continue;let n=e.querySelector(`[data-microfeed-nav-overflow]`),r=n?.querySelector(`[data-microfeed-nav-overflow-menu]`),i=n?.querySelector(`summary`);if(!n||!r||!i)continue;for(let e of t.slice(2))r.append(e);n.hidden=!1;let a=()=>{i.setAttribute(`aria-expanded`,String(n.open))};n.addEventListener(`toggle`,a),r.addEventListener(`click`,()=>{n.open=!1}),document.addEventListener(`pointerdown`,e=>{e.target instanceof Node&&!n.contains(e.target)&&(n.open=!1)}),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&(n.open=!1)}),a()}}function n(){e(),t()}document.readyState===`loading`?document.addEventListener(`DOMContentLoaded`,n,{once:!0}):n()})();</script>
