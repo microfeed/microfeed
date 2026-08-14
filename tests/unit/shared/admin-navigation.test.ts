@@ -20,6 +20,7 @@ describe("getAdminNavigationItems", () => {
       [NAV_ITEMS.CATEGORIES, "/studio/categories/"],
       [NAV_ITEMS.SERIES, "/studio/series/"],
       [NAV_ITEMS.CONTACT_MESSAGES, "/studio/contact-messages/"],
+      [NAV_ITEMS.MEDIA_LIBRARY, "/studio/media-library/"],
       [NAV_ITEMS.API, "/studio/api/"],
       [NAV_ITEMS.SETTINGS, "/studio/settings/"],
     ]);

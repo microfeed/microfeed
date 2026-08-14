@@ -185,6 +185,7 @@ export const NAV_ITEMS = {
   CATEGORIES: 'categories',
   SERIES: 'series',
   CONTACT_MESSAGES: 'contact_messages',
+  MEDIA_LIBRARY: 'media_library',
   API: 'api',
   SETTINGS: 'settings',
 } as const;
@@ -213,6 +214,9 @@ export const NAV_ITEMS_DICT = {
   },
   [NAV_ITEMS.CONTACT_MESSAGES]: {
     name: 'Contact messages',
+  },
+  [NAV_ITEMS.MEDIA_LIBRARY]: {
+    name: 'Media library',
   },
   [NAV_ITEMS.API]: {
     name: 'API',
