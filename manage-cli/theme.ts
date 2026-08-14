@@ -1174,7 +1174,10 @@ async function managementAction(
   if (!baseUrl) throw new Error("The selected instance has no deployment URL.");
   try {
     const response = await fetch(new URL("/.well-known/microfeed/theme-management/", baseUrl), {
-      headers: {authorization: `Bearer ${token}`},
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+      },
       method: "POST",
     });
     const body = await response.json().catch(() => ({})) as Record<string, unknown>;
