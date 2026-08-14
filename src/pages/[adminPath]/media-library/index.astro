@@ -1,0 +1,21 @@
+---
+import {env} from "cloudflare:workers";
+
+import MediaLibraryApp from "@/components/admin/media-library/MediaLibraryApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {listMediaLibrary} from "@/server/media/library";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const entries = await listMediaLibrary(env.FEED_DB);
+---
+
+<AdminShell activeNavItem={NAV_ITEMS.MEDIA_LIBRARY} documentTitle="Media library | microfeed.org" {feedContent} {onboardingResult} pageTitle="Media library">
+  <MediaLibraryApp client:load entries={entries}>
+    <AdminPageFallback slot="fallback" kind="list" />
+  </MediaLibraryApp>
+</AdminShell>

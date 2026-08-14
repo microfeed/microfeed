@@ -15,12 +15,15 @@ import {
 } from "@/shared/Constants";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import AdminInput from "@/components/admin/shared/AdminInput";
+import AdminDialog from "@/components/admin/shared/AdminDialog";
 import FileUploader from "@/components/admin/shared/AdminFileUploader";
-import {CloudUploadIcon} from "lucide-react";
+import {CloudUploadIcon, ImagesIcon} from "lucide-react";
 import {getPublicBaseUrl} from "@/client/ClientUrlUtils";
 import {showToast} from "@/client/ToastUtils";
 import {getMediaFileFromUrl} from "@/shared/MediaFileUtils";
+import type {MediaLibraryRecord} from "@/shared/MediaLibrary";
 import MediaStorageUnavailableDialog from "@/components/admin/shared/MediaStorageUnavailableDialog";
+import {Button} from "@/components/ui/button";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -191,6 +194,9 @@ export default class MediaManager extends React.Component<any, any> {
       uploadStatus: null,
       progressText: '0.00%',
       showMediaStorageUnavailable: false,
+      showLibrary: false,
+      libraryEntries: [],
+      libraryLoading: false,
     };
   }
 
@@ -256,11 +262,47 @@ export default class MediaManager extends React.Component<any, any> {
     this.setState({showMediaStorageUnavailable: true});
   }
 
+  async openLibrary() {
+    this.setState({showLibrary: true, libraryLoading: true});
+    try {
+      const response = await fetch(ADMIN_URLS.ajaxMediaLibrary(), {
+        headers: {accept: "application/json"},
+      });
+      const body = await response.json().catch(() => ({})) as {
+        items?: MediaLibraryRecord[];
+      };
+      this.setState({
+        libraryEntries: Array.isArray(body.items) ? body.items : [],
+        libraryLoading: false,
+      });
+    } catch {
+      this.setState({libraryLoading: false});
+      showToast("Failed to load the media library.", "error");
+    }
+  }
+
+  pickFromLibrary(entry: MediaLibraryRecord) {
+    this.setState({
+      showLibrary: false,
+      url: entry.object_key,
+      contentType: entry.content_type || 'image/avif',
+      sizeByte: entry.size_bytes || 0,
+    }, () => {
+      this.props.onMediaFileUpdated({
+        url: entry.object_key,
+        sizeByte: entry.size_bytes || 0,
+        contentType: entry.content_type || 'image/avif',
+        category: ENCLOSURE_CATEGORIES.IMAGE,
+      }, {immediate: true});
+    });
+  }
+
   render() {
     const {
       category, url, contentType, sizeByte, durationSecond,
       uploadStatus, progressText, publicBucketUrl,
-      showMediaStorageUnavailable,
+      showMediaStorageUnavailable, showLibrary, libraryEntries,
+      libraryLoading,
     } = this.state;
     const {label, labelComponent} = this.props;
     const mediaStorageReady = this.props.mediaStorageReady !== false;
@@ -361,6 +403,19 @@ export default class MediaManager extends React.Component<any, any> {
           onFileUpload={this.onFileUpload}
           onMediaStorageUnavailable={this.showMediaStorageUnavailable}
         />}
+        {category === ENCLOSURE_CATEGORIES.IMAGE && (
+          <div className="mt-3">
+            <Button
+              disabled={uploading}
+              onClick={() => void this.openLibrary()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <ImagesIcon aria-hidden="true" /> Choose from library
+            </Button>
+          </div>
+        )}
       </div>
       <MediaStorageUnavailableDialog
         dashboardUrl={this.props.mediaStorage?.dashboardUrl}
@@ -370,6 +425,46 @@ export default class MediaManager extends React.Component<any, any> {
         open={showMediaStorageUnavailable}
         state={this.props.mediaStorage?.mediaStorageState}
       />
+      <AdminDialog
+        title="Choose from media library"
+        open={showLibrary}
+        onOpenChange={(open) => this.setState({showLibrary: open})}
+      >
+        <div className="p-4">
+          {libraryLoading ? (
+            <p className="text-sm text-muted-foreground">Loading media library...</p>
+          ) : libraryEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No media yet. Upload an image first and it will appear here.
+            </p>
+          ) : (
+            <div className="grid max-h-96 grid-cols-3 gap-3 overflow-y-auto">
+              {libraryEntries.map((entry: MediaLibraryRecord) => (
+                <button
+                  className="group relative aspect-square w-full overflow-hidden rounded-md border border-border bg-muted outline-none transition hover:border-primary focus-visible:ring-2 focus-visible:ring-primary"
+                  key={entry.id}
+                  onClick={() => this.pickFromLibrary(entry)}
+                  title={entry.filename}
+                  type="button"
+                >
+                  {entry.content_type?.startsWith("image/") ? (
+                    <img
+                      alt={entry.filename}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      src={urlJoinWithRelative(publicBucketUrl, entry.url)}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      <ImagesIcon aria-hidden="true" className="size-6" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </AdminDialog>
     </div>);
   }
 }

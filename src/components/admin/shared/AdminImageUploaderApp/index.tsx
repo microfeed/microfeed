@@ -4,16 +4,19 @@ import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.min.css';
 import Requests from '@/client/requests';
 import {
+  ADMIN_URLS,
   randomHex,
   resolvePublicBucketUrl,
   urlJoinWithRelative,
 } from '@/shared/StringUtils';
 import type {ImageMetadataTarget} from "@/types";
+import type {MediaLibraryRecord} from "@/shared/MediaLibrary";
 import AdminDialog from "../AdminDialog";
 import FileUploader from "../AdminFileUploader";
 import {
   CloudUploadIcon,
   ExternalLinkIcon,
+  ImagesIcon,
   PencilIcon,
   RefreshCwIcon,
   Trash2Icon,
@@ -109,6 +112,9 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       showDeleteConfirm: false,
       showPreview: false,
       showMediaStorageUnavailable: false,
+      showLibrary: false,
+      libraryEntries: [],
+      libraryLoading: false,
       deleting: false,
       previewImageUrl: null,
       cropper: null,
@@ -170,6 +176,41 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }
 
     this.inputFile.click();
+  }
+
+  async openLibrary() {
+    this.setState({showLibrary: true, libraryLoading: true});
+    try {
+      const response = await fetch(ADMIN_URLS.ajaxMediaLibrary(), {
+        headers: {accept: "application/json"},
+      });
+      const body = await response.json().catch(() => ({})) as {
+        items?: MediaLibraryRecord[];
+      };
+      this.setState({
+        libraryEntries: Array.isArray(body.items) ? body.items : [],
+        libraryLoading: false,
+      });
+    } catch {
+      this.setState({libraryLoading: false});
+      showToast("Failed to load the media library.", "error");
+    }
+  }
+
+  pickFromLibrary(entry: MediaLibraryRecord) {
+    // Reuse an existing library image without re-uploading. The stored image
+    // URL is the R2 object key (e.g. production/images/xxx.avif), matching
+    // the format produced by a fresh upload. Nothing is queued for deletion
+    // because the replaced image may still be used by other posts.
+    this.props.onImageUploaded(
+      entry.object_key,
+      entry.content_type || "image/avif",
+      undefined,
+    );
+    this.setState({
+      currentImageUrl: entry.object_key,
+      showLibrary: false,
+    });
   }
 
   async onDeleteImage() {
@@ -245,15 +286,23 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       return;
     }
     this.setState({ uploadStatus: UPLOAD_STATUS__START });
-    cropper.getCroppedCanvas().toBlob((blob: Blob | null) => {
+    const canvas = cropper.getCroppedCanvas();
+    // Convert the 1:1 crop to AVIF where the browser supports encoding it.
+    // Browsers without AVIF encode support silently fall back to PNG, so the
+    // blob type tells us which format was actually produced.
+    canvas.toBlob((blob: Blob | null) => {
       if (!blob) {
         showToast('Failed to prepare this image. Please try another file.', 'error');
         this.setState({...this.initState});
         return;
       }
+      const isAvif = blob.type === 'image/avif';
+      const finalFilename = isAvif
+        ? cdnFilename.replace(/\.[a-z0-9]+$/iu, '.avif')
+        : cdnFilename;
       cropper.disable();
 
-      Requests.upload(blob, cdnFilename, (percentage: any) => {
+      Requests.upload(blob, finalFilename, (percentage: any) => {
         this.setState({
           progressText: `${Number(percentage * 100.0).toFixed(2)}%`,
         });
@@ -288,7 +337,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           }
         });
       });
-    }, 'image/png');
+    }, 'image/avif', 0.8);
   }
 
   showMediaStorageUnavailable() {
@@ -299,7 +348,8 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     const {uploadStatus, currentImageUrl, deleting, progressText, showModal,
       showDeleteConfirm,
       showPreview,
-      showMediaStorageUnavailable, publicBucketUrl, previewImageUrl,
+      showMediaStorageUnavailable, showLibrary, libraryEntries,
+      libraryLoading, publicBucketUrl, previewImageUrl,
       imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
     const fileTypes = ['PNG', 'JPG', 'JPEG'];
@@ -346,6 +396,10 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
             <DropdownMenuItem onClick={this.onFileUploadClick}>
               <RefreshCwIcon aria-hidden="true" />
               Replace
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void this.openLibrary()}>
+              <ImagesIcon aria-hidden="true" />
+              Choose from library
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => this.setState({showPreview: true})}>
               <ExternalLinkIcon aria-hidden="true" />
@@ -410,6 +464,17 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           <EmptyImage fileTypes={fileTypes} />
         </div>
       </FileUploader>}
+      {!absoluteImageUrl && <div className="mt-2 flex justify-center">
+        <Button
+          disabled={uploading}
+          onClick={() => void this.openLibrary()}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <ImagesIcon aria-hidden="true" /> Choose from library
+        </Button>
+      </div>}
       <MediaStorageUnavailableDialog
         dashboardUrl={this.props.mediaStorage?.dashboardUrl}
         onOpenChange={(open) => this.setState({
@@ -465,6 +530,46 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           {imageSizeNotOkay ? <div>{imageSizeNotOkayMsg}</div> :
             <div>Image ok: {parseInt(imageWidth)} x {parseInt(imageHeight)} pixels.</div>}
         </div>}
+      </AdminDialog>
+      <AdminDialog
+        title="Choose from media library"
+        open={showLibrary}
+        onOpenChange={(open) => this.setState({showLibrary: open})}
+      >
+        <div className="p-4">
+          {libraryLoading ? (
+            <p className="text-sm text-muted-foreground">Loading media library...</p>
+          ) : libraryEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No media yet. Upload an image first and it will appear here.
+            </p>
+          ) : (
+            <div className="grid max-h-96 grid-cols-3 gap-3 overflow-y-auto">
+              {libraryEntries.map((entry: MediaLibraryRecord) => (
+                <button
+                  className="group relative aspect-square w-full overflow-hidden rounded-md border border-border bg-muted outline-none transition hover:border-primary focus-visible:ring-2 focus-visible:ring-primary"
+                  key={entry.id}
+                  onClick={() => this.pickFromLibrary(entry)}
+                  title={entry.filename}
+                  type="button"
+                >
+                  {entry.content_type?.startsWith("image/") ? (
+                    <img
+                      alt={entry.filename}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      src={urlJoinWithRelative(publicBucketUrl, entry.url)}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      <ImagesIcon aria-hidden="true" className="size-6" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </AdminDialog>
     </div>);
   }

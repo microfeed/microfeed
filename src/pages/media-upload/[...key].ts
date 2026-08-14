@@ -7,6 +7,7 @@ import {
   mediaStorageUnavailableResponse,
 } from "@/server/media/storage";
 import {normalizeObjectKey, verifySignedUpload} from "@/server/media/uploads";
+import {recordUploadedMedia} from "@/server/media/library";
 
 const corsHeaders = {
   "access-control-allow-headers": "content-type",
@@ -52,6 +53,23 @@ export const PUT: APIRoute = async ({params, request, url}) => {
     httpMetadata: contentType ? {contentType} : request.headers,
   });
   const [object] = await Promise.all([put, piping]);
+  // Record the completed upload in the global media library so the owner can
+  // reuse the same file across posts without re-uploading. The URL matches
+  // the public /media/{key} serving route.
+  const sizeBytes = sizeValue ? Number(sizeValue) : null;
+  await recordUploadedMedia(env.FEED_DB, {
+    content_type: contentType || null,
+    filename: objectKey.split("/").at(-1) ?? objectKey,
+    object_key: objectKey,
+    size_bytes: sizeBytes,
+    url: `/media/${objectKey}`,
+  }).catch((error: unknown) => {
+    console.error(JSON.stringify({
+      error: error instanceof Error ? error.message : String(error),
+      message: "Failed to record uploaded media in the media library",
+      objectKey,
+    }));
+  });
   return jsonResponse(
     {etag: object?.httpEtag ?? null},
     {headers: corsHeaders},

@@ -422,6 +422,7 @@ export const ADMIN_URLS = {
   series: () => adminUrl("series", browserAdminPath()),
   contactMessages: () =>
     adminUrl("contact-messages", browserAdminPath()),
+  mediaLibrary: () => adminUrl("media-library", browserAdminPath()),
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
@@ -453,6 +454,9 @@ export const ADMIN_URLS = {
     adminUrl("ajax/contact-messages", browserAdminPath()),
   ajaxContactMessage: (id: string) =>
     adminUrl(`ajax/contact-messages/${id}`, browserAdminPath()),
+  ajaxMediaLibrary: () => adminUrl("ajax/media-library", browserAdminPath()),
+  ajaxMediaLibraryEntry: (id: string) =>
+    adminUrl(`ajax/media-library/${id}`, browserAdminPath()),
   ajaxPreviewSiteFile: () =>
     adminUrl("ajax/site-files/preview", browserAdminPath()),
   ajaxPublishSiteFile: (id: string) =>

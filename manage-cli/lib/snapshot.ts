@@ -43,6 +43,7 @@ export const SNAPSHOT_TABLES = {
     "series",
     "item_series",
     "contact_messages",
+    "media_library",
   ],
   ephemeral: [
     "item_create_idempotency",
