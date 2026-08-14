@@ -420,6 +420,8 @@ export const ADMIN_URLS = {
     adminUrl(`site-files/${id}`, browserAdminPath()),
   categories: () => adminUrl("categories", browserAdminPath()),
   series: () => adminUrl("series", browserAdminPath()),
+  contactMessages: () =>
+    adminUrl("contact-messages", browserAdminPath()),
   settings: () => adminUrl("settings", browserAdminPath()),
   api: () => adminUrl("api", browserAdminPath()),
   apiAuthentication: () => adminUrl("api/auth", browserAdminPath()),
@@ -447,6 +449,10 @@ export const ADMIN_URLS = {
   ajaxSeriesList: () => adminUrl("ajax/series", browserAdminPath()),
   ajaxSeries: (id: string) =>
     adminUrl(`ajax/series/${id}`, browserAdminPath()),
+  ajaxContactMessages: () =>
+    adminUrl("ajax/contact-messages", browserAdminPath()),
+  ajaxContactMessage: (id: string) =>
+    adminUrl(`ajax/contact-messages/${id}`, browserAdminPath()),
   ajaxPreviewSiteFile: () =>
     adminUrl("ajax/site-files/preview", browserAdminPath()),
   ajaxPublishSiteFile: (id: string) =>

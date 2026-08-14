@@ -194,12 +194,15 @@ export default class Theme {
   getWebPage(
     page: object,
     navigationPages: object[] = [],
+    extraContext: Record<string, unknown> = {},
   ): {html: string} {
     return {
       html: renderThemeTemplate(this.getWebPageTmpl(), {
         ...this.context,
+        ...extraContext,
         navigation_pages: navigationPages,
         page,
+        is_contact_page: String((page as {slug?: unknown})?.slug) === "contact",
       }),
     };
   }

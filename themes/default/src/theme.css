@@ -778,3 +778,70 @@ body.rss-page {
     width: 9rem;
   }
 }
+
+/* Contact form on the dedicated contact Page. */
+.mf-contact {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mf-border);
+  margin-top: 2.5rem;
+}
+
+.mf-contact h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.mf-contact-success {
+  border: 1px solid var(--mf-border);
+  border-radius: 0.5rem;
+  background: var(--mf-surface);
+  padding: 0.75rem 1rem;
+  color: var(--mf-text);
+}
+
+.mf-contact-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mf-contact-field {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--mf-muted);
+}
+
+.mf-contact-field input,
+.mf-contact-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--mf-border);
+  border-radius: 0.5rem;
+  background: var(--mf-background);
+  color: var(--mf-text);
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+}
+
+.mf-contact-field input:focus,
+.mf-contact-field textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--mf-accent) 50%, transparent);
+  outline-offset: 1px;
+}
+
+.mf-contact-submit {
+  justify-self: start;
+  border: 1px solid var(--mf-accent);
+  border-radius: 0.5rem;
+  background: var(--mf-accent);
+  color: #ffffff;
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mf-contact-submit:hover {
+  filter: brightness(0.95);
+}

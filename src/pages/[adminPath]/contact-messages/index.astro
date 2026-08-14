@@ -1,0 +1,21 @@
+---
+import {env} from "cloudflare:workers";
+
+import ContactMessagesApp from "@/components/admin/contact-messages/ContactMessagesApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {listContactMessages} from "@/server/contact/service";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) {
+  throw new Error("Admin feed context was not initialized.");
+}
+const messages = await listContactMessages(env.FEED_DB);
+---
+
+<AdminShell activeNavItem={NAV_ITEMS.CONTACT_MESSAGES} documentTitle="Contact messages | microfeed.org" {feedContent} {onboardingResult} pageTitle="Contact messages">
+  <ContactMessagesApp client:load messages={messages}>
+    <AdminPageFallback slot="fallback" kind="list" />
+  </ContactMessagesApp>
+</AdminShell>

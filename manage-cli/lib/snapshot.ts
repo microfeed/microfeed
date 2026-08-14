@@ -42,6 +42,7 @@ export const SNAPSHOT_TABLES = {
     "item_categories",
     "series",
     "item_series",
+    "contact_messages",
   ],
   ephemeral: [
     "item_create_idempotency",
