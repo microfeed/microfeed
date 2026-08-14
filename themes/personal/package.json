@@ -1,0 +1,14 @@
+{
+  "name": "@microfeed/personal-theme",
+  "version": "0.1.0",
+  "packageManager": "yarn@4.18.0",
+  "private": true,
+  "scripts": {
+    "preview": "theme-kit preview .",
+    "test": "theme-kit test . --json",
+    "validate": "theme-kit validate . --json"
+  },
+  "devDependencies": {
+    "@microfeed/theme-kit": "^1.0.0"
+  }
+}

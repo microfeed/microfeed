@@ -1,0 +1,86 @@
+<main>
+  {{#items.0}}
+  <a class="mf-back-link" href="/">&larr; Home</a>
+  <article>
+    <h1 class="mf-item-title">{{title}}</h1>
+    <div class="mf-item-meta">
+      <time datetime="{{date_published}}">{{_microfeed.date_published_short}}</time>
+      {{#_microfeed.duration_hhmmss}}
+      &middot; {{_microfeed.duration_hhmmss}}
+      {{/_microfeed.duration_hhmmss}}
+    </div>
+
+    {{#categories.length}}
+    <div class="mf-item-meta">
+      {{#categories}}
+      <span class="mf-chip">{{name}}</span>
+      {{/categories}}
+    </div>
+    {{/categories.length}}
+
+    {{#series}}
+    <p class="mf-item-series">
+      {{#series_number}}Part {{series_number}} of {{/series_number}}
+      <strong>{{name}}</strong>
+    </p>
+    {{/series}}
+
+    {{#_microfeed.is_audio}}
+    <div class="mf-player">
+      {{#attachments}}
+      <audio controls preload="metadata">
+        <source src="{{url}}" type="{{mime_type}}" />
+        Your browser does not support the audio element.
+      </audio>
+      {{/attachments}}
+    </div>
+    {{/_microfeed.is_audio}}
+
+    {{#_microfeed.is_video}}
+    <div class="mf-player">
+      {{#attachments}}
+      <video controls preload="metadata">
+        <source src="{{url}}" type="{{mime_type}}" />
+        Your browser does not support the video element.
+      </video>
+      {{/attachments}}
+    </div>
+    {{/_microfeed.is_video}}
+
+    {{#_microfeed.is_document}}
+    <div class="mf-player">
+      {{#attachments}}
+      <a href="{{url}}" target="_blank" rel="noopener nofollow">Download file &rarr;</a>
+      {{/attachments}}
+    </div>
+    {{/_microfeed.is_document}}
+
+    {{#_microfeed.is_external_url}}
+    <div class="mf-player">
+      {{#attachments}}
+      <a href="{{url}}" target="_blank" rel="noopener nofollow">View url &rarr;</a>
+      {{/attachments}}
+    </div>
+    {{/_microfeed.is_external_url}}
+
+    {{#_microfeed.is_image}}
+    <div class="mf-player">
+      {{#attachments}}
+      <a href="{{url}}" target="_blank">
+        <img src="{{url}}" alt="{{title}}" loading="lazy" />
+      </a>
+      {{/attachments}}
+    </div>
+    {{/_microfeed.is_image}}
+
+    {{#content_html}}
+    <div class="mf-rich-content">{{{content_html}}}</div>
+    {{/content_html}}
+    {{^content_html}}
+    {{#content_text}}
+    <div class="mf-rich-content"><p>{{content_text}}</p></div>
+    {{/content_text}}
+    {{/content_html}}
+  </article>
+  {{/items.0}}
+</main>

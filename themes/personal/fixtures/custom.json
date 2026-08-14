@@ -1,0 +1,67 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Personal theme fixture",
+  "description": "Representative content for Feed, Item, Page, navigation, and Search previews.",
+  "home_page_url": "https://example.test/",
+  "items": [
+    {
+      "id": "essay-fixture",
+      "title": "An essay with categories and a series",
+      "content_html": "<p>This essay belongs to a series and carries two categories.</p>",
+      "content_text": "This essay belongs to a series and carries two categories.",
+      "date_published": "2026-08-13T10:00:00.000Z",
+      "categories": [
+        {"id": "cat-writing", "name": "Writing", "slug": "writing"},
+        {"id": "cat-notes", "name": "Notes", "slug": "notes"}
+      ],
+      "series": {
+        "id": "series-essays",
+        "kind": "post",
+        "name": "Field Notes",
+        "slug": "field-notes",
+        "series_number": 2
+      },
+      "_microfeed": {
+        "web_url": "https://example.test/i/essay-fixture/"
+      }
+    },
+    {
+      "id": "podcast-fixture",
+      "title": "A podcast episode with an audio player",
+      "content_html": "<p>An audio episode that keeps podcast support.</p>",
+      "content_text": "An audio episode that keeps podcast support.",
+      "date_published": "2026-08-12T09:00:00.000Z",
+      "attachments": [
+        {
+          "url": "https://example.test/media/audio.mp3",
+          "mime_type": "audio/mpeg",
+          "size_in_bytes": 1000000
+        }
+      ],
+      "categories": [
+        {"id": "cat-podcast", "name": "Podcast", "slug": "podcast"}
+      ],
+      "series": {
+        "id": "series-podcast",
+        "kind": "podcast",
+        "name": "The Show",
+        "slug": "the-show",
+        "series_number": 5
+      },
+      "_microfeed": {
+        "web_url": "https://example.test/i/podcast-fixture/",
+        "is_audio": true,
+        "duration_hhmmss": "12:34"
+      }
+    },
+    {
+      "id": "searchable-fixture",
+      "title": "Searchable Page and Item styles",
+      "content_text": "Use this longer description to verify excerpts, wrapping, and matched-text highlighting.",
+      "date_published": "2026-08-11T08:00:00.000Z",
+      "_microfeed": {
+        "web_url": "https://example.test/i/searchable-fixture/"
+      }
+    }
+  ]
+}
