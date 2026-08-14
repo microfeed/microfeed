@@ -51,8 +51,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
+import {cn} from "@/lib/utils";
+import {MAX_CATEGORIES_PER_ITEM, type CategoryRecord} from "@/shared/Categories";
 
 const SUBMIT_STATUS__START = 1;
+
+function itemCategoryIds(item: Record<string, unknown>): string[] {
+  const value = item.categories;
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) =>
+    typeof entry === "string"
+      ? entry
+      : (entry as {id?: unknown})?.id
+  ).filter((id): id is string => typeof id === "string" && id.length > 0);
+}
 
 function initItem(itemId: string) {
   return ({
@@ -67,6 +79,7 @@ function initItem(itemId: string) {
 }
 
 interface Props {
+  categories: CategoryRecord[];
   feedContent: FeedContent;
   itemId?: string;
   onboardingResult: OnboardingResult;
@@ -411,6 +424,49 @@ export default class EditItemApp extends React.Component<Props, any> {
                 }}
               />
             </div>
+          </div>
+          <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+            <div className="mb-2 text-sm font-semibold text-foreground">Categories</div>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Assign up to {MAX_CATEGORIES_PER_ITEM} categories to this post.
+            </p>
+            {this.props.categories?.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No categories yet. Add categories in the Categories page first.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(this.props.categories ?? []).map((category) => {
+                  const selected = itemCategoryIds(item).includes(category.id);
+                  const atLimit = itemCategoryIds(item).length >= MAX_CATEGORIES_PER_ITEM;
+                  const disabled = !selected && atLimit;
+                  return (
+                    <button
+                      aria-pressed={selected}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent/30",
+                        disabled && "cursor-not-allowed opacity-45",
+                      )}
+                      disabled={disabled}
+                      key={category.id}
+                      onClick={() => {
+                        const current = itemCategoryIds(item);
+                        const next = selected
+                          ? current.filter((id) => id !== category.id)
+                          : [...current, category.id];
+                        this.onUpdateItemMeta({categories: next});
+                      }}
+                      type="button"
+                    >
+                      {category.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
             <details>

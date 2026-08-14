@@ -38,6 +38,8 @@ export const SNAPSHOT_TABLES = {
     "themes",
     "theme_drafts",
     "theme_state",
+    "categories",
+    "item_categories",
   ],
   ephemeral: [
     "item_create_idempotency",

@@ -15,6 +15,14 @@
       <a href="{{items.0._microfeed.rss_url}}" target="_blank">rss</a>
     </div>
 
+    {{#items.0.categories.length}}
+    <div class="mb-4 flex flex-wrap gap-2">
+      {{#items.0.categories}}
+      <span class="rounded-full border px-2 py-0.5 text-xs">{{name}}</span>
+      {{/items.0.categories}}
+    </div>
+    {{/items.0.categories.length}}
+
     <div>
       {{#items.0._microfeed.is_audio}}
       <div class="text-sm mb-4">

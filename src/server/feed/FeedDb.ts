@@ -25,6 +25,10 @@ import {
 import type {FeedContent, ImageMetadataTarget} from "@/types";
 import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
 import {DEFAULT_CHANNEL_COPYRIGHT} from "@/shared/TemplateVariables";
+import {
+  assignItemCategories,
+  categoriesForItems,
+} from "@/server/categories/service";
 
 /**
  * support url query parameters:
@@ -385,6 +389,18 @@ export default class FeedDb {
         }
       }
     }
+    if ((contentJson as any).items) {
+      const itemIds = (contentJson as any).items.map((item: any) => item.id);
+      if (itemIds.length > 0) {
+        const categoriesByItem = await categoriesForItems(
+          this.FEED_DB,
+          itemIds,
+        );
+        for (const item of (contentJson as any).items) {
+          item.categories = categoriesByItem.get(String(item.id)) ?? [];
+        }
+      }
+    }
     return contentJson;
   }
 
@@ -517,7 +533,11 @@ export default class FeedDb {
     const row = await this.FEED_DB.prepare(
       `SELECT * FROM items WHERE id = ? AND status IN (${placeholders}) LIMIT 1`,
     ).bind(id, ...statuses).first();
-    return row ? getItemJson(row) : null;
+    if (!row) return null;
+    const item = getItemJson(row);
+    const categoriesByItem = await categoriesForItems(this.FEED_DB, [id]);
+    item.categories = categoriesByItem.get(id) ?? [];
+    return item;
   }
 
   async _putChannelToContent(channel: any) {
@@ -589,6 +609,7 @@ export default class FeedDb {
       console.error('Failed to upsert item', error);
       throw error;
     }
+    await assignItemCategories(this.FEED_DB, id, data.categories);
     console.log('Done!', res);
   }
 
