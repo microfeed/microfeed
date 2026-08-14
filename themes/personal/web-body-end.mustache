@@ -1,8 +1,11 @@
 <footer class="mf-site-footer">
-  {{#_microfeed.copyright}}
-  {{_microfeed.copyright}}
-  {{/_microfeed.copyright}}
-  {{^_microfeed.copyright}}
-  © {{_microfeed.publisher}}
-  {{/_microfeed.copyright}}
+  <span class="mf-footer-title">{{title}}</span>
+  <span class="mf-footer-copyright">
+    {{#_microfeed.copyright}}
+    {{_microfeed.copyright}}
+    {{/_microfeed.copyright}}
+    {{^_microfeed.copyright}}
+    © {{_microfeed.publisher}}
+    {{/_microfeed.copyright}}
+  </span>
 </footer>
