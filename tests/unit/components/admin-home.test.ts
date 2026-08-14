@@ -4,6 +4,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 import AdminHomeApp from "@/components/admin/home/AdminHomeApp";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
+import {CONTACT_MESSAGE_STATUSES, type ContactMessageRecord} from "@/shared/ContactMessage";
 import type {OnboardingCheck, OnboardingResult} from "@/types";
 
 function onboardingResult(complete: boolean): OnboardingResult {
@@ -33,7 +34,7 @@ function onboardingResult(complete: boolean): OnboardingResult {
   };
 }
 
-function renderHome(complete: boolean): string {
+function renderHome(complete: boolean, contactMessages: ContactMessageRecord[] = []): string {
   vi.stubGlobal("window", {
     location: {
       hostname: "feed.example.com",
@@ -44,6 +45,7 @@ function renderHome(complete: boolean): string {
 
   return renderToStaticMarkup(
     React.createElement(AdminHomeApp, {
+      contactMessages,
       feedContent: {},
       onboardingResult: onboardingResult(complete),
     }),
@@ -67,5 +69,29 @@ describe("admin home section order", () => {
     expect(output.indexOf(">Public access</h2>")).toBeLessThan(
       output.indexOf(">Setup checklist</div>"),
     );
+  });
+
+  it("shows an empty state when there are no contact messages", () => {
+    const output = renderHome(true);
+
+    expect(output).toContain("No contact messages yet");
+  });
+
+  it("lists recent contact messages and an unread badge", () => {
+    const output = renderHome(true, [
+      {
+        date_created: "2026-08-14T00:00:00.000Z",
+        email: "a@example.com",
+        id: "m1",
+        message: "Hello there",
+        name: "Alice",
+        status: CONTACT_MESSAGE_STATUSES.NEW,
+      },
+    ]);
+
+    expect(output).toContain("Alice");
+    expect(output).toContain("a@example.com");
+    expect(output).toContain("1 unread");
+    expect(output).toContain("View all");
   });
 });
