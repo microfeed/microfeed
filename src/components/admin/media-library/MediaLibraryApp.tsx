@@ -3,7 +3,7 @@ import {ImageIcon, Trash2Icon} from "lucide-react";
 
 import {Button} from "@/components/ui/button";
 import {showToast} from "@/client/ToastUtils";
-import {ADMIN_URLS, humanFileSize, resolvePublicBucketUrl, urlJoinWithRelative} from "@/shared/StringUtils";
+import {ADMIN_URLS, humanFileSize, urlJoinWithRelative} from "@/shared/StringUtils";
 import type {MediaLibraryRecord} from "@/shared/MediaLibrary";
 
 interface Props {
@@ -23,11 +23,9 @@ function absoluteUrl(url: string, publicBucketUrl: string): string {
   return urlJoinWithRelative(publicBucketUrl, url) ?? url;
 }
 
-export default function MediaLibraryApp({entries: initialEntries, publicBucketUrl: initialPublicBucketUrl}: Props) {
+export default function MediaLibraryApp({entries: initialEntries, publicBucketUrl = "/media/"}: Props) {
   const [entries, setEntries] = useState(initialEntries);
   const [busy, setBusy] = useState(false);
-  const publicBucketUrl = initialPublicBucketUrl ||
-    resolvePublicBucketUrl("/media/", window.location.hostname);
 
   const remove = async (entry: MediaLibraryRecord) => {
     if (!window.confirm(
