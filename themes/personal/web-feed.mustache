@@ -11,30 +11,34 @@
   <ul class="mf-feed-list">
     {{#items}}
     <li class="mf-feed-item">
-      {{#image}}
-      <a class="mf-feed-cover" href="{{_microfeed.web_url}}" tabindex="-1" aria-hidden="true">
-        <img src="{{.}}" alt="" loading="lazy" />
-      </a>
-      {{/image}}
-      <time class="mf-feed-date" datetime="{{date_published}}">{{_microfeed.date_published_short}}</time>
-      <h2 class="mf-feed-title"><a href="{{_microfeed.web_url}}">{{title}}</a></h2>
-      {{#content_text}}
-      <p class="mf-feed-excerpt">{{content_text}}</p>
-      {{/content_text}}
-      <div class="mf-feed-meta">
-        {{#categories.length}}
-        {{#categories}}
-        <span class="mf-chip">{{name}}</span>
-        {{/categories}}
-        {{/categories.length}}
-        {{#series}}
-        <span class="mf-series-note">
-          {{#series_number}}Part {{series_number}} of {{/series_number}}{{name}}
-        </span>
-        {{/series}}
-        {{#_microfeed.duration_hhmmss}}
-        <span class="mf-series-note">{{_microfeed.duration_hhmmss}}</span>
-        {{/_microfeed.duration_hhmmss}}
+      <div class="mf-feed-row">
+        {{#image}}
+        <a class="mf-feed-cover" href="{{_microfeed.web_url}}" tabindex="-1" aria-hidden="true">
+          <img src="{{.}}" alt="" loading="lazy" />
+        </a>
+        {{/image}}
+        <div class="mf-feed-body">
+          <time class="mf-feed-date" datetime="{{date_published}}">{{_microfeed.date_published_short}}</time>
+          <h2 class="mf-feed-title"><a href="{{_microfeed.web_url}}">{{title}}</a></h2>
+          {{#content_text}}
+          <p class="mf-feed-excerpt">{{content_text}}</p>
+          {{/content_text}}
+          <div class="mf-feed-meta">
+            {{#categories.length}}
+            {{#categories}}
+            <span class="mf-chip">{{name}}</span>
+            {{/categories}}
+            {{/categories.length}}
+            {{#series}}
+            <span class="mf-series-note">
+              {{#series_number}}Part {{series_number}} of {{/series_number}}{{name}}
+            </span>
+            {{/series}}
+            {{#_microfeed.duration_hhmmss}}
+            <span class="mf-series-note">{{_microfeed.duration_hhmmss}}</span>
+            {{/_microfeed.duration_hhmmss}}
+          </div>
+        </div>
       </div>
     </li>
     {{/items}}

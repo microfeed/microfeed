@@ -122,15 +122,15 @@
   .mf-feed-list { list-style: none; margin: 0; padding: 0; }
   .mf-feed-item { padding: 1.5rem 0; border-bottom: 1px solid var(--mf-border); }
   .mf-feed-item:first-child { border-top: 1px solid var(--mf-border); }
-  .mf-feed-cover { display: block; margin: 0 0 1rem; }
+  .mf-feed-row { display: flex; gap: 1.25rem; align-items: flex-start; }
+  .mf-feed-cover { flex: none; width: 6rem; }
   .mf-feed-cover img {
     display: block;
     width: 100%;
-    max-width: 20rem;
     height: auto;
-    margin: 0 auto;
     border-radius: 0.5rem;
   }
+  .mf-feed-body { flex: 1; min-width: 0; }
   .mf-feed-date {
     display: block;
     font-size: 0.8rem;
