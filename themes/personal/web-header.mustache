@@ -122,6 +122,15 @@
   .mf-feed-list { list-style: none; margin: 0; padding: 0; }
   .mf-feed-item { padding: 1.5rem 0; border-bottom: 1px solid var(--mf-border); }
   .mf-feed-item:first-child { border-top: 1px solid var(--mf-border); }
+  .mf-feed-cover { display: block; margin: 0 0 1rem; }
+  .mf-feed-cover img {
+    display: block;
+    width: 100%;
+    max-width: 20rem;
+    height: auto;
+    margin: 0 auto;
+    border-radius: 0.5rem;
+  }
   .mf-feed-date {
     display: block;
     font-size: 0.8rem;
@@ -158,6 +167,13 @@
 
   /* ---- Item ---- */
   .mf-back-link { display: block; margin: 1.5rem 0 1rem; font-size: 0.9rem; }
+  .mf-item-cover { margin: 0 0 1.5rem; }
+  .mf-item-cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
   .mf-item-title { font-size: 2.1rem; margin: 0 0 0.75rem; }
   .mf-item-meta { color: var(--mf-muted); font-size: 0.9rem; margin-bottom: 1rem; }
   .mf-item-meta .mf-chip { margin-right: 0.35rem; }
@@ -259,6 +275,10 @@
 
   /* ---- Footer ---- */
   .mf-site-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
     width: 100%;
     max-width: 42rem;
     margin: 0 auto;
@@ -267,6 +287,7 @@
     font-size: 0.85rem;
     border-top: 1px solid var(--mf-border);
   }
+  .mf-footer-title { font-weight: 600; color: var(--mf-text); }
 
   /* ---- Platform search popup alignment ---- */
   .mf-public-search-result__details {

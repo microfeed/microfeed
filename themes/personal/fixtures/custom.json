@@ -7,6 +7,7 @@
     {
       "id": "essay-fixture",
       "title": "An essay with categories and a series",
+      "image": "https://example.test/media/cover.avif",
       "content_html": "<p>This essay belongs to a series and carries two categories.</p>",
       "content_text": "This essay belongs to a series and carries two categories.",
       "date_published": "2026-08-13T10:00:00.000Z",

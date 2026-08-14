@@ -2,6 +2,11 @@
   {{#items.0}}
   <a class="mf-back-link" href="/">&larr; Home</a>
   <article>
+    {{#image}}
+    <div class="mf-item-cover">
+      <img src="{{.}}" alt="{{title}}" />
+    </div>
+    {{/image}}
     <h1 class="mf-item-title">{{title}}</h1>
     <div class="mf-item-meta">
       <time datetime="{{date_published}}">{{_microfeed.date_published_short}}</time>
