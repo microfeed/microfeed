@@ -31,6 +31,11 @@ describe("generated API reference", () => {
       url: API_BASE_PATH,
     }]);
     expect(Number(MICROFEED_VERSION.split(".")[0])).toBe(API_MAJOR_VERSION);
+    expect(OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post?.operationId)
+      .toBe("receiveMicrofeedWebhook");
+    expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("webhook-signature");
+    expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("item.published");
+    expect(API_LLMS_FULL_TEXT).toContain("microfeedEvent");
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_CREDENTIAL");
     expect(
       OPENAPI_DOCUMENT.paths?.["/site-files/preview/"]?.post?.description,
@@ -187,6 +192,33 @@ describe("generated API reference", () => {
     expect(specification).toContain("ItemValidationResponse");
     expect(OPENAPI_DOCUMENT.paths?.["/items/"]?.post?.responses)
       .toHaveProperty("409");
+  });
+
+  it("accepts automation context on every persistent mutating operation", () => {
+    const operations = [
+      ["/items/", "post"],
+      ["/items/{itemId}/", "put"],
+      ["/items/{itemId}/", "delete"],
+      ["/pages/", "post"],
+      ["/pages/{pageId}/", "put"],
+      ["/pages/{pageId}/", "delete"],
+      ["/site-files/", "post"],
+      ["/site-files/{siteFileId}/", "put"],
+      ["/site-files/{siteFileId}/", "delete"],
+      ["/site-files/{siteFileId}/publish/", "post"],
+      ["/site-files/{siteFileId}/reset/", "post"],
+      ["/channels/{channelId}/", "put"],
+      ["/media_files/presigned_urls/", "post"],
+    ] as const;
+
+    for (const [pathname, method] of operations) {
+      const operation = OPENAPI_DOCUMENT.paths?.[pathname]?.[method];
+      const serialized = JSON.stringify(operation?.parameters ?? []);
+      expect(serialized, `${method.toUpperCase()} ${pathname}`)
+        .toContain("Microfeed-Correlation-Id");
+      expect(serialized, `${method.toUpperCase()} ${pathname}`)
+        .toContain("Microfeed-Causation-Id");
+    }
   });
 
   it("keeps Page navigation order out of individual Page inputs", () => {

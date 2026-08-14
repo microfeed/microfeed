@@ -21,6 +21,10 @@ import {
   reorderPageNavigation,
   updatePage,
 } from "@/server/pages/service";
+import {
+  contentMutationWebhookCommit,
+  singleWebhookEventCommit,
+} from "@/server/webhooks/emission";
 
 const pageNavigationOrderSchema = z.object({
   page_ids: z.array(z.string().min(1)).max(100),
@@ -73,6 +77,12 @@ export const createAdminPage: APIRoute = async ({request}) => {
   try {
     const page = await createPage(database(request), request, parsed.data, {
       adminPath: env.MICROFEED_ADMIN_PATH,
+      commit: contentMutationWebhookCommit(env, request, {
+        context: {origin: "dashboard"},
+        id: (result) => result.id,
+        kind: "page",
+        mutation: "created",
+      }),
     });
     return jsonResponse(page, {status: 201});
   } catch (error) {
@@ -102,7 +112,16 @@ export const reorderAdminPageNavigation: APIRoute = async ({request}) => {
     );
   }
   try {
-    await reorderPageNavigation(database(request), parsed.data.page_ids);
+    await reorderPageNavigation(
+      database(request),
+      parsed.data.page_ids,
+      singleWebhookEventCommit(env, request, {
+        object: {page_ids: parsed.data.page_ids},
+        subjectId: "navigation",
+        subjectType: "page",
+        type: "page.navigation_updated",
+      }, {origin: "dashboard"}),
+    );
     return jsonResponse({});
   } catch (error) {
     const response = serviceError(error);
@@ -123,16 +142,29 @@ export const updateAdminPage: APIRoute = async ({params, request}) => {
     }, {status: 400});
   }
   try {
+    const before = await getPageById(
+      env.FEED_DB,
+      request,
+      params.pageId,
+    );
     const page = await updatePage(
       database(request),
       request,
       params.pageId,
       parsed.data,
-      {adminPath: env.MICROFEED_ADMIN_PATH},
+      {
+        adminPath: env.MICROFEED_ADMIN_PATH,
+        commit: contentMutationWebhookCommit(env, request, {
+          before: before as unknown as Record<string, unknown> | null,
+          context: {origin: "dashboard"},
+          id: params.pageId,
+          kind: "page",
+          mutation: "updated",
+        }),
+      },
     );
-    return page
-      ? jsonResponse(page)
-      : jsonResponse({error: "Page not found."}, {status: 404});
+    if (!page) return jsonResponse({error: "Page not found."}, {status: 404});
+    return jsonResponse(page);
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;
@@ -145,9 +177,21 @@ export const deleteAdminPage: APIRoute = async ({params, request}) => {
     return jsonResponse({error: "Invalid Page ID."}, {status: 400});
   }
   try {
-    return await deletePage(database(request), params.pageId)
-      ? jsonResponse({})
-      : jsonResponse({error: "Page not found."}, {status: 404});
+    const before = await getPageById(env.FEED_DB, request, params.pageId);
+    if (!await deletePage(
+      database(request),
+      params.pageId,
+      contentMutationWebhookCommit(env, request, {
+        before: before as unknown as Record<string, unknown> | null,
+        context: {origin: "dashboard"},
+        id: params.pageId,
+        kind: "page",
+        mutation: "deleted",
+      }),
+    )) {
+      return jsonResponse({error: "Page not found."}, {status: 404});
+    }
+    return jsonResponse({});
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;

@@ -762,6 +762,51 @@ describe("first-class local instances", () => {
     expect(yarnScripts).not.toContain("test");
   });
 
+  it("adds the simulated Queue only after explicit local webhook opt-in", async () => {
+    const {commands, config} = await freshModules();
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      const itemSearch = itemSearchCommandResult(args);
+      if (itemSearch) return itemSearch;
+      if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
+        return commandResult("Migrations applied");
+      }
+      if (command.startsWith("d1 execute FEED_DB --local --command ")) {
+        return commandResult(JSON.stringify([{results: []}]));
+      }
+      if (["types", "typecheck", "test:deploy", "build"].includes(args[0]!)) {
+        return commandResult();
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    await config.ensureLocalOnlyConfig("webhook-local");
+
+    await commands.deployCommand({instance: "webhook-local", local: true}, runner);
+    let saved = await config.readConfig(false, "webhook-local");
+    let generated = await readFile(config.wranglerConfigPath(saved!), "utf8");
+    expect(saved?.webhooks).toMatchObject({enabled: false, reuse: false});
+    expect(generated).not.toContain('"WEBHOOK_QUEUE"');
+    expect(generated).not.toContain('"queues"');
+    expect(generated).not.toContain('"WEBHOOK_SECRET_KEY"');
+
+    await commands.deployCommand({
+      "enable-webhooks": true,
+      instance: "webhook-local",
+      local: true,
+    }, runner);
+    saved = await config.readConfig(false, "webhook-local");
+    generated = await readFile(config.wranglerConfigPath(saved!), "utf8");
+    expect(saved?.webhooks).toMatchObject({
+      enabled: true,
+      reuse: false,
+    });
+    expect(saved?.webhooks?.queueName).toBe("microfeed-webhook-local-webhooks");
+    expect(generated).toContain('"binding": "WEBHOOK_QUEUE"');
+    expect(generated).toContain('"max_retries": 5');
+    expect(generated).toContain('"*/5 * * * *"');
+    expect(generated).toContain('"WEBHOOK_SECRET_KEY"');
+  });
+
   it("stops local deployment preparation when smoke tests fail", async () => {
     const {commands, config} = await freshModules();
     await config.ensureLocalOnlyConfig("smoke-failure");
@@ -1326,6 +1371,7 @@ describe("connecting an existing Cloudflare instance", () => {
         return commandResult(JSON.stringify([
           {name: "BETTER_AUTH_SECRET", type: "secret_text"},
           {name: "UPLOAD_SIGNING_KEY", type: "secret_text"},
+          {name: "WEBHOOK_SECRET_KEY", type: "secret_text"},
         ]));
       }
       throw new Error(`Unexpected command: ${command}`);
@@ -1376,6 +1422,11 @@ describe("connecting an existing Cloudflare instance", () => {
             text: "instance-id",
             type: "plain_text",
           },
+          {
+            name: "WEBHOOK_QUEUE",
+            queue_name: "feed-worker-webhooks",
+            type: "queue",
+          },
         ]});
       }
       if (url.pathname.endsWith("/feed-worker/subdomain")) {
@@ -1414,12 +1465,19 @@ describe("connecting an existing Cloudflare instance", () => {
         completedSteps: expect.arrayContaining([
           "better-auth-secret-created",
           "upload-signing-secret-created",
+          "webhook-queue-ready",
+          "webhook-secret-created",
         ]),
         customDomain: "feed.example.com",
         hosting: "cloudflare",
         instanceId: "instance-id",
         instanceName: "feed",
         workerName: "feed-worker",
+        webhooks: {
+          enabled: true,
+          queueName: "feed-worker-webhooks",
+          reuse: true,
+        },
       }),
     );
     expect(await config.readActiveInstance()).toBe("feed");

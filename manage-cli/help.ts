@@ -119,6 +119,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
+      "--enable-webhooks is the explicit opt-in for Queue-backed webhooks. It requests Queue permission, creates a dedicated environment-specific Queue, adds the producer/consumer binding and five-minute reconciler, and creates the encrypted endpoint-secret key. Ordinary deployments do none of these things.",
       "--local is limited to init --local instances. It regenerates configuration, applies local D1 migrations, runs focused deployment smoke tests and a build, preserves local data, and does not start a server.",
     ],
     examples: [
@@ -126,6 +127,9 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "yarn manage deploy --preview --instance personal",
       "yarn manage deploy --enable-r2 --instance personal",
       "yarn manage deploy --local --enable-r2 --instance local-test",
+      "yarn manage deploy --enable-webhooks --instance personal",
+      "yarn manage deploy --preview --enable-webhooks --instance personal",
+      "yarn manage deploy --local --enable-webhooks --instance local-test",
     ],
     name: "deploy",
     options: [
@@ -134,11 +138,12 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--preview", "Deploy the saved preview environment."),
       option("--local", "Prepare an init --local instance without starting its server."),
       option("--enable-r2", "Permanently enable the saved Cloudflare or simulated local R2 binding."),
+      option("--enable-webhooks", "Permanently enable the dedicated Cloudflare or simulated local webhook Queue."),
       option("--reuse-r2", "Explicitly approve a same-named existing bucket during R2 enablement."),
       option("--yes", "Run non-interactively; pending R2 remains content-only unless --enable-r2 is passed."),
     ],
     summary: "Check, migrate, deploy, and verify a saved installation.",
-    usage: "yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]",
+    usage: "yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks]",
   },
   {
     changes: "Starts a local server and changes only isolated local D1/R2 simulation data.",
@@ -248,7 +253,8 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
   {
     changes: "Read-only Cloudflare and public-site verification.",
     details: [
-      "Checks the Worker, exact D1 binding, ready R2 bucket and binding, public URL, administrator state, pending password link, and dashboard protection.",
+      "Checks the Worker, exact D1 binding, ready R2 bucket and binding, webhook Queue and binding when enabled, public URL, administrator state, pending password link, and dashboard protection.",
+      "For enabled webhooks, reports realtime Queue backlog and oldest message; Cloudflare-observed writes, reads, deletes, total billable operations, and average retries for the Queue; account-wide Queue totals for the same UTC-day window; and microfeed-side delivery accounting with an observation time.",
       "A verified content-only Worker is healthy; status reports media storage as subscription-pending or user-disabled instead of treating it as a missing required resource.",
       "Returns an actionable failure when a required resource or protection check is missing.",
     ],

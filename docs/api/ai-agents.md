@@ -9,6 +9,11 @@ the repository-local form of the official
 local workspace works after `yarn install`, so the agent does not need a global
 CLI or permission to download one from a registry.
 
+This page covers an interactive coding agent acting while a person is present.
+For a persistent receiver that reacts asynchronously to signed events, use
+[Build webhook-driven AI agents](../../automation/ai-agents/) and the separate
+`build-microfeed-automation` skill.
+
 The clone also includes the `manage-microfeed-content` agent skill at
 `.agents/skills/manage-microfeed-content/`. It is the agent-focused workflow
 for CLI selection, vocabulary, browser-consent handoff, media uploads,

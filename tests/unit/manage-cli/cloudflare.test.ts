@@ -203,6 +203,81 @@ describe("CloudflareClient", () => {
     await expect(cloudflare.hasRequiredScopes()).resolves.toBe(true);
   });
 
+  it("reports Queue and account-wide Cloudflare operation analytics", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth token --json") {
+        return commandResult(JSON.stringify({token: "oauth-token", type: "oauth"}));
+      }
+      throw new Error(`Unexpected command: ${args.join(" ")}`);
+    });
+    const operation = (
+      actionType: string,
+      billableOperations: number,
+      count: number,
+      retryCount = 0,
+    ) => ({
+      avg: {retryCount},
+      count,
+      dimensions: {actionType, queueID: "queue-id"},
+      sum: {billableOperations, bytes: billableOperations * 64},
+    });
+    const fetchMock = vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.pathname.endsWith("/accounts/account-id/queues")) {
+        return Response.json({
+          errors: [],
+          result: [{queue_id: "queue-id", queue_name: "feed-webhooks"}],
+          success: true,
+        });
+      }
+      if (url.pathname.endsWith("/graphql")) {
+        expect(init?.method).toBe("POST");
+        expect(new Headers(init?.headers).get("authorization")).toBe("Bearer oauth-token");
+        const body = JSON.parse(String(init?.body)) as {
+          query: string;
+          variables: Record<string, string>;
+        };
+        expect(body.query).toContain("queueMessageOperationsAdaptiveGroups");
+        expect(body.variables).toMatchObject({
+          accountTag: "account-id",
+          queueId: "queue-id",
+        });
+        return Response.json({data: {viewer: {accounts: [{
+          account: [
+            operation("WriteMessage", 15, 15),
+            operation("ReadMessage", 20, 15, 0.4),
+            operation("DeleteMessage", 9, 9),
+          ],
+          queue: [
+            operation("WriteMessage", 10, 10),
+            operation("ReadMessage", 20, 15, 0.4),
+            operation("DeleteMessage", 9, 9),
+          ],
+        }]}}});
+      }
+      throw new Error(`Unexpected API request: ${url.pathname}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const metrics = await new CloudflareClient(runner)
+      .queueOperationMetrics("account-id", "feed-webhooks");
+    expect(metrics?.queue).toEqual({
+      averageRetriesPerMessage: 0.4,
+      bytes: 2_496,
+      deletes: 9,
+      reads: 20,
+      total: 39,
+      writes: 10,
+    });
+    expect(metrics?.account).toMatchObject({
+      deletes: 9,
+      reads: 20,
+      total: 44,
+      writes: 15,
+    });
+    expect(metrics?.periodStart).toMatch(/T00:00:00Z$/u);
+  });
+
   it("reports the login email and directory-bound Wrangler profile", async () => {
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
@@ -343,6 +418,11 @@ describe("CloudflareClient", () => {
             text: "private-admin",
             type: "plain_text",
           },
+          {
+            name: "WEBHOOK_QUEUE",
+            queue_name: "feed-webhooks",
+            type: "queue",
+          },
         ]});
       }
       if (url.pathname.endsWith("/other-worker/settings")) {
@@ -373,6 +453,7 @@ describe("CloudflareClient", () => {
       r2Ready: true,
       r2SetupMode: "automatic",
       workerName: "feed-worker",
+      webhookQueueName: "feed-webhooks",
       workersDevUrl:
         "https://feed-worker.example-account.workers.dev",
     }]);

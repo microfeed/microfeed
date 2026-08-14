@@ -12,6 +12,7 @@ import {
 } from "./commands.js";
 import {CliError} from "./errors.js";
 import {renderCliHelp} from "./help.js";
+import {webhookCommand} from "./webhooks.js";
 
 export const HELP = renderCliHelp();
 
@@ -21,7 +22,7 @@ function requestedHelp(args: string[]): readonly string[] | undefined {
   }
   const [command, subcommand] = args;
   if (!command || command === "--help" || command === "-h") return [];
-  if (command === "instances" || command === "item" || command === "media") {
+  if (command === "instances" || command === "item" || command === "media" || command === "webhook") {
     if (subcommand && subcommand !== "--help" && subcommand !== "-h") {
       return [command, subcommand];
     }
@@ -57,6 +58,7 @@ export async function run(argv: string[]): Promise<void> {
   if (command === "item") return await itemCommand(rest, options);
   if (command === "media") return await mediaCommand(rest, options);
   if (command === "api") return await rawApiCommand(rest, options);
+  if (command === "webhook") return await webhookCommand(rest, options.json);
   throw new CliError(`Unknown command: ${command}\n\n${HELP}`);
 }
 

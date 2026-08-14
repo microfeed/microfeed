@@ -28,6 +28,10 @@ import {
 } from "@/shared/themes/ThemeRenderer";
 import {validateThemePackage} from "@/shared/themes/ThemeValidation";
 import {
+  commitDatabaseMutation,
+  type DatabaseMutationCommit,
+} from "@/server/mutation";
+import {
   storedThemeFromRow,
   storedThemeSummaryFromRow,
   themeDraftFromRow,
@@ -621,60 +625,82 @@ export default class ThemeStore {
     return published;
   }
 
-  async activate(id: string): Promise<ThemeState> {
+  async activate(
+    id: string,
+    commit?: DatabaseMutationCommit<ThemeState>,
+  ): Promise<ThemeState> {
     const theme = await this.getVersion(id);
     if (!theme) throw new Error("Theme version not found.");
     validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
-    const updated = await this.database.prepare(
+    const before = await this.getState();
+    if (before.activeThemeId === id) return before;
+    const now = new Date().toISOString();
+    const state: ThemeState = {
+      activeThemeId: id,
+      previousThemeId: before.activeThemeId,
+      updatedAt: now,
+    };
+    const statement = this.database.prepare(
       `UPDATE theme_state SET previous_theme_id = active_theme_id,
-       active_theme_id = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = 'current' AND (active_theme_id IS NULL OR active_theme_id != ?)
+       active_theme_id = ?, updated_at = ?
+       WHERE id = 'current'
          AND EXISTS (
            SELECT 1 FROM themes WHERE id = ? AND deleted_at IS NULL
-         )
-       RETURNING active_theme_id`,
-    ).bind(id, id, id).first<{active_theme_id: string}>();
-    if (!updated) {
-      const state = await this.getState();
-      if (state.activeThemeId === id) return state;
-      throw new Error("Theme version became unavailable before activation.");
-    }
+         )`,
+    ).bind(id, now, id);
+    await commitDatabaseMutation(this.database, [statement], state, commit);
     await this.purgeActiveTheme();
-    return this.getState();
+    return state;
   }
 
-  async deactivate(): Promise<ThemeState> {
-    await this.database.prepare(
+  async deactivate(
+    commit?: DatabaseMutationCommit<ThemeState>,
+  ): Promise<ThemeState> {
+    const before = await this.getState();
+    if (!before.activeThemeId) return before;
+    const now = new Date().toISOString();
+    const state: ThemeState = {
+      activeThemeId: null,
+      previousThemeId: before.activeThemeId,
+      updatedAt: now,
+    };
+    const statement = this.database.prepare(
       `UPDATE theme_state SET previous_theme_id = active_theme_id,
-       active_theme_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = 'current'`,
-    ).run();
+       active_theme_id = NULL, updated_at = ? WHERE id = 'current'`,
+    ).bind(now);
+    await commitDatabaseMutation(this.database, [statement], state, commit);
     await this.purgeActiveTheme();
-    return this.getState();
+    return state;
   }
 
-  async rollback(): Promise<ThemeState> {
-    const state = await this.getState();
-    if (state.previousThemeId) {
-      const previous = await this.getVersion(state.previousThemeId);
+  async rollback(
+    commit?: DatabaseMutationCommit<ThemeState>,
+  ): Promise<ThemeState> {
+    const before = await this.getState();
+    if (before.previousThemeId) {
+      const previous = await this.getVersion(before.previousThemeId);
       if (!previous) throw new Error("The previous theme is unavailable.");
       validateThemePackage(previous.manifest, previous.bundle, MICROFEED_VERSION);
     }
-    const updated = await this.database.prepare(
+    const now = new Date().toISOString();
+    const state: ThemeState = {
+      activeThemeId: before.previousThemeId,
+      previousThemeId: before.activeThemeId,
+      updatedAt: now,
+    };
+    const statement = this.database.prepare(
       `UPDATE theme_state SET active_theme_id = previous_theme_id,
-       previous_theme_id = active_theme_id, updated_at = CURRENT_TIMESTAMP
+       previous_theme_id = active_theme_id, updated_at = ?
        WHERE id = 'current' AND (
          previous_theme_id IS NULL OR EXISTS (
            SELECT 1 FROM themes
            WHERE id = theme_state.previous_theme_id AND deleted_at IS NULL
          )
-       )
-       RETURNING active_theme_id`,
-    ).first<{active_theme_id: string | null}>();
-    if (!updated) {
-      throw new Error("The previous theme became unavailable before rollback.");
-    }
+       )`,
+    ).bind(now);
+    await commitDatabaseMutation(this.database, [statement], state, commit);
     await this.purgeActiveTheme();
-    return this.getState();
+    return state;
   }
 
   async deleteVersion(id: string, bucket?: R2Bucket | null): Promise<void> {

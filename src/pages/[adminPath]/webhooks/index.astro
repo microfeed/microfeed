@@ -1,0 +1,26 @@
+---
+import {env} from "cloudflare:workers";
+
+import WebhookOverviewApp from "@/components/admin/webhooks/WebhookOverviewApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {webhookOverview} from "@/server/webhooks/store";
+import {NAV_ITEMS} from "@/shared/Constants";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+const overview = await webhookOverview(env);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.WEBHOOKS}
+  documentTitle="Webhooks | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Webhook overview"
+  webhookActivePage="overview"
+  webhookNavigation
+>
+  <div class="mx-auto max-w-6xl">
+    <WebhookOverviewApp client:only="react" {overview} />
+  </div>
+</AdminShell>

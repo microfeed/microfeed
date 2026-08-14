@@ -340,7 +340,7 @@ local data, performs the same preparation against local D1, and does not deploy
 or start a server.
 
 ```console
-yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
+yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks]
 ```
 
 | Option | Meaning |
@@ -350,6 +350,7 @@ yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
 | `--preview` | Deploy preview instead of production. |
 | `--local` | Prepare an instance created with `init --local`; cannot target a Cloudflare-managed instance or be combined with `--preview`. |
 | `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
+| `--enable-webhooks` | Explicitly create and bind a dedicated production, preview, or locally simulated webhook Queue and create its endpoint-secret encryption key. Ordinary deployments do not request Queue permission or create Queue resources. |
 | `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
 | `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
 
@@ -372,6 +373,13 @@ binding, and deployment verifies both the bucket and Worker binding before
 completing. A later failure remains resumable. The CLI records a fresh remote
 restore baseline only when D1 is still bootstrap-only and the new bucket is
 empty; failing that eligibility check does not undo working R2 setup.
+
+Webhook enablement is resumable and isolated by environment. Production and
+preview use separate Queue names; local development uses Wrangler's Queue
+simulation. The generated Worker config binds the same Queue as producer and
+consumer and runs a five-minute reconciler. Once enabled, subsequent deployments
+preserve the binding. An owned Queue appears in the reviewed destroy plan and is
+removed with its environment.
 
 ## `yarn manage dev`
 
@@ -721,6 +729,9 @@ Durable tables currently include channels, items, Pages, Site Files, settings,
 users, and login accounts. Sessions, verification records, rate-limit state, and password
 setup/reset records are recreated empty. The target installation identity is
 rewritten, while the administrator email and password hash are preserved.
+Webhook endpoints, encrypted signing secrets, delivery history, budgets, and
+alerts are deployment-specific and are recreated empty; after a restore,
+create new endpoints and distribute their new one-time secrets.
 `publicBucketUrl` is reset to `/media/`.
 
 ### Restore safety and recovery
@@ -812,6 +823,14 @@ state, pending password setup, and anonymous dashboard protection. When R2 is
 ready, also verify both the exact bucket and the Worker's `MEDIA_BUCKET`
 binding. A verified content-only Worker is healthy and reports media as either
 subscription-pending or user-disabled.
+
+When webhooks are enabled, status also verifies the exact Queue and
+`WEBHOOK_QUEUE` binding. It prints realtime backlog and oldest-message data;
+Cloudflare-observed writes, reads, deletes, total billable operations, and
+average retries for that Queue since UTC midnight; account-wide Queue totals
+for the same window; microfeed-side delivery accounting; and the observation
+time. Cloudflare Analytics is operational telemetry rather than a billing
+invoice, so reconcile cost alerts with the account's Queues dashboard.
 
 ```console
 yarn manage status [--instance <name>] [--preview]

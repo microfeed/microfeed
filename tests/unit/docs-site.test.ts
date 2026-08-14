@@ -735,6 +735,70 @@ describe("documentation site", () => {
     );
   });
 
+  it("publishes the complete webhook and agent automation learning path", async () => {
+    const [docsConfig, loader] = await Promise.all([
+      readFile(path.join(docsRoot, "astro.config.ts"), "utf8"),
+      readFile(path.join(docsRoot, "src", "content.config.ts"), "utf8"),
+    ]);
+    expect(docsConfig.indexOf('label: "Content automation"')).toBeGreaterThan(
+      docsConfig.indexOf('label: "API and integrations"'),
+    );
+    expect(docsConfig).toContain(
+      'label: "Automate microfeed content with webhooks and AI agents"',
+    );
+    expect(docsConfig).toContain('paths: ["automation/**"');
+    expect(loader).toContain('"automation/**/*.md"');
+
+    const pages = new Map<string, string>();
+    for (const file of [
+      "index.md",
+      "setup-and-test.md",
+      "ai-agents.md",
+      "recipes.md",
+      "operations.md",
+    ]) {
+      const source = await readFile(path.join(docsRoot, "automation", file), "utf8");
+      pages.set(file, source);
+      expect(source, file).not.toMatch(/!\[[^\]]*\]\(/u);
+    }
+    expect(pages.get("index.md")).toContain("**webhook** announces what changed");
+    expect(pages.get("index.md")).toContain("generated OpenAPI");
+    expect(pages.get("setup-and-test.md")).toContain("yarn microfeed webhook listen");
+    expect(pages.get("setup-and-test.md")).toContain("webhook.test");
+    expect(pages.get("ai-agents.md")).toContain("before JSON parsing");
+    expect(pages.get("ai-agents.md")).toContain("Framework-neutral TypeScript");
+    expect(pages.get("ai-agents.md")).toContain("Framework-neutral Python");
+    expect(pages.get("ai-agents.md")).toContain("Cloudflare Agents SDK");
+    for (const recipe of [
+      "Publish announcement",
+      "Editorial review",
+      "Audio transcription",
+      "Translate a Page",
+      "Knowledge and search synchronization",
+    ]) expect(pages.get("recipes.md")).toContain(`## ${recipe}`);
+    expect(pages.get("operations.md")).toContain("Production readiness checklist");
+    expect(pages.get("operations.md")).toContain("six total attempts");
+
+    const skill = await readFile(path.join(
+      repositoryRoot,
+      ".agents",
+      "skills",
+      "build-microfeed-automation",
+      "SKILL.md",
+    ), "utf8");
+    for (const requirement of [
+      "Standard Webhooks",
+      "durable",
+      "deduplic",
+      "least-privilege",
+      "correlation",
+      "causation",
+      "prompt-injection",
+      "yarn microfeed webhook listen",
+      "production readiness",
+    ]) expect(skill.toLowerCase()).toContain(requirement.toLowerCase());
+  });
+
   it("documents modern theme authoring without migration internals", async () => {
     const files = await documentationFiles();
     for (const file of files) {
@@ -886,17 +950,25 @@ describe("documentation site", () => {
       ]);
 
     const apiSectionStart = docsConfig.indexOf('label: "API and integrations"');
+    const automationSectionStart = docsConfig.indexOf(
+      'label: "Content automation"',
+    );
     const cliSectionStart = docsConfig.indexOf(
       'label: "@microfeed/cli and AI agents"',
     );
     const referenceSectionStart = docsConfig.indexOf('label: "Reference"');
     const contributeSectionStart = docsConfig.indexOf('label: "Contribute"');
     expect(apiSectionStart).toBeGreaterThan(-1);
-    expect(cliSectionStart).toBeGreaterThan(apiSectionStart);
+    expect(automationSectionStart).toBeGreaterThan(apiSectionStart);
+    expect(cliSectionStart).toBeGreaterThan(automationSectionStart);
     expect(referenceSectionStart).toBeGreaterThan(cliSectionStart);
     expect(contributeSectionStart).toBeGreaterThan(referenceSectionStart);
 
-    const apiSection = docsConfig.slice(apiSectionStart, cliSectionStart);
+    const apiSection = docsConfig.slice(apiSectionStart, automationSectionStart);
+    const automationSection = docsConfig.slice(
+      automationSectionStart,
+      cliSectionStart,
+    );
     const cliSection = docsConfig.slice(cliSectionStart, referenceSectionStart);
     const referenceSection = docsConfig.slice(
       referenceSectionStart,
@@ -905,6 +977,7 @@ describe("documentation site", () => {
     expect(apiSection).toContain("Bearer authentication");
     expect(apiSection).not.toContain("@microfeed/cli");
     expect(apiSection).not.toContain("AI agents");
+    expect(automationSection).toContain("Build webhook-driven AI agents");
     expect(cliSection).toContain("Manage content with @microfeed/cli");
     expect(cliSection).toContain("Manage content with AI agents");
     expect(cliSection).not.toContain("command reference");

@@ -32,6 +32,8 @@ the command you need.
 - [`item delete`](#yarn-microfeed-item-delete)
 - [`media`](#yarn-microfeed-media)
 - [`media upload`](#yarn-microfeed-media-upload)
+- [`webhook`](#yarn-microfeed-webhook)
+- [`webhook listen`](#yarn-microfeed-webhook-listen)
 - [`api`](#yarn-microfeed-api)
 - [Output and errors](#output-and-errors)
 - [Saved instances and credentials](#saved-instances-and-credentials)
@@ -140,6 +142,7 @@ For every authenticated REST request, the CLI:
 | `item update <item-id>` | Update an item from flags or JSON. | Changes remote content. |
 | `item delete <item-id>` | Delete an item after exact-ID confirmation. | Permanently deletes remote content. |
 | `media upload <file>` | Upload standalone media for rich content or later API use. | Creates a remote media object but does not edit an item. |
+| `webhook listen` | Verify, display, and optionally forward local webhook deliveries. | Starts a loopback-only local server; does not create a remote endpoint or relay. |
 | `api <method> <path>` | Call a relative `/api/v1/…` REST endpoint. | Depends on the method and endpoint. |
 
 ## Global options
@@ -693,6 +696,63 @@ yarn microfeed media upload ./episode.mp3 \
   --json
 ```
 
+## `yarn microfeed webhook`
+
+Receive signed webhook deliveries during local development. The CLI does not
+create a microfeed endpoint or provide a public relay.
+
+```console
+yarn microfeed webhook listen [options]
+```
+
+## `yarn microfeed webhook listen`
+
+**Purpose:** Start a loopback-only development receiver, verify Standard
+Webhooks signatures against exact request bytes, print each event, and
+optionally forward it to another loopback server.
+
+**Changes:** Listens on `127.0.0.1:8978/webhook` until interrupted. It does not
+change local content or any remote microfeed resource.
+
+```console
+yarn microfeed webhook listen \
+  [--secret-file <path>] \
+  [--forward-to <url>] \
+  [--port <1-65535>] \
+  [--json]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--secret-file <path>` | Read the signing secret from a UTF-8 file. Without it or `MICROFEED_WEBHOOK_SECRET`, the listener uses a hidden terminal prompt. |
+| `--forward-to <url>` | Forward verified requests to an HTTP loopback URL with an explicit port. Exact body bytes and webhook headers are preserved. |
+| `--port <1-65535>` | Change the loopback listener port from its 8978 default. |
+| `--json` | Write one NDJSON object for each verified delivery. |
+
+There is deliberately no plaintext `--secret` option. Add
+`http://127.0.0.1:8978/webhook` under **Admin → Webhooks → Endpoints**, then use
+the one-time endpoint secret with the listener. Deployed endpoints require
+HTTPS; this HTTP exception exists only for local development.
+
+Without a forward target, a verified delivery returns `204`. Forwarding has a
+nine-second timeout and returns `502` for connection failure or `504` for a
+timeout. A duplicate delivery ID is marked in human or NDJSON output but is
+still forwarded so the target's own deduplication can be tested.
+
+```console
+yarn microfeed webhook listen
+
+MICROFEED_WEBHOOK_SECRET=whsec_... \
+  yarn microfeed webhook listen --json
+
+yarn microfeed webhook listen \
+  --secret-file .webhook-secret \
+  --forward-to http://127.0.0.1:3000/hooks/microfeed
+```
+
+See [Set up and test an automation](/automation/setup-and-test/) for the full
+Admin and local development workflow.
+
 ## `yarn microfeed api`
 
 **Purpose:** Call a documented REST operation while the CLI selects, injects,
@@ -825,6 +885,7 @@ When refresh fails or no refresh token exists, log in again.
 | `MICROFEED_API_KEY` | Use an existing API key as the Bearer credential. It takes precedence over saved browser credentials and is never persisted. Supply it through a CI secret manager. |
 | `MICROFEED_URL` | Set the API-key target site URL when no selected saved instance supplies one. HTTPS is required except for local loopback site URLs. |
 | `MICROFEED_INSTANCE` | Select a saved instance when `--instance` is omitted. |
+| `MICROFEED_WEBHOOK_SECRET` | Supply the signing secret to `webhook listen` without a prompt. Prefer a development secret manager; never commit it. |
 | `MICROFEED_CONFIG_DIR` | Override the instance-store directory. Intended for isolated environments and tests; it does not weaken encryption or replace the OS keychain. |
 
 Never place a credential directly in a command, checked-in file, log,
@@ -840,6 +901,7 @@ yarn microfeed instances use -h
 yarn microfeed item create --help
 yarn microfeed help item delete
 yarn microfeed media upload --help
+yarn microfeed webhook listen --help
 yarn microfeed api --help
 ```
 

@@ -183,6 +183,7 @@ export const NAV_ITEMS = {
   PAGES: 'pages',
   SITE_FILES: 'site_files',
   API: 'api',
+  WEBHOOKS: 'webhooks',
   SETTINGS: 'settings',
 } as const;
 
@@ -204,6 +205,9 @@ export const NAV_ITEMS_DICT = {
   },
   [NAV_ITEMS.API]: {
     name: 'API',
+  },
+  [NAV_ITEMS.WEBHOOKS]: {
+    name: 'Webhooks',
   },
   [NAV_ITEMS.SETTINGS]: {
     name: 'Settings',

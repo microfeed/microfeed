@@ -39,6 +39,7 @@ describe("Wrangler configuration template", () => {
           '["UPLOAD_SIGNING_KEY","BETTER_AUTH_SECRET"]',
         )
         .replace("__R2_BINDING__", '"r2_buckets": [],')
+        .replace("__WEBHOOK_BINDINGS__", "")
         .replace("__R2_SETUP_MODE__", "automatic")
         .replace("__ROUTES__", "[]"),
     ) as {
@@ -107,5 +108,13 @@ describe("Wrangler configuration template", () => {
     expect(requiredSecrets(publicAdminConfig)).toEqual([
       "UPLOAD_SIGNING_KEY",
     ]);
+  });
+
+  it("requires the webhook encryption secret only after explicit opt-in", () => {
+    expect(requiredSecrets(config)).not.toContain("WEBHOOK_SECRET_KEY");
+    expect(requiredSecrets({
+      ...config,
+      webhooks: {enabled: true, queueName: "feed-webhooks", reuse: false},
+    })).toContain("WEBHOOK_SECRET_KEY");
   });
 });

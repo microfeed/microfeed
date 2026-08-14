@@ -31,7 +31,9 @@ the database but cannot be used until access is deliberately re-enabled.
 2. Select **Create API key**.
 3. Enter a name that identifies one integration, such as “Publishing
    automation” or “Mobile app.”
-4. Create the key, then copy it into that integration’s secret storage.
+4. Select **Read content**, **Write content**, or both. A receiver that only
+   indexes or announces content should not receive write permission.
+5. Create the key, then copy it into that integration’s secret storage.
 
 Use a different key for every integration. That lets you stop one client
 without interrupting the others.
@@ -76,4 +78,5 @@ integration is retired or a credential may have leaked.
 Open **API → API Overview** and select a key in a generated example, or use
 **API Explorer**. A valid request returns its documented success response. A
 missing, malformed, revoked, or otherwise invalid Bearer credential returns
-401. A disabled API returns 404 so the endpoint is not advertised publicly.
+401. A valid key without the required read or write permission returns 403. A
+disabled API returns 404 so the endpoint is not advertised publicly.

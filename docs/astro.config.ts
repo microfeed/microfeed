@@ -85,6 +85,16 @@ export default defineConfig({
           ],
         },
         {
+          label: "Content automation",
+          items: [
+            { label: "Content automation overview", link: "/automation/" },
+            { label: "Set up and test an automation", link: "/automation/setup-and-test/" },
+            { label: "Build webhook-driven AI agents", link: "/automation/ai-agents/" },
+            { label: "Automation recipes", link: "/automation/recipes/" },
+            { label: "Operate and troubleshoot", link: "/automation/operations/" },
+          ],
+        },
+        {
           label: "@microfeed/cli and AI agents",
           items: [
             { label: "Manage content with @microfeed/cli", link: "/api/cli/" },
@@ -134,6 +144,12 @@ export default defineConfig({
               description:
                 "The guided CLI workflow, AI-agent conventions, and complete content-management command reference.",
               paths: ["api/cli", "api/ai-agents", "microfeed-cli"],
+            },
+            {
+              label: "Automate microfeed content with webhooks and AI agents",
+              description:
+                "Webhook setup, secure agent receiver patterns, runnable automation recipes, and production operations.",
+              paths: ["automation/**", "api/index", "api/authentication", "microfeed-cli"],
             },
           ],
           optionalLinks: [

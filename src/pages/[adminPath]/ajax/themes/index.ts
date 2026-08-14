@@ -3,6 +3,10 @@ import type {APIRoute} from "astro";
 
 import {jsonResponse} from "@/server/http";
 import ThemeStore from "@/server/themes/ThemeStore";
+import {
+  singleWebhookEventCommit,
+  webhookEventsCommit,
+} from "@/server/webhooks/emission";
 import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
 
 function errorResponse(error: unknown): Response {
@@ -46,13 +50,97 @@ export const POST: APIRoute = async ({request}) => {
       return jsonResponse({error: "Choose an installed theme version."}, {status: 400});
     }
     if (input.action === "activate" && typeof input.themeId === "string") {
-      return jsonResponse({state: await store.activate(input.themeId)});
+      const before = await store.getState();
+      const [theme, previous] = await Promise.all([
+        store.getVersion(input.themeId),
+        before.activeThemeId
+          ? store.getVersion(before.activeThemeId, true)
+          : null,
+      ]);
+      const state = await store.activate(
+        input.themeId,
+        webhookEventsCommit(env, request, (result) => {
+          if (
+            before.activeThemeId === result.activeThemeId ||
+            !result.activeThemeId
+          ) return [];
+          return [
+            ...(before.activeThemeId
+              ? [{
+                  changedFields: ["activeThemeId"],
+                  object: previous ?? {id: before.activeThemeId},
+                  subjectId: before.activeThemeId,
+                  subjectType: "theme" as const,
+                  type: "theme.deactivated" as const,
+                }]
+              : []),
+            {
+              changedFields: ["activeThemeId"],
+              object: theme ?? {id: result.activeThemeId},
+              subjectId: result.activeThemeId,
+              subjectType: "theme" as const,
+              type: "theme.activated" as const,
+            },
+          ];
+        }, {origin: "dashboard"}),
+      );
+      return jsonResponse({state});
     }
     if (input.action === "deactivate") {
-      return jsonResponse({state: await store.deactivate()});
+      const before = await store.getState();
+      const theme = before.activeThemeId
+        ? await store.getVersion(before.activeThemeId, true)
+        : null;
+      const state = await store.deactivate(
+        singleWebhookEventCommit(env, request, () =>
+          before.activeThemeId
+            ? {
+                changedFields: ["activeThemeId"],
+                object: theme ?? {id: before.activeThemeId},
+                subjectId: before.activeThemeId,
+                subjectType: "theme",
+                type: "theme.deactivated",
+              }
+            : null, {origin: "dashboard"}),
+      );
+      return jsonResponse({state});
     }
     if (input.action === "rollback") {
-      return jsonResponse({state: await store.rollback()});
+      const before = await store.getState();
+      const [previous, active] = await Promise.all([
+        before.activeThemeId
+          ? store.getVersion(before.activeThemeId, true)
+          : null,
+        before.previousThemeId
+          ? store.getVersion(before.previousThemeId)
+          : null,
+      ]);
+      const state = await store.rollback(
+        webhookEventsCommit(env, request, (result) => {
+          if (before.activeThemeId === result.activeThemeId) return [];
+          return [
+            ...(before.activeThemeId
+              ? [{
+                  changedFields: ["activeThemeId"],
+                  object: previous ?? {id: before.activeThemeId},
+                  subjectId: before.activeThemeId,
+                  subjectType: "theme" as const,
+                  type: "theme.deactivated" as const,
+                }]
+              : []),
+            ...(result.activeThemeId
+              ? [{
+                  changedFields: ["activeThemeId"],
+                  object: active ?? {id: result.activeThemeId},
+                  subjectId: result.activeThemeId,
+                  subjectType: "theme" as const,
+                  type: "theme.activated" as const,
+                }]
+              : []),
+          ];
+        }, {origin: "dashboard"}),
+      );
+      return jsonResponse({state});
     }
     return jsonResponse({error: "Unknown theme action."}, {status: 400});
   } catch (error) {

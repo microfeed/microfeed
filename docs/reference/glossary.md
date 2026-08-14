@@ -32,6 +32,19 @@ data resources.
 **Cloudflare Access**
 An optional identity layer that can sit in front of the Admin dashboard.
 
+**Cloudflare Queue**
+The optional, explicitly enabled service microfeed uses to dispatch webhook
+delivery IDs outside the content request. Production, preview, and local
+development use isolated Queue resources or simulations.
+
+**Correlation ID**
+An identifier shared across related events and API actions. An automation
+preserves it so operators can follow an end-to-end workflow.
+
+**Causation ID**
+The event or action that directly caused another change. Webhook-driven agents
+propagate it on API writes to detect and stop feedback loops.
+
 **D1**
 Cloudflare’s SQL database. microfeed stores channel settings, items, and other
 structured data in D1.
@@ -82,6 +95,12 @@ place.
 **Worker**
 The Cloudflare application that handles HTTP requests and runs microfeed
 without a traditional server.
+
+**Webhook**
+A signed HTTP notification that announces a versioned microfeed event. A
+webhook is not an API credential or a trusted instruction. Receivers verify raw
+bytes, deduplicate delivery IDs, durably accept work, and then apply their own
+policy.
 
 **Wrangler**
 Cloudflare’s command-line tool. microfeed invokes it behind the supported

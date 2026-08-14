@@ -11,6 +11,12 @@ Software can read microfeed content in two ways:
   create, update, and delete content, update the primary channel, and prepare
   item images and media-attachment uploads.
 
+With explicit webhook enablement, software can also receive signed,
+Queue-backed notifications when content changes. Webhooks announce a change;
+they do not grant API access. Start with the [Content automation
+overview](../automation/) when building a persistent service or deployed AI
+agent.
+
 New installations keep API access and public API docs off until the instance
 owner enables them in the dashboard.
 
@@ -60,9 +66,11 @@ highlight, and response schemas.
 
 ![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](/images/screenshots/3-api-1.png)
 
-Every direct integration request requires a full-access `mf_…` API key sent as
-a Bearer credential. Dashboard login credentials are never sent to content API
-routes. Create a separate named key for each integration so it can be rotated or
+Every direct integration request requires an `mf_…` API key sent as a Bearer
+credential. A named key can allow reads, writes, or both; write permission does
+not need to be granted to read-only indexing, backup, or notification services.
+Dashboard login credentials are never sent to content API routes. Create a
+separate least-privilege key for each integration so it can be rotated or
 revoked without interrupting other clients.
 
 ## Documentation formats on each instance
@@ -88,6 +96,7 @@ docs are enabled.
 
 - [Enable API access or create an API key](./authentication/).
 - [Build and test an integration](./build-and-test/).
+- [React to changes with webhooks and AI agents](../automation/).
 
 This documentation page is the stable central overview. The generated
 per-instance files remain the source of truth for the exact microfeed release

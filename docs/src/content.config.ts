@@ -14,6 +14,7 @@ const docs = defineCollection({
       "dashboard/**/*.{md,mdx}",
       "manage/**/*.md",
       "api/**/*.md",
+      "automation/**/*.md",
       "reference/**/*.md",
       "contribute/**/*.md",
     ],

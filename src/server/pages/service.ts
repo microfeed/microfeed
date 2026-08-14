@@ -19,6 +19,10 @@ import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
 import type FeedDb from "@/server/feed/FeedDb";
 import {PUBLIC_CACHE_TAGS} from "@/server/cache/public-cache";
 import {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
+import {
+  commitDatabaseMutation,
+  type DatabaseMutationCommit,
+} from "@/server/mutation";
 
 export interface PageInput {
   content_html?: string;
@@ -330,7 +334,11 @@ export async function createPage(
   database: FeedDb,
   request: Request,
   input: PageInput,
-  options: {adminPath?: string | null; id?: string} = {},
+  options: {
+    adminPath?: string | null;
+    commit?: DatabaseMutationCommit<PageRecord>;
+    id?: string;
+  } = {},
 ): Promise<PageRecord> {
   const title = String(input.title ?? "").trim();
   if (!title) throw new PageRequestError("A Page title is required.");
@@ -358,8 +366,25 @@ export async function createPage(
   const nextOrder = showInNavigation
     ? await nextNavigationOrder(database.FEED_DB)
     : 0;
+  const publishedAt = isPublicStatus(status) ? now : null;
+  const metaDescription = input.meta_description?.trim() || null;
+  const page = pageFromRow({
+    content_html: contentHtml,
+    content_text: htmlToPlainText(contentHtml),
+    created_at: now,
+    id,
+    meta_description: metaDescription,
+    navigation_label: navigationLabel,
+    navigation_order: nextOrder,
+    published_at: publishedAt,
+    show_in_navigation: showInNavigation ? 1 : 0,
+    slug,
+    status,
+    title,
+    updated_at: now,
+  }, new URL(request.url).origin);
   try {
-    await database.FEED_DB.batch([
+    await commitDatabaseMutation(database.FEED_DB, [
       database.FEED_DB.prepare(`
         INSERT INTO pages (
           id, slug, title, content_html, content_text, status,
@@ -373,18 +398,18 @@ export async function createPage(
         contentHtml,
         htmlToPlainText(contentHtml),
         status,
-        input.meta_description?.trim() || null,
+        metaDescription,
         showInNavigation ? 1 : 0,
         navigationLabel,
         nextOrder,
-        isPublicStatus(status) ? now : null,
+        publishedAt,
         now,
         now,
       ),
       database.FEED_DB.prepare(
         "INSERT INTO page_paths (slug, page_id, is_current, created_at) VALUES (?, ?, 1, ?)",
       ).bind(slug, id, now),
-    ]);
+    ], page, options.commit);
   } catch (error) {
     if (String(error).toLocaleLowerCase().includes("unique")) {
       throw new PageConflictError(`The path /${slug}/ is already reserved.`);
@@ -392,7 +417,7 @@ export async function createPage(
     throw error;
   }
   await purgePageCaches(database, id);
-  return (await getPageById(database.FEED_DB, request, id))!;
+  return page;
 }
 
 export async function updatePage(
@@ -400,7 +425,10 @@ export async function updatePage(
   request: Request,
   id: string,
   input: PageInput,
-  options: {adminPath?: string | null} = {},
+  options: {
+    adminPath?: string | null;
+    commit?: DatabaseMutationCommit<PageRecord>;
+  } = {},
 ): Promise<PageRecord | null> {
   const existingRow = await database.FEED_DB.prepare(
     "SELECT * FROM pages WHERE id = ? AND status != ? LIMIT 1",
@@ -490,6 +518,26 @@ export async function updatePage(
       ).bind(slug, id, now),
     );
   }
+  const metaDescription = input.meta_description === undefined
+    ? existingRow.meta_description
+    : input.meta_description?.trim() || null;
+  const publishedAt = existingRow.published_at ??
+    (isPublicStatus(status) ? now : null);
+  const page = pageFromRow({
+    content_html: contentHtml,
+    content_text: htmlToPlainText(contentHtml),
+    created_at: existingRow.created_at,
+    id,
+    meta_description: metaDescription,
+    navigation_label: navigationLabel,
+    navigation_order: navigationOrder,
+    published_at: publishedAt,
+    show_in_navigation: showInNavigation ? 1 : 0,
+    slug,
+    status,
+    title,
+    updated_at: now,
+  }, new URL(request.url).origin);
   statements.push(database.FEED_DB.prepare(`
     UPDATE pages SET
       slug = ?, title = ?, content_html = ?, content_text = ?, status = ?,
@@ -502,19 +550,22 @@ export async function updatePage(
     contentHtml,
     htmlToPlainText(contentHtml),
     status,
-    input.meta_description === undefined
-      ? existingRow.meta_description
-      : input.meta_description?.trim() || null,
+    metaDescription,
     showInNavigation ? 1 : 0,
     navigationLabel,
     navigationOrder,
-    existingRow.published_at ?? (isPublicStatus(status) ? now : null),
+    publishedAt,
     now,
     id,
     STATUSES.DELETED,
   ));
   try {
-    await database.FEED_DB.batch(statements);
+    await commitDatabaseMutation(
+      database.FEED_DB,
+      statements,
+      page,
+      options.commit,
+    );
   } catch (error) {
     if (String(error).toLocaleLowerCase().includes("unique")) {
       throw new PageConflictError(`The path /${slug}/ is already reserved.`);
@@ -522,12 +573,13 @@ export async function updatePage(
     throw error;
   }
   await purgePageCaches(database, id);
-  return getPageById(database.FEED_DB, request, id);
+  return page;
 }
 
 export async function reorderPageNavigation(
   database: FeedDb,
   pageIds: string[],
+  commit?: DatabaseMutationCommit<string[]>,
 ): Promise<void> {
   if (new Set(pageIds).size !== pageIds.length) {
     throw new PageRequestError("Each navigation Page can appear only once.");
@@ -552,12 +604,13 @@ export async function reorderPageNavigation(
   if (pageIds.length === 0) return;
 
   const now = new Date().toISOString();
-  await database.FEED_DB.batch(pageIds.map((id, index) =>
+  const statements = pageIds.map((id, index) =>
     database.FEED_DB.prepare(`
       UPDATE pages SET navigation_order = ?, updated_at = ?
       WHERE id = ? AND status != ? AND show_in_navigation = 1
     `).bind((index + 1) * 10, now, id, STATUSES.DELETED)
-  ));
+  );
+  await commitDatabaseMutation(database.FEED_DB, statements, pageIds, commit);
   await database.purgePublicCacheTags([
     PUBLIC_CACHE_TAGS.PAGES,
     PUBLIC_CACHE_TAGS.ITEMS,
@@ -568,6 +621,7 @@ export async function reorderPageNavigation(
 export async function deletePage(
   database: FeedDb,
   id: string,
+  commit?: DatabaseMutationCommit<boolean>,
 ): Promise<boolean> {
   const existing = await database.FEED_DB.prepare(
     "SELECT slug FROM pages WHERE id = ? AND status != ? LIMIT 1",
@@ -575,15 +629,16 @@ export async function deletePage(
   if (existing && isNotFoundPageSlug(existing.slug)) {
     throw new PageRequestError("The default 404 Page cannot be deleted.");
   }
-  const result = await database.FEED_DB.prepare(
+  if (!existing) return false;
+  const statement = database.FEED_DB.prepare(
     "UPDATE pages SET status = ?, updated_at = ? WHERE id = ? AND status != ?",
   ).bind(
     STATUSES.DELETED,
     new Date().toISOString(),
     id,
     STATUSES.DELETED,
-  ).run();
-  if (!result.meta.changes) return false;
+  );
+  await commitDatabaseMutation(database.FEED_DB, [statement], true, commit);
   await purgePageCaches(database, id);
   return true;
 }

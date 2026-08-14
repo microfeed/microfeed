@@ -35,6 +35,11 @@ export interface MicrofeedConfig {
     createdAt: string;
     fingerprint: string;
   };
+  webhooks?: {
+    enabled: boolean;
+    queueName: string;
+    reuse: boolean;
+  };
   workerName?: string;
 }
 

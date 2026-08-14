@@ -71,6 +71,50 @@ const itemInputOptions = [
 export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   {
     details: [
+      "Starts a development-only HTTP listener on 127.0.0.1:8978/webhook. It verifies Standard Webhooks signatures against the exact request bytes before printing or forwarding an event.",
+      "Provide the signing secret through the hidden prompt, MICROFEED_WEBHOOK_SECRET, or --secret-file. A plaintext --secret option is intentionally unsupported.",
+      "Use --json for one NDJSON object per delivery. Repeated delivery IDs are marked duplicate but are still forwarded so your receiver's deduplication can be tested.",
+      "--forward-to accepts only an explicit loopback HTTP address. The listener preserves the exact body and webhook headers, times out after nine seconds, and returns 502 or 504 when forwarding fails.",
+      "The listener does not create an endpoint or expose a remote relay. In local development, create an endpoint for http://127.0.0.1:8978/webhook in Admin → Webhooks.",
+    ],
+    examples: [
+      "yarn microfeed webhook listen",
+      "MICROFEED_WEBHOOK_SECRET=whsec_... yarn microfeed webhook listen --json",
+      "yarn microfeed webhook listen --secret-file .webhook-secret --forward-to http://127.0.0.1:3000/hooks/microfeed",
+    ],
+    options: [
+      option("--secret-file <path>", "Read the signing secret from a UTF-8 file."),
+      option("--forward-to <url>", "Forward verified requests to another loopback HTTP server."),
+      option("--port <1-65535>", "Listen on another 127.0.0.1 port. Defaults to 8978."),
+      jsonOption,
+    ],
+    path: ["webhook"],
+    subcommands: [
+      {name: "listen", description: "Verify, display, and optionally forward local webhook deliveries."},
+    ],
+    summary: "Receive and verify webhook deliveries during local development.",
+    usage: "yarn microfeed webhook listen [options]",
+  },
+  {
+    details: [
+      "This is the webhook listener command. See `yarn microfeed help webhook` for security, forwarding, and local endpoint guidance.",
+    ],
+    examples: [
+      "yarn microfeed webhook listen",
+      "yarn microfeed webhook listen --secret-file .webhook-secret --json",
+    ],
+    options: [
+      option("--secret-file <path>", "Read the signing secret from a UTF-8 file."),
+      option("--forward-to <url>", "Forward verified requests to another loopback HTTP server."),
+      option("--port <1-65535>", "Listen on another 127.0.0.1 port. Defaults to 8978."),
+      jsonOption,
+    ],
+    path: ["webhook", "listen"],
+    summary: "Verify, display, and optionally forward local webhook deliveries.",
+    usage: "yarn microfeed webhook listen [options]",
+  },
+  {
+    details: [
       "<site-url> is the root public URL of one microfeed site: scheme plus hostname and optional port, with no path, query, fragment, or embedded credentials.",
       "Valid site URLs include https://feed.example.com and, for local testing, http://127.0.0.1:4321. A dashboard URL such as https://feed.example.com/admin is not a site URL.",
       "Use the URL that opens the public microfeed site. It may be a custom-domain URL or the generated workers.dev URL.",

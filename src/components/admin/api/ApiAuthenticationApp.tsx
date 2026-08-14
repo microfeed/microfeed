@@ -31,8 +31,10 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {showToast} from "@/client/ToastUtils";
 import {
+  API_KEY_SCOPES,
   type ApiAccessSettings,
   type ApiKeyRecord,
+  type ApiKeyScope,
   updateApiAccessEnabled,
 } from "@/shared/Api";
 import {API_BASE_PATH} from "@/shared/ApiVersion";
@@ -69,12 +71,14 @@ export default function ApiAuthenticationApp({
   const [settings, setSettings] = useState(initialSettings);
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
+  const [scopes, setScopes] = useState<ApiKeyScope[]>(["content:read"]);
   const [createSettings, setCreateSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
   const openCreate = () => {
     setName("");
+    setScopes(["content:read"]);
     setCreateSettings(settings);
     setCreateOpen(true);
   };
@@ -87,7 +91,7 @@ export default function ApiAuthenticationApp({
         apiKey: ApiKeyRecord;
         settings: ApiAccessSettings;
       }>(await fetch(ADMIN_URLS.ajaxApiKeys(), {
-        body: JSON.stringify({name, settings: createSettings}),
+        body: JSON.stringify({name, scopes, settings: createSettings}),
         headers: {"content-type": "application/json"},
         method: "POST",
       }));
@@ -216,7 +220,8 @@ export default function ApiAuthenticationApp({
                         </Button>
                       </div>
                       <p className="mt-2 text-xs text-muted-foreground">
-                        Created {new Date(apiKey.createdAtMs).toLocaleString()}
+                        {apiKey.scopes.includes("content:write") ? "Read and write" : "Read only"}
+                        {" · "}Created {new Date(apiKey.createdAtMs).toLocaleString()}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -266,6 +271,40 @@ export default function ApiAuthenticationApp({
               app, or content backup.
             </p>
           </div>
+          <fieldset>
+            <legend className="text-sm font-medium">Permissions</legend>
+            <div className="mt-2 grid gap-2 rounded-lg border p-3">
+              {API_KEY_SCOPES.map((scope) => (
+                <label className="flex items-start gap-3" key={scope}>
+                  <input
+                    checked={scopes.includes(scope)}
+                    className="mt-1 size-4"
+                    onChange={(event) => setScopes((current) =>
+                      event.target.checked
+                        ? [...new Set([...current, scope])]
+                        : current.filter((value) => value !== scope)
+                    )}
+                    type="checkbox"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium">
+                      {scope === "content:read" ? "Read content" : "Write content"}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {scope === "content:read"
+                        ? "Read feeds, items, Pages, Site Files, and search."
+                        : "Create, update, publish, and delete content and prepare uploads."}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {!scopes.length && (
+              <p className="mt-2 text-xs text-destructive">
+                Choose at least one permission.
+              </p>
+            )}
+          </fieldset>
           {shouldShowApiAccessControls(settings) && (
             <div className="grid gap-4 rounded-xl border bg-muted/30 p-4">
               <div>
@@ -302,7 +341,7 @@ export default function ApiAuthenticationApp({
           )}
           <DialogFooter>
             <Button disabled={saving} onClick={() => setCreateOpen(false)} type="button" variant="outline">Cancel</Button>
-            <Button disabled={saving || !createSettings.enabled || !name.trim()} onClick={create} type="button">
+            <Button disabled={saving || !createSettings.enabled || !name.trim() || !scopes.length} onClick={create} type="button">
               Create API key
             </Button>
           </DialogFooter>
