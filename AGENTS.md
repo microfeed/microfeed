@@ -77,6 +77,47 @@
 - Keep stable, unprocessed public assets in `public/`; do not move them into the
   source bundle or change their public URLs without an explicit migration.
 
+## Personal-site features (fork-specific, preserve on upstream sync)
+
+This fork (`kiran-brahma/microfeed`) adds personal-website features on top of
+upstream microfeed. They are NOT part of upstream `microfeed/microfeed` and
+must be preserved when syncing upstream changes. Do not remove or "clean up"
+these features when updating from upstream. The plan lives in
+`docs/plans/personal-site-cms.md`.
+
+- **Categories** — managed list in the DB (`categories`, `item_categories`
+  tables, migration `0017`). Admin page under `[adminPath]/categories/`;
+  service `src/server/categories/service.ts`; shared types
+  `src/shared/Categories.ts`. An item can carry at most 2 categories
+  (`MAX_CATEGORIES_PER_ITEM`). Categories are attached to loaded items in
+  `FeedDb` and exposed in the public JSON feed.
+- **Series** — managed list in the DB (`series`, `item_series` tables,
+  migration `0018`). Series are typed `post` or `podcast` so posts and
+  podcasts keep separate series. Admin page under `[adminPath]/series/`;
+  service `src/server/series/service.ts`; shared types `src/shared/Series.ts`.
+  An item belongs to at most one series with an optional series number.
+- **Contact form** — public form (name/email/message) saved to
+  `contact_messages` (migration `0019`). Public POST endpoint
+  `src/pages/contact/submit.ts` (no admin auth). Admin inbox under
+  `[adminPath]/contact-messages/`; service `src/server/contact/service.ts`;
+  shared types `src/shared/ContactMessage.ts`.
+- **Media manager** — global media library (`media_library` table, migration
+  `0020`). Completed uploads are recorded in `src/server/media/library.ts`
+  via the upload hook in `src/pages/media-upload/[...key].ts`. Admin library
+  under `[adminPath]/media-library/`. The item editor can reuse a library
+  image as a cover or attachment. Images are cropped 1:1 and converted to
+  AVIF client-side (`canvas.toBlob('image/avif')`) with PNG fallback.
+- **Personal theme** — a new theme package at `themes/personal/`
+  (`personal.minimal`). Clean, minimal, writing-first; keeps podcast support;
+  renders categories, series, and the contact form. The bundled default theme
+  (`themes/default/`) is unchanged.
+
+When a future AI session updates this repository from upstream, it must keep
+all of the above intact and re-run the related tests
+(`tests/worker/categories.test.ts`, `tests/worker/series.test.ts`,
+`tests/worker/contact-messages.test.ts`, `tests/worker/media-library.test.ts`)
+and the `themes/personal/` validate/test.
+
 ## Theme export
 
 - When a user asks Codex to export, copy, fork, inspect, or begin developing an
