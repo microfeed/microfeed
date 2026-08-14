@@ -287,30 +287,23 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }
     this.setState({ uploadStatus: UPLOAD_STATUS__START });
     const canvas = cropper.getCroppedCanvas();
-    // Convert the 1:1 crop to AVIF where the browser supports encoding it.
-    // Browsers without AVIF encode support silently fall back to PNG, so the
-    // blob type tells us which format was actually produced.
     canvas.toBlob((blob: Blob | null) => {
       if (!blob) {
         showToast('Failed to prepare this image. Please try another file.', 'error');
         this.setState({...this.initState});
         return;
       }
-      const isAvif = blob.type === 'image/avif';
-      const finalFilename = isAvif
-        ? cdnFilename.replace(/\.[a-z0-9]+$/iu, '.avif')
-        : cdnFilename;
       cropper.disable();
 
-      Requests.upload(blob, finalFilename, (percentage: any) => {
+      Requests.upload(blob, cdnFilename, (percentage: any) => {
         this.setState({
           progressText: `${Number(percentage * 100.0).toFixed(2)}%`,
         });
-      }, (cdnUrl: any) => {
+      }, (cdnUrl: any, uploadBlob?: any) => {
         const replacedImageUrl = this.state.currentImageUrl;
         this.props.onImageUploaded(
           cdnUrl,
-          blob.type || 'image/png',
+          uploadBlob?.type || blob.type || 'image/avif',
           replacedImageUrl,
         );
         cropper.destroy();
@@ -337,7 +330,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           }
         });
       });
-    }, 'image/avif', 0.8);
+    }, 'image/png');
   }
 
   showMediaStorageUnavailable() {
@@ -352,7 +345,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       libraryLoading, publicBucketUrl, previewImageUrl,
       imageWidth, imageHeight} = this.state;
     const absoluteImageUrl =  currentImageUrl ? urlJoinWithRelative(publicBucketUrl, currentImageUrl) : null;
-    const fileTypes = ['PNG', 'JPG', 'JPEG'];
+    const fileTypes = ['PNG', 'JPG', 'JPEG', 'WEBP', 'AVIF', 'GIF', 'HEIC'];
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const mediaStorageReady = this.props.mediaStorageReady !== false;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;

@@ -2717,6 +2717,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jsquash/avif@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "@jsquash/avif@npm:2.1.1"
+  dependencies:
+    wasm-feature-detect: "npm:^1.2.11"
+  checksum: 10/436142d9a5b9d3e385006a9c8471c6960c6ac07f144e31c4cd7174ebb0ce511de4cc9febbcf2ce4fe50fe1ab93c8728bf68b1948ce518910c7fc9ee637b0137a
+  languageName: node
+  linkType: hard
+
 "@levischuck/tiny-cbor@npm:^0.2.2":
   version: 0.2.11
   resolution: "@levischuck/tiny-cbor@npm:0.2.11"
@@ -2883,7 +2892,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@microfeed/theme-kit@workspace:^, @microfeed/theme-kit@workspace:packages/theme-kit":
+"@microfeed/personal-theme@workspace:themes/personal":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/personal-theme@workspace:themes/personal"
+  dependencies:
+    "@microfeed/theme-kit": "npm:^1.0.0"
+  languageName: unknown
+  linkType: soft
+
+"@microfeed/theme-kit@npm:^1.0.0, @microfeed/theme-kit@workspace:^, @microfeed/theme-kit@workspace:packages/theme-kit":
   version: 0.0.0-use.local
   resolution: "@microfeed/theme-kit@workspace:packages/theme-kit"
   dependencies:
@@ -9865,6 +9882,7 @@ __metadata:
     "@clack/prompts": "npm:^1.7.0"
     "@cloudflare/vitest-pool-workers": "npm:^0.19.0"
     "@fontsource-variable/geist": "npm:^5.3.0"
+    "@jsquash/avif": "npm:^2.1.1"
     "@redocly/cli": "npm:^2.44.1"
     "@scalar/api-reference-react": "npm:^0.9.60"
     "@tailwindcss/forms": "npm:^0.5.3"
@@ -14203,6 +14221,13 @@ __metadata:
   version: 2.2.8
   resolution: "w3c-keyname@npm:2.2.8"
   checksum: 10/95bafa4c04fa2f685a86ca1000069c1ec43ace1f8776c10f226a73296caeddd83f893db885c2c220ebeb6c52d424e3b54d7c0c1e963bbf204038ff1a944fbb07
+  languageName: node
+  linkType: hard
+
+"wasm-feature-detect@npm:^1.2.11":
+  version: 1.9.0
+  resolution: "wasm-feature-detect@npm:1.9.0"
+  checksum: 10/d1f73402c2de141ccb55e4a9e9a7896c0ac83977880b7b9cb7abdd155d969d43fb8b88f1d1d8a248c2d1158e3eedac54d6b76c034708ac8e038c05ff9b4e104d
   languageName: node
   linkType: hard
 

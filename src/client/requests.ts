@@ -23,9 +23,8 @@ async function uploadFile(file: any, cdnFilename: any, onProgress: any, onUpload
   // converted blob's size and type so the server's length check matches.
   const isImage = typeof file?.type === "string" && file.type.startsWith("image/");
   const uploadBlob = isImage ? await convertImageToAvif(file) : file;
-  const convertedToAvif =
-    uploadBlob !== file && uploadBlob.type === "image/avif";
-  const finalFilename = convertedToAvif
+  const isAvif = uploadBlob?.type === "image/avif";
+  const finalFilename = isAvif
     ? cdnFilename.replace(/\.[a-z0-9]+$/iu, ".avif")
     : cdnFilename;
   const { size, type } = uploadBlob;

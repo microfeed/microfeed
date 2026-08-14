@@ -1,3 +1,5 @@
+import encode from "@jsquash/avif/encode";
+
 /**
  * Convert an image blob to AVIF client-side before it is uploaded to R2.
  *
@@ -23,10 +25,9 @@ export async function convertImageToAvif(blob: Blob): Promise<Blob> {
     }
     context.drawImage(bitmap, 0, 0);
     bitmap.close();
-    const avifBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, "image/avif", 0.8);
-    });
-    return avifBlob && avifBlob.type === "image/avif" ? avifBlob : blob;
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const avifBuffer = await encode(imageData, {quality: 80});
+    return new Blob([avifBuffer], {type: "image/avif"});
   } catch {
     return blob;
   }
