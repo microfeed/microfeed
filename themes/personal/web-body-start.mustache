@@ -1,0 +1,15 @@
+<header class="mf-site-header">
+  <a class="mf-site-title" href="{{home_page_url}}">{{title}}</a>
+  <button type="button" class="mf-search-button" aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open>
+    Search
+  </button>
+  <nav class="mf-site-navigation" aria-label="Site navigation" data-microfeed-site-nav>
+    {{#navigation_pages}}
+    <a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>
+    {{/navigation_pages}}
+    <details class="mf-nav-overflow" data-microfeed-nav-overflow hidden>
+      <summary aria-label="More pages" aria-expanded="false">More</summary>
+      <div class="mf-nav-overflow-menu" data-microfeed-nav-overflow-menu></div>
+    </details>
+  </nav>
+</header>

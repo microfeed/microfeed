@@ -1,0 +1,46 @@
+<main>
+  <h1 class="mf-feed-heading">{{title}}</h1>
+  {{#description}}
+  <p class="mf-feed-description">{{description}}</p>
+  {{/description}}
+
+  {{^items.length}}
+  <p>No posts yet.</p>
+  {{/items.length}}
+
+  <ul class="mf-feed-list">
+    {{#items}}
+    <li class="mf-feed-item">
+      <time class="mf-feed-date" datetime="{{date_published}}">{{_microfeed.date_published_short}}</time>
+      <h2 class="mf-feed-title"><a href="{{_microfeed.web_url}}">{{title}}</a></h2>
+      {{#content_text}}
+      <p class="mf-feed-excerpt">{{content_text}}</p>
+      {{/content_text}}
+      <div class="mf-feed-meta">
+        {{#categories.length}}
+        {{#categories}}
+        <span class="mf-chip">{{name}}</span>
+        {{/categories}}
+        {{/categories.length}}
+        {{#series}}
+        <span class="mf-series-note">
+          {{#series_number}}Part {{series_number}} of {{/series_number}}{{name}}
+        </span>
+        {{/series}}
+        {{#_microfeed.duration_hhmmss}}
+        <span class="mf-series-note">{{_microfeed.duration_hhmmss}}</span>
+        {{/_microfeed.duration_hhmmss}}
+      </div>
+    </li>
+    {{/items}}
+  </ul>
+
+  <nav class="mf-pagination" aria-label="Pagination">
+    {{#_microfeed.prev_url}}
+    <a href="{{_microfeed.prev_url}}">&larr; Newer</a>
+    {{/_microfeed.prev_url}}
+    {{#_microfeed.next_url}}
+    <a href="{{_microfeed.next_url}}">Older &rarr;</a>
+    {{/_microfeed.next_url}}
+  </nav>
+</main>
