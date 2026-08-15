@@ -129,7 +129,7 @@ describe("bundled theme packages", () => {
     expect(sourceStyles).toMatch(/\.mf-search-page-results \.mf-public-search-result__details mark\s*\{[\s\S]*?background:\s*color-mix\(/u);
   });
 
-  it("distinguishes wrapped rich-text lines from separate paragraphs", async () => {
+  it("keeps a consistent gap between every rendered rich-text block", async () => {
     const [feed, item, page, sourceStyles] = await Promise.all([
       readFile(path.join(root, "themes/default/src/templates/web-feed.mustache"), "utf8"),
       readFile(path.join(root, "themes/default/src/templates/web-item.mustache"), "utf8"),
@@ -141,13 +141,13 @@ describe("bundled theme packages", () => {
       expect(template).toContain('class="mf-rich-content"');
     }
     expect(sourceStyles).toMatch(
-      /\.mf-rich-content \{\s*line-height:\s*1\.6;\s*\}/u,
+      /\.mf-rich-content \{[\s\S]*?--mf-rich-block-gap:\s*1rem;[\s\S]*?line-height:\s*1\.6;/u,
     );
     expect(sourceStyles).toMatch(
-      /\.mf-rich-content p \{\s*margin:\s*0;\s*\}/u,
+      /\.mf-rich-content > \* \{\s*margin-block:\s*0;\s*\}/u,
     );
     expect(sourceStyles).toMatch(
-      /\.mf-rich-content p \+ p \{\s*margin-top:\s*1em;\s*\}/u,
+      /\.mf-rich-content > \* \+ \* \{\s*margin-top:\s*var\(--mf-rich-block-gap\);\s*\}/u,
     );
   });
 
@@ -180,7 +180,7 @@ describe("bundled theme packages", () => {
       assets: [],
       formatVersion: 2,
       packageId: "microfeed.default",
-      version: "1.1.7",
+      version: "1.1.8",
     });
     expect(application.version).toBe("1.0.4");
   });

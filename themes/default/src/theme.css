@@ -480,15 +480,17 @@ html .mf-public-search::backdrop {
 }
 
 .mf-rich-content {
+  --mf-rich-block-gap: 1rem;
+
   line-height: 1.6;
 }
 
-.mf-rich-content p {
-  margin: 0;
+.mf-rich-content > * {
+  margin-block: 0;
 }
 
-.mf-rich-content p + p {
-  margin-top: 1em;
+.mf-rich-content > * + * {
+  margin-top: var(--mf-rich-block-gap);
 }
 
 section {
