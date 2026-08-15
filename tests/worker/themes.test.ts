@@ -137,7 +137,7 @@ describe("versioned theme storage", () => {
       id: "bundled-default-v2",
       packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.1.7",
+      version: "1.1.8",
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });

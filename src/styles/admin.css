@@ -221,16 +221,18 @@ a {
 }
 
 .admin-rich-editor .ql-container .ql-editor {
+  --mf-rich-block-gap: 1.2rem;
+
   font-size: 120%;
   line-height: 1.6;
 }
 
-.admin-rich-editor .ql-container .ql-editor p {
-  margin: 0;
+.admin-rich-editor .ql-container .ql-editor > * {
+  margin-block: 0;
 }
 
-.admin-rich-editor .ql-container .ql-editor p + p {
-  margin-top: 1em;
+.admin-rich-editor .ql-container .ql-editor > * + * {
+  margin-top: var(--mf-rich-block-gap);
 }
 
 .ql-editor img,
