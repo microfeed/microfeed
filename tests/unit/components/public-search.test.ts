@@ -28,7 +28,7 @@ describe("public search modal", () => {
     expect(source).toContain('class="mf-public-search__close"');
     expect(source).toContain('aria-hidden="true"');
     expect(source).toContain('[data-microfeed-search-close]');
-    expect(source).toContain('addEventListener("click", () => dialog.close())');
+    expect(source).toContain('addEventListener("click", closeSearch)');
   });
 
   it("opens from the platform keyboard shortcut", () => {
@@ -39,13 +39,44 @@ describe("public search modal", () => {
     expect(source).toContain("dialog.showModal()");
   });
 
-  it("opens from pointer and keyboard-activated search fields", () => {
+  it("locks background scrolling while the modal is open", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain("function lockBackgroundScroll(scrollPosition)");
+    expect(source).toContain('document.body.style.position = "fixed"');
+    expect(source).toContain(
+      'document.body.style.top = "-" + scrollPosition + "px"',
+    );
+    expect(source).toContain("lockBackgroundScroll(scrollPosition)");
+    expect(source).toContain(
+      'dialog?.addEventListener("close", unlockBackgroundScroll)',
+    );
+    expect(source).toContain("window.scrollTo(0, scrollPosition)");
+  });
+
+  it("opens from focused, pointer, and keyboard-activated search fields", () => {
     const source = publicSearchHtml();
 
     expect(source).toContain('id="microfeed-search-dialog"');
     expect(source).toContain('trigger.addEventListener("click", openSearch)');
+    expect(source).toContain("trigger instanceof HTMLInputElement");
+    expect(source).toContain('trigger.addEventListener("focus", () => {');
+    expect(source).toContain("if (suppressTriggerFocus) return");
     expect(source).toContain("trigger instanceof HTMLButtonElement");
     expect(source).toContain('event.key !== "Enter" && event.key !== " "');
+  });
+
+  it("does not immediately reopen when dialog focus returns to its trigger", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain(
+      "function suppressTriggerFocusUntilCloseSettles()",
+    );
+    expect(source).toContain(
+      'dialog?.addEventListener("cancel", suppressTriggerFocusUntilCloseSettles)',
+    );
+    expect(source).toContain("suppressTriggerFocusUntilCloseSettles();");
+    expect(source).toContain("dialog.close();");
   });
 
   it("centers the modal without relying on browser dialog defaults", () => {

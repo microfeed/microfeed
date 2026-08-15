@@ -1,5 +1,28 @@
 <!-- Shared navigation rendered immediately after <body>. -->
 <nav class="mf-site-nav" aria-label="Site navigation" data-microfeed-site-nav>
+  <a class="mf-site-brand" href="/" aria-label="{{title}} home">
+    {{#icon}}<img src="{{icon}}" alt="" loading="lazy" />{{/icon}}
+    {{^icon}}<span>{{title}}</span>{{/icon}}
+  </a>
+
+  <div class="mf-nav-links">
+    {{#navigation_pages}}
+    <a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>
+    {{/navigation_pages}}
+    <details class="mf-nav-overflow" data-microfeed-nav-overflow hidden>
+      <summary aria-label="Page menu" aria-expanded="false">
+        <span class="mf-nav-overflow-label">More</span>
+        <svg class="mf-nav-overflow-chevron" aria-hidden="true" viewBox="0 0 20 20" width="14" height="14">
+          <path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+        </svg>
+        <svg class="mf-nav-overflow-menu-icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+          <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+        </svg>
+      </summary>
+      <div class="mf-nav-overflow-menu" data-microfeed-nav-overflow-menu></div>
+    </details>
+  </div>
+
   <div class="mf-site-search" role="search">
     <label class="mf-visually-hidden" for="microfeed-site-search">Search this site</label>
     <svg class="mf-search-icon-graphic" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
@@ -15,18 +38,49 @@
     </svg>
   </button>
 
-  <div class="mf-nav-links">
-    {{#navigation_pages}}
-    <a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>
-    {{/navigation_pages}}
-    <details class="mf-nav-overflow" data-microfeed-nav-overflow hidden>
-      <summary aria-label="More pages" aria-expanded="false">
-        More
-        <svg aria-hidden="true" viewBox="0 0 20 20" width="14" height="14">
-          <path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+  <div class="mf-theme-menu" data-microfeed-theme-menu>
+    <button
+      type="button"
+      class="mf-theme-trigger"
+      aria-label="Color theme: light"
+      aria-haspopup="menu"
+      aria-expanded="false"
+      data-microfeed-theme-trigger
+    >
+      <svg class="mf-theme-trigger-icon" data-microfeed-theme-icon="system" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+        <rect x="3" y="4" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M8 22h8M12 18v4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+      </svg>
+      <svg class="mf-theme-trigger-icon" data-microfeed-theme-icon="light" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+        <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+      </svg>
+      <svg class="mf-theme-trigger-icon" data-microfeed-theme-icon="dark" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+        <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </button>
+    <div class="mf-theme-menu-panel" role="menu" aria-label="Color theme" hidden>
+      <div class="mf-theme-menu-label">Color theme</div>
+      <button type="button" role="menuitemradio" aria-checked="false" data-microfeed-theme-option="system">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+          <rect x="3" y="4" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 22h8M12 18v4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
         </svg>
-      </summary>
-      <div class="mf-nav-overflow-menu" data-microfeed-nav-overflow-menu></div>
-    </details>
+        <span>System</span>
+      </button>
+      <button type="button" role="menuitemradio" aria-checked="true" data-microfeed-theme-option="light">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+        </svg>
+        <span>Light</span>
+      </button>
+      <button type="button" role="menuitemradio" aria-checked="false" data-microfeed-theme-option="dark">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+          <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"/>
+        </svg>
+        <span>Dark</span>
+      </button>
+    </div>
   </div>
 </nav>
