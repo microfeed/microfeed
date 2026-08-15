@@ -10,10 +10,11 @@ import {
 import {jsonResponse} from "@/server/http";
 import FeedDb from "@/server/feed/FeedDb";
 import {
+  activeThemeSupportsPages,
   createPage,
   deletePage,
   getPageById,
-  listPages,
+  listAdminPageSummaries,
   PageConflictError,
   PageRequestError,
   PageThemeUnsupportedError,
@@ -42,10 +43,16 @@ function database(request: Request): FeedDb {
   return new FeedDb(env, request, cache);
 }
 
-export const listAdminPages: APIRoute = async ({request}) => {
-  const db = database(request);
+export const listAdminPages: APIRoute = async () => {
   try {
-    return jsonResponse(await listPages(db, request, {limit: 100}));
+    const [items, themeSupportsPages] = await Promise.all([
+      listAdminPageSummaries(env.FEED_DB),
+      activeThemeSupportsPages(env.FEED_DB),
+    ]);
+    return jsonResponse(
+      {items, themeSupportsPages},
+      {headers: {"cache-control": "private, no-store"}},
+    );
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;

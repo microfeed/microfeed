@@ -9,6 +9,7 @@ import {
   siteFileMediaTypeForName,
   validateSiteFilename,
 } from "@/shared/SiteFiles";
+import type {AdminSiteFileSummary} from "@/shared/AdminCollections";
 import {
   defaultSiteFileTemplate,
   validateSiteFileTemplateSource,
@@ -111,6 +112,27 @@ export async function listSiteFiles(
   return result.results.map((row) =>
     recordFromRow(row as SiteFileRow, baseUrl)
   );
+}
+
+export async function listAdminSiteFileSummaries(
+  database: D1Database,
+): Promise<AdminSiteFileSummary[]> {
+  const result = await database.prepare(`
+    SELECT id, filename, content_type, enabled
+    FROM site_files
+    ORDER BY generator IS NULL, filename COLLATE NOCASE, id
+  `).all<{
+    content_type: SiteFileMediaType;
+    enabled: number;
+    filename: string;
+    id: string;
+  }>();
+  return result.results.map((row) => ({
+    content_type: row.content_type,
+    enabled: Boolean(row.enabled),
+    filename: String(row.filename),
+    id: String(row.id),
+  }));
 }
 
 export async function getSiteFileById(

@@ -1,11 +1,19 @@
 import {FileCode2Icon, PlusIcon} from "lucide-react";
 
+import {useAdminCollection} from "@/client/useAdminCollection";
+import {
+  AdminCollectionError,
+  AdminCollectionLoading,
+} from "@/components/admin/shared/AdminCollectionState";
 import {buttonVariants} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import {ADMIN_URLS} from "@/shared/StringUtils";
-import type {SiteFileRecord} from "@/shared/SiteFiles";
+import type {
+  AdminSiteFileListResponse,
+  AdminSiteFileSummary,
+} from "@/shared/AdminCollections";
 
-export default function SiteFilesApp({files}: {files: SiteFileRecord[]}) {
+export function SiteFilesList({files}: {files: AdminSiteFileSummary[]}) {
   return (
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -39,6 +47,34 @@ export default function SiteFilesApp({files}: {files: SiteFileRecord[]}) {
             </div>
           </a>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export default function SiteFilesApp() {
+  const {data, error, loading, retry} =
+    useAdminCollection<AdminSiteFileListResponse>(
+      ADMIN_URLS.ajaxSiteFiles(),
+      "Could not load Site Files.",
+    );
+  if (!data) {
+    return error
+      ? <AdminCollectionError message={error} retry={retry} />
+      : <AdminCollectionLoading label="Loading Site Files" />;
+  }
+  return (
+    <div>
+      {error && (
+        <div className="mb-4">
+          <AdminCollectionError message={error} retry={retry} />
+        </div>
+      )}
+      <div
+        aria-busy={loading}
+        className={cn("transition-opacity", loading && "opacity-60")}
+      >
+        <SiteFilesList files={data.items} />
       </div>
     </div>
   );
