@@ -11,7 +11,7 @@ import {
   createSiteFile,
   deleteSiteFile,
   getSiteFileById,
-  listSiteFiles,
+  listAdminSiteFileSummaries,
   previewSiteFile,
   publishSiteFile,
   resetSiteFile,
@@ -34,8 +34,11 @@ function database(request: Request): FeedDb {
   return new FeedDb(env, request, cache);
 }
 
-export const listAdminSiteFiles: APIRoute = async ({request}) =>
-  jsonResponse({items: await listSiteFiles(env.FEED_DB, request)});
+export const listAdminSiteFiles: APIRoute = async () =>
+  jsonResponse(
+    {items: await listAdminSiteFileSummaries(env.FEED_DB)},
+    {headers: {"cache-control": "private, no-store"}},
+  );
 
 export const createAdminSiteFile: APIRoute = async ({request}) => {
   const parsed = apiSiteFileInputSchema.safeParse(await request.json().catch(

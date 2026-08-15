@@ -13,6 +13,7 @@ import {
   type PageRecord,
   validatePageSlug,
 } from "@/shared/Pages";
+import type {AdminPageSummary} from "@/shared/AdminCollections";
 import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
 import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
 import type FeedDb from "@/server/feed/FeedDb";
@@ -262,6 +263,55 @@ export async function listPages(
       ? {next_cursor: encodeCursor(visible.at(-1)!)}
       : {}),
   };
+}
+
+export async function listAdminPageSummaries(
+  database: D1Database,
+): Promise<AdminPageSummary[]> {
+  const statusValues = [
+    STATUSES.PUBLISHED,
+    STATUSES.UNLISTED,
+    STATUSES.UNPUBLISHED,
+  ];
+  const result = await database.prepare(`
+    SELECT
+      id,
+      slug,
+      status,
+      title,
+      show_in_navigation,
+      navigation_label,
+      navigation_order
+    FROM pages
+    WHERE status IN (${statusValues.map(() => "?").join(", ")})
+    ORDER BY updated_at DESC, id DESC
+    LIMIT 100
+  `).bind(...statusValues).all<Pick<
+    PageRow,
+    | "id"
+    | "navigation_label"
+    | "navigation_order"
+    | "show_in_navigation"
+    | "slug"
+    | "status"
+    | "title"
+  >>();
+  return result.results.map((row) => {
+    const status = statusName(Number(row.status));
+    return {
+      id: String(row.id),
+      is_not_found_page: isNotFoundPageSlug(row.slug),
+      navigation_label: String(row.navigation_label ?? ""),
+      navigation_order: Number(row.navigation_order ?? 0),
+      show_in_navigation: pageNavigationEnabledForStatus(
+        status,
+        Boolean(row.show_in_navigation),
+      ),
+      slug: String(row.slug),
+      status,
+      title: String(row.title),
+    };
+  });
 }
 
 export async function getPageById(

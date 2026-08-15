@@ -16,6 +16,7 @@ import {
   resolvePublicBucketUrl,
 } from "@/shared/StringUtils";
 import {
+  isAdminCollectionListPath,
   isExistingItemEditorPath,
   isPublicPageCandidateForDynamicAdminRoute,
 } from "./server/admin-routes";
@@ -286,10 +287,17 @@ const handleRequest = defineMiddleware(async (context, next) => {
     // precise 404 without fetching the default list first.
     const editingExistingItem = isExistingItemEditorPath(pathname, adminPath);
     if (!editingExistingItem) {
+      const collectionLoadsWithAjax = isAdminCollectionListPath(
+        pathname,
+        adminPath,
+      );
       let query;
       let itemsOrder;
       let itemsSort;
-      if (pathname.startsWith(adminUrl("items/list", adminPath))) {
+      if (
+        !collectionLoadsWithAjax &&
+        pathname.startsWith(adminUrl("items/list", adminPath))
+      ) {
         query = itemQueryForStatusFilter(
           context.url.searchParams.get("status"),
         );
@@ -309,6 +317,7 @@ const handleRequest = defineMiddleware(async (context, next) => {
         context.request,
         {
           adminProtection: protection,
+          includeItems: !collectionLoadsWithAjax,
           itemsOrder,
           itemsSort,
           ...(query

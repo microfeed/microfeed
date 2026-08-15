@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import {
+  isAdminCollectionListPath,
   isExistingItemEditorPath,
   isPublicPageCandidateForDynamicAdminRoute,
 } from "@/server/admin-routes";
@@ -46,5 +47,30 @@ describe("admin item routes", () => {
     "/admin/items/new-item/",
   ])("lets the existing item page load its own context for %s", (pathname) => {
     expect(isExistingItemEditorPath(pathname)).toBe(true);
+  });
+});
+
+describe("admin collection routes", () => {
+  it.each([
+    "/admin/items/list/",
+    "/admin/pages/",
+    "/admin/site-files/",
+  ])("loads %s as an AJAX-backed collection shell", (pathname) => {
+    expect(isAdminCollectionListPath(pathname)).toBe(true);
+  });
+
+  it.each([
+    "/admin/items/list/extra/",
+    "/admin/pages/new/",
+    "/admin/pages/page-id/",
+    "/admin/site-files/new/",
+    "/admin/settings/",
+  ])("keeps %s on its existing server data path", (pathname) => {
+    expect(isAdminCollectionListPath(pathname)).toBe(false);
+  });
+
+  it("supports a custom admin path", () => {
+    expect(isAdminCollectionListPath("/studio/pages/", "studio")).toBe(true);
+    expect(isAdminCollectionListPath("/admin/pages/", "studio")).toBe(false);
   });
 });

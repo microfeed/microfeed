@@ -1,4 +1,15 @@
+import {adminUrl} from "@/shared/AdminPath";
+
 const RESERVED_ITEM_PATHS = new Set(["list", "new"]);
+
+export function isAdminCollectionListPath(
+  pathname: string,
+  adminPath = "admin",
+): boolean {
+  return ["items/list", "pages", "site-files"].some(
+    (path) => pathname === adminUrl(path, adminPath),
+  );
+}
 
 export function isPublicPageCandidateForDynamicAdminRoute(
   pathname: string,

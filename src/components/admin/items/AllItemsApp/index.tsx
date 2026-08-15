@@ -4,6 +4,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import {useMemo, useState, type MouseEvent} from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -14,6 +15,11 @@ import {
 } from "lucide-react";
 
 import AdminPageApp from "@/components/admin/shared/AdminPageApp";
+import {
+  AdminCollectionError,
+  AdminCollectionLoading,
+} from "@/components/admin/shared/AdminCollectionState";
+import {useAdminCollection} from "@/client/useAdminCollection";
 import {buttonVariants} from "@/components/ui/button";
 import {
   Tooltip,
@@ -44,11 +50,13 @@ import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {
   ADMIN_URLS,
   PUBLIC_URLS,
-  resolvePublicBucketUrl,
   secondsToHHMMSS,
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
-import type {FeedContent, FeedItem} from "@/types";
+import type {
+  AdminItemListResponse,
+  AdminItemSummary,
+} from "@/shared/AdminCollections";
 
 interface MediaFile {
   category?: string;
@@ -69,8 +77,14 @@ interface ItemTableRow {
 }
 
 interface Props {
-  feedContent: FeedContent;
+  itemsPerPage: number;
+  publicBucketUrl: string;
 }
+
+type ListNavigationHandler = (
+  event: MouseEvent<HTMLAnchorElement>,
+  href: string,
+) => void;
 
 const FILTER_LABELS: Record<ItemStatusFilter, string> = {
   all: "All items",
@@ -89,15 +103,6 @@ const STATUS_CLASSES: Record<number, string> = {
 };
 
 const columnHelper = createColumnHelper<ItemTableRow>();
-
-function currentStatusFilter(): ItemStatusFilter {
-  if (typeof window === "undefined") {
-    return "all";
-  }
-  return normalizeItemStatusFilter(
-    new URLSearchParams(window.location.search).get("status"),
-  );
-}
 
 function statusName(status: number): string {
   const name = ITEM_STATUSES_DICT[
@@ -225,37 +230,38 @@ function MediaCell({row}: {row: ItemTableRow}) {
   );
 }
 
-function tableRows(items: FeedItem[], publicBucketUrl: string): ItemTableRow[] {
+function tableRows(
+  items: AdminItemSummary[],
+  publicBucketUrl: string,
+): ItemTableRow[] {
   return items.map((item) => {
     const image = String(item.image ?? "").trim();
     return {
-      createdAtMs: typeof item.createdAtMs === "number"
-        ? item.createdAtMs
-        : Number(item.createdAtMs),
-      id: String(item.id ?? ""),
+      createdAtMs: item.createdAtMs,
+      id: item.id,
       imageUrl: image
         ? urlJoinWithRelative(publicBucketUrl, image) ?? undefined
         : undefined,
-      mediaFile: item.mediaFile as MediaFile | undefined,
-      pubDateMs: typeof item.pubDateMs === "number"
-        ? item.pubDateMs
-        : Number(item.pubDateMs),
+      mediaFile: item.mediaFile,
+      pubDateMs: item.pubDateMs,
       publicBucketUrl,
-      status: typeof item.status === "number" ? item.status : STATUSES.PUBLISHED,
-      title: String(item.title ?? "").trim() || "Untitled",
-      updatedAtMs: typeof item.updatedAtMs === "number"
-        ? item.updatedAtMs
-        : Number(item.updatedAtMs),
+      status: item.status,
+      title: item.title,
+      updatedAtMs: item.updatedAtMs,
     };
   });
 }
 
 function ItemStatusFilters({
   activeFilter,
+  loading,
+  navigate,
   order,
   sort,
 }: {
   activeFilter: ItemStatusFilter;
+  loading: boolean;
+  navigate: ListNavigationHandler;
   order: ItemOrder;
   sort: ItemSort;
 }) {
@@ -266,17 +272,21 @@ function ItemStatusFilters({
     >
       {ITEM_STATUS_FILTERS.map((statusFilter) => {
         const active = statusFilter === activeFilter;
+        const href = buildItemsListUrl({order, sort, statusFilter});
         return (
           <a
             aria-current={active ? "page" : undefined}
+            aria-disabled={loading ? "true" : undefined}
             className={cn(
               buttonVariants({size: "lg", variant: "outline"}),
               "w-full text-sm sm:text-base",
               active &&
                 "border-brand-light bg-brand-light/10 text-brand-dark ring-1 ring-brand-light/20 hover:bg-brand-light/15 dark:border-brand-light dark:bg-brand-light/20 dark:text-white dark:ring-brand-light/50 dark:hover:bg-brand-light/25",
+              loading && "cursor-not-allowed opacity-70",
             )}
-            href={buildItemsListUrl({order, sort, statusFilter})}
+            href={href}
             key={statusFilter}
+            onClick={(event) => navigate(event, href)}
           >
             {FILTER_LABELS[statusFilter]}
           </a>
@@ -286,22 +296,32 @@ function ItemStatusFilters({
   );
 }
 
-function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) {
-  const activeFilter = currentStatusFilter();
-  const sort = itemSortDefinition(feed.items_sort ?? ITEM_SORTS.UPDATED_AT);
-  const order = feed.items_order ?? ITEM_ORDERS.DESC;
-  const nextUrl = feed.items_next_cursor === undefined
+export function ItemListTable({
+  data,
+  listing,
+  loading = false,
+  navigate = () => {},
+}: {
+  data: ItemTableRow[];
+  listing: AdminItemListResponse;
+  loading?: boolean;
+  navigate?: ListNavigationHandler;
+}) {
+  const activeFilter = normalizeItemStatusFilter(listing.statusFilter);
+  const sort = itemSortDefinition(listing.sort);
+  const order = listing.order;
+  const nextUrl = listing.nextCursor === undefined
     ? undefined
     : buildItemsListUrl({
-        nextCursor: feed.items_next_cursor,
+        nextCursor: listing.nextCursor,
         order,
         sort: sort.sort,
         statusFilter: activeFilter,
       });
-  const prevUrl = feed.items_prev_cursor === undefined
+  const prevUrl = listing.prevCursor === undefined
     ? undefined
     : buildItemsListUrl({
-        prevCursor: feed.items_prev_cursor,
+        prevCursor: listing.prevCursor,
         order,
         sort: sort.sort,
         statusFilter: activeFilter,
@@ -326,8 +346,13 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
         aria-label={active
           ? `${label}, sorted ${descending ? "descending" : "ascending"}. Sort ${descending ? "ascending" : "descending"}.`
           : `${label}. Sort descending.`}
-        className="inline-flex min-w-0 flex-wrap items-center gap-1.5"
+        className={cn(
+          "inline-flex min-w-0 flex-wrap items-center gap-1.5",
+          loading && "cursor-not-allowed",
+        )}
         href={sortUrl}
+        onClick={(event) => navigate(event, sortUrl)}
+        aria-disabled={loading ? "true" : undefined}
       >
         {label}
         {active && (descending
@@ -424,7 +449,13 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
 
   return (
     <div>
-      <ItemStatusFilters activeFilter={activeFilter} order={order} sort={sort.sort} />
+      <ItemStatusFilters
+        activeFilter={activeFilter}
+        loading={loading}
+        navigate={navigate}
+        order={order}
+        sort={sort.sort}
+      />
       <div className="overflow-x-auto rounded-[14px] border bg-card">
         <table className="w-full min-w-[64rem] table-fixed border-collapse text-sm">
           <thead>
@@ -505,8 +536,13 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
         >
           {prevUrl && (
             <a
-              className={buttonVariants({size: "sm", variant: "outline"})}
+              aria-disabled={loading ? "true" : undefined}
+              className={cn(
+                buttonVariants({size: "sm", variant: "outline"}),
+                loading && "cursor-not-allowed",
+              )}
               href={prevUrl}
+              onClick={(event) => navigate(event, prevUrl)}
             >
               <ChevronLeftIcon aria-hidden="true" />
               Previous
@@ -514,8 +550,13 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
           )}
           {nextUrl && (
             <a
-              className={buttonVariants({size: "sm", variant: "outline"})}
+              aria-disabled={loading ? "true" : undefined}
+              className={cn(
+                buttonVariants({size: "sm", variant: "outline"}),
+                loading && "cursor-not-allowed",
+              )}
               href={nextUrl}
+              onClick={(event) => navigate(event, nextUrl)}
             >
               Next
               <ChevronRightIcon aria-hidden="true" />
@@ -527,18 +568,77 @@ function ItemListTable({data, feed}: {data: ItemTableRow[]; feed: FeedContent}) 
   );
 }
 
-export default function AllItemsApp({feedContent}: Props) {
-  const feed = feedContent;
-  const items = feed.items ?? [];
-  const publicBucketUrl = resolvePublicBucketUrl(
-    feed.settings?.webGlobalSettings?.publicBucketUrl,
-    window.location.hostname,
+function collectionUrl(search: string, itemsPerPage: number): string {
+  const parameters = new URLSearchParams(search);
+  parameters.set("limit", String(itemsPerPage));
+  return `${ADMIN_URLS.ajaxItems()}?${parameters.toString()}`;
+}
+
+export default function AllItemsApp({itemsPerPage, publicBucketUrl}: Props) {
+  const [search, setSearch] = useState(() =>
+    typeof window === "undefined" ? "" : window.location.search
   );
-  const data = tableRows(items, publicBucketUrl);
+  const endpoint = collectionUrl(search, itemsPerPage);
+  const {data: listing, error, loading, retry} =
+    useAdminCollection<AdminItemListResponse>(
+      endpoint,
+      "Could not load items.",
+    );
+  const data = useMemo(
+    () => tableRows(listing?.items ?? [], publicBucketUrl),
+    [listing, publicBucketUrl],
+  );
+  const navigate: ListNavigationHandler = (event, href) => {
+    if (loading) {
+      event.preventDefault();
+      return;
+    }
+    if (
+      event.defaultPrevented || event.button !== 0 || event.metaKey ||
+      event.ctrlKey || event.shiftKey || event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const destination = new URL(href, window.location.href);
+    if (destination.search === search) return;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${destination.search}${window.location.hash}`,
+    );
+    setSearch(destination.search);
+  };
 
   return (
     <AdminPageApp>
-      <ItemListTable data={data} feed={feed} />
+      {!listing && !error && <AdminCollectionLoading label="Loading items" />}
+      {!listing && error && (
+        <AdminCollectionError message={error} retry={retry} />
+      )}
+      {listing && (
+        <div>
+          {error && (
+            <div className="mb-4">
+              <AdminCollectionError message={error} retry={retry} />
+            </div>
+          )}
+          <div
+            aria-busy={loading}
+            className={cn(
+              "transition-opacity",
+              loading && "opacity-60",
+            )}
+          >
+            <ItemListTable
+              data={data}
+              listing={listing}
+              loading={loading}
+              navigate={navigate}
+            />
+          </div>
+        </div>
+      )}
     </AdminPageApp>
   );
 }
