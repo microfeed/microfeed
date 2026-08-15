@@ -29,6 +29,10 @@ import {
   apiWebhookDeliveryHeadersSchema,
   apiWebhookEventSchema,
 } from "./ApiSchemas";
+import {
+  WEBHOOK_EVENT_DEFINITIONS,
+  WEBHOOK_EVENT_EXAMPLES,
+} from "./WebhookExamples";
 import {MICROFEED_VERSION} from "./Version";
 import {API_BASE_PATH} from "./ApiVersion";
 import * as z from "zod";
@@ -102,7 +106,17 @@ export const OPENAPI_DOCUMENT = createDocument({
         requestParams: {header: apiWebhookDeliveryHeadersSchema},
         requestBody: {
           required: true,
-          content: {"application/json": {schema: apiWebhookEventSchema}},
+          content: {
+            "application/json": {
+              examples: Object.fromEntries(WEBHOOK_EVENT_DEFINITIONS.map(
+                ({description, name, type}) => [
+                  type,
+                  {description, summary: name, value: WEBHOOK_EVENT_EXAMPLES[type]},
+                ],
+              )),
+              schema: apiWebhookEventSchema,
+            },
+          },
         },
         responses: {
           "2XX": {description: "The receiver durably accepted the event."},

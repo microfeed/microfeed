@@ -13,6 +13,7 @@ import {
 import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {API_BASE_PATH, API_MAJOR_VERSION} from "@/shared/ApiVersion";
+import {WEBHOOK_EVENT_TYPES} from "@/shared/Webhooks";
 import {
   API_LLMS_FULL_TEXT,
   OPENAPI_JSON,
@@ -35,6 +36,19 @@ describe("generated API reference", () => {
       .toBe("receiveMicrofeedWebhook");
     expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("webhook-signature");
     expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("item.published");
+    const webhookRequestBody = OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post
+      ?.requestBody as {
+        content?: {"application/json"?: {examples?: Record<string, {value?: any}>}};
+      } | undefined;
+    const examples = webhookRequestBody?.content?.["application/json"]?.examples;
+    expect(Object.keys(examples ?? {})).toEqual([...WEBHOOK_EVENT_TYPES]);
+    for (const type of WEBHOOK_EVENT_TYPES) {
+      expect(examples?.[type]?.value).toMatchObject({test: true, type});
+    }
+    const componentSchemas = OPENAPI_DOCUMENT.components?.schemas ?? {};
+    expect(componentSchemas).toHaveProperty("WebhookItemSnapshot");
+    expect(componentSchemas).toHaveProperty("WebhookPageNavigationSnapshot");
+    expect(componentSchemas).toHaveProperty("WebhookThemeSnapshot");
     expect(API_LLMS_FULL_TEXT).toContain("microfeedEvent");
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_CREDENTIAL");
     expect(

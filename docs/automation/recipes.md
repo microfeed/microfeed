@@ -8,6 +8,19 @@ agents](../ai-agents/): verify raw bytes, validate the event, insert the deliver
 ID and job atomically, then return `202`. Run model and tool work only from the
 durable job consumer.
 
+The shared consumer must stop test events before dispatching a recipe:
+
+```ts
+async function dispatch(event: MicrofeedEvent) {
+  if (event.test) return testAudit.recordAccepted(event); // no production effects
+  return handlers[event.type]?.(event);
+}
+```
+
+Use `yarn microfeed webhook sample <event> --json` or Admin Event Explorer to
+inspect the exact input while building each recipe. Event Explorer sends count
+toward the daily delivery budget; previews and local terminal prints do not.
+
 Use trusted configuration rather than values from content:
 
 ```dotenv

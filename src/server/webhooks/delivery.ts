@@ -317,6 +317,7 @@ export async function processWebhookMessage(
           "webhook-timestamp": String(timestamp),
           "x-microfeed-attempt": String(attempt),
           "x-microfeed-event": record.event_type,
+          "x-microfeed-test": record.is_test ? "true" : "false",
         },
         method: "POST",
         redirect: "manual",

@@ -22,6 +22,12 @@ both REST operations and webhook event envelopes. Enable public API docs, then
 use `<site-url>/api/v1/openapi.json`, `openapi.yaml`, or `llms-full.txt`. This
 guide intentionally does not maintain a second copy of those schemas.
 
+Every supported event has an exact named example in the OpenAPI webhook
+operation. For visual discovery, open **Admin → Webhooks → Event explorer** to
+compare Payload, Schema, and Headers, preview generated or current content, and
+copy the exact raw JSON. From a terminal, read the same per-instance example
+with `yarn microfeed webhook sample <event> --json`.
+
 ## Choose an automation style
 
 | Style | Best for | Tradeoffs |

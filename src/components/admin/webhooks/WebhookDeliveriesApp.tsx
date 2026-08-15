@@ -21,9 +21,9 @@ async function read(path: string, init?: RequestInit): Promise<any> {
   return result;
 }
 
-export default function WebhookDeliveriesApp({initialDeliveries, endpoints}: {initialDeliveries: WebhookDeliverySummary[]; endpoints: WebhookEndpointSummary[]}) {
+export default function WebhookDeliveriesApp({initialDeliveries, endpoints, initialSelected}: {initialDeliveries: WebhookDeliverySummary[]; endpoints: WebhookEndpointSummary[]; initialSelected?: any}) {
   const [deliveries, setDeliveries] = useState(initialDeliveries);
-  const [selected, setSelected] = useState<any>();
+  const [selected, setSelected] = useState<any>(initialSelected);
   const [filters, setFilters] = useState({endpoint_id: "", event_type: "", status: ""});
   const [busy, setBusy] = useState(false);
 
@@ -81,7 +81,7 @@ export default function WebhookDeliveriesApp({initialDeliveries, endpoints}: {in
             {deliveries.map((delivery) => (
               <li key={delivery.id}>
                 <button className="grid w-full gap-1 p-4 text-left hover:bg-muted/50 sm:grid-cols-[1fr_auto]" onClick={() => inspect(delivery.id)} type="button">
-                  <span><span className="font-medium">{delivery.eventType}</span><span className="ml-2 text-xs text-muted-foreground">{delivery.endpointName ?? delivery.endpointUrl}</span></span>
+                  <span><span className="font-medium">{delivery.eventType}</span>{delivery.isTest && <span className="ml-2 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase">test</span>}<span className="ml-2 text-xs text-muted-foreground">{delivery.endpointName ?? delivery.endpointUrl}</span></span>
                   <span className="text-xs font-medium">{delivery.status}</span>
                   <span className="text-xs text-muted-foreground">{new Date(delivery.createdAt).toLocaleString()} · {delivery.attemptCount} attempts</span>
                 </button>
@@ -97,6 +97,7 @@ export default function WebhookDeliveriesApp({initialDeliveries, endpoints}: {in
               <dt className="text-muted-foreground">Delivery</dt><dd className="break-all font-mono text-xs">{selected.id}</dd>
               <dt className="text-muted-foreground">Event</dt><dd className="break-all font-mono text-xs">{selected.eventId}</dd>
               <dt className="text-muted-foreground">Status</dt><dd>{selected.status}</dd>
+              <dt className="text-muted-foreground">Test</dt><dd>{selected.isTest ? "Yes" : "No"}</dd>
               <dt className="text-muted-foreground">Response</dt><dd>{selected.responseStatus ?? "—"}</dd>
             </dl>
             <Button disabled={busy || selected.status === "pending" || selected.status === "retrying"} onClick={redeliver} type="button" variant="outline">Manual redelivery</Button>

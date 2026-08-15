@@ -22,9 +22,11 @@ categories, language, and description.
 **API** opens a dedicated area for availability, API keys, an interactive
 browser explorer, and public API documentation formats.
 
-**Webhooks** opens Overview, Endpoints, and Deliveries. It shows Queue-backed
-availability and daily budget, manages signed event subscriptions and one-time
-secrets, and provides attempt diagnostics, pause recovery, and redelivery. See
+**Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
+Queue-backed availability and daily budget, manages signed event subscriptions
+and one-time secrets, previews exact generated or current-content payloads,
+sends marked test events, and provides attempt diagnostics, pause recovery, and
+redelivery. See
 [Content automation](/automation/) before connecting a deployed agent.
 
 **Settings** manages website themes and shared code, tracking URLs, subscribe

@@ -57,6 +57,12 @@ microfeed in Cloudflare.
 An ordered collection of published items. microfeed presents the collection as
 Web pages, RSS, and JSON.
 
+**Event Explorer**
+The read-only Admin webhook contract browser. It previews exact generated or
+current-content event bodies, schemas, and headers; can print a preview only in
+local development; and can send one signed, budgeted test delivery to a chosen
+endpoint.
+
 **Headless**
 A publishing mode in which software consumes RSS, JSON Feed, or the API while a
 different website or app presents the content. microfeed can hide its generated
@@ -101,6 +107,12 @@ A signed HTTP notification that announces a versioned microfeed event. A
 webhook is not an API credential or a trusted instruction. Receivers verify raw
 bytes, deduplicate delivery IDs, durably accept work, and then apply their own
 policy.
+
+**Webhook test event**
+A signed webhook envelope with `test: true`. Event Explorer can use any real
+event type for a test, while `webhook.test` checks connectivity. Receivers trust
+the body flag only after signature verification and prevent every test from
+producing production side effects.
 
 **Wrangler**
 Cloudflare’s command-line tool. microfeed invokes it behind the supported

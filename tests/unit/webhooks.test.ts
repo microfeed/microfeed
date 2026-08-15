@@ -16,13 +16,20 @@ import {
   changedWebhookFields,
   contentMutationWebhookInputs,
 } from "@/server/webhooks/emission";
-import {truncateWebhookPayload} from "@/server/webhooks/events";
+import {
+  prepareWebhookEvent,
+  truncateWebhookPayload,
+} from "@/server/webhooks/events";
 import {
   validateWebhookEndpointUrl,
   validateWebhookEvents,
   WebhookRequestError,
 } from "@/server/webhooks/validation";
 import {WEBHOOK_EVENT_TYPES, WEBHOOK_LIMITS} from "@/shared/Webhooks";
+import {
+  WEBHOOK_EVENT_EXAMPLES,
+  webhookGeneratedEventInput,
+} from "@/shared/WebhookExamples";
 import {
   apiWebhookContextHeadersSchema,
   apiWebhookEventSchema,
@@ -108,6 +115,26 @@ describe("webhook contract", () => {
       object: {id: "one"},
       truncated_fields: ["data.object.content_html"],
     });
+
+    const prepared = JSON.parse(prepareWebhookEvent(
+      {MICROFEED_INSTANCE_ID: "site"} as Env,
+      new Request("https://feed.example.com/admin/"),
+      {
+        changedFields: ["content_html"],
+        object: {
+          content_html: "x".repeat(WEBHOOK_LIMITS.payloadBytes),
+          content_text: "Large item",
+          id: "one",
+          status: "published",
+        },
+        previousStatus: "published",
+        subjectId: "one",
+        type: "item.updated",
+      },
+      {origin: "dashboard"},
+    ).payload);
+    expect(prepared.data.object).toEqual({id: "one"});
+    expect(apiWebhookEventSchema.safeParse(prepared).success).toBe(true);
   });
 
   it("discriminates subjects and validates automation context headers", () => {
@@ -121,7 +148,12 @@ describe("webhook contract", () => {
       },
       data: {
         changed_fields: ["title"],
-        object: {id: "one", title: "Hello"},
+        object: {
+          content_text: "Hello",
+          id: "one",
+          status: "unpublished",
+          title: "Hello",
+        },
         previous_status: null,
         truncated_fields: [],
       },
@@ -129,6 +161,7 @@ describe("webhook contract", () => {
       site: {id: "site", url: "https://feed.example.com"},
       subject: {api_path: "/api/v1/items/one/", id: "one", type: "item"},
       timestamp: "2026-08-14T12:00:00.000Z",
+      test: false,
       type: "item.created",
     };
     expect(apiWebhookEventSchema.safeParse(event).success).toBe(true);
@@ -136,6 +169,21 @@ describe("webhook contract", () => {
       ...event,
       subject: {...event.subject, type: "page"},
     }).success).toBe(false);
+    for (const type of WEBHOOK_EVENT_TYPES) {
+      expect(
+        apiWebhookEventSchema.safeParse(WEBHOOK_EVENT_EXAMPLES[type]).success,
+        type,
+      ).toBe(true);
+      const runtimePayload = JSON.parse(prepareWebhookEvent(
+        {MICROFEED_INSTANCE_ID: "site"} as Env,
+        new Request("https://feed.example.com/admin/"),
+        webhookGeneratedEventInput(type),
+        {origin: "system"},
+      ).payload);
+      expect(runtimePayload.test, type).toBe(false);
+      expect(apiWebhookEventSchema.safeParse(runtimePayload).success, type)
+        .toBe(true);
+    }
     expect(apiWebhookContextHeadersSchema.safeParse({
       "Microfeed-Causation-Id": "evt_one",
       "Microfeed-Correlation-Id": "workflow-123",

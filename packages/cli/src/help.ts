@@ -76,11 +76,13 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Use --json for one NDJSON object per delivery. Repeated delivery IDs are marked duplicate but are still forwarded so your receiver's deduplication can be tested.",
       "--forward-to accepts only an explicit loopback HTTP address. The listener preserves the exact body and webhook headers, times out after nine seconds, and returns 502 or 504 when forwarding fails.",
       "The listener does not create an endpoint or expose a remote relay. In local development, create an endpoint for http://127.0.0.1:8978/webhook in Admin → Webhooks.",
+      "Use `webhook sample <event>` to read an exact generated example from the selected instance's OpenAPI contract without starting a listener.",
     ],
     examples: [
       "yarn microfeed webhook listen",
       "MICROFEED_WEBHOOK_SECRET=whsec_... yarn microfeed webhook listen --json",
       "yarn microfeed webhook listen --secret-file .webhook-secret --forward-to http://127.0.0.1:3000/hooks/microfeed",
+      "yarn microfeed webhook sample item.published --instance production --json",
     ],
     options: [
       option("--secret-file <path>", "Read the signing secret from a UTF-8 file."),
@@ -91,9 +93,10 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     path: ["webhook"],
     subcommands: [
       {name: "listen", description: "Verify, display, and optionally forward local webhook deliveries."},
+      {name: "sample <event>", description: "Print the instance's exact OpenAPI example for one event."},
     ],
-    summary: "Receive and verify webhook deliveries during local development.",
-    usage: "yarn microfeed webhook listen [options]",
+    summary: "Inspect exact examples or receive verified deliveries during local development.",
+    usage: "yarn microfeed webhook <listen|sample> [arguments] [options]",
   },
   {
     details: [
@@ -112,6 +115,23 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     path: ["webhook", "listen"],
     summary: "Verify, display, and optionally forward local webhook deliveries.",
     usage: "yarn microfeed webhook listen [options]",
+  },
+  {
+    details: [
+      "Reads the named example from the selected instance's generated /api/v1/openapi.json contract. The CLI does not bundle a second event schema, authenticate, or change site data.",
+      "Use the exact event type, such as item.published, page.navigation_updated, or webhook.test. Human output is formatted; --json writes only the example envelope.",
+      "If the instance does not publish API documentation, enable it in Admin → API → API Settings or use Admin → Webhooks → Event explorer.",
+      "Generated examples have test: true. After verifying a real delivery signature, receivers must inspect that signed flag and prevent test events from producing production side effects.",
+    ],
+    examples: [
+      "yarn microfeed webhook sample item.published",
+      "yarn microfeed webhook sample page.navigation_updated --instance production --json",
+      "MICROFEED_URL=http://127.0.0.1:4321 yarn microfeed webhook sample webhook.test --json",
+    ],
+    options: [instanceOption, jsonOption],
+    path: ["webhook", "sample"],
+    summary: "Print one exact webhook example from an instance's OpenAPI contract.",
+    usage: "yarn microfeed webhook sample <event> [--instance <name>] [--json]",
   },
   {
     details: [

@@ -25,6 +25,23 @@ export const WEBHOOK_EVENT_TYPES = [
 
 export type WebhookEventType = typeof WEBHOOK_EVENT_TYPES[number];
 
+export type WebhookSubjectType =
+  | "channel"
+  | "item"
+  | "page"
+  | "site_file"
+  | "theme"
+  | "webhook";
+
+export interface WebhookEventInput {
+  changedFields?: string[];
+  object: Record<string, unknown>;
+  previousStatus?: string | null;
+  subjectId: string;
+  subjectType?: WebhookSubjectType;
+  type: WebhookEventType;
+}
+
 export const WEBHOOK_EVENT_TYPE_SET = new Set<string>(WEBHOOK_EVENT_TYPES);
 
 export const WEBHOOK_LIMITS = {
@@ -80,6 +97,21 @@ export interface WebhookEndpointSummary {
   url: string;
 }
 
+export type WebhookExplorerSourceMode = "current" | "generated";
+
+export interface WebhookExplorerSubject {
+  description?: string;
+  id: string;
+  label: string;
+}
+
+export interface WebhookExplorerPreview {
+  headers: Record<string, string>;
+  payload: Record<string, unknown>;
+  rawBody: string;
+  schema: Record<string, unknown>;
+}
+
 export interface WebhookDeliverySummary {
   attemptCount: number;
   completedAt?: string;
@@ -122,7 +154,7 @@ export interface WebhookOverview {
 
 export function webhookSubjectType(
   eventType: WebhookEventType,
-): "channel" | "item" | "page" | "site_file" | "theme" | "webhook" {
+): WebhookSubjectType {
   const prefix = eventType.split(".", 1)[0];
   return prefix === "channel" || prefix === "item" || prefix === "page" ||
       prefix === "site_file" || prefix === "theme"

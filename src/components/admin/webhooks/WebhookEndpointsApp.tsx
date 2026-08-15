@@ -2,6 +2,13 @@ import {useState} from "react";
 
 import AdminSectionCard from "@/components/admin/shared/AdminSectionCard";
 import {Button} from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {showToast} from "@/client/ToastUtils";
@@ -41,8 +48,26 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
   const [endpoints, setEndpoints] = useState(initialEndpoints);
   const [form, setForm] = useState<FormValue>(emptyForm);
   const [editingId, setEditingId] = useState<string>();
+  const [formOpen, setFormOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [revealedSecret, setRevealedSecret] = useState<string>();
+
+  const slotDescription = `${endpoints.length} of ${WEBHOOK_LIMITS.endpointCount} endpoint slots are in use. Disabled and auto-paused endpoints count until deleted.`;
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditingId(undefined);
+    setForm(emptyForm);
+  };
+  const openCreate = () => {
+    setEditingId(undefined);
+    setForm(emptyForm);
+    setFormOpen(true);
+  };
+  const openEdit = (endpoint: WebhookEndpointSummary) => {
+    setEditingId(endpoint.id);
+    setForm({events: endpoint.events, name: endpoint.name, url: endpoint.url});
+    setFormOpen(true);
+  };
 
   const refresh = async () => {
     setEndpoints(await requestJson("endpoints"));
@@ -56,10 +81,9 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
         {body: JSON.stringify(form), method: editingId ? "PUT" : "POST"},
       );
       if (result.secret) setRevealedSecret(result.secret);
-      setForm(emptyForm);
-      setEditingId(undefined);
       await refresh();
       showToast(editingId ? "Webhook endpoint updated." : "Webhook endpoint created.", "success");
+      closeForm();
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), "error");
     } finally {
@@ -99,6 +123,15 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
       setBusy(false);
     }
   };
+  const openTest = (endpoint: WebhookEndpointSummary) => {
+    const query = new URLSearchParams({
+      endpoint: endpoint.id,
+      event: "webhook.test",
+    });
+    window.location.assign(
+      `${adminUrl("webhooks/events", browserAdminPath())}?${query}`,
+    );
+  };
 
   return (
     <div className="grid gap-6">
@@ -110,43 +143,64 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
         </div>
       )}
 
-      <AdminSectionCard
-        description={`${endpoints.length} of ${WEBHOOK_LIMITS.endpointCount} endpoint slots are in use. Disabled and auto-paused endpoints count until deleted.`}
-        title={editingId ? "Edit endpoint" : "Add endpoint"}
-      >
-        <form className="grid gap-5" onSubmit={submit}>
-          <div className="grid gap-2">
-            <Label htmlFor="webhook-name">Name</Label>
-            <Input id="webhook-name" maxLength={80} onChange={(event) => setForm({...form, name: event.target.value})} required value={form.name} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="webhook-url">Endpoint URL</Label>
-            <Input id="webhook-url" onChange={(event) => setForm({...form, url: event.target.value})} placeholder="https://automation.example.com/webhook" required type="url" value={form.url} />
-            <p className="text-xs text-muted-foreground">HTTPS is required when deployed. Local development permits http://127.0.0.1:&lt;port&gt;/webhook.</p>
-          </div>
-          <fieldset>
-            <legend className="text-sm font-medium">Subscribed events</legend>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {selectableEvents.map((eventType) => (
-                <label className="flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-sm" key={eventType}>
-                  <input
-                    checked={form.events.includes(eventType)}
-                    onChange={(event) => setForm({...form, events: event.target.checked ? [...form.events, eventType] : form.events.filter((value) => value !== eventType)})}
-                    type="checkbox"
-                  />
-                  <code>{eventType}</code>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={busy || !enabled || endpoints.length >= WEBHOOK_LIMITS.endpointCount && !editingId} type="submit">{editingId ? "Save endpoint" : "Create endpoint"}</Button>
-            {editingId && <Button onClick={() => {setEditingId(undefined); setForm(emptyForm);}} type="button" variant="outline">Cancel</Button>}
-          </div>
-        </form>
-      </AdminSectionCard>
+      {endpoints.length === 0 && (
+        <AdminSectionCard description={slotDescription} title="Add endpoint">
+          <EndpointForm
+            busy={busy}
+            editing={false}
+            enabled={enabled}
+            endpointCount={endpoints.length}
+            form={form}
+            onChange={setForm}
+            onSubmit={submit}
+          />
+        </AdminSectionCard>
+      )}
 
-      <AdminSectionCard description="Tests and redeliveries count toward the daily delivery budget." title="Configured endpoints">
+      {endpoints.length > 0 && (
+        <Dialog
+          onOpenChange={(open) => {
+            if (!open && busy) return;
+            if (open) setFormOpen(true);
+            else closeForm();
+          }}
+          open={formOpen}
+        >
+          <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl lg:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Edit endpoint" : "Add endpoint"}</DialogTitle>
+              <DialogDescription>{slotDescription}</DialogDescription>
+            </DialogHeader>
+            <EndpointForm
+              busy={busy}
+              editing={Boolean(editingId)}
+              enabled={enabled}
+              endpointCount={endpoints.length}
+              form={form}
+              onCancel={closeForm}
+              onChange={setForm}
+              onSubmit={submit}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <AdminSectionCard
+        action={endpoints.length > 0 ? (
+          <Button
+            disabled={busy || !enabled || endpoints.length >= WEBHOOK_LIMITS.endpointCount}
+            onClick={openCreate}
+            size="sm"
+            type="button"
+          >
+            Add endpoint
+          </Button>
+        ) : undefined}
+        description={endpoints.length > 0
+          ? <>{slotDescription} Tests and redeliveries count toward the daily delivery budget.</>
+          : "Tests and redeliveries count toward the daily delivery budget."}
+        title="Configured endpoints"
+      >
         {endpoints.length === 0 ? (
           <p className="text-sm text-muted-foreground">No webhook endpoints have been created.</p>
         ) : (
@@ -163,8 +217,8 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
                     <p className="mt-2 text-xs text-muted-foreground">{endpoint.events.join(", ")} · {endpoint.consecutiveTerminalFailures} consecutive terminal failures</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button disabled={busy} onClick={() => {setEditingId(endpoint.id); setForm({events: endpoint.events, name: endpoint.name, url: endpoint.url}); window.scrollTo({top: 0, behavior: "smooth"});}} size="sm" type="button" variant="outline">Edit</Button>
-                    <Button disabled={busy || endpoint.status === "disabled"} onClick={() => action(endpoint, "test")} size="sm" type="button" variant="outline">Test</Button>
+                    <Button disabled={busy} onClick={() => openEdit(endpoint)} size="sm" type="button" variant="outline">Edit</Button>
+                    <Button disabled={busy || endpoint.status === "disabled"} onClick={() => openTest(endpoint)} size="sm" type="button" variant="outline">Test</Button>
                     <Button disabled={busy} onClick={() => action(endpoint, "rotate")} size="sm" type="button" variant="outline">Rotate secret</Button>
                     {endpoint.status === "auto_paused" ? (
                       <Button disabled={busy || !endpoint.resumeTestedAt} onClick={() => action(endpoint, "resume")} size="sm" type="button">Resume</Button>
@@ -181,6 +235,59 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
         )}
       </AdminSectionCard>
     </div>
+  );
+}
+
+function EndpointForm({
+  busy,
+  editing,
+  enabled,
+  endpointCount,
+  form,
+  onCancel,
+  onChange,
+  onSubmit,
+}: {
+  busy: boolean;
+  editing: boolean;
+  enabled: boolean;
+  endpointCount: number;
+  form: FormValue;
+  onCancel?: () => void;
+  onChange: (form: FormValue) => void;
+  onSubmit: (event: React.FormEvent) => void;
+}) {
+  return (
+    <form className="grid gap-5" onSubmit={onSubmit}>
+      <div className="grid gap-2">
+        <Label htmlFor="webhook-name">Name</Label>
+        <Input id="webhook-name" maxLength={80} onChange={(event) => onChange({...form, name: event.target.value})} required value={form.name} />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="webhook-url">Endpoint URL</Label>
+        <Input id="webhook-url" onChange={(event) => onChange({...form, url: event.target.value})} placeholder="https://automation.example.com/webhook" required type="url" value={form.url} />
+        <p className="text-xs text-muted-foreground">HTTPS is required when deployed. Local development permits http://127.0.0.1:&lt;port&gt;/webhook.</p>
+      </div>
+      <fieldset>
+        <legend className="text-sm font-medium">Subscribed events</legend>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {selectableEvents.map((eventType) => (
+            <label className="flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-sm" key={eventType}>
+              <input
+                checked={form.events.includes(eventType)}
+                onChange={(event) => onChange({...form, events: event.target.checked ? [...form.events, eventType] : form.events.filter((value) => value !== eventType)})}
+                type="checkbox"
+              />
+              <code>{eventType}</code>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={busy || !enabled || endpointCount >= WEBHOOK_LIMITS.endpointCount && !editing} type="submit">{editing ? "Save endpoint" : "Create endpoint"}</Button>
+        {onCancel && <Button disabled={busy} onClick={onCancel} type="button" variant="outline">Cancel</Button>}
+      </div>
+    </form>
   );
 }
 

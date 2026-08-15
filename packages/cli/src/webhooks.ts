@@ -4,6 +4,7 @@ import {createServer, type IncomingHttpHeaders, type IncomingMessage, type Serve
 import type {AddressInfo} from "node:net";
 import {parseOptions, stringFlag} from "./arguments.js";
 import {CliError} from "./errors.js";
+import {publicSiteOrigin, type GlobalOptions} from "./http.js";
 
 const DEFAULT_PORT = 8978;
 const MAX_BODY_BYTES = 256 * 1024;
@@ -213,10 +214,98 @@ export async function handleWebhook(
   }
 }
 
-export async function webhookCommand(args: string[], json: boolean): Promise<void> {
-  const [subcommand, ...rest] = args;
-  if (subcommand !== "listen") throw new CliError("Usage: yarn microfeed webhook listen [options]");
-  const parsed = parseOptions(rest, new Set(["forward-to", "port", "secret-file"]));
+interface WebhookOpenApiDocument {
+  webhooks?: {
+    microfeedEvent?: {
+      post?: {
+        requestBody?: {
+          content?: {
+            "application/json"?: {
+              examples?: Record<string, {value?: unknown}>;
+            };
+          };
+        };
+      };
+    };
+  };
+}
+
+export async function readWebhookSample(
+  eventType: string,
+  options: GlobalOptions,
+  fetcher: typeof fetch = fetch,
+): Promise<Record<string, unknown>> {
+  if (!/^[a-z_]+\.[a-z_]+$/u.test(eventType)) {
+    throw new CliError("Provide an exact webhook event such as item.published.");
+  }
+  const origin = await publicSiteOrigin(options);
+  const target = new URL("/api/v1/openapi.json", origin);
+  let response: Response;
+  try {
+    response = await fetcher(target, {
+      headers: {accept: "application/json"},
+      redirect: "manual",
+    });
+  } catch (error) {
+    throw new CliError(
+      `Could not read the generated OpenAPI contract from ${origin}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  if (response.status >= 300 && response.status < 400) {
+    throw new CliError(
+      "The OpenAPI contract returned a redirect. Verify the selected microfeed site URL.",
+    );
+  }
+  if (!response.ok) {
+    throw new CliError(
+      `The generated OpenAPI contract is unavailable (${response.status}). Enable published API documentation in Admin → API → API Settings, or open Admin → Webhooks → Event explorer.`,
+    );
+  }
+  const document = await response.json().catch(() => null) as
+    | WebhookOpenApiDocument
+    | null;
+  const value = document?.webhooks?.microfeedEvent?.post?.requestBody?.content?.[
+    "application/json"
+  ]?.examples?.[eventType]?.value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new CliError(
+      `The selected instance does not publish an example for ${eventType}. List exact event names in its OpenAPI webhook operation or use Admin → Webhooks → Event explorer.`,
+    );
+  }
+  const sample = value as Record<string, unknown>;
+  if (sample.type !== eventType || sample.test !== true) {
+    throw new CliError(
+      `The OpenAPI example for ${eventType} is inconsistent. Use Admin → Webhooks → Event explorer and update the instance before building against it.`,
+    );
+  }
+  return sample;
+}
+
+async function webhookSampleCommand(
+  args: string[],
+  options: GlobalOptions,
+): Promise<void> {
+  const parsed = parseOptions(args, new Set());
+  if (parsed.positionals.length !== 1) {
+    throw new CliError(
+      "Usage: yarn microfeed webhook sample <event> [--instance <name>] [--json]",
+    );
+  }
+  const eventType = parsed.positionals[0]!;
+  const sample = await readWebhookSample(eventType, options);
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(sample)}\n`);
+    return;
+  }
+  process.stdout.write(
+    `Webhook example: ${eventType}\n\n${JSON.stringify(sample, null, 2)}\n`,
+  );
+}
+
+async function webhookListenCommand(args: string[], json: boolean): Promise<void> {
+  const parsed = parseOptions(args, new Set(["forward-to", "port", "secret-file"]));
   if (parsed.positionals.length > 0) throw new CliError("webhook listen does not accept positional arguments.");
   const portInput = stringFlag(parsed, "port");
   const port = portInput === undefined ? DEFAULT_PORT : Number(portInput);
@@ -246,4 +335,20 @@ export async function webhookCommand(args: string[], json: boolean): Promise<voi
     process.once("SIGINT", stop);
     process.once("SIGTERM", stop);
   });
+}
+
+export async function webhookCommand(
+  args: string[],
+  options: GlobalOptions,
+): Promise<void> {
+  const [subcommand, ...rest] = args;
+  if (subcommand === "listen") {
+    return webhookListenCommand(rest, options.json);
+  }
+  if (subcommand === "sample") {
+    return webhookSampleCommand(rest, options);
+  }
+  throw new CliError(
+    "Usage: yarn microfeed webhook <listen|sample> [arguments] [options]",
+  );
 }

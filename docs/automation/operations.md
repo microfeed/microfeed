@@ -33,14 +33,17 @@ and `5xx` retry. Redirects and all other `4xx` responses terminate immediately.
 At-least-once Queue delivery means the same delivery ID may arrive more than
 once. Deduplicate it in durable storage and make actions idempotent. A manual
 redelivery preserves the event ID and exact body while assigning a new delivery
-ID; it therefore needs both delivery deduplication and action idempotency.
+ID, including the original signed `test` value; it therefore needs both
+delivery deduplication and action idempotency.
 
 ## Budget, cost, and Queue accounting
 
 microfeed reserves the complete fanout atomically against a 1,000-delivery UTC
 daily budget. It never sends a partial fanout. Tests and manual redeliveries use
-the same budget. The Admin overview estimates Queue operations from reserved
-deliveries. `yarn manage status` verifies the Queue and reports its realtime
+the same budget. Event Explorer endpoint sends are tests and use that budget;
+Explorer previews, copy actions, and loopback terminal prints are free and do
+not create delivery records. The Admin overview estimates Queue operations from
+reserved deliveries. `yarn manage status` verifies the Queue and reports its realtime
 backlog and oldest message; Cloudflare-observed writes, reads, deletes, total
 billable operations, and average retries for both the site Queue and the
 account-wide UTC-day window; microfeed-side delivery accounting; and the
@@ -97,6 +100,8 @@ history is retained for 30 days.
 ## Production readiness checklist
 
 - [ ] Raw-body Standard Webhooks verification happens before JSON parsing.
+- [ ] The signed body `test` flag gates production side effects; the unsigned
+      header hint never overrides it.
 - [ ] Delivery IDs and action keys are durably deduplicated in one transaction.
 - [ ] The receiver returns `202` only after durable acceptance.
 - [ ] Model and external-service work runs in a durable queue or workflow.

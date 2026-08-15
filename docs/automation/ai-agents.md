@@ -8,8 +8,11 @@ The receiver's synchronous job is intentionally small:
 1. Read the raw bytes once.
 2. Verify `webhook-id`, `webhook-timestamp`, and `webhook-signature` before JSON parsing.
 3. Validate the envelope against the instance's generated OpenAPI contract.
-4. Insert the delivery ID and durable job in one transaction.
-5. Return `202` before calling a model or external tool.
+4. Inspect the signed `test` boolean and route tests to a no-production-effects
+   policy. The `x-microfeed-test` header is a convenient hint, not the trusted
+   value.
+5. Insert the delivery ID and durable job in one transaction.
+6. Return `202` before calling a model or external tool.
 
 Later workers fetch current state before consequential actions and use
 `<event.id>:<action>` as the action idempotency key. When an action writes back
@@ -58,6 +61,7 @@ export async function receive(request: Request): Promise<Response> {
   await jobs.insertOnceAndEnqueue({
     deliveryId: request.headers.get("webhook-id"),
     event,
+    effectPolicy: event.test === true ? "no-production-effects" : "production",
   });
   return new Response(null, {status: 202});
 }
@@ -80,7 +84,8 @@ def receive(request, jobs):
     if not any(hmac.compare_digest(base64.b64decode(value), expected) for value in supplied):
         return ("invalid signature", 401)
     event = json.loads(raw)
-    jobs.insert_once_and_enqueue(delivery_id, event)  # one transaction
+    effect_policy = "no-production-effects" if event["test"] else "production"
+    jobs.insert_once_and_enqueue(delivery_id, event, effect_policy)  # one transaction
     return ("", 202)
 ```
 
@@ -102,6 +107,10 @@ export class MicrofeedAutomation extends Agent<Env> {
   }
 
   async processEvent(input: {deliveryId: string; event: MicrofeedEvent}) {
+    if (input.event.test) {
+      await this.recordTestAcceptance(input);
+      return; // Never call production models, tools, APIs, or destinations.
+    }
     // Apply trusted policy, fetch current microfeed state, then call approved tools.
   }
 }
@@ -125,3 +134,8 @@ guide](https://developers.cloudflare.com/agents/communication-channels/webhooks/
 and [queue-task reference](https://developers.cloudflare.com/agents/runtime/execution/queue-tasks/).
 
 Use the [automation recipes](../recipes/) to add a bounded action.
+
+Discover exact payloads from the instance's OpenAPI webhook examples, **Admin
+→ Webhooks → Event explorer**, or `yarn microfeed webhook sample <event>
+--json`. Do not infer fields from prose or accept arbitrary sample payloads as a
+replacement for schema validation.

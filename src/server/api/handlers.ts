@@ -80,6 +80,7 @@ import {
   singleWebhookEventCommit,
   webhookItemObject,
 } from "@/server/webhooks/emission";
+import {webhookChannelSnapshot} from "@/shared/WebhookExamples";
 
 export const getApiFeed: APIRoute = ({request}) =>
   jsonFeedResponse(request, false, undefined, undefined, false);
@@ -759,17 +760,18 @@ export const updateApiPrimaryChannel: APIRoute = async ({
   if (!parsed.success) {
     return jsonResponse({error: "Invalid channel."}, {status: 400});
   }
-  const before = structuredClone(
+  const before = webhookChannelSnapshot(structuredClone(
     (locals.feedCrud.feedContent.channel ?? {}) as Record<string, unknown>,
-  );
+  ));
   await locals.feedCrud.upsertChannel(
     parsed.data,
     singleWebhookEventCommit(env, request, (after) => {
-      const changedFields = changedWebhookFields(before, after);
+      const object = webhookChannelSnapshot(after);
+      const changedFields = changedWebhookFields(before, object);
       return changedFields.length > 0
         ? {
             changedFields,
-            object: after,
+            object,
             subjectId: "primary",
             subjectType: "channel",
             type: "channel.updated",

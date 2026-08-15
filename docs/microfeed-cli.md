@@ -34,6 +34,7 @@ the command you need.
 - [`media upload`](#yarn-microfeed-media-upload)
 - [`webhook`](#yarn-microfeed-webhook)
 - [`webhook listen`](#yarn-microfeed-webhook-listen)
+- [`webhook sample`](#yarn-microfeed-webhook-sample)
 - [`api`](#yarn-microfeed-api)
 - [Output and errors](#output-and-errors)
 - [Saved instances and credentials](#saved-instances-and-credentials)
@@ -143,6 +144,7 @@ For every authenticated REST request, the CLI:
 | `item delete <item-id>` | Delete an item after exact-ID confirmation. | Permanently deletes remote content. |
 | `media upload <file>` | Upload standalone media for rich content or later API use. | Creates a remote media object but does not edit an item. |
 | `webhook listen` | Verify, display, and optionally forward local webhook deliveries. | Starts a loopback-only local server; does not create a remote endpoint or relay. |
+| `webhook sample <event>` | Read one exact event example from the selected instance's OpenAPI contract. | Read-only; does not authenticate or change the instance. |
 | `api <method> <path>` | Call a relative `/api/v1/…` REST endpoint. | Depends on the method and endpoint. |
 
 ## Global options
@@ -698,11 +700,12 @@ yarn microfeed media upload ./episode.mp3 \
 
 ## `yarn microfeed webhook`
 
-Receive signed webhook deliveries during local development. The CLI does not
-create a microfeed endpoint or provide a public relay.
+Inspect an exact OpenAPI example or receive signed webhook deliveries during
+local development. The CLI does not create a microfeed endpoint or provide a
+public relay.
 
 ```console
-yarn microfeed webhook listen [options]
+yarn microfeed webhook <listen|sample> [arguments] [options]
 ```
 
 ## `yarn microfeed webhook listen`
@@ -752,6 +755,42 @@ yarn microfeed webhook listen \
 
 See [Set up and test an automation](/automation/setup-and-test/) for the full
 Admin and local development workflow.
+
+## `yarn microfeed webhook sample`
+
+**Purpose:** Print the exact named example published by one instance's
+generated OpenAPI webhook operation.
+
+**Changes:** None. The command makes one unauthenticated read of public API
+documentation and writes the example to standard output.
+
+```console
+yarn microfeed webhook sample <event> [--instance <name>] [--json]
+```
+
+Use an exact event type such as `item.published`,
+`page.navigation_updated`, or `webhook.test`. The CLI resolves the site using
+normal saved-instance selection or `MICROFEED_URL`, reads
+`/api/v1/openapi.json`, and selects that event's named example. It does not
+bundle a second schema.
+
+Without `--json`, output includes a short heading and formatted payload. With
+`--json`, standard output contains only the one example envelope, which is
+suitable for agents, fixtures, and pipes. Generated examples have signed-body
+shape `test: true`; a receiver must verify a delivered signature before
+trusting that field and must prevent test events from producing production
+side effects.
+
+```console
+yarn microfeed webhook sample item.published
+yarn microfeed webhook sample page.navigation_updated --instance production --json
+MICROFEED_URL=http://127.0.0.1:4321 \
+  yarn microfeed webhook sample webhook.test --json
+```
+
+If the contract is unavailable, enable **Publish API docs** in **Admin → API →
+API Settings**, or inspect the same canonical examples in **Admin → Webhooks →
+Event explorer**.
 
 ## `yarn microfeed api`
 
@@ -883,7 +922,7 @@ When refresh fails or no refresh token exists, log in again.
 | Variable | Purpose |
 | --- | --- |
 | `MICROFEED_API_KEY` | Use an existing API key as the Bearer credential. It takes precedence over saved browser credentials and is never persisted. Supply it through a CI secret manager. |
-| `MICROFEED_URL` | Set the API-key target site URL when no selected saved instance supplies one. HTTPS is required except for local loopback site URLs. |
+| `MICROFEED_URL` | Set the target site URL for API-key operations or `webhook sample`. HTTPS is required except for local loopback site URLs. |
 | `MICROFEED_INSTANCE` | Select a saved instance when `--instance` is omitted. |
 | `MICROFEED_WEBHOOK_SECRET` | Supply the signing secret to `webhook listen` without a prompt. Prefer a development secret manager; never commit it. |
 | `MICROFEED_CONFIG_DIR` | Override the instance-store directory. Intended for isolated environments and tests; it does not weaken encryption or replace the OS keychain. |
@@ -900,6 +939,7 @@ yarn microfeed login --help
 yarn microfeed instances use -h
 yarn microfeed item create --help
 yarn microfeed help item delete
+yarn microfeed webhook sample --help
 yarn microfeed media upload --help
 yarn microfeed webhook listen --help
 yarn microfeed api --help

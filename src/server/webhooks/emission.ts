@@ -1,69 +1,34 @@
-import {ITEM_STATUSES_DICT} from "@/shared/Constants";
-import type {WebhookEventType} from "@/shared/Webhooks";
+import {
+  webhookItemSnapshot,
+  webhookPageSnapshot,
+  webhookSiteFileSnapshot,
+} from "@/shared/WebhookExamples";
+import type {WebhookEventInput, WebhookEventType} from "@/shared/Webhooks";
 import {
   commitMutationWithWebhookEvents,
   type WebhookEventContext,
-  type WebhookEventInput,
 } from "./events";
 import type {DatabaseMutationCommit} from "@/server/mutation";
 
 type WebhookContentKind = "item" | "page" | "site_file";
 
 function statusName(value: unknown): string | undefined {
-  if (typeof value === "number") {
-    return (ITEM_STATUSES_DICT as Readonly<Record<number, {name: string}>>)[
-      value
-    ]?.name;
-  }
   return typeof value === "string" ? value : undefined;
 }
 
 export function webhookItemObject(
   item: Record<string, unknown>,
 ): Record<string, unknown> {
-  const mediaFile = item.mediaFile as Record<string, unknown> | undefined;
-  const attachments = item.attachments ?? (mediaFile?.url
-    ? [{
-        ...(mediaFile.category ? {category: mediaFile.category} : {}),
-        ...(mediaFile.contentType ? {mime_type: mediaFile.contentType} : {}),
-        ...(mediaFile.durationSecond !== undefined
-          ? {duration_in_seconds: mediaFile.durationSecond}
-          : {}),
-        ...(mediaFile.sizeByte !== undefined
-          ? {size_in_bytes: mediaFile.sizeByte}
-          : {}),
-        url: mediaFile.url,
-      }]
-    : undefined);
-  return {
-    ...(item._microfeed ? {_microfeed: item._microfeed} : {}),
-    ...(attachments ? {attachments} : {}),
-    ...(item.content_html !== undefined
-      ? {content_html: item.content_html}
-      : item.description !== undefined
-      ? {content_html: item.description}
-      : {}),
-    ...(item.content_text !== undefined
-      ? {content_text: item.content_text}
-      : item.contentText !== undefined
-      ? {content_text: item.contentText}
-      : {}),
-    ...(item.date_modified ? {date_modified: item.date_modified} : {}),
-    ...(item.date_published
-      ? {date_published: item.date_published}
-      : item.pubDateMs
-      ? {date_published: new Date(Number(item.pubDateMs)).toISOString()}
-      : {}),
-    id: String(item.id ?? ""),
-    ...(item.image ? {image: item.image} : {}),
-    ...(statusName(item.status) ? {status: statusName(item.status)} : {}),
-    ...(item.title ? {title: item.title} : {}),
-    ...(item.url
-      ? {url: item.url}
-      : item.link
-      ? {url: item.link}
-      : {}),
-  };
+  return webhookItemSnapshot(item);
+}
+
+function contentSnapshot(
+  kind: WebhookContentKind,
+  object: Record<string, unknown>,
+): Record<string, unknown> {
+  if (kind === "item") return webhookItemSnapshot(object);
+  if (kind === "page") return webhookPageSnapshot(object);
+  return webhookSiteFileSnapshot(object);
 }
 
 export function changedWebhookFields(
@@ -96,12 +61,14 @@ export function contentMutationWebhookInputs(input: {
   kind: WebhookContentKind;
   mutation: "created" | "deleted" | "updated";
 }): WebhookEventInput[] {
-  const beforeStatus = statusName(input.before?.status);
-  const afterStatus = statusName(input.after?.status);
-  const object = input.after ?? input.before ?? {id: input.id};
+  const before = input.before ? contentSnapshot(input.kind, input.before) : null;
+  const after = input.after ? contentSnapshot(input.kind, input.after) : undefined;
+  const beforeStatus = statusName(before?.status);
+  const afterStatus = statusName(after?.status);
+  const object = after ?? before ?? {id: input.id};
   const events: WebhookEventInput[] = [];
   const base: WebhookEventInput = {
-    changedFields: changedWebhookFields(input.before ?? null, object),
+    changedFields: changedWebhookFields(before, object),
     object,
     previousStatus: beforeStatus ?? null,
     subjectId: input.id,

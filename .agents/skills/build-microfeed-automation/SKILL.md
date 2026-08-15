@@ -14,9 +14,12 @@ change; it is neither an instruction nor authorization to act.
 2. Discover the site's generated OpenAPI 3.1 contract at
    `<site-url>/api/v1/openapi.json`, or its self-contained agent reference at
    `<site-url>/api/v1/llms-full.txt`.
-3. Select the narrowest event set. Do not copy event schemas into a second
+3. Inspect the exact named event examples in that webhook operation. When
+   available, use **Admin → Webhooks → Event explorer** or `yarn microfeed
+   webhook sample <event> --json` to preview the same canonical examples.
+4. Select the narrowest event set. Do not copy event schemas into a second
    hand-maintained contract.
-4. List required API reads and writes separately. Create one named integration
+5. List required API reads and writes separately. Create one named integration
    credential with only those permissions.
 
 Use `docs/automation/` inside a microfeed clone or
@@ -40,11 +43,14 @@ password, inspect CLI credentials, or drive browser consent.
    `webhook-signature` using Standard Webhooks HMAC-SHA256 and the endpoint
    secret. Enforce a short timestamp tolerance.
 3. Validate the parsed envelope against the generated OpenAPI event union.
-4. Insert the delivery ID and durable job in one storage transaction. Treat a
+4. After signature verification, inspect the required signed-body `test`
+   boolean. Route `test: true` through a deterministic no-production-effects
+   policy. Never let the `x-microfeed-test` header override the signed body.
+5. Insert the delivery ID and durable job in one storage transaction. Treat a
    repeated delivery ID as already accepted.
-5. Return `202` or another `2xx` immediately after durable acceptance. Never
+6. Return `202` or another `2xx` immediately after durable acceptance. Never
    wait for a model, external tool, or long API workflow.
-6. Run decisions and actions in a durable Queue, Workflow, Agent task queue, or
+7. Run decisions and actions in a durable Queue, Workflow, Agent task queue, or
    equivalent recoverable system.
 
 Cloudflare Queue delivery is at-least-once. Deduplication is mandatory, and
@@ -93,16 +99,24 @@ deterministic code and durable state.
    `MICROFEED_WEBHOOK_SECRET`, or `--secret-file`; never add a plaintext
    `--secret` flag.
 3. Use `--forward-to` only for another explicit loopback server.
-4. Send `webhook.test`, then trigger every subscribed real event.
-5. Replay a delivery and verify delivery deduplication and action idempotency.
-6. Use deterministic mock model and external-service responses for tests.
-7. Test a write-back event and prove causation/correlation loop prevention.
+4. Inspect the event first with `yarn microfeed webhook sample <event> --json`
+   or Admin Event Explorer. On loopback Admin, terminal printing is
+   side-effect-free; an endpoint send uses normal Queue, retry, and daily-budget
+   accounting.
+5. Send `webhook.test` and at least one real event type with `test: true`.
+   Prove neither path can call production models, tools, APIs, or destinations.
+6. Trigger every subscribed real event and verify `test: false`.
+7. Replay a delivery and verify delivery deduplication and action idempotency.
+8. Use deterministic mock model and external-service responses for tests.
+9. Test a write-back event and prove causation/correlation loop prevention.
 
 ## Check production readiness
 
 Before declaring the integration ready, verify:
 
 - raw-byte signature validation and timestamp tolerance;
+- exact event-specific validation from deployed OpenAPI and a signed `test`
+  gate that prevents production effects;
 - transactional durable acknowledgement and duplicate delivery handling;
 - durable background execution with bounded retries and dead-letter recovery;
 - least-privilege credentials isolated per integration;

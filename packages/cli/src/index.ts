@@ -58,7 +58,7 @@ export async function run(argv: string[]): Promise<void> {
   if (command === "item") return await itemCommand(rest, options);
   if (command === "media") return await mediaCommand(rest, options);
   if (command === "api") return await rawApiCommand(rest, options);
-  if (command === "webhook") return await webhookCommand(rest, options.json);
+  if (command === "webhook") return await webhookCommand(rest, options);
   throw new CliError(`Unknown command: ${command}\n\n${HELP}`);
 }
 

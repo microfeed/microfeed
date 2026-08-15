@@ -92,6 +92,12 @@ contract but does not persist authentication. Older `/json/openapi.html` and
 `/json/openapi.yaml` links redirect to the new locations only while public API
 docs are enabled.
 
+The top-level OpenAPI webhook operation contains exact schemas and a named
+example for every supported event, including specialized Page navigation, Site
+File, theme, and connection-test snapshots. Inspect them visually in **Admin →
+Webhooks → Event explorer**, or print one directly from this per-instance
+contract with `yarn microfeed webhook sample <event> --json`.
+
 ## Choose your next step
 
 - [Enable API access or create an API key](./authentication/).

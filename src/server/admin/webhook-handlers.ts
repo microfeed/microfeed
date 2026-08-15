@@ -7,6 +7,13 @@ import {
   redeliverWebhookDelivery,
 } from "@/server/webhooks/events";
 import {
+  listWebhookExplorerSubjects,
+  parseWebhookExplorerSelection,
+  previewWebhookExplorerEvent,
+  printWebhookExplorerEvent,
+  sendWebhookExplorerEvent,
+} from "@/server/webhooks/explorer";
+import {
   createWebhookEndpoint,
   deleteWebhookEndpoint,
   getWebhookDelivery,
@@ -45,6 +52,24 @@ async function body(request: Request): Promise<Record<string, unknown>> {
   return input as Record<string, unknown>;
 }
 
+function explorerBody(
+  input: Record<string, unknown>,
+  allowEndpoint = false,
+): Record<string, unknown> {
+  const allowed = new Set([
+    "event_type",
+    "source_mode",
+    "subject_id",
+    ...(allowEndpoint ? ["endpoint_id"] : []),
+  ]);
+  if (Object.keys(input).some((key) => !allowed.has(key))) {
+    throw new WebhookRequestError(
+      "Event Explorer accepts only an event, source, subject, and selected endpoint.",
+    );
+  }
+  return input;
+}
+
 async function respond(action: () => Promise<unknown>): Promise<Response> {
   try {
     return jsonResponse(await action());
@@ -57,6 +82,63 @@ async function respond(action: () => Promise<unknown>): Promise<Response> {
 
 export const getWebhookOverview: APIRoute = async () =>
   respond(() => webhookOverview(env));
+
+export const listAdminWebhookExplorerSubjects: APIRoute = async ({request}) => {
+  const search = new URL(request.url).searchParams;
+  return respond(() =>
+    listWebhookExplorerSubjects(
+      env,
+      request,
+      search.get("event_type"),
+      search.get("q"),
+    )
+  );
+};
+
+export const previewAdminWebhookExplorerEvent: APIRoute = async ({request}) =>
+  respond(async () => {
+    const input = explorerBody(await body(request));
+    return previewWebhookExplorerEvent(
+      env,
+      request,
+      parseWebhookExplorerSelection(input),
+    );
+  });
+
+export const printAdminWebhookExplorerEvent: APIRoute = async ({request}) =>
+  respond(async () => {
+    const input = explorerBody(await body(request));
+    return printWebhookExplorerEvent(
+      env,
+      request,
+      parseWebhookExplorerSelection(input),
+    );
+  });
+
+export const sendAdminWebhookExplorerEvent: APIRoute = async ({request}) =>
+  respond(async () => {
+    const input = explorerBody(await body(request), true);
+    const endpointId = typeof input.endpoint_id === "string"
+      ? input.endpoint_id
+      : "";
+    const selection = parseWebhookExplorerSelection(input);
+    const endpoint = endpointId
+      ? await getWebhookEndpoint(env.FEED_DB, endpointId)
+      : null;
+    const subscriptionMismatch = Boolean(
+      endpoint && selection.eventType !== "webhook.test" &&
+        !endpoint.events.includes(selection.eventType),
+    );
+    return {
+      ...await sendWebhookExplorerEvent(
+        env,
+        request,
+        selection,
+        endpointId,
+      ),
+      subscriptionMismatch,
+    };
+  });
 
 export const listAdminWebhookEndpoints: APIRoute = async () =>
   respond(() => listWebhookEndpoints(env.FEED_DB));

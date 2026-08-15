@@ -13,11 +13,17 @@ import {
   redeliverWebhookDelivery,
 } from "@/server/webhooks/events";
 import {
+  previewWebhookExplorerEvent,
+  printWebhookExplorerEvent,
+  sendWebhookExplorerEvent,
+} from "@/server/webhooks/explorer";
+import {
   createWebhookEndpoint,
   resumeWebhookEndpoint,
   rotateWebhookEndpointSecret,
 } from "@/server/webhooks/store";
 import {WEBHOOK_RETRY_DELAYS_SECONDS} from "@/shared/Webhooks";
+import {apiWebhookEventSchema} from "@/shared/ApiSchemas";
 import FeedDb from "@/server/feed/FeedDb";
 import FeedCrudManager from "@/server/feed/FeedCrudManager";
 import {
@@ -121,6 +127,7 @@ beforeEach(async () => {
     env.FEED_DB.prepare(
       "DELETE FROM settings WHERE category LIKE 'webhook-atomic-%'",
     ),
+    env.FEED_DB.prepare("DELETE FROM items WHERE id = 'explorer-item'"),
   ]);
 });
 
@@ -164,11 +171,14 @@ describe("webhook fanout and accounting", () => {
     ).bind(id).first<{payload_json: string}>();
     const payload = JSON.parse(event!.payload_json) as {
       context: {causation_id: string; correlation_id: string};
+      test: boolean;
     };
     expect(payload.context).toMatchObject({
       causation_id: "evt_parent",
       correlation_id: "workflow_one",
     });
+    expect(payload.test).toBe(false);
+    expect(apiWebhookEventSchema.safeParse(payload).success).toBe(true);
 
     const updateRequest = new Request(
       `https://feed.example.com/api/v1/items/${id}/`,
@@ -392,8 +402,24 @@ describe("webhook endpoint lifecycle", () => {
       "paused",
     );
     expect(queueIds).toEqual([test.deliveryId]);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, {status: 204})));
+    const testPayload = await env.FEED_DB.prepare(`
+      SELECT webhook_events.payload_json
+      FROM webhook_deliveries
+      JOIN webhook_events ON webhook_events.id = webhook_deliveries.event_id
+      WHERE webhook_deliveries.id = ?
+    `).bind(test.deliveryId).first<{payload_json: string}>();
+    expect(JSON.parse(testPayload!.payload_json)).toMatchObject({
+      test: true,
+      type: "webhook.test",
+    });
+    const fetcher = vi.fn(async (
+      _input: RequestInfo | URL,
+      _init?: RequestInit,
+    ) => new Response(null, {status: 204}));
+    vi.stubGlobal("fetch", fetcher);
     await processWebhookMessage(runtime(), message(test.deliveryId));
+    expect(new Headers(fetcher.mock.calls[0]?.[1]?.headers).get("x-microfeed-test"))
+      .toBe("true");
     expect(await env.FEED_DB.prepare(`
       SELECT status, resume_tested_at FROM webhook_endpoints WHERE id = 'paused'
     `).first()).toMatchObject({status: "auto_paused"});
@@ -407,6 +433,7 @@ describe("webhook endpoint lifecycle", () => {
   it("rotates with a 24-hour overlap and redelivers the same event under a new delivery ID", async () => {
     await insertEndpoint("rotation-redelivery");
     const sourceId = await insertDelivery("rotation-redelivery", "source", {
+      isTest: true,
       status: "succeeded",
     });
     const rotated = await rotateWebhookEndpointSecret(runtime(), "rotation-redelivery");
@@ -429,11 +456,117 @@ describe("webhook endpoint lifecycle", () => {
     expect(redelivery.eventId).toBe("evt_source");
     expect(queueIds).toEqual([redelivery.deliveryId]);
     expect(await env.FEED_DB.prepare(`
-      SELECT event_id, is_manual FROM webhook_deliveries WHERE id = ?
+      SELECT event_id, is_manual, is_test FROM webhook_deliveries WHERE id = ?
     `).bind(redelivery.deliveryId).first()).toEqual({
       event_id: "evt_source",
       is_manual: 1,
+      is_test: 1,
     });
+  });
+});
+
+describe("webhook Event Explorer", () => {
+  it("previews and locally prints exact test payloads without persistence or budget use", async () => {
+    const request = new Request("http://127.0.0.1:4321/admin/webhooks/events/");
+    const selection = {
+      eventType: "page.published" as const,
+      sourceMode: "generated" as const,
+    };
+    const before = await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM webhook_events",
+    ).first();
+    const preview = await previewWebhookExplorerEvent(runtime(), request, selection);
+    expect(apiWebhookEventSchema.safeParse(preview.payload).success).toBe(true);
+    expect(preview.payload).toMatchObject({
+      test: true,
+      type: "page.published",
+    });
+    expect(preview.headers["x-microfeed-test"]).toBe("true");
+    expect(preview.rawBody).toBe(JSON.stringify(preview.payload));
+
+    const output: string[] = [];
+    vi.spyOn(console, "info").mockImplementation((value) => {
+      output.push(String(value));
+    });
+    const printed = await printWebhookExplorerEvent(runtime(), request, selection);
+    expect(output).toEqual([
+      "=== microfeed Event Explorer preview: page.published (not delivered) ===",
+      printed.rawBody,
+    ]);
+    expect(printed.rawBody).toBe(preview.rawBody);
+    expect(await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM webhook_events",
+    ).first()).toEqual(before);
+    expect(await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM webhook_budget_reservations",
+    ).first()).toEqual({count: 0});
+    await expect(printWebhookExplorerEvent(
+      runtime(),
+      new Request("https://feed.example.com/admin/webhooks/events/"),
+      selection,
+    )).rejects.toThrow(/loopback/u);
+  });
+
+  it("normalizes current content for a simulated transition and sends it outside subscriptions", async () => {
+    await env.FEED_DB.prepare(`
+      INSERT INTO items (id, status, data, content_text)
+      VALUES ('explorer-item', ?, ?, 'Current body')
+    `).bind(
+      2,
+      JSON.stringify({description: "<p>Current body</p>", title: "Current item"}),
+    ).run();
+    const request = new Request("http://127.0.0.1:4321/admin/webhooks/events/");
+    const selection = {
+      eventType: "item.published" as const,
+      sourceMode: "current" as const,
+      subjectId: "explorer-item",
+    };
+    const preview = await previewWebhookExplorerEvent(runtime(), request, selection);
+    expect(apiWebhookEventSchema.safeParse(preview.payload).success).toBe(true);
+    expect(preview.payload).toMatchObject({
+      data: {
+        changed_fields: ["status"],
+        object: {id: "explorer-item", status: "published"},
+        previous_status: "unpublished",
+      },
+      test: true,
+      type: "item.published",
+    });
+
+    await insertEndpoint("explorer-direct");
+    const queueIds: string[] = [];
+    const sent = await sendWebhookExplorerEvent(
+      runtime(queueIds),
+      request,
+      selection,
+      "explorer-direct",
+    );
+    expect(queueIds).toEqual([sent.deliveryId]);
+    expect(sent.delivery?.payload).toMatchObject({
+      data: {object: {status: "published"}},
+      test: true,
+      type: "item.published",
+    });
+    expect(await env.FEED_DB.prepare(
+      "SELECT deliveries FROM webhook_daily_usage WHERE usage_day = date('now')",
+    ).first()).toEqual({deliveries: 1});
+  });
+
+  it("replaces generated identifiers when it creates the stored test delivery", async () => {
+    await insertEndpoint("explorer-generated");
+    const sent = await sendWebhookExplorerEvent(
+      runtime(),
+      new Request("http://127.0.0.1:4321/admin/webhooks/events/"),
+      {eventType: "webhook.test", sourceMode: "generated"},
+      "explorer-generated",
+    );
+    expect(sent.delivery?.payload).toMatchObject({
+      data: {object: {id: "explorer-generated"}},
+      subject: {id: "explorer-generated"},
+      test: true,
+      type: "webhook.test",
+    });
+    expect(sent.eventId).not.toContain("example");
   });
 });
 
@@ -452,6 +585,7 @@ describe("webhook delivery policy", () => {
     const request = requests[0]!;
     expect(request.redirect).toBe("manual");
     expect(request.headers.get("webhook-signature")?.split(" ")).toHaveLength(2);
+    expect(request.headers.get("x-microfeed-test")).toBe("false");
     expect(await request.text()).toBe(JSON.stringify({id: "evt_rotation", type: "item.published"}));
     expect(await env.FEED_DB.prepare(`
       SELECT status, attempt_count FROM webhook_deliveries WHERE id = ?

@@ -2,6 +2,7 @@ import {
   ActivityIcon,
   ArrowLeftIcon,
   BlocksIcon,
+  FlaskConicalIcon,
   WebhookIcon,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ interface Props {
 const pageIcons: Record<AdminWebhookPage["icon"], typeof BlocksIcon> = {
   deliveries: ActivityIcon,
   endpoints: WebhookIcon,
+  event_explorer: FlaskConicalIcon,
   overview: BlocksIcon,
 };
 

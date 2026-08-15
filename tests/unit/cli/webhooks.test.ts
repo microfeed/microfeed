@@ -5,6 +5,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {
   handleWebhook,
+  readWebhookSample,
   validatedForwardUrl,
   verifyWebhookSignature,
   type ListenOptions,
@@ -188,5 +189,44 @@ describe("microfeed webhook listener behavior", () => {
     await vi.advanceTimersByTimeAsync(9_000);
     await handling;
     expect(timedOut.result.status).toBe(504);
+  });
+});
+
+describe("microfeed webhook samples", () => {
+  it("reads the exact named example from the selected instance OpenAPI contract", async () => {
+    vi.stubEnv("MICROFEED_URL", "https://feed.example.com");
+    const sample = {id: "evt_example", test: true, type: "item.published"};
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toBe("https://feed.example.com/api/v1/openapi.json");
+      return new Response(JSON.stringify({
+        webhooks: {
+          microfeedEvent: {
+            post: {
+              requestBody: {
+                content: {
+                  "application/json": {
+                    examples: {"item.published": {value: sample}},
+                  },
+                },
+              },
+            },
+          },
+        },
+      }), {headers: {"content-type": "application/json"}});
+    });
+    await expect(readWebhookSample(
+      "item.published",
+      {json: true},
+      fetcher as typeof fetch,
+    )).resolves.toEqual(sample);
+  });
+
+  it("explains how to recover when published API docs are unavailable", async () => {
+    vi.stubEnv("MICROFEED_URL", "https://feed.example.com");
+    await expect(readWebhookSample(
+      "item.published",
+      {json: true},
+      vi.fn(async () => new Response("", {status: 404})) as typeof fetch,
+    )).rejects.toThrow(/Event explorer/u);
   });
 });

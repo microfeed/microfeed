@@ -116,7 +116,8 @@ export const reorderAdminPageNavigation: APIRoute = async ({request}) => {
       database(request),
       parsed.data.page_ids,
       singleWebhookEventCommit(env, request, {
-        object: {page_ids: parsed.data.page_ids},
+        changedFields: ["page_ids"],
+        object: {id: "navigation", page_ids: parsed.data.page_ids},
         subjectId: "navigation",
         subjectType: "page",
         type: "page.navigation_updated",

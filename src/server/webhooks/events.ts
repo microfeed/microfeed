@@ -1,18 +1,10 @@
 import {
   WEBHOOK_LIMITS,
+  type WebhookEventInput,
   type WebhookEventType,
   webhookSubjectType,
 } from "@/shared/Webhooks";
 import {WebhookRequestError, WebhookUnavailableError} from "./validation";
-
-export interface WebhookEventInput {
-  changedFields?: string[];
-  object: Record<string, unknown>;
-  previousStatus?: string | null;
-  subjectId: string;
-  subjectType?: "channel" | "item" | "page" | "site_file" | "theme" | "webhook";
-  type: WebhookEventType;
-}
 
 export type WebhookOrigin = "api" | "dashboard" | "system";
 
@@ -29,7 +21,7 @@ interface EligibleEndpoint extends Record<string, unknown> {
   url: string;
 }
 
-interface PreparedEvent {
+export interface PreparedWebhookEvent {
   budgetDay: string;
   causationId?: string;
   correlationId: string;
@@ -51,11 +43,15 @@ function webhooksAvailable(runtimeEnv: Env): boolean {
   );
 }
 
-function apiPath(subjectType: string, subjectId: string): string | undefined {
+function apiPath(
+  subjectType: string,
+  subjectId: string,
+  eventType: WebhookEventType,
+): string | undefined {
   if (subjectType === "item") {
     return `/api/v1/items/${encodeURIComponent(subjectId)}/`;
   }
-  if (subjectType === "page") {
+  if (subjectType === "page" && eventType !== "page.navigation_updated") {
     return `/api/v1/pages/${encodeURIComponent(subjectId)}/`;
   }
   if (subjectType === "site_file") {
@@ -77,27 +73,14 @@ export function truncateWebhookPayload(
   if (new TextEncoder().encode(serialized).byteLength <= WEBHOOK_LIMITS.payloadBytes) {
     return serialized;
   }
-  const candidates = [
-    "content_html",
-    "content_text",
-    "draft_content",
-    "published_content",
-    "description",
-    "_microfeed",
-  ];
-  for (const field of candidates) {
-    if (Object.hasOwn(data.object, field)) {
-      delete data.object[field];
-      data.truncated_fields.push(`data.object.${field}`);
-      serialized = JSON.stringify(envelope);
-      if (
-        new TextEncoder().encode(serialized).byteLength <=
-          WEBHOOK_LIMITS.payloadBytes
-      ) return serialized;
-    }
+  if (!Object.hasOwn(object, "id")) {
+    throw new Error("Webhook snapshots require a stable id before truncation.");
   }
-  data.object = Object.hasOwn(object, "id") ? {id: object.id} : {};
-  data.truncated_fields.push("data.object");
+  data.object = {id: object.id};
+  data.truncated_fields = Object.keys(object)
+    .filter((field) => field !== "id")
+    .sort()
+    .map((field) => `data.object.${field}`);
   serialized = JSON.stringify(envelope);
   if (new TextEncoder().encode(serialized).byteLength > WEBHOOK_LIMITS.payloadBytes) {
     throw new Error("Webhook event metadata exceeds the payload limit.");
@@ -105,19 +88,26 @@ export function truncateWebhookPayload(
   return serialized;
 }
 
-function prepareEvent(
+export function prepareWebhookEvent(
   runtimeEnv: Env,
   request: Request,
   input: WebhookEventInput,
   context: WebhookEventContext,
-): PreparedEvent {
-  const eventId = `evt_${crypto.randomUUID()}`;
-  const timestamp = new Date().toISOString();
+  options: {
+    correlationId?: string;
+    eventId?: string;
+    requestId?: string;
+    test?: boolean;
+    timestamp?: string;
+  } = {},
+): PreparedWebhookEvent {
+  const eventId = options.eventId ?? `evt_${crypto.randomUUID()}`;
+  const timestamp = options.timestamp ?? new Date().toISOString();
   const causationId = context.causationId ??
     request.headers.get("Microfeed-Causation-Id") ?? undefined;
-  const correlationId = context.correlationId ??
+  const correlationId = options.correlationId ?? context.correlationId ??
     request.headers.get("Microfeed-Correlation-Id") ?? causationId ?? eventId;
-  const requestId = context.requestId ??
+  const requestId = options.requestId ?? context.requestId ??
     request.headers.get("cf-ray") ?? `req_${crypto.randomUUID()}`;
   const subjectType = input.subjectType ?? webhookSubjectType(input.type);
   const object = structuredClone(input.object);
@@ -141,13 +131,14 @@ function prepareEvent(
       url: new URL(request.url).origin,
     },
     subject: {
-      ...(apiPath(subjectType, input.subjectId)
-        ? {api_path: apiPath(subjectType, input.subjectId)}
+      ...(apiPath(subjectType, input.subjectId, input.type)
+        ? {api_path: apiPath(subjectType, input.subjectId, input.type)}
         : {}),
       id: input.subjectId,
       type: subjectType,
     },
     timestamp,
+    test: Boolean(options.test),
     type: input.type,
   };
   return {
@@ -163,7 +154,7 @@ function prepareEvent(
 
 function eventStatement(
   database: D1Database,
-  prepared: PreparedEvent,
+  prepared: PreparedWebhookEvent,
   input: WebhookEventInput,
   context: WebhookEventContext,
   deliveryCount: number,
@@ -194,7 +185,7 @@ function eventStatement(
 
 function deliveryStatement(
   database: D1Database,
-  prepared: PreparedEvent,
+  prepared: PreparedWebhookEvent,
   endpoint: EligibleEndpoint,
   status: "pending" | "suppressed_budget" | "suppressed_endpoint_paused",
   options: {isManual?: boolean; isTest?: boolean} = {},
@@ -267,7 +258,7 @@ async function mutationEventPlan(
 ): Promise<MutationEventPlan | null> {
   const endpoints = await eligibleEndpoints(runtimeEnv.FEED_DB, input.type);
   if (endpoints.length === 0) return null;
-  const prepared = prepareEvent(runtimeEnv, request, input, context);
+  const prepared = prepareWebhookEvent(runtimeEnv, request, input, context);
   if (endpoints.length > WEBHOOK_LIMITS.endpointCount) {
     const statements = [
       eventStatement(
@@ -413,7 +404,7 @@ export async function emitWebhookEvent(
   if (endpoints.length === 0) return {deliveryIds: []};
   const active = endpoints.filter(({status}) => status === "active");
   const paused = endpoints.filter(({status}) => status === "auto_paused");
-  const prepared = prepareEvent(runtimeEnv, request, input, context);
+  const prepared = prepareWebhookEvent(runtimeEnv, request, input, context);
   if (endpoints.length > WEBHOOK_LIMITS.endpointCount) {
     await runtimeEnv.FEED_DB.batch([
       eventStatement(
@@ -522,7 +513,9 @@ async function createDirectDelivery(
   endpoint: EligibleEndpoint,
   options: {isManual?: boolean; isTest?: boolean},
 ): Promise<{deliveryId: string; eventId: string; suppressed?: string}> {
-  const prepared = prepareEvent(runtimeEnv, request, input, context);
+  const prepared = prepareWebhookEvent(runtimeEnv, request, input, context, {
+    test: options.isTest,
+  });
   const delivery = deliveryStatement(
     runtimeEnv.FEED_DB,
     prepared,
@@ -595,11 +588,45 @@ export async function createWebhookTestDelivery(
     runtimeEnv,
     request,
     {
-      object: {message: "This is a microfeed webhook test."},
+      object: {
+        id: endpointId,
+        message: "This is a microfeed webhook test.",
+      },
       subjectId: endpointId,
       subjectType: "webhook",
       type: "webhook.test",
     },
+    {origin: "dashboard"},
+    endpoint,
+    {isTest: true},
+  );
+}
+
+export async function createWebhookExplorerDelivery(
+  runtimeEnv: Env,
+  request: Request,
+  endpointId: string,
+  input: WebhookEventInput,
+): Promise<{deliveryId: string; eventId: string; suppressed?: string}> {
+  if (!webhooksAvailable(runtimeEnv)) {
+    throw new WebhookUnavailableError(
+      "Enable webhooks with yarn manage deploy --enable-webhooks first.",
+    );
+  }
+  const endpoint = await endpointForDirectDelivery(
+    runtimeEnv.FEED_DB,
+    endpointId,
+    true,
+  );
+  if (!endpoint) {
+    throw new WebhookRequestError(
+      "The endpoint does not exist or is disabled.",
+    );
+  }
+  return createDirectDelivery(
+    runtimeEnv,
+    request,
+    input,
     {origin: "dashboard"},
     endpoint,
     {isTest: true},
@@ -615,7 +642,7 @@ export async function redeliverWebhookDelivery(
     throw new WebhookUnavailableError("Webhooks are not enabled.");
   }
   const source = await runtimeEnv.FEED_DB.prepare(`
-    SELECT webhook_deliveries.endpoint_id,
+    SELECT webhook_deliveries.endpoint_id, webhook_deliveries.is_test,
       webhook_events.id AS event_id
     FROM webhook_deliveries
     JOIN webhook_events ON webhook_events.id = webhook_deliveries.event_id
@@ -647,14 +674,15 @@ export async function redeliverWebhookDelivery(
       ),
       runtimeEnv.FEED_DB.prepare(`
         INSERT INTO webhook_deliveries (
-          id, event_id, endpoint_id, endpoint_url, status, is_manual,
+          id, event_id, endpoint_id, endpoint_url, status, is_test, is_manual,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, 'pending', 1, ?, ?)
+        ) VALUES (?, ?, ?, ?, 'pending', ?, 1, ?, ?)
       `).bind(
         newDeliveryId,
         String(source.event_id),
         endpoint.id,
         endpoint.url,
+        Number(source.is_test) ? 1 : 0,
         now,
         now,
       ),
@@ -663,14 +691,15 @@ export async function redeliverWebhookDelivery(
     if (String(error).includes("webhook_daily_budget")) {
       await runtimeEnv.FEED_DB.prepare(`
         INSERT INTO webhook_deliveries (
-          id, event_id, endpoint_id, endpoint_url, status, is_manual,
+          id, event_id, endpoint_id, endpoint_url, status, is_test, is_manual,
           completed_at, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, 'suppressed_budget', 1, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, 'suppressed_budget', ?, 1, ?, ?, ?)
       `).bind(
         newDeliveryId,
         String(source.event_id),
         endpoint.id,
         endpoint.url,
+        Number(source.is_test) ? 1 : 0,
         now,
         now,
         now,

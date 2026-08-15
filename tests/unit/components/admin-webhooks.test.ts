@@ -5,9 +5,11 @@ import {describe, expect, it} from "vitest";
 import AdminWebhookSidebar from "@/components/admin/webhooks/AdminWebhookSidebar";
 import WebhookDeliveriesApp from "@/components/admin/webhooks/WebhookDeliveriesApp";
 import WebhookEndpointsApp from "@/components/admin/webhooks/WebhookEndpointsApp";
+import WebhookEventExplorerApp from "@/components/admin/webhooks/WebhookEventExplorerApp";
 import WebhookOverviewApp from "@/components/admin/webhooks/WebhookOverviewApp";
 import {getAdminNavigationItems} from "@/shared/AdminNavigation";
 import {NAV_ITEMS} from "@/shared/Constants";
+import {ADMIN_WEBHOOK_PAGES} from "@/shared/AdminWebhookNavigation";
 
 const deployment = {
   deployedAt: "2026-08-14T12:00:00.000Z",
@@ -47,6 +49,12 @@ describe("Webhook Admin", () => {
   });
 
   it("renders the standalone overview, endpoint, and delivery navigation", () => {
+    expect(ADMIN_WEBHOOK_PAGES.map(({name}) => name)).toEqual([
+      "Overview",
+      "Endpoints",
+      "Event explorer",
+      "Deliveries",
+    ]);
     const output = renderToStaticMarkup(React.createElement(AdminWebhookSidebar, {
       data: {
         activePage: "endpoints",
@@ -55,14 +63,35 @@ describe("Webhook Admin", () => {
         pageUrls: {
           deliveries: "/admin/webhooks/deliveries/",
           endpoints: "/admin/webhooks/endpoints/",
+          event_explorer: "/admin/webhooks/events/",
           overview: "/admin/webhooks/",
         },
       },
     }));
     expect(output).toContain("Overview");
     expect(output).toContain("Endpoints");
+    expect(output).toContain("Event explorer");
     expect(output).toContain("Deliveries");
     expect(output).toContain('aria-current="page"');
+  });
+
+  it("renders exact payload discovery and safe Event Explorer actions", () => {
+    const output = renderToStaticMarkup(React.createElement(
+      WebhookEventExplorerApp,
+      {
+        endpoints: [endpoint],
+        initialEndpointId: endpoint.id,
+        initialEventType: "page.published",
+        localPrintAvailable: true,
+      },
+    ));
+    expect(output).toContain("Generated example");
+    expect(output).toContain("Current content");
+    expect(output).toContain("Copy raw JSON");
+    expect(output).toContain("Copy formatted JSON");
+    expect(output).toContain("Print in yarn dev");
+    expect(output).toContain("Subscription mismatch");
+    expect(output).toContain("1,000 daily deliveries");
   });
 
   it("shows cost, failure, event, and setup guidance on the overview", () => {
@@ -98,12 +127,23 @@ describe("Webhook Admin", () => {
       initialEndpoints: [endpoint],
     }));
     expect(endpoints).toContain("1 of 20 endpoint slots");
+    expect(endpoints).toContain(">Add endpoint</button>");
+    expect(endpoints).not.toContain('id="webhook-name"');
     expect(endpoints).toContain("item.published");
     expect(endpoints).toContain("10 consecutive terminal failures");
     expect(endpoints).toContain("Send a successful test");
     expect(endpoints).toContain(">Resume<");
     expect(endpoints).toContain("Rotate secret");
-    expect(endpoints).toContain("Local development permits");
+
+    const emptyEndpoints = renderToStaticMarkup(React.createElement(WebhookEndpointsApp, {
+      enabled: true,
+      initialEndpoints: [],
+    }));
+    expect(emptyEndpoints.indexOf("Add endpoint")).toBeLessThan(
+      emptyEndpoints.indexOf("Configured endpoints"),
+    );
+    expect(emptyEndpoints).toContain('id="webhook-name"');
+    expect(emptyEndpoints).toContain("Local development permits");
 
     const deliveries = renderToStaticMarkup(React.createElement(
       WebhookDeliveriesApp,

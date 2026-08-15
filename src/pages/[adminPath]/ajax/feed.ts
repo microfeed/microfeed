@@ -8,6 +8,7 @@ import {jsonResponse} from "../../../server/http";
 import type {FeedContent} from "../../../types";
 import type {PublicCachePurger} from "@/server/cache/public-cache";
 import {STATUSES} from "@/shared/Constants";
+import {webhookChannelSnapshot} from "@/shared/WebhookExamples";
 import {
   changedWebhookFields,
   contentMutationWebhookInputs,
@@ -55,11 +56,12 @@ export async function updateAdminFeed(
       }));
     }
     if (updatedFeed.channel) {
-      const before = (beforeChannelContent?.channel ?? {}) as Record<
-        string,
-        unknown
-      >;
-      const after = updatedFeed.channel as Record<string, unknown>;
+      const before = webhookChannelSnapshot(
+        (beforeChannelContent?.channel ?? {}) as Record<string, unknown>,
+      );
+      const after = webhookChannelSnapshot(
+        updatedFeed.channel as Record<string, unknown>,
+      );
       const changedFields = changedWebhookFields(before, after);
       if (changedFields.length > 0) {
         events.push({

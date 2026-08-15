@@ -8,6 +8,7 @@ import {
   webhookEventsCommit,
 } from "@/server/webhooks/emission";
 import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
+import {webhookThemeSnapshot} from "@/shared/WebhookExamples";
 
 function errorResponse(error: unknown): Response {
   return jsonResponse({
@@ -67,16 +68,20 @@ export const POST: APIRoute = async ({request}) => {
           return [
             ...(before.activeThemeId
               ? [{
-                  changedFields: ["activeThemeId"],
-                  object: previous ?? {id: before.activeThemeId},
+                  changedFields: ["active_theme_id"],
+                  object: previous
+                    ? webhookThemeSnapshot(previous)
+                    : {id: before.activeThemeId},
                   subjectId: before.activeThemeId,
                   subjectType: "theme" as const,
                   type: "theme.deactivated" as const,
                 }]
               : []),
             {
-              changedFields: ["activeThemeId"],
-              object: theme ?? {id: result.activeThemeId},
+              changedFields: ["active_theme_id"],
+              object: theme
+                ? webhookThemeSnapshot(theme)
+                : {id: result.activeThemeId},
               subjectId: result.activeThemeId,
               subjectType: "theme" as const,
               type: "theme.activated" as const,
@@ -95,8 +100,10 @@ export const POST: APIRoute = async ({request}) => {
         singleWebhookEventCommit(env, request, () =>
           before.activeThemeId
             ? {
-                changedFields: ["activeThemeId"],
-                object: theme ?? {id: before.activeThemeId},
+                changedFields: ["active_theme_id"],
+                object: theme
+                  ? webhookThemeSnapshot(theme)
+                  : {id: before.activeThemeId},
                 subjectId: before.activeThemeId,
                 subjectType: "theme",
                 type: "theme.deactivated",
@@ -121,8 +128,10 @@ export const POST: APIRoute = async ({request}) => {
           return [
             ...(before.activeThemeId
               ? [{
-                  changedFields: ["activeThemeId"],
-                  object: previous ?? {id: before.activeThemeId},
+                  changedFields: ["active_theme_id"],
+                  object: previous
+                    ? webhookThemeSnapshot(previous)
+                    : {id: before.activeThemeId},
                   subjectId: before.activeThemeId,
                   subjectType: "theme" as const,
                   type: "theme.deactivated" as const,
@@ -130,8 +139,10 @@ export const POST: APIRoute = async ({request}) => {
               : []),
             ...(result.activeThemeId
               ? [{
-                  changedFields: ["activeThemeId"],
-                  object: active ?? {id: result.activeThemeId},
+                  changedFields: ["active_theme_id"],
+                  object: active
+                    ? webhookThemeSnapshot(active)
+                    : {id: result.activeThemeId},
                   subjectId: result.activeThemeId,
                   subjectType: "theme" as const,
                   type: "theme.activated" as const,

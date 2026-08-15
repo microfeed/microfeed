@@ -7,6 +7,10 @@ import {
   PAGE_META_DESCRIPTION_MAX_LENGTH,
   PAGE_SLUG_MAX_LENGTH,
 } from "./Pages";
+import {
+  themeManifestV1Schema,
+  themeSourceKindSchema,
+} from "./themes/ThemeContract";
 import {WEBHOOK_EVENT_TYPES} from "./Webhooks";
 
 export const apiItemIdSchema = z.string().min(1).meta({
@@ -466,6 +470,10 @@ export const apiWebhookDeliveryHeadersSchema = z.object({
   "x-microfeed-event": z.enum(WEBHOOK_EVENT_TYPES).meta({
     description: "The event type duplicated from the JSON envelope.",
   }),
+  "x-microfeed-test": z.enum(["true", "false"]).meta({
+    description:
+      "Whether this is an administrator-requested test. Trust the signed JSON body's test field after signature verification.",
+  }),
 });
 
 export const apiWebhookSiteSchema = z.object({
@@ -505,37 +513,137 @@ export const apiWebhookContextSchema = z.object({
   request_id: z.string(),
 }).meta({id: "WebhookContext"});
 
-export const apiWebhookDataSchema = z.object({
-  changed_fields: z.array(z.string()),
-  object: z.record(z.string(), z.unknown()),
-  previous_status: z.string().nullable(),
-  truncated_fields: z.array(z.string()),
-}).meta({id: "WebhookData"});
+export const apiWebhookTruncatedSnapshotSchema = z.object({
+  id: z.string(),
+}).meta({
+  id: "WebhookTruncatedSnapshot",
+  description:
+    "The stable subject identifier retained when larger snapshot fields are removed to fit the webhook payload limit.",
+});
 
-export const apiWebhookChannelDataSchema = apiWebhookDataSchema.meta({
-  id: "WebhookChannelData",
+export const apiWebhookChannelSnapshotSchema = z.object({
+  _microfeed: z.object({copyright: z.string().optional()}).optional(),
+  authors: z.array(z.object({name: z.string()})).optional(),
+  description: z.string().optional(),
+  expired: z.boolean().optional(),
+  homepage_url: z.url().optional(),
+  icon: z.url().optional(),
+  id: z.string(),
+  language: z.string().optional(),
+  title: z.string().optional(),
+}).meta({id: "WebhookChannelSnapshot"});
+
+export const apiWebhookItemSnapshotSchema = z.object({
+  attachments: z.array(apiAttachmentOutputSchema).max(1).optional(),
+  content_html: z.string().optional(),
+  content_text: z.string(),
+  date_modified: z.iso.datetime().optional(),
+  date_published: z.iso.datetime().optional(),
+  id: z.string(),
+  image: z.string().optional(),
+  status: z.enum(["published", "unlisted", "unpublished"]),
+  title: z.string().optional(),
+  url: z.string().optional(),
+}).meta({id: "WebhookItemSnapshot"});
+
+export const apiWebhookPageSnapshotSchema = apiPageOutputSchema.meta({
+  id: "WebhookPageSnapshot",
 });
-export const apiWebhookItemDataSchema = apiWebhookDataSchema.meta({
-  id: "WebhookItemData",
+
+export const apiWebhookPageNavigationSnapshotSchema = z.object({
+  id: z.literal("navigation"),
+  page_ids: z.array(z.string()),
+}).meta({id: "WebhookPageNavigationSnapshot"});
+
+export const apiWebhookSiteFileSnapshotSchema = apiSiteFileOutputSchema.meta({
+  id: "WebhookSiteFileSnapshot",
 });
-export const apiWebhookPageDataSchema = apiWebhookDataSchema.meta({
-  id: "WebhookPageData",
-});
-export const apiWebhookSiteFileDataSchema = apiWebhookDataSchema.meta({
-  id: "WebhookSiteFileData",
-});
-export const apiWebhookThemeDataSchema = apiWebhookDataSchema.meta({
-  id: "WebhookThemeData",
-});
-export const apiWebhookTestDataSchema = apiWebhookDataSchema.meta({
-  id: "WebhookTestData",
-});
+
+export const apiWebhookThemeSnapshotSchema = z.object({
+  asset_owner_theme_id: z.string().nullable(),
+  checksum_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+  created_at: z.string(),
+  id: z.string(),
+  manifest: themeManifestV1Schema,
+  name: z.string(),
+  origin_theme_id: z.string().nullable(),
+  package_id: z.string(),
+  source_commit: z.string().nullable(),
+  source_kind: themeSourceKindSchema,
+  source_ref: z.string().nullable(),
+  source_url: z.string().nullable(),
+  version: z.string(),
+}).meta({id: "WebhookThemeSnapshot"});
+
+export const apiWebhookTestSnapshotSchema = z.object({
+  id: z.string(),
+  message: z.string(),
+}).meta({id: "WebhookTestSnapshot"});
+
+const apiWebhookStatusSchema = z.enum([
+  "published",
+  "unlisted",
+  "unpublished",
+]);
+
+function webhookDataSchema(
+  id: string,
+  object: z.ZodType,
+  previousStatus: z.ZodType,
+) {
+  return z.object({
+    changed_fields: z.array(z.string()),
+    object: z.union([object, apiWebhookTruncatedSnapshotSchema]),
+    previous_status: previousStatus,
+    truncated_fields: z.array(z.string()),
+  }).meta({id});
+}
+
+export const apiWebhookChannelDataSchema = webhookDataSchema(
+  "WebhookChannelData",
+  apiWebhookChannelSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookItemDataSchema = webhookDataSchema(
+  "WebhookItemData",
+  apiWebhookItemSnapshotSchema,
+  apiWebhookStatusSchema.nullable(),
+);
+export const apiWebhookPageDataSchema = webhookDataSchema(
+  "WebhookPageData",
+  apiWebhookPageSnapshotSchema,
+  apiWebhookStatusSchema.nullable(),
+);
+export const apiWebhookPageNavigationDataSchema = webhookDataSchema(
+  "WebhookPageNavigationData",
+  apiWebhookPageNavigationSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookSiteFileDataSchema = webhookDataSchema(
+  "WebhookSiteFileData",
+  apiWebhookSiteFileSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookThemeDataSchema = webhookDataSchema(
+  "WebhookThemeData",
+  apiWebhookThemeSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookTestDataSchema = webhookDataSchema(
+  "WebhookTestData",
+  apiWebhookTestSnapshotSchema,
+  z.null(),
+);
 
 const apiWebhookEventBaseSchema = z.object({
   api_version: z.literal("1"),
   context: apiWebhookContextSchema,
   id: z.string().startsWith("evt_"),
   site: apiWebhookSiteSchema,
+  test: z.boolean().meta({
+    description:
+      "True only for an administrator-requested test. A verified test event must not produce production side effects.",
+  }),
   timestamp: z.iso.datetime(),
 });
 
@@ -559,7 +667,7 @@ export const apiWebhookEventSchema = z.discriminatedUnion("type", [
   webhookVariant("page.unlisted", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
   webhookVariant("page.unpublished", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
   webhookVariant("page.deleted", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
-  webhookVariant("page.navigation_updated", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.navigation_updated", apiWebhookPageSubjectSchema, apiWebhookPageNavigationDataSchema),
   webhookVariant("site_file.created", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
   webhookVariant("site_file.updated", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
   webhookVariant("site_file.published", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
