@@ -228,6 +228,54 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
   }
   let controller;
+  let lockedScrollPosition;
+  let previousScrollStyles;
+  let suppressTriggerFocus = false;
+  let triggerFocusSuppressionTimer;
+
+  function lockBackgroundScroll(scrollPosition) {
+    if (lockedScrollPosition !== undefined) return;
+    lockedScrollPosition = scrollPosition;
+    previousScrollStyles = {
+      bodyOverflow: document.body.style.overflow,
+      bodyPosition: document.body.style.position,
+      bodyTop: document.body.style.top,
+      bodyWidth: document.body.style.width,
+      rootOverflow: document.documentElement.style.overflow,
+    };
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = "-" + scrollPosition + "px";
+    document.body.style.width = "100%";
+  }
+
+  function unlockBackgroundScroll() {
+    if (lockedScrollPosition === undefined || !previousScrollStyles) return;
+    const scrollPosition = lockedScrollPosition;
+    document.documentElement.style.overflow = previousScrollStyles.rootOverflow;
+    document.body.style.overflow = previousScrollStyles.bodyOverflow;
+    document.body.style.position = previousScrollStyles.bodyPosition;
+    document.body.style.top = previousScrollStyles.bodyTop;
+    document.body.style.width = previousScrollStyles.bodyWidth;
+    lockedScrollPosition = undefined;
+    previousScrollStyles = undefined;
+    window.scrollTo(0, scrollPosition);
+  }
+
+  function suppressTriggerFocusUntilCloseSettles() {
+    suppressTriggerFocus = true;
+    window.clearTimeout(triggerFocusSuppressionTimer);
+    triggerFocusSuppressionTimer = window.setTimeout(() => {
+      suppressTriggerFocus = false;
+    }, 0);
+  }
+
+  function closeSearch() {
+    if (!dialog?.open) return;
+    suppressTriggerFocusUntilCloseSettles();
+    dialog.close();
+  }
 
   function resultContainer(input) {
     const scopes = [
@@ -405,7 +453,11 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       window.location.assign("/search/");
       return;
     }
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      const scrollPosition = window.scrollY;
+      dialog.showModal();
+      lockBackgroundScroll(scrollPosition);
+    }
     dialog.querySelector("[data-microfeed-search-input]")?.focus();
   }
 
@@ -413,6 +465,12 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     "[data-microfeed-search-open]",
   )) {
     trigger.addEventListener("click", openSearch);
+    if (trigger instanceof HTMLInputElement) {
+      trigger.addEventListener("focus", () => {
+        if (suppressTriggerFocus) return;
+        openSearch();
+      });
+    }
     if (!(trigger instanceof HTMLButtonElement)) {
       trigger.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
@@ -422,7 +480,9 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
   }
   dialog?.querySelector("[data-microfeed-search-close]")
-    ?.addEventListener("click", () => dialog.close());
+    ?.addEventListener("click", closeSearch);
+  dialog?.addEventListener("cancel", suppressTriggerFocusUntilCloseSettles);
+  dialog?.addEventListener("close", unlockBackgroundScroll);
   dialog?.querySelector("[data-microfeed-search-input]")
     ?.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" || event.isComposing) return;
@@ -434,10 +494,13 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       event.preventDefault();
       openSearch();
     }
-    if (event.key === "Escape" && dialog?.open) dialog.close();
+    if (event.key === "Escape" && dialog?.open) {
+      event.preventDefault();
+      closeSearch();
+    }
   });
   dialog?.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
+    if (event.target === dialog) closeSearch();
   });
 </script>`;
 

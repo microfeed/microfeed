@@ -56,7 +56,7 @@ describe("bundled theme packages", () => {
     expect(sourceStyles).not.toMatch(/footer\s*\{[^}]*position:\s*fixed/gu);
   });
 
-  it("uses a responsive search field and overflows navigation after two pages", async () => {
+  it("uses responsive search and collapses Page links into a mobile menu", async () => {
     const [bodyStart, feed, item, page, search, sourceStyles, sourceScript] = await Promise.all([
       readFile(path.join(root, "themes/default/web-body-start.mustache"), "utf8"),
       readFile(path.join(root, "themes/default/web-feed.mustache"), "utf8"),
@@ -77,8 +77,13 @@ describe("bundled theme packages", () => {
     expect(bodyStart).toContain('type="search"');
     expect(bodyStart).toContain('class="mf-search-icon-button"');
     expect(bodyStart).toContain("data-microfeed-nav-overflow");
-    expect(bodyStart.indexOf('class="mf-site-search"'))
+    expect(bodyStart).toContain('class="mf-nav-overflow-menu-icon"');
+    expect(bodyStart.indexOf('class="mf-site-brand"'))
       .toBeLessThan(bodyStart.indexOf('class="mf-nav-links"'));
+    expect(bodyStart.indexOf('class="mf-nav-links"'))
+      .toBeLessThan(bodyStart.indexOf('class="mf-site-search"'));
+    expect(bodyStart.indexOf('class="mf-site-search"'))
+      .toBeLessThan(bodyStart.indexOf('class="mf-theme-menu"'));
     expect(bodyStart).toContain("readonly");
     expect(bodyStart).toContain('aria-haspopup="dialog"');
     expect(bodyStart).toContain('aria-controls="microfeed-search-dialog"');
@@ -91,16 +96,21 @@ describe("bundled theme packages", () => {
       expect(template).toContain('<div class="icon-arrow-left">{{title}}</div>');
     }
 
-    expect(sourceScript).toContain("if (links.length <= 2) continue");
+    expect(sourceScript).toContain('window.matchMedia("(max-width: 600px)")');
+    expect(sourceScript).toContain("if (mobileNavigation.matches)");
+    expect(sourceScript).toContain("for (const link of links) menu.append(link)");
+    expect(sourceScript).toContain("for (const link of links.slice(0, 2))");
     expect(sourceScript).toContain("for (const link of links.slice(2))");
     expect(sourceStyles).toMatch(/\.mf-site-search\s*\{[\s\S]*?display:\s*grid;/u);
     expect(sourceStyles).toMatch(/\.mf-site-search\s*\{[\s\S]*?width:\s*min\(13\.5rem, 38vw\);/u);
     expect(sourceStyles).toMatch(/\.mf-site-search input\[type="search"\]\s*\{[\s\S]*?font-size:\s*0\.875rem;/u);
     expect(sourceStyles).toMatch(/\.mf-site-nav\s*\{[\s\S]*?justify-content:\s*space-between;/u);
-    expect(sourceStyles).toMatch(/\.mf-nav-links\s*\{[\s\S]*?margin-left:\s*auto;/u);
-    expect(sourceStyles).not.toMatch(/\.mf-site-search\s*\{[^}]*margin-left:\s*auto;/u);
+    expect(sourceStyles).toMatch(/\.mf-site-search\s*\{[\s\S]*?margin-left:\s*auto;/u);
+    expect(sourceStyles).not.toMatch(/\.mf-nav-links\s*\{[^}]*margin-left:\s*auto;/u);
     expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-site-search\s*\{\s*display:\s*none;/u);
     expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-search-icon-button\s*\{[\s\S]*?display:\s*inline-flex;/u);
+    expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-nav-links > a\s*\{[\s\S]*?display:\s*none;/u);
+    expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-nav-overflow-menu-icon\s*\{[\s\S]*?display:\s*block;/u);
     expect(sourceStyles).toMatch(/html \.mf-public-search\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?margin:\s*auto;/u);
     expect(sourceStyles).toMatch(/\.mf-nav-overflow summary:hover\s*\{[\s\S]*?opacity:\s*65%;/u);
     expect(search).toContain('class="mf-visually-hidden"');

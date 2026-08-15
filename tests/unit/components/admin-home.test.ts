@@ -3,6 +3,7 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import AdminHomeApp from "@/components/admin/home/AdminHomeApp";
+import WhatsNewApp from "@/components/admin/home/AdminHomeApp/component/WhatsNewApp";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
 import type {OnboardingCheck, OnboardingResult} from "@/types";
 
@@ -66,6 +67,27 @@ describe("admin home section order", () => {
 
     expect(output.indexOf(">Public access</h2>")).toBeLessThan(
       output.indexOf(">Setup checklist</div>"),
+    );
+  });
+
+  it("links the updates card directly to the What's new section", () => {
+    const app = new WhatsNewApp({});
+    app.state = {
+      fetchStatus: null,
+      items: [{
+        _microfeed: {
+          date_published_short: "Aug 14, 2026",
+          web_url: "https://www.microfeed.org/example/",
+        },
+        id: "example",
+        title: "Example update",
+      }],
+    };
+
+    const output = renderToStaticMarkup(app.render());
+
+    expect(output).toContain(
+      'href="https://www.microfeed.org/#whats-new"',
     );
   });
 });

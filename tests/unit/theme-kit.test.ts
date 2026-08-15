@@ -331,8 +331,27 @@ describe("@microfeed/theme-kit package loading", () => {
     );
     expect(html).toContain('"title":"Searchable preview item"');
     expect(html).toContain('"date_published":"2026-08-13T10:00:00.000Z"');
-    expect(html).toContain("if (!dialog.open) dialog.showModal()");
+    expect(html).toContain("lockBackgroundScroll(scrollPosition)");
     expect(html).toContain("(event.metaKey || event.ctrlKey)");
+  });
+
+  it("bundles the default theme color menu into standalone previews", async () => {
+    const theme = await loadThemePackage(
+      path.join(repositoryRoot, "themes/default"),
+    );
+    const html = standaloneThemePreviewDocument(theme, {
+      home_page_url: "https://example.test/",
+      items: [],
+      title: "Theme preview fixture",
+      version: "https://jsonfeed.org/version/1.1",
+    }, "feed");
+
+    expect(html).toContain("data-microfeed-theme-menu");
+    expect(html).toContain('data-microfeed-theme-option="system"');
+    expect(html).toContain('data-microfeed-theme-option="light"');
+    expect(html).toContain('data-microfeed-theme-option="dark"');
+    expect(html).toContain("microfeed-public-theme");
+    expect(html).toContain("prefers-color-scheme: dark");
   });
 
   it("rejects symlinked declared files", async () => {
