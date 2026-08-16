@@ -67,12 +67,14 @@ directories.
 
 ## Agent skill
 
-Inside a microfeed clone, agent hosts discover the repository-owned
-`manage-microfeed-content` skill at
-`.agents/skills/manage-microfeed-content/`. The published npm tarball contains
-the identical skill at `dist/skills/manage-microfeed-content/` for agent hosts
-or skill installers that distribute skills with the CLI. The repository copy
-is canonical, and the package check fails when the bundled copy differs.
+Inside a microfeed clone, repository guidance routes coding agents to the
+canonical `manage-microfeed-content` skill at
+`.agents/skills/manage-microfeed-content/`. Claude Code enters through the
+root `CLAUDE.md` bridge; compatible agent hosts can discover the skill directly.
+The published npm tarball contains the identical skill at
+`dist/skills/manage-microfeed-content/` for agent hosts or skill installers
+that distribute skills with the CLI. The repository copy is canonical, and
+the package check fails when the bundled copy differs.
 
 The skill teaches invocation selection, site and instance vocabulary,
 connection identity, browser-consent handoff, deterministic output, the difference between

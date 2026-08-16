@@ -46,8 +46,14 @@ yarn preview --feed-url https://example.com/json/
 
 Read [THEME.md](./THEME.md), \`microfeed-theme.json\`, and the schemas under
 \`.microfeed/schemas/\` before editing. Establish a clean validation and test
-baseline before the first commit. If this directory is not already a Git
-repository, initialize it after those checks pass:
+baseline before the first commit.
+
+Coding-agent workflows remain canonical under \`.agents/skills/\`.
+\`CLAUDE.md\` directs Claude Code to the same theme-development skill without
+duplicating it.
+
+If this directory is not already a Git repository, initialize it after those
+checks pass:
 
 \`\`\`console
 git init --initial-branch main
@@ -106,6 +112,9 @@ documents Pages, shared navigation, the search popup, the Search page, stable
 hooks, styling tokens, and the platform/theme ownership boundary. Read it
 before changing public layout or behavior. Never create screenshots unless the
 owner explicitly requests them.
+
+Claude Code reads \`CLAUDE.md\`, which directs it to that canonical bundled
+skill on demand.
 
 Install the repository-local authoring CLI once with \`yarn install\`. The
 generated \`package.json\` keeps validation, tests, and preview reproducible for

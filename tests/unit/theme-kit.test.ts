@@ -1,5 +1,5 @@
 import {execFile} from "node:child_process";
-import {cp, mkdtemp, readFile, symlink, writeFile} from "node:fs/promises";
+import {access, cp, mkdtemp, readFile, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
@@ -175,7 +175,8 @@ describe("@microfeed/theme-kit package loading", () => {
       "../../packages/theme-kit/assets/starter/",
       import.meta.url,
     );
-    const [skill, reference, bodyStart, search, header, fixture] = await Promise.all([
+    const [bridge, skill, reference, bodyStart, search, header, fixture] = await Promise.all([
+      readFile(new URL("CLAUDE.md", starter), "utf8"),
       readFile(new URL(".agents/skills/develop-microfeed-theme/SKILL.md", starter), "utf8"),
       readFile(new URL(".agents/skills/develop-microfeed-theme/references/public-site.md", starter), "utf8"),
       readFile(new URL("web-body-start.mustache", starter), "utf8"),
@@ -184,6 +185,10 @@ describe("@microfeed/theme-kit package loading", () => {
       readFile(new URL("fixtures/custom.json", starter), "utf8").then(JSON.parse),
     ]);
 
+    expect(bridge).toContain(
+      ".agents/skills/develop-microfeed-theme/SKILL.md",
+    );
+    expect(bridge).toContain("Resolve every referenced file relative");
     expect(skill).toContain("migrating a theme to v2");
     expect(skill).toContain("references/public-site.md");
     expect(reference).toContain("Theme and platform responsibilities");
@@ -238,6 +243,12 @@ describe("@microfeed/theme-kit package loading", () => {
 
     expect(new Set(skills).size).toBe(1);
     expect(new Set(references).size).toBe(1);
+
+    const bridges = await Promise.all([
+      "packages/theme-kit/assets/starter/CLAUDE.md",
+      "themes/default/CLAUDE.md",
+    ].map((filename) => readFile(path.join(repositoryRoot, filename), "utf8")));
+    expect(new Set(bridges).size).toBe(1);
   });
 
   it("loads the starter as a complete text-only package", async () => {
@@ -287,6 +298,14 @@ describe("@microfeed/theme-kit package loading", () => {
       );
     await expect(readFile(path.join(output, ".gitignore"), "utf8"))
       .resolves.toBe(".yarn/\nnode_modules/\n");
+    await expect(readFile(path.join(output, "CLAUDE.md"), "utf8"))
+      .resolves.toContain(
+        ".agents/skills/develop-microfeed-theme/SKILL.md",
+      );
+    await expect(access(path.join(
+      output,
+      ".agents/skills/develop-microfeed-theme/SKILL.md",
+    ))).resolves.toBeUndefined();
   });
 
   it("resolves relative paths from the invoking workspace directory", async () => {

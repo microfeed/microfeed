@@ -5,6 +5,9 @@
 - When a user asks to implement, fix, refactor, test, document, update CI, or
   otherwise change this repository, use the `develop-microfeed` skill. Do not
   use it for read-only questions, explanations, reviews, or status reports.
+- For documentation changes, also use the `document-microfeed` skill. For
+  changes to the bundled default theme or generic theme starter, also use the
+  `develop-microfeed-theme` skill.
 - Do not make changes directly on `main`. Create or continue a focused branch
   named `<type>/<short-kebab-case>` where `<type>` is `feature`, `fix`, `docs`,
   `refactor`, `test`, `ci`, or `chore`. Existing nonconforming branches may be
@@ -18,11 +21,13 @@
   handing work back. Confirm each process has exited so a human operator can
   run `yarn dev` without a port conflict; never stop a server you did not start.
 
-## Cloudflare deployment
+## Instance management and Cloudflare deployment
 
-- When a user asks to install, deploy, publish, update, configure, destroy,
-  remove, or uninstall microfeed on Cloudflare, use the repository's
-  `deploy-microfeed` skill.
+- When a user asks a coding agent to operate `yarn manage` against local or
+  Cloudflare state, use the repository's `deploy-microfeed` skill. This covers
+  accounts, initialization, connection, development, deployment, themes,
+  snapshots, status, destruction, Pages migration, domains, Access, built-in
+  authentication, configuration, and instance selection.
 - Perform every Cloudflare deployment change through `yarn manage`. Do not
   improvise with raw Wrangler commands, direct Cloudflare API calls, or a
   separate deployment implementation.
@@ -44,9 +49,9 @@
   or SSL settings. Report the final Workers & Pages, D1, and R2 dashboard links,
   the exact resource names, and whether each should be absent or preserved.
 - Never ask for or accept a Cloudflare token or microfeed password in chat.
-  Codex must never use `--admin-password`; that unsafe option is only for
-  non-Codex automation whose operator accepts command-history and process-list
-  exposure.
+  Coding agents must never use `--admin-password`; that unsafe option is only
+  for unattended automation whose operator accepts command-history and
+  process-list exposure.
 - Discover authorization and accounts first with `yarn manage accounts --json`.
   When the user wants a separate named login, use `yarn manage accounts
   --profile <name> --reauthorize`; do not replace another Wrangler profile.
@@ -77,17 +82,17 @@
 - Keep stable, unprocessed public assets in `public/`; do not move them into the
   source bundle or change their public URLs without an explicit migration.
 
-## Theme export
+## Theme repositories
 
-- When a user asks Codex to export, copy, fork, inspect, or begin developing an
-  installed theme from a saved instance, use the repository's
+- When a user asks a coding agent to initialize, export, copy, fork, inspect,
+  or begin developing a theme from a saved instance, use the repository's
   `export-microfeed-theme` skill.
-- Prefer `yarn manage theme export --active --instance <name> --git --json` and
-  its default `.microfeed/themes/<package-id>-<version>/` destination. Use an
-  explicit immutable theme ID when the user selects one.
-- Export and verify only. Do not install, activate, deactivate, delete, stage,
-  commit, create a remote, or push unless the user separately requests that
-  action. Stop every preview server started for verification.
+- Use `yarn manage theme init` to create a new theme identity from the site's
+  effective appearance. Use `yarn manage theme export` when the user wants an
+  exact installed immutable version and must preserve its package identity.
+- Initialize or export and verify only. Do not install, activate, deactivate,
+  delete, stage, commit, create a remote, or push unless the user separately
+  requests that action. Stop every preview server started for verification.
 
 ## API contracts and documentation
 
@@ -114,8 +119,9 @@
 
 ## Content management CLI
 
-- When a user asks Codex to list, read, create, update, delete, or upload media
-  for content on a microfeed site, use the `manage-microfeed-content` skill.
+- When a user asks a coding agent to list, read, create, update, delete, or
+  upload media for content on a microfeed site, use the
+  `manage-microfeed-content` skill.
   Do not use that operational skill when changing the CLI implementation or
   documentation itself.
 - Treat `docs/microfeed-cli.md` as the canonical command, option, output, and

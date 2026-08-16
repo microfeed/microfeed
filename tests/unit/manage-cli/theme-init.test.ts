@@ -435,6 +435,10 @@ describe("theme repository initialization", () => {
     );
     expect(initializedReadme).toContain("`local.my-active-theme@0.1.0`");
     expect(initializedReadme).toContain("yarn validate");
+    await expect(readFile(path.join(output, "CLAUDE.md"), "utf8"))
+      .resolves.toContain(
+        ".agents/skills/develop-microfeed-theme/SKILL.md",
+      );
     await expect(readFile(
       path.join(output, ".agents/skills/develop-microfeed-theme/SKILL.md"),
       "utf8",
@@ -560,6 +564,7 @@ describe("theme repository initialization", () => {
       ".yarnrc.yml",
       ".microfeed/schemas/manifest.schema.json",
       ".microfeed/schemas/theme-context.schema.json",
+      "CLAUDE.md",
       ".agents/skills/develop-microfeed-theme/SKILL.md",
       ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
       ".agents/skills/develop-microfeed-theme/references/public-site.md",

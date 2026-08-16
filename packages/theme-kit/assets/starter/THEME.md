@@ -10,6 +10,9 @@ hooks, styling tokens, and the platform/theme ownership boundary. Read it
 before changing public layout or behavior. Never create screenshots unless the
 owner explicitly requests them.
 
+Claude Code reads `CLAUDE.md`, which directs it to that canonical bundled
+skill on demand.
+
 Install the repository-local authoring CLI once with `yarn install`. The
 generated `package.json` keeps validation, tests, and preview reproducible for
 people, coding agents, and CI.
