@@ -21,7 +21,9 @@ Expected result: a new `microfeed` folder containing this repository.
 ## 2. Open the folder in your coding agent
 
 Open that folder in OpenAI Codex, Claude Code, Cursor, or another local coding
-agent. Then paste this prompt:
+agent. Claude Code reads the repository's `CLAUDE.md` bridge, which imports the
+shared `AGENTS.md` guidance and routes matching work to the canonical skills
+under `.agents/skills/`. Then paste this prompt:
 
 ```text
 Deploy microfeed to Cloudflare.

@@ -268,13 +268,15 @@ for every command, option, output contract, and safety rule.
 
 ## Agent skill
 
-A microfeed clone exposes the repository-owned `manage-microfeed-content`
-skill automatically from `.agents/skills/`. The npm package also includes the
-same skill at `dist/skills/manage-microfeed-content/` so agent hosts and skill
-installers can distribute it together with the CLI. The skill teaches site and
-instance vocabulary, browser-consent handoff, deterministic output,
-standalone-media versus item-image versus media-attachment semantics,
-credential safety, and deletion confirmation.
+A microfeed clone routes coding agents to the repository-owned
+`manage-microfeed-content` skill under `.agents/skills/`. Claude Code enters
+through the root `CLAUDE.md` bridge; compatible agent hosts can discover the
+skill directly. The npm package also includes the same skill at
+`dist/skills/manage-microfeed-content/` so agent hosts and skill installers can
+distribute it together with the CLI. The skill teaches site and instance
+vocabulary, browser-consent handoff, deterministic output, standalone-media
+versus item-image versus media-attachment semantics, credential safety, and
+deletion confirmation.
 
 ## Bugs and source
 

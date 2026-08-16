@@ -30,8 +30,14 @@ yarn preview --feed-url https://example.com/json/
 
 Read [THEME.md](./THEME.md), `microfeed-theme.json`, and the schemas under
 `.microfeed/schemas/` before editing. Establish a clean validation and test
-baseline before the first commit. If this directory is not already a Git
-repository, initialize it after those checks pass:
+baseline before the first commit.
+
+Coding-agent workflows remain canonical under `.agents/skills/`.
+`CLAUDE.md` directs Claude Code to the same theme-development skill without
+duplicating it.
+
+If this directory is not already a Git repository, initialize it after those
+checks pass:
 
 ```console
 git init --initial-branch main

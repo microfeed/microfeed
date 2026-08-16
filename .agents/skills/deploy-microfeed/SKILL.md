@@ -1,6 +1,6 @@
 ---
 name: deploy-microfeed
-description: Deploy and administer microfeed on Cloudflare from a local repository clone using the project-owned yarn manage CLI. Use when a user asks Codex to install, initialize, deploy, publish, update, connect, check, configure, destroy, remove, or uninstall a microfeed Worker, D1 database, R2 bucket, administrator login, preview environment, or custom domain.
+description: Deploy and administer microfeed from a local repository clone using the project-owned yarn manage CLI. Use when a user asks a coding agent to operate a local or Cloudflare instance, including accounts, initialization, connection, development, deployment, themes, snapshots, status, destruction, Pages migration, domains, Access, built-in authentication, configuration, or instance selection.
 ---
 
 # Deploy microfeed
@@ -24,12 +24,12 @@ their Cloudflare email, password, private password-setup link, or token in chat.
 
 ## Guardrails
 
-- Use this workflow only from local Codex with a browser that can complete
-  Wrangler's local OAuth callback. Do not attempt it from hosted or headless
-  Codex.
+- Use this workflow only from a local interactive coding-agent session whose
+  environment can complete Wrangler's localhost browser OAuth callback. Do not
+  attempt it from a hosted or headless agent session.
 - Never request a password or Cloudflare token in chat. Never use
   `--admin-password`; that deliberately unsafe option exists only for
-  non-Codex automation whose operator accepts shell-history, process-list,
+  unattended automation whose operator accepts shell-history, process-list,
   transcript, and CI-log exposure.
 - Relay the one-time password-creation URL printed by `yarn manage` exactly once
   so the user can open it. Treat it as private: never ask the user to paste it
@@ -125,10 +125,19 @@ successful steps were undone.
 - Prepare an `init --local` instance without starting it: `yarn manage deploy --local`
 - Existing compatible Worker not saved in this clone: `yarn manage connect`;
   connecting is read-only, so ask again before a later deployment
+- Isolated local development server: `yarn manage dev`
+- Theme initialization and live version management: `yarn manage theme`; use
+  [`export-microfeed-theme`](../export-microfeed-theme/SKILL.md) when creating
+  or exporting a standalone authoring repository
+- Portable backup or restore: `yarn manage snapshot`
 - Diagnostics only: `yarn manage status`
 - Destruction plan or removal: `yarn manage destroy`
+- Side-by-side migration from Cloudflare Pages: `yarn manage migrate-pages`
 - Production custom domain: `yarn manage domain`
+- Optional user-managed Cloudflare Access: `yarn manage access`
 - Administrator login or dashboard-path changes: `yarn manage auth`
+- Generate and validate local configuration: `yarn manage config`
+- List or select saved instances: `yarn manage instances` or `yarn manage use`
 - Isolated preview after production exists: `yarn manage init --preview`
 
 Use `init --no-r2` only when the user explicitly wants a content-only or test

@@ -1360,6 +1360,7 @@ async function writeThemePackage(
         )),
       );
       for (const relativePath of [
+        "CLAUDE.md",
         ".agents/skills/develop-microfeed-theme/SKILL.md",
         ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
         ".agents/skills/develop-microfeed-theme/references/public-site.md",

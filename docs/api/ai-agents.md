@@ -18,6 +18,10 @@ credential safety, and destructive-action confirmation. The published
 that distribute skills with npm packages. The top-level repository copy is the
 source of truth; packaging tests require the bundled copy to match it.
 
+Claude Code reads the clone's `CLAUDE.md`, which imports `AGENTS.md` and routes
+content work to that canonical skill. Other compatible agent hosts can discover
+the `.agents/skills/` copy directly.
+
 You do not need to read or install that skill manually when the agent is
 already working inside a microfeed clone. Describe the content outcome and the
 site; the agent should discover the repository guidance itself.

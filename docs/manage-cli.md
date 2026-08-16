@@ -412,12 +412,12 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 D1 version, then the bundled default fallback. The command copies the source
 theme's available slots
 and any declared packaged assets into an empty directory, adds the authoring
-kit, schemas, fixture, local package scripts, and instructions, and initializes a Git
-repository on `main`. It recursively creates the destination and any missing
-parent directories, so `~/microfeed-themes/` does not need to exist first. It
-refuses to write into a non-empty destination. Keeping the generated directory
-outside the microfeed checkout prevents the standalone theme repository from
-being committed to microfeed accidentally.
+kit, schemas, fixture, local package scripts, agent skill, and `CLAUDE.md`
+bridge, and initializes a Git repository on `main`. It recursively creates the
+destination and any missing parent directories, so `~/microfeed-themes/` does
+not need to exist first. It refuses to write into a non-empty destination.
+Keeping the generated directory outside the microfeed checkout prevents the
+standalone theme repository from being committed to microfeed accidentally.
 
 The derived package receives a separate `local.<directory-name>` package ID
 and starts at `0.1.0`, so edits cannot overwrite the source version. Its source
@@ -445,8 +445,9 @@ yarn manage theme export <theme-id> --instance personal \
 ```
 
 Export writes the templates, inherited assets, README, local package scripts,
-fixture, schemas, an independent `yarn.lock`, a pinned Yarn version, and a
-project-local `.yarnrc.yml` into an empty directory. The local Yarn
+fixture, schemas, agent skill, `CLAUDE.md` bridge, an independent `yarn.lock`,
+a pinned Yarn version, and a project-local `.yarnrc.yml` into an empty
+directory. The local Yarn
 configuration preapproves only `@microfeed/theme-kit`, so a newly published
 official toolkit can pass Yarn's package-age gate without weakening the gate
 for other packages. The generated dependency uses the compatible major range

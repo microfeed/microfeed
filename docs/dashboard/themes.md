@@ -486,6 +486,7 @@ the new theme starts at its own independent `0.1.0` manifest version.
 The generated repository contains:
 
 ```text
+CLAUDE.md
 package.json
 .gitignore
 .yarnrc.yml
@@ -507,8 +508,12 @@ fixtures/
 ```
 
 `THEME.md` is the coding-agent edit/test loop. The generated JSON Schemas are
-the contract for the manifest and render context. The render context is the
-public JSON Feed plus:
+the contract for the manifest and render context.
+
+Claude Code reads `CLAUDE.md`, which routes it to the same canonical bundled
+theme-development skill used by other compatible coding agents.
+
+The render context is the public JSON Feed plus:
 
 - `current_year`
 - `_theme.package_id`
