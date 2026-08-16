@@ -219,6 +219,48 @@ yarn microfeed item delete 0HGJLSML3P1 \
 
 There is no generic `--yes` option.
 
+## Develop webhook receivers
+
+Create a complete local JavaScript receiver without contacting a site:
+
+```console
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language javascript
+```
+
+The generated server will provide `http://127.0.0.1:3000/webhook` after it
+starts. Next, create that URL under **Admin → Webhooks → Endpoints**, copy its
+one-time `whsec_…` secret as `MICROFEED_WEBHOOK_SECRET`, then install and run
+the receiver. Send an Event Explorer test only after the receiver is listening.
+
+Add `--language python` for Flask. The starter binds only
+`http://127.0.0.1:3000/webhook`, verifies exact raw bytes with the maintained
+Standard Webhooks library, displays delivery/event/test/duplicate details, and
+prevents signed test events from producing production effects. It is a local
+inspector with in-memory duplicate tracking, not a production queue.
+
+Use the tools for distinct jobs:
+
+- `webhook scaffold` creates a receiver project offline.
+- `webhook listen` verifies, displays, and optionally forwards signed local
+  deliveries.
+- `webhook sample <event>` reads one exact unsigned example from an instance's
+  generated OpenAPI contract.
+- Admin Event Explorer sends a real signed, budgeted, retryable test.
+
+Every endpoint receives one unique `whsec_…` signing secret. Store it only in
+`MICROFEED_WEBHOOK_SECRET`. The Standard Webhooks signature authenticates
+microfeed and detects tampering; no additional passcode or URL credential is
+needed.
+
+Within a microfeed clone, `.microfeed/webhooks/<endpoint-name>/` is the
+recommended development location. The clone ignores `.microfeed/`, so local
+receiver code and secrets are not accidentally committed to microfeed. Move a
+hardened receiver into its own repository when it becomes a deployed service.
+The root `yarn microfeed` command resolves relative scaffold paths from the Yarn
+project root, so this directory is created beside the root `package.json`, not
+inside `packages/cli`.
+
 ## Call the REST API
 
 The raw API command accepts only relative `/api/v1/…` paths:

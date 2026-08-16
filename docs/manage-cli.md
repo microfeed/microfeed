@@ -350,7 +350,7 @@ yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enab
 | `--preview` | Deploy preview instead of production. |
 | `--local` | Prepare an instance created with `init --local`; cannot target a Cloudflare-managed instance or be combined with `--preview`. |
 | `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
-| `--enable-webhooks` | Explicitly create and bind a dedicated production, preview, or locally simulated webhook Queue and create its endpoint-secret encryption key. Ordinary deployments do not request Queue permission or create Queue resources. |
+| `--enable-webhooks` | Explicitly create and bind a dedicated production or preview webhook Queue and create its endpoint-secret encryption key. With `--local`, prepares the same simulated binding explicitly, although plain `dev` already does this temporarily. Ordinary Cloudflare deployments do not request Queue permission or create Queue resources. |
 | `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
 | `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
 
@@ -375,11 +375,13 @@ restore baseline only when D1 is still bootstrap-only and the new bucket is
 empty; failing that eligibility check does not undo working R2 setup.
 
 Webhook enablement is resumable and isolated by environment. Production and
-preview use separate Queue names; local development uses Wrangler's Queue
-simulation. The generated Worker config binds the same Queue as producer and
-consumer and runs a five-minute reconciler. Once enabled, subsequent deployments
-preserve the binding. An owned Queue appears in the reviewed destroy plan and is
-removed with its environment.
+preview use separate Queue names and require explicit opt-in because they add
+Cloudflare resources, authorization, account-wide usage, and possible cost.
+The generated Worker config binds the same Queue as producer and consumer and
+runs a five-minute reconciler. Once enabled, subsequent deployments preserve
+the binding. An owned Queue appears in the reviewed destroy plan and is removed
+with its environment. Plain local `dev` temporarily generates the equivalent
+Wrangler simulation without changing saved production or preview enablement.
 
 ## `yarn manage dev`
 
@@ -393,13 +395,21 @@ site is connected to Cloudflare, development uses isolated local D1 and R2
 simulations.
 
 ```console
-yarn manage dev [--instance <name>] [--preview]
+yarn manage dev [--instance <name>] [--preview] [--enable-webhooks]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the local sandbox. |
 | `--preview` | Use preview configuration with isolated local data. |
+| `--enable-webhooks` | Optional explicit alias. Webhook simulation is already enabled for every local `dev` run. |
+
+Plain `dev` always generates a temporary Wrangler configuration with the local
+Queue producer, consumer, five-minute reconciler, and local endpoint-secret
+encryption key. It creates no Cloudflare Queue or other resource, requests no
+Cloudflare permission, incurs no Cloudflare Queue or Worker charge, and does
+not change whether preview or production webhooks are enabled. The original
+generated configuration is restored when the development server exits.
 
 ## `yarn manage theme`
 

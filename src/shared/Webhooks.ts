@@ -47,6 +47,7 @@ export const WEBHOOK_EVENT_TYPE_SET = new Set<string>(WEBHOOK_EVENT_TYPES);
 export const WEBHOOK_LIMITS = {
   autoPauseTerminalFailures: 10,
   dailyDeliveries: 1_000,
+  maximumDailyDeliveries: 1_000_000,
   endpointCount: 20,
   payloadBytes: 256 * 1_024,
   responseDiagnosticBytes: 4_096,
@@ -150,6 +151,11 @@ export interface WebhookOverview {
   endpoints: number;
   estimatedQueueOperationsToday: number;
   recentFailures: number;
+}
+
+export interface WebhookSettings {
+  dailyDeliveryLimit: number;
+  updatedAt?: string;
 }
 
 export function webhookSubjectType(

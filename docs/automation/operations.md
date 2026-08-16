@@ -15,7 +15,7 @@ not intentionally time out the webhook request while a model runs.
 | `pending` / `retrying` | Waiting for the next attempt. | Inspect the schedule and endpoint health. |
 | `succeeded` | Receiver returned `2xx`. | Continue automation-side monitoring. |
 | `failed` | A terminal response occurred or six attempts were exhausted. | Fix the receiver, then redeliver if still useful. |
-| `suppressed_budget` | The all-or-none daily reservation would exceed 1,000. | Wait for the UTC reset or reduce fanout. |
+| `suppressed_budget` | The all-or-none daily reservation would exceed the configured budget. | Raise the guard if intended, wait for the UTC reset, or reduce fanout. |
 | `suppressed_endpoint_paused` | The endpoint was auto-paused. | Repair, test successfully, and explicitly resume. |
 | `canceled_endpoint_paused` | Pending work was canceled when the circuit opened. | Choose manual redelivery after recovery. |
 | `canceled_endpoint_disabled` | An administrator disabled or deleted the endpoint. | Re-enable only if intentional. |
@@ -38,12 +38,21 @@ delivery deduplication and action idempotency.
 
 ## Budget, cost, and Queue accounting
 
-microfeed reserves the complete fanout atomically against a 1,000-delivery UTC
-daily budget. It never sends a partial fanout. Tests and manual redeliveries use
-the same budget. Event Explorer endpoint sends are tests and use that budget;
-Explorer previews, copy actions, and loopback terminal prints are free and do
-not create delivery records. The Admin overview estimates Queue operations from
-reserved deliveries. `yarn manage status` verifies the Queue and reports its realtime
+microfeed reserves the complete fanout atomically against an owner-controlled
+UTC daily delivery budget. The default is 1,000; an administrator can change it
+immediately from 0 through 1,000,000 under **Webhooks → Overview → Change
+budget** without a deployment or restart. This is a fail-closed cost guard, not
+a microfeed pricing tier or a Cloudflare quota. Zero stops new reservations,
+and lowering the limit below today's usage leaves zero available until the
+limit is raised or the next 00:00 UTC reset. Already queued deliveries continue.
+
+microfeed never sends a partial fanout. Tests and manual redeliveries use the
+same configured budget. Event Explorer endpoint sends are tests and use that
+budget; Explorer previews, copy actions, and loopback terminal prints are free
+and do not create delivery records. Retries do not reserve another delivery,
+but each attempt can increase Queue operations and Worker execution. The Admin
+overview shows used, available, and projected operation counts before a budget
+change. `yarn manage status` verifies the Queue and reports its realtime
 backlog and oldest message; Cloudflare-observed writes, reads, deletes, total
 billable operations, and average retries for both the site Queue and the
 account-wide UTC-day window; microfeed-side delivery accounting; and the

@@ -77,12 +77,14 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "--forward-to accepts only an explicit loopback HTTP address. The listener preserves the exact body and webhook headers, times out after nine seconds, and returns 502 or 504 when forwarding fails.",
       "The listener does not create an endpoint or expose a remote relay. In local development, create an endpoint for http://127.0.0.1:8978/webhook in Admin → Webhooks.",
       "Use `webhook sample <event>` to read an exact generated example from the selected instance's OpenAPI contract without starting a listener.",
+      "Use `webhook scaffold <directory>` to create an offline JavaScript or Python receiver project. Inside a microfeed clone, prefer the ignored .microfeed/webhooks/<endpoint-name>/ workspace. It writes files only, installs nothing, and never creates an endpoint.",
     ],
     examples: [
       "yarn microfeed webhook listen",
       "MICROFEED_WEBHOOK_SECRET=whsec_... yarn microfeed webhook listen --json",
       "yarn microfeed webhook listen --secret-file .webhook-secret --forward-to http://127.0.0.1:3000/hooks/microfeed",
       "yarn microfeed webhook sample item.published --instance production --json",
+      "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 --language javascript",
     ],
     options: [
       option("--secret-file <path>", "Read the signing secret from a UTF-8 file."),
@@ -94,9 +96,10 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     subcommands: [
       {name: "listen", description: "Verify, display, and optionally forward local webhook deliveries."},
       {name: "sample <event>", description: "Print the instance's exact OpenAPI example for one event."},
+      {name: "scaffold <directory>", description: "Create an offline JavaScript or Python receiver starter."},
     ],
     summary: "Inspect exact examples or receive verified deliveries during local development.",
-    usage: "yarn microfeed webhook <listen|sample> [arguments] [options]",
+    usage: "yarn microfeed webhook <listen|sample|scaffold> [arguments] [options]",
   },
   {
     details: [
@@ -132,6 +135,28 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     path: ["webhook", "sample"],
     summary: "Print one exact webhook example from an instance's OpenAPI contract.",
     usage: "yarn microfeed webhook sample <event> [--instance <name>] [--json]",
+  },
+  {
+    details: [
+      "Creates one local receiver project from templates bundled with @microfeed/cli. The command works offline, installs and starts nothing, creates no endpoint, and performs no authentication.",
+      "JavaScript is the default. Choose Python with --language python. The destination must not already exist; there is no overwrite or force option.",
+      "Inside a microfeed clone, use .microfeed/webhooks/<endpoint-name>/. The CLI resolves relative scaffold paths from Yarn's project root, so `yarn microfeed` creates it beside the root package.json rather than under packages/cli. The ignored local workspace is not checked into microfeed.",
+      "After scaffolding, create http://127.0.0.1:3000/webhook in Admin → Webhooks → Endpoints and copy its one-time whsec_… secret. Then install dependencies and start the receiver with that value as MICROFEED_WEBHOOK_SECRET before sending an Event Explorer test.",
+      "Both starters bind only to 127.0.0.1:3000, verify exact raw request bytes with standardwebhooks, display duplicates and test status, return 401 for invalid signatures and 204 after acceptance, and have no production side effects.",
+      "The starter's in-memory duplicate set resets on restart. Add durable acknowledgement, background work, idempotency, loop prevention, approval policy, audit logs, and cost alerts before production.",
+    ],
+    examples: [
+      "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1",
+      "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 --language python",
+      "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 --json",
+    ],
+    options: [
+      option("--language <javascript|python>", "Select the receiver language. Defaults to javascript."),
+      jsonOption,
+    ],
+    path: ["webhook", "scaffold"],
+    summary: "Create a loopback-only webhook receiver starter without installing anything.",
+    usage: "yarn microfeed webhook scaffold <directory> [--language javascript|python] [--json]",
   },
   {
     details: [

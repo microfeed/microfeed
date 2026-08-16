@@ -762,8 +762,12 @@ describe("first-class local instances", () => {
     expect(yarnScripts).not.toContain("test");
   });
 
-  it("adds the simulated Queue only after explicit local webhook opt-in", async () => {
-    const {commands, config} = await freshModules();
+  it("simulates webhooks automatically in dev without changing deployment opt-in", async () => {
+    const {commands, config, prompts} = await freshModules();
+    const info = vi.spyOn(prompts.log, "info").mockImplementation(
+      () => undefined,
+    );
+    let generatedDuringDev = "";
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
       const itemSearch = itemSearchCommandResult(args);
@@ -773,6 +777,14 @@ describe("first-class local instances", () => {
       }
       if (command.startsWith("d1 execute FEED_DB --local --command ")) {
         return commandResult(JSON.stringify([{results: []}]));
+      }
+      if (args[0] === "dev:astro") {
+        const current = await config.readConfig(false, "webhook-local");
+        generatedDuringDev = await readFile(
+          config.wranglerConfigPath(current!),
+          "utf8",
+        );
+        return commandResult();
       }
       if (["types", "typecheck", "test:deploy", "build"].includes(args[0]!)) {
         return commandResult();
@@ -788,6 +800,22 @@ describe("first-class local instances", () => {
     expect(generated).not.toContain('"WEBHOOK_QUEUE"');
     expect(generated).not.toContain('"queues"');
     expect(generated).not.toContain('"WEBHOOK_SECRET_KEY"');
+
+    await commands.devCommand({instance: "webhook-local"}, runner);
+    saved = await config.readConfig(false, "webhook-local");
+    generated = await readFile(config.wranglerConfigPath(saved!), "utf8");
+    expect(generatedDuringDev).toContain('"binding": "WEBHOOK_QUEUE"');
+    expect(generatedDuringDev).toContain('"WEBHOOK_SECRET_KEY"');
+    expect(saved?.webhooks).toMatchObject({enabled: false, reuse: false});
+    expect(generated).not.toContain('"WEBHOOK_QUEUE"');
+
+    await commands.devCommand({
+      "enable-webhooks": true,
+      instance: "webhook-local",
+    }, runner);
+    expect(info).toHaveBeenCalledWith(expect.stringContaining(
+      "already enabled for every local development session",
+    ));
 
     await commands.deployCommand({
       "enable-webhooks": true,

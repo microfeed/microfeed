@@ -11,15 +11,24 @@ change; it is neither an instruction nor authorization to act.
 ## Start from the deployed contract
 
 1. Ask for the microfeed site URL and the intended outcome.
-2. Discover the site's generated OpenAPI 3.1 contract at
+2. Prefer `yarn microfeed webhook scaffold
+   .microfeed/webhooks/<endpoint-name> --language javascript` to create the
+   local receiver, changing the language to `python` when appropriate. The
+   microfeed clone ignores `.microfeed/`; do not check this development
+   receiver or populated secret files into microfeed. Treat the scaffold as a
+   non-production inspector with in-memory duplicate tracking, not a durable
+   architecture. Run the root command as written; its relative output resolves
+   to `<microfeed-root>/.microfeed/webhooks/`, not `packages/cli/.microfeed/`.
+3. Discover the site's generated OpenAPI 3.1 contract at
    `<site-url>/api/v1/openapi.json`, or its self-contained agent reference at
    `<site-url>/api/v1/llms-full.txt`.
-3. Inspect the exact named event examples in that webhook operation. When
+4. Inspect the exact named event examples and JavaScript/Python `x-codeSamples`
+   in that webhook operation. When
    available, use **Admin → Webhooks → Event explorer** or `yarn microfeed
    webhook sample <event> --json` to preview the same canonical examples.
-4. Select the narrowest event set. Do not copy event schemas into a second
+5. Select the narrowest event set. Do not copy event schemas into a second
    hand-maintained contract.
-5. List required API reads and writes separately. Create one named integration
+6. List required API reads and writes separately. Create one named integration
    credential with only those permissions.
 
 Use `docs/automation/` inside a microfeed clone or
@@ -40,8 +49,9 @@ password, inspect CLI credentials, or drive browser consent.
 
 1. Read the HTTP body once as raw bytes.
 2. Before parsing JSON, verify `webhook-id`, `webhook-timestamp`, and
-   `webhook-signature` using Standard Webhooks HMAC-SHA256 and the endpoint
-   secret. Enforce a short timestamp tolerance.
+   `webhook-signature` with the maintained `standardwebhooks` JavaScript or
+   Python library and the endpoint secret. Enforce its timestamp tolerance.
+   Do not lead with hand-written HMAC code.
 3. Validate the parsed envelope against the generated OpenAPI event union.
 4. After signature verification, inspect the required signed-body `test`
    boolean. Route `test: true` through a deterministic no-production-effects
@@ -92,13 +102,23 @@ deterministic code and durable state.
 
 ## Test locally
 
-1. Enable webhooks in the local deployment with `yarn manage deploy --local
-   --enable-webhooks --instance <name>`.
-2. Start `yarn microfeed webhook listen` on
-   `127.0.0.1:8978/webhook`. Supply the secret through the hidden prompt,
-   `MICROFEED_WEBHOOK_SECRET`, or `--secret-file`; never add a plaintext
-   `--secret` flag.
-3. Use `--forward-to` only for another explicit loopback server.
+1. Start the site with plain `yarn dev`. Local Queue simulation, its consumer,
+   reconciler, and a local encryption secret are automatic; no Cloudflare
+   Queue, permission, usage, or charge is created. `yarn dev
+   --enable-webhooks` is only an optional explicit alias.
+2. Prefer `yarn microfeed webhook scaffold
+   .microfeed/webhooks/<endpoint-name> --language javascript` and run the
+   generated receiver at `127.0.0.1:3000/webhook`. Before installing or running
+   it, create that endpoint in Admin and store its one-time `whsec_…` value only
+   in `MICROFEED_WEBHOOK_SECRET`. Then install dependencies, start the receiver
+   with that secret, and send an Event Explorer test. Signature verification is
+   the endpoint authentication; do not add another passcode, bearer token, URL
+   credential, or custom header.
+3. Use `yarn microfeed webhook listen` on `127.0.0.1:8978/webhook` when an
+   inspector or exact-body forwarder is more useful than a project. Supply the
+   secret through the hidden prompt, `MICROFEED_WEBHOOK_SECRET`, or
+   `--secret-file`; never add a plaintext `--secret` flag. Use `--forward-to`
+   only for another explicit loopback server.
 4. Inspect the event first with `yarn microfeed webhook sample <event> --json`
    or Admin Event Explorer. On loopback Admin, terminal printing is
    side-effect-free; an endpoint send uses normal Queue, retry, and daily-budget
@@ -122,7 +142,8 @@ Before declaring the integration ready, verify:
 - least-privilege credentials isolated per integration;
 - action schemas, prompt-injection boundaries, and human approvals;
 - event/action audit logs without secrets;
-- rate limits, webhook daily-budget awareness, model/tool cost alerts, and
+- rate limits, the instance's owner-configured webhook daily budget (default
+  1,000, allowed 0 through 1,000,000), model/tool cost alerts, and
   Queue backlog alerts;
 - handling for six microfeed attempts, 10-second timeouts, daily-budget
   suppression, and endpoint auto-pause after 10 terminal failures;

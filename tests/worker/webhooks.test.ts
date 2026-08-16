@@ -19,8 +19,11 @@ import {
 } from "@/server/webhooks/explorer";
 import {
   createWebhookEndpoint,
+  readWebhookSettings,
   resumeWebhookEndpoint,
   rotateWebhookEndpointSecret,
+  updateWebhookSettings,
+  webhookOverview,
 } from "@/server/webhooks/store";
 import {WEBHOOK_RETRY_DELAYS_SECONDS} from "@/shared/Webhooks";
 import {apiWebhookEventSchema} from "@/shared/ApiSchemas";
@@ -125,6 +128,9 @@ beforeEach(async () => {
     env.FEED_DB.prepare("DELETE FROM webhook_alerts"),
     env.FEED_DB.prepare("DELETE FROM webhook_endpoints"),
     env.FEED_DB.prepare(
+      "INSERT INTO webhook_settings (id, daily_delivery_limit, updated_at) VALUES (1, 1000, CURRENT_TIMESTAMP) ON CONFLICT (id) DO UPDATE SET daily_delivery_limit = 1000, updated_at = CURRENT_TIMESTAMP",
+    ),
+    env.FEED_DB.prepare(
       "DELETE FROM settings WHERE category LIKE 'webhook-atomic-%'",
     ),
     env.FEED_DB.prepare("DELETE FROM items WHERE id = 'explorer-item'"),
@@ -132,6 +138,98 @@ beforeEach(async () => {
 });
 
 describe("webhook fanout and accounting", () => {
+  it("updates the runtime delivery budget without a deployment", async () => {
+    await expect(updateWebhookSettings(env.FEED_DB, {
+      dailyDeliveryLimit: 10_000,
+    })).rejects.toThrow(/Confirm/u);
+    await expect(updateWebhookSettings(env.FEED_DB, {
+      dailyDeliveryLimit: 1_000_001,
+      highCostAcknowledged: true,
+    })).rejects.toThrow(/whole number/u);
+
+    await expect(updateWebhookSettings(env.FEED_DB, {
+      dailyDeliveryLimit: 10_000,
+      highCostAcknowledged: true,
+    })).resolves.toMatchObject({dailyDeliveryLimit: 10_000});
+    await expect(readWebhookSettings(env.FEED_DB))
+      .resolves.toMatchObject({dailyDeliveryLimit: 10_000});
+    await expect(webhookOverview(runtime()))
+      .resolves.toMatchObject({dailyLimit: 10_000});
+
+    await expect(updateWebhookSettings(env.FEED_DB, {
+      dailyDeliveryLimit: 0,
+    })).resolves.toMatchObject({dailyDeliveryLimit: 0});
+  });
+
+  it("suppresses below current usage until the budget is raised", async () => {
+    await insertEndpoint("budget-change");
+    await env.FEED_DB.prepare(
+      "INSERT INTO webhook_subscriptions (endpoint_id, event_type) VALUES ('budget-change', 'item.created')",
+    ).run();
+    await updateWebhookSettings(env.FEED_DB, {
+      dailyDeliveryLimit: 2_000,
+      highCostAcknowledged: true,
+    });
+    await env.FEED_DB.prepare(
+      "INSERT INTO webhook_daily_usage (usage_day, deliveries) VALUES (date('now'), 1500)",
+    ).run();
+    await updateWebhookSettings(env.FEED_DB, {dailyDeliveryLimit: 1_000});
+
+    const queueIds: string[] = [];
+    const suppressed = await emitWebhookEvent(
+      runtime(queueIds),
+      new Request("https://feed.example.com/api/v1/items/"),
+      {object: {id: "below"}, subjectId: "below", type: "item.created"},
+      {origin: "api"},
+    );
+    expect(suppressed).toMatchObject({deliveryIds: [], suppressed: "daily_budget"});
+    expect(queueIds).toEqual([]);
+
+    await updateWebhookSettings(env.FEED_DB, {
+      dailyDeliveryLimit: 2_000,
+      highCostAcknowledged: true,
+    });
+    const emitted = await emitWebhookEvent(
+      runtime(queueIds),
+      new Request("https://feed.example.com/api/v1/items/"),
+      {object: {id: "raised"}, subjectId: "raised", type: "item.created"},
+      {origin: "api"},
+    );
+    expect(emitted.deliveryIds).toHaveLength(1);
+    expect(await env.FEED_DB.prepare(
+      "SELECT deliveries FROM webhook_daily_usage WHERE usage_day = date('now')",
+    ).first()).toEqual({deliveries: 1_501});
+  });
+
+  it("atomically permits only the fanout that fits during concurrent reservations", async () => {
+    await insertEndpoint("budget-concurrent");
+    await env.FEED_DB.prepare(
+      "INSERT INTO webhook_subscriptions (endpoint_id, event_type) VALUES ('budget-concurrent', 'item.created')",
+    ).run();
+    await updateWebhookSettings(env.FEED_DB, {dailyDeliveryLimit: 1});
+    const queueIds: string[] = [];
+    const results = await Promise.all([
+      emitWebhookEvent(
+        runtime(queueIds),
+        new Request("https://feed.example.com/api/v1/items/"),
+        {object: {id: "concurrent-one"}, subjectId: "concurrent-one", type: "item.created"},
+        {origin: "api"},
+      ),
+      emitWebhookEvent(
+        runtime(queueIds),
+        new Request("https://feed.example.com/api/v1/items/"),
+        {object: {id: "concurrent-two"}, subjectId: "concurrent-two", type: "item.created"},
+        {origin: "api"},
+      ),
+    ]);
+    expect(results.filter(({deliveryIds}) => deliveryIds.length === 1)).toHaveLength(1);
+    expect(results.filter(({suppressed}) => suppressed === "daily_budget")).toHaveLength(1);
+    expect(queueIds).toHaveLength(1);
+    expect(await env.FEED_DB.prepare(
+      "SELECT deliveries FROM webhook_daily_usage WHERE usage_day = date('now')",
+    ).first()).toEqual({deliveries: 1});
+  });
+
   it("records API content, context headers, and its outbox in the mutation path", async () => {
     await insertEndpoint("api-route");
     await env.FEED_DB.batch([

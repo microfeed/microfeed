@@ -35,6 +35,7 @@ import {
 } from "./WebhookExamples";
 import {MICROFEED_VERSION} from "./Version";
 import {API_BASE_PATH} from "./ApiVersion";
+import {WEBHOOK_OPENAPI_CODE_SAMPLES} from "./WebhookQuickstarts";
 import * as z from "zod";
 
 const json = (schema: z.ZodType) => ({
@@ -96,6 +97,7 @@ export const OPENAPI_DOCUMENT = createDocument({
   webhooks: {
     microfeedEvent: {
       post: {
+        "x-codeSamples": [...WEBHOOK_OPENAPI_CODE_SAMPLES],
         security: [],
         operationId: "receiveMicrofeedWebhook",
         summary: "Receive a microfeed webhook event",

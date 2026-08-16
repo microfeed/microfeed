@@ -19,6 +19,8 @@ import type {
 } from "@/shared/Webhooks";
 
 interface Props {
+  dailyLimit?: number;
+  deliveriesToday?: number;
   endpoints: WebhookEndpointSummary[];
   initialEndpointId?: string;
   initialEventType?: WebhookEventType;
@@ -55,6 +57,8 @@ function eventGroups(): Array<[string, WebhookEventDefinition[]]> {
 }
 
 export default function WebhookEventExplorerApp({
+  dailyLimit = 1_000,
+  deliveriesToday = 0,
   endpoints,
   initialEndpointId,
   initialEventType = "webhook.test",
@@ -155,7 +159,7 @@ export default function WebhookEventExplorerApp({
       `Send ${eventType} to ${endpoint.name}?`,
       endpoint.url,
       "This is a signed test delivery and must not cause production side effects.",
-      "It reserves one of the 1,000 daily deliveries and may retry.",
+      `It reserves one delivery from the daily budget (${Math.max(dailyLimit - deliveriesToday, 0).toLocaleString("en-US")} currently available) and may retry.`,
       ...(subscriptionMismatch ? ["The endpoint is not subscribed to this event; Event Explorer will bypass that subscription."] : []),
     ].join("\n\n");
     if (!window.confirm(warning)) return;
@@ -264,7 +268,7 @@ export default function WebhookEventExplorerApp({
             <Button disabled={busy || !endpoint || endpoint.status === "disabled" || !preview} onClick={send} type="button">Send test delivery</Button>
             {localPrintAvailable && <Button disabled={busy || !preview} onClick={print} type="button" variant="outline">Print in yarn dev</Button>}
           </div>
-          <p className="text-xs text-muted-foreground">Sending reserves 1 of the 1,000 daily deliveries and can retry. Previewing, copying, and local printing are free and side-effect-free.</p>
+          <p className="text-xs text-muted-foreground">Sending reserves 1 delivery from the {dailyLimit.toLocaleString("en-US")}-delivery daily budget and can retry. Previewing, copying, and local printing are free and side-effect-free.</p>
           {deliveryId && <p className="rounded-lg border p-3 text-sm">Delivery <code>{deliveryId}</code> was created. <a className="underline underline-offset-4" href={deliveriesUrl}>Open Delivery details</a>.</p>}
         </div>
       </AdminSectionCard>

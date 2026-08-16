@@ -1,7 +1,9 @@
 import {createHmac, timingSafeEqual} from "node:crypto";
-import {readFile} from "node:fs/promises";
+import {mkdir, readFile, readdir, stat, writeFile} from "node:fs/promises";
 import {createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse} from "node:http";
 import type {AddressInfo} from "node:net";
+import path from "node:path";
+import {fileURLToPath} from "node:url";
 import {parseOptions, stringFlag} from "./arguments.js";
 import {CliError} from "./errors.js";
 import {publicSiteOrigin, type GlobalOptions} from "./http.js";
@@ -9,6 +11,8 @@ import {publicSiteOrigin, type GlobalOptions} from "./http.js";
 const DEFAULT_PORT = 8978;
 const MAX_BODY_BYTES = 256 * 1024;
 const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
+const WEBHOOK_STARTER_LANGUAGES = ["javascript", "python"] as const;
+type WebhookStarterLanguage = typeof WEBHOOK_STARTER_LANGUAGES[number];
 
 export interface ListenOptions {
   forwardTo?: string;
@@ -304,6 +308,136 @@ async function webhookSampleCommand(
   );
 }
 
+interface WebhookScaffoldResult {
+  createdFiles: string[];
+  directory: string;
+  language: WebhookStarterLanguage;
+  localEndpointUrl: string;
+  nextStepCommands: string[];
+}
+
+function starterDirectory(language: WebhookStarterLanguage): string {
+  return fileURLToPath(
+    new URL(`../templates/webhook/${language}/`, import.meta.url),
+  );
+}
+
+export function resolveWebhookScaffoldDirectory(
+  directoryInput: string,
+  workingDirectory = process.cwd(),
+  projectDirectory = process.env.PROJECT_CWD,
+): string {
+  const baseDirectory = projectDirectory?.trim()
+    ? path.resolve(projectDirectory)
+    : workingDirectory;
+  return path.resolve(baseDirectory, directoryInput);
+}
+
+export async function scaffoldWebhookReceiver(
+  directoryInput: string,
+  language: WebhookStarterLanguage = "javascript",
+): Promise<WebhookScaffoldResult> {
+  const directory = resolveWebhookScaffoldDirectory(directoryInput);
+  try {
+    await stat(directory);
+    throw new CliError(
+      `The scaffold destination already exists: ${directory}. Choose a new directory; webhook scaffold never overwrites files.`,
+    );
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") {
+      throw new CliError(
+        `Could not inspect the scaffold destination: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  const sourceDirectory = starterDirectory(language);
+  const entries = (await readdir(sourceDirectory, {withFileTypes: true}))
+    .filter((entry) => entry.isFile())
+    .map((entry) => ({
+      output: entry.name === "gitignore" ? ".gitignore" : entry.name,
+      source: entry.name,
+    }))
+    .sort((left, right) => left.output.localeCompare(right.output));
+  await mkdir(path.dirname(directory), {recursive: true});
+  await mkdir(directory);
+  try {
+    for (const entry of entries) {
+      await writeFile(
+        path.join(directory, entry.output),
+        await readFile(path.join(sourceDirectory, entry.source)),
+        {flag: "wx"},
+      );
+    }
+  } catch (error) {
+    throw new CliError(
+      `Could not create the webhook starter: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  const nextStepCommands = language === "javascript"
+    ? [
+        `cd ${JSON.stringify(directory)}`,
+        "yarn install",
+        "MICROFEED_WEBHOOK_SECRET=whsec_... yarn start",
+      ]
+    : [
+        `cd ${JSON.stringify(directory)}`,
+        "python3 -m venv .venv",
+        ". .venv/bin/activate",
+        "pip install -r requirements.txt",
+        "MICROFEED_WEBHOOK_SECRET=whsec_... python server.py",
+      ];
+  return {
+    createdFiles: entries.map(({output}) => output),
+    directory,
+    language,
+    localEndpointUrl: "http://127.0.0.1:3000/webhook",
+    nextStepCommands,
+  };
+}
+
+async function webhookScaffoldCommand(
+  args: string[],
+  json: boolean,
+): Promise<void> {
+  const parsed = parseOptions(args, new Set(["language"]));
+  if (parsed.positionals.length !== 1) {
+    throw new CliError(
+      "Usage: yarn microfeed webhook scaffold <directory> [--language javascript|python] [--json]",
+    );
+  }
+  const languageInput = stringFlag(parsed, "language") ?? "javascript";
+  if (!WEBHOOK_STARTER_LANGUAGES.includes(
+    languageInput as WebhookStarterLanguage,
+  )) {
+    throw new CliError("--language must be javascript or python.");
+  }
+  const result = await scaffoldWebhookReceiver(
+    parsed.positionals[0]!,
+    languageInput as WebhookStarterLanguage,
+  );
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+    return;
+  }
+  process.stdout.write([
+    `Created the ${result.language} webhook receiver in ${result.directory}.`,
+    `After it starts, the receiver will listen at ${result.localEndpointUrl}.`,
+    "",
+    `Before starting it, create a webhook endpoint for ${result.localEndpointUrl} in Admin → Webhooks → Endpoints.`,
+    "Copy the one-time whsec_… signing secret; this is your MICROFEED_WEBHOOK_SECRET.",
+    "",
+    "Then install dependencies and run the receiver with that secret:",
+    ...result.nextStepCommands,
+    "",
+    "With the receiver running, send a signed test from Admin → Webhooks → Event explorer.",
+    "This starter is a local inspector. Add durable work, deduplication, idempotency, loop prevention, and approval policy before production.",
+    "",
+  ].join("\n"));
+}
+
 async function webhookListenCommand(args: string[], json: boolean): Promise<void> {
   const parsed = parseOptions(args, new Set(["forward-to", "port", "secret-file"]));
   if (parsed.positionals.length > 0) throw new CliError("webhook listen does not accept positional arguments.");
@@ -348,7 +482,10 @@ export async function webhookCommand(
   if (subcommand === "sample") {
     return webhookSampleCommand(rest, options);
   }
+  if (subcommand === "scaffold") {
+    return webhookScaffoldCommand(rest, options.json);
+  }
   throw new CliError(
-    "Usage: yarn microfeed webhook <listen|sample> [arguments] [options]",
+    "Usage: yarn microfeed webhook <listen|sample|scaffold> [arguments] [options]",
   );
 }

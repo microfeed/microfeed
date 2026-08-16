@@ -763,11 +763,29 @@ describe("documentation site", () => {
     }
     expect(pages.get("index.md")).toContain("**webhook** announces what changed");
     expect(pages.get("index.md")).toContain("generated OpenAPI");
+    expect(pages.get("setup-and-test.md")).toContain("webhook scaffold");
+    expect(pages.get("setup-and-test.md")).toContain(
+      ".microfeed/webhooks/endpoint1",
+    );
+    expect(pages.get("setup-and-test.md")).toContain(
+      "<microfeed-root>/packages/cli/.microfeed/webhooks/endpoint1",
+    );
+    const setup = pages.get("setup-and-test.md") ?? "";
+    expect(setup.indexOf("Endpoints → Add endpoint")).toBeGreaterThan(
+      setup.indexOf("webhook scaffold"),
+    );
+    expect(setup.indexOf("yarn install")).toBeGreaterThan(
+      setup.indexOf("Endpoints → Add endpoint"),
+    );
+    expect(setup.indexOf("Event explorer")).toBeGreaterThan(
+      setup.indexOf("yarn install"),
+    );
     expect(pages.get("setup-and-test.md")).toContain("yarn microfeed webhook listen");
     expect(pages.get("setup-and-test.md")).toContain("webhook.test");
     expect(pages.get("ai-agents.md")).toContain("before JSON parsing");
-    expect(pages.get("ai-agents.md")).toContain("Framework-neutral TypeScript");
-    expect(pages.get("ai-agents.md")).toContain("Framework-neutral Python");
+    expect(pages.get("ai-agents.md")).toContain("TypeScript receiver core");
+    expect(pages.get("ai-agents.md")).toContain("Python receiver core");
+    expect(pages.get("ai-agents.md")).toContain('from "standardwebhooks"');
     expect(pages.get("ai-agents.md")).toContain("Cloudflare Agents SDK");
     for (const recipe of [
       "Publish announcement",
@@ -794,6 +812,8 @@ describe("documentation site", () => {
       "correlation",
       "causation",
       "prompt-injection",
+      ".microfeed/webhooks/<endpoint-name>",
+      "yarn microfeed webhook scaffold",
       "yarn microfeed webhook listen",
       "production readiness",
     ]) expect(skill.toLowerCase()).toContain(requirement.toLowerCase());

@@ -150,18 +150,22 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     details: [
       "Generates the selected local Wrangler configuration, applies local migrations, and starts Astro development.",
       "A connected Cloudflare installation still uses isolated local data; production D1 and R2 are never synchronized.",
+      "Webhook delivery is always available through Wrangler's local Queue simulation. It creates no Cloudflare Queue, requests no Cloudflare permission, and incurs no Cloudflare charge.",
+      "--enable-webhooks is accepted as an explicit alias, but is unnecessary because local webhook simulation is already enabled.",
     ],
     examples: [
       "yarn manage dev --instance personal",
       "yarn manage dev --preview --instance personal",
+      "yarn dev --enable-webhooks --instance personal",
     ],
     name: "dev",
     options: [
       option("--instance <name>", "Select the local or connected site sandbox."),
       option("--preview", "Use the saved preview configuration with isolated local data."),
+      option("--enable-webhooks", "Explicitly acknowledge the webhook simulation that is already enabled locally."),
     ],
     summary: "Run one site locally with isolated development data.",
-    usage: "yarn manage dev [--instance <name>] [--preview]",
+    usage: "yarn manage dev [--instance <name>] [--preview] [--enable-webhooks]",
   },
   {
     changes: "Initializes a local authoring repository, installs immutable theme versions in D1, optionally writes declared assets to R2, or changes the active theme through a one-time authenticated Worker operation.",

@@ -9,6 +9,7 @@ import {
   type WebhookEndpointStatus,
   type WebhookEventType,
   type WebhookOverview,
+  type WebhookSettings,
 } from "@/shared/Webhooks";
 import {
   encryptWebhookSecret,
@@ -409,7 +410,7 @@ export async function webhookOverview(
   runtimeEnv: Env,
 ): Promise<WebhookOverview> {
   const today = new Date().toISOString().slice(0, 10);
-  const [counts, usage, failures, alerts] = await Promise.all([
+  const [counts, usage, settings, failures, alerts] = await Promise.all([
     runtimeEnv.FEED_DB.prepare(`
       SELECT COUNT(*) AS total,
         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active
@@ -418,6 +419,7 @@ export async function webhookOverview(
     runtimeEnv.FEED_DB.prepare(`
       SELECT deliveries FROM webhook_daily_usage WHERE usage_day = ?
     `).bind(today).first<{deliveries: number}>(),
+    readWebhookSettings(runtimeEnv.FEED_DB),
     runtimeEnv.FEED_DB.prepare(`
       SELECT COUNT(*) AS total FROM webhook_deliveries
       WHERE status = 'failed' AND created_at >= datetime('now', '-24 hours')
@@ -436,7 +438,7 @@ export async function webhookOverview(
       kind: String(alert.kind),
       message: String(alert.message),
     })),
-    dailyLimit: WEBHOOK_LIMITS.dailyDeliveries,
+    dailyLimit: settings.dailyDeliveryLimit,
     deliveriesToday,
     enabled: Boolean(
       runtimeEnv.WEBHOOK_QUEUE && runtimeEnv.WEBHOOK_SECRET_KEY?.trim(),
@@ -446,6 +448,52 @@ export async function webhookOverview(
     estimatedQueueOperationsToday: deliveriesToday * 3,
     recentFailures: Number(failures?.total ?? 0),
   };
+}
+
+export async function readWebhookSettings(
+  database: D1Database,
+): Promise<WebhookSettings> {
+  const row = await database.prepare(`
+    SELECT daily_delivery_limit, updated_at
+    FROM webhook_settings WHERE id = 1 LIMIT 1
+  `).first<{daily_delivery_limit: number; updated_at: string}>();
+  const value = Number(row?.daily_delivery_limit);
+  const dailyDeliveryLimit = Number.isInteger(value) && value >= 0 &&
+      value <= WEBHOOK_LIMITS.maximumDailyDeliveries
+    ? value
+    : WEBHOOK_LIMITS.dailyDeliveries;
+  return {
+    dailyDeliveryLimit,
+    ...(row?.updated_at ? {updatedAt: row.updated_at} : {}),
+  };
+}
+
+export async function updateWebhookSettings(
+  database: D1Database,
+  input: {dailyDeliveryLimit: unknown; highCostAcknowledged?: unknown},
+): Promise<WebhookSettings> {
+  const dailyDeliveryLimit = input.dailyDeliveryLimit;
+  if (!Number.isInteger(dailyDeliveryLimit) ||
+      Number(dailyDeliveryLimit) < 0 ||
+      Number(dailyDeliveryLimit) > WEBHOOK_LIMITS.maximumDailyDeliveries) {
+    throw new WebhookRequestError(
+      `The daily delivery budget must be a whole number from 0 to ${WEBHOOK_LIMITS.maximumDailyDeliveries.toLocaleString("en-US")}.`,
+    );
+  }
+  if (Number(dailyDeliveryLimit) > WEBHOOK_LIMITS.dailyDeliveries &&
+      input.highCostAcknowledged !== true) {
+    throw new WebhookRequestError(
+      "Confirm that a higher budget can exceed Cloudflare's account-wide Queue allowance and create charges.",
+    );
+  }
+  await database.prepare(`
+    INSERT INTO webhook_settings (id, daily_delivery_limit, updated_at)
+    VALUES (1, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT (id) DO UPDATE SET
+      daily_delivery_limit = excluded.daily_delivery_limit,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(dailyDeliveryLimit).run();
+  return readWebhookSettings(database);
 }
 
 export {WEBHOOK_EVENT_TYPES};

@@ -15,6 +15,10 @@ import {MICROFEED_VERSION} from "@/shared/Version";
 import {API_BASE_PATH, API_MAJOR_VERSION} from "@/shared/ApiVersion";
 import {WEBHOOK_EVENT_TYPES} from "@/shared/Webhooks";
 import {
+  JAVASCRIPT_WEBHOOK_RECEIVER,
+  PYTHON_WEBHOOK_RECEIVER,
+} from "@/shared/WebhookQuickstarts";
+import {
   API_LLMS_FULL_TEXT,
   OPENAPI_JSON,
   OPENAPI_YAML,
@@ -36,6 +40,13 @@ describe("generated API reference", () => {
       .toBe("receiveMicrofeedWebhook");
     expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("webhook-signature");
     expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("item.published");
+    const webhookOperation = OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post as
+      | {"x-codeSamples"?: Array<{lang: string; source: string}>}
+      | undefined;
+    expect(webhookOperation?.["x-codeSamples"]).toEqual([
+      expect.objectContaining({lang: "JavaScript", source: JAVASCRIPT_WEBHOOK_RECEIVER}),
+      expect.objectContaining({lang: "Python", source: PYTHON_WEBHOOK_RECEIVER}),
+    ]);
     const webhookRequestBody = OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post
       ?.requestBody as {
         content?: {"application/json"?: {examples?: Record<string, {value?: any}>}};
@@ -50,6 +61,8 @@ describe("generated API reference", () => {
     expect(componentSchemas).toHaveProperty("WebhookPageNavigationSnapshot");
     expect(componentSchemas).toHaveProperty("WebhookThemeSnapshot");
     expect(API_LLMS_FULL_TEXT).toContain("microfeedEvent");
+    expect(API_LLMS_FULL_TEXT).toContain("const {Webhook} = require");
+    expect(API_LLMS_FULL_TEXT).toContain("from standardwebhooks.webhooks import Webhook");
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_CREDENTIAL");
     expect(
       OPENAPI_DOCUMENT.paths?.["/site-files/preview/"]?.post?.description,
@@ -108,6 +121,21 @@ describe("generated API reference", () => {
       expect(htmlReference).toContain("ApiReferencePage");
       expect(htmlReference).not.toContain("Response.redirect");
     }
+  });
+
+  it("keeps Admin and OpenAPI receiver code byte-identical to scaffold templates", async () => {
+    const [javascript, python] = await Promise.all([
+      readFile(path.join(
+        repositoryRoot,
+        "packages/cli/templates/webhook/javascript/server.cjs",
+      ), "utf8"),
+      readFile(path.join(
+        repositoryRoot,
+        "packages/cli/templates/webhook/python/server.py",
+      ), "utf8"),
+    ]);
+    expect(javascript).toBe(JAVASCRIPT_WEBHOOK_RECEIVER);
+    expect(python).toBe(PYTHON_WEBHOOK_RECEIVER);
   });
 
   it("makes the full LLM reference self-contained", () => {

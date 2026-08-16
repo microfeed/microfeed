@@ -23,11 +23,21 @@ categories, language, and description.
 browser explorer, and public API documentation formats.
 
 **Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
-Queue-backed availability and daily budget, manages signed event subscriptions
-and one-time secrets, previews exact generated or current-content payloads,
-sends marked test events, and provides attempt diagnostics, pause recovery, and
+context-aware local or deployed availability, combines configured and active
+endpoint counts, and shows an owner-controlled daily delivery budget instead of
+a pricing-tier limit. The Overview quickstart can scaffold or copy a complete
+JavaScript or Python receiver, explain its one-time signing secret, and lead
+directly to a signed Event Explorer test. Endpoints manages subscriptions and
+secret rotation; Event explorer previews exact generated or current-content
+payloads; Deliveries provides attempt diagnostics, pause recovery, and
 redelivery. See
 [Content automation](/automation/) before connecting a deployed agent.
+
+Plain `yarn dev` automatically supplies the local Queue simulation at no
+Cloudflare cost. Preview and production show an instance-specific enable
+command and explain why deployed Queue resources remain opt-in. The daily
+delivery budget defaults to 1,000, can be changed immediately from 0 through
+1,000,000, and is an owner cost guard rather than a microfeed plan limit.
 
 **Settings** manages website themes and shared code, tracking URLs, subscribe
 methods, site access, media storage, feed ordering, and favicon. It does not

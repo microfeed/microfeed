@@ -267,8 +267,30 @@ describe("webhook limits migration", () => {
     const db = new DatabaseSync(":memory:");
     db.exec("PRAGMA foreign_keys = ON");
     db.exec(await readFile(path.join(repositoryRoot, "migrations/0017_webhooks.sql"), "utf8"));
+    db.exec(await readFile(path.join(repositoryRoot, "migrations/0019_webhook_delivery_budget.sql"), "utf8"));
     return db;
   }
+
+  it("preserves existing daily usage while replacing the fixed limit", async () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    db.exec(await readFile(path.join(repositoryRoot, "migrations/0017_webhooks.sql"), "utf8"));
+    db.prepare(
+      "INSERT INTO webhook_daily_usage (usage_day, deliveries) VALUES ('2026-08-13', 875)",
+    ).run();
+
+    db.exec(await readFile(
+      path.join(repositoryRoot, "migrations/0019_webhook_delivery_budget.sql"),
+      "utf8",
+    ));
+
+    expect(db.prepare(
+      "SELECT usage_day, deliveries FROM webhook_daily_usage",
+    ).get()).toEqual({deliveries: 875, usage_day: "2026-08-13"});
+    expect(db.prepare(
+      "SELECT daily_delivery_limit FROM webhook_settings WHERE id = 1",
+    ).get()).toEqual({daily_delivery_limit: 1_000});
+  });
 
   it("atomically enforces endpoint slots and deletion semantics", async () => {
     const db = await database();
@@ -300,5 +322,26 @@ describe("webhook limits migration", () => {
         {deliveries: 1_000, usage_day: "2026-08-14"},
         {deliveries: 20, usage_day: "2026-08-15"},
       ]);
+  });
+
+  it("enforces a configurable fail-closed budget from zero to one million", async () => {
+    const db = await database();
+    const insert = db.prepare("INSERT INTO webhook_events (id, event_type, subject_type, subject_id, payload_json, origin, request_id, correlation_id, delivery_count, budget_day) VALUES (?, 'item.created', 'item', 'one', '{}', 'api', 'request', 'correlation', ?, '2026-08-14')");
+
+    db.prepare("UPDATE webhook_settings SET daily_delivery_limit = 0 WHERE id = 1").run();
+    expect(() => insert.run("evt_zero", 1)).toThrow(/webhook_daily_budget/u);
+
+    db.prepare("UPDATE webhook_settings SET daily_delivery_limit = 1000000 WHERE id = 1").run();
+    insert.run("evt_million", 1_000_000);
+    expect(db.prepare("SELECT deliveries FROM webhook_daily_usage WHERE usage_day = '2026-08-14'").get())
+      .toEqual({deliveries: 1_000_000});
+    expect(() => insert.run("evt_over", 1)).toThrow(/webhook_daily_budget/u);
+    expect(() => db.prepare("UPDATE webhook_settings SET daily_delivery_limit = 1000001 WHERE id = 1").run())
+      .toThrow();
+
+    db.prepare("DELETE FROM webhook_settings WHERE id = 1").run();
+    db.prepare("DELETE FROM webhook_daily_usage").run();
+    insert.run("evt_fallback", 1_000);
+    expect(() => insert.run("evt_fallback_over", 1)).toThrow(/webhook_daily_budget/u);
   });
 });

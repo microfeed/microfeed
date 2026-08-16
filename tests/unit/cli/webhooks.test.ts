@@ -1,4 +1,7 @@
 import {createHmac, randomBytes} from "node:crypto";
+import {mkdtemp, readFile, readdir, rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import path from "node:path";
 import {Readable} from "node:stream";
 
 import {afterEach, describe, expect, it, vi} from "vitest";
@@ -6,10 +9,14 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {
   handleWebhook,
   readWebhookSample,
+  resolveWebhookScaffoldDirectory,
+  scaffoldWebhookReceiver,
   validatedForwardUrl,
   verifyWebhookSignature,
   type ListenOptions,
 } from "../../../packages/cli/src/webhooks";
+
+const temporaryDirectories: string[] = [];
 
 function signedRequest(body: Buffer, secret: string, deliveryId = "whd_test") {
   const timestamp = String(Math.floor(Date.now() / 1_000));
@@ -57,10 +64,13 @@ function responseCapture() {
   return {response, result};
 }
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  await Promise.all(temporaryDirectories.splice(0).map((directory) =>
+    rm(directory, {force: true, recursive: true})
+  ));
 });
 
 describe("microfeed webhook listener signatures", () => {
@@ -228,5 +238,102 @@ describe("microfeed webhook samples", () => {
       {json: true},
       vi.fn(async () => new Response("", {status: 404})) as typeof fetch,
     )).rejects.toThrow(/Event explorer/u);
+  });
+});
+
+describe("microfeed webhook scaffold", () => {
+  it("resolves relative output from the Yarn project root, not the CLI workspace", () => {
+    const projectRoot = path.join(path.sep, "review", "microfeed");
+    const cliWorkspace = path.join(projectRoot, "packages", "cli");
+    expect(resolveWebhookScaffoldDirectory(
+      ".microfeed/webhooks/endpoint1",
+      cliWorkspace,
+      projectRoot,
+    )).toBe(path.join(
+      projectRoot,
+      ".microfeed",
+      "webhooks",
+      "endpoint1",
+    ));
+    expect(resolveWebhookScaffoldDirectory(
+      "local-receiver",
+      cliWorkspace,
+      "",
+    )).toBe(path.join(cliWorkspace, "local-receiver"));
+  });
+
+  it("creates the complete JavaScript starter without secrets or installation", async () => {
+    const parent = await mkdtemp(path.join(tmpdir(), "microfeed-webhook-js-"));
+    temporaryDirectories.push(parent);
+    const destination = path.join(
+      parent,
+      ".microfeed",
+      "webhooks",
+      "endpoint1",
+    );
+    const result = await scaffoldWebhookReceiver(destination);
+    expect(result).toMatchObject({
+      directory: destination,
+      language: "javascript",
+      localEndpointUrl: "http://127.0.0.1:3000/webhook",
+    });
+    expect(result.nextStepCommands[0]?.replaceAll(path.sep, "/")).toContain(
+      ".microfeed/webhooks/endpoint1",
+    );
+    expect((await readdir(destination)).sort()).toEqual([
+      ".env.example",
+      ".gitignore",
+      "README.md",
+      "package.json",
+      "server.cjs",
+      "yarn.lock",
+    ]);
+    expect(await readFile(path.join(destination, "yarn.lock"), "utf8"))
+      .toBe("");
+    expect(JSON.parse(
+      await readFile(path.join(destination, "package.json"), "utf8"),
+    )).toMatchObject({
+      dependencies: {
+        express: "5.2.1",
+        standardwebhooks: "1.0.0",
+      },
+    });
+    const source = await readFile(path.join(destination, "server.cjs"), "utf8");
+    expect(source).toContain("express.raw");
+    expect(source).toContain("event.test === true");
+    expect(source).toContain('app.listen(3000, "127.0.0.1"');
+    expect(source).not.toContain("whsec_");
+    const readme = await readFile(path.join(destination, "README.md"), "utf8");
+    const createEndpoint = readme.indexOf("Add endpoint");
+    const install = readme.indexOf("yarn install");
+    const start = readme.indexOf("MICROFEED_WEBHOOK_SECRET=whsec_... yarn start");
+    const eventExplorer = readme.indexOf("Event\n   explorer");
+    expect(createEndpoint).toBeGreaterThan(-1);
+    expect(install).toBeGreaterThan(createEndpoint);
+    expect(start).toBeGreaterThan(install);
+    expect(eventExplorer).toBeGreaterThan(start);
+    await expect(scaffoldWebhookReceiver(destination))
+      .rejects.toThrow(/already exists/u);
+  });
+
+  it("creates the complete Python starter with pinned maintained libraries", async () => {
+    const parent = await mkdtemp(path.join(tmpdir(), "microfeed-webhook-py-"));
+    temporaryDirectories.push(parent);
+    const destination = path.join(parent, "nested", "receiver");
+    const result = await scaffoldWebhookReceiver(destination, "python");
+    expect(result.language).toBe("python");
+    expect(result.createdFiles).toEqual([
+      ".env.example",
+      ".gitignore",
+      "README.md",
+      "requirements.txt",
+      "server.py",
+    ]);
+    expect(await readFile(path.join(destination, "requirements.txt"), "utf8"))
+      .toBe("Flask==3.1.3\nstandardwebhooks==1.0.1\n");
+    const source = await readFile(path.join(destination, "server.py"), "utf8");
+    expect(source).toContain("request.get_data");
+    expect(source).toContain('app.run(host="127.0.0.1", port=3000)');
+    expect(source).not.toContain("whsec_");
   });
 });

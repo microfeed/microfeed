@@ -12,6 +12,7 @@ const [initialEndpoints, overview] = await Promise.all([
   listWebhookEndpoints(env.FEED_DB),
   webhookOverview(env),
 ]);
+const initialQuickstart = Astro.url.searchParams.get("quickstart") === "1";
 ---
 
 <AdminShell
@@ -24,6 +25,6 @@ const [initialEndpoints, overview] = await Promise.all([
   webhookNavigation
 >
   <div class="mx-auto max-w-6xl">
-    <WebhookEndpointsApp client:only="react" enabled={overview.enabled} {initialEndpoints} />
+    <WebhookEndpointsApp client:only="react" enabled={overview.enabled} {initialEndpoints} {initialQuickstart} />
   </div>
 </AdminShell>

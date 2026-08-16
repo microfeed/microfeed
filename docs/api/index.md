@@ -94,9 +94,14 @@ docs are enabled.
 
 The top-level OpenAPI webhook operation contains exact schemas and a named
 example for every supported event, including specialized Page navigation, Site
-File, theme, and connection-test snapshots. Inspect them visually in **Admin →
-Webhooks → Event explorer**, or print one directly from this per-instance
-contract with `yarn microfeed webhook sample <event> --json`.
+File, theme, and connection-test snapshots. It also includes complete
+JavaScript and Python `x-codeSamples` that use the maintained Standard Webhooks
+libraries. Inspect the contract and code visually in **Admin → Webhooks → Event
+explorer** or the public Scalar page, print one exact example with `yarn
+microfeed webhook sample <event> --json`, or create the same runnable receiver
+offline with `yarn microfeed webhook scaffold
+.microfeed/webhooks/endpoint1 --language javascript` inside a microfeed clone's
+ignored local workspace.
 
 ## Choose your next step
 

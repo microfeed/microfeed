@@ -5,10 +5,14 @@ import WebhookOverviewApp from "@/components/admin/webhooks/WebhookOverviewApp";
 import AdminShell from "@/layouts/AdminShell.astro";
 import {webhookOverview} from "@/server/webhooks/store";
 import {NAV_ITEMS} from "@/shared/Constants";
+import {isLocalDevelopmentHostname} from "@/shared/StringUtils";
 
 const {feedContent, onboardingResult} = Astro.locals;
 if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
 const overview = await webhookOverview(env);
+const localDevelopment = isLocalDevelopmentHostname(Astro.url.hostname);
+const instanceName = env.MICROFEED_INSTANCE_NAME?.trim() || "<name>";
+const deploymentEnvironment = env.DEPLOYMENT_ENVIRONMENT ?? "production";
 ---
 
 <AdminShell
@@ -21,6 +25,6 @@ const overview = await webhookOverview(env);
   webhookNavigation
 >
   <div class="mx-auto max-w-6xl">
-    <WebhookOverviewApp client:only="react" {overview} />
+    <WebhookOverviewApp client:only="react" {deploymentEnvironment} {instanceName} {localDevelopment} {overview} />
   </div>
 </AdminShell>

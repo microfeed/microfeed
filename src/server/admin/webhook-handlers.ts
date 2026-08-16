@@ -23,6 +23,7 @@ import {
   resumeWebhookEndpoint,
   rotateWebhookEndpointSecret,
   updateWebhookEndpoint,
+  updateWebhookSettings,
   webhookOverview,
 } from "@/server/webhooks/store";
 import {
@@ -82,6 +83,23 @@ async function respond(action: () => Promise<unknown>): Promise<Response> {
 
 export const getWebhookOverview: APIRoute = async () =>
   respond(() => webhookOverview(env));
+
+export const updateAdminWebhookSettings: APIRoute = async ({request}) =>
+  respond(async () => {
+    const input = await body(request);
+    const allowed = new Set(["dailyDeliveryLimit", "highCostAcknowledged"]);
+    if (Object.keys(input).some((key) => !allowed.has(key))) {
+      throw new WebhookRequestError(
+        "Webhook settings accept only the daily delivery budget and cost acknowledgement.",
+      );
+    }
+    return {
+      settings: await updateWebhookSettings(env.FEED_DB, {
+        dailyDeliveryLimit: input.dailyDeliveryLimit,
+        highCostAcknowledged: input.highCostAcknowledged,
+      }),
+    };
+  });
 
 export const listAdminWebhookExplorerSubjects: APIRoute = async ({request}) => {
   const search = new URL(request.url).searchParams;

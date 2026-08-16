@@ -132,6 +132,7 @@ describe("snapshot migration history", () => {
     expect(SNAPSHOT_TABLES.ephemeral).toContain("site_search_documents");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_endpoints");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_deliveries");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_settings");
     expect(SNAPSHOT_TABLES.durable).toContain("pages");
     expect(SNAPSHOT_TABLES.durable).toContain("site_files");
   });

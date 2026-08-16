@@ -14,10 +14,12 @@ import {Label} from "@/components/ui/label";
 import {showToast} from "@/client/ToastUtils";
 import type {WebhookEndpointSummary} from "@/shared/Webhooks";
 import {adminUrl, browserAdminPath} from "@/shared/AdminPath";
+import {WEBHOOK_QUICKSTART_ENDPOINT_URL} from "@/shared/WebhookQuickstarts";
 import {WEBHOOK_EVENT_TYPES, WEBHOOK_LIMITS, type WebhookEventType} from "@/shared/Webhooks";
 
 interface Props {
   enabled: boolean;
+  initialQuickstart?: boolean;
   initialEndpoints: WebhookEndpointSummary[];
 }
 
@@ -44,11 +46,20 @@ async function requestJson(path: string, init?: RequestInit): Promise<any> {
   return payload;
 }
 
-export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) {
+export default function WebhookEndpointsApp({
+  enabled,
+  initialEndpoints,
+  initialQuickstart = false,
+}: Props) {
   const [endpoints, setEndpoints] = useState(initialEndpoints);
-  const [form, setForm] = useState<FormValue>(emptyForm);
+  const [form, setForm] = useState<FormValue>(() => ({
+    ...emptyForm,
+    url: initialQuickstart ? WEBHOOK_QUICKSTART_ENDPOINT_URL : "",
+  }));
   const [editingId, setEditingId] = useState<string>();
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(
+    initialQuickstart && initialEndpoints.length > 0,
+  );
   const [busy, setBusy] = useState(false);
   const [revealedSecret, setRevealedSecret] = useState<string>();
 
@@ -138,6 +149,12 @@ export default function WebhookEndpointsApp({enabled, initialEndpoints}: Props) 
       {revealedSecret && (
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-5" role="status">
           <p className="font-semibold">Copy this signing secret now. It will not be shown again.</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            This endpoint-specific <code>whsec_…</code> secret authenticates
+            microfeed and detects changed request bytes. Store it in
+            <code> MICROFEED_WEBHOOK_SECRET</code>, never in source code or the
+            endpoint URL. No separate passcode or bearer token is needed.
+          </p>
           <code className="mt-3 block overflow-x-auto rounded-md bg-background p-3 text-sm">{revealedSecret}</code>
           <Button className="mt-3" onClick={() => navigator.clipboard.writeText(revealedSecret)} size="sm" type="button" variant="outline">Copy secret</Button>
         </div>
@@ -268,6 +285,18 @@ function EndpointForm({
         <Input id="webhook-url" onChange={(event) => onChange({...form, url: event.target.value})} placeholder="https://automation.example.com/webhook" required type="url" value={form.url} />
         <p className="text-xs text-muted-foreground">HTTPS is required when deployed. Local development permits http://127.0.0.1:&lt;port&gt;/webhook.</p>
       </div>
+      {!editing && (
+        <div className="rounded-xl bg-muted p-4 text-sm leading-6">
+          <p className="font-medium">Authentication</p>
+          <p className="mt-1 text-muted-foreground">
+            microfeed generates one unique Standard Webhooks signing secret
+            for this endpoint and reveals it once. Your receiver verifies the
+            exact raw body, delivery ID, timestamp, and signature with that
+            secret. Put it in <code>MICROFEED_WEBHOOK_SECRET</code>; do not add
+            a passcode, bearer token, URL credential, or custom authentication header.
+          </p>
+        </div>
+      )}
       <fieldset>
         <legend className="text-sm font-medium">Subscribed events</legend>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">

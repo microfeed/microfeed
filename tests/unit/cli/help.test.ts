@@ -70,6 +70,16 @@ describe("microfeed CLI help", () => {
     expect(help).toContain("--attachment-file");
   });
 
+  it("recommends the ignored microfeed workspace for webhook scaffolds", () => {
+    const help = renderCliHelp(["webhook", "scaffold"]);
+    expect(help).toContain(".microfeed/webhooks/<endpoint-name>/");
+    expect(help).toContain(
+      "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1",
+    );
+    expect(help).toContain("rather than under packages/cli");
+    expect(help).toContain("not checked into microfeed");
+  });
+
   it("explains how owners enable API access and when agents must pause", () => {
     const remoteTopics = [
       ["login"],

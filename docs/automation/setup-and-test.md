@@ -10,35 +10,80 @@ a separately named integration credential for this automation. Give it only the
 read or write permissions the workflow requires; do not reuse a human or
 unrelated service credential.
 
-Webhooks require an explicit deployment opt-in:
+Preview and production webhooks require an explicit deployment opt-in:
 
 ```console
 yarn manage deploy --enable-webhooks --instance <name>
 ```
 
-For an isolated preview or local simulation:
+For an isolated preview:
 
 ```console
 yarn manage deploy --preview --enable-webhooks --instance <name>
-yarn manage deploy --local --enable-webhooks --instance <name>
 ```
 
 An ordinary deployment does not request Queue permission or create a Queue.
-Production and preview use distinct Queues; local development uses Wrangler's
-Queue simulation.
+Production and preview use distinct Queues. Plain `yarn dev` always starts
+Wrangler's isolated local Queue simulation, consumer, reconciler, and local
+secret encryption. It creates no Cloudflare resource, requests no Cloudflare
+permission, and incurs no Cloudflare Queue or Worker charge. `yarn dev
+--enable-webhooks` is accepted as an explicit alias, but the flag is not needed
+locally and does not change preview or production.
 
-## 2. Start the local listener
+## 2. Scaffold, register, and run a local receiver
 
-Run the site locally, then start a second terminal:
+Create a complete JavaScript receiver project offline:
+
+```console
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language javascript
+```
+
+The generated server will provide the local endpoint
+`http://127.0.0.1:3000/webhook` after you start it. Before starting it, open
+**Admin → Webhooks → Endpoints → Add endpoint**, create that URL, and copy the
+one-time `whsec_…` signing secret. This value is your
+`MICROFEED_WEBHOOK_SECRET`; it cannot be revealed again.
+
+Now install dependencies and run the receiver with the saved secret:
+
+```console
+cd .microfeed/webhooks/endpoint1
+yarn install
+MICROFEED_WEBHOOK_SECRET=whsec_... yarn start
+```
+
+The microfeed clone ignores `.microfeed/`, so this local receiver and its
+secret files are not checked into the microfeed repository. Use
+`.microfeed/webhooks/<endpoint-name>/` for additional endpoints. Move a
+production-hardened receiver into its own repository when you are ready to
+deploy it. When invoked through the root `yarn microfeed` script, the CLI
+resolves this relative directory from the Yarn project root, so it creates
+`<microfeed-root>/.microfeed/webhooks/endpoint1`, not
+`<microfeed-root>/packages/cli/.microfeed/webhooks/endpoint1`.
+
+Use `--language python` for the Flask starter. Both starters bind only
+`127.0.0.1:3000/webhook`, read exact raw bytes, verify signatures with the
+maintained `standardwebhooks` library, mark in-memory duplicates, and prevent
+`test: true` events from producing production effects. They are local
+inspectors, not production queues; duplicate state resets on restart.
+
+Every endpoint receives one unique `whsec_…` Standard Webhooks signing secret.
+Store it only as
+`MICROFEED_WEBHOOK_SECRET`; never put it in source code or the endpoint URL. The
+signature authenticates microfeed and detects tampering, so no separate
+passcode, bearer token, URL credential, or custom authentication header is
+needed.
+
+Alternatively, use the built-in verified inspector and forwarder:
 
 ```console
 yarn microfeed webhook listen
 ```
 
 The listener binds only `127.0.0.1:8978/webhook`. Paste the endpoint signing
-secret into its hidden prompt. You can instead use
-`MICROFEED_WEBHOOK_SECRET` or `--secret-file`; there is deliberately no
-plaintext `--secret` option.
+secret into its hidden prompt, use `MICROFEED_WEBHOOK_SECRET`, or pass
+`--secret-file`; there is deliberately no plaintext `--secret` option.
 
 To test a receiver already listening on another loopback port:
 
@@ -54,9 +99,10 @@ Use `--json` for one NDJSON record per delivery.
 
 ## 3. Discover and test an exact event
 
-Open **Admin → Webhooks → Endpoints**. Create an endpoint for
-`http://127.0.0.1:8978/webhook`, choose one or more events, and immediately copy
-the signing secret. It cannot be revealed later.
+If you chose the scaffolded receiver above, its endpoint and secret are already
+configured. For `webhook listen`, open **Admin → Webhooks → Endpoints** and
+create `http://127.0.0.1:8978/webhook`. Choose one or more events and
+immediately copy the signing secret. It cannot be revealed later.
 
 Select **Test** to open **Webhooks → Event explorer** with that endpoint and
 `webhook.test` selected. Before sending, inspect its exact Payload, Schema, and
@@ -93,10 +139,18 @@ payload, correlation chain, response status, and attempts.
 
 - At most 20 non-deleted endpoints may exist. Disabled and auto-paused
   endpoints count; deletion frees a slot.
-- At most 1,000 new deliveries are reserved per UTC day. If a complete fanout
-  does not fit, every matching delivery is recorded as `suppressed_budget`.
+- The owner-controlled daily delivery budget defaults to 1,000 and can be
+  changed from 0 through 1,000,000 in **Webhooks → Overview** without a
+  deployment. It is a cost guard, not a microfeed pricing tier. If a complete
+  fanout does not fit, every matching delivery is recorded as
+  `suppressed_budget`.
+- Setting the budget to zero stops new reservations. Lowering it below today's
+  existing usage leaves zero available until it is raised or 00:00 UTC; already
+  queued deliveries continue.
 - Each Event Explorer send reserves one delivery and may retry. Explorer previews,
   copy actions, and local terminal prints do not consume delivery budget.
+- Retries do not reserve additional deliveries, but they do increase Queue and
+  Worker usage.
 - A delivery has six total attempts: immediately, then approximately 1 minute,
   5 minutes, 30 minutes, 2 hours, and 8 hours later.
 - Network errors, timeouts, `408`, `425`, `429`, and `5xx` retry. Redirects and

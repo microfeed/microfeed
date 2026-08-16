@@ -53,10 +53,17 @@ different trust and operating models.
 | API action worker | A validated, approved action | Named integration credential with required scopes | Model-selected credentials or arbitrary URLs. |
 | Notification adapter | Approved message and configured destination | Destination-specific send permission | Permission to write microfeed content. |
 
-Webhooks are disabled until the operator runs `yarn manage deploy
---enable-webhooks`. Each instance permits 20 non-deleted endpoints and reserves
-at most 1,000 new deliveries per UTC day. Fanout, tests, and manual redeliveries
-all count toward that budget.
+Plain `yarn dev` automatically enables Wrangler's local Queue simulation. It
+creates no Cloudflare resources, requests no Cloudflare permissions, and incurs
+no Cloudflare Queue or Worker charges. Preview and production remain explicitly
+opt-in with `yarn manage deploy --enable-webhooks` because they create deployed
+resources and account-wide usage.
+
+Each instance permits 20 non-deleted endpoints. Its owner-controlled daily
+delivery budget defaults to 1,000 and can be changed from 0 through 1,000,000 in
+**Admin → Webhooks → Overview** without redeploying. This is a cost guard, not a
+microfeed pricing tier. Fanout, tests, and manual redeliveries all count toward
+the configured UTC-day budget.
 
 ## Next steps
 

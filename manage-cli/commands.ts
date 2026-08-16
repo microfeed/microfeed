@@ -5060,34 +5060,54 @@ export async function devCommand(
     flagBoolean(flags, "preview"),
     context.instanceName,
   );
-  prompts.note(
-    [
-      `Local sandbox: ${config.instanceName}`,
-      `Instance type: ${
-        isLocalOnly(config)
-          ? "Local only"
-          : "Cloudflare — managed here"
-      }`,
-      `D1: ${config.d1.name} (local simulation)`,
-      `R2: ${config.r2.name} (local simulation)`,
-      "Production D1 and R2 data will not be accessed or changed.",
-    ].join("\n"),
-    "Local development",
-  );
-  await context.cloudflare.applyLocalMigrations(config);
-  await prepareItemSearch(context.cloudflare, config, {
-    local: true,
-    persistTo: localPersistencePath(config),
-  });
-  await runYarnScript(runner, "dev:astro", {
-    env: {
-      ...process.env,
-      MICROFEED_INSTANCE: config.instanceName,
-      MICROFEED_LOCAL_STATE: localPersistencePath(config),
-      MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
+  const developmentConfig: MicrofeedConfig = {
+    ...config,
+    webhooks: {
+      enabled: true,
+      queueName: `${workerName(config)}-webhooks-local`.slice(0, 63),
+      reuse: false,
     },
-    interactive: true,
-  });
+  };
+  await generateWranglerConfig(developmentConfig);
+  try {
+    prompts.note(
+      [
+        `Local sandbox: ${config.instanceName}`,
+        `Instance type: ${
+          isLocalOnly(config)
+            ? "Local only"
+            : "Cloudflare — managed here"
+        }`,
+        `D1: ${config.d1.name} (local simulation)`,
+        `R2: ${config.r2.name} (local simulation)`,
+        `Webhooks: ${developmentConfig.webhooks!.queueName} (local simulation)`,
+        "Production D1 and R2 data will not be accessed or changed.",
+        "No Cloudflare Queue resources, permissions, or charges are used.",
+      ].join("\n"),
+      "Local development",
+    );
+    if (flagBoolean(flags, "enable-webhooks")) {
+      prompts.log.info(
+        "Webhook Queue simulation is already enabled for every local development session; --enable-webhooks is optional.",
+      );
+    }
+    await context.cloudflare.applyLocalMigrations(config);
+    await prepareItemSearch(context.cloudflare, config, {
+      local: true,
+      persistTo: localPersistencePath(config),
+    });
+    await runYarnScript(runner, "dev:astro", {
+      env: {
+        ...process.env,
+        MICROFEED_INSTANCE: config.instanceName,
+        MICROFEED_LOCAL_STATE: localPersistencePath(config),
+        MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
+      },
+      interactive: true,
+    });
+  } finally {
+    await generateWranglerConfig(config);
+  }
 }
 
 function sqlIdentifier(value: string): string {

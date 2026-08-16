@@ -8,6 +8,13 @@ agents](../ai-agents/): verify raw bytes, validate the event, insert the deliver
 ID and job atomically, then return `202`. Run model and tool work only from the
 durable job consumer.
 
+Begin with `yarn microfeed webhook scaffold
+.microfeed/webhooks/endpoint1 --language javascript` (or change the language to
+`python`) to prove local signature verification and test gating. The
+`.microfeed/` workspace is ignored by the microfeed clone.
+Then replace that starter's console-only, in-memory behavior with the durable
+receiver described above before adding any recipe effect.
+
 The shared consumer must stop test events before dispatching a recipe:
 
 ```ts
@@ -54,7 +61,8 @@ async function microfeed(path: string, event: MicrofeedEvent, action: string, in
 
 For local deterministic tests, set `AUTOMATION_MODE=mock`; model, transcription,
 translation, and notification adapters should return fixtures without network
-access. Then run:
+access. Send the signed Event Explorer test directly to a scaffolded receiver
+at `http://127.0.0.1:3000/webhook`, or inspect and forward it with:
 
 ```console
 yarn microfeed webhook listen --secret-file .webhook-secret \

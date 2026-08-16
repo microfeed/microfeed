@@ -55,8 +55,9 @@ export const SNAPSHOT_TABLES = {
     "auth_password_setup",
     "theme_management_tokens",
     // Webhook endpoint secrets are encrypted with a deployment-specific key.
-    // Endpoint configuration and delivery history therefore do not cross a
-    // snapshot boundary; operators recreate endpoints on the restored site.
+    // Endpoint configuration, delivery history, and the account-specific cost
+    // guard therefore do not cross a snapshot boundary; operators recreate
+    // endpoints and choose a budget on the restored site.
     "webhook_alerts",
     "webhook_budget_reservations",
     "webhook_daily_usage",
@@ -64,6 +65,7 @@ export const SNAPSHOT_TABLES = {
     "webhook_delivery_attempts",
     "webhook_endpoints",
     "webhook_events",
+    "webhook_settings",
     "webhook_subscriptions",
   ],
   internal: ["_cf_KV", "d1_kv"],

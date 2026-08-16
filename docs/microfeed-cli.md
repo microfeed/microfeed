@@ -33,6 +33,7 @@ the command you need.
 - [`media`](#yarn-microfeed-media)
 - [`media upload`](#yarn-microfeed-media-upload)
 - [`webhook`](#yarn-microfeed-webhook)
+- [`webhook scaffold`](#yarn-microfeed-webhook-scaffold)
 - [`webhook listen`](#yarn-microfeed-webhook-listen)
 - [`webhook sample`](#yarn-microfeed-webhook-sample)
 - [`api`](#yarn-microfeed-api)
@@ -143,6 +144,7 @@ For every authenticated REST request, the CLI:
 | `item update <item-id>` | Update an item from flags or JSON. | Changes remote content. |
 | `item delete <item-id>` | Delete an item after exact-ID confirmation. | Permanently deletes remote content. |
 | `media upload <file>` | Upload standalone media for rich content or later API use. | Creates a remote media object but does not edit an item. |
+| `webhook scaffold <directory>` | Copy a runnable JavaScript or Python webhook inspector project. | Creates one new local directory; works offline and never installs, starts, or authenticates anything. |
 | `webhook listen` | Verify, display, and optionally forward local webhook deliveries. | Starts a loopback-only local server; does not create a remote endpoint or relay. |
 | `webhook sample <event>` | Read one exact event example from the selected instance's OpenAPI contract. | Read-only; does not authenticate or change the instance. |
 | `api <method> <path>` | Call a relative `/api/v1/…` REST endpoint. | Depends on the method and endpoint. |
@@ -700,13 +702,73 @@ yarn microfeed media upload ./episode.mp3 \
 
 ## `yarn microfeed webhook`
 
-Inspect an exact OpenAPI example or receive signed webhook deliveries during
-local development. The CLI does not create a microfeed endpoint or provide a
-public relay.
+Create a local receiver project, inspect an exact OpenAPI example, or receive
+signed webhook deliveries during local development. The CLI does not create a
+microfeed endpoint or provide a public relay.
 
 ```console
-yarn microfeed webhook <listen|sample> [arguments] [options]
+yarn microfeed webhook <scaffold|listen|sample> [arguments] [options]
 ```
+
+Use `scaffold` to create code you can extend, `listen` to inspect or forward
+signed deliveries without a project, `sample` to discover an unsigned exact
+payload, and Admin Event Explorer to send a signed, budgeted, retryable test.
+
+## `yarn microfeed webhook scaffold`
+
+**Purpose:** Copy one complete, offline webhook receiver starter into a new
+local directory.
+
+**Changes:** Creates only the destination and selected starter files. It
+installs and starts nothing, creates no endpoint, reads no saved instance, and
+performs no authentication. The destination must not already exist; there is
+no overwrite or force option.
+
+```console
+yarn microfeed webhook scaffold <directory> \
+  [--language javascript|python] \
+  [--json]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--language <language>` | Select `javascript` (the default) or `python`. |
+| `--json` | Return the absolute directory, language, exact created-file list, local endpoint URL, and next-step commands. |
+
+The JavaScript starter pins Express 5.2.1 and `standardwebhooks` 1.0.0. The
+Python starter pins Flask 3.1.3 and `standardwebhooks` 1.0.1. Both bind only
+`127.0.0.1:3000`, accept `POST /webhook`, verify the exact raw body with the
+maintained library, return `401` or `204`, mark in-memory duplicate delivery
+IDs, print the verified payload, and skip every production effect when signed
+`test` is true. They never print the secret or signature.
+
+These are local development inspectors. Their duplicate state resets on
+restart, and they contain no durable queue or production side effect. Store the
+endpoint's one-time secret in `MICROFEED_WEBHOOK_SECRET` through the generated
+`.env.example`; the signing secret is the endpoint authentication, so a second
+passcode is unnecessary.
+
+Inside a microfeed clone, use `.microfeed/webhooks/<endpoint-name>/` as the
+destination. The clone ignores `.microfeed/`, just as it does for local theme
+and instance work, so the development receiver and populated secret files are
+not checked into microfeed. Move a production-hardened receiver into its own
+repository before deploying it. Relative scaffold destinations resolve from
+Yarn's project root. Therefore the root `yarn microfeed` command creates
+`<microfeed-root>/.microfeed/webhooks/endpoint1`, never
+`<microfeed-root>/packages/cli/.microfeed/webhooks/endpoint1`.
+
+```console
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language javascript
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language python --json
+```
+
+Human output guides you to scaffold first, register
+`http://127.0.0.1:3000/webhook` and save its one-time secret second, then
+install and run with `MICROFEED_WEBHOOK_SECRET` before sending an Event Explorer
+test. The same templates supply Admin quickstart code and
+the OpenAPI webhook operation's JavaScript and Python `x-codeSamples`.
 
 ## `yarn microfeed webhook listen`
 
@@ -939,6 +1001,7 @@ yarn microfeed login --help
 yarn microfeed instances use -h
 yarn microfeed item create --help
 yarn microfeed help item delete
+yarn microfeed webhook scaffold --help
 yarn microfeed webhook sample --help
 yarn microfeed media upload --help
 yarn microfeed webhook listen --help
