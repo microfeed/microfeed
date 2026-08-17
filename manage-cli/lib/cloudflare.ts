@@ -1327,13 +1327,18 @@ export class CloudflareClient {
       `/accounts/${encodeURIComponent(accountId)}/queues/` +
         `${encodeURIComponent(queueId)}/consumers`,
     );
-    return consumers.map((consumer) => ({
-      id: String(consumer.consumer_id ?? consumer.id ?? ""),
-      ...(typeof consumer.script_name === "string"
-        ? {scriptName: consumer.script_name}
-        : {}),
-      type: String(consumer.type ?? ""),
-    })).filter(({id}) => id.length > 0);
+    return consumers.map((consumer) => {
+      const scriptName = [
+        consumer.script_name,
+        consumer.script,
+        consumer.service,
+      ].find((value): value is string => typeof value === "string");
+      return {
+        id: String(consumer.consumer_id ?? consumer.id ?? ""),
+        ...(scriptName ? {scriptName} : {}),
+        type: String(consumer.type ?? ""),
+      };
+    }).filter(({id}) => id.length > 0);
   }
 
   async queueOperationMetrics(
@@ -1361,7 +1366,7 @@ export class CloudflareClient {
             count
             avg { retryCount }
             sum { billableOperations bytes }
-            dimensions { actionType queueID }
+            dimensions { actionType }
           }
           account: queueMessageOperationsAdaptiveGroups(
             limit: 10000
@@ -1373,7 +1378,7 @@ export class CloudflareClient {
             count
             avg { retryCount }
             sum { billableOperations bytes }
-            dimensions { actionType queueID }
+            dimensions { actionType }
           }
         }
       }
@@ -1381,7 +1386,7 @@ export class CloudflareClient {
     interface OperationRow {
       avg?: {retryCount?: unknown};
       count?: unknown;
-      dimensions?: {actionType?: unknown; queueID?: unknown};
+      dimensions?: {actionType?: unknown};
       sum?: {billableOperations?: unknown; bytes?: unknown};
     }
     const data = await this.graphql<{

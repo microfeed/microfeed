@@ -1416,7 +1416,7 @@ describe("connecting an existing Cloudflare instance", () => {
       "d1:write",
       "pages:write",
       "zone:read",
-      "queues:read",
+      "queues:write",
     ];
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");

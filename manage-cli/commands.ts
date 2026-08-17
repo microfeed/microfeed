@@ -3548,10 +3548,7 @@ export async function statusCommand(
     context.instanceName,
   );
   if (webhookProvisioned(config)) {
-    context.cloudflare = new CloudflareClient(runner, [
-      "queues:read",
-      "account_analytics:read",
-    ]);
+    context.cloudflare = new CloudflareClient(runner, ["queues:write"]);
   }
   const accountId = cloudflareAccountId(config);
   const targetWorkerName = workerName(config);
@@ -3696,9 +3693,20 @@ export async function statusCommand(
           `identity, paused, empty, and detached\n  Cron triggers: none`,
       );
     } else {
+      const consumerSummary = consumers.length
+        ? consumers.map((consumer) =>
+          `${consumer.type}:${consumer.scriptName ?? consumer.id}`
+        ).join(", ")
+        : "none";
       prompts.log.error(
         `Webhook Queue ${config.webhooks.queueName}: saved ${webhookState(config)} ` +
-          "state does not match its Queue, binding, backlog, or Cron state",
+          "state does not match its Cloudflare resources\n" +
+          `  Queue identity: ${queueIdentity ? "exact" : "missing or replaced"}\n` +
+          `  Realtime metrics: ${queueMetrics ? "available" : "unavailable"}\n` +
+          `  WEBHOOK_QUEUE binding: ${queueBinding ? "found" : "missing"}\n` +
+          `  Delivery: ${queueResource?.deliveryPaused ? "paused" : "resumed"}\n` +
+          `  Expected Worker consumer: ${expectedConsumer ? "found" : "missing"} ` +
+          `(${consumerSummary})\n  Cron triggers: ${schedules.length ? schedules.join(", ") : "none"}`,
       );
     }
   } else {
@@ -5284,7 +5292,7 @@ export async function connectCommand(
 ): Promise<void> {
   const preview = flagBoolean(flags, "preview");
   const context: CommandContext = {
-    cloudflare: new CloudflareClient(runner, ["queues:read"]),
+    cloudflare: new CloudflareClient(runner, ["queues:write"]),
     flags,
     instanceName: undefined,
     runner,

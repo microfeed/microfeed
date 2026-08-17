@@ -150,11 +150,23 @@ describe("CloudflareClient", () => {
       if (url.pathname.endsWith("/queues/queue-id/consumers")) {
         return Response.json({
           errors: [],
-          result: [{
-            consumer_id: "consumer-id",
-            script_name: "feed",
-            type: "worker",
-          }],
+          result: [
+            {
+              consumer_id: "consumer-id",
+              script: "feed",
+              type: "worker",
+            },
+            {
+              consumer_id: "legacy-consumer-id",
+              script_name: "legacy-feed",
+              type: "worker",
+            },
+            {
+              consumer_id: "service-consumer-id",
+              service: "service-feed",
+              type: "worker",
+            },
+          ],
           success: true,
         });
       }
@@ -166,11 +178,19 @@ describe("CloudflareClient", () => {
     await expect(client.workerSchedules("account-id", "feed"))
       .resolves.toEqual(["0 * * * *"]);
     await expect(client.queueConsumers("account-id", "queue-id"))
-      .resolves.toEqual([{
-        id: "consumer-id",
-        scriptName: "feed",
-        type: "worker",
-      }]);
+      .resolves.toEqual([
+        {id: "consumer-id", scriptName: "feed", type: "worker"},
+        {
+          id: "legacy-consumer-id",
+          scriptName: "legacy-feed",
+          type: "worker",
+        },
+        {
+          id: "service-consumer-id",
+          scriptName: "service-feed",
+          type: "worker",
+        },
+      ]);
   });
 
   it("requests only the selected OAuth scopes and OS keyring storage", async () => {
@@ -299,7 +319,7 @@ describe("CloudflareClient", () => {
     ) => ({
       avg: {retryCount},
       count,
-      dimensions: {actionType, queueID: "queue-id"},
+      dimensions: {actionType},
       sum: {billableOperations, bytes: billableOperations * 64},
     });
     const fetchMock = vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
@@ -319,6 +339,7 @@ describe("CloudflareClient", () => {
           variables: Record<string, string>;
         };
         expect(body.query).toContain("queueMessageOperationsAdaptiveGroups");
+        expect(body.query).not.toContain("queueID");
         expect(body.variables).toMatchObject({
           accountTag: "account-id",
           queueId: "queue-id",
