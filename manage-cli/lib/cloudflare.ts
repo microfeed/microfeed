@@ -419,6 +419,12 @@ export class CloudflareClient {
   }
 
   async login(): Promise<void> {
+    const {profile} = await this.profileState();
+    if (profile && profile !== "default") {
+      await this.authorizeProfile(profile);
+      await this.activateProfile(profile);
+      return;
+    }
     try {
       await runWrangler(
         this.runner,

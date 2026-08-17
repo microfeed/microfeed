@@ -185,6 +185,40 @@ describe("CloudflareClient", () => {
     );
   });
 
+  it("reauthorizes the active named profile when adding OAuth scopes", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth list") {
+        return commandResult([
+          "│ Profile │ Bound Directories │",
+          `│ company │ ${repositoryRoot} │`,
+        ].join("\n"));
+      }
+      return commandResult();
+    });
+
+    await new CloudflareClient(runner, ["queues:write"]).login();
+
+    expect(runner).toHaveBeenCalledWith(
+      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      [
+        "auth",
+        "create",
+        "company",
+        "--scopes",
+        ...OAUTH_SCOPES,
+        "queues:write",
+      ],
+      expect.objectContaining({interactive: true}),
+    );
+    expect(runner).toHaveBeenCalledWith(
+      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      ["auth", "activate", "company", repositoryRoot],
+      expect.objectContaining({cwd: repositoryRoot}),
+    );
+    expect(runner.mock.calls.some(([, args]) => args[0] === "login"))
+      .toBe(false);
+  });
+
   it("turns OAuth rejection or callback failure into a non-destructive error", async () => {
     const runner = vi.fn<CommandRunner>().mockRejectedValue(
       new Error("callback server closed"),
