@@ -43,8 +43,8 @@ BEGIN
       1000
     );
 
-  SELECT CASE WHEN changes() = 0
-    THEN RAISE(ABORT, 'webhook_daily_budget') END;
+  SELECT (CASE WHEN changes() = 0
+    THEN RAISE(ABORT, 'webhook_daily_budget') END);
 END;
 
 CREATE TRIGGER webhook_reservation_reserve_budget
@@ -64,6 +64,6 @@ BEGIN
       1000
     );
 
-  SELECT CASE WHEN changes() = 0
-    THEN RAISE(ABORT, 'webhook_daily_budget') END;
+  SELECT (CASE WHEN changes() = 0
+    THEN RAISE(ABORT, 'webhook_daily_budget') END);
 END;

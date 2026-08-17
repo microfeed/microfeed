@@ -1,4 +1,4 @@
-PRAGMA foreign_keys = OFF;
+PRAGMA defer_foreign_keys = true;
 
 DROP INDEX IF EXISTS webhook_deliveries_created;
 DROP INDEX IF EXISTS webhook_deliveries_endpoint;
@@ -79,5 +79,3 @@ CREATE INDEX webhook_deliveries_reconcile
 ON webhook_deliveries (status, queued_at, next_attempt_at, lease_until);
 CREATE INDEX webhook_delivery_attempts_delivery
 ON webhook_delivery_attempts (delivery_id, attempt_number);
-
-PRAGMA foreign_keys = ON;

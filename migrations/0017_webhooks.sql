@@ -88,8 +88,8 @@ BEGIN
   WHERE usage_day = NEW.budget_day
     AND deliveries + NEW.delivery_count <= 1000;
 
-  SELECT CASE WHEN changes() = 0
-    THEN RAISE(ABORT, 'webhook_daily_budget') END;
+  SELECT (CASE WHEN changes() = 0
+    THEN RAISE(ABORT, 'webhook_daily_budget') END);
 END;
 
 CREATE TABLE IF NOT EXISTS webhook_budget_reservations (
@@ -113,8 +113,8 @@ BEGIN
   WHERE usage_day = NEW.budget_day
     AND deliveries + NEW.delivery_count <= 1000;
 
-  SELECT CASE WHEN changes() = 0
-    THEN RAISE(ABORT, 'webhook_daily_budget') END;
+  SELECT (CASE WHEN changes() = 0
+    THEN RAISE(ABORT, 'webhook_daily_budget') END);
 END;
 
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
