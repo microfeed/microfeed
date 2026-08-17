@@ -742,6 +742,7 @@ export async function hasConfiguredWebhookEndpoints(
     SELECT 1 AS configured
     FROM webhook_endpoints
     WHERE deleted_at IS NULL
+      AND status IN ('active', 'auto_paused')
     LIMIT 1
   `).first<{configured: number}>();
   return Boolean(endpoint?.configured);

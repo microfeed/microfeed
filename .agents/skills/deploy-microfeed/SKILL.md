@@ -50,11 +50,13 @@ their Cloudflare email, password, private password-setup link, or token in chat.
   create a Worker, D1 database, R2 bucket, Worker secrets, and, only when
   selected, a Worker Custom Domain with Cloudflare-managed DNS and
   certificates.
-- Keep deployed webhooks disabled unless the user explicitly asks to enable
-  them for an exact production or preview site. Webhook opt-in creates a
-  dedicated Queue, producer and consumer bindings, an hourly maintenance
-  trigger, and an endpoint-secret encryption key, so it requires its own
-  approval and exact `--enable-webhooks` command.
+- Keep never-provisioned webhooks off unless the user explicitly asks to enable
+  them for an exact production or preview site. Preserve an existing enabled or
+  disabled lifecycle state during ordinary deployment; never change it without
+  an explicit request. First opt-in creates a dedicated Queue, producer and
+  consumer bindings, an hourly maintenance trigger, and an endpoint-secret
+  encryption key, so it requires its own approval and exact
+  `--enable-webhooks` command.
 - Delete a deployment only through `yarn manage destroy`, after its dry run and
   explicit approval of the exact resource list. Never delete reused data,
   bypass identity or replacement-resource checks, pass `--yes`, or improvise
@@ -128,9 +130,16 @@ successful steps were undone.
 - Saved Cloudflare installation: `yarn manage deploy`
 - Explicitly enable deferred media storage: `yarn manage deploy --enable-r2`
 - Explicitly enable production webhooks:
-  `yarn manage deploy --enable-webhooks --instance <name>`
+  `yarn manage deploy --enable-webhooks --instance <instance-name>`
 - Explicitly enable preview webhooks:
-  `yarn manage deploy --preview --enable-webhooks --instance <name>`
+  `yarn manage deploy --preview --enable-webhooks --instance <instance-name>`
+- Disable production webhook infrastructure while retaining its Queue and
+  encryption secret:
+  `yarn manage deploy --disable-webhooks --instance <instance-name>`
+- Disable preview webhook infrastructure independently:
+  `yarn manage deploy --preview --disable-webhooks --instance <instance-name>`
+- Disable local Queue and Cron simulation for one run only:
+  `yarn dev --disable-webhooks --instance <instance-name>`
 - Prepare an `init --local` instance without starting it: `yarn manage deploy --local`
 - Existing compatible Worker not saved in this clone: `yarn manage connect`;
   connecting is read-only, so ask again before a later deployment
@@ -157,19 +166,26 @@ Preview and Cloudflare snapshot operations require production R2 to be ready.
 Use `--instance <name>` whenever more than one saved instance exists or the
 user named a target. Do not deploy a local-only instance to Cloudflare.
 
-When the user asks to enable webhooks, repeat the exact target environment and
-explain that ordinary deployments leave webhooks off. Follow the normal dirty
-checkout and Cloudflare authorization guardrails, run only the appropriate
-command above, then verify with `yarn manage status --instance <name>` and
-report whether the Queue and Worker binding are ready. Do not infer preview
-from production or production from preview.
+When the user asks to enable webhooks, repeat the exact target environment.
+Explain that first enablement creates one dedicated Queue and encryption secret,
+while later enables verify and reuse their exact saved identities. An ordinary
+deployment preserves the saved state: enabled remains enabled, disabled remains
+detached, and unprovisioned remains off. Follow the normal dirty-checkout and
+Cloudflare authorization guardrails, run only the appropriate command above,
+then verify with `yarn manage status --instance <instance-name>` and report the
+Queue ID, producer binding, Worker consumer, delivery state, and Cron result.
+Do not infer preview from production or production from preview.
 
-When the user asks to stop webhook delivery, guide them to **Admin → Webhooks →
-Endpoints** to disable or delete every endpoint. This immediately cancels
-pending delivery and prevents new reservations without redeploying. It does
-not remove the Queue resource. Do not claim that a `--disable-webhooks` flag
-exists; v1 removes an owned Queue only through the complete, separately
-approved instance-destroy workflow.
+When the user asks to stop one webhook integration, guide them to **Admin →
+Webhooks → Endpoints** to disable or delete that endpoint. When they ask to stop
+webhook infrastructure or periodic Worker checks, use the exact production or
+preview `--disable-webhooks` command above after repeating the target. Explain
+that it cancels pending deliveries, purges queued messages, and removes the
+producer, consumer, and every Cron while retaining endpoint data, delivery
+history, the dedicated Queue, and the encryption secret. Events during the
+disabled interval are not replayed. Rerunning enable or disable is idempotent;
+never recreate, rename, adopt, purge, resume, or delete the Queue outside
+`yarn manage`.
 
 ## Fresh-clone workflow
 
@@ -329,7 +345,7 @@ not work around the failure with lower-level Cloudflare tooling.
 3. Always begin with the read-only plan:
 
    ```console
-   yarn manage destroy --instance <instance> --account-id <account-id> --dry-run
+   yarn manage destroy --instance <instance-name> --account-id <account-id> --dry-run
    ```
 
    Add `--preview` only when the user selected the preview. Never destroy
@@ -337,16 +353,19 @@ not work around the failure with lower-level Cloudflare tooling.
    the CLI.
 4. Relay the complete plan in plain language, including the site and account,
    public address, hosted application, database ID and name, media bucket,
+   webhook Queue name, Queue ID, state, ownership, backlog, Cron schedules,
    custom address, reused/preserved status, local instance folder, and every
-   dashboard inspection URL. Explain that owned Cloudflare data deletion is
+   dashboard inspection URL. Explain that the instance-specific Queue is
+   deleted even with `--keep-data`, while D1 and R2 may be preserved. Owned
+   Cloudflare data deletion is
    permanent and that the local folder includes a separate development
    database and media sandbox. Ask whether the user wants to keep Cloudflare
    data; add `--keep-data` only when they explicitly choose it.
 5. Obtain explicit approval for that exact plan. Then run:
 
    ```console
-   yarn manage destroy --instance <instance> --account-id <account-id> \
-     --confirm <instance>
+   yarn manage destroy --instance <instance-name> --account-id <account-id> \
+     --confirm <instance-name>
    ```
 
    Preserve `--preview` or `--keep-data` from the approved plan. Do not use
@@ -357,13 +376,14 @@ not work around the failure with lower-level Cloudflare tooling.
    - hosted application and custom address absent;
    - owned database absent or explicitly preserved;
    - owned media storage absent or explicitly preserved;
+   - webhook Queue absent and Cron schedules removed;
    - local instance folder and development sandbox removed;
-   - final Workers & Pages, D1, and R2 list checks reported.
+   - final Workers & Pages, D1, R2, and Queues list checks reported.
 7. If interrupted, rerun the identical confirmed command. Rely on the CLI's
    recorded steps, identity checks, and replacement-resource refusal. Never
    clear its progress markers or delete a same-named replacement manually.
 8. Report automatic deletion and preserved resources separately. Do not inspect
    or change Zero Trust or SSL settings. Relay the final account-specific
-   Workers & Pages, D1, and R2 dashboard links, the exact name to find on each
+   Workers & Pages, D1, R2, and Queues dashboard links, the exact name to find on each
    page, and whether it should be absent or preserved. Ask the user to refresh
    the lists if Cloudflare has not reflected the change yet.

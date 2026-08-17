@@ -65,9 +65,17 @@ rotated or revoked, update the integration immediately.
 
 Open **Admin → Webhooks → Deliveries** to inspect the status, attempts,
 response diagnostics, and suppression reason. Then run `yarn manage status` to
-check whether the Queue is bound and whether its backlog or oldest-message age
-is growing. Do not rotate a signing secret or redeliver an event until you know
-which receiver configuration is active.
+check the saved infrastructure state. Enabled webhooks require the exact Queue,
+producer binding, Worker consumer, resumed delivery, and hourly Cron. Disabled
+webhooks require the retained Queue to be paused and empty with no binding,
+consumer, or Cron. Do not rotate a signing secret or redeliver an event until
+you know which receiver configuration and deployed environment are active.
+
+If disabling or re-enabling was interrupted, rerun the same `yarn manage
+deploy --disable-webhooks` or `--enable-webhooks` command for the exact instance
+and environment. The operation resumes from saved progress. Do not create,
+rename, resume, purge, or delete a similarly named Queue by hand; an unexpected
+Queue ID fails closed to protect another resource.
 
 Use [Operate and troubleshoot webhooks](/webhooks/operations/) for response
 handling, retries, budget suppression, auto-pause recovery, signing-secret

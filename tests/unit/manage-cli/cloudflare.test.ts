@@ -126,6 +126,53 @@ describe("Pages collision preflight", () => {
 });
 
 describe("CloudflareClient", () => {
+  it("reads Worker Cron wrappers and Queue consumers from the Cloudflare API", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth token --json") {
+        return commandResult(JSON.stringify({
+          token: "oauth-token",
+          type: "oauth",
+        }));
+      }
+      throw new Error(`Unexpected command: ${args.join(" ")}`);
+    });
+    const fetchMock = vi.fn(async (input: URL | RequestInfo) => {
+      const url = new URL(
+        input instanceof Request ? input.url : input.toString(),
+      );
+      if (url.pathname.endsWith("/workers/scripts/feed/schedules")) {
+        return Response.json({
+          errors: [],
+          result: {schedules: [{cron: "0 * * * *"}]},
+          success: true,
+        });
+      }
+      if (url.pathname.endsWith("/queues/queue-id/consumers")) {
+        return Response.json({
+          errors: [],
+          result: [{
+            consumer_id: "consumer-id",
+            script_name: "feed",
+            type: "worker",
+          }],
+          success: true,
+        });
+      }
+      throw new Error(`Unexpected request: ${url.href}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new CloudflareClient(runner);
+
+    await expect(client.workerSchedules("account-id", "feed"))
+      .resolves.toEqual(["0 * * * *"]);
+    await expect(client.queueConsumers("account-id", "queue-id"))
+      .resolves.toEqual([{
+        id: "consumer-id",
+        scriptName: "feed",
+        type: "worker",
+      }]);
+  });
+
   it("requests only the selected OAuth scopes and OS keyring storage", async () => {
     const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult());
     await new CloudflareClient(runner).login();
@@ -447,6 +494,7 @@ describe("CloudflareClient", () => {
       adminPath: "private-admin",
       customDomains: ["feed.example.com"],
       d1: {id: "database-id", name: "feed-db"},
+      deploymentEnvironment: "production",
       instanceId: "instance-id",
       projectName: "feed",
       r2Name: "feed-media",
@@ -454,6 +502,7 @@ describe("CloudflareClient", () => {
       r2SetupMode: "automatic",
       workerName: "feed-worker",
       webhookQueueName: "feed-webhooks",
+      webhookState: "enabled",
       workersDevUrl:
         "https://feed-worker.example-account.workers.dev",
     }]);

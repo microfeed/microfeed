@@ -40,8 +40,10 @@ An optional identity layer that can sit in front of the Admin dashboard.
 **Cloudflare Queue**
 The optional, explicitly enabled service microfeed uses to dispatch webhook
 delivery IDs outside the content request. Production and preview use isolated,
-explicitly enabled Queue resources. Plain local development automatically uses
-Wrangler's simulation and creates no Cloudflare resource or charge.
+instance-specific Queue resources. Infrastructure disabling pauses and detaches
+the Queue without deleting it, so later enablement can reuse the same identity
+and encryption secret. Plain local development automatically uses Wrangler's
+simulation and creates no Cloudflare resource or charge.
 
 **Correlation ID**
 An identifier shared across related events and API actions. An automation

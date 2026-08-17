@@ -292,6 +292,52 @@ describe("webhook limits migration", () => {
     ).get()).toEqual({daily_delivery_limit: 1_000});
   });
 
+  it("preserves deliveries and attempts while adding infrastructure cancellation", async () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    db.exec(await readFile(
+      path.join(repositoryRoot, "migrations/0017_webhooks.sql"),
+      "utf8",
+    ));
+    db.exec(`
+      INSERT INTO webhook_endpoints
+        (id, name, url, secret_ciphertext)
+      VALUES ('endpoint', 'Endpoint', 'https://example.com/webhook', 'cipher');
+      INSERT INTO webhook_events
+        (id, event_type, subject_type, subject_id, payload_json, origin,
+          request_id, correlation_id, budget_day)
+      VALUES ('event', 'webhook.test', 'webhook', 'test', '{}', 'system',
+        'request', 'correlation', '2026-08-17');
+      INSERT INTO webhook_deliveries
+        (id, event_id, endpoint_id, endpoint_url)
+      VALUES ('delivery', 'event', 'endpoint', 'https://example.com/webhook');
+      INSERT INTO webhook_delivery_attempts
+        (delivery_id, attempt_number, outcome, duration_ms)
+      VALUES ('delivery', 1, 'retry', 10);
+    `);
+
+    db.exec(await readFile(
+      path.join(
+        repositoryRoot,
+        "migrations/0020_webhook_infrastructure_disable.sql",
+      ),
+      "utf8",
+    ));
+    db.prepare(`
+      UPDATE webhook_deliveries
+      SET status = 'canceled_webhooks_disabled'
+      WHERE id = 'delivery'
+    `).run();
+
+    expect(db.prepare(
+      "SELECT status FROM webhook_deliveries WHERE id = 'delivery'",
+    ).get()).toEqual({status: "canceled_webhooks_disabled"});
+    expect(db.prepare(
+      "SELECT delivery_id, attempt_number FROM webhook_delivery_attempts",
+    ).all()).toEqual([{attempt_number: 1, delivery_id: "delivery"}]);
+    expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+  });
+
   it("atomically enforces endpoint slots and deletion semantics", async () => {
     const db = await database();
     const insert = db.prepare("INSERT INTO webhook_endpoints (id, name, url, secret_ciphertext, status) VALUES (?, ?, ?, 'cipher', ?)");

@@ -300,9 +300,11 @@ Discover an existing compatible microfeed Worker, including a content-only
 Worker identified by its D1 binding and saved R2 variables, verify its public
 identity, and save it in this clone. Cloudflare is not changed. Connected D1
 and any ready R2 resource are marked reused and preserved by later destruction.
+Use `--preview` only after production is connected; it recovers the preview's
+independent Worker and webhook Queue identity under the same saved instance.
 
 ```console
-yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
+yarn manage connect [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
 ```
 
 | Option | Meaning |
@@ -310,6 +312,7 @@ yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
 | `--account-id <id>` | Search one exact account. |
 | `--worker <name>` | Select an exact compatible Worker. |
 | `--instance <name>` | Choose the local saved name. |
+| `--preview` | Connect the preview Worker after its production instance is connected under the same local name. |
 | `--yes` | Run without selection prompts; requires `--worker` when several matches exist. |
 
 ## `yarn manage deploy`
@@ -340,7 +343,7 @@ local data, performs the same preparation against local D1, and does not deploy
 or start a server.
 
 ```console
-yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks]
+yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]
 ```
 
 | Option | Meaning |
@@ -350,7 +353,8 @@ yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enab
 | `--preview` | Deploy preview instead of production. |
 | `--local` | Prepare an instance created with `init --local`; cannot target a Cloudflare-managed instance or be combined with `--preview`. |
 | `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
-| `--enable-webhooks` | Explicitly create and bind a dedicated production or preview webhook Queue and create its endpoint-secret encryption key. With `--local`, prepares the same simulated binding explicitly, although plain `dev` already does this temporarily. Ordinary Cloudflare deployments do not request Queue permission or create Queue resources. |
+| `--enable-webhooks` | Provision one dedicated production or preview Queue and endpoint-secret encryption key when needed, then bind its producer and consumer and install one hourly Cron. Re-enabling verifies and reuses the exact saved Queue ID and secret. With `--local`, prepares the simulated binding explicitly, although plain `dev` already does this temporarily. |
+| `--disable-webhooks` | For Cloudflare production or preview, pause and purge the dedicated Queue, cancel pending deliveries, and deploy empty producer, consumer, and Cron configuration. Retains the Queue, endpoint data, delivery history, and encryption secret. Cannot be combined with `--enable-webhooks` or `--local`. |
 | `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
 | `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
 
@@ -374,29 +378,33 @@ completing. A later failure remains resumable. The CLI records a fresh remote
 restore baseline only when D1 is still bootstrap-only and the new bucket is
 empty; failing that eligibility check does not undo working R2 setup.
 
-Webhook enablement is resumable and isolated by environment. Production and
-preview use separate Queue names and require explicit opt-in because they add
-Cloudflare resources, authorization, account-wide usage, and possible cost.
-The generated Worker config binds the same Queue as producer and consumer and
-runs one hourly maintenance trigger. It reconciles delivery IDs that were saved
-in D1 but not successfully handed to the Queue on every run, and performs
-30-day retention cleanup only on the 00:00 UTC run. When no non-deleted
-endpoint is configured, the trigger exits after one D1 existence check without
-reconciling, cleaning, or using the Queue. Once enabled, subsequent deployments
-preserve the binding. An owned Queue appears in the reviewed destroy plan and
-is removed with its environment. Plain local `dev` temporarily generates the
-equivalent Wrangler simulation without changing saved production or preview
-enablement.
+Webhook infrastructure has three saved states: `unprovisioned`, `enabled`, and
+`disabled`. Production and preview use separate, instance-specific Queue names
+and IDs. The first enable creates one Queue and one endpoint-secret encryption
+key. Later enablement, disabling, normal deployment, status, connection, and
+destruction verify that exact identity and fail closed if the Queue is missing
+or replaced. A same-named unknown Queue is never adopted automatically.
 
-To stop webhook delivery after enablement, open **Admin → Webhooks →
-Endpoints** and disable or delete every endpoint. Disabling cancels pending
-deliveries and prevents new reservations; deleting also frees the endpoint
-slot. This takes effect immediately without redeployment. It does not delete
-the deployed Queue or encryption key, so the site can reuse them later. There
-is no standalone `--disable-webhooks` deployment option in v1; the complete
-instance destroy flow removes an owned Queue only as part of its reviewed
-resource plan. Retained webhook history is not pruned while the site remains
-endpoint-free; maintenance resumes when another endpoint is configured.
+Enabled configuration binds the Queue as producer and consumer and installs
+one hourly maintenance trigger. It reconciles delivery IDs saved in D1 but not
+handed to the Queue and performs 30-day retention cleanup on the 00:00 UTC run.
+When no active or auto-paused endpoint remains, the trigger exits after one D1
+check without reconciliation, cleanup, or Queue work.
+
+Disabling is resumable. It pauses delivery, marks pending or retrying rows
+`canceled_webhooks_disabled`, deploys explicit empty Queue and Cron arrays,
+cancels again to close the deployment race, purges the dedicated Queue, and
+verifies that the Queue is retained, paused, empty, and detached. Endpoint
+settings, subscriptions, encrypted signing secrets, failure streaks, history,
+and the encryption key remain unchanged. Events during the disabled interval
+are not replayed. Re-enabling keeps the Queue paused while restoring the
+producer, consumer, and Cron, then resumes delivery after verification.
+
+An ordinary deployment preserves the saved lifecycle state. Repeating enable
+or disable verifies the state without creating another Queue or secret.
+Interrupted transitions resume on the next deployment. The reviewed destroy
+plan includes the Queue name, Queue ID, lifecycle state, backlog, and Cron
+schedules; confirmed destruction removes the exact Queue even when disabled.
 
 ## `yarn manage dev`
 
@@ -410,7 +418,7 @@ site is connected to Cloudflare, development uses isolated local D1 and R2
 simulations.
 
 ```console
-yarn manage dev [--instance <name>] [--preview] [--enable-webhooks]
+yarn manage dev [--instance <name>] [--preview] [--enable-webhooks|--disable-webhooks]
 ```
 
 | Option | Meaning |
@@ -418,6 +426,7 @@ yarn manage dev [--instance <name>] [--preview] [--enable-webhooks]
 | `--instance <name>` | Select the local sandbox. |
 | `--preview` | Use preview configuration with isolated local data. |
 | `--enable-webhooks` | Optional explicit alias. Webhook simulation is already enabled for every local `dev` run. |
+| `--disable-webhooks` | Omit the simulated Queue producer, consumer, and Cron for this run only. Does not change saved production, preview, or later local behavior. |
 
 Plain `dev` always generates a temporary Wrangler configuration with the local
 Queue producer, consumer, hourly maintenance trigger, and local endpoint-secret
@@ -849,8 +858,11 @@ ready, also verify both the exact bucket and the Worker's `MEDIA_BUCKET`
 binding. A verified content-only Worker is healthy and reports media as either
 subscription-pending or user-disabled.
 
-When webhooks are enabled, status also verifies the exact Queue and
-`WEBHOOK_QUEUE` binding. It prints realtime backlog and oldest-message data;
+When webhooks are enabled, status also verifies the exact Queue ID, producer
+binding, Worker consumer, resumed delivery, and one hourly Cron. When disabled,
+it verifies that the same Queue is retained, paused, empty, and has no producer,
+consumer, or Cron. An unprovisioned environment expects none of those resources.
+For enabled infrastructure it prints realtime backlog and oldest-message data;
 Cloudflare-observed writes, reads, deletes, total billable operations, and
 average retries for that Queue since UTC midnight; account-wide Queue totals
 for the same window; microfeed-side delivery accounting; and the observation
@@ -879,7 +891,8 @@ data unless explicitly preserved.
 
 Inventory and safely remove one saved Cloudflare deployment. Always begin with
 `--dry-run`; it prints the exact site, account, Worker, D1 ID/name, R2 bucket,
-custom address, local folder, actions, and inspection links.
+webhook Queue name and ID, lifecycle state, backlog, Cron schedules, custom
+address, local folder, actions, and inspection links.
 
 ```console
 yarn manage destroy --instance <name> --dry-run
@@ -897,9 +910,12 @@ yarn manage destroy --instance <name> --confirm <name>
 
 `--yes` and `--local` are rejected. Reused data is always preserved. The
 command verifies installation identity, refuses unexpected or replacement
-resources, deletes the Worker before owned data, records completed steps, and
-removes local state last. Rerun the same confirmed command to resume a partial
-removal.
+resources, pauses a dedicated webhook Queue, explicitly removes Cron schedules,
+cancels pending webhook deliveries when D1 is preserved, deletes the Worker,
+then deletes the exact verified Queue before owned data. `--keep-data` preserves
+D1 and R2, not the environment-specific Queue. Completed steps are recorded and
+local state is removed last. Rerun the same confirmed command to resume a
+partial removal.
 
 ## `yarn manage migrate-pages`
 

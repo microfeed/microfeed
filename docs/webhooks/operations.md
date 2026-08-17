@@ -27,6 +27,7 @@ acknowledgment, signature verification, and downstream retries belong.
 | `suppressed_endpoint_paused` | The endpoint was auto-paused. | Repair, test successfully, and explicitly resume. |
 | `canceled_endpoint_paused` | Pending work was canceled when the circuit opened. | Choose manual redelivery after recovery. |
 | `canceled_endpoint_disabled` | An administrator disabled or deleted the endpoint. | Re-enable only if intentional. |
+| `canceled_webhooks_disabled` | The owner disabled webhook infrastructure for this deployed environment. | Re-enable infrastructure, then manually redeliver only events that remain useful. |
 
 Responses are limited to 4 KiB of diagnostics. Secrets, authorization headers,
 and complete remote pages are not stored. Redirects are never followed.
@@ -113,12 +114,29 @@ those implementation details in a receiver.
 
 ## Safe shutdown
 
+For one integration:
+
 1. Disable the endpoint so no new work is queued.
 2. Let the automation's durable queue drain or cancel jobs according to policy.
 3. Resolve or export audit records and pending approvals.
 4. Delete the endpoint to free its slot.
 5. Revoke its API credential and destination permissions.
 6. Remove secrets from the runtime and secret manager.
+
+To stop the microfeed environment's webhook Worker invocations as well, run
+the appropriate infrastructure command after reviewing its target:
+
+```console
+# Replace <instance-name> with a saved instance name.
+yarn manage deploy --disable-webhooks --instance <instance-name>
+```
+
+Add `--preview` before `--disable-webhooks` for preview. The command cancels
+pending microfeed deliveries and purges the Queue rather than draining it. It
+removes the producer, consumer, and Cron while retaining the Queue, endpoint
+configuration, encrypted signing secrets, and history. Re-enable with the
+matching `--enable-webhooks` command; events from the disabled interval are not
+replayed.
 
 ## Production readiness checklist
 

@@ -23,7 +23,8 @@ categories, language, and description.
 browser explorer, and public API documentation formats.
 
 **Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
-whether delivery is available and summarizes configured endpoints, daily
+whether infrastructure was never provisioned, is enabled, or is disabled with
+its Queue preserved. It summarizes configured endpoints, daily
 delivery usage, Queue operations, and failures. Endpoints manages destination
 URLs, subscriptions, status, and signing secrets. Event explorer previews exact
 payloads and sends signed tests. Deliveries shows attempts, response

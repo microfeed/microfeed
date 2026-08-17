@@ -1,4 +1,5 @@
 import nodePath from "node:path";
+import {setTimeout as delay} from "node:timers/promises";
 
 import {
   normalizeAdminAuthMode,
@@ -212,6 +213,18 @@ export interface QueueOperationMetrics {
   queue: QueueOperationSummary;
 }
 
+export interface QueueResource {
+  deliveryPaused: boolean;
+  id: string;
+  name: string;
+}
+
+export interface QueueConsumer {
+  id: string;
+  scriptName?: string;
+  type: "http_pull" | "worker" | string;
+}
+
 export interface DiscoveredMicrofeedWorker {
   accountId: string;
   accountName: string;
@@ -223,12 +236,15 @@ export interface DiscoveredMicrofeedWorker {
     name: string;
   };
   instanceId: string | null;
+  deploymentEnvironment: "preview" | "production";
   projectName: string;
   r2Name: string;
   r2Ready: boolean;
   r2SetupMode: R2SetupMode;
   workerName: string;
+  webhookQueueId?: string;
   webhookQueueName?: string;
+  webhookState?: "unprovisioned" | "enabled" | "disabled";
   workersDevUrl: string | null;
 }
 
@@ -694,6 +710,14 @@ export class CloudflareClient {
     await this.apiRequest<unknown>(path, {method: "DELETE"});
   }
 
+  private async apiPut<T>(path: string, body: unknown): Promise<T> {
+    return (await this.apiRequest<T>(path, {
+      body: JSON.stringify(body),
+      headers: {"content-type": "application/json"},
+      method: "PUT",
+    })).result;
+  }
+
   private async graphql<T>(
     query: string,
     variables: Record<string, unknown>,
@@ -863,6 +887,17 @@ export class CloudflareClient {
               ),
             );
             const savedR2Name = variables.get("MICROFEED_R2_BUCKET_NAME");
+            const savedWebhookQueueName = variables.get(
+              "MICROFEED_WEBHOOK_QUEUE_NAME",
+            );
+            const effectiveWebhookQueueName = webhookQueueName ??
+              savedWebhookQueueName ?? undefined;
+            const savedWebhookState = variables.get("MICROFEED_WEBHOOK_STATE");
+            const webhookState = savedWebhookState === "enabled" ||
+                savedWebhookState === "disabled" ||
+                savedWebhookState === "unprovisioned"
+              ? savedWebhookState
+              : webhookQueueName ? "enabled" : undefined;
             const effectiveR2Name = r2Name ?? savedR2Name ?? null;
             if (!d1Id || !d1Name || !effectiveR2Name) {
               return null;
@@ -889,6 +924,10 @@ export class CloudflareClient {
               customDomains: (domainsByWorker.get(workerName) ?? [])
                 .sort((left, right) => left.localeCompare(right)),
               d1: {id: d1Id, name: d1Name},
+              deploymentEnvironment:
+                variables.get("DEPLOYMENT_ENVIRONMENT") === "preview"
+                  ? "preview"
+                  : "production",
               instanceId: variables.get("MICROFEED_INSTANCE_ID") ?? null,
               projectName: variables.get("CLOUDFLARE_PROJECT_NAME") ??
                 workerName,
@@ -896,7 +935,13 @@ export class CloudflareClient {
               r2Ready: r2Name !== null,
               r2SetupMode,
               workerName,
-              ...(webhookQueueName ? {webhookQueueName} : {}),
+              ...(variables.get("MICROFEED_WEBHOOK_QUEUE_ID")
+                ? {webhookQueueId: variables.get("MICROFEED_WEBHOOK_QUEUE_ID")!}
+                : {}),
+              ...(effectiveWebhookQueueName
+                ? {webhookQueueName: effectiveWebhookQueueName}
+                : {}),
+              ...(webhookState ? {webhookState} : {}),
               workersDevUrl:
                 subdomain.enabled === true && workersDevSubdomain
                   ? `https://${workerName}.${workersDevSubdomain}.workers.dev`
@@ -1235,7 +1280,7 @@ export class CloudflareClient {
   async queueByName(
     accountId: string,
     name: string,
-  ): Promise<{id: string; name: string} | null> {
+  ): Promise<QueueResource | null> {
     const queues = await this.apiGet<Array<Record<string, unknown>>>(
       `/accounts/${encodeURIComponent(accountId)}/queues`,
     );
@@ -1243,7 +1288,13 @@ export class CloudflareClient {
       String(candidate.queue_name ?? candidate.name ?? "") === name
     );
     const id = String(queue?.queue_id ?? queue?.id ?? "");
-    return queue && id ? {id, name} : null;
+    const settings = queue && typeof queue.settings === "object" &&
+        queue.settings !== null
+      ? queue.settings as Record<string, unknown>
+      : {};
+    return queue && id
+      ? {deliveryPaused: settings.delivery_paused === true, id, name}
+      : null;
   }
 
   async queueMetrics(accountId: string, name: string): Promise<QueueMetrics | null> {
@@ -1260,6 +1311,23 @@ export class CloudflareClient {
       oldestMessageTimestampMs: Number(metrics.oldest_message_timestamp_ms ?? 0),
       queueId: queue.id,
     };
+  }
+
+  async queueConsumers(
+    accountId: string,
+    queueId: string,
+  ): Promise<QueueConsumer[]> {
+    const consumers = await this.apiGet<Array<Record<string, unknown>>>(
+      `/accounts/${encodeURIComponent(accountId)}/queues/` +
+        `${encodeURIComponent(queueId)}/consumers`,
+    );
+    return consumers.map((consumer) => ({
+      id: String(consumer.consumer_id ?? consumer.id ?? ""),
+      ...(typeof consumer.script_name === "string"
+        ? {scriptName: consumer.script_name}
+        : {}),
+      type: String(consumer.type ?? ""),
+    })).filter(({id}) => id.length > 0);
   }
 
   async queueOperationMetrics(
@@ -1358,12 +1426,17 @@ export class CloudflareClient {
     };
   }
 
-  async createQueue(accountId: string, name: string): Promise<void> {
+  async createQueue(accountId: string, name: string): Promise<QueueResource> {
     await runWrangler(
       this.runner,
       ["queues", "create", name],
       {env: accountEnvironment(accountId)},
     );
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) {
+      throw new Error(`Cloudflare created Queue ${name} but it was not found.`);
+    }
+    return queue;
   }
 
   async deleteQueue(accountId: string, name: string): Promise<void> {
@@ -1371,6 +1444,84 @@ export class CloudflareClient {
       this.runner,
       ["queues", "delete", name],
       {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async pauseQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "pause-delivery", name],
+      {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async purgeQueue(accountId: string, name: string): Promise<void> {
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) throw new Error(`Webhook Queue ${name} was not found.`);
+    await runWrangler(
+      this.runner,
+      ["queues", "purge", name, "--force"],
+      {env: accountEnvironment(accountId)},
+    );
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const status = await this.apiGet<{
+        completed?: unknown;
+        started_at?: unknown;
+      }>(
+        `/accounts/${encodeURIComponent(accountId)}/queues/` +
+          `${encodeURIComponent(queue.id)}/purge`,
+      ).catch(() => null);
+      if (typeof status?.completed === "string" && status.completed) return;
+      const metrics = await this.queueMetrics(accountId, name);
+      if (metrics?.backlogCount === 0) return;
+      await delay(1_000);
+    }
+    throw new Error(
+      `Webhook Queue ${name} did not become empty after Cloudflare accepted ` +
+        "the purge request.",
+    );
+  }
+
+  async resumeQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "resume-delivery", name],
+      {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async workerSchedules(
+    accountId: string,
+    name: string,
+  ): Promise<string[]> {
+    const result = await this.apiGet<
+      Array<{cron?: unknown}> | {schedules?: unknown}
+    >(
+      `/accounts/${encodeURIComponent(accountId)}/workers/scripts/` +
+        `${encodeURIComponent(name)}/schedules`,
+    );
+    const schedules = Array.isArray(result)
+      ? result
+      : Array.isArray(result.schedules)
+        ? result.schedules.filter(
+            (schedule): schedule is {cron?: unknown} =>
+              Boolean(schedule) && typeof schedule === "object",
+          )
+        : [];
+    return schedules.flatMap(({cron}) =>
+      typeof cron === "string" ? [cron] : []
+    ).sort((left, right) => left.localeCompare(right));
+  }
+
+  async replaceWorkerSchedules(
+    accountId: string,
+    name: string,
+    crons: readonly string[],
+  ): Promise<void> {
+    await this.apiPut(
+      `/accounts/${encodeURIComponent(accountId)}/workers/scripts/` +
+        `${encodeURIComponent(name)}/schedules`,
+      crons.map((cron) => ({cron})),
     );
   }
 

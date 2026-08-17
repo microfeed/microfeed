@@ -448,6 +448,14 @@ export async function webhookOverview(
     `).all<Record<string, unknown>>(),
   ]);
   const deliveriesToday = Number(usage?.deliveries ?? 0);
+  const runtimeEnabled = Boolean(
+    runtimeEnv.WEBHOOK_QUEUE && runtimeEnv.WEBHOOK_SECRET_KEY?.trim(),
+  );
+  const configuredState = runtimeEnv.MICROFEED_WEBHOOK_STATE;
+  const infrastructureState = configuredState === "enabled" ||
+      configuredState === "disabled" || configuredState === "unprovisioned"
+    ? configuredState
+    : runtimeEnabled ? "enabled" : "unprovisioned";
   return {
     activeEndpoints: Number(counts?.active ?? 0),
     alerts: alerts.results.map((alert) => ({
@@ -458,9 +466,8 @@ export async function webhookOverview(
     })),
     dailyLimit: settings.dailyDeliveryLimit,
     deliveriesToday,
-    enabled: Boolean(
-      runtimeEnv.WEBHOOK_QUEUE && runtimeEnv.WEBHOOK_SECRET_KEY?.trim(),
-    ),
+    enabled: runtimeEnabled,
+    infrastructureState,
     endpointLimit: WEBHOOK_LIMITS.endpointCount,
     endpoints: Number(counts?.total ?? 0),
     estimatedQueueOperationsToday: deliveriesToday * 3,
