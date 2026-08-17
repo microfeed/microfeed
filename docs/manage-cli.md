@@ -741,7 +741,7 @@ setup/reset records are recreated empty. The target installation identity is
 rewritten, while the administrator email and password hash are preserved.
 Webhook endpoints, encrypted signing secrets, delivery history, budgets, and
 alerts are deployment-specific and are recreated empty; after a restore,
-create new endpoints and distribute their new one-time secrets.
+create new endpoints and distribute their new signing secrets.
 `publicBucketUrl` is reset to `/media/`.
 
 ### Restore safety and recovery

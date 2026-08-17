@@ -26,11 +26,11 @@ browser explorer, and public API documentation formats.
 context-aware local or deployed availability, combines configured and active
 endpoint counts, and shows an owner-controlled daily delivery budget instead of
 a pricing-tier limit. The Overview quickstart can scaffold or copy a complete
-JavaScript or Python receiver, explain its one-time signing secret, and lead
-directly to a signed Event Explorer test. Endpoints manages subscriptions and
-secret rotation; Event explorer previews exact generated or current-content
-payloads; Deliveries provides attempt diagnostics, pause recovery, and
-redelivery. See
+JavaScript or Python receiver, explain how to reveal its signing secret, and
+lead directly to a signed Event Explorer test. Endpoints manages subscriptions
+and signing-secret reveal or rotation; Event explorer previews exact generated
+or current-content payloads; Deliveries provides attempt diagnostics, pause
+recovery, and redelivery. See
 [Content automation](/automation/) before connecting a deployed agent.
 
 Plain `yarn dev` automatically supplies the local Queue simulation at no

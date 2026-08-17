@@ -20,6 +20,7 @@ import {
   getWebhookEndpoint,
   listWebhookDeliveries,
   listWebhookEndpoints,
+  revealWebhookEndpointSecret,
   resumeWebhookEndpoint,
   rotateWebhookEndpointSecret,
   updateWebhookEndpoint,
@@ -71,9 +72,12 @@ function explorerBody(
   return input;
 }
 
-async function respond(action: () => Promise<unknown>): Promise<Response> {
+async function respond(
+  action: () => Promise<unknown>,
+  init?: ResponseInit,
+): Promise<Response> {
   try {
-    return jsonResponse(await action());
+    return jsonResponse(await action(), init);
   } catch (error) {
     const response = errorResponse(error);
     if (response) return response;
@@ -169,7 +173,7 @@ export const createAdminWebhookEndpoint: APIRoute = async ({request}) =>
       name: input.name,
       url: input.url,
     }, new URL(request.url).origin);
-    return {...result, secretShownOnce: true};
+    return result;
   });
 
 export const getAdminWebhookEndpoint: APIRoute = async ({params}) => {
@@ -205,6 +209,16 @@ export const deleteAdminWebhookEndpoint: APIRoute = async ({params}) => {
   return jsonResponse({});
 };
 
+export const revealAdminWebhookEndpointSecret: APIRoute = async ({params}) =>
+  respond(async () => {
+    if (!params.endpointId) {
+      throw new WebhookRequestError("Choose a webhook endpoint.");
+    }
+    const secret = await revealWebhookEndpointSecret(env, params.endpointId);
+    if (!secret) throw new WebhookRequestError("Webhook endpoint not found.");
+    return {secret};
+  }, {headers: {"cache-control": "private, no-store"}});
+
 export const rotateAdminWebhookEndpointSecret: APIRoute = async ({params}) =>
   respond(async () => {
     if (!params.endpointId) {
@@ -212,7 +226,7 @@ export const rotateAdminWebhookEndpointSecret: APIRoute = async ({params}) =>
     }
     const result = await rotateWebhookEndpointSecret(env, params.endpointId);
     if (!result) throw new WebhookRequestError("Webhook endpoint not found.");
-    return {...result, secretShownOnce: true};
+    return result;
   });
 
 export const testAdminWebhookEndpoint: APIRoute = async ({params, request}) =>

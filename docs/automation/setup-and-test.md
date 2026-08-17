@@ -42,8 +42,9 @@ yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
 The generated server will provide the local endpoint
 `http://127.0.0.1:3000/webhook` after you start it. Before starting it, open
 **Admin → Webhooks → Endpoints → Add endpoint**, create that URL, and copy the
-one-time `whsec_…` signing secret. This value is your
-`MICROFEED_WEBHOOK_SECRET`; it cannot be revealed again.
+`whsec_…` value from **Signing secret**. This value is your
+`MICROFEED_WEBHOOK_SECRET`; you can reveal or rotate it later from the same
+endpoint.
 
 Now install dependencies and run the receiver with the saved secret:
 
@@ -102,7 +103,8 @@ Use `--json` for one NDJSON record per delivery.
 If you chose the scaffolded receiver above, its endpoint and secret are already
 configured. For `webhook listen`, open **Admin → Webhooks → Endpoints** and
 create `http://127.0.0.1:8978/webhook`. Choose one or more events and
-immediately copy the signing secret. It cannot be revealed later.
+open **Signing secret** to reveal the value for the listener. You can return to
+reveal it again or rotate it later.
 
 Select **Test** to open **Webhooks → Event explorer** with that endpoint and
 `webhook.test` selected. Before sending, inspect its exact Payload, Schema, and

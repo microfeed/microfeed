@@ -2,6 +2,7 @@ import {env} from "cloudflare:workers";
 import type {APIContext} from "astro";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
+import {revealAdminWebhookEndpointSecret} from "@/server/admin/webhook-handlers";
 import {encryptWebhookSecret, generateWebhookSecret} from "@/server/webhooks/crypto";
 import {processWebhookMessage, type WebhookQueueMessage} from "@/server/webhooks/delivery";
 import {
@@ -457,6 +458,21 @@ describe("webhook fanout and accounting", () => {
 });
 
 describe("webhook endpoint lifecycle", () => {
+  it("reveals an encrypted endpoint secret through a non-cacheable Admin response", async () => {
+    const {secret} = await insertEndpoint("reveal-secret");
+    const response = await revealAdminWebhookEndpointSecret({
+      params: {endpointId: "reveal-secret"},
+    } as unknown as APIContext);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(await response.json()).toEqual({secret});
+    const stored = await env.FEED_DB.prepare(`
+      SELECT secret_ciphertext FROM webhook_endpoints
+      WHERE id = 'reveal-secret'
+    `).first<{secret_ciphertext: string}>();
+    expect(stored?.secret_ciphertext).not.toContain(secret);
+  });
+
   it("enforces the twentieth slot under concurrent dashboard creation", async () => {
     for (let index = 0; index < 19; index += 1) {
       await insertEndpoint(`existing-${index}`, {

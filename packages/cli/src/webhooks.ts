@@ -427,7 +427,7 @@ async function webhookScaffoldCommand(
     `After it starts, the receiver will listen at ${result.localEndpointUrl}.`,
     "",
     `Before starting it, create a webhook endpoint for ${result.localEndpointUrl} in Admin → Webhooks → Endpoints.`,
-    "Copy the one-time whsec_… signing secret; this is your MICROFEED_WEBHOOK_SECRET.",
+    "Open Signing secret for that endpoint and reveal the whsec_… value; this is your MICROFEED_WEBHOOK_SECRET.",
     "",
     "Then install dependencies and run the receiver with that secret:",
     ...result.nextStepCommands,

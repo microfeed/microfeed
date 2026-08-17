@@ -1,3 +1,5 @@
+import {readFileSync} from "node:fs";
+
 import React from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
@@ -168,7 +170,7 @@ describe("Webhook Admin", () => {
     expect(output).toContain("Content automation guide");
   });
 
-  it("renders one-time-secret, endpoint-limit, pause recovery, filters, and redelivery controls", () => {
+  it("renders signing-secret, endpoint-limit, pause recovery, filters, and redelivery controls", () => {
     const endpoints = renderToStaticMarkup(React.createElement(WebhookEndpointsApp, {
       enabled: true,
       initialEndpoints: [endpoint],
@@ -180,8 +182,17 @@ describe("Webhook Admin", () => {
     expect(endpoints).toContain("10 consecutive terminal failures");
     expect(endpoints).toContain("Send a successful test");
     expect(endpoints).toContain(">Resume<");
-    expect(endpoints).toContain("Rotate secret");
+    expect(endpoints).toContain("Signing secret");
+    expect(endpoints).not.toContain(">Rotate secret</button>");
     expect(endpoints).not.toContain("Endpoint quickstart");
+    const source = readFileSync(new URL(
+      "../../../src/components/admin/webhooks/WebhookEndpointsApp.tsx",
+      import.meta.url,
+    ), "utf8");
+    expect(source).toContain("Reveal signing secret");
+    expect(source).toContain("Copy signing secret");
+    expect(source).toContain("Rotate signing secret");
+    expect(source).toContain("previous secret remains valid for 24 hours");
 
     const emptyEndpoints = renderToStaticMarkup(React.createElement(WebhookEndpointsApp, {
       enabled: true,

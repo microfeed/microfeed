@@ -12,6 +12,7 @@ import {
   type WebhookSettings,
 } from "@/shared/Webhooks";
 import {
+  decryptWebhookSecret,
   encryptWebhookSecret,
   generateWebhookSecret,
 } from "./crypto";
@@ -96,6 +97,23 @@ export async function getWebhookEndpoint(
     LIMIT 1
   `).bind(id).first<EndpointRow>();
   return row ? endpointFromRow(row) : null;
+}
+
+export async function revealWebhookEndpointSecret(
+  runtimeEnv: Env,
+  id: string,
+): Promise<string | null> {
+  const row = await runtimeEnv.FEED_DB.prepare(`
+    SELECT secret_ciphertext
+    FROM webhook_endpoints
+    WHERE id = ? AND deleted_at IS NULL
+    LIMIT 1
+  `).bind(id).first<{secret_ciphertext: string}>();
+  if (!row) return null;
+  return decryptWebhookSecret(
+    row.secret_ciphertext,
+    webhookEncryptionSecret(runtimeEnv),
+  );
 }
 
 export async function createWebhookEndpoint(

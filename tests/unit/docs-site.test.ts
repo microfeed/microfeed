@@ -782,6 +782,10 @@ describe("documentation site", () => {
     );
     expect(pages.get("setup-and-test.md")).toContain("yarn microfeed webhook listen");
     expect(pages.get("setup-and-test.md")).toContain("webhook.test");
+    expect(pages.get("setup-and-test.md")).toContain("**Signing secret**");
+    expect(pages.get("setup-and-test.md")).not.toContain(
+      "cannot be revealed",
+    );
     expect(pages.get("ai-agents.md")).toContain("before JSON parsing");
     expect(pages.get("ai-agents.md")).toContain("TypeScript receiver core");
     expect(pages.get("ai-agents.md")).toContain("Python receiver core");
@@ -817,6 +821,12 @@ describe("documentation site", () => {
       "yarn microfeed webhook listen",
       "production readiness",
     ]) expect(skill.toLowerCase()).toContain(requirement.toLowerCase());
+    const glossary = await readFile(
+      path.join(docsRoot, "reference", "glossary.md"),
+      "utf8",
+    );
+    expect(glossary).toContain("administrator\ncan reveal it");
+    expect(glossary).not.toContain("revealed once");
   });
 
   it("documents modern theme authoring without migration internals", async () => {

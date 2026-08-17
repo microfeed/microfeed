@@ -202,7 +202,7 @@ export default function WebhookOverviewApp({
             </QuickstartStep>
 
             <QuickstartStep
-              description="Register the local URL and save the secret shown once."
+              description="Register the local URL and reveal its signing secret."
               number={2}
               title="Create the webhook endpoint"
             >
@@ -218,10 +218,12 @@ export default function WebhookOverviewApp({
                 Create endpoint
               </Button>
               <p>
-                Copy the one-time <code>whsec_…</code> value immediately. This
-                is your <code>MICROFEED_WEBHOOK_SECRET</code>. It authenticates
+                Open <strong>Signing secret</strong> for the endpoint and
+                reveal the <code>whsec_…</code> value. This is your
+                {" "}<code>MICROFEED_WEBHOOK_SECRET</code>. It authenticates
                 microfeed and detects changed request bytes, so no additional
-                passcode is needed.
+                passcode is needed. You can return to reveal or rotate it
+                later.
               </p>
             </QuickstartStep>
 
@@ -233,7 +235,7 @@ export default function WebhookOverviewApp({
               <p>
                 In a terminal, enter the generated directory, install its
                 dependencies, and replace <code>whsec_...</code> with the secret
-                copied in step 2.
+                revealed in step 2.
               </p>
               <QuickstartCommand onCopy={copy} value={quickstart.directoryCommand} />
               {quickstart.installCommands.map((command) => (

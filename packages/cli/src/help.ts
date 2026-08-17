@@ -141,7 +141,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Creates one local receiver project from templates bundled with @microfeed/cli. The command works offline, installs and starts nothing, creates no endpoint, and performs no authentication.",
       "JavaScript is the default. Choose Python with --language python. The destination must not already exist; there is no overwrite or force option.",
       "Inside a microfeed clone, use .microfeed/webhooks/<endpoint-name>/. The CLI resolves relative scaffold paths from Yarn's project root, so `yarn microfeed` creates it beside the root package.json rather than under packages/cli. The ignored local workspace is not checked into microfeed.",
-      "After scaffolding, create http://127.0.0.1:3000/webhook in Admin → Webhooks → Endpoints and copy its one-time whsec_… secret. Then install dependencies and start the receiver with that value as MICROFEED_WEBHOOK_SECRET before sending an Event Explorer test.",
+      "After scaffolding, create http://127.0.0.1:3000/webhook in Admin → Webhooks → Endpoints, open Signing secret, and reveal its whsec_… value. Then install dependencies and start the receiver with that value as MICROFEED_WEBHOOK_SECRET before sending an Event Explorer test.",
       "Both starters bind only to 127.0.0.1:3000, verify exact raw request bytes with standardwebhooks, display duplicates and test status, return 401 for invalid signatures and 204 after acceptance, and have no production side effects.",
       "The starter's in-memory duplicate set resets on restart. Add durable acknowledgement, background work, idempotency, loop prevention, approval policy, audit logs, and cost alerts before production.",
     ],

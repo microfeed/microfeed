@@ -229,9 +229,10 @@ yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
 ```
 
 The generated server will provide `http://127.0.0.1:3000/webhook` after it
-starts. Next, create that URL under **Admin → Webhooks → Endpoints**, copy its
-one-time `whsec_…` secret as `MICROFEED_WEBHOOK_SECRET`, then install and run
-the receiver. Send an Event Explorer test only after the receiver is listening.
+starts. Next, create that URL under **Admin → Webhooks → Endpoints**, reveal its
+`whsec_…` value from **Signing secret** as `MICROFEED_WEBHOOK_SECRET`, then
+install and run the receiver. Send an Event Explorer test only after the
+receiver is listening.
 
 Add `--language python` for Flask. The starter binds only
 `http://127.0.0.1:3000/webhook`, verifies exact raw bytes with the maintained

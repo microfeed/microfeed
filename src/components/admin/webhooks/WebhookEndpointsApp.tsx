@@ -1,3 +1,10 @@
+import {
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LockKeyholeIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 import {useState} from "react";
 
 import AdminSectionCard from "@/components/admin/shared/AdminSectionCard";
@@ -6,6 +13,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -61,7 +69,10 @@ export default function WebhookEndpointsApp({
     initialQuickstart && initialEndpoints.length > 0,
   );
   const [busy, setBusy] = useState(false);
-  const [revealedSecret, setRevealedSecret] = useState<string>();
+  const [secretBusy, setSecretBusy] = useState(false);
+  const [secretEndpoint, setSecretEndpoint] = useState<WebhookEndpointSummary>();
+  const [secretValue, setSecretValue] = useState<string>();
+  const [secretVisible, setSecretVisible] = useState(false);
 
   const slotDescription = `${endpoints.length} of ${WEBHOOK_LIMITS.endpointCount} endpoint slots are in use. Disabled and auto-paused endpoints count until deleted.`;
   const closeForm = () => {
@@ -79,6 +90,20 @@ export default function WebhookEndpointsApp({
     setForm({events: endpoint.events, name: endpoint.name, url: endpoint.url});
     setFormOpen(true);
   };
+  const openSecret = (
+    endpoint: WebhookEndpointSummary,
+    secret?: string,
+  ) => {
+    setSecretEndpoint(endpoint);
+    setSecretValue(secret);
+    setSecretVisible(Boolean(secret));
+  };
+  const closeSecret = () => {
+    if (secretBusy) return;
+    setSecretEndpoint(undefined);
+    setSecretValue(undefined);
+    setSecretVisible(false);
+  };
 
   const refresh = async () => {
     setEndpoints(await requestJson("endpoints"));
@@ -91,10 +116,12 @@ export default function WebhookEndpointsApp({
         editingId ? `endpoints/${editingId}` : "endpoints",
         {body: JSON.stringify(form), method: editingId ? "PUT" : "POST"},
       );
-      if (result.secret) setRevealedSecret(result.secret);
       await refresh();
       showToast(editingId ? "Webhook endpoint updated." : "Webhook endpoint created.", "success");
       closeForm();
+      if (result.secret && result.endpoint) {
+        openSecret(result.endpoint, result.secret);
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), "error");
     } finally {
@@ -106,11 +133,10 @@ export default function WebhookEndpointsApp({
     setBusy(true);
     try {
       const method = actionName === "delete" ? "DELETE" : "POST";
-      const result = await requestJson(
+      await requestJson(
         `endpoints/${endpoint.id}${actionName === "delete" ? "" : `/${actionName}`}`,
         {body: method === "POST" ? "{}" : undefined, method},
       );
-      if (result.secret) setRevealedSecret(result.secret);
       await refresh();
       showToast(actionName === "test" ? "Test delivery queued." : `Endpoint ${actionName} complete.`, "success");
     } catch (error) {
@@ -143,22 +169,133 @@ export default function WebhookEndpointsApp({
       `${adminUrl("webhooks/events", browserAdminPath())}?${query}`,
     );
   };
+  const toggleSecret = async () => {
+    if (!secretEndpoint) return;
+    if (secretVisible) {
+      setSecretVisible(false);
+      return;
+    }
+    if (secretValue) {
+      setSecretVisible(true);
+      return;
+    }
+    setSecretBusy(true);
+    try {
+      const result = await requestJson(
+        `endpoints/${secretEndpoint.id}/secret`,
+      );
+      setSecretValue(result.secret);
+      setSecretVisible(true);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), "error");
+    } finally {
+      setSecretBusy(false);
+    }
+  };
+  const copySecret = async () => {
+    if (!secretValue) return;
+    await navigator.clipboard.writeText(secretValue);
+    showToast("Signing secret copied.", "success");
+  };
+  const rotateSecret = async () => {
+    if (!secretEndpoint || !window.confirm(
+      `Rotate the signing secret for “${secretEndpoint.name}”? The current secret will remain valid for 24 hours so you can update the receiver.`,
+    )) return;
+    setSecretBusy(true);
+    try {
+      const result = await requestJson(
+        `endpoints/${secretEndpoint.id}/rotate`,
+        {body: "{}", method: "POST"},
+      );
+      if (!result.secret || !result.endpoint) {
+        throw new Error("The rotated signing secret was not returned.");
+      }
+      setSecretEndpoint(result.endpoint);
+      setSecretValue(result.secret);
+      setSecretVisible(true);
+      await refresh();
+      showToast(
+        "Signing secret rotated. The previous secret remains valid for 24 hours.",
+        "success",
+      );
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), "error");
+    } finally {
+      setSecretBusy(false);
+    }
+  };
 
   return (
     <div className="grid gap-6">
-      {revealedSecret && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-5" role="status">
-          <p className="font-semibold">Copy this signing secret now. It will not be shown again.</p>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            This endpoint-specific <code>whsec_…</code> secret authenticates
-            microfeed and detects changed request bytes. Store it in
-            <code> MICROFEED_WEBHOOK_SECRET</code>, never in source code or the
-            endpoint URL. No separate passcode or bearer token is needed.
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open) closeSecret();
+        }}
+        open={Boolean(secretEndpoint)}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LockKeyholeIcon aria-hidden="true" className="size-4" />
+              Signing secret
+            </DialogTitle>
+            <DialogDescription>
+              Use this endpoint-specific secret to verify that webhook events
+              come from microfeed. You can reveal or rotate it here.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex min-w-0 items-center gap-1 rounded-lg bg-muted p-2">
+            <code className="min-w-0 flex-1 overflow-x-auto px-2 py-1 text-sm">
+              {secretVisible && secretValue
+                ? secretValue
+                : `whsec_${"•".repeat(24)}`}
+            </code>
+            <Button
+              aria-label={secretVisible ? "Hide signing secret" : "Reveal signing secret"}
+              disabled={secretBusy}
+              onClick={() => void toggleSecret()}
+              size="icon-sm"
+              title={secretVisible ? "Hide signing secret" : "Reveal signing secret"}
+              type="button"
+              variant="ghost"
+            >
+              {secretVisible ? <EyeOffIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+            </Button>
+            <Button
+              aria-label="Copy signing secret"
+              disabled={secretBusy || !secretValue}
+              onClick={() => void copySecret()}
+              size="icon-sm"
+              title="Copy signing secret"
+              type="button"
+              variant="ghost"
+            >
+              <CopyIcon aria-hidden="true" />
+            </Button>
+          </div>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Store it in <code>MICROFEED_WEBHOOK_SECRET</code>, never in source
+            code or the endpoint URL. The signature is the authentication;
+            no separate passcode or bearer token is needed.
           </p>
-          <code className="mt-3 block overflow-x-auto rounded-md bg-background p-3 text-sm">{revealedSecret}</code>
-          <Button className="mt-3" onClick={() => navigator.clipboard.writeText(revealedSecret)} size="sm" type="button" variant="outline">Copy secret</Button>
-        </div>
-      )}
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/8 p-3 text-sm leading-6">
+            Rotating creates a new secret immediately. The previous secret
+            remains valid for 24 hours so you can update the receiver without
+            interrupting deliveries.
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={secretBusy}
+              onClick={() => void rotateSecret()}
+              type="button"
+              variant="outline"
+            >
+              <RefreshCwIcon aria-hidden="true" />
+              Rotate signing secret
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {endpoints.length === 0 && (
         <AdminSectionCard description={slotDescription} title="Add endpoint">
@@ -236,7 +373,7 @@ export default function WebhookEndpointsApp({
                   <div className="flex flex-wrap gap-2">
                     <Button disabled={busy} onClick={() => openEdit(endpoint)} size="sm" type="button" variant="outline">Edit</Button>
                     <Button disabled={busy || endpoint.status === "disabled"} onClick={() => openTest(endpoint)} size="sm" type="button" variant="outline">Test</Button>
-                    <Button disabled={busy} onClick={() => action(endpoint, "rotate")} size="sm" type="button" variant="outline">Rotate secret</Button>
+                    <Button disabled={busy} onClick={() => openSecret(endpoint)} size="sm" type="button" variant="outline">Signing secret</Button>
                     {endpoint.status === "auto_paused" ? (
                       <Button disabled={busy || !endpoint.resumeTestedAt} onClick={() => action(endpoint, "resume")} size="sm" type="button">Resume</Button>
                     ) : (
@@ -290,10 +427,12 @@ function EndpointForm({
           <p className="font-medium">Authentication</p>
           <p className="mt-1 text-muted-foreground">
             microfeed generates one unique Standard Webhooks signing secret
-            for this endpoint and reveals it once. Your receiver verifies the
+            for this endpoint. Your receiver verifies the
             exact raw body, delivery ID, timestamp, and signature with that
-            secret. Put it in <code>MICROFEED_WEBHOOK_SECRET</code>; do not add
-            a passcode, bearer token, URL credential, or custom authentication header.
+            secret. You can reveal or rotate it later from the endpoint's
+            <strong> Signing secret</strong> dialog. Put it in
+            <code> MICROFEED_WEBHOOK_SECRET</code>; do not add a passcode,
+            bearer token, URL credential, or custom authentication header.
           </p>
         </div>
       )}

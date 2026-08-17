@@ -10,8 +10,9 @@ The generated server will provide the local endpoint
 
 1. In microfeed Admin, open **Webhooks → Endpoints → Add endpoint** and create
    that URL.
-2. Copy the one-time `whsec_…` signing secret. This is your
-   `MICROFEED_WEBHOOK_SECRET`.
+2. Open **Signing secret** for the endpoint and reveal its `whsec_…` value.
+   This is your `MICROFEED_WEBHOOK_SECRET`; you can reveal or rotate it later
+   from the same dialog.
 3. Install dependencies and run the receiver with that secret:
 
    ```console

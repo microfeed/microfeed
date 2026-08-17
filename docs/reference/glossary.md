@@ -116,9 +116,11 @@ bytes, deduplicate delivery IDs, durably accept work, and then apply their own
 policy.
 
 **Webhook signing secret**
-The unique `whsec_…` value revealed once when an endpoint is created or rotated.
-A receiver stores it as `MICROFEED_WEBHOOK_SECRET` and uses it to verify the
-Standard Webhooks ID, timestamp, signature, and exact body. That verification
+The unique encrypted `whsec_…` value for a webhook endpoint. An administrator
+can reveal it from the endpoint's **Signing secret** dialog or rotate it; after
+rotation, the previous value remains valid for 24 hours. A receiver stores the
+current value as `MICROFEED_WEBHOOK_SECRET` and uses it to verify the Standard
+Webhooks ID, timestamp, signature, and exact body. That verification
 authenticates microfeed and detects tampering; an additional passcode, bearer
 token, URL credential, or custom header is unnecessary.
 

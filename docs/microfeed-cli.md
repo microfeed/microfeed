@@ -743,10 +743,11 @@ IDs, print the verified payload, and skip every production effect when signed
 `test` is true. They never print the secret or signature.
 
 These are local development inspectors. Their duplicate state resets on
-restart, and they contain no durable queue or production side effect. Store the
-endpoint's one-time secret in `MICROFEED_WEBHOOK_SECRET` through the generated
-`.env.example`; the signing secret is the endpoint authentication, so a second
-passcode is unnecessary.
+restart, and they contain no durable queue or production side effect. Reveal
+the endpoint's signing secret from its Admin **Signing secret** dialog and
+store it in `MICROFEED_WEBHOOK_SECRET` through the generated `.env.example`;
+the signing secret is the endpoint authentication, so a second passcode is
+unnecessary.
 
 Inside a microfeed clone, use `.microfeed/webhooks/<endpoint-name>/` as the
 destination. The clone ignores `.microfeed/`, just as it does for local theme
@@ -765,9 +766,9 @@ yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
 ```
 
 Human output guides you to scaffold first, register
-`http://127.0.0.1:3000/webhook` and save its one-time secret second, then
-install and run with `MICROFEED_WEBHOOK_SECRET` before sending an Event Explorer
-test. The same templates supply Admin quickstart code and
+`http://127.0.0.1:3000/webhook` and reveal its signing secret second, then
+install and run with `MICROFEED_WEBHOOK_SECRET` before sending an Event
+Explorer test. The same templates supply Admin quickstart code and
 the OpenAPI webhook operation's JavaScript and Python `x-codeSamples`.
 
 ## `yarn microfeed webhook listen`
@@ -796,8 +797,8 @@ yarn microfeed webhook listen \
 
 There is deliberately no plaintext `--secret` option. Add
 `http://127.0.0.1:8978/webhook` under **Admin → Webhooks → Endpoints**, then use
-the one-time endpoint secret with the listener. Deployed endpoints require
-HTTPS; this HTTP exception exists only for local development.
+the endpoint's revealed signing secret with the listener. Deployed endpoints
+require HTTPS; this HTTP exception exists only for local development.
 
 Without a forward target, a verified delivery returns `204`. Forwarding has a
 nine-second timeout and returns `502` for connection failure or `504` for a
