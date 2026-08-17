@@ -1,8 +1,8 @@
 # `@microfeed/cli`
 
 [Package on npm](https://www.npmjs.com/package/@microfeed/cli) ·
-[Guided workflow](https://docs.microfeed.org/api/cli/) ·
-[Complete command reference](https://docs.microfeed.org/microfeed-cli/)
+[Guided workflow](https://docs.microfeed.org/automation/cli/) ·
+[`@microfeed/cli` reference](https://docs.microfeed.org/microfeed-cli/)
 
 The official, agent-friendly command for publishing and managing content on
 one or more [microfeed](https://www.microfeed.org/) sites. Use it directly from
@@ -102,8 +102,9 @@ server-visible connection name are intentionally separate.
 ## Log in
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed login https://feed.example.com \
-  --instance production \
+  --instance <instance-name> \
   --connection-name "Home Mac"
 ```
 
@@ -128,9 +129,10 @@ credential storage.
 Manage saved instances with:
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed instances list
-yarn microfeed instances use production
-yarn microfeed logout --instance production
+yarn microfeed instances use <instance-name>
+yarn microfeed logout --instance <instance-name>
 ```
 
 Logout revokes this computer's current token family and removes the local
@@ -145,15 +147,16 @@ Use `--json` for deterministic output consumed by another program or coding
 agent:
 
 ```console
-yarn microfeed item list --summary --instance production --json
-yarn microfeed item search hello --fields title --instance production --json
-yarn microfeed item get 0HGJLSML3P1 --unwrap --instance production --json
-yarn microfeed item create --instance production --input item.json --validate-only --json
-yarn microfeed item create --instance production --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json
-yarn microfeed item update 0HGJLSML3P1 --instance production --input item.json --json
-yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./episode.mp3 --json
-yarn microfeed item update 0HGJLSML3P1 --instance production --image-file ./cover.png --json
-yarn microfeed media upload ./inline-image.png --instance production --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed item list --summary --instance <instance-name> --json
+yarn microfeed item search hello --fields title --instance <instance-name> --json
+yarn microfeed item get 0HGJLSML3P1 --unwrap --instance <instance-name> --json
+yarn microfeed item create --instance <instance-name> --input item.json --validate-only --json
+yarn microfeed item create --instance <instance-name> --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json
+yarn microfeed item update 0HGJLSML3P1 --instance <instance-name> --input item.json --json
+yarn microfeed item update 0HGJLSML3P1 --instance <instance-name> --attachment-file ./episode.mp3 --json
+yarn microfeed item update 0HGJLSML3P1 --instance <instance-name> --image-file ./cover.png --json
+yarn microfeed media upload ./inline-image.png --instance <instance-name> --json
 ```
 
 Create and update accept either a JSON object through `--input` or common flags
@@ -199,7 +202,8 @@ with file bytes.
 For an image embedded inside `content_html`, upload it as standalone media:
 
 ```console
-yarn microfeed media upload ./diagram.png --instance production --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed media upload ./diagram.png --instance <instance-name> --json
 ```
 
 Read the permanent `media_url` from the JSON result, insert it into an `<img
@@ -211,21 +215,66 @@ Item deletion requires an interactive exact-ID confirmation. For reviewed
 automation, pass the same ID to `--confirm`:
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed item delete 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --confirm 0HGJLSML3P1 \
   --json
 ```
 
 There is no generic `--yes` option.
 
+## Develop webhook receivers
+
+Create a complete local JavaScript receiver without contacting a site:
+
+```console
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language javascript
+```
+
+The generated server will provide `http://127.0.0.1:3000/webhook` after it
+starts. Next, create that URL under **Admin → Webhooks → Endpoints**, reveal its
+`whsec_…` value from **Signing secret** as `MICROFEED_WEBHOOK_SECRET`, then
+install and run the receiver. Send an Event Explorer test only after the
+receiver is listening.
+
+Add `--language python` for Flask. The starter binds only
+`http://127.0.0.1:3000/webhook`, verifies exact raw bytes with the maintained
+Standard Webhooks library, displays delivery/event/test/duplicate details, and
+prevents signed test events from producing production effects. It is a local
+inspector with in-memory duplicate tracking, not a production queue.
+
+Use the tools for distinct jobs:
+
+- `webhook scaffold` creates a receiver project offline.
+- `webhook listen` verifies, displays, and optionally forwards signed local
+  deliveries.
+- `webhook sample <event>` reads one exact unsigned example from an instance's
+  generated OpenAPI contract.
+- Admin Event Explorer sends a real signed, budgeted, retryable test.
+
+Every endpoint receives one unique `whsec_…` signing secret. Store it only in
+`MICROFEED_WEBHOOK_SECRET`. The Standard Webhooks signature authenticates
+microfeed and detects tampering; no additional passcode or URL credential is
+needed.
+
+Within a microfeed clone, `.microfeed/webhooks/<endpoint-name>/` is the
+recommended development location. The clone ignores `.microfeed/`, so local
+receiver code and secrets are not accidentally committed to microfeed. Move a
+hardened receiver into its own repository when it becomes a deployed service.
+The root `yarn microfeed` command resolves relative scaffold paths from the Yarn
+project root, so this directory is created beside the root `package.json`, not
+inside `packages/cli`.
+
 ## Call the REST API
 
 The raw API command accepts only relative `/api/v1/…` paths:
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed api GET "/api/v1/feed/?limit=3" \
-  --instance production \
+  --instance <instance-name> \
   --json
 ```
 
@@ -263,7 +312,7 @@ yarn microfeed media upload --help
 yarn microfeed api --help
 ```
 
-Read the complete [microfeed cli reference](https://docs.microfeed.org/microfeed-cli/)
+Read the complete [`@microfeed/cli` reference](https://docs.microfeed.org/microfeed-cli/)
 for every command, option, output contract, and safety rule.
 
 ## Agent skill

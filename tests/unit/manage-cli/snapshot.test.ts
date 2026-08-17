@@ -130,6 +130,9 @@ describe("snapshot migration history", () => {
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_create_idempotency");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_search_metadata");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("site_search_documents");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_endpoints");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_deliveries");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_settings");
     expect(SNAPSHOT_TABLES.durable).toContain("pages");
     expect(SNAPSHOT_TABLES.durable).toContain("site_files");
   });
@@ -282,7 +285,8 @@ function snapshotSql(
     "SELECT name, sql, tbl_name, type FROM sqlite_schema " +
       "WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' " +
       `${includeIndexes ? "" : "AND type <> 'index' "}` +
-      "ORDER BY type DESC, name",
+      "ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 " +
+      "WHEN 'trigger' THEN 2 ELSE 3 END, name",
   ).all() as Array<{
     name: string;
     sql: string;

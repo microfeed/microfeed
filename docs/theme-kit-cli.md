@@ -1,5 +1,5 @@
 ---
-title: theme-kit cli reference
+title: "@microfeed/theme-kit reference"
 description: Complete command and option reference for the @microfeed/theme-kit authoring CLI.
 ---
 
@@ -11,9 +11,10 @@ theme.
 
 Use [`yarn manage theme`](/manage-cli/#yarn-manage-theme) from a microfeed
 checkout for instance operations such as export, install, update, activation,
-rollback, and deletion. See [Themes and website code](/dashboard/themes/) for
-the authoring workflow, storage model, and Vite, Webpack, Tailwind, D1, and R2
-examples.
+rollback, and deletion. See [Build and release a theme](/themes/) for the
+authoring workflow, [Theme contract and rendering](/themes/contract/) for the
+package contract, and [Bundle CSS, JavaScript, and assets](/themes/assets/) for
+Vite, Webpack, Tailwind, D1, and R2 examples.
 
 ## Run the CLI
 

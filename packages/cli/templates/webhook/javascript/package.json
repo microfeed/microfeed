@@ -1,0 +1,12 @@
+{
+  "name": "microfeed-webhook-receiver",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.cjs"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "standardwebhooks": "1.0.0"
+  }
+}

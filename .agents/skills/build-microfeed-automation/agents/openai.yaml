@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build microfeed automations"
+  short_description: "Build secure webhook-driven microfeed agents"
+  default_prompt: "Use $build-microfeed-automation to build a secure webhook-driven automation for my microfeed site."

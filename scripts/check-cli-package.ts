@@ -1,4 +1,4 @@
-import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, readFile, readdir, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
@@ -104,6 +104,32 @@ try {
       !packedSkillMetadata.includes("Manage microfeed content")) {
     throw new Error("The packed content-management skill is missing or stale.");
   }
+  const packedJavascriptStarter = await readFile(path.join(
+    temporary,
+    "package/templates/webhook/javascript/server.cjs",
+  ), "utf8");
+  const packedJavascriptLock = await readFile(path.join(
+    temporary,
+    "package/templates/webhook/javascript/yarn.lock",
+  ), "utf8");
+  const packedJavascriptPackage = JSON.parse(await readFile(path.join(
+    temporary,
+    "package/templates/webhook/javascript/package.json",
+  ), "utf8")) as {dependencies?: Record<string, string>};
+  const repositoryJavascriptStarter = await readFile(path.join(
+    process.cwd(),
+    "packages/cli/templates/webhook/javascript/server.cjs",
+  ), "utf8");
+  if (packedJavascriptStarter !== repositoryJavascriptStarter) {
+    throw new Error("The packed webhook starter is missing or stale.");
+  }
+  if (packedJavascriptLock !== "") {
+    throw new Error("The packed webhook starter is missing its empty Yarn project boundary.");
+  }
+  if (packedJavascriptPackage.dependencies?.express !== "5.2.1" ||
+      packedJavascriptPackage.dependencies?.standardwebhooks !== "1.0.0") {
+    throw new Error("The packed JavaScript webhook starter dependencies are stale.");
+  }
 
   const packedHelp = run(process.execPath, [
     path.join(temporary, "package", "dist", "index.js"),
@@ -149,6 +175,43 @@ try {
   if (expectedCreateHelp !== projectCreateHelp) {
     throw new Error("Project-local item create help behaves differently.");
   }
+  const projectScaffold = path.join(
+    project,
+    ".microfeed",
+    "webhooks",
+    "endpoint1",
+  );
+  const projectScaffoldResult = JSON.parse(run(
+    "yarn",
+    ["microfeed", "webhook", "scaffold", projectScaffold, "--json"],
+    project,
+  )) as {directory?: string; language?: string};
+  if (projectScaffoldResult.directory !== projectScaffold ||
+      projectScaffoldResult.language !== "javascript") {
+    throw new Error("Project-local webhook scaffold output is invalid.");
+  }
+  if (JSON.stringify((await readdir(projectScaffold)).sort()) !== JSON.stringify([
+    ".env.example",
+    ".gitignore",
+    "README.md",
+    "package.json",
+    "server.cjs",
+    "yarn.lock",
+  ])) {
+    throw new Error("The packed JavaScript webhook starter file set is incomplete.");
+  }
+  run("yarn", ["install"], projectScaffold);
+  const installedStarterLock = await readFile(
+    path.join(projectScaffold, "yarn.lock"),
+    "utf8",
+  );
+  if (!installedStarterLock.includes(
+    'standardwebhooks: "npm:1.0.0"',
+  ) || !installedStarterLock.includes(
+    'resolution: "standardwebhooks@npm:1.0.0"',
+  )) {
+    throw new Error("The nested JavaScript webhook starter cannot install independently.");
+  }
 
   const dlxHelp = run("yarn", [
     "dlx",
@@ -160,6 +223,35 @@ try {
   // Yarn reports the temporary package resolution before running the binary.
   if (!dlxHelp.endsWith(HELP)) {
     throw new Error("The yarn dlx @microfeed/cli behavior diverged.");
+  }
+  const dlxScaffold = path.join(temporary, "dlx-scaffold");
+  const dlxScaffoldOutput = run("yarn", [
+    "dlx",
+    "--package",
+    `@microfeed/cli@file:${archive}`,
+    "microfeed",
+    "webhook",
+    "scaffold",
+    dlxScaffold,
+    "--language",
+    "python",
+    "--json",
+  ], temporary);
+  const dlxScaffoldResult = JSON.parse(
+    dlxScaffoldOutput.slice(dlxScaffoldOutput.indexOf("{")),
+  ) as {directory?: string; language?: string};
+  if (dlxScaffoldResult.directory !== dlxScaffold ||
+      dlxScaffoldResult.language !== "python") {
+    throw new Error("yarn dlx webhook scaffold output is invalid.");
+  }
+  if (JSON.stringify((await readdir(dlxScaffold)).sort()) !== JSON.stringify([
+    ".env.example",
+    ".gitignore",
+    "README.md",
+    "requirements.txt",
+    "server.py",
+  ])) {
+    throw new Error("The packed Python webhook starter file set is incomplete.");
   }
   process.stdout.write(
     "Workspace, project-local, packed, and yarn dlx @microfeed/cli behavior match.\n",

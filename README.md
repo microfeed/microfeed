@@ -191,7 +191,7 @@ Choose the publishing workflow that fits the task:
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through browser-authorized access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the
-  browser. See the [guided CLI workflow](https://docs.microfeed.org/api/cli/)
+  browser. See the [guided CLI workflow](https://docs.microfeed.org/automation/cli/)
   or the complete [`yarn microfeed`
   reference](https://docs.microfeed.org/microfeed-cli/).
 
@@ -221,8 +221,9 @@ Themes developed by the community can be installed from public GitHub
 repositories with `yarn manage theme`. Developers and AI coding agents can
 initialize a standalone theme repository, work with fixtures or a live public
 JSON Feed, use tools such as Tailwind CSS, and validate the package before it
-is installed. See [Themes and website code](https://docs.microfeed.org/dashboard/themes/)
-for the complete authoring, preview, installation, and asset workflow.
+is installed. See [Build and release a theme](https://docs.microfeed.org/themes/)
+for the complete authoring workflow and [Themes and website
+code](https://docs.microfeed.org/dashboard/themes/) for the site-owner controls.
 The only bundled source project is [`themes/default`](themes/default). It is a
 complete standalone Theme Kit workspace with Tailwind CSS, TypeScript,
 fixtures, validation, tests, and `yarn preview`. Its generated package has no
@@ -319,16 +320,18 @@ durable data, migration history, the entire R2 bucket, object metadata, and
 checksums:
 
 ```console
-yarn manage snapshot create --instance production --output backup.tar.gz
+# Replace <instance-name> with a saved instance name.
+yarn manage snapshot create --instance <instance-name> --output backup.tar.gz
 ```
 
 You can also download a Cloudflare site and immediately create a new local copy
 with its real content:
 
 ```console
+# Replace both placeholders with saved or new instance names.
 yarn manage snapshot pull \
-  --instance production \
-  --local-instance production-copy
+  --instance <instance-name> \
+  --local-instance <local-instance-name>
 ```
 
 Restore archives only with a checkout whose migration history exactly extends

@@ -188,6 +188,30 @@ export interface WorkerDomain {
   service: string;
 }
 
+export interface QueueMetrics {
+  backlogBytes: number;
+  backlogCount: number;
+  oldestMessageTimestampMs: number;
+  observedAt: string;
+  queueId: string;
+}
+
+export interface QueueOperationSummary {
+  averageRetriesPerMessage: number;
+  bytes: number;
+  deletes: number;
+  reads: number;
+  total: number;
+  writes: number;
+}
+
+export interface QueueOperationMetrics {
+  account: QueueOperationSummary;
+  observedAt: string;
+  periodStart: string;
+  queue: QueueOperationSummary;
+}
+
 export interface DiscoveredMicrofeedWorker {
   accountId: string;
   accountName: string;
@@ -204,6 +228,7 @@ export interface DiscoveredMicrofeedWorker {
   r2Ready: boolean;
   r2SetupMode: R2SetupMode;
   workerName: string;
+  webhookQueueName?: string;
   workersDevUrl: string | null;
 }
 
@@ -368,13 +393,20 @@ function parsePagesProjects(output: string): PagesProject[] {
 export class CloudflareClient {
   private credentialsPromise?: Promise<CloudflareCredentials>;
 
-  constructor(private readonly runner: CommandRunner) {}
+  constructor(
+    private readonly runner: CommandRunner,
+    private readonly additionalScopes: readonly string[] = [],
+  ) {}
+
+  private scopes(): string[] {
+    return [...new Set([...OAUTH_SCOPES, ...this.additionalScopes])];
+  }
 
   async login(): Promise<void> {
     try {
       await runWrangler(
         this.runner,
-        ["login", "--use-keyring", "--scopes", ...OAUTH_SCOPES],
+        ["login", "--use-keyring", "--scopes", ...this.scopes()],
         {interactive: true},
       );
     } catch (error) {
@@ -393,7 +425,7 @@ export class CloudflareClient {
     try {
       await runWrangler(
         this.runner,
-        ["auth", "create", profile, "--scopes", ...OAUTH_SCOPES],
+        ["auth", "create", profile, "--scopes", ...this.scopes()],
         {
           env: {
             ...process.env,
@@ -526,7 +558,7 @@ export class CloudflareClient {
           (permission): permission is string => typeof permission === "string",
         )
       : [];
-    return OAUTH_SCOPES.every((scope) => permissions.includes(scope));
+    return this.scopes().every((scope) => permissions.includes(scope));
   }
 
   private async credentials(): Promise<CloudflareCredentials> {
@@ -662,6 +694,34 @@ export class CloudflareClient {
     await this.apiRequest<unknown>(path, {method: "DELETE"});
   }
 
+  private async graphql<T>(
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<T> {
+    const credentials = await this.credentials();
+    const authorizationHeaders: Record<string, string> =
+      credentials.type === "api_key"
+        ? {"X-Auth-Email": credentials.email, "X-Auth-Key": credentials.key}
+        : {Authorization: `Bearer ${credentials.token}`};
+    const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      body: JSON.stringify({query, variables}),
+      headers: {"content-type": "application/json", ...authorizationHeaders},
+      method: "POST",
+    });
+    const data = await response.json().catch(() => null) as {
+      data?: T;
+      errors?: Array<{message?: unknown}>;
+    } | null;
+    if (!response.ok || !data?.data || data.errors?.length) {
+      const detail = data?.errors
+        ?.map(({message}) => typeof message === "string" ? message : "")
+        .filter(Boolean)
+        .join("; ");
+      throw new Error(detail || "Cloudflare Queue analytics are unavailable.");
+    }
+    return data.data;
+  }
+
   async workerBindings(
     accountId: string,
     workerName: string,
@@ -771,6 +831,9 @@ export class CloudflareClient {
             const r2 = bindings.find(
               ({name, type}) => name === "MEDIA_BUCKET" && type === "r2_bucket",
             );
+            const webhookQueue = bindings.find(
+              ({name, type}) => name === "WEBHOOK_QUEUE" && type === "queue",
+            );
             const d1Id = typeof d1?.database_id === "string"
               ? d1.database_id
               : typeof d1?.id === "string"
@@ -779,6 +842,16 @@ export class CloudflareClient {
             const r2Name = typeof r2?.bucket_name === "string"
               ? r2.bucket_name
               : null;
+            const webhookQueueName = typeof webhookQueue?.queue_name === "string"
+              ? webhookQueue.queue_name
+              : typeof webhookQueue?.queue === "string"
+              ? webhookQueue.queue
+              : null;
+            if (webhookQueue && !webhookQueueName) {
+              throw new Error(
+                "WEBHOOK_QUEUE exists but its Queue name is not inspectable.",
+              );
+            }
             const d1Name = d1Id ? d1Names.get(d1Id) : undefined;
             const variables = new Map(
               bindings.flatMap((binding) =>
@@ -823,6 +896,7 @@ export class CloudflareClient {
               r2Ready: r2Name !== null,
               r2SetupMode,
               workerName,
+              ...(webhookQueueName ? {webhookQueueName} : {}),
               workersDevUrl:
                 subdomain.enabled === true && workersDevSubdomain
                   ? `https://${workerName}.${workersDevSubdomain}.workers.dev`
@@ -1151,6 +1225,152 @@ export class CloudflareClient {
     throw new Error(
       result.stderr.trim() || result.stdout.trim() ||
         "Unable to create R2 bucket.",
+    );
+  }
+
+  async queueExists(accountId: string, name: string): Promise<boolean> {
+    return Boolean(await this.queueByName(accountId, name));
+  }
+
+  async queueByName(
+    accountId: string,
+    name: string,
+  ): Promise<{id: string; name: string} | null> {
+    const queues = await this.apiGet<Array<Record<string, unknown>>>(
+      `/accounts/${encodeURIComponent(accountId)}/queues`,
+    );
+    const queue = queues.find((candidate) =>
+      String(candidate.queue_name ?? candidate.name ?? "") === name
+    );
+    const id = String(queue?.queue_id ?? queue?.id ?? "");
+    return queue && id ? {id, name} : null;
+  }
+
+  async queueMetrics(accountId: string, name: string): Promise<QueueMetrics | null> {
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) return null;
+    const metrics = await this.apiGet<Record<string, unknown>>(
+      `/accounts/${encodeURIComponent(accountId)}/queues/` +
+        `${encodeURIComponent(queue.id)}/metrics`,
+    );
+    return {
+      backlogBytes: Number(metrics.backlog_bytes ?? 0),
+      backlogCount: Number(metrics.backlog_count ?? 0),
+      observedAt: new Date().toISOString(),
+      oldestMessageTimestampMs: Number(metrics.oldest_message_timestamp_ms ?? 0),
+      queueId: queue.id,
+    };
+  }
+
+  async queueOperationMetrics(
+    accountId: string,
+    name: string,
+  ): Promise<QueueOperationMetrics | null> {
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) return null;
+    const observedAt = new Date().toISOString();
+    const periodStart = `${observedAt.slice(0, 10)}T00:00:00Z`;
+    const query = `query QueueOperations(
+      $accountTag: string!, $queueId: string!,
+      $datetimeStart: Time!, $datetimeEnd: Time!
+    ) {
+      viewer {
+        accounts(filter: {accountTag: $accountTag}) {
+          queue: queueMessageOperationsAdaptiveGroups(
+            limit: 10000
+            filter: {
+              queueId: $queueId
+              datetime_geq: $datetimeStart
+              datetime_leq: $datetimeEnd
+            }
+          ) {
+            count
+            avg { retryCount }
+            sum { billableOperations bytes }
+            dimensions { actionType queueID }
+          }
+          account: queueMessageOperationsAdaptiveGroups(
+            limit: 10000
+            filter: {
+              datetime_geq: $datetimeStart
+              datetime_leq: $datetimeEnd
+            }
+          ) {
+            count
+            avg { retryCount }
+            sum { billableOperations bytes }
+            dimensions { actionType queueID }
+          }
+        }
+      }
+    }`;
+    interface OperationRow {
+      avg?: {retryCount?: unknown};
+      count?: unknown;
+      dimensions?: {actionType?: unknown; queueID?: unknown};
+      sum?: {billableOperations?: unknown; bytes?: unknown};
+    }
+    const data = await this.graphql<{
+      viewer?: {accounts?: Array<{account?: OperationRow[]; queue?: OperationRow[]}>};
+    }>(query, {
+      accountTag: accountId,
+      datetimeEnd: observedAt,
+      datetimeStart: periodStart,
+      queueId: queue.id,
+    });
+    const account = data.viewer?.accounts?.[0];
+    const summarize = (rows: OperationRow[] = []): QueueOperationSummary => {
+      let retryWeight = 0;
+      let retries = 0;
+      const summary: QueueOperationSummary = {
+        averageRetriesPerMessage: 0,
+        bytes: 0,
+        deletes: 0,
+        reads: 0,
+        total: 0,
+        writes: 0,
+      };
+      for (const row of rows) {
+        const operations = Number(row.sum?.billableOperations ?? 0);
+        const bytes = Number(row.sum?.bytes ?? 0);
+        const count = Number(row.count ?? 0);
+        const averageRetries = Number(row.avg?.retryCount ?? 0);
+        summary.total += operations;
+        summary.bytes += bytes;
+        if (row.dimensions?.actionType === "WriteMessage") {
+          summary.writes += operations;
+        } else if (row.dimensions?.actionType === "ReadMessage") {
+          summary.reads += operations;
+          retries += averageRetries * count;
+          retryWeight += count;
+        } else if (row.dimensions?.actionType === "DeleteMessage") {
+          summary.deletes += operations;
+        }
+      }
+      summary.averageRetriesPerMessage = retryWeight ? retries / retryWeight : 0;
+      return summary;
+    };
+    return {
+      account: summarize(account?.account),
+      observedAt,
+      periodStart,
+      queue: summarize(account?.queue),
+    };
+  }
+
+  async createQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "create", name],
+      {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async deleteQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "delete", name],
+      {env: accountEnvironment(accountId)},
     );
   }
 

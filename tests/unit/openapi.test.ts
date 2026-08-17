@@ -13,6 +13,11 @@ import {
 import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {API_BASE_PATH, API_MAJOR_VERSION} from "@/shared/ApiVersion";
+import {WEBHOOK_EVENT_TYPES} from "@/shared/Webhooks";
+import {
+  JAVASCRIPT_WEBHOOK_RECEIVER,
+  PYTHON_WEBHOOK_RECEIVER,
+} from "@/shared/WebhookQuickstarts";
 import {
   API_LLMS_FULL_TEXT,
   OPENAPI_JSON,
@@ -31,6 +36,33 @@ describe("generated API reference", () => {
       url: API_BASE_PATH,
     }]);
     expect(Number(MICROFEED_VERSION.split(".")[0])).toBe(API_MAJOR_VERSION);
+    expect(OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post?.operationId)
+      .toBe("receiveMicrofeedWebhook");
+    expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("webhook-signature");
+    expect(JSON.stringify(OPENAPI_DOCUMENT.webhooks)).toContain("item.published");
+    const webhookOperation = OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post as
+      | {"x-codeSamples"?: Array<{lang: string; source: string}>}
+      | undefined;
+    expect(webhookOperation?.["x-codeSamples"]).toEqual([
+      expect.objectContaining({lang: "JavaScript", source: JAVASCRIPT_WEBHOOK_RECEIVER}),
+      expect.objectContaining({lang: "Python", source: PYTHON_WEBHOOK_RECEIVER}),
+    ]);
+    const webhookRequestBody = OPENAPI_DOCUMENT.webhooks?.microfeedEvent?.post
+      ?.requestBody as {
+        content?: {"application/json"?: {examples?: Record<string, {value?: any}>}};
+      } | undefined;
+    const examples = webhookRequestBody?.content?.["application/json"]?.examples;
+    expect(Object.keys(examples ?? {})).toEqual([...WEBHOOK_EVENT_TYPES]);
+    for (const type of WEBHOOK_EVENT_TYPES) {
+      expect(examples?.[type]?.value).toMatchObject({test: true, type});
+    }
+    const componentSchemas = OPENAPI_DOCUMENT.components?.schemas ?? {};
+    expect(componentSchemas).toHaveProperty("WebhookItemSnapshot");
+    expect(componentSchemas).toHaveProperty("WebhookPageNavigationSnapshot");
+    expect(componentSchemas).toHaveProperty("WebhookThemeSnapshot");
+    expect(API_LLMS_FULL_TEXT).toContain("microfeedEvent");
+    expect(API_LLMS_FULL_TEXT).toContain("const {Webhook} = require");
+    expect(API_LLMS_FULL_TEXT).toContain("from standardwebhooks.webhooks import Webhook");
     expect(API_LLMS_FULL_TEXT).toContain("Authorization: Bearer YOUR_CREDENTIAL");
     expect(
       OPENAPI_DOCUMENT.paths?.["/site-files/preview/"]?.post?.description,
@@ -89,6 +121,21 @@ describe("generated API reference", () => {
       expect(htmlReference).toContain("ApiReferencePage");
       expect(htmlReference).not.toContain("Response.redirect");
     }
+  });
+
+  it("keeps Admin and OpenAPI receiver code byte-identical to scaffold templates", async () => {
+    const [javascript, python] = await Promise.all([
+      readFile(path.join(
+        repositoryRoot,
+        "packages/cli/templates/webhook/javascript/server.cjs",
+      ), "utf8"),
+      readFile(path.join(
+        repositoryRoot,
+        "packages/cli/templates/webhook/python/server.py",
+      ), "utf8"),
+    ]);
+    expect(javascript).toBe(JAVASCRIPT_WEBHOOK_RECEIVER);
+    expect(python).toBe(PYTHON_WEBHOOK_RECEIVER);
   });
 
   it("makes the full LLM reference self-contained", () => {
@@ -187,6 +234,33 @@ describe("generated API reference", () => {
     expect(specification).toContain("ItemValidationResponse");
     expect(OPENAPI_DOCUMENT.paths?.["/items/"]?.post?.responses)
       .toHaveProperty("409");
+  });
+
+  it("accepts automation context on every persistent mutating operation", () => {
+    const operations = [
+      ["/items/", "post"],
+      ["/items/{itemId}/", "put"],
+      ["/items/{itemId}/", "delete"],
+      ["/pages/", "post"],
+      ["/pages/{pageId}/", "put"],
+      ["/pages/{pageId}/", "delete"],
+      ["/site-files/", "post"],
+      ["/site-files/{siteFileId}/", "put"],
+      ["/site-files/{siteFileId}/", "delete"],
+      ["/site-files/{siteFileId}/publish/", "post"],
+      ["/site-files/{siteFileId}/reset/", "post"],
+      ["/channels/{channelId}/", "put"],
+      ["/media_files/presigned_urls/", "post"],
+    ] as const;
+
+    for (const [pathname, method] of operations) {
+      const operation = OPENAPI_DOCUMENT.paths?.[pathname]?.[method];
+      const serialized = JSON.stringify(operation?.parameters ?? []);
+      expect(serialized, `${method.toUpperCase()} ${pathname}`)
+        .toContain("Microfeed-Correlation-Id");
+      expect(serialized, `${method.toUpperCase()} ${pathname}`)
+        .toContain("Microfeed-Causation-Id");
+    }
   });
 
   it("keeps Page navigation order out of individual Page inputs", () => {

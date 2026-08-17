@@ -10,7 +10,7 @@ You can complete the whole workflow in the visual Admin dashboard. For repeatabl
 agent-driven publishing, the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) manages the
 same channel after its owner enables the authenticated API. Start with
-[Manage content with the microfeed CLI](/api/cli/).
+[Manage content with the microfeed CLI](/automation/cli/).
 
 ## Create an item
 
@@ -82,10 +82,10 @@ confirmation.
 Inside a microfeed clone, the agent should prefer `yarn microfeed`. Elsewhere,
 it can use a project-local installation or `yarn dlx @microfeed/cli`. You sign
 in and approve permissions in the browser; the CLI stores and refreshes the
-credential without printing it. First [enable API access and connect the
-CLI](/api/authentication/), then see the [agent workflow](/api/ai-agents/) and
-complete [microfeed CLI reference](/microfeed-cli/) for media
-vocabulary, deterministic input, and deletion safeguards.
+credential without printing it. Follow the [guided CLI
+workflow](/automation/cli/), then see the [agent workflow](/automation/ai-agents/)
+and complete [`@microfeed/cli` reference](/microfeed-cli/) for media vocabulary,
+deterministic input, and deletion safeguards.
 
 ## Verify distribution
 

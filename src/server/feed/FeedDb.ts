@@ -520,10 +520,9 @@ export default class FeedDb {
     return row ? getItemJson(row) : null;
   }
 
-  async _putChannelToContent(channel: any) {
+  _putChannelToContentStatement(channel: any) {
     const {id, status, is_primary, ...data} = channel;
-    const batchStatements = [];
-    batchStatements.push(this.getUpdateSql(
+    return this.getUpdateSql(
       'channels',
       {
         id,
@@ -533,34 +532,30 @@ export default class FeedDb {
         'is_primary': is_primary,
         data: JSON.stringify(data),
       },
-    ));
-    await this.FEED_DB.batch(batchStatements);
+    );
   }
 
-  async _updateOrAddSetting(settings: any, category: any) {
-    let res;
-    try {
-      res = await this.getUpsertSql(
+  _updateOrAddSettingStatement(settings: any, category: any) {
+    return this.getUpsertSql(
         'settings',
         'category',
         {category},
         {
           data: JSON.stringify(settings[category]),
-        }).run();
-    } catch (error) {
-      console.error('Failed to upsert setting', error);
-      throw error;
-    }
-    console.log('Done', res);
+        });
   }
 
-  async _putSettingsToContent(settings: any) {
-    for (const category of Object.keys(settings)) {
-      await this._updateOrAddSetting(settings, category);
-    }
+  async _updateOrAddSetting(settings: any, category: any) {
+    return this._updateOrAddSettingStatement(settings, category).run();
   }
 
-  async _putItemToContent(item: any) {
+  _putSettingsToContentStatements(settings: any) {
+    return Object.keys(settings).map((category) =>
+      this._updateOrAddSettingStatement(settings, category)
+    );
+  }
+
+  _putItemToContentStatement(item: any) {
     const {
       contentText: _contentText,
       createdAtMs: _createdAtMs,
@@ -581,15 +576,8 @@ export default class FeedDb {
       'pub_date': msToRFC3339(pubDateMs),
       data: JSON.stringify(data),
     };
-    let res;
-    try {
-      res = await this.getUpsertSql(
-        'items', 'id', {id}, {...keyValuePairs}, timestamp).run();
-    } catch (error) {
-      console.error('Failed to upsert item', error);
-      throw error;
-    }
-    console.log('Done!', res);
+    return this.getUpsertSql(
+      'items', 'id', {id}, {...keyValuePairs}, timestamp);
   }
 
   async _purgePublicCacheTags(tags: string[]) {
@@ -601,20 +589,28 @@ export default class FeedDb {
     await this._purgePublicCacheTags(tags);
   }
 
-  async putContent(feed: FeedContent) {
+  async putContent(
+    feed: FeedContent,
+    commit?: (statements: D1PreparedStatement[]) => Promise<void>,
+  ) {
     const {channel, settings, item} = feed;
     const cacheTags = publicCacheTagsForFeedUpdate(feed);
+    const statements: D1PreparedStatement[] = [];
     try {
       if (channel) {
-        await this._putChannelToContent(channel);
+        statements.push(this._putChannelToContentStatement(channel));
       }
 
       if (settings) {
-        await this._putSettingsToContent(settings);
+        statements.push(...this._putSettingsToContentStatements(settings));
       }
 
       if (item) {
-        await this._putItemToContent(item);
+        statements.push(this._putItemToContentStatement(item));
+      }
+      if (statements.length > 0) {
+        if (commit) await commit(statements);
+        else await this.FEED_DB.batch(statements);
       }
     } catch (error) {
       await this._purgePublicCacheTags(cacheTags);

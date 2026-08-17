@@ -209,6 +209,16 @@ function validateConfig(
       value.deploymentEnvironment === "production" ||
       value.deploymentEnvironment === "preview"
     ) &&
+    (
+      value.webhooks === undefined ||
+      (
+        isRecord(value.webhooks) &&
+        typeof value.webhooks.enabled === "boolean" &&
+        typeof value.webhooks.queueName === "string" &&
+        value.webhooks.queueName.length > 0 &&
+        typeof value.webhooks.reuse === "boolean"
+      )
+    ) &&
     (value.hosting === undefined ||
       value.hosting === "cloudflare" ||
       value.hosting === "local");
@@ -260,6 +270,15 @@ function validateConfig(
       : {}),
     ...(typeof value.workerName === "string"
       ? {workerName: value.workerName}
+      : {}),
+    ...(isRecord(value.webhooks)
+      ? {
+          webhooks: {
+            enabled: value.webhooks.enabled as boolean,
+            queueName: value.webhooks.queueName as string,
+            reuse: value.webhooks.reuse as boolean,
+          },
+        }
       : {}),
   };
 }
@@ -520,6 +539,7 @@ export function requiredSecrets(config: MicrofeedConfig): string[] {
     ...(adminAuthMode(config) === "built-in"
       ? ["BETTER_AUTH_SECRET"]
       : []),
+    ...(config.webhooks?.enabled ? ["WEBHOOK_SECRET_KEY"] : []),
   ];
 }
 
@@ -560,6 +580,11 @@ export function localConfig(instanceName = "local"): MicrofeedConfig {
       name: `${resourcePrefix}-media`,
       reuse: false,
       setupMode: "automatic",
+    },
+    webhooks: {
+      enabled: false,
+      queueName: `${resourcePrefix}-webhooks`,
+      reuse: false,
     },
   };
 }
@@ -627,6 +652,9 @@ async function ensureLocalDevVars(config: MicrofeedConfig): Promise<void> {
     currentDevVars.includes("BETTER_AUTH_SECRET=")
       ? ""
       : `BETTER_AUTH_SECRET=${randomBytes(32).toString("base64url")}`,
+    currentDevVars.includes("WEBHOOK_SECRET_KEY=")
+      ? ""
+      : `WEBHOOK_SECRET_KEY=${randomBytes(32).toString("base64url")}`,
   ].filter(Boolean);
   if (additions.length > 0) {
     const prefix = currentDevVars && !currentDevVars.endsWith("\n")
@@ -660,6 +688,20 @@ export async function generateWranglerConfig(
         {binding: "MEDIA_BUCKET", bucket_name: config.r2.name},
       ], null, 2)},`
     : "";
+  const webhookBindings = config.webhooks?.enabled
+    ? `"queues": ${JSON.stringify({
+        consumers: [{
+          max_batch_size: 1,
+          max_batch_timeout: 1,
+          max_retries: 5,
+          queue: config.webhooks.queueName,
+        }],
+        producers: [{
+          binding: "WEBHOOK_QUEUE",
+          queue: config.webhooks.queueName,
+        }],
+      }, null, 2)},\n  "triggers": {"crons": ["0 * * * *"]},`
+    : "";
   const rendered = template
     .replaceAll("__PROJECT_ROOT__", relativeRoot)
     .replaceAll("__WORKER_NAME__", workerName(config))
@@ -684,6 +726,7 @@ export async function generateWranglerConfig(
     .replaceAll("__INSTANCE_NAME__", config.instanceName)
     .replace("__REQUIRED_SECRETS__", JSON.stringify(secrets))
     .replace("__R2_BINDING__", r2Binding)
+    .replace("__WEBHOOK_BINDINGS__", webhookBindings)
     .replace("__ROUTES__", routes);
   await mkdir(path.dirname(targetPath), {recursive: true});
   const temporaryPath = `${targetPath}.tmp`;

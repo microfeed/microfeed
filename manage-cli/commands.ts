@@ -249,6 +249,9 @@ function instanceTargetMessage(config: MicrofeedConfig): string {
     `Worker: ${workerName(config)}`,
     `D1: ${config.d1.name}`,
     `R2: ${config.r2.name} (${r2State})`,
+    ...(config.webhooks?.enabled
+      ? [`Webhook Queue: ${config.webhooks.queueName}`]
+      : ["Webhooks: disabled (explicit opt-in required)"]),
     ...(config.customDomain ? [`Domain: ${config.customDomain}`] : []),
   ].join("\n");
 }
@@ -351,7 +354,8 @@ async function authenticate(
       "workers_scripts:write is required to safely check and deploy the " +
       "selected Worker name. pages:write is requested only because Wrangler " +
       "does not expose a pages:read OAuth scope. microfeed only lists Pages " +
-      "projects and never changes or deletes them.",
+      "projects and never changes or deletes them. Queue permission is " +
+      "requested only for an explicit --enable-webhooks operation.",
       "Cloudflare authorization",
     );
     await context.cloudflare.login();
@@ -611,6 +615,7 @@ async function runChecks(
 async function withEphemeralSecretFile<T>(
   includeBetterAuthSecret: boolean,
   includeUploadSigningKey: boolean,
+  includeWebhookSecret: boolean,
   callback: (filename: string) => Promise<T>,
 ): Promise<T> {
   const directory = await mkdtemp(path.join(tmpdir(), "microfeed-secrets-"));
@@ -624,6 +629,9 @@ async function withEphemeralSecretFile<T>(
           : {}),
         ...(includeUploadSigningKey
           ? {UPLOAD_SIGNING_KEY: randomBytes(32).toString("base64url")}
+          : {}),
+        ...(includeWebhookSecret
+          ? {WEBHOOK_SECRET_KEY: randomBytes(32).toString("base64url")}
           : {}),
       }),
       {encoding: "utf8", mode: 0o600},
@@ -1410,6 +1418,10 @@ export function r2OverviewDashboardUrl(accountId: string): string {
     "r2/overview";
 }
 
+export function queuesDashboardUrl(accountId: string): string {
+  return `https://dash.cloudflare.com/${accountId}/workers/queues`;
+}
+
 export type AdminProtection = "access" | "built-in" | null;
 
 interface AdminAuthDisableNotice {
@@ -1614,12 +1626,15 @@ async function deployConfiguredProject(
   const needsUploadSigningSecret = includeNewSigningSecret &&
     !config.completedSteps.includes("upload-signing-secret-created") &&
     !config.completedSteps.includes("worker-deployed");
+  const needsWebhookSecret = Boolean(config.webhooks?.enabled) &&
+    !config.completedSteps.includes("webhook-secret-created");
   let deploymentUrl;
   try {
-    deploymentUrl = needsAuthSecret || needsUploadSigningSecret
+    deploymentUrl = needsAuthSecret || needsUploadSigningSecret || needsWebhookSecret
       ? await withEphemeralSecretFile(
           needsAuthSecret,
           needsUploadSigningSecret,
+          needsWebhookSecret,
           (filename) => context.cloudflare.deploy(
             config,
             filename,
@@ -1637,6 +1652,9 @@ async function deployConfiguredProject(
   }
   if (needsUploadSigningSecret) {
     markStep(config, "upload-signing-secret-created");
+  }
+  if (needsWebhookSecret) {
+    markStep(config, "webhook-secret-created");
   }
   markStep(config, "worker-deployed");
   await writeConfig(config);
@@ -2710,8 +2728,12 @@ export async function deployCommand(
   flags: Flags,
   runner: CommandRunner = runCommand,
 ): Promise<void> {
+  const enableWebhooks = flagBoolean(flags, "enable-webhooks");
   const context: CommandContext = {
-    cloudflare: new CloudflareClient(runner),
+    cloudflare: new CloudflareClient(
+      runner,
+      enableWebhooks ? ["queues:write"] : [],
+    ),
     flags,
     instanceName: undefined,
     runner,
@@ -2760,6 +2782,14 @@ export async function deployCommand(
       markStep(config, "r2-ready");
       await writeConfig(config);
     }
+    if (enableWebhooks && !config.webhooks?.enabled) {
+      config.webhooks = {
+        enabled: true,
+        queueName: `${workerName(config)}-webhooks`.slice(0, 63),
+        reuse: false,
+      };
+      await writeConfig(config);
+    }
     await generateWranglerConfig(config);
     await context.cloudflare.applyLocalMigrations(config);
     await prepareItemSearch(context.cloudflare, config, {
@@ -2784,6 +2814,21 @@ export async function deployCommand(
     throw new Error(
       `This installation belongs to Cloudflare account ${accountId}.`,
     );
+  }
+  if (enableWebhooks && !config.webhooks?.enabled) {
+    const queueName = `${workerName(config)}-webhooks`.slice(0, 63);
+    if (await context.cloudflare.queueExists(accountId, queueName)) {
+      throw new Error(
+        `Queue \`${queueName}\` already exists and is not owned by this ` +
+          "saved microfeed instance. No Queue was reused or overwritten.",
+      );
+    }
+    prompts.log.step(`Creating webhook Queue ${queueName}`);
+    await context.cloudflare.createQueue(accountId, queueName);
+    config.webhooks = {enabled: true, queueName, reuse: false};
+    markStep(config, "webhook-queue-ready");
+    await writeConfig(config);
+    await generateWranglerConfig(config);
   }
   const pages = await context.cloudflare.pagesProjects(accountId);
   const targetWorkerName = workerName(config);
@@ -3251,6 +3296,12 @@ export async function statusCommand(
     preview,
     context.instanceName,
   );
+  if (config.webhooks?.enabled) {
+    context.cloudflare = new CloudflareClient(runner, [
+      "queues:read",
+      "account_analytics:read",
+    ]);
+  }
   const accountId = cloudflareAccountId(config);
   const targetWorkerName = workerName(config);
   prompts.intro(
@@ -3307,6 +3358,67 @@ export async function statusCommand(
           `account's R2 permissions, then rerun status. ${errorMessage(error)}`,
       );
     }
+  }
+  let webhookQueue = !config.webhooks?.enabled;
+  if (config.webhooks?.enabled) {
+    const [queueMetrics, operationMetrics] = await Promise.all([
+      context.cloudflare.queueMetrics(accountId, config.webhooks.queueName),
+      context.cloudflare.queueOperationMetrics(
+        accountId,
+        config.webhooks.queueName,
+      ),
+    ]);
+    const queueBinding = bindings.some((binding) =>
+      binding.name === "WEBHOOK_QUEUE" &&
+      binding.type === "queue" &&
+      (
+        binding.queue_name === config.webhooks!.queueName ||
+        binding.queue === config.webhooks!.queueName
+      )
+    );
+    webhookQueue = Boolean(queueMetrics && queueBinding);
+    if (webhookQueue && queueMetrics) {
+      const oldest = queueMetrics.oldestMessageTimestampMs > 0
+        ? new Date(queueMetrics.oldestMessageTimestampMs).toISOString()
+        : "none";
+      const rows = await context.cloudflare.queryD1(
+        config,
+        `SELECT
+          (SELECT COALESCE(SUM(deliveries), 0) FROM webhook_daily_usage
+            WHERE usage_day = date('now')) AS writes,
+          (SELECT COUNT(*) FROM webhook_delivery_attempts
+            WHERE created_at >= date('now')) AS reads,
+          (SELECT COUNT(*) FROM webhook_deliveries
+            WHERE completed_at >= date('now')) AS deletes,
+          (SELECT COUNT(*) FROM webhook_delivery_attempts
+            WHERE attempt_number > 1 AND created_at >= date('now')) AS retries`,
+      );
+      const accounting = rows[0] ?? {};
+      const queueOperations = operationMetrics?.queue;
+      const accountOperations = operationMetrics?.account;
+      prompts.log.success(
+        `Webhook Queue ${config.webhooks.queueName}: exact resource and ` +
+          `WEBHOOK_QUEUE binding found\n  Realtime backlog: ${queueMetrics.backlogCount} ` +
+          `messages / ${queueMetrics.backlogBytes} bytes\n  Oldest message: ${oldest}\n` +
+          `  Cloudflare Queue operations since UTC midnight: writes ${queueOperations?.writes ?? 0}, ` +
+          `reads ${queueOperations?.reads ?? 0}, deletes ${queueOperations?.deletes ?? 0}, ` +
+          `total ${queueOperations?.total ?? 0}, average retries/message ` +
+          `${(queueOperations?.averageRetriesPerMessage ?? 0).toFixed(2)}\n` +
+          `  Account-wide Queue operations in the same window: writes ${accountOperations?.writes ?? 0}, ` +
+          `reads ${accountOperations?.reads ?? 0}, deletes ${accountOperations?.deletes ?? 0}, ` +
+          `total ${accountOperations?.total ?? 0}\n` +
+          `  Today's microfeed delivery accounting: reserved writes ${Number(accounting.writes ?? 0)}, ` +
+          `attempt reads ${Number(accounting.reads ?? 0)}, completed deletes ${Number(accounting.deletes ?? 0)}, ` +
+          `retry attempts ${Number(accounting.retries ?? 0)}\n  Observed: ` +
+          `${operationMetrics?.observedAt ?? queueMetrics.observedAt}`,
+      );
+    } else {
+      prompts.log.error(
+        `Webhook Queue ${config.webhooks.queueName}: resource or binding missing`,
+      );
+    }
+  } else {
+    prompts.log.info("Webhooks: disabled; no Queue resource is expected");
   }
   if (worker) {
     prompts.log.success(`Worker ${targetWorkerName}: found`);
@@ -3440,7 +3552,7 @@ export async function statusCommand(
       );
     }
   }
-  if (!worker || !d1 || (isR2Ready(config) && !r2)) {
+  if (!worker || !d1 || (isR2Ready(config) && !r2) || !webhookQueue) {
     throw new Error("One or more required Cloudflare resources are missing.");
   }
   if (builtInAuthEnabled && !owner) {
@@ -3472,6 +3584,7 @@ interface DestroyInspection {
   d1Exists: boolean;
   domains: Awaited<ReturnType<CloudflareClient["workerDomains"]>>;
   r2Exists: boolean;
+  queueExists: boolean;
   workerExists: boolean;
 }
 
@@ -3479,6 +3592,7 @@ const DESTROY_WORKER_STEP = "destroy-worker-deleted";
 const DESTROY_DOMAINS_STEP = "destroy-domains-detached";
 const DESTROY_D1_STEP = "destroy-d1-deleted";
 const DESTROY_R2_STEP = "destroy-r2-deleted";
+const DESTROY_QUEUE_STEP = "destroy-webhook-queue-deleted";
 
 function normalizedHostnames(hostnames: string[]): string[] {
   return hostnames.map((hostname) => hostname.toLowerCase().replace(/\.$/u, ""))
@@ -3501,13 +3615,16 @@ async function inspectDestroyTarget(
 ): Promise<DestroyInspection> {
   const accountId = account.id;
   const targetWorkerName = workerName(config);
-  const [workerExists, databases, r2Exists, domains] = await Promise.all([
+  const [workerExists, databases, r2Exists, domains, queueExists] = await Promise.all([
     context.cloudflare.workerExists(accountId, targetWorkerName),
     context.cloudflare.d1Databases(accountId),
     isR2Ready(config)
       ? context.cloudflare.r2BucketExists(accountId, config.r2.name)
       : Promise.resolve(false),
     context.cloudflare.workerDomains(accountId, targetWorkerName),
+    config.webhooks?.enabled
+      ? context.cloudflare.queueExists(accountId, config.webhooks.queueName)
+      : Promise.resolve(false),
   ]);
 
   if (config.completedSteps.includes(DESTROY_WORKER_STEP) && workerExists) {
@@ -3522,6 +3639,13 @@ async function inspectDestroyTarget(
       `R2 bucket \`${config.r2.name}\` exists again after an earlier destroy ` +
         "run deleted it. Bucket names can be reused, so microfeed will not " +
         "delete this replacement bucket.",
+    );
+  }
+  if (config.completedSteps.includes(DESTROY_QUEUE_STEP) && queueExists) {
+    throw new Error(
+      `Webhook Queue \`${config.webhooks?.queueName}\` exists again after ` +
+        "an earlier destroy run deleted it. microfeed will not delete the " +
+        "replacement Queue.",
     );
   }
 
@@ -3578,7 +3702,10 @@ async function inspectDestroyTarget(
       discovered.d1.name !== config.d1.name ||
       discovered.r2Name !== config.r2.name ||
       discovered.r2Ready !== isR2Ready(config) ||
-      discovered.r2SetupMode !== config.r2.setupMode
+      discovered.r2SetupMode !== config.r2.setupMode ||
+      discovered.webhookQueueName !== (
+        config.webhooks?.enabled ? config.webhooks.queueName : undefined
+      )
     ) {
       throw new Error(
         `Worker \`${targetWorkerName}\` no longer matches this saved ` +
@@ -3588,7 +3715,7 @@ async function inspectDestroyTarget(
     }
   }
 
-  return {d1Exists, domains, r2Exists, workerExists};
+  return {d1Exists, domains, queueExists, r2Exists, workerExists};
 }
 
 function destroyResourcePlan(
@@ -3630,6 +3757,13 @@ function destroyResourcePlan(
     } — ${inspection.domains.length > 0 ? "DETACH" : "Already absent"}`,
     `Content database: ${config.d1.name} (${config.d1.id}) — ${d1Action}`,
     `Media storage: ${config.r2.name} — ${r2Action}`,
+    ...(config.webhooks?.enabled
+      ? [`Webhook Queue: ${config.webhooks.queueName} — ${
+          config.webhooks.reuse
+            ? "PRESERVE (shared/reused resource)"
+            : inspection.queueExists ? "DELETE" : "Already absent"
+        }`]
+      : ["Webhook Queue: not configured"]),
     "Local instance folder: DELETE only after Cloudflare verification passes " +
       "(saved configuration and separate local development data)",
   ].join("\n");
@@ -3672,6 +3806,18 @@ function destroyInspectionLinks(
       `  Expected after removal: ${r2Expected}`,
       `  ${r2OverviewDashboardUrl(accountId)}`,
     ].join("\n"),
+    ...(config.webhooks?.enabled
+      ? [[
+          "Webhook Queues",
+          `  Look for: ${config.webhooks.queueName}`,
+          `  Expected after removal: ${
+            !inspection.queueExists
+              ? "already absent"
+              : config.webhooks.reuse ? "still listed because it is preserved" : "not listed"
+          }`,
+          `  ${queuesDashboardUrl(accountId)}`,
+        ].join("\n")]
+      : []),
   ].join("\n\n");
 }
 
@@ -3756,6 +3902,9 @@ export async function destroyCommand(
       `No saved Cloudflare ${preview ? "preview " : ""}deployment was ` +
         `found for site ${context.instanceName ?? "unknown"}.`,
     );
+  }
+  if (config.webhooks?.enabled) {
+    context.cloudflare = new CloudflareClient(runner, ["queues:write"]);
   }
   if (!preview && await readConfig(true, config.instanceName)) {
     throw new Error(
@@ -3856,6 +4005,28 @@ export async function destroyCommand(
   await recordDestroyStep(config, DESTROY_DOMAINS_STEP);
   if (inspection.domains.length > 0) {
     prompts.log.success("Custom address: detached");
+  }
+
+  if (config.webhooks?.enabled && !config.webhooks.reuse && inspection.queueExists) {
+    if (!await context.cloudflare.queueExists(accountId, config.webhooks.queueName)) {
+      throw new Error(
+        `Webhook Queue ${config.webhooks.queueName} changed after the deletion ` +
+          "plan was inspected. Rerun --dry-run before deleting it.",
+      );
+    }
+    await context.cloudflare.deleteQueue(accountId, config.webhooks.queueName);
+    if (await context.cloudflare.queueExists(accountId, config.webhooks.queueName)) {
+      throw new Error(
+        `Webhook Queue ${config.webhooks.queueName} still exists after deletion. ` +
+          `Inspect ${queuesDashboardUrl(accountId)}.`,
+      );
+    }
+    await recordDestroyStep(config, DESTROY_QUEUE_STEP);
+    prompts.log.success(`Webhook Queue ${config.webhooks.queueName}: deleted`);
+  } else if (config.webhooks?.enabled) {
+    prompts.log.info(
+      `Webhook Queue ${config.webhooks.queueName}: ${inspection.queueExists ? "preserved" : "already absent"}`,
+    );
   }
 
   if (!config.d1.reuse && !keepData && inspection.d1Exists) {
@@ -4791,6 +4962,12 @@ export async function connectCommand(
       ...(secretNames.has("UPLOAD_SIGNING_KEY")
         ? ["upload-signing-secret-created"]
         : []),
+      ...(selectedWorker.webhookQueueName
+        ? ["webhook-queue-ready"]
+        : []),
+      ...(selectedWorker.webhookQueueName && secretNames.has("WEBHOOK_SECRET_KEY")
+        ? ["webhook-secret-created"]
+        : []),
     ],
     customDomain,
     d1: {
@@ -4809,6 +4986,15 @@ export async function connectCommand(
       setupMode: selectedWorker.r2SetupMode,
     },
     workerName: selectedWorker.workerName,
+    ...(selectedWorker.webhookQueueName
+      ? {
+          webhooks: {
+            enabled: true,
+            queueName: selectedWorker.webhookQueueName,
+            reuse: true,
+          },
+        }
+      : {}),
   };
   await generateWranglerConfig(config);
   await writeConfig(config);
@@ -4874,34 +5060,54 @@ export async function devCommand(
     flagBoolean(flags, "preview"),
     context.instanceName,
   );
-  prompts.note(
-    [
-      `Local sandbox: ${config.instanceName}`,
-      `Instance type: ${
-        isLocalOnly(config)
-          ? "Local only"
-          : "Cloudflare — managed here"
-      }`,
-      `D1: ${config.d1.name} (local simulation)`,
-      `R2: ${config.r2.name} (local simulation)`,
-      "Production D1 and R2 data will not be accessed or changed.",
-    ].join("\n"),
-    "Local development",
-  );
-  await context.cloudflare.applyLocalMigrations(config);
-  await prepareItemSearch(context.cloudflare, config, {
-    local: true,
-    persistTo: localPersistencePath(config),
-  });
-  await runYarnScript(runner, "dev:astro", {
-    env: {
-      ...process.env,
-      MICROFEED_INSTANCE: config.instanceName,
-      MICROFEED_LOCAL_STATE: localPersistencePath(config),
-      MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
+  const developmentConfig: MicrofeedConfig = {
+    ...config,
+    webhooks: {
+      enabled: true,
+      queueName: `${workerName(config)}-webhooks-local`.slice(0, 63),
+      reuse: false,
     },
-    interactive: true,
-  });
+  };
+  await generateWranglerConfig(developmentConfig);
+  try {
+    prompts.note(
+      [
+        `Local sandbox: ${config.instanceName}`,
+        `Instance type: ${
+          isLocalOnly(config)
+            ? "Local only"
+            : "Cloudflare — managed here"
+        }`,
+        `D1: ${config.d1.name} (local simulation)`,
+        `R2: ${config.r2.name} (local simulation)`,
+        `Webhooks: ${developmentConfig.webhooks!.queueName} (local simulation)`,
+        "Production D1 and R2 data will not be accessed or changed.",
+        "No Cloudflare Queue resources, permissions, or charges are used.",
+      ].join("\n"),
+      "Local development",
+    );
+    if (flagBoolean(flags, "enable-webhooks")) {
+      prompts.log.info(
+        "Webhook Queue simulation is already enabled for every local development session; --enable-webhooks is optional.",
+      );
+    }
+    await context.cloudflare.applyLocalMigrations(config);
+    await prepareItemSearch(context.cloudflare, config, {
+      local: true,
+      persistTo: localPersistencePath(config),
+    });
+    await runYarnScript(runner, "dev:astro", {
+      env: {
+        ...process.env,
+        MICROFEED_INSTANCE: config.instanceName,
+        MICROFEED_LOCAL_STATE: localPersistencePath(config),
+        MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
+      },
+      interactive: true,
+    });
+  } finally {
+    await generateWranglerConfig(config);
+  }
 }
 
 function sqlIdentifier(value: string): string {

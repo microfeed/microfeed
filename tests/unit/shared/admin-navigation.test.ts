@@ -18,6 +18,7 @@ describe("getAdminNavigationItems", () => {
       [NAV_ITEMS.PAGES, "/studio/pages/"],
       [NAV_ITEMS.SITE_FILES, "/studio/site-files/"],
       [NAV_ITEMS.API, "/studio/api/"],
+      [NAV_ITEMS.WEBHOOKS, "/studio/webhooks/"],
       [NAV_ITEMS.SETTINGS, "/studio/settings/"],
     ]);
     expect(items.filter((item) => item.active).map((item) => item.id)).toEqual([

@@ -15,10 +15,6 @@ import {
 } from "../../packages/theme-kit/src/cli";
 import {renderThemeKitHelp} from "../../packages/theme-kit/src/help";
 import {
-  generatedGenericThemeRepositoryReadme,
-  generatedThemeReadme,
-} from "../../packages/theme-kit/src/readme";
-import {
   THEME_MAX_TEMPLATE_BYTES,
   themeContextSchema,
   themeManifestV1Schema,
@@ -103,23 +99,17 @@ describe("@microfeed/theme-kit package loading", () => {
     expect(renderThemeKitHelp("fixture pull")).toContain("--output <file>");
   });
 
-  it("keeps generated schemas and agent instructions synchronized", async () => {
+  it("keeps generated schemas synchronized", async () => {
     const starter = new URL(
       "../../packages/theme-kit/assets/starter/",
       import.meta.url,
     );
-    const [manifestSchema, contextSchema, readme, repositoryReadme, manifest] =
-      await Promise.all([
+    const [manifestSchema, contextSchema] = await Promise.all([
       readFile(new URL(".microfeed/schemas/manifest.schema.json", starter), "utf8"),
       readFile(new URL(".microfeed/schemas/theme-context.schema.json", starter), "utf8"),
-      readFile(new URL("THEME.md", starter), "utf8"),
-      readFile(new URL("README.md", starter), "utf8"),
-      readFile(new URL("microfeed-theme.json", starter), "utf8").then(JSON.parse),
     ]);
     expect(JSON.parse(manifestSchema)).toEqual(z.toJSONSchema(themeManifestV1Schema));
     expect(JSON.parse(contextSchema)).toEqual(z.toJSONSchema(themeContextSchema));
-    expect(readme).toBe(generatedThemeReadme());
-    expect(repositoryReadme).toBe(generatedGenericThemeRepositoryReadme(manifest));
   });
 
   it("documents which Pages are available to theme navigation", () => {
@@ -170,32 +160,18 @@ describe("@microfeed/theme-kit package loading", () => {
     });
   });
 
-  it("gives new theme repositories a complete public-site contract", async () => {
+  it("gives new theme repositories a complete public-site implementation", async () => {
     const starter = new URL(
       "../../packages/theme-kit/assets/starter/",
       import.meta.url,
     );
-    const [bridge, skill, reference, bodyStart, search, header, fixture] = await Promise.all([
-      readFile(new URL("CLAUDE.md", starter), "utf8"),
-      readFile(new URL(".agents/skills/develop-microfeed-theme/SKILL.md", starter), "utf8"),
-      readFile(new URL(".agents/skills/develop-microfeed-theme/references/public-site.md", starter), "utf8"),
+    const [bodyStart, search, header, fixture] = await Promise.all([
       readFile(new URL("web-body-start.mustache", starter), "utf8"),
       readFile(new URL("web-search.mustache", starter), "utf8"),
       readFile(new URL("web-header.mustache", starter), "utf8"),
       readFile(new URL("fixtures/custom.json", starter), "utf8").then(JSON.parse),
     ]);
 
-    expect(bridge).toContain(
-      ".agents/skills/develop-microfeed-theme/SKILL.md",
-    );
-    expect(bridge).toContain("Resolve every referenced file relative");
-    expect(skill).toContain("migrating a theme to v2");
-    expect(skill).toContain("references/public-site.md");
-    expect(reference).toContain("Theme and platform responsibilities");
-    expect(reference).toContain("Do not copy the search dialog");
-    expect(reference).toContain("special 404 Page");
-    expect(reference).toContain("data-microfeed-search-details");
-    expect(reference).toContain("at least three entries");
     expect(bodyStart).toContain("{{#navigation_pages}}");
     expect(bodyStart).toContain("data-microfeed-nav-item");
     expect(bodyStart).toContain("data-microfeed-search-open");

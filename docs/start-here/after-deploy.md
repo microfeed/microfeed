@@ -32,8 +32,8 @@ Open the dashboard URL printed by the CLI. Then:
 
 Create a clearly labeled test item, preview its public page, and check the RSS
 and JSON feeds. You can publish it yourself in the Admin dashboard. To publish
-with a coding agent, first [enable API access and connect the CLI](/api/authentication/),
-then ask the agent to use the official
+with a coding agent, first [enable API access and connect the
+CLI](/automation/cli/), then ask the agent to use the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside this
 clone, the agent should run `yarn microfeed`; you remain responsible for
 browser authorization and approval of destructive actions. Delete or unpublish
@@ -53,4 +53,5 @@ microfeed Worker.
 - [Add a custom domain or Cloudflare Access](/manage/domains-and-access/).
 - [Learn the dashboard](/dashboard/).
 - [Enable the authenticated API](/api/authentication/) for an integration.
+- [Choose an API, webhook, or CLI automation workflow](/automation/).
 - [Create a portable snapshot](/manage/backups-and-migrations/).

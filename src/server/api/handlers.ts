@@ -74,6 +74,13 @@ import {
   SiteFileRequestError,
   updateSiteFile,
 } from "@/server/site-files/service";
+import {
+  changedWebhookFields,
+  contentMutationWebhookCommit,
+  singleWebhookEventCommit,
+  webhookItemObject,
+} from "@/server/webhooks/emission";
+import {webhookChannelSnapshot} from "@/shared/WebhookExamples";
 
 export const getApiFeed: APIRoute = ({request}) =>
   jsonFeedResponse(request, false, undefined, undefined, false);
@@ -221,6 +228,12 @@ export const createApiPage: APIRoute = async ({locals, request}) => {
   try {
     const page = await createPage(locals.feedDb, request, parsed.data, {
       adminPath: env.MICROFEED_ADMIN_PATH,
+      commit: contentMutationWebhookCommit(env, request, {
+        context: {origin: "api"},
+        id: (result) => result.id,
+        kind: "page",
+        mutation: "created",
+      }),
     });
     return jsonResponse({id: page.id}, {status: 201});
   } catch (error) {
@@ -274,16 +287,29 @@ export const updateApiPage: APIRoute = async ({locals, params, request}) => {
     );
   }
   try {
+    const before = await getPageById(
+      locals.feedDb.FEED_DB,
+      request,
+      params.pageId,
+    );
     const page = await updatePage(
       locals.feedDb,
       request,
       params.pageId,
       parsed.data,
-      {adminPath: env.MICROFEED_ADMIN_PATH},
+      {
+        adminPath: env.MICROFEED_ADMIN_PATH,
+        commit: contentMutationWebhookCommit(env, request, {
+          before: before as unknown as Record<string, unknown> | null,
+          context: {origin: "api"},
+          id: params.pageId,
+          kind: "page",
+          mutation: "updated",
+        }),
+      },
     );
-    return page
-      ? jsonResponse(page)
-      : jsonResponse({error: "Page not found."}, {status: 404});
+    if (!page) return jsonResponse({error: "Page not found."}, {status: 404});
+    return jsonResponse(page);
   } catch (error) {
     const response = pageServiceError(error);
     if (response) return response;
@@ -291,14 +317,30 @@ export const updateApiPage: APIRoute = async ({locals, params, request}) => {
   }
 };
 
-export const deleteApiPage: APIRoute = async ({locals, params}) => {
+export const deleteApiPage: APIRoute = async ({locals, params, request}) => {
   if (!locals.feedDb || !params.pageId) {
     return new Response("Feed context unavailable", {status: 500});
   }
   try {
-    return await deletePage(locals.feedDb, params.pageId)
-      ? jsonResponse({})
-      : jsonResponse({error: "Page not found."}, {status: 404});
+    const before = await getPageById(
+      locals.feedDb.FEED_DB,
+      request,
+      params.pageId,
+    );
+    if (!await deletePage(
+      locals.feedDb,
+      params.pageId,
+      contentMutationWebhookCommit(env, request, {
+        before: before as unknown as Record<string, unknown> | null,
+        context: {origin: "api"},
+        id: params.pageId,
+        kind: "page",
+        mutation: "deleted",
+      }),
+    )) {
+      return jsonResponse({error: "Page not found."}, {status: 404});
+    }
+    return jsonResponse({});
   } catch (error) {
     const response = pageServiceError(error);
     if (response) return response;
@@ -336,7 +378,17 @@ export const createApiSiteFile: APIRoute = async ({locals, request}) => {
     return jsonResponse({error: "Invalid Site File."}, {status: 400});
   }
   try {
-    const siteFile = await createSiteFile(locals.feedDb, request, parsed.data);
+    const siteFile = await createSiteFile(
+      locals.feedDb,
+      request,
+      parsed.data,
+      contentMutationWebhookCommit(env, request, {
+        context: {origin: "api"},
+        id: (result) => result.id,
+        kind: "site_file",
+        mutation: "created",
+      }),
+    );
     return jsonResponse({id: siteFile.id}, {status: 201});
   } catch (error) {
     const response = siteFileServiceError(error);
@@ -431,15 +483,28 @@ export const updateApiSiteFile: APIRoute = async ({
     return jsonResponse({error: "Invalid Site File."}, {status: 400});
   }
   try {
+    const before = await getSiteFileById(
+      locals.feedDb.FEED_DB,
+      request,
+      params.siteFileId,
+    );
     const siteFile = await updateSiteFile(
       locals.feedDb,
       request,
       params.siteFileId,
       parsed.data,
+      contentMutationWebhookCommit(env, request, {
+        before: before as unknown as Record<string, unknown> | null,
+        context: {origin: "api"},
+        id: params.siteFileId,
+        kind: "site_file",
+        mutation: "updated",
+      }),
     );
-    return siteFile
-      ? jsonResponse(siteFile)
-      : jsonResponse({error: "Site File not found."}, {status: 404});
+    if (!siteFile) {
+      return jsonResponse({error: "Site File not found."}, {status: 404});
+    }
+    return jsonResponse(siteFile);
   } catch (error) {
     const response = siteFileServiceError(error);
     if (response) return response;
@@ -447,14 +512,30 @@ export const updateApiSiteFile: APIRoute = async ({
   }
 };
 
-export const deleteApiSiteFile: APIRoute = async ({locals, params}) => {
+export const deleteApiSiteFile: APIRoute = async ({locals, params, request}) => {
   if (!locals.feedDb || !params.siteFileId) {
     return new Response("Feed context unavailable", {status: 500});
   }
   try {
-    return await deleteSiteFile(locals.feedDb, params.siteFileId)
-      ? jsonResponse({})
-      : jsonResponse({error: "Site File not found."}, {status: 404});
+    const before = await getSiteFileById(
+      locals.feedDb.FEED_DB,
+      request,
+      params.siteFileId,
+    );
+    if (!await deleteSiteFile(
+      locals.feedDb,
+      params.siteFileId,
+      contentMutationWebhookCommit(env, request, {
+        before: before as unknown as Record<string, unknown> | null,
+        context: {origin: "api"},
+        id: params.siteFileId,
+        kind: "site_file",
+        mutation: "deleted",
+      }),
+    )) {
+      return jsonResponse({error: "Site File not found."}, {status: 404});
+    }
+    return jsonResponse({});
   } catch (error) {
     const response = siteFileServiceError(error);
     if (response) return response;
@@ -475,10 +556,19 @@ async function mutateApiSiteFile(
       locals.feedDb,
       request,
       params.siteFileId,
+      singleWebhookEventCommit(env, request, (result) => ({
+        object: result as unknown as Record<string, unknown>,
+        subjectId: result.id,
+        subjectType: "site_file",
+        type: action === publishSiteFile
+          ? "site_file.published"
+          : "site_file.reset",
+      }), {origin: "api"}),
     );
-    return siteFile
-      ? jsonResponse(siteFile)
-      : jsonResponse({error: "Site File not found."}, {status: 404});
+    if (!siteFile) {
+      return jsonResponse({error: "Site File not found."}, {status: 404});
+    }
+    return jsonResponse(siteFile);
   } catch (error) {
     const response = siteFileServiceError(error);
     if (response) return response;
@@ -493,7 +583,7 @@ export const resetApiSiteFile: APIRoute = (context) =>
   mutateApiSiteFile(context, resetSiteFile);
 
 export const createApiItem: APIRoute = async ({locals, request}) => {
-  if (!locals.feedCrud) {
+  if (!locals.feedCrud || !locals.feedDb) {
     return new Response("Feed context unavailable", {status: 500});
   }
   const parsed = apiItemInputSchema.safeParse(await request.json().catch(
@@ -504,7 +594,18 @@ export const createApiItem: APIRoute = async ({locals, request}) => {
   }
   const rawIdempotencyKey = request.headers.get("idempotency-key");
   if (rawIdempotencyKey === null) {
-    const id = await createItemRecord(locals.feedCrud, parsed.data);
+    const id = await createItemRecord(
+      locals.feedCrud,
+      parsed.data,
+      undefined,
+      contentMutationWebhookCommit(env, request, {
+        context: {origin: "api"},
+        id: (item) => String(item.id),
+        kind: "item",
+        mapResult: webhookItemObject,
+        mutation: "created",
+      }),
+    );
     return jsonResponse({id}, {status: 201});
   }
   const idempotencyKey = apiIdempotencyKeySchema.safeParse(
@@ -532,7 +633,18 @@ export const createApiItem: APIRoute = async ({locals, request}) => {
   }
 
   if (!claim.completed && !await locals.feedDb.getItemById(claim.itemId)) {
-    await createItemRecord(locals.feedCrud, parsed.data, claim.itemId);
+    await createItemRecord(
+      locals.feedCrud,
+      parsed.data,
+      claim.itemId,
+      contentMutationWebhookCommit(env, request, {
+        context: {origin: "api"},
+        id: claim.itemId,
+        kind: "item",
+        mapResult: webhookItemObject,
+        mutation: "created",
+      }),
+    );
   }
   if (!claim.completed) {
     await completeItemCreateIdempotency(
@@ -564,7 +676,7 @@ export const getApiItem: APIRoute = ({params, request}) =>
     false,
   );
 
-export const deleteApiItem: APIRoute = async ({locals, params}) => {
+export const deleteApiItem: APIRoute = async ({locals, params, request}) => {
   const itemId = getIdFromSlug(params.itemId ?? "");
   if (!itemId) {
     return jsonResponse({error: "Invalid item id"}, {status: 400});
@@ -572,7 +684,20 @@ export const deleteApiItem: APIRoute = async ({locals, params}) => {
   if (!locals.feedCrud || !locals.feedDb) {
     return new Response("Feed context unavailable", {status: 500});
   }
-  if (!await deleteItemRecord(locals.feedDb, locals.feedCrud, itemId)) {
+  const before = await locals.feedDb.getItemById(itemId);
+  if (!await deleteItemRecord(
+    locals.feedDb,
+    locals.feedCrud,
+    itemId,
+    contentMutationWebhookCommit(env, request, {
+      before: before ? webhookItemObject(before) : null,
+      context: {origin: "api"},
+      id: itemId,
+      kind: "item",
+      mapResult: webhookItemObject,
+      mutation: "deleted",
+    }),
+  )) {
     return jsonResponse({error: "Item not found."}, {status: 404});
   }
   return jsonResponse({});
@@ -592,11 +717,20 @@ export const updateApiItem: APIRoute = async ({locals, params, request}) => {
   if (!parsed.success) {
     return jsonResponse({error: "Invalid item."}, {status: 400});
   }
+  const before = await locals.feedDb.getItemById(itemId);
   const item = await updateItemRecord(
     locals.feedDb,
     locals.feedCrud,
     itemId,
     parsed.data,
+    contentMutationWebhookCommit(env, request, {
+      before: before ? webhookItemObject(before) : null,
+      context: {origin: "api"},
+      id: itemId,
+      kind: "item",
+      mapResult: webhookItemObject,
+      mutation: "updated",
+    }),
   );
   if (!item) {
     return jsonResponse({error: "Item not found."}, {status: 404});
@@ -605,7 +739,8 @@ export const updateApiItem: APIRoute = async ({locals, params, request}) => {
     ...locals.feedCrud.feedContent,
     items: [item],
   }, true) as {items?: unknown[]};
-  return jsonResponse(publicFeed.items?.[0] ?? {});
+  const object = (publicFeed.items?.[0] ?? {}) as Record<string, unknown>;
+  return jsonResponse(object);
 };
 
 export const updateApiPrimaryChannel: APIRoute = async ({
@@ -625,7 +760,25 @@ export const updateApiPrimaryChannel: APIRoute = async ({
   if (!parsed.success) {
     return jsonResponse({error: "Invalid channel."}, {status: 400});
   }
-  await locals.feedCrud.upsertChannel(parsed.data);
+  const before = webhookChannelSnapshot(structuredClone(
+    (locals.feedCrud.feedContent.channel ?? {}) as Record<string, unknown>,
+  ));
+  await locals.feedCrud.upsertChannel(
+    parsed.data,
+    singleWebhookEventCommit(env, request, (after) => {
+      const object = webhookChannelSnapshot(after);
+      const changedFields = changedWebhookFields(before, object);
+      return changedFields.length > 0
+        ? {
+            changedFields,
+            object,
+            subjectId: "primary",
+            subjectType: "channel",
+            type: "channel.updated",
+          }
+        : null;
+    }, {origin: "api"}),
+  );
   return jsonResponse({});
 };
 

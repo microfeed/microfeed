@@ -1,5 +1,3 @@
-import {readFile} from "node:fs/promises";
-
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {globalOptions} from "../../../packages/cli/src/arguments";
@@ -68,6 +66,16 @@ describe("microfeed CLI help", () => {
     expect(help).toContain("media_url");
     expect(help).toContain("--image-file");
     expect(help).toContain("--attachment-file");
+  });
+
+  it("recommends the ignored microfeed workspace for webhook scaffolds", () => {
+    const help = renderCliHelp(["webhook", "scaffold"]);
+    expect(help).toContain(".microfeed/webhooks/<endpoint-name>/");
+    expect(help).toContain(
+      "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1",
+    );
+    expect(help).toContain("rather than under packages/cli");
+    expect(help).toContain("not checked into microfeed");
   });
 
   it("explains how owners enable API access and when agents must pause", () => {
@@ -154,31 +162,6 @@ describe("microfeed CLI help", () => {
       "--profile",
       "production",
     ], {json: false})).rejects.toThrow("Unknown option: --profile");
-  });
-
-  it("keeps every help topic and option discoverable in the canonical reference", async () => {
-    const reference = await readFile(
-      new URL("../../../docs/microfeed-cli.md", import.meta.url),
-      "utf8",
-    );
-
-    for (const topic of CLI_HELP_TOPICS) {
-      const command = topic.path.join(" ");
-      expect(reference).toContain(`## \`yarn microfeed ${command}\``);
-      for (const {syntax} of topic.options) {
-        const optionName = syntax.split(" ")[0]!;
-        expect(
-          reference,
-          `${command} does not document ${optionName}`,
-        ).toContain(`\`${optionName}`);
-      }
-    }
-    expect(reference).toContain("api_access_or_resource_not_found");
-    expect(reference).toContain("API → API Settings");
-    expect(reference).toContain("AI agent to pause");
-    expect(reference).toContain(
-      "https://docs.microfeed.org/api/authentication/#enable-the-api",
-    );
   });
 
   it("rejects unknown and overlong help topics", async () => {

@@ -22,6 +22,16 @@ categories, language, and description.
 **API** opens a dedicated area for availability, API keys, an interactive
 browser explorer, and public API documentation formats.
 
+**Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
+whether delivery is available and summarizes configured endpoints, daily
+delivery usage, Queue operations, and failures. Endpoints manages destination
+URLs, subscriptions, status, and signing secrets. Event explorer previews exact
+payloads and sends signed tests. Deliveries shows attempts, response
+diagnostics, suppression reasons, and redelivery controls. Start with
+[Webhooks and integrations](/webhooks/) before connecting an endpoint, and use
+[webhook operations](/webhooks/operations/) for retries, budgets, recovery, and
+cost accounting.
+
 **Settings** manages website themes and shared code, tracking URLs, subscribe
 methods, site access, media storage, feed ordering, and favicon. It does not
 contain the **Edit channel** form. See [Themes and website code](/dashboard/themes/)

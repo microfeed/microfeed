@@ -1,5 +1,5 @@
 ---
-title: microfeed cli reference
+title: "@microfeed/cli reference"
 description: Canonical commands, options, authentication behavior, output, and safety rules for @microfeed/cli.
 ---
 
@@ -7,7 +7,7 @@ This is the canonical capability reference for the official
 [`@microfeed/cli` package](https://www.npmjs.com/package/@microfeed/cli),
 including the `yarn microfeed` command available inside a microfeed clone. For
 a shorter workflow, start with
-[Manage content with the microfeed CLI](/api/cli/).
+[Manage content with the microfeed CLI](/automation/cli/).
 
 This page is intentionally exhaustive. You do not need to read it from top to
 bottom before publishing; use the contents list or built-in `--help` to jump to
@@ -32,6 +32,10 @@ the command you need.
 - [`item delete`](#yarn-microfeed-item-delete)
 - [`media`](#yarn-microfeed-media)
 - [`media upload`](#yarn-microfeed-media-upload)
+- [`webhook`](#yarn-microfeed-webhook)
+- [`webhook scaffold`](#yarn-microfeed-webhook-scaffold)
+- [`webhook listen`](#yarn-microfeed-webhook-listen)
+- [`webhook sample`](#yarn-microfeed-webhook-sample)
 - [`api`](#yarn-microfeed-api)
 - [Output and errors](#output-and-errors)
 - [Saved instances and credentials](#saved-instances-and-credentials)
@@ -140,6 +144,9 @@ For every authenticated REST request, the CLI:
 | `item update <item-id>` | Update an item from flags or JSON. | Changes remote content. |
 | `item delete <item-id>` | Delete an item after exact-ID confirmation. | Permanently deletes remote content. |
 | `media upload <file>` | Upload standalone media for rich content or later API use. | Creates a remote media object but does not edit an item. |
+| `webhook scaffold <directory>` | Copy a runnable JavaScript or Python webhook inspector project. | Creates one new local directory; works offline and never installs, starts, or authenticates anything. |
+| `webhook listen` | Verify, display, and optionally forward local webhook deliveries. | Starts a loopback-only local server; does not create a remote endpoint or relay. |
+| `webhook sample <event>` | Read one exact event example from the selected instance's OpenAPI contract. | Read-only; does not authenticate or change the instance. |
 | `api <method> <path>` | Call a relative `/api/v1/…` REST endpoint. | Depends on the method and endpoint. |
 
 ## Global options
@@ -200,8 +207,9 @@ opens **API → API Settings**, and turns on **Enable API access**. If an agent 
 operating the CLI, it pauses and asks the owner to complete that browser step.
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed login https://feed.example.com \
-  --instance production \
+  --instance <instance-name> \
   --connection-name "Home Mac"
 ```
 
@@ -308,9 +316,10 @@ yarn microfeed item list [options]
 | `--fields <fields>` | With `--summary`, select comma-separated projected fields. Defaults to `id,title,status,date_published,date_modified,url`. |
 
 ```console
-yarn microfeed item list --instance production --limit 25 --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed item list --instance <instance-name> --limit 25 --json
 
-yarn microfeed item list --instance production \
+yarn microfeed item list --instance <instance-name> \
   --summary \
   --fields id,title,status \
   --json
@@ -352,13 +361,15 @@ matched.
 Search only titles for `hello`:
 
 ```console
-yarn microfeed item search hello --fields title --instance production --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed item search hello --fields title --instance <instance-name> --json
 ```
 
 Search both items and Pages:
 
 ```console
-yarn microfeed item search hello --types items,pages --instance production --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed item search hello --types items,pages --instance <instance-name> --json
 ```
 
 Keep the shell's outer quotes separate from the exact phrase quotes that the
@@ -392,12 +403,13 @@ yarn microfeed item get <item-id> [--unwrap] [--fields <fields>]
 | `--fields <fields>` | With `--unwrap`, select comma-separated projected fields from the same allowlist used by `item list --summary`. |
 
 ```console
-yarn microfeed item get 0HGJLSML3P1 --instance production --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed item get 0HGJLSML3P1 --instance <instance-name> --json
 
 yarn microfeed item get 0HGJLSML3P1 \
   --unwrap \
   --fields id,title,status \
-  --instance production \
+  --instance <instance-name> \
   --json
 ```
 
@@ -487,42 +499,43 @@ yarn microfeed item create [item flags | --input <file|->] \
 | `--verify` | After creation and any attachment update, read the item back and return that unwrapped response. A failed read-back exits unsuccessfully and reports the already-created ID. |
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed item create \
-  --instance production \
+  --instance <instance-name> \
   --title "Release notes" \
   --content-html "<p>What changed.</p>" \
   --status published \
   --json
 
 yarn microfeed item create \
-  --instance production \
+  --instance <instance-name> \
   --input item.json \
   --validate-only \
   --json
 
 yarn microfeed item create \
-  --instance production \
+  --instance <instance-name> \
   --input item.json \
   --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc \
   --verify \
   --json
 
 yarn microfeed item create \
-  --instance production \
+  --instance <instance-name> \
   --title "Episode 1" \
   --attachment-file ./episode.mp3 \
   --status published \
   --json
 
 yarn microfeed item create \
-  --instance production \
+  --instance <instance-name> \
   --title "Full-resolution photo" \
   --attachment-file ./original.png \
   --status unlisted \
   --json
 
 yarn microfeed item create \
-  --instance production \
+  --instance <instance-name> \
   --title "Photo update" \
   --image-file ./cover.png \
   --status unlisted \
@@ -562,18 +575,19 @@ yarn microfeed item update <item-id> [item flags | --input <file|->]
 ```
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed item update 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --input - \
   --json < item.json
 
 yarn microfeed item update 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --attachment-file ./episode.mp3 \
   --json
 
 yarn microfeed item update 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --image-file ./cover.png \
   --json
 ```
@@ -597,8 +611,9 @@ item ID. In non-interactive use, `--confirm` is required and its value must
 exactly equal the positional ID. There is no generic `--yes` option.
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed item delete 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --confirm 0HGJLSML3P1 \
   --json
 ```
@@ -651,7 +666,8 @@ contract requires an existing item ID for audio, video, and document uploads.
 For an inline rich-text image, upload first:
 
 ```console
-yarn microfeed media upload ./diagram.png --instance production --json
+# Replace <instance-name> with a saved instance name.
+yarn microfeed media upload ./diagram.png --instance <instance-name> --json
 ```
 
 ```json
@@ -673,8 +689,9 @@ JSON input:
 ```
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed item update 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --input item.json \
   --json
 ```
@@ -687,11 +704,168 @@ unused upload is not left behind.
 For non-image media, supply the target item:
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed media upload ./episode.mp3 \
   --item-id 0HGJLSML3P1 \
-  --instance production \
+  --instance <instance-name> \
   --json
 ```
+
+## `yarn microfeed webhook`
+
+Create a local receiver project, inspect an exact OpenAPI example, or receive
+signed webhook deliveries during local development. The CLI does not create a
+microfeed endpoint or provide a public relay.
+
+```console
+yarn microfeed webhook <scaffold|listen|sample> [arguments] [options]
+```
+
+Use `scaffold` to create code you can extend, `listen` to inspect or forward
+signed deliveries without a project, `sample` to discover an unsigned exact
+payload, and Admin Event Explorer to send a signed, budgeted, retryable test.
+
+## `yarn microfeed webhook scaffold`
+
+**Purpose:** Copy one complete, offline webhook receiver starter into a new
+local directory.
+
+**Changes:** Creates only the destination and selected starter files. It
+installs and starts nothing, creates no endpoint, reads no saved instance, and
+performs no authentication. The destination must not already exist; there is
+no overwrite or force option.
+
+```console
+yarn microfeed webhook scaffold <directory> \
+  [--language javascript|python] \
+  [--json]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--language <language>` | Select `javascript` (the default) or `python`. |
+| `--json` | Return the absolute directory, language, exact created-file list, local endpoint URL, and next-step commands. |
+
+The JavaScript starter pins Express 5.2.1 and `standardwebhooks` 1.0.0. The
+Python starter pins Flask 3.1.3 and `standardwebhooks` 1.0.1. Both bind only
+`127.0.0.1:3000`, accept `POST /webhook`, verify the exact raw body with the
+maintained library, return `401` or `204`, mark in-memory duplicate delivery
+IDs, print the verified payload, and skip every production effect when signed
+`test` is true. They never print the secret or signature.
+
+These are local development inspectors. Their duplicate state resets on
+restart, and they contain no durable queue or production side effect. Reveal
+the endpoint's signing secret from its Admin **Signing secret** dialog and
+store it in `MICROFEED_WEBHOOK_SECRET` through the generated `.env.example`;
+the signing secret is the endpoint authentication, so a second passcode is
+unnecessary.
+
+Inside a microfeed clone, use `.microfeed/webhooks/<endpoint-name>/` as the
+destination. The clone ignores `.microfeed/`, just as it does for local theme
+and instance work, so the development receiver and populated secret files are
+not checked into microfeed. Move a production-hardened receiver into its own
+repository before deploying it. Relative scaffold destinations resolve from
+Yarn's project root. Therefore the root `yarn microfeed` command creates
+`<microfeed-root>/.microfeed/webhooks/endpoint1`, never
+`<microfeed-root>/packages/cli/.microfeed/webhooks/endpoint1`.
+
+```console
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language javascript
+yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+  --language python --json
+```
+
+Human output guides you to scaffold first, register
+`http://127.0.0.1:3000/webhook` and reveal its signing secret second, then
+install and run with `MICROFEED_WEBHOOK_SECRET` before sending an Event
+Explorer test. The same templates supply Admin quickstart code and
+the OpenAPI webhook operation's JavaScript and Python `x-codeSamples`.
+
+## `yarn microfeed webhook listen`
+
+**Purpose:** Start a loopback-only development receiver, verify Standard
+Webhooks signatures against exact request bytes, print each event, and
+optionally forward it to another loopback server.
+
+**Changes:** Listens on `127.0.0.1:8978/webhook` until interrupted. It does not
+change local content or any remote microfeed resource.
+
+```console
+yarn microfeed webhook listen \
+  [--secret-file <path>] \
+  [--forward-to <url>] \
+  [--port <1-65535>] \
+  [--json]
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--secret-file <path>` | Read the signing secret from a UTF-8 file. Without it or `MICROFEED_WEBHOOK_SECRET`, the listener uses a hidden terminal prompt. |
+| `--forward-to <url>` | Forward verified requests to an HTTP loopback URL with an explicit port. Exact body bytes and webhook headers are preserved. |
+| `--port <1-65535>` | Change the loopback listener port from its 8978 default. |
+| `--json` | Write one NDJSON object for each verified delivery. |
+
+There is deliberately no plaintext `--secret` option. Add
+`http://127.0.0.1:8978/webhook` under **Admin → Webhooks → Endpoints**, then use
+the endpoint's revealed signing secret with the listener. Deployed endpoints
+require HTTPS; this HTTP exception exists only for local development.
+
+Without a forward target, a verified delivery returns `204`. Forwarding has a
+nine-second timeout and returns `502` for connection failure or `504` for a
+timeout. A duplicate delivery ID is marked in human or NDJSON output but is
+still forwarded so the target's own deduplication can be tested.
+
+```console
+yarn microfeed webhook listen
+
+MICROFEED_WEBHOOK_SECRET=whsec_... \
+  yarn microfeed webhook listen --json
+
+yarn microfeed webhook listen \
+  --secret-file .webhook-secret \
+  --forward-to http://127.0.0.1:3000/hooks/microfeed
+```
+
+See [Webhooks and integrations](/webhooks/) for enablement, endpoint creation,
+signed testing, and safe shutdown.
+
+## `yarn microfeed webhook sample`
+
+**Purpose:** Print the exact named example published by one instance's
+generated OpenAPI webhook operation.
+
+**Changes:** None. The command makes one unauthenticated read of public API
+documentation and writes the example to standard output.
+
+```console
+yarn microfeed webhook sample <event> [--instance <name>] [--json]
+```
+
+Use an exact event type such as `item.published`,
+`page.navigation_updated`, or `webhook.test`. The CLI resolves the site using
+normal saved-instance selection or `MICROFEED_URL`, reads
+`/api/v1/openapi.json`, and selects that event's named example. It does not
+bundle a second schema.
+
+Without `--json`, output includes a short heading and formatted payload. With
+`--json`, standard output contains only the one example envelope, which is
+suitable for agents, fixtures, and pipes. Generated examples have signed-body
+shape `test: true`; a receiver must verify a delivered signature before
+trusting that field and must prevent test events from producing production
+side effects.
+
+```console
+# Replace <instance-name> with a saved instance name.
+yarn microfeed webhook sample item.published
+yarn microfeed webhook sample page.navigation_updated --instance <instance-name> --json
+MICROFEED_URL=http://127.0.0.1:4321 \
+  yarn microfeed webhook sample webhook.test --json
+```
+
+If the contract is unavailable, enable **Publish API docs** in **Admin → API →
+API Settings**, or inspect the same canonical examples in **Admin → Webhooks →
+Event explorer**.
 
 ## `yarn microfeed api`
 
@@ -723,12 +897,13 @@ prepared upload URLs. Use `media upload <file>` for inline or standalone media,
 Quote paths containing `?` or `&` so the shell passes them as one argument.
 
 ```console
+# Replace <instance-name> with a saved instance name.
 yarn microfeed api GET "/api/v1/feed/?limit=3" \
-  --instance production \
+  --instance <instance-name> \
   --json
 
 yarn microfeed api POST /api/v1/items/ \
-  --instance production \
+  --instance <instance-name> \
   --input item.json \
   --header "Content-Type: application/json" \
   --json
@@ -823,8 +998,9 @@ When refresh fails or no refresh token exists, log in again.
 | Variable | Purpose |
 | --- | --- |
 | `MICROFEED_API_KEY` | Use an existing API key as the Bearer credential. It takes precedence over saved browser credentials and is never persisted. Supply it through a CI secret manager. |
-| `MICROFEED_URL` | Set the API-key target site URL when no selected saved instance supplies one. HTTPS is required except for local loopback site URLs. |
+| `MICROFEED_URL` | Set the target site URL for API-key operations or `webhook sample`. HTTPS is required except for local loopback site URLs. |
 | `MICROFEED_INSTANCE` | Select a saved instance when `--instance` is omitted. |
+| `MICROFEED_WEBHOOK_SECRET` | Supply the signing secret to `webhook listen` without a prompt. Prefer a development secret manager; never commit it. |
 | `MICROFEED_CONFIG_DIR` | Override the instance-store directory. Intended for isolated environments and tests; it does not weaken encryption or replace the OS keychain. |
 
 Never place a credential directly in a command, checked-in file, log,
@@ -839,7 +1015,10 @@ yarn microfeed login --help
 yarn microfeed instances use -h
 yarn microfeed item create --help
 yarn microfeed help item delete
+yarn microfeed webhook scaffold --help
+yarn microfeed webhook sample --help
 yarn microfeed media upload --help
+yarn microfeed webhook listen --help
 yarn microfeed api --help
 ```
 
