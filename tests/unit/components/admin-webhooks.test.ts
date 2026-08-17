@@ -124,6 +124,9 @@ describe("Webhook Admin", () => {
     expect(output).toContain("Change budget");
     expect(output).toContain("Estimated Queue operations today");
     expect(output).toContain("Fanout was suppressed.");
+    expect(output).toContain("Reconciliation runs hourly");
+    expect(output).toContain("cleanup runs once daily");
+    expect(output).toContain("Enable or stop webhooks");
     expect(output).toContain("Standard Webhooks");
     expect(output).toContain("Build and test your first endpoint");
     const quickstartSection = output.slice(
@@ -147,6 +150,12 @@ describe("Webhook Admin", () => {
     expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.directoryCommand);
     expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.runCommand);
     expect(output).toContain("Copy server.cjs");
+    expect(output).toContain(
+      'aria-label="JavaScript webhook receiver code"',
+    );
+    expect(output).toContain("language-js");
+    expect(output).toContain('class="token keyword"');
+    expect(output).toContain("readonly=\"\"");
     expect(output).toContain('app.listen(3000, &quot;127.0.0.1&quot;');
     expect(output).toContain(
       'href="/admin/webhooks/events/?event=webhook.test"',
@@ -156,9 +165,11 @@ describe("Webhook Admin", () => {
     expect(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand).toContain(
       ".microfeed/webhooks/endpoint1 --language javascript",
     );
+    expect(WEBHOOK_QUICKSTARTS.javascript.highlightLanguage).toBe("js");
     expect(WEBHOOK_QUICKSTARTS.python.scaffoldCommand).toContain(
       ".microfeed/webhooks/endpoint1 --language python",
     );
+    expect(WEBHOOK_QUICKSTARTS.python.highlightLanguage).toBe("python");
     expect(WEBHOOK_QUICKSTARTS.python.installCommands).toEqual([
       "python3 -m venv .venv",
       ". .venv/bin/activate",
@@ -168,6 +179,29 @@ describe("Webhook Admin", () => {
     expect(output).toContain("no additional");
     expect(output).toContain("passcode is needed");
     expect(output).toContain("Content automation guide");
+
+    const disabledOutput = renderToStaticMarkup(React.createElement(
+      WebhookOverviewApp,
+      {
+        instanceName: "personal",
+        overview: {
+          activeEndpoints: 0,
+          alerts: [],
+          dailyLimit: 1_000,
+          deliveriesToday: 0,
+          enabled: false,
+          endpointLimit: 20,
+          endpoints: 0,
+          estimatedQueueOperationsToday: 0,
+          recentFailures: 0,
+        },
+      },
+    ));
+    expect(disabledOutput).toContain("Ordinary deployments keep webhooks off");
+    expect(disabledOutput).toContain(
+      "yarn manage deploy --enable-webhooks --instance personal",
+    );
+    expect(disabledOutput).toContain("Enable production webhooks");
   });
 
   it("renders signing-secret, endpoint-limit, pause recovery, filters, and redelivery controls", () => {

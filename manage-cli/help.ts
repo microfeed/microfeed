@@ -119,7 +119,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
       "--enable-r2 requires Cloudflare R2 entitlement, creates or explicitly reuses the saved bucket, deploys MEDIA_BUCKET, and verifies the exact bucket and Worker binding before completing.",
-      "--enable-webhooks is the explicit opt-in for Queue-backed webhooks. It requests Queue permission, creates a dedicated environment-specific Queue, adds the producer/consumer binding and five-minute reconciler, and creates the encrypted endpoint-secret key. Ordinary deployments do none of these things.",
+      "--enable-webhooks is the explicit opt-in for Queue-backed webhooks. It requests Queue permission, creates a dedicated environment-specific Queue, adds the producer/consumer binding and hourly maintenance trigger, and creates the encrypted endpoint-secret key. The trigger reconciles hourly and performs retention cleanup once daily only while an endpoint is configured. Ordinary deployments do none of these things.",
       "--local is limited to init --local instances. It regenerates configuration, applies local D1 migrations, runs focused deployment smoke tests and a build, preserves local data, and does not start a server.",
     ],
     examples: [

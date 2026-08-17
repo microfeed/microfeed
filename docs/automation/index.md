@@ -57,7 +57,11 @@ Plain `yarn dev` automatically enables Wrangler's local Queue simulation. It
 creates no Cloudflare resources, requests no Cloudflare permissions, and incurs
 no Cloudflare Queue or Worker charges. Preview and production remain explicitly
 opt-in with `yarn manage deploy --enable-webhooks` because they create deployed
-resources and account-wide usage.
+resources and account-wide usage. Ordinary deployments leave webhooks off.
+After enablement, disable or delete every endpoint in Admin to stop new
+deliveries immediately; the provisioned Queue stays available for later reuse.
+See [Set up and test an automation](./setup-and-test/) for the manual command
+and a ready-to-copy coding-agent prompt.
 
 Each instance permits 20 non-deleted endpoints. Its owner-controlled daily
 delivery budget defaults to 1,000 and can be changed from 0 through 1,000,000 in

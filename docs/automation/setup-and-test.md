@@ -23,12 +23,60 @@ yarn manage deploy --preview --enable-webhooks --instance <name>
 ```
 
 An ordinary deployment does not request Queue permission or create a Queue.
-Production and preview use distinct Queues. Plain `yarn dev` always starts
-Wrangler's isolated local Queue simulation, consumer, reconciler, and local
-secret encryption. It creates no Cloudflare resource, requests no Cloudflare
-permission, and incurs no Cloudflare Queue or Worker charge. `yarn dev
---enable-webhooks` is accepted as an explicit alias, but the flag is not needed
-locally and does not change preview or production.
+Production and preview use distinct Queues. Webhook enablement is preserved by
+later deployments once selected. The deployed Worker runs an hourly
+reconciliation trigger and daily retention cleanup only while at least one
+non-deleted endpoint is configured.
+
+Plain `yarn dev` always starts Wrangler's isolated local Queue simulation,
+consumer, hourly maintenance trigger, and local secret encryption. It creates
+no Cloudflare resource, requests no Cloudflare permission, and incurs no
+Cloudflare Queue or Worker charge. `yarn dev --enable-webhooks` is accepted as
+an explicit alias, but the flag is not needed locally and does not change
+preview or production.
+
+### Run the deployment manually
+
+Use the production or preview command above from a trusted local clone. The
+`--enable-webhooks` flag is the explicit consent to create the environment's
+Queue, Worker producer and consumer bindings, Cron trigger, and endpoint-secret
+encryption key. After deployment, verify the saved site:
+
+```console
+yarn manage status --instance <name>
+```
+
+### Ask a coding agent to enable webhooks
+
+Give a local coding agent the exact site and environment. For production, this
+prompt is copyable as written after replacing `<name>`:
+
+```text
+Enable production webhooks for my saved microfeed site "<name>". Follow the
+deploy-microfeed skill, review the deploy section of docs/manage-cli.md, and
+run yarn manage deploy --enable-webhooks --instance <name>. Do not change
+another site or the preview environment. After deployment, run yarn manage
+status --instance <name> and report whether the webhook Queue and binding are
+ready.
+```
+
+For preview, say “preview webhooks,” add `--preview` to both the deployment
+instruction and the exact command, and tell the agent not to change production.
+The agent must still inspect the checkout, obtain any required Cloudflare
+authorization, and follow the deployment skill's approval boundaries.
+
+### Stop webhook delivery
+
+Open **Admin → Webhooks → Endpoints** and disable or delete every endpoint.
+Disabling cancels pending deliveries and prevents new reservations; deleting
+also frees the endpoint slot. This is immediate and needs no deployment. The
+Queue and encryption key remain provisioned for later reuse, but the hourly
+trigger exits after one D1 existence check while there are no configured
+endpoints, without reconciliation, cleanup, or Queue operations. v1 has no
+standalone `--disable-webhooks` deployment option; an owned Queue is removed
+only with the complete instance through the reviewed `yarn manage destroy`
+flow. Retained webhook history is not pruned while no endpoint is configured;
+maintenance resumes if an endpoint is added later.
 
 ## 2. Scaffold, register, and run a local receiver
 

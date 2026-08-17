@@ -735,6 +735,36 @@ export async function enqueueUnqueuedWebhookDeliveries(
   return ids.length;
 }
 
+export async function hasConfiguredWebhookEndpoints(
+  database: D1Database,
+): Promise<boolean> {
+  const endpoint = await database.prepare(`
+    SELECT 1 AS configured
+    FROM webhook_endpoints
+    WHERE deleted_at IS NULL
+    LIMIT 1
+  `).first<{configured: number}>();
+  return Boolean(endpoint?.configured);
+}
+
+export function isDailyWebhookCleanupDue(scheduledTime: number): boolean {
+  return new Date(scheduledTime).getUTCHours() === 0;
+}
+
+export async function runWebhookScheduledMaintenance(
+  runtimeEnv: Env,
+  scheduledTime: number,
+): Promise<{cleaned: boolean; reconciled: number; skipped: boolean}> {
+  if (!webhooksAvailable(runtimeEnv) ||
+    !await hasConfiguredWebhookEndpoints(runtimeEnv.FEED_DB)) {
+    return {cleaned: false, reconciled: 0, skipped: true};
+  }
+  const reconciled = await enqueueUnqueuedWebhookDeliveries(runtimeEnv);
+  const cleaned = isDailyWebhookCleanupDue(scheduledTime);
+  if (cleaned) await pruneWebhookHistory(runtimeEnv.FEED_DB);
+  return {cleaned, reconciled, skipped: false};
+}
+
 export async function pruneWebhookHistory(database: D1Database): Promise<void> {
   await database.batch([
     database.prepare(`

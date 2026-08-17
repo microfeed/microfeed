@@ -130,6 +130,7 @@ export const WEBHOOK_QUICKSTARTS = {
   javascript: {
     directoryCommand: "cd .microfeed/webhooks/endpoint1",
     filename: "server.cjs",
+    highlightLanguage: "js",
     installCommands: ["yarn install"],
     label: "JavaScript",
     runCommand: "MICROFEED_WEBHOOK_SECRET=whsec_... yarn start",
@@ -140,6 +141,7 @@ export const WEBHOOK_QUICKSTARTS = {
   python: {
     directoryCommand: "cd .microfeed/webhooks/endpoint1",
     filename: "server.py",
+    highlightLanguage: "python",
     installCommands: [
       "python3 -m venv .venv",
       ". .venv/bin/activate",

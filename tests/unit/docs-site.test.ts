@@ -786,6 +786,15 @@ describe("documentation site", () => {
     expect(pages.get("setup-and-test.md")).not.toContain(
       "cannot be revealed",
     );
+    expect(pages.get("setup-and-test.md")).toContain(
+      "Ask a coding agent to enable webhooks",
+    );
+    expect(pages.get("setup-and-test.md")).toContain(
+      "yarn manage deploy --enable-webhooks --instance <name>",
+    );
+    expect(pages.get("setup-and-test.md")).toContain(
+      "standalone `--disable-webhooks`",
+    );
     expect(pages.get("ai-agents.md")).toContain("before JSON parsing");
     expect(pages.get("ai-agents.md")).toContain("TypeScript receiver core");
     expect(pages.get("ai-agents.md")).toContain("Python receiver core");
@@ -800,6 +809,15 @@ describe("documentation site", () => {
     ]) expect(pages.get("recipes.md")).toContain(`## ${recipe}`);
     expect(pages.get("operations.md")).toContain("Production readiness checklist");
     expect(pages.get("operations.md")).toContain("six total attempts");
+    expect(pages.get("operations.md")).toContain(
+      "one Cloudflare Worker, not a separate cleanup Worker",
+    );
+    expect(pages.get("operations.md")).toContain(
+      "minute zero of every hour",
+    );
+    expect(pages.get("operations.md")).toContain(
+      "existence check: no reconciliation query",
+    );
 
     const skill = await readFile(path.join(
       repositoryRoot,
@@ -827,6 +845,18 @@ describe("documentation site", () => {
     );
     expect(glossary).toContain("administrator\ncan reveal it");
     expect(glossary).not.toContain("revealed once");
+
+    const deploymentSkill = await readFile(path.join(
+      repositoryRoot,
+      ".agents",
+      "skills",
+      "deploy-microfeed",
+      "SKILL.md",
+    ), "utf8");
+    expect(deploymentSkill).toContain(
+      "yarn manage deploy --enable-webhooks --instance <name>",
+    );
+    expect(deploymentSkill).toContain("Keep deployed webhooks disabled");
   });
 
   it("documents modern theme authoring without migration internals", async () => {

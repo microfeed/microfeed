@@ -103,8 +103,10 @@ deterministic code and durable state.
 ## Test locally
 
 1. Start the site with plain `yarn dev`. Local Queue simulation, its consumer,
-   reconciler, and a local encryption secret are automatic; no Cloudflare
-   Queue, permission, usage, or charge is created. `yarn dev
+   hourly maintenance trigger, and a local encryption secret are automatic; no
+   Cloudflare Queue, permission, usage, or charge is created. Reconciliation
+   runs hourly and retention cleanup runs on the 00:00 UTC invocation only
+   while an endpoint is configured. `yarn dev
    --enable-webhooks` is only an optional explicit alias.
 2. Prefer `yarn microfeed webhook scaffold
    .microfeed/webhooks/<endpoint-name> --language javascript` and run the

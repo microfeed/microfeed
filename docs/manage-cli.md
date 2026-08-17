@@ -378,10 +378,25 @@ Webhook enablement is resumable and isolated by environment. Production and
 preview use separate Queue names and require explicit opt-in because they add
 Cloudflare resources, authorization, account-wide usage, and possible cost.
 The generated Worker config binds the same Queue as producer and consumer and
-runs a five-minute reconciler. Once enabled, subsequent deployments preserve
-the binding. An owned Queue appears in the reviewed destroy plan and is removed
-with its environment. Plain local `dev` temporarily generates the equivalent
-Wrangler simulation without changing saved production or preview enablement.
+runs one hourly maintenance trigger. It reconciles delivery IDs that were saved
+in D1 but not successfully handed to the Queue on every run, and performs
+30-day retention cleanup only on the 00:00 UTC run. When no non-deleted
+endpoint is configured, the trigger exits after one D1 existence check without
+reconciling, cleaning, or using the Queue. Once enabled, subsequent deployments
+preserve the binding. An owned Queue appears in the reviewed destroy plan and
+is removed with its environment. Plain local `dev` temporarily generates the
+equivalent Wrangler simulation without changing saved production or preview
+enablement.
+
+To stop webhook delivery after enablement, open **Admin → Webhooks →
+Endpoints** and disable or delete every endpoint. Disabling cancels pending
+deliveries and prevents new reservations; deleting also frees the endpoint
+slot. This takes effect immediately without redeployment. It does not delete
+the deployed Queue or encryption key, so the site can reuse them later. There
+is no standalone `--disable-webhooks` deployment option in v1; the complete
+instance destroy flow removes an owned Queue only as part of its reviewed
+resource plan. Retained webhook history is not pruned while the site remains
+endpoint-free; maintenance resumes when another endpoint is configured.
 
 ## `yarn manage dev`
 
@@ -405,7 +420,7 @@ yarn manage dev [--instance <name>] [--preview] [--enable-webhooks]
 | `--enable-webhooks` | Optional explicit alias. Webhook simulation is already enabled for every local `dev` run. |
 
 Plain `dev` always generates a temporary Wrangler configuration with the local
-Queue producer, consumer, five-minute reconciler, and local endpoint-secret
+Queue producer, consumer, hourly maintenance trigger, and local endpoint-secret
 encryption key. It creates no Cloudflare Queue or other resource, requests no
 Cloudflare permission, incurs no Cloudflare Queue or Worker charge, and does
 not change whether preview or production webhooks are enabled. The original

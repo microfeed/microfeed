@@ -700,7 +700,7 @@ export async function generateWranglerConfig(
           binding: "WEBHOOK_QUEUE",
           queue: config.webhooks.queueName,
         }],
-      }, null, 2)},\n  "triggers": {"crons": ["*/5 * * * *"]},`
+      }, null, 2)},\n  "triggers": {"crons": ["0 * * * *"]},`
     : "";
   const rendered = template
     .replaceAll("__PROJECT_ROOT__", relativeRoot)

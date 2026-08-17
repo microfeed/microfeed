@@ -10,8 +10,11 @@ import {
   createWebhookTestDelivery,
   emitWebhookEvent,
   enqueueUnqueuedWebhookDeliveries,
+  hasConfiguredWebhookEndpoints,
+  isDailyWebhookCleanupDue,
   pruneWebhookHistory,
   redeliverWebhookDelivery,
+  runWebhookScheduledMaintenance,
 } from "@/server/webhooks/events";
 import {
   previewWebhookExplorerEvent,
@@ -761,6 +764,73 @@ describe("webhook delivery policy", () => {
 });
 
 describe("webhook reconciliation and retention", () => {
+  it("skips reconciliation and cleanup when no endpoint is configured", async () => {
+    await insertEndpoint("deleted");
+    const deliveryId = await insertDelivery("deleted", "deleted");
+    await env.FEED_DB.prepare(`
+      UPDATE webhook_endpoints
+      SET deleted_at = CURRENT_TIMESTAMP, status = 'disabled'
+      WHERE id = 'deleted'
+    `).run();
+    await env.FEED_DB.prepare(`
+      UPDATE webhook_deliveries
+      SET status = 'failed', created_at = datetime('now', '-31 days'),
+        completed_at = datetime('now', '-31 days')
+      WHERE id = ?
+    `).bind(deliveryId).run();
+
+    expect(await hasConfiguredWebhookEndpoints(env.FEED_DB)).toBe(false);
+    await expect(runWebhookScheduledMaintenance(
+      runtime(),
+      Date.UTC(2026, 7, 18, 0),
+    )).resolves.toEqual({cleaned: false, reconciled: 0, skipped: true});
+    expect(await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM webhook_deliveries WHERE id = ?",
+    ).bind(deliveryId).first()).toEqual({count: 1});
+  });
+
+  it("skips idle sites, reconciles hourly, and cleans only at midnight UTC", async () => {
+    const queueIds: string[] = [];
+    expect(await hasConfiguredWebhookEndpoints(env.FEED_DB)).toBe(false);
+    await expect(runWebhookScheduledMaintenance(
+      runtime(queueIds),
+      Date.UTC(2026, 7, 17, 12),
+    )).resolves.toEqual({cleaned: false, reconciled: 0, skipped: true});
+    expect(queueIds).toEqual([]);
+
+    await insertEndpoint("scheduled");
+    await env.FEED_DB.prepare(
+      "UPDATE webhook_endpoints SET status = 'disabled' WHERE id = 'scheduled'",
+    ).run();
+    expect(await hasConfiguredWebhookEndpoints(env.FEED_DB)).toBe(true);
+    await env.FEED_DB.prepare(
+      "UPDATE webhook_endpoints SET status = 'active' WHERE id = 'scheduled'",
+    ).run();
+    const deliveryId = await insertDelivery("scheduled", "scheduled");
+    expect(await hasConfiguredWebhookEndpoints(env.FEED_DB)).toBe(true);
+    expect(isDailyWebhookCleanupDue(Date.UTC(2026, 7, 17, 12))).toBe(false);
+    await expect(runWebhookScheduledMaintenance(
+      runtime(queueIds),
+      Date.UTC(2026, 7, 17, 12),
+    )).resolves.toEqual({cleaned: false, reconciled: 1, skipped: false});
+    expect(queueIds).toEqual([deliveryId]);
+
+    await env.FEED_DB.prepare(`
+      UPDATE webhook_deliveries
+      SET status = 'failed', created_at = datetime('now', '-31 days'),
+        completed_at = datetime('now', '-31 days')
+      WHERE id = ?
+    `).bind(deliveryId).run();
+    expect(isDailyWebhookCleanupDue(Date.UTC(2026, 7, 18, 0))).toBe(true);
+    await expect(runWebhookScheduledMaintenance(
+      runtime(queueIds),
+      Date.UTC(2026, 7, 18, 0),
+    )).resolves.toEqual({cleaned: true, reconciled: 0, skipped: false});
+    expect(await env.FEED_DB.prepare(
+      "SELECT COUNT(*) AS count FROM webhook_deliveries WHERE id = ?",
+    ).bind(deliveryId).first()).toEqual({count: 0});
+  });
+
   it("requeues unleased saved work and prunes 30-day diagnostics", async () => {
     await insertEndpoint("reconcile");
     const deliveryId = await insertDelivery("reconcile", "reconcile");

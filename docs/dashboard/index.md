@@ -35,9 +35,14 @@ recovery, and redelivery. See
 
 Plain `yarn dev` automatically supplies the local Queue simulation at no
 Cloudflare cost. Preview and production show an instance-specific enable
-command and explain why deployed Queue resources remain opt-in. The daily
-delivery budget defaults to 1,000, can be changed immediately from 0 through
-1,000,000, and is an owner cost guard rather than a microfeed plan limit.
+command, a copyable coding-agent prompt, and an explanation of why deployed
+Queue resources remain opt-in. The same availability dialog explains how to
+stop delivery immediately by disabling or deleting every endpoint. The Worker
+reconciles hourly and performs retention cleanup at 00:00 UTC only while an
+endpoint is configured; otherwise the trigger exits after one D1 existence
+check. The daily delivery budget defaults to 1,000, can be changed immediately
+from 0 through 1,000,000, and is an owner cost guard rather than a microfeed
+plan limit.
 
 **Settings** manages website themes and shared code, tracking URLs, subscribe
 methods, site access, media storage, feed ordering, and favicon. It does not

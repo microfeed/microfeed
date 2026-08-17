@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import {showToast} from "@/client/ToastUtils";
+import AdminCodeEditor from "@/components/admin/shared/AdminCodeEditor";
 import AdminSectionCard from "@/components/admin/shared/AdminSectionCard";
 import {Button} from "@/components/ui/button";
 import {
@@ -78,6 +79,7 @@ export default function WebhookOverviewApp({
   const deploymentCommand = `yarn manage deploy ${
     deploymentEnvironment === "preview" ? "--preview " : ""
   }--enable-webhooks --instance ${instanceName}`;
+  const agentDeploymentPrompt = `Enable ${deploymentLabel.toLowerCase()} webhooks for my saved microfeed site "${instanceName}". Follow the deploy-microfeed skill, review the deploy section of docs/manage-cli.md, and run ${deploymentCommand}. Do not change another site or environment. After deployment, run yarn manage status --instance ${instanceName} and report whether the webhook Queue and binding are ready.`;
 
   const copy = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value);
@@ -88,9 +90,11 @@ export default function WebhookOverviewApp({
     <div className="grid gap-6">
       <AdminSectionCard
         action={<WebhookEnablementDialog
+          agentPrompt={agentDeploymentPrompt}
           command={deploymentCommand}
           deploymentLabel={deploymentLabel}
           enabled={overview.enabled}
+          endpointUrl={endpointUrl}
           localDevelopment={localDevelopment}
           onCopy={copy}
         />}
@@ -113,8 +117,8 @@ export default function WebhookOverviewApp({
               {localDevelopment
                 ? "yarn dev uses Wrangler's local Queue simulation. It creates no Cloudflare resources, requests no Queue permissions, and incurs no Cloudflare charge."
                 : overview.enabled
-                ? "Deliveries are stored in D1 and dispatched through this deployment's dedicated Cloudflare Queue."
-                : "Enable webhooks explicitly when this deployment is ready to create and use a dedicated Cloudflare Queue."}
+                ? "Deliveries are stored in D1 and dispatched through this deployment's dedicated Cloudflare Queue. Reconciliation runs hourly and cleanup runs once daily while at least one endpoint is configured."
+                : "Ordinary deployments keep webhooks off. Enable them explicitly only when this deployment is ready to create and use a dedicated Cloudflare Queue."}
             </p>
             {!localDevelopment && !overview.enabled && (
               <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted p-3">
@@ -301,9 +305,14 @@ export default function WebhookOverviewApp({
                 Copy {quickstart.filename}
               </Button>
             </div>
-            <pre className="max-h-[36rem] overflow-auto rounded-xl bg-muted p-4 text-xs leading-5">
-              {quickstart.source}
-            </pre>
+            <AdminCodeEditor
+              ariaLabel={`${quickstart.label} webhook receiver code`}
+              code={quickstart.source}
+              language={quickstart.highlightLanguage}
+              maxHeight="36rem"
+              minHeight="36rem"
+              readOnly
+            />
             <div className="mt-3 rounded-xl border border-amber-500/35 bg-amber-500/8 p-4 text-sm leading-6">
               <p className="font-medium">Local inspector, not production infrastructure</p>
               <p className="mt-1 text-muted-foreground">
@@ -374,9 +383,11 @@ function QuickstartStep({
 }
 
 function QuickstartCommand({
+  copyLabel = "Command",
   onCopy,
   value,
 }: {
+  copyLabel?: string;
   onCopy: (value: string, label: string) => Promise<void>;
   value: string;
 }) {
@@ -386,9 +397,11 @@ function QuickstartCommand({
         {value}
       </code>
       <button
-        aria-label={`Copy command: ${value}`}
+        aria-label={copyLabel === "Command"
+          ? `Copy command: ${value}`
+          : `Copy ${copyLabel.toLowerCase()}`}
         className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
-        onClick={() => void onCopy(value, "Command")}
+        onClick={() => void onCopy(value, copyLabel)}
         type="button"
       >
         <CopyIcon aria-hidden="true" className="size-4" />
@@ -555,15 +568,19 @@ function BudgetMetric({
 }
 
 function WebhookEnablementDialog({
+  agentPrompt,
   command,
   deploymentLabel,
   enabled,
+  endpointUrl,
   localDevelopment,
   onCopy,
 }: {
+  agentPrompt: string;
   command: string;
   deploymentLabel: "Preview" | "Production";
   enabled: boolean;
+  endpointUrl: string;
   localDevelopment: boolean;
   onCopy: (value: string, label: string) => Promise<void>;
 }) {
@@ -573,7 +590,7 @@ function WebhookEnablementDialog({
         {localDevelopment
           ? "How local simulation works"
           : enabled
-          ? "How enablement works"
+          ? "Enable or stop webhooks"
           : `Enable ${deploymentLabel.toLowerCase()} webhooks`}
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
@@ -598,17 +615,34 @@ function WebhookEnablementDialog({
             <p className="mt-1 text-muted-foreground">
               The explicit deployment option requests Queue authorization,
               creates a dedicated Queue and Worker bindings, enables the
-              five-minute reconciler, and creates the endpoint-secret
-              encryption key. Queue operations share the Cloudflare account's
-              allowance, and Worker execution is metered separately. Sites
-              that do not use webhooks should not provision these resources.
+              hourly reconciliation trigger, and creates the endpoint-secret
+              encryption key. The same trigger performs retention cleanup once
+              daily at 00:00 UTC. When no non-deleted endpoint is configured,
+              it exits after one D1 existence check without reconciling,
+              cleaning, or using the Queue. Queue operations share the
+              Cloudflare account's allowance, and Worker execution is metered
+              separately. Sites that do not use webhooks should not provision
+              these resources.
             </p>
-            <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted p-3">
-              <code className="min-w-0 flex-1 overflow-x-auto text-xs">{command}</code>
-              <button aria-label="Copy deployment command" className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground" onClick={() => void onCopy(command, "Deployment command")} type="button">
-                <CopyIcon aria-hidden="true" className="size-4" />
-              </button>
-            </div>
+            <p className="mt-3 font-medium">Run it manually</p>
+            <QuickstartCommand copyLabel="Deployment command" onCopy={onCopy} value={command} />
+            <p className="mt-3 font-medium">Ask a coding agent</p>
+            <p className="mt-1 text-muted-foreground">
+              Give a local coding agent this prompt from a trusted microfeed
+              checkout. It will follow the same project-owned deployment flow.
+            </p>
+            <QuickstartCommand copyLabel="Coding-agent prompt" onCopy={onCopy} value={agentPrompt} />
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="font-medium">Stop webhook delivery</p>
+            <p className="mt-1 text-muted-foreground">
+              Open <a className="font-medium text-foreground underline underline-offset-4" href={endpointUrl}>Webhooks → Endpoints</a>,
+              then disable or delete every endpoint. Disabling cancels pending
+              deliveries and prevents new reservations; deletion also frees
+              the endpoint slot. The deployed Queue remains provisioned for
+              later reuse, but with no configured endpoints the hourly trigger
+              skips reconciliation and daily cleanup after one D1 check.
+            </p>
           </div>
           {localDevelopment && (
             <p className="rounded-xl bg-emerald-500/10 p-4">

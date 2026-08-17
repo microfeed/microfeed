@@ -831,7 +831,7 @@ describe("first-class local instances", () => {
     expect(saved?.webhooks?.queueName).toBe("microfeed-webhook-local-webhooks");
     expect(generated).toContain('"binding": "WEBHOOK_QUEUE"');
     expect(generated).toContain('"max_retries": 5');
-    expect(generated).toContain('"*/5 * * * *"');
+    expect(generated).toContain('"0 * * * *"');
     expect(generated).toContain('"WEBHOOK_SECRET_KEY"');
   });
 

@@ -2,8 +2,7 @@ import {handle} from "@astrojs/cloudflare/handler";
 
 import {processWebhookMessage, type WebhookQueueMessage} from "@/server/webhooks/delivery";
 import {
-  enqueueUnqueuedWebhookDeliveries,
-  pruneWebhookHistory,
+  runWebhookScheduledMaintenance,
 } from "@/server/webhooks/events";
 
 export default {
@@ -24,9 +23,8 @@ export default {
       }
     }
   },
-  async scheduled(_controller, runtimeEnv) {
+  async scheduled(controller, runtimeEnv) {
     if (!runtimeEnv.WEBHOOK_QUEUE) return;
-    await enqueueUnqueuedWebhookDeliveries(runtimeEnv);
-    await pruneWebhookHistory(runtimeEnv.FEED_DB);
+    await runWebhookScheduledMaintenance(runtimeEnv, controller.scheduledTime);
   },
 } satisfies ExportedHandler<Env, WebhookQueueMessage>;

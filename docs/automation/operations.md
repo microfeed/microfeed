@@ -86,16 +86,37 @@ Use manual redelivery only after checking whether the event remains relevant.
 It consumes daily budget and can repeat an action unless the automation uses
 `event.id + action` idempotency.
 
-## Logs and reconciliation
+## Internal delivery, reconciliation, and cleanup
 
 Correlate logs by delivery ID, event ID, correlation ID, causation ID, action
 idempotency key, and destination operation ID. Never log signing secrets, API
 keys, raw authorization headers, or unnecessary private content.
 
-A five-minute scheduled reconciler enqueues saved deliveries that were not
-successfully handed to the Queue. Atomic leases prevent concurrent consumers
-from executing the same attempt. Delivery, attempt, suppression, and event
-history is retained for 30 days.
+microfeed uses one Cloudflare Worker, not a separate cleanup Worker. Its
+`fetch` handler serves the site and Admin, its Queue consumer performs delivery
+attempts, and its scheduled handler performs maintenance. A content mutation
+and its webhook outbox records commit together in D1; only delivery IDs are
+then sent to the Queue. The consumer leases a delivery, sends the signed HTTP
+request, records the attempt, and explicitly acknowledges or retries the Queue
+message. Queue retries provide the six-attempt schedule described above.
+
+One Cron trigger invokes the scheduled handler at minute zero of every hour.
+Hourly reconciliation recovers saved delivery IDs that were not successfully
+handed to the Queue, such as after a crash between the D1 commit and Queue
+write. It is a repair path, not the normal delivery path. The 00:00 UTC run also
+performs retention cleanup for 30-day delivery, attempt, suppression, event,
+expired-secret, and resolved-alert history. Atomic leases prevent a consumer
+and reconciliation from executing the same attempt concurrently.
+
+Before either maintenance path runs, the handler checks D1 for at least one
+non-deleted endpoint. If none is configured, it exits after that single
+existence check: no reconciliation query, cleanup batch, or Queue operation is
+performed. Disabled and auto-paused endpoints still count because their
+history and recovery controls remain active. Deleting every endpoint stops new
+delivery reservations and makes later scheduled invocations take this idle
+path. Retained history is not pruned while the site stays endpoint-free; it is
+eligible for cleanup after an endpoint is configured again or is removed with
+the complete instance.
 
 ## Safe shutdown
 

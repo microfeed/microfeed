@@ -50,6 +50,11 @@ their Cloudflare email, password, private password-setup link, or token in chat.
   create a Worker, D1 database, R2 bucket, Worker secrets, and, only when
   selected, a Worker Custom Domain with Cloudflare-managed DNS and
   certificates.
+- Keep deployed webhooks disabled unless the user explicitly asks to enable
+  them for an exact production or preview site. Webhook opt-in creates a
+  dedicated Queue, producer and consumer bindings, an hourly maintenance
+  trigger, and an endpoint-secret encryption key, so it requires its own
+  approval and exact `--enable-webhooks` command.
 - Delete a deployment only through `yarn manage destroy`, after its dry run and
   explicit approval of the exact resource list. Never delete reused data,
   bypass identity or replacement-resource checks, pass `--yes`, or improvise
@@ -122,6 +127,10 @@ successful steps were undone.
 - Fresh Cloudflare installation: `yarn manage init`
 - Saved Cloudflare installation: `yarn manage deploy`
 - Explicitly enable deferred media storage: `yarn manage deploy --enable-r2`
+- Explicitly enable production webhooks:
+  `yarn manage deploy --enable-webhooks --instance <name>`
+- Explicitly enable preview webhooks:
+  `yarn manage deploy --preview --enable-webhooks --instance <name>`
 - Prepare an `init --local` instance without starting it: `yarn manage deploy --local`
 - Existing compatible Worker not saved in this clone: `yarn manage connect`;
   connecting is read-only, so ask again before a later deployment
@@ -147,6 +156,20 @@ Preview and Cloudflare snapshot operations require production R2 to be ready.
 
 Use `--instance <name>` whenever more than one saved instance exists or the
 user named a target. Do not deploy a local-only instance to Cloudflare.
+
+When the user asks to enable webhooks, repeat the exact target environment and
+explain that ordinary deployments leave webhooks off. Follow the normal dirty
+checkout and Cloudflare authorization guardrails, run only the appropriate
+command above, then verify with `yarn manage status --instance <name>` and
+report whether the Queue and Worker binding are ready. Do not infer preview
+from production or production from preview.
+
+When the user asks to stop webhook delivery, guide them to **Admin → Webhooks →
+Endpoints** to disable or delete every endpoint. This immediately cancels
+pending delivery and prevents new reservations without redeploying. It does
+not remove the Queue resource. Do not claim that a `--disable-webhooks` flag
+exists; v1 removes an owned Queue only through the complete, separately
+approved instance-destroy workflow.
 
 ## Fresh-clone workflow
 
