@@ -182,7 +182,7 @@ describe("bundled theme packages", () => {
       packageId: "microfeed.default",
       version: "1.1.8",
     });
-    expect(application.version).toBe("1.0.4");
+    expect(application.version).toBe("1.0.5");
   });
 
   it("keeps the generated theme-authoring skill synchronized", async () => {

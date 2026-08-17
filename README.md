@@ -66,7 +66,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a personal website with custom links
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless CMS with a GUI dashboard, JSON Feed, and generated API docs. Explore the public demo’s [interactive API reference](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
+* a headless CMS with a GUI dashboard, RSS Feed, JSON Feed, API, Webhooks, and [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Explore the public demo’s [interactive API docs](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
 * a themeable publishing platform with immutable D1-backed versions, isolated Admin drafts and previews, GitHub installation through `yarn manage theme`, and the standalone [`@microfeed/theme-kit`](https://www.npmjs.com/package/@microfeed/theme-kit) authoring CLI.
 * standalone public Pages, credential-free typeahead search with Command/Ctrl-K, and editable generated `robots.txt`, `llms.txt`, and `sitemap.xml` files.
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
@@ -243,9 +243,8 @@ same published content.
 | Publish many content types | Share articles, podcasts, videos, images, documents, and curated external links from one feed. |
 | Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
 | Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
-| AI-agent workflows | Deploy and administer sites with `yarn manage`, then manage content through the official `@microfeed/cli` and documented API. |
+| Headless CMS and content automation | Read and update content through the API, receive signed change notifications through webhooks, and give local AI agents a friendlier workflow through `@microfeed/cli`. |
 | Versioned themes | Edit safely in Admin or install community themes from GitHub, preview inactive versions, and activate or roll back explicitly. |
-| Headless CMS and generated API docs | Use the public JSON Feed or authenticated API with OpenAPI, interactive reference pages, and agent-readable `llms.txt`. |
 | Your data on your Cloudflare account | Keep content metadata in D1 and optional media and theme assets in R2 under infrastructure you control. |
 | Portable backups | Export the database, media bucket, theme versions, and migration history together in an owner-readable snapshot. |
 | Custom domains and access controls | Use your own web address and choose public, headless, or offline delivery while protecting the dashboard separately. |
