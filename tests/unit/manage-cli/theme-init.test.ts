@@ -429,27 +429,10 @@ describe("theme repository initialization", () => {
       .toBe(themeKitCompatibilityRange(MICROFEED_VERSION));
     await expect(readFile(path.join(output, "yarn.lock"), "utf8"))
       .resolves.toBe("");
-    const initializedReadme = await readFile(path.join(output, "README.md"), "utf8");
-    expect(initializedReadme).toContain(
-      "initialized from\n`example.active@2.3.4` (installed)",
-    );
-    expect(initializedReadme).toContain("`local.my-active-theme@0.1.0`");
-    expect(initializedReadme).toContain("yarn validate");
     await expect(readFile(path.join(output, "CLAUDE.md"), "utf8"))
       .resolves.toContain(
         ".agents/skills/develop-microfeed-theme/SKILL.md",
       );
-    await expect(readFile(
-      path.join(output, ".agents/skills/develop-microfeed-theme/SKILL.md"),
-      "utf8",
-    )).resolves.toContain("Never create screenshots unless the user explicitly asks");
-    await expect(readFile(
-      path.join(
-        output,
-        ".agents/skills/develop-microfeed-theme/references/public-site.md",
-      ),
-      "utf8",
-    )).resolves.toContain("Theme and platform responsibilities");
     await expect(readFile(path.join(output, assetPath), "utf8"))
       .resolves.toContain("<svg");
     expect(runner).toHaveBeenCalledWith(
@@ -534,11 +517,6 @@ describe("theme repository initialization", () => {
     expect(writtenManifest).toEqual(exportedManifest);
     await expect(readFile(path.join(output, assetPath), "utf8"))
       .resolves.toContain("<svg");
-    const repositoryReadme = await readFile(path.join(output, "README.md"), "utf8");
-    expect(repositoryReadme).toContain(
-      "exported from the exact\ninstalled package `example.active@2.3.4`",
-    );
-    expect(repositoryReadme).toContain("yarn preview --feed-url https://example.com/json/");
     const exportedPackage = JSON.parse(
       await readFile(path.join(output, "package.json"), "utf8"),
     ) as {
@@ -574,13 +552,6 @@ describe("theme repository initialization", () => {
       await expect(readFile(path.join(output, relativePath), "utf8"))
         .resolves.not.toHaveLength(0);
     }
-    const publicSiteReference = await readFile(path.join(
-      output,
-      ".agents/skills/develop-microfeed-theme/references/public-site.md",
-    ), "utf8");
-    expect(publicSiteReference).toContain("data-microfeed-search-open");
-    expect(publicSiteReference).toContain("navigation_pages");
-    expect(publicSiteReference).toContain("special 404 Page");
     const conformance = JSON.parse((await execFileAsync(
       process.execPath,
       [

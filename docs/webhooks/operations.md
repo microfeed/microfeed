@@ -1,12 +1,20 @@
 ---
-title: Operate and troubleshoot automations
-description: Understand delivery states, retries, budgets, Queue metrics, auto-pause recovery, rotation, redelivery, and production readiness.
+title: Operate and troubleshoot webhooks
+description: Operate webhook delivery, retries, budgets, Queue metrics, auto-pause recovery, signing-secret rotation, redelivery, and receiver readiness.
 ---
+
+This guide covers microfeed webhook delivery and the receiver that accepts each
+event. It does not cover failures inside a later model, tool, or destination.
 
 microfeed considers a delivery successful when the receiver durably accepts the
 job and returns `2xx`. A later model, tool, or destination failure belongs to
 the automation. Retrying that work should happen in its own durable queue; do
 not intentionally time out the webhook request while a model runs.
+
+For n8n and Zapier, monitor both microfeed delivery history and the platform or
+verification gateway. See the [automation-platform
+comparison](../automation/#automation-platforms-n8n-and-zapier) for where
+acknowledgment, signature verification, and downstream retries belong.
 
 ## Delivery states
 
@@ -61,7 +69,7 @@ observation time. Analytics is operational telemetry, not a billing invoice.
 A normal successful delivery generally uses three Queue operations: write,
 read, and delete. Six failed attempts use at most eight under this design: one
 write, six reads, and a final delete. Worker execution is metered separately.
-As of this documentation update, Cloudflare includes 10,000 Queue operations
+As of August 2026, Cloudflare includes 10,000 Queue operations
 per day on Workers Free. Workers Paid includes 1,000,000 operations per month,
 then charges $0.40 per million operations. These allowances and charges are
 account-wide, not per microfeed site, and messages are metered in 64 KB chunks.
@@ -77,46 +85,31 @@ deliveries, and suppresses new matches. Test deliveries are still allowed. A
 successful paused test only unlocks the **Resume** control; it does not resume
 automatically.
 
-Rotate endpoint secrets from **Admin → Webhooks → Endpoints**. Copy the new
-secret once, deploy it to the receiver, and keep the transition bounded. The
-prior value is retained encrypted for 24 hours. Remove old secret material from
-the receiver and secret manager after the transition.
+Rotate endpoint secrets from **Admin → Webhooks → Endpoints → Signing
+secret**. Reveal the new value, deploy it to the receiver, and keep the
+transition bounded. The prior value is retained encrypted for 24 hours. Remove
+old secret material from the receiver and secret manager after the transition.
 
 Use manual redelivery only after checking whether the event remains relevant.
 It consumes daily budget and can repeat an action unless the automation uses
 `event.id + action` idempotency.
 
-## Internal delivery, reconciliation, and cleanup
+## Monitor delivery
 
 Correlate logs by delivery ID, event ID, correlation ID, causation ID, action
 idempotency key, and destination operation ID. Never log signing secrets, API
 keys, raw authorization headers, or unnecessary private content.
 
-microfeed uses one Cloudflare Worker, not a separate cleanup Worker. Its
-`fetch` handler serves the site and Admin, its Queue consumer performs delivery
-attempts, and its scheduled handler performs maintenance. A content mutation
-and its webhook outbox records commit together in D1; only delivery IDs are
-then sent to the Queue. The consumer leases a delivery, sends the signed HTTP
-request, records the attempt, and explicitly acknowledges or retries the Queue
-message. Queue retries provide the six-attempt schedule described above.
+Use **Admin → Webhooks → Deliveries** for event payloads, attempt history,
+response diagnostics, and suppression reasons. Use `yarn manage status` for
+Queue bindings, backlog, oldest-message age, and account-wide operation
+telemetry. The Cloudflare Queues dashboard is the final place to inspect Queue
+health and billing-related usage.
 
-One Cron trigger invokes the scheduled handler at minute zero of every hour.
-Hourly reconciliation recovers saved delivery IDs that were not successfully
-handed to the Queue, such as after a crash between the D1 commit and Queue
-write. It is a repair path, not the normal delivery path. The 00:00 UTC run also
-performs retention cleanup for 30-day delivery, attempt, suppression, event,
-expired-secret, and resolved-alert history. Atomic leases prevent a consumer
-and reconciliation from executing the same attempt concurrently.
-
-Before either maintenance path runs, the handler checks D1 for at least one
-non-deleted endpoint. If none is configured, it exits after that single
-existence check: no reconciliation query, cleanup batch, or Queue operation is
-performed. Disabled and auto-paused endpoints still count because their
-history and recovery controls remain active. Deleting every endpoint stops new
-delivery reservations and makes later scheduled invocations take this idle
-path. Retained history is not pruned while the site stays endpoint-free; it is
-eligible for cleanup after an endpoint is configured again or is removed with
-the complete instance.
+The deployment contract owns reconciliation, retention, and Worker binding
+details. See the [`yarn manage deploy` reference](/manage-cli/#yarn-manage-deploy)
+when diagnosing provisioning or maintenance behavior instead of depending on
+those implementation details in a receiver.
 
 ## Safe shutdown
 

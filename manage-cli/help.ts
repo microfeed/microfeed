@@ -235,8 +235,8 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Archives contain administrator credentials and private media, are unencrypted, and are created with owner-only file permissions.",
     ],
     examples: [
-      "yarn manage snapshot create --instance production --output backup.tar.gz",
-      "yarn manage snapshot pull --instance production --local-instance production-copy",
+      "yarn manage snapshot create --instance my-site --output backup.tar.gz",
+      "yarn manage snapshot pull --instance my-site --local-instance my-site-copy",
       "yarn manage snapshot restore --file backup.tar.gz --local --instance restored-local",
       "yarn manage snapshot restore --file backup.tar.gz --instance restored-cloudflare --dry-run",
       "yarn manage snapshot restore --file backup.tar.gz --instance restored-cloudflare --confirm restored-cloudflare",

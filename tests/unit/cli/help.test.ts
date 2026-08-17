@@ -1,5 +1,3 @@
-import {readFile} from "node:fs/promises";
-
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {globalOptions} from "../../../packages/cli/src/arguments";
@@ -164,31 +162,6 @@ describe("microfeed CLI help", () => {
       "--profile",
       "production",
     ], {json: false})).rejects.toThrow("Unknown option: --profile");
-  });
-
-  it("keeps every help topic and option discoverable in the canonical reference", async () => {
-    const reference = await readFile(
-      new URL("../../../docs/microfeed-cli.md", import.meta.url),
-      "utf8",
-    );
-
-    for (const topic of CLI_HELP_TOPICS) {
-      const command = topic.path.join(" ");
-      expect(reference).toContain(`## \`yarn microfeed ${command}\``);
-      for (const {syntax} of topic.options) {
-        const optionName = syntax.split(" ")[0]!;
-        expect(
-          reference,
-          `${command} does not document ${optionName}`,
-        ).toContain(`\`${optionName}`);
-      }
-    }
-    expect(reference).toContain("api_access_or_resource_not_found");
-    expect(reference).toContain("API → API Settings");
-    expect(reference).toContain("AI agent to pause");
-    expect(reference).toContain(
-      "https://docs.microfeed.org/api/authentication/#enable-the-api",
-    );
   });
 
   it("rejects unknown and overlong help topics", async () => {

@@ -1,6 +1,6 @@
 ---
-title: Pages and Site Files
-description: Publish standalone Pages and customize root-level text files.
+title: Pages, search, and Site Files
+description: Publish standalone Pages, help visitors search the public site, and customize root-level text files.
 ---
 
 microfeed separates website-only content from feed items. Use **Pages** for
@@ -48,6 +48,24 @@ with the correct `404` response.
 The `/404/` path, Published visibility, navigation exclusion, and Page itself
 are protected, so they cannot be changed or deleted. The 404 Page is also
 omitted from public search, generated `llms.txt`, and generated `sitemap.xml`.
+
+## Use public search
+
+Format v2 themes can expose a search control on every public HTML page and a
+complete results page at `/search/`. Visitors can also press
+<kbd>Command</kbd>+<kbd>K</kbd> on macOS or <kbd>Ctrl</kbd>+<kbd>K</kbd>
+elsewhere to open microfeed's accessible search dialog.
+
+Public search includes Published items and Published Pages. It excludes item
+drafts, Unlisted and Draft Pages, and the protected 404 Page. The typeahead
+route returns safe highlighted segments and is never cached. Submitting the
+search form opens `/search/?q=...` for complete results.
+
+microfeed supplies the search dialog, keyboard behavior, request cancellation,
+and safe result rendering. The active theme supplies a button that opens the
+dialog and the surrounding Search page layout. Theme authors can follow the
+[theme contract and rendering guide](/themes/contract/#connect-public-search)
+for the stable hooks and render context.
 
 ## Theme compatibility
 

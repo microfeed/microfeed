@@ -13,62 +13,53 @@ Software can read microfeed content in two ways:
 
 With explicit webhook enablement, software can also receive signed,
 Queue-backed notifications when content changes. Webhooks announce a change;
-they do not grant API access. Start with the [Content automation
-overview](../automation/) when building a persistent service or deployed AI
-agent.
+they do not grant API access. Start with [Webhooks and
+integrations](../webhooks/) when building a persistent service or deployed AI
+agent, and use the [Content automation overview](../automation/) for practical
+automation examples.
 
 New installations keep API access and public API docs off until the instance
 owner enables them in the dashboard.
 
+Explore the current contract in microfeed.org's [interactive API
+documentation](https://www.microfeed.org/api/v1/). It includes request and
+response schemas, authentication requirements, and examples for API operations
+and webhook events.
+
 If you want a coding agent to publish content, start with the official
-[microfeed CLI guide](./cli/) instead of creating and sharing an API key. Build
+[microfeed CLI guide](../automation/cli/) instead of creating and sharing an API key. Build
 directly against the REST API when you are integrating another application or
 service.
 
 ## What the API can do
 
-The generated OpenAPI 3.1 contract currently includes:
+The authenticated API covers these capability groups:
 
-| Operation | Purpose |
+| Capability | Typical operations |
 | --- | --- |
-| `GET /api/v1/feed/` | Read the complete feed with cursor pagination. |
-| `POST /api/v1/items/` | Create an item. |
-| `POST /api/v1/items/validate/` | Validate an item create payload without changing content. |
-| `GET /api/v1/items/{itemId}/` | Read one item. |
-| `PUT /api/v1/items/{itemId}/` | Update provided fields without clearing omitted fields. |
-| `DELETE /api/v1/items/{itemId}/` | Delete one item. |
-| `GET /api/v1/search/` | Search item titles or plain-text content with filters and cursor pagination. |
-| `PUT /api/v1/channels/primary/` | Update the primary channel. |
-| `POST /api/v1/media_files/presigned_urls/` | Prepare a short-lived, same-origin media upload. |
+| Channel | Read or update the primary channel identity and settings exposed by the contract. |
+| Items | List, search, validate, create, read, update, and delete feed items. |
+| Pages | List, search, create, read, update, delete, and reorder standalone website Pages. |
+| Site Files | List, read, create, update, preview, publish, reset, and delete root-level text files. |
+| Search | Search item and Page titles or stored plain-text content with filters and cursor pagination. |
+| Media | Prepare same-origin uploads for item images, attachments, channel images, and standalone media. |
 
-Each item may have both an `image` for cover art or a thumbnail and one main
-media attachment in `attachments[0]`. The attachment may be audio, video, a
-document, an image, or an external link; it becomes the RSS `<enclosure>`.
+The generated OpenAPI document is the exact operation inventory for the
+installed microfeed version. It defines every path, method, field, permission,
+response, and compatibility rule; this overview deliberately does not maintain
+a second endpoint list.
 
-Before creating, an authenticated client can send the same JSON payload to
-`POST /api/v1/items/validate/`. A successful response is `{ "valid": true }`;
-the route uses the site's current item schema without creating a record,
-preparing an upload, or invalidating a cache.
-
-For retry-safe creation, send an `Idempotency-Key` header containing 1–128
-printable ASCII characters with no surrounding whitespace. The server retains
-a hashed reservation for 24 hours. The same key and canonical payload return
-the original ID and `Idempotency-Replayed: true`; a different payload with the
-same key returns `409`. Without the header, the existing create response and
-behavior are unchanged. Generate one key per logical item and reuse it for
-every retry rather than generating a key per request attempt.
-
-Search uses the site's D1 database. Terms are combined with AND, the last term
-supports prefix matching, and single or double quotes select an exact phrase.
-Exact matches rank before typo-tolerant title matches. Use the generated API
-reference for the current `fields`, status, publication-date, limit, cursor,
-highlight, and response schemas.
+For retry-safe writes, use the idempotency behavior documented by the selected
+operation. Generate one key per logical action and reuse it with the same
+payload for every retry. When a webhook-triggered integration writes back,
+also propagate the event's correlation ID and use the triggering event ID as
+the causation ID so the receiver can recognize its own effects.
 
 ![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](/images/screenshots/3-api-1.png)
 
 Every direct integration request requires an `mf_…` API key sent as a Bearer
 credential. A named key can allow reads, writes, or both; write permission does
-not need to be granted to read-only indexing, backup, or notification services.
+not need to be granted to read-only indexing, export, or notification services.
 Dashboard login credentials are never sent to content API routes. Create a
 separate least-privilege key for each integration so it can be rotated or
 revoked without interrupting other clients.
@@ -92,22 +83,41 @@ contract but does not persist authentication. Older `/json/openapi.html` and
 `/json/openapi.yaml` links redirect to the new locations only while public API
 docs are enabled.
 
+## Ask a coding agent to read the API contract
+
+The public demo's [self-contained `llms-full.txt`
+reference](https://www.microfeed.org/api/v1/llms-full.txt) combines the API
+guide and complete generated OpenAPI contract in one text file. Give a coding
+agent this prompt before it designs or changes an integration:
+
+```text
+Read https://www.microfeed.org/api/v1/llms-full.txt before writing code. Use
+the generated OpenAPI contract in that file as the source of truth for paths,
+methods, request and response fields, Bearer authentication, permissions,
+pagination, idempotency, and errors.
+
+I want to <describe the integration or API task>. First identify the smallest
+set of operations and least-privilege API permissions it needs. Then explain
+the data flow and implement it without guessing undocumented fields or routes.
+Keep API credentials in environment variables, never print them, and do not
+deploy or make destructive requests without my approval.
+```
+
+For an integration targeting a particular self-hosted site, replace the public
+URL in the prompt with `<site-url>/api/v1/llms-full.txt`. That instance file
+matches its installed microfeed version exactly.
+
 The top-level OpenAPI webhook operation contains exact schemas and a named
-example for every supported event, including specialized Page navigation, Site
-File, theme, and connection-test snapshots. It also includes complete
-JavaScript and Python `x-codeSamples` that use the maintained Standard Webhooks
-libraries. Inspect the contract and code visually in **Admin → Webhooks → Event
-explorer** or the public Scalar page, print one exact example with `yarn
-microfeed webhook sample <event> --json`, or create the same runnable receiver
-offline with `yarn microfeed webhook scaffold
-.microfeed/webhooks/endpoint1 --language javascript` inside a microfeed clone's
-ignored local workspace.
+example for every supported event. Inspect those events in **Admin → Webhooks →
+Event explorer** and use [Build webhook endpoints](/webhooks/endpoints/) for
+receiver code and local signed testing.
 
 ## Choose your next step
 
 - [Enable API access or create an API key](./authentication/).
-- [Build and test an integration](./build-and-test/).
-- [React to changes with webhooks and AI agents](../automation/).
+- [Build an API integration](./build-and-test/).
+- [Connect n8n or Zapier](../automation/#automation-platforms-n8n-and-zapier).
+- [React to changes with webhooks](../webhooks/).
 
 This documentation page is the stable central overview. The generated
 per-instance files remain the source of truth for the exact microfeed release

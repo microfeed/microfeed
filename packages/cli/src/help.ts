@@ -83,7 +83,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "yarn microfeed webhook listen",
       "MICROFEED_WEBHOOK_SECRET=whsec_... yarn microfeed webhook listen --json",
       "yarn microfeed webhook listen --secret-file .webhook-secret --forward-to http://127.0.0.1:3000/hooks/microfeed",
-      "yarn microfeed webhook sample item.published --instance production --json",
+      "yarn microfeed webhook sample item.published --instance my-site --json",
       "yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 --language javascript",
     ],
     options: [
@@ -128,7 +128,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     ],
     examples: [
       "yarn microfeed webhook sample item.published",
-      "yarn microfeed webhook sample page.navigation_updated --instance production --json",
+      "yarn microfeed webhook sample page.navigation_updated --instance my-site --json",
       "MICROFEED_URL=http://127.0.0.1:4321 yarn microfeed webhook sample webhook.test --json",
     ],
     options: [instanceOption, jsonOption],
@@ -172,8 +172,8 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed login https://feed.example.com --instance production",
-      "yarn microfeed login https://feed.example.com --instance production --connection-name \"Home Mac\"",
+      "yarn microfeed login https://feed.example.com --instance my-site",
+      "yarn microfeed login https://feed.example.com --instance my-site --connection-name \"Home Mac\"",
       "yarn microfeed login http://127.0.0.1:4321 --instance local",
     ],
     options: [
@@ -199,7 +199,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     ],
     examples: [
       "yarn microfeed logout",
-      "yarn microfeed logout --instance production --json",
+      "yarn microfeed logout --instance my-site --json",
     ],
     options: [instanceOption, jsonOption],
     path: ["logout"],
@@ -214,7 +214,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     ],
     examples: [
       "yarn microfeed instances list",
-      "yarn microfeed instances use production",
+      "yarn microfeed instances use my-site",
       "yarn microfeed instances remove old-test",
       "yarn microfeed help instances remove",
     ],
@@ -248,7 +248,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "This changes only the local current-instance pointer. It does not contact the site or change browser authorization.",
     ],
     examples: [
-      "yarn microfeed instances use production",
+      "yarn microfeed instances use my-site",
       "yarn microfeed instances use personal-feed --json",
     ],
     options: [jsonOption],
@@ -280,10 +280,10 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "Delete is permanent and requires an exact item-ID confirmation. Run help for a subcommand before changing content.",
     ],
     examples: [
-      "yarn microfeed item list --instance production --json",
-      "yarn microfeed item search hello --fields title --instance production --json",
-      "yarn microfeed item get 0HGJLSML3P1 --instance production --json",
-      "yarn microfeed item create --instance production --input item.json --json",
+      "yarn microfeed item list --instance my-site --json",
+      "yarn microfeed item search hello --fields title --instance my-site --json",
+      "yarn microfeed item get 0HGJLSML3P1 --instance my-site --json",
+      "yarn microfeed item create --instance my-site --input item.json --json",
       "yarn microfeed help item delete",
     ],
     options: [],
@@ -307,8 +307,8 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed item list --instance production --limit 25 --json",
-      "yarn microfeed item list --summary --fields id,title,status --instance production --json",
+      "yarn microfeed item list --instance my-site --limit 25 --json",
+      "yarn microfeed item list --summary --fields id,title,status --instance my-site --json",
       "yarn microfeed item list --next-cursor eyJpZCI6IjEyMyJ9 --sort published_at --order desc --json",
     ],
     options: [
@@ -344,7 +344,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed item search hello --fields title --instance production --json",
+      "yarn microfeed item search hello --fields title --instance my-site --json",
       "yarn microfeed item search '\"season finale\"' --fields title,content --status published,unlisted --json",
       "yarn microfeed item search launch --date-published-ms-gt 1767225600000 --limit 50 --json",
       "yarn microfeed item search launch --next-cursor eyJ2ZXJzaW9uIjoxfQ --json",
@@ -387,7 +387,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed item get 0HGJLSML3P1 --instance production",
+      "yarn microfeed item get 0HGJLSML3P1 --instance my-site",
       "yarn microfeed item get release-notes-0HGJLSML3P1 --json",
       "yarn microfeed item get 0HGJLSML3P1 --unwrap --fields id,title,status --json",
     ],
@@ -420,14 +420,14 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed item create --instance production --title \"Release notes\" --status published --json",
-      "yarn microfeed item create --instance production --title \"Episode 1\" --attachment-file ./episode.mp3 --status published --json",
-      "yarn microfeed item create --instance production --title \"Full-resolution photo\" --attachment-file ./photo.png --status unlisted --json",
-      "yarn microfeed item create --instance production --title \"Photo\" --image-file ./cover.png --status unlisted --json",
-      "yarn microfeed item create --instance production --input item.json --json",
-      "yarn microfeed item create --instance production --input - --json < item.json",
-      "yarn microfeed item create --instance production --input item.json --validate-only --json",
-      "yarn microfeed item create --instance production --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json",
+      "yarn microfeed item create --instance my-site --title \"Release notes\" --status published --json",
+      "yarn microfeed item create --instance my-site --title \"Episode 1\" --attachment-file ./episode.mp3 --status published --json",
+      "yarn microfeed item create --instance my-site --title \"Full-resolution photo\" --attachment-file ./photo.png --status unlisted --json",
+      "yarn microfeed item create --instance my-site --title \"Photo\" --image-file ./cover.png --status unlisted --json",
+      "yarn microfeed item create --instance my-site --input item.json --json",
+      "yarn microfeed item create --instance my-site --input - --json < item.json",
+      "yarn microfeed item create --instance my-site --input item.json --validate-only --json",
+      "yarn microfeed item create --instance my-site --input item.json --idempotency-key 8ca861ab-0383-4f10-bbc2-8c80d8ef29dc --verify --json",
     ],
     options: [
       ...itemInputOptions,
@@ -460,11 +460,11 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed item update 0HGJLSML3P1 --instance production --status unlisted --json",
-      "yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./episode.mp3 --json",
-      "yarn microfeed item update 0HGJLSML3P1 --instance production --attachment-file ./original.png --json",
-      "yarn microfeed item update 0HGJLSML3P1 --instance production --image-file ./cover.png --json",
-      "yarn microfeed item update 0HGJLSML3P1 --instance production --input item.json --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance my-site --status unlisted --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance my-site --attachment-file ./episode.mp3 --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance my-site --attachment-file ./original.png --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance my-site --image-file ./cover.png --json",
+      "yarn microfeed item update 0HGJLSML3P1 --instance my-site --input item.json --json",
       "yarn microfeed item update 0HGJLSML3P1 --input - --json < item.json",
     ],
     options: [...itemInputOptions, instanceOption, jsonOption],
@@ -480,8 +480,8 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed item delete 0HGJLSML3P1 --instance production",
-      "yarn microfeed item delete 0HGJLSML3P1 --instance production --confirm 0HGJLSML3P1 --json",
+      "yarn microfeed item delete 0HGJLSML3P1 --instance my-site",
+      "yarn microfeed item delete 0HGJLSML3P1 --instance my-site --confirm 0HGJLSML3P1 --json",
     ],
     options: [
       option(
@@ -503,7 +503,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed media upload ./diagram.png --instance production --json",
+      "yarn microfeed media upload ./diagram.png --instance my-site --json",
       "yarn microfeed help media upload",
     ],
     options: [],
@@ -525,9 +525,9 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed media upload ./diagram.png --instance production --json",
-      "yarn microfeed media upload ./episode.mp3 --item-id 0HGJLSML3P1 --instance production --json",
-      "MEDIA_URL=$(yarn microfeed media upload ./diagram.png --instance production)",
+      "yarn microfeed media upload ./diagram.png --instance my-site --json",
+      "yarn microfeed media upload ./episode.mp3 --item-id 0HGJLSML3P1 --instance my-site --json",
+      "MEDIA_URL=$(yarn microfeed media upload ./diagram.png --instance my-site)",
     ],
     options: [
       option(
@@ -551,8 +551,8 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ...apiAccessDetails,
     ],
     examples: [
-      "yarn microfeed api GET \"/api/v1/feed/?limit=3\" --instance production --json",
-      "yarn microfeed api POST /api/v1/items/ --instance production --input item.json --json",
+      "yarn microfeed api GET \"/api/v1/feed/?limit=3\" --instance my-site --json",
+      "yarn microfeed api POST /api/v1/items/ --instance my-site --input item.json --json",
       "yarn microfeed api PUT /api/v1/items/0HGJLSML3P1/ --input - --json < item.json",
     ],
     options: [

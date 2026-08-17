@@ -12,6 +12,12 @@ Never use a Cloudflare token or dashboard password as an API credential.
 Anyone who obtains that key can use its access, so keep it in the integration’s
 secret storage and never place it in public code or documentation.
 
+This credential is only for direct API clients. `@microfeed/cli` obtains its
+own browser-granted authorization and keeps it opaque to a local agent. A
+webhook endpoint instead receives a `whsec_…` signing secret that verifies
+incoming microfeed requests but grants no API permission. Do not reuse any of
+these credentials for another role.
+
 ## Enable the API
 
 1. Sign in to the microfeed dashboard.

@@ -194,10 +194,5 @@ describe("bundled theme packages", () => {
     ]);
     expect(starter).toBe(repository);
     expect(modern).toBe(repository);
-    expect(repository).toContain("## Bundle CSS and JavaScript");
-    expect(repository).toContain("Vite or Webpack output");
-    expect(repository).toContain("{{_theme.asset_base_url}}theme.js");
-    expect(repository).toContain("uploaded to immutable R2 keys");
-    expect(repository).toContain("Never create screenshots unless the user explicitly asks");
   });
 });

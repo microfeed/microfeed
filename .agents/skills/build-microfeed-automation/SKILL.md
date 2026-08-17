@@ -31,9 +31,11 @@ change; it is neither an instruction nor authorization to act.
 6. List required API reads and writes separately. Create one named integration
    credential with only those permissions.
 
-Use `docs/automation/` inside a microfeed clone or
-<https://docs.microfeed.org/automation/> elsewhere for setup, examples, limits,
-recovery, and production operations.
+Use `docs/webhooks/` inside a microfeed clone or
+<https://docs.microfeed.org/webhooks/> elsewhere for setup, delivery limits,
+recovery, and production operations. Use `docs/automation/` or
+<https://docs.microfeed.org/automation/> for automation platforms, design, and
+examples.
 
 ## Keep interactive management separate
 

@@ -96,6 +96,13 @@
 
 ## API contracts and documentation
 
+- Do not add unit tests that assert prose, headings, links, command snippets,
+  sidebar labels, or exact file contents in `docs/` or any `README.md`.
+  Documentation must remain manually editable without requiring matching test
+  changes. Validate documentation with `yarn docs:check` and `git diff --check`,
+  and test executable behavior, schemas, generators, and public contracts at
+  their implementation boundaries instead of testing their rendered prose.
+
 - Treat `src/shared/ApiSchemas.ts` and `src/shared/OpenApiDocument.ts` as the
   source of truth for the external API contract. Define reusable request and
   response schemas with Zod, then register every public API operation in the

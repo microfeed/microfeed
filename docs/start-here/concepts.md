@@ -49,6 +49,12 @@ upload media, and customize the channel. It is separate from the public site.
 people or coding agents manage the same channel through browser authorization
 without reading or printing the credential.
 
+**Content automation** can use three related tools. The authenticated API reads
+or changes content. Webhooks notify an external endpoint when subscribed
+content changes. `@microfeed/cli` wraps API operations in task-oriented commands
+that are easier for a person or local coding agent to use. See [Content
+automation](/automation/) to choose the right combination.
+
 **Headless** means using microfeed’s feeds or API while another website or app
 presents the content. microfeed can hide its generated web pages without
 deleting the content or structured feeds.
@@ -79,4 +85,4 @@ the application, deploys it, and verifies the result. It stores local connection
 details in the repository’s ignored `.microfeed/` directory.
 
 For exact behavior and safety rules, use the
-[`yarn manage` command reference](/manage-cli/).
+[`yarn manage` reference](/manage-cli/).

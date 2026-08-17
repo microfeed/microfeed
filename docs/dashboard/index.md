@@ -23,26 +23,14 @@ categories, language, and description.
 browser explorer, and public API documentation formats.
 
 **Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
-context-aware local or deployed availability, combines configured and active
-endpoint counts, and shows an owner-controlled daily delivery budget instead of
-a pricing-tier limit. The Overview quickstart can scaffold or copy a complete
-JavaScript or Python receiver, explain how to reveal its signing secret, and
-lead directly to a signed Event Explorer test. Endpoints manages subscriptions
-and signing-secret reveal or rotation; Event explorer previews exact generated
-or current-content payloads; Deliveries provides attempt diagnostics, pause
-recovery, and redelivery. See
-[Content automation](/automation/) before connecting a deployed agent.
-
-Plain `yarn dev` automatically supplies the local Queue simulation at no
-Cloudflare cost. Preview and production show an instance-specific enable
-command, a copyable coding-agent prompt, and an explanation of why deployed
-Queue resources remain opt-in. The same availability dialog explains how to
-stop delivery immediately by disabling or deleting every endpoint. The Worker
-reconciles hourly and performs retention cleanup at 00:00 UTC only while an
-endpoint is configured; otherwise the trigger exits after one D1 existence
-check. The daily delivery budget defaults to 1,000, can be changed immediately
-from 0 through 1,000,000, and is an owner cost guard rather than a microfeed
-plan limit.
+whether delivery is available and summarizes configured endpoints, daily
+delivery usage, Queue operations, and failures. Endpoints manages destination
+URLs, subscriptions, status, and signing secrets. Event explorer previews exact
+payloads and sends signed tests. Deliveries shows attempts, response
+diagnostics, suppression reasons, and redelivery controls. Start with
+[Webhooks and integrations](/webhooks/) before connecting an endpoint, and use
+[webhook operations](/webhooks/operations/) for retries, budgets, recovery, and
+cost accounting.
 
 **Settings** manages website themes and shared code, tracking URLs, subscribe
 methods, site access, media storage, feed ordering, and favicon. It does not

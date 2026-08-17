@@ -1,5 +1,5 @@
 ---
-title: yarn manage command reference
+title: yarn manage reference
 description: Canonical commands, options, side effects, and safety contracts for the microfeed management CLI.
 ---
 
@@ -506,7 +506,7 @@ output and a normal build may replace it. The ignored repository remains local
 until you commit and push it from inside its own directory, and cleanup that
 removes ignored files can still delete it. Validate the untouched baseline
 before making the first commit. See
-[Export an installed theme with an AI coding agent](/dashboard/themes/#export-an-installed-theme-with-an-ai-coding-agent)
+[Export an installed version](/themes/#export-an-installed-version)
 for a copy-paste prompt that stops before commit or publication.
 
 Use this command to install a theme package from a local directory or a public

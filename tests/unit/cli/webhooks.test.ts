@@ -303,15 +303,6 @@ describe("microfeed webhook scaffold", () => {
     expect(source).toContain("event.test === true");
     expect(source).toContain('app.listen(3000, "127.0.0.1"');
     expect(source).not.toContain("whsec_");
-    const readme = await readFile(path.join(destination, "README.md"), "utf8");
-    const createEndpoint = readme.indexOf("Add endpoint");
-    const install = readme.indexOf("yarn install");
-    const start = readme.indexOf("MICROFEED_WEBHOOK_SECRET=whsec_... yarn start");
-    const eventExplorer = readme.indexOf("Event\n   explorer");
-    expect(createEndpoint).toBeGreaterThan(-1);
-    expect(install).toBeGreaterThan(createEndpoint);
-    expect(start).toBeGreaterThan(install);
-    expect(eventExplorer).toBeGreaterThan(start);
     await expect(scaffoldWebhookReceiver(destination))
       .rejects.toThrow(/already exists/u);
   });
