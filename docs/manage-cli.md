@@ -391,7 +391,18 @@ handed to the Queue and performs 30-day retention cleanup on the 00:00 UTC run.
 When no active or auto-paused endpoint remains, the trigger exits after one D1
 check without reconciliation, cleanup, or Queue work.
 
-Disabling is resumable. It pauses delivery, marks pending or retrying rows
+Before enabling or disabling, the CLI verifies the existing exact Queue
+identity when present and performs read-only Queue and D1 access checks through
+the same Wrangler profile used by the deployment. It retries each safe check
+once when Cloudflare returns authentication code `10000`. If the second check
+fails, the command stops
+before pausing, creating, purging, resuming, or detaching webhook resources and
+prints the exact deployment command to rerun in a fresh process. If Cloudflare
+rejects a later request, the saved transition remains resumable and the same
+recovery command is shown.
+
+Disabling is resumable. It records the transition, pauses delivery, and marks
+pending or retrying rows
 `canceled_webhooks_disabled`, deploys explicit empty Queue and Cron arrays,
 cancels again to close the deployment race, purges the dedicated Queue, and
 verifies that the Queue is retained, paused, empty, and detached. Endpoint

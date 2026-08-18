@@ -334,6 +334,13 @@ verification failure as actionable. Preserve the CLI's error, explain the next
 safe step, and rerun the same management command after the user resolves it. Do
 not work around the failure with lower-level Cloudflare tooling.
 
+Webhook lifecycle commands perform retried, read-only D1 and Queue access
+preflight before changing infrastructure. If Cloudflare returns authentication
+code `10000`, use the exact fresh-process command printed by `yarn manage`.
+Never substitute a raw Wrangler command. A failure before the preflight leaves
+the Queue untouched; a later failure leaves a recorded transition that the
+same command resumes safely.
+
 ## Destruction workflow
 
 1. Treat requests to delete, destroy, remove, uninstall, or tear down a site as

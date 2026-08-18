@@ -16,6 +16,7 @@ import {tmpdir} from "node:os";
 import path from "node:path";
 import {Readable, Transform} from "node:stream";
 import {pipeline} from "node:stream/promises";
+import {setTimeout as delay} from "node:timers/promises";
 import {isDeepStrictEqual} from "node:util";
 
 import type {AdminAuthMode} from "@/shared/AdminAuth";
@@ -84,6 +85,7 @@ import {
   type CloudflareIdentity,
   CloudflareClient,
   type DiscoveredMicrofeedWorker,
+  isCloudflareAuthenticationError,
   pagesCollisionMessage,
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
@@ -1652,7 +1654,15 @@ async function deployConfiguredProject(
         )
       : await context.cloudflare.deploy(config, undefined, sourceCommitSha);
   } catch (error) {
-    await prepareItemSearch(context.cloudflare, config);
+    try {
+      await prepareItemSearch(context.cloudflare, config);
+    } catch (recoveryError) {
+      throw new Error(
+        `${errorMessage(error)}\n\nThe deployment failed, and microfeed also ` +
+          "could not restore search readiness after that failure. " +
+          errorMessage(recoveryError),
+      );
+    }
     throw error;
   }
   config.deploymentUrl = deploymentUrl ?? config.deploymentUrl;
@@ -2747,6 +2757,84 @@ SET status = 'canceled_endpoint_disabled',
   updated_at = CURRENT_TIMESTAMP
 WHERE status IN ('pending', 'retrying')`;
 const WEBHOOK_DISABLE_PURGED_STEP = "webhook-disable-queue-purged";
+const WEBHOOK_ACCESS_CHECK_SQL =
+  "SELECT 1 AS microfeed_webhook_access_check";
+
+type WebhookLifecycleAction = "enable" | "disable";
+
+function webhookLifecycleDeployCommand(
+  config: MicrofeedConfig,
+  action: WebhookLifecycleAction,
+): string {
+  return [
+    "yarn manage deploy",
+    ...(config.deploymentEnvironment === "preview" ? ["--preview"] : []),
+    `--${action}-webhooks`,
+    `--instance ${config.instanceName}`,
+    `--account-id ${cloudflareAccountId(config)}`,
+  ].join(" ");
+}
+
+function webhookAuthenticationError(
+  error: unknown,
+  config: MicrofeedConfig,
+  action: WebhookLifecycleAction,
+  mutationStarted: boolean,
+): Error {
+  const command = webhookLifecycleDeployCommand(config, action);
+  const recovery = mutationStarted
+    ? config.webhooks?.transition
+      ? "The webhook transition is recorded and remains safely resumable."
+      : "The next run will verify the exact Queue identity before continuing."
+    : "This attempt did not pause, create, purge, resume, or detach the Queue.";
+  return new Error(
+    "Cloudflare did not accept an authenticated request used to verify D1 " +
+      "and Queue access " +
+      "(code 10000). This can be a short-lived OAuth or Cloudflare API " +
+      `failure. ${recovery}\n\nRerun the exact command in a fresh process:\n` +
+      `${command}\n\nCloudflare reported:\n${errorMessage(error)}`,
+  );
+}
+
+async function verifyWebhookLifecycleAccess(
+  context: CommandContext,
+  config: MicrofeedConfig,
+  action: WebhookLifecycleAction,
+): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await context.cloudflare.queryD1(config, WEBHOOK_ACCESS_CHECK_SQL);
+      return;
+    } catch (error) {
+      if (!isCloudflareAuthenticationError(error)) throw error;
+      lastError = error;
+      if (attempt === 0) await delay(250);
+    }
+  }
+  throw webhookAuthenticationError(lastError, config, action, false);
+}
+
+async function runWebhookLifecycleStep<T>(
+  config: MicrofeedConfig,
+  action: WebhookLifecycleAction,
+  task: () => Promise<T>,
+  mutationStarted = true,
+): Promise<T> {
+  try {
+    return await task();
+  } catch (error) {
+    if (isCloudflareAuthenticationError(error)) {
+      throw webhookAuthenticationError(
+        error,
+        config,
+        action,
+        mutationStarted,
+      );
+    }
+    throw error;
+  }
+}
 
 async function verifiedWebhookQueue(
   context: CommandContext,
@@ -2815,6 +2903,63 @@ async function cancelPendingWebhookDeliveries(
   await context.cloudflare.queryD1(config, WEBHOOK_CANCEL_PENDING_SQL);
 }
 
+function verifiedWebhookQueueConsumers(
+  consumers: QueueConsumer[],
+  targetWorkerName: string,
+): QueueConsumer[] {
+  const expected = consumers.filter(({scriptName, type}) =>
+    type === "worker" && scriptName === targetWorkerName
+  );
+  const unexpected = consumers.filter((consumer) =>
+    !expected.includes(consumer)
+  );
+  if (unexpected.length > 0 || expected.length > 1) {
+    const summary = consumers.map(({id, scriptName, type}) =>
+      `${type}:${scriptName ?? "unknown"} (${id})`
+    ).join(", ");
+    throw new Error(
+      `Webhook Queue has an unexpected consumer configuration: ${summary}. ` +
+        `microfeed will detach only the single Worker consumer named ` +
+        `\`${targetWorkerName}\`. No Queue consumers were detached.`,
+    );
+  }
+  return expected;
+}
+
+async function detachWebhookQueueConsumer(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<number> {
+  const accountId = cloudflareAccountId(config);
+  const queue = await verifiedWebhookQueue(context, config);
+  const consumers = await context.cloudflare.queueConsumers(
+    accountId,
+    queue.id,
+  );
+  const expectedConsumers = verifiedWebhookQueueConsumers(
+    consumers,
+    workerName(config),
+  );
+  for (const consumer of expectedConsumers) {
+    await context.cloudflare.deleteQueueConsumer(
+      accountId,
+      queue.id,
+      consumer.id,
+    );
+  }
+  const remainingConsumers = await context.cloudflare.queueConsumers(
+    accountId,
+    queue.id,
+  );
+  if (remainingConsumers.length > 0) {
+    throw new Error(
+      `Cloudflare still reports a consumer for webhook Queue ${queue.name}. ` +
+        "The Queue was retained and no other webhook resource was changed.",
+    );
+  }
+  return expectedConsumers.length;
+}
+
 async function disabledWebhookDeploymentIsVerified(
   context: CommandContext,
   config: MicrofeedConfig,
@@ -2833,6 +2978,21 @@ async function disabledWebhookDeploymentIsVerified(
   );
   return queue.deliveryPaused && metrics?.backlogCount === 0 && !bound &&
     consumers.length === 0 && schedules.length === 0;
+}
+
+async function webhookDisableDeploymentIsDetached(
+  context: CommandContext,
+  config: MicrofeedConfig,
+): Promise<boolean> {
+  const accountId = cloudflareAccountId(config);
+  const [bindings, schedules] = await Promise.all([
+    context.cloudflare.workerBindings(accountId, workerName(config)),
+    context.cloudflare.workerSchedules(accountId, workerName(config)),
+  ]);
+  const bound = bindings.some(({name, type}) =>
+    name === "WEBHOOK_QUEUE" && type === "queue"
+  );
+  return !bound && schedules.length === 0;
 }
 
 async function enabledWebhookDeploymentIsVerified(
@@ -2974,6 +3134,7 @@ export async function deployCommand(
     config.webhooks?.transition === "disabling";
   let finishWebhookEnable = enableWebhooks ||
     config.webhooks?.transition === "enabling";
+  let resumeDetachedWebhookDisable = false;
 
   if (enableWebhooks && config.webhooks?.transition === "disabling") {
     throw new Error(
@@ -2995,23 +3156,47 @@ export async function deployCommand(
   }
 
   if (finishWebhookEnable) {
+    let accessVerified = false;
     if (!webhookProvisioned(config)) {
-      await provisionWebhookQueue(context, config);
+      await verifyWebhookLifecycleAccess(context, config, "enable");
+      accessVerified = true;
+      await runWebhookLifecycleStep(config, "enable", () =>
+        provisionWebhookQueue(context, config)
+      );
     }
-    const queue = await verifiedWebhookQueue(context, config);
-    if (webhookEnabled(config) && !config.webhooks?.transition &&
-      await enabledWebhookDeploymentIsVerified(context, config)) {
+    const queue = await runWebhookLifecycleStep(
+      config,
+      "enable",
+      () => verifiedWebhookQueue(context, config),
+      Boolean(config.webhooks?.transition),
+    );
+    const alreadyEnabled = webhookEnabled(config) &&
+      !config.webhooks?.transition &&
+      await runWebhookLifecycleStep(
+        config,
+        "enable",
+        () => enabledWebhookDeploymentIsVerified(context, config),
+        false,
+      );
+    if (alreadyEnabled) {
       finishWebhookEnable = false;
       prompts.log.info(
         `Webhooks are already enabled with Queue ${queue.name}; its exact ` +
           "identity, consumer, binding, delivery state, and Cron were verified.",
       );
     } else {
-      await context.cloudflare.pauseQueue(accountId, queue.name);
+      if (!accessVerified) {
+        await verifyWebhookLifecycleAccess(context, config, "enable");
+      }
       config.webhooks!.state = "enabled";
       config.webhooks!.transition = "enabling";
       await writeConfig(config);
       await generateWranglerConfig(config);
+      if (!queue.deliveryPaused) {
+        await runWebhookLifecycleStep(config, "enable", () =>
+          context.cloudflare.pauseQueue(accountId, queue.name)
+        );
+      }
     }
   }
 
@@ -3025,7 +3210,12 @@ export async function deployCommand(
     } else if (
       webhookState(config) === "disabled" &&
       !config.webhooks?.transition &&
-      await disabledWebhookDeploymentIsVerified(context, config)
+      await runWebhookLifecycleStep(
+        config,
+        "disable",
+        () => disabledWebhookDeploymentIsVerified(context, config),
+        false,
+      )
     ) {
       prompts.outro(
         `Webhooks are already disabled for ${preview ? "preview" : "production"}. ` +
@@ -3033,86 +3223,141 @@ export async function deployCommand(
       );
       return;
     } else {
-      const queue = await verifiedWebhookQueue(context, config);
-      await context.cloudflare.pauseQueue(accountId, queue.name);
-      await context.cloudflare.applyMigrations(config);
-      await cancelPendingWebhookDeliveries(context, config);
+      const resumingDisable = config.webhooks?.transition === "disabling";
+      const queue = await runWebhookLifecycleStep(
+        config,
+        "disable",
+        () => verifiedWebhookQueue(context, config),
+        resumingDisable,
+      );
+      await verifyWebhookLifecycleAccess(context, config, "disable");
       config.webhooks!.state = "disabled";
       config.webhooks!.transition = "disabling";
       await writeConfig(config);
       await generateWranglerConfig(config);
-    }
-  }
-  const pages = await context.cloudflare.pagesProjects(accountId);
-  const targetWorkerName = workerName(config);
-  if (pages.includes(targetWorkerName)) {
-    throw new Error(pagesCollisionMessage(targetWorkerName));
-  }
-  const enabledR2Now = await prepareR2ForDeployment(
-    context,
-    config,
-    enableR2,
-  );
-  const r2EnablePending = enabledR2Now ||
-    config.completedSteps.includes("r2-enable-pending");
-  try {
-    await deployConfiguredProject(context, config, false);
-  } catch (error) {
-    const detail = errorMessage(error);
-    if (
-      isR2Ready(config) &&
-      /(?:\br2\b|media_bucket|10042|notentitled)/iu.test(detail)
-    ) {
-      throw new Error(
-        `${detail}\n\nThe saved R2 bucket and MEDIA_BUCKET binding were not ` +
-          "removed. Restore this account's R2 billing and permissions, then " +
-          `rerun \`yarn manage deploy --instance ${config.instanceName}\`.`,
+      if (!queue.deliveryPaused) {
+        await runWebhookLifecycleStep(config, "disable", () =>
+          context.cloudflare.pauseQueue(accountId, queue.name)
+        );
+      }
+      if (
+        resumingDisable && !enableR2 &&
+        await runWebhookLifecycleStep(config, "disable", () =>
+          webhookDisableDeploymentIsDetached(context, config)
+        )
+      ) {
+        resumeDetachedWebhookDisable = true;
+        prompts.log.info(
+          "Webhook Queue binding and Cron are already removed; continuing " +
+            "the interrupted disable without redeploying the Worker.",
+        );
+      } else {
+        await runWebhookLifecycleStep(config, "disable", () =>
+          context.cloudflare.applyMigrations(config)
+        );
+      }
+      await runWebhookLifecycleStep(config, "disable", () =>
+        cancelPendingWebhookDeliveries(context, config)
       );
     }
-    throw error;
   }
-  if (r2EnablePending) {
-    await verifyR2Deployment(context, config);
-    await tryRecordDeferredR2RestoreBaseline(context, config);
+  if (!resumeDetachedWebhookDisable) {
+    const pages = await context.cloudflare.pagesProjects(accountId);
+    const targetWorkerName = workerName(config);
+    if (pages.includes(targetWorkerName)) {
+      throw new Error(pagesCollisionMessage(targetWorkerName));
+    }
+    const enabledR2Now = await prepareR2ForDeployment(
+      context,
+      config,
+      enableR2,
+    );
+    const r2EnablePending = enabledR2Now ||
+      config.completedSteps.includes("r2-enable-pending");
+    try {
+      await deployConfiguredProject(context, config, false);
+    } catch (error) {
+      if (finishWebhookDisable && isCloudflareAuthenticationError(error)) {
+        throw webhookAuthenticationError(error, config, "disable", true);
+      }
+      if (finishWebhookEnable && isCloudflareAuthenticationError(error)) {
+        throw webhookAuthenticationError(error, config, "enable", true);
+      }
+      const detail = errorMessage(error);
+      if (
+        isR2Ready(config) &&
+        /(?:\br2\b|media_bucket|10042|notentitled)/iu.test(detail)
+      ) {
+        throw new Error(
+          `${detail}\n\nThe saved R2 bucket and MEDIA_BUCKET binding were not ` +
+            "removed. Restore this account's R2 billing and permissions, then " +
+            `rerun \`yarn manage deploy --instance ${config.instanceName}\`.`,
+        );
+      }
+      throw error;
+    }
+    if (r2EnablePending) {
+      await verifyR2Deployment(context, config);
+      await tryRecordDeferredR2RestoreBaseline(context, config);
+    }
   }
   if (finishWebhookDisable && config.webhooks) {
-    await cancelPendingWebhookDeliveries(context, config);
-    if (!config.completedSteps.includes(WEBHOOK_DISABLE_PURGED_STEP)) {
-      await context.cloudflare.purgeQueue(accountId, config.webhooks.queueName);
-      markStep(config, WEBHOOK_DISABLE_PURGED_STEP);
-      await writeConfig(config);
-    }
-    if (!await disabledWebhookDeploymentIsVerified(context, config)) {
-      throw new Error(
-        "Webhook disabling did not verify cleanly. The Queue was retained; " +
-          "rerun the same command to resume verification.",
+    await runWebhookLifecycleStep(config, "disable", async () => {
+      await cancelPendingWebhookDeliveries(context, config);
+      const detachedConsumers = await detachWebhookQueueConsumer(
+        context,
+        config,
       );
-    }
-    delete config.webhooks.transition;
-    config.completedSteps = config.completedSteps.filter(
-      (step) => step !== WEBHOOK_DISABLE_PURGED_STEP,
-    );
-    await writeConfig(config);
-    await generateWranglerConfig(config);
-    prompts.log.success(
-      `Webhooks disabled; Queue ${config.webhooks.queueName} was retained, ` +
-        "paused, and emptied.",
-    );
+      prompts.log.success(
+        detachedConsumers > 0
+          ? "Webhook Queue consumer: detached"
+          : "Webhook Queue consumer: already absent",
+      );
+      if (!config.completedSteps.includes(WEBHOOK_DISABLE_PURGED_STEP)) {
+        await context.cloudflare.purgeQueue(
+          accountId,
+          config.webhooks!.queueName,
+        );
+        markStep(config, WEBHOOK_DISABLE_PURGED_STEP);
+        await writeConfig(config);
+      }
+      if (!await disabledWebhookDeploymentIsVerified(context, config)) {
+        throw new Error(
+          "Webhook disabling did not verify cleanly. The Queue was retained; " +
+            "rerun the same command to resume verification.",
+        );
+      }
+      delete config.webhooks!.transition;
+      config.completedSteps = config.completedSteps.filter(
+        (step) => step !== WEBHOOK_DISABLE_PURGED_STEP,
+      );
+      await writeConfig(config);
+      await generateWranglerConfig(config);
+      prompts.log.success(
+        `Webhooks disabled; Queue ${config.webhooks!.queueName} was retained, ` +
+          "paused, and emptied.",
+      );
+    });
   }
   if (finishWebhookEnable && config.webhooks) {
-    await context.cloudflare.resumeQueue(accountId, config.webhooks.queueName);
-    if (!await enabledWebhookDeploymentIsVerified(context, config)) {
-      throw new Error(
-        "Webhook enablement did not verify cleanly. The existing Queue was " +
-          "not replaced; rerun the same command to resume verification.",
+    await runWebhookLifecycleStep(config, "enable", async () => {
+      await context.cloudflare.resumeQueue(
+        accountId,
+        config.webhooks!.queueName,
       );
-    }
-    delete config.webhooks.transition;
-    await writeConfig(config);
-    await generateWranglerConfig(config);
-    prompts.log.success(
-      `Webhooks enabled with existing Queue ${config.webhooks.queueName}.`,
-    );
+      if (!await enabledWebhookDeploymentIsVerified(context, config)) {
+        throw new Error(
+          "Webhook enablement did not verify cleanly. The existing Queue was " +
+            "not replaced; rerun the same command to resume verification.",
+        );
+      }
+      delete config.webhooks!.transition;
+      await writeConfig(config);
+      await generateWranglerConfig(config);
+      prompts.log.success(
+        `Webhooks enabled with existing Queue ${config.webhooks!.queueName}.`,
+      );
+    });
   }
   prompts.outro(deploymentOutcomeMessage(config, preview));
 }
@@ -3903,29 +4148,6 @@ const DESTROY_CRON_STEP = "destroy-webhook-crons-removed";
 const DESTROY_CONSUMER_STEP = "destroy-webhook-consumer-detached";
 const DESTROY_QUEUE_STEP = "destroy-webhook-queue-deleted";
 
-function verifiedDestroyQueueConsumers(
-  consumers: QueueConsumer[],
-  targetWorkerName: string,
-): QueueConsumer[] {
-  const expected = consumers.filter(({scriptName, type}) =>
-    type === "worker" && scriptName === targetWorkerName
-  );
-  const unexpected = consumers.filter((consumer) =>
-    !expected.includes(consumer)
-  );
-  if (unexpected.length > 0 || expected.length > 1) {
-    const summary = consumers.map(({id, scriptName, type}) =>
-      `${type}:${scriptName ?? "unknown"} (${id})`
-    ).join(", ");
-    throw new Error(
-      `Webhook Queue has an unexpected consumer configuration: ${summary}. ` +
-        `microfeed will detach only the single Worker consumer named ` +
-        `\`${targetWorkerName}\`. No resources were deleted.`,
-    );
-  }
-  return expected;
-}
-
 function normalizedHostnames(hostnames: string[]): string[] {
   return hostnames.map((hostname) => hostname.toLowerCase().replace(/\.$/u, ""))
     .sort((left, right) => left.localeCompare(right));
@@ -3997,7 +4219,7 @@ async function inspectDestroyTarget(
     );
   }
   if (!config.completedSteps.includes(DESTROY_CONSUMER_STEP)) {
-    verifiedDestroyQueueConsumers(queueConsumers, targetWorkerName);
+    verifiedWebhookQueueConsumers(queueConsumers, targetWorkerName);
   }
 
   if (config.completedSteps.includes(DESTROY_WORKER_STEP) && workerExists) {
@@ -4415,7 +4637,7 @@ export async function destroyCommand(
         accountId,
         queue.id,
       );
-      const expectedConsumers = verifiedDestroyQueueConsumers(
+      const expectedConsumers = verifiedWebhookQueueConsumers(
         consumers,
         targetWorkerName,
       );
