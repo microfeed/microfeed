@@ -61,6 +61,7 @@ import DEFAULT_THEME_MANIFEST from "../themes/default/microfeed-theme.json";
 import type {CommandRunner, MicrofeedConfig} from "./types";
 import type {Flags} from "./commands";
 import {CloudflareClient} from "./lib/cloudflare";
+import {pruneSupersededBundledThemeVersions} from "./lib/bundled-theme-pruning";
 import {
   cloudflareAccountId,
   defaultLocalInstance,
@@ -951,6 +952,53 @@ async function installLocal(
   }
 }
 
+async function pruneInstalledBundledThemeVersions(
+  target: Target,
+  installed: StoredThemeVersion,
+): Promise<void> {
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      await pruneSupersededBundledThemeVersions({
+        deleteAssets: async (keys) => {
+          if (keys.length > 0) await local.bucket.delete(keys);
+        },
+        query: async (sql, parameters = []) => {
+          const result = await local.database.prepare(sql)
+            .bind(...parameters)
+            .all<Record<string, unknown>>();
+          return result.results;
+        },
+      }, installed.packageId, installed.version);
+    } finally {
+      await local.close();
+    }
+    return;
+  }
+
+  await pruneSupersededBundledThemeVersions({
+    deleteAssets: async (keys) => {
+      if (keys.length === 0) return;
+      if (!isR2Ready(target.config)) {
+        throw new Error(
+          "R2 media storage is unavailable for bundled theme asset cleanup.",
+        );
+      }
+      const accountId = cloudflareAccountId(target.config);
+      await Promise.all(keys.map((key) => target.client.deleteR2Object(
+        accountId,
+        target.config.r2.name,
+        key,
+      )));
+    },
+    query: (sql, parameters = []) => target.client.queryD1WithParameters(
+      target.config,
+      sql,
+      parameters,
+    ),
+  }, installed.packageId, installed.version);
+}
+
 async function installResolved(target: Target, resolved: ResolvedThemeSource) {
   if (resolved.source.kind === "bundled") {
     if (!isReservedThemePackageId(resolved.loaded.manifest.packageId)) {
@@ -961,7 +1009,13 @@ async function installResolved(target: Target, resolved: ResolvedThemeSource) {
   } else {
     assertUserThemePackageId(resolved.loaded.manifest.packageId);
   }
-  return target.local ? installLocal(target, resolved) : installRemote(target, resolved);
+  const installed = target.local
+    ? await installLocal(target, resolved)
+    : await installRemote(target, resolved);
+  if (resolved.source.kind === "bundled") {
+    await pruneInstalledBundledThemeVersions(target, installed);
+  }
+  return installed;
 }
 
 async function initializationThemeState(target: Target): Promise<ThemeState> {
@@ -974,6 +1028,28 @@ async function initializationThemeState(target: Target): Promise<ThemeState> {
     "SELECT * FROM theme_state WHERE id = 'current' LIMIT 1",
   );
   return themeStateFromRow(row ?? null);
+}
+
+async function hasInstalledBundledThemePackage(
+  target: Target,
+  packageId: string,
+): Promise<boolean> {
+  const sql = `SELECT 1 AS installed FROM themes
+    WHERE package_id = ? AND source_kind = 'bundled' AND deleted_at IS NULL
+    LIMIT 1`;
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      return Boolean(await local.database.prepare(sql).bind(packageId).first());
+    } finally {
+      await local.close();
+    }
+  }
+  return (await target.client.queryD1WithParameters(
+    target.config,
+    sql,
+    [packageId],
+  )).length > 0;
 }
 
 async function activateInitializationTheme(
@@ -1080,9 +1156,10 @@ export async function installDefaultThemeForInitialization(
 }
 
 /**
- * Makes the current bundled v2 theme available to an upgraded site without
- * changing its public appearance. The effective-theme lookup also recognizes
- * pre-versioning custom themes as v1 appearances.
+ * Makes the current bundled v2 theme available to an upgraded site or a site
+ * that already has a bundled-theme lineage, without changing its public
+ * appearance. The effective-theme lookup also recognizes pre-versioning
+ * custom themes as v1 appearances.
  */
 export async function installDefaultThemeForV1Appearance(
   config: MicrofeedConfig,
@@ -1095,7 +1172,13 @@ export async function installDefaultThemeForV1Appearance(
     local,
   };
   const active = await effectiveTheme(target);
-  if (active.manifest.formatVersion !== 1) return null;
+  if (
+    active.manifest.formatVersion !== 1 &&
+    !await hasInstalledBundledThemePackage(
+      target,
+      DEFAULT_THEME_MANIFEST.packageId,
+    )
+  ) return null;
   if (DEFAULT_THEME_MANIFEST.formatVersion !== 2) {
     throw new Error(
       "The bundled default must use theme format v2 before it can be installed for a v1 site.",
