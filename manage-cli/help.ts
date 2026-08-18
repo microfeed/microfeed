@@ -289,7 +289,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     changes: "Permanently deletes owned Cloudflare resources and local instance data unless explicitly preserved.",
     details: [
       "Always run --dry-run first. The plan includes exact identities, expected actions, and Cloudflare inspection links.",
-      "A provisioned webhook Queue is listed by name, ID, lifecycle state, backlog, and Cron schedules. Confirmed destruction pauses it, removes Cron schedules, deletes the Worker, and deletes that exact Queue even when --keep-data preserves D1 and R2.",
+      "A provisioned webhook Queue is listed by name, ID, lifecycle state, consumer, backlog, and Cron schedules. Confirmed destruction pauses it, removes Cron schedules, verifies and detaches only this Worker's exact consumer, deletes the Worker, and deletes that exact Queue even when --keep-data preserves D1 and R2.",
       "The command refuses --yes, requires an exact typed or --confirm name, preserves reused resources, and resumes recorded partial deletion safely.",
       "Production cannot be destroyed while its preview still exists.",
     ],

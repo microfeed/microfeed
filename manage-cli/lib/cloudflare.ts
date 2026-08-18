@@ -1341,6 +1341,18 @@ export class CloudflareClient {
     }).filter(({id}) => id.length > 0);
   }
 
+  async deleteQueueConsumer(
+    accountId: string,
+    queueId: string,
+    consumerId: string,
+  ): Promise<void> {
+    await this.apiDelete(
+      `/accounts/${encodeURIComponent(accountId)}/queues/` +
+        `${encodeURIComponent(queueId)}/consumers/` +
+        encodeURIComponent(consumerId),
+    );
+  }
+
   async queueOperationMetrics(
     accountId: string,
     name: string,

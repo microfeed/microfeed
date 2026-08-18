@@ -87,6 +87,7 @@ import {
   pagesCollisionMessage,
   pagesDomainAttachedMessage,
   pagesDomainIsAttached,
+  type QueueConsumer,
   R2NotEntitledError,
   validateWranglerProfileName,
 } from "./lib/cloudflare";
@@ -3885,6 +3886,7 @@ export async function statusCommand(
 interface DestroyInspection {
   d1Exists: boolean;
   domains: Awaited<ReturnType<CloudflareClient["workerDomains"]>>;
+  queueConsumers: QueueConsumer[];
   r2Exists: boolean;
   queue: Awaited<ReturnType<CloudflareClient["queueByName"]>>;
   queueExists: boolean;
@@ -3898,7 +3900,31 @@ const DESTROY_DOMAINS_STEP = "destroy-domains-detached";
 const DESTROY_D1_STEP = "destroy-d1-deleted";
 const DESTROY_R2_STEP = "destroy-r2-deleted";
 const DESTROY_CRON_STEP = "destroy-webhook-crons-removed";
+const DESTROY_CONSUMER_STEP = "destroy-webhook-consumer-detached";
 const DESTROY_QUEUE_STEP = "destroy-webhook-queue-deleted";
+
+function verifiedDestroyQueueConsumers(
+  consumers: QueueConsumer[],
+  targetWorkerName: string,
+): QueueConsumer[] {
+  const expected = consumers.filter(({scriptName, type}) =>
+    type === "worker" && scriptName === targetWorkerName
+  );
+  const unexpected = consumers.filter((consumer) =>
+    !expected.includes(consumer)
+  );
+  if (unexpected.length > 0 || expected.length > 1) {
+    const summary = consumers.map(({id, scriptName, type}) =>
+      `${type}:${scriptName ?? "unknown"} (${id})`
+    ).join(", ");
+    throw new Error(
+      `Webhook Queue has an unexpected consumer configuration: ${summary}. ` +
+        `microfeed will detach only the single Worker consumer named ` +
+        `\`${targetWorkerName}\`. No resources were deleted.`,
+    );
+  }
+  return expected;
+}
 
 function normalizedHostnames(hostnames: string[]): string[] {
   return hostnames.map((hostname) => hostname.toLowerCase().replace(/\.$/u, ""))
@@ -3940,6 +3966,9 @@ async function inspectDestroyTarget(
         : []),
   ]);
   const queueExists = Boolean(queue);
+  const queueConsumers = queue
+    ? await context.cloudflare.queueConsumers(accountId, queue.id)
+    : [];
 
   if (webhookProvisioned(config) && !queue &&
     !config.completedSteps.includes(DESTROY_QUEUE_STEP)) {
@@ -3958,6 +3987,17 @@ async function inspectDestroyTarget(
         `but this instance owns ${config.webhooks.queueId}. No resources ` +
         "were deleted.",
     );
+  }
+  if (config.completedSteps.includes(DESTROY_CONSUMER_STEP) &&
+    queueConsumers.length > 0) {
+    throw new Error(
+      `Webhook Queue \`${config.webhooks?.queueName}\` has a consumer after ` +
+        "an earlier destroy run recorded its consumer as detached. " +
+        "microfeed will not delete the replacement consumer.",
+    );
+  }
+  if (!config.completedSteps.includes(DESTROY_CONSUMER_STEP)) {
+    verifiedDestroyQueueConsumers(queueConsumers, targetWorkerName);
   }
 
   if (config.completedSteps.includes(DESTROY_WORKER_STEP) && workerExists) {
@@ -4066,6 +4106,7 @@ async function inspectDestroyTarget(
     d1Exists,
     domains,
     queue,
+    queueConsumers,
     queueExists,
     queueMetrics,
     r2Exists,
@@ -4120,6 +4161,10 @@ function destroyResourcePlan(
             `(${config.webhooks!.queueId ?? inspection.queue?.id ?? "ID unavailable"}) — ` +
             `${inspection.queueExists ? "DELETE" : "Already absent"}`,
           `Webhook Queue ownership: dedicated to this ${preview ? "preview" : "production"} environment`,
+          `Webhook Queue consumer: ${inspection.queueConsumers.length > 0
+            ? `${inspection.queueConsumers[0]!.scriptName} ` +
+              `(${inspection.queueConsumers[0]!.id}) — REMOVE`
+            : "none"}`,
           `Webhook Queue backlog: ${inspection.queueMetrics
             ? `${inspection.queueMetrics.backlogCount} messages / ${inspection.queueMetrics.backlogBytes} bytes`
             : "unavailable"}`,
@@ -4362,6 +4407,43 @@ export async function destroyCommand(
     }
     await recordDestroyStep(config, DESTROY_CRON_STEP);
     prompts.log.success("Webhook Cron schedules: removed");
+
+    let detachedConsumers = 0;
+    if (inspection.queue) {
+      const queue = await verifiedWebhookQueue(context, config);
+      const consumers = await context.cloudflare.queueConsumers(
+        accountId,
+        queue.id,
+      );
+      const expectedConsumers = verifiedDestroyQueueConsumers(
+        consumers,
+        targetWorkerName,
+      );
+      for (const consumer of expectedConsumers) {
+        await context.cloudflare.deleteQueueConsumer(
+          accountId,
+          queue.id,
+          consumer.id,
+        );
+        detachedConsumers += 1;
+      }
+      const remainingConsumers = await context.cloudflare.queueConsumers(
+        accountId,
+        queue.id,
+      );
+      if (remainingConsumers.length > 0) {
+        throw new Error(
+          `Cloudflare still reports a consumer for webhook Queue ` +
+            `${queue.name}. No Worker or data resource was deleted.`,
+        );
+      }
+    }
+    await recordDestroyStep(config, DESTROY_CONSUMER_STEP);
+    prompts.log.success(
+      detachedConsumers > 0
+        ? "Webhook Queue consumer: detached"
+        : "Webhook Queue consumer: already absent",
+    );
 
     if ((keepData || config.d1.reuse) && inspection.d1Exists) {
       await context.cloudflare.queryD1(

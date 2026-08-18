@@ -126,7 +126,7 @@ describe("Pages collision preflight", () => {
 });
 
 describe("CloudflareClient", () => {
-  it("reads Worker Cron wrappers and Queue consumers from the Cloudflare API", async () => {
+  it("reads Worker Cron wrappers and manages Queue consumers through the Cloudflare API", async () => {
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       if (args.join(" ") === "auth token --json") {
         return commandResult(JSON.stringify({
@@ -136,7 +136,10 @@ describe("CloudflareClient", () => {
       }
       throw new Error(`Unexpected command: ${args.join(" ")}`);
     });
-    const fetchMock = vi.fn(async (input: URL | RequestInfo) => {
+    const fetchMock = vi.fn(async (
+      input: URL | RequestInfo,
+      init?: RequestInit,
+    ) => {
       const url = new URL(
         input instanceof Request ? input.url : input.toString(),
       );
@@ -147,7 +150,7 @@ describe("CloudflareClient", () => {
           success: true,
         });
       }
-      if (url.pathname.endsWith("/queues/queue-id/consumers")) {
+      if (url.pathname.endsWith("/queues/queue-id/consumers") && !init?.method) {
         return Response.json({
           errors: [],
           result: [
@@ -170,6 +173,11 @@ describe("CloudflareClient", () => {
           success: true,
         });
       }
+      if (url.pathname.endsWith(
+        "/queues/queue-id/consumers/consumer-id",
+      ) && init?.method === "DELETE") {
+        return Response.json({errors: [], result: {}, success: true});
+      }
       throw new Error(`Unexpected request: ${url.href}`);
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -191,6 +199,17 @@ describe("CloudflareClient", () => {
           type: "worker",
         },
       ]);
+    await client.deleteQueueConsumer(
+      "account-id",
+      "queue-id",
+      "consumer-id",
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "/accounts/account-id/queues/queue-id/consumers/consumer-id",
+      ),
+      expect.objectContaining({method: "DELETE"}),
+    );
   });
 
   it("requests only the selected OAuth scopes and OS keyring storage", async () => {

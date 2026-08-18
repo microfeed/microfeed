@@ -353,11 +353,12 @@ not work around the failure with lower-level Cloudflare tooling.
    the CLI.
 4. Relay the complete plan in plain language, including the site and account,
    public address, hosted application, database ID and name, media bucket,
-   webhook Queue name, Queue ID, state, ownership, backlog, Cron schedules,
-   custom address, reused/preserved status, local instance folder, and every
-   dashboard inspection URL. Explain that the instance-specific Queue is
-   deleted even with `--keep-data`, while D1 and R2 may be preserved. Owned
-   Cloudflare data deletion is
+   webhook Queue name, Queue ID, state, ownership, exact consumer, backlog,
+   Cron schedules, custom address, reused/preserved status, local instance
+   folder, and every dashboard inspection URL. Explain that confirmed
+   destruction verifies and detaches only the saved Worker's Queue consumer,
+   then deletes the instance-specific Queue even with `--keep-data`, while D1
+   and R2 may be preserved. Owned Cloudflare data deletion is
    permanent and that the local folder includes a separate development
    database and media sandbox. Ask whether the user wants to keep Cloudflare
    data; add `--keep-data` only when they explicitly choose it.

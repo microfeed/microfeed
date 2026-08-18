@@ -892,7 +892,8 @@ data unless explicitly preserved.
 Inventory and safely remove one saved Cloudflare deployment. Always begin with
 `--dry-run`; it prints the exact site, account, Worker, D1 ID/name, R2 bucket,
 webhook Queue name and ID, lifecycle state, backlog, Cron schedules, custom
-address, local folder, actions, and inspection links.
+address, local folder, actions, and inspection links. If a Queue consumer is
+attached, the plan includes its Worker name and consumer ID.
 
 ```console
 yarn manage destroy --instance <name> --dry-run
@@ -911,11 +912,14 @@ yarn manage destroy --instance <name> --confirm <name>
 `--yes` and `--local` are rejected. Reused data is always preserved. The
 command verifies installation identity, refuses unexpected or replacement
 resources, pauses a dedicated webhook Queue, explicitly removes Cron schedules,
-cancels pending webhook deliveries when D1 is preserved, deletes the Worker,
-then deletes the exact verified Queue before owned data. `--keep-data` preserves
-D1 and R2, not the environment-specific Queue. Completed steps are recorded and
-local state is removed last. Rerun the same confirmed command to resume a
-partial removal.
+cancels pending webhook deliveries when D1 is preserved, detaches only the
+single Queue consumer whose Worker name exactly matches the saved deployment,
+and verifies that no consumer remains. It then deletes the Worker and exact
+verified Queue before owned data. An unexpected, ambiguous, or replacement
+consumer fails closed without deleting it. `--keep-data` preserves D1 and R2,
+not the environment-specific Queue. Completed steps are recorded and local
+state is removed last. Rerun the same confirmed command to resume a partial
+removal.
 
 ## `yarn manage migrate-pages`
 
