@@ -144,13 +144,10 @@ terminal, print the same unsigned example with:
 yarn microfeed webhook sample item.published --json
 ```
 
-Use `yarn microfeed webhook listen` when you need a verified loopback inspector
-or forwarder without a receiver project. Add `--tunnel` to print a temporary
-HTTPS endpoint that can receive a deployed instance's signed test on this
-computer. The CLI can download a pinned, SHA-256-verified `cloudflared` helper
-into its own cache after approval, and it stops the child tunnel on exit. Event
-Explorer sends are real signed, budgeted deliveries and may retry; previews and
-unsigned samples do not make an HTTP request.
+Before creating a receiver project, follow [Test webhooks without code](../testing/)
+to inspect a signed delivery with the loopback listener or a temporary public
+tunnel. Event Explorer sends are real signed, budgeted deliveries and may
+retry; previews and unsigned samples do not make an HTTP request.
 
 Before production, test:
 
