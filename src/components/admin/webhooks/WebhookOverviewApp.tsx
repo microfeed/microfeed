@@ -199,73 +199,205 @@ export default function WebhookOverviewApp({
       )}
 
       <AdminSectionCard
-        description="Run a complete receiver locally, create an endpoint, and send a real signed test."
+        description={localDevelopment
+          ? "Run a complete receiver locally, create an endpoint, and send a real signed test."
+          : "Open a temporary public listener on this computer and send it a real signed test."}
         title="Build and test your first endpoint"
       >
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(22rem,1.15fr)]">
-          <div className="grid content-start gap-3 text-sm leading-6">
+        {localDevelopment
+          ? <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(22rem,1.15fr)]">
+            <div className="grid content-start gap-3 text-sm leading-6">
+              <QuickstartStep
+                description={`Create the ${quickstart.label} receiver project in the repository root.`}
+                number={1}
+                title={`Scaffold the ${quickstart.label} receiver`}
+              >
+                <p>
+                  From the microfeed repository root, run the command below. It
+                  writes to the ignored <code>.microfeed/webhooks/</code>
+                  {" "}workspace—not <code>packages/cli/.microfeed/</code>—and does
+                  not install or start anything.
+                </p>
+                <QuickstartCommand onCopy={copy} value={quickstart.scaffoldCommand} />
+                <p>
+                  After it starts in step 3, this receiver will listen at
+                  {" "}<code>{WEBHOOK_QUICKSTART_ENDPOINT_URL}</code>.
+                </p>
+              </QuickstartStep>
+
+              <QuickstartStep
+                description="Register the local URL and reveal its signing secret."
+                number={2}
+                title="Create the webhook endpoint"
+              >
+                <p>
+                  Open the prefilled endpoint form, enter a name, choose the
+                  events you want, and create the endpoint for
+                  {" "}<code>{WEBHOOK_QUICKSTART_ENDPOINT_URL}</code>.
+                </p>
+                <Button
+                  render={<a href={endpointCreateUrl} rel="noreferrer" target="_blank" />}
+                  size="sm"
+                >
+                  Create endpoint
+                </Button>
+                <p>
+                  Open <strong>Signing secret</strong> for the endpoint and
+                  reveal the <code>whsec_…</code> value. This is your
+                  {" "}<code>MICROFEED_WEBHOOK_SECRET</code>. It authenticates
+                  microfeed and detects changed request bytes, so no additional
+                  passcode is needed. You can return to reveal or rotate it
+                  later.
+                </p>
+              </QuickstartStep>
+
+              <QuickstartStep
+                description={`Install ${quickstart.label} dependencies and start the loopback server.`}
+                number={3}
+                title={`Install and run the ${quickstart.label} receiver`}
+              >
+                <p>
+                  In a terminal, enter the generated directory, install its
+                  dependencies, and replace <code>whsec_...</code> with the secret
+                  revealed in step 2.
+                </p>
+                <QuickstartCommand onCopy={copy} value={quickstart.directoryCommand} />
+                {quickstart.installCommands.map((command) => (
+                  <QuickstartCommand key={command} onCopy={copy} value={command} />
+                ))}
+                <QuickstartCommand onCopy={copy} value={quickstart.runCommand} />
+                <p>
+                  Keep this terminal open. It should print
+                  {" "}<code>Listening at {WEBHOOK_QUICKSTART_ENDPOINT_URL}</code>.
+                </p>
+              </QuickstartStep>
+
+              <QuickstartStep
+                description="Send a signed webhook.test and confirm it reaches the terminal."
+                number={4}
+                title="Send and verify a test event"
+              >
+                <p>
+                  With the receiver still running, open Event Explorer. Select
+                  the endpoint from step 2 and <code>webhook.test</code>, keep the
+                  generated example, then choose <strong>Send test delivery</strong>
+                  {" "}and confirm the budgeted delivery.
+                </p>
+                <Button
+                  render={<a href={explorerUrl} rel="noreferrer" target="_blank" />}
+                  size="sm"
+                  variant="outline"
+                >
+                  Open Event Explorer
+                </Button>
+                <p>
+                  The receiver terminal should print the delivery ID, event type,
+                  {" "}<code>test: true</code>, duplicate status, and formatted
+                  payload. A <code>204</code> response marks the delivery as
+                  accepted in microfeed.
+                </p>
+              </QuickstartStep>
+            </div>
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex gap-2" role="tablist" aria-label="Receiver language">
+                  {(["javascript", "python"] as const).map((language) => (
+                    <Button
+                      aria-selected={previewLanguage === language}
+                      key={language}
+                      onClick={() => setPreviewLanguage(language)}
+                      role="tab"
+                      size="sm"
+                      type="button"
+                      variant={previewLanguage === language ? "default" : "outline"}
+                    >
+                      {WEBHOOK_QUICKSTARTS[language].label}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  onClick={() => void copy(quickstart.source, `${quickstart.label} receiver code`)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <CopyIcon aria-hidden="true" className="size-4" />
+                  Copy {quickstart.filename}
+                </Button>
+              </div>
+              <AdminCodeEditor
+                ariaLabel={`${quickstart.label} webhook receiver code`}
+                code={quickstart.source}
+                language={quickstart.highlightLanguage}
+                maxHeight="36rem"
+                minHeight="36rem"
+                readOnly
+              />
+              <div className="mt-3 rounded-xl border border-amber-500/35 bg-amber-500/8 p-4 text-sm leading-6">
+                <p className="font-medium">Local inspector, not production infrastructure</p>
+                <p className="mt-1 text-muted-foreground">
+                  Duplicate state resets on restart, no job is durably queued,
+                  and production effects are intentionally absent. Add durable
+                  acknowledgement, background work, idempotency, loop
+                  prevention, approvals, audit logs, and cost alerts before
+                  deployment.
+                </p>
+              </div>
+            </div>
+          </div>
+          : <div className="grid max-w-4xl content-start gap-3 text-sm leading-6">
             <QuickstartStep
-              description={`Create the ${quickstart.label} receiver project in the repository root.`}
+              description="Start a verified local inspector and expose it through a temporary public URL."
               number={1}
-              title={`Scaffold the ${quickstart.label} receiver`}
+              title="Start the temporary webhook listener"
             >
               <p>
                 From the microfeed repository root, run the command below. It
-                writes to the ignored <code>.microfeed/webhooks/</code>
-                {" "}workspace—not <code>packages/cli/.microfeed/</code>—and does
-                not install or start anything.
+                starts a loopback listener and a free Cloudflare Quick Tunnel.
+                If <code>cloudflared</code> is unavailable, the CLI can download
+                a pinned, verified copy after asking for approval.
               </p>
-              <QuickstartCommand onCopy={copy} value={quickstart.scaffoldCommand} />
+              <QuickstartCommand onCopy={copy} value="yarn microfeed webhook listen --tunnel" />
               <p>
-                After it starts in step 3, this receiver will listen at
-                {" "}<code>{WEBHOOK_QUICKSTART_ENDPOINT_URL}</code>.
+                Wait for <strong>Temporary public webhook endpoint</strong> and
+                copy the printed <code>https://…trycloudflare.com/webhook</code>
+                {" "}URL. Keep this terminal open; the URL exists only while the
+                command is running.
               </p>
             </QuickstartStep>
 
             <QuickstartStep
-              description="Register the local URL and reveal its signing secret."
+              description="Register the printed HTTPS URL and copy its endpoint-specific secret."
               number={2}
               title="Create the webhook endpoint"
             >
               <p>
-                Open the prefilled endpoint form, enter a name, choose the
-                events you want, and create the endpoint for
-                {" "}<code>{WEBHOOK_QUICKSTART_ENDPOINT_URL}</code>.
+                In another tab, open Endpoints, choose <strong>Add endpoint</strong>,
+                paste the exact public URL from step 1, enter a name, and select
+                the events you want to test.
               </p>
               <Button
-                render={<a href={endpointCreateUrl} rel="noreferrer" target="_blank" />}
+                render={<a href={endpointUrl} rel="noreferrer" target="_blank" />}
                 size="sm"
               >
-                Create endpoint
+                Open Endpoints
               </Button>
               <p>
-                Open <strong>Signing secret</strong> for the endpoint and
-                reveal the <code>whsec_…</code> value. This is your
-                {" "}<code>MICROFEED_WEBHOOK_SECRET</code>. It authenticates
-                microfeed and detects changed request bytes, so no additional
-                passcode is needed. You can return to reveal or rotate it
-                later.
+                After creation, copy the one-time <code>whsec_…</code> signing
+                secret. If you close it, use the endpoint's
+                {" "}<strong>Signing secret</strong> action to reveal it again.
               </p>
             </QuickstartStep>
 
             <QuickstartStep
-              description={`Install ${quickstart.label} dependencies and start the loopback server.`}
+              description="Authenticate the listener before it accepts or prints deliveries."
               number={3}
-              title={`Install and run the ${quickstart.label} receiver`}
+              title="Enter the signing secret"
             >
               <p>
-                In a terminal, enter the generated directory, install its
-                dependencies, and replace <code>whsec_...</code> with the secret
-                revealed in step 2.
-              </p>
-              <QuickstartCommand onCopy={copy} value={quickstart.directoryCommand} />
-              {quickstart.installCommands.map((command) => (
-                <QuickstartCommand key={command} onCopy={copy} value={command} />
-              ))}
-              <QuickstartCommand onCopy={copy} value={quickstart.runCommand} />
-              <p>
-                Keep this terminal open. It should print
-                {" "}<code>Listening at {WEBHOOK_QUICKSTART_ENDPOINT_URL}</code>.
+                Return to the listener terminal, paste the signing secret into
+                its prompt, and submit it. The CLI does not print the secret.
+                Wait for <strong>Listening for verified microfeed webhooks</strong>.
               </p>
             </QuickstartStep>
 
@@ -294,54 +426,15 @@ export default function WebhookOverviewApp({
                 accepted in microfeed.
               </p>
             </QuickstartStep>
-          </div>
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex gap-2" role="tablist" aria-label="Receiver language">
-                {(["javascript", "python"] as const).map((language) => (
-                  <Button
-                    aria-selected={previewLanguage === language}
-                    key={language}
-                    onClick={() => setPreviewLanguage(language)}
-                    role="tab"
-                    size="sm"
-                    type="button"
-                    variant={previewLanguage === language ? "default" : "outline"}
-                  >
-                    {WEBHOOK_QUICKSTARTS[language].label}
-                  </Button>
-                ))}
-              </div>
-              <Button
-                onClick={() => void copy(quickstart.source, `${quickstart.label} receiver code`)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <CopyIcon aria-hidden="true" className="size-4" />
-                Copy {quickstart.filename}
-              </Button>
-            </div>
-            <AdminCodeEditor
-              ariaLabel={`${quickstart.label} webhook receiver code`}
-              code={quickstart.source}
-              language={quickstart.highlightLanguage}
-              maxHeight="36rem"
-              minHeight="36rem"
-              readOnly
-            />
-            <div className="mt-3 rounded-xl border border-amber-500/35 bg-amber-500/8 p-4 text-sm leading-6">
-              <p className="font-medium">Local inspector, not production infrastructure</p>
+            <div className="rounded-xl border border-amber-500/35 bg-amber-500/8 p-4">
+              <p className="font-medium">Temporary testing only</p>
               <p className="mt-1 text-muted-foreground">
-                Duplicate state resets on restart, no job is durably queued,
-                and production effects are intentionally absent. Add durable
-                acknowledgement, background work, idempotency, loop
-                prevention, approvals, audit logs, and cost alerts before
-                deployment.
+                Quick Tunnels have no uptime guarantee and are not a deployed
+                receiver. Pressing Ctrl+C stops the listener and tunnel. Delete
+                the temporary endpoint afterward; the next run receives a new URL.
               </p>
             </div>
-          </div>
-        </div>
+          </div>}
       </AdminSectionCard>
 
       <AdminSectionCard

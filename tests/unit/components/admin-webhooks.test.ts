@@ -136,49 +136,22 @@ describe("Webhook Admin", () => {
     );
     expect(quickstartSection.match(/<details /gu)).toHaveLength(4);
     expect(quickstartSection).not.toContain("<details open");
-    expect(output).toContain(".microfeed/webhooks/");
-    expect(output).toContain("packages/cli/.microfeed/");
-    expect(output).toContain(
-      'href="/admin/webhooks/endpoints/?quickstart=1"',
-    );
-    expect(output).toContain("This is your");
-    expect(output).toContain("MICROFEED_WEBHOOK_SECRET");
-    expect(output).toContain("Scaffold the JavaScript receiver");
+    expect(output).toContain("yarn microfeed webhook listen --tunnel");
+    expect(output).toContain("Temporary public webhook endpoint");
+    expect(output).toContain("https://…trycloudflare.com/webhook");
+    expect(output).toContain('href="/admin/webhooks/endpoints/"');
+    expect(output).toContain("Start the temporary webhook listener");
     expect(output).toContain("Create the webhook endpoint");
-    expect(output).toContain("Install and run the JavaScript receiver");
+    expect(output).toContain("Enter the signing secret");
     expect(output).toContain("Send and verify a test event");
-    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand);
-    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.directoryCommand);
-    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.runCommand);
-    expect(output).toContain("Copy server.cjs");
-    expect(output).toContain(
-      'aria-label="JavaScript webhook receiver code"',
-    );
-    expect(output).toContain("language-js");
-    expect(output).toContain('class="token keyword"');
-    expect(output).toContain("readonly=\"\"");
-    expect(output).toContain('app.listen(3000, &quot;127.0.0.1&quot;');
+    expect(output).toContain("Quick Tunnels have no uptime guarantee");
     expect(output).toContain(
       'href="/admin/webhooks/events/?event=webhook.test"',
     );
+    expect(output).not.toContain(".microfeed/webhooks/");
+    expect(output).not.toContain("Receiver language");
     expect(output).not.toContain("Open endpoint quickstart");
     expect(output).not.toContain("Endpoint quickstart");
-    expect(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand).toContain(
-      ".microfeed/webhooks/endpoint1 --language javascript",
-    );
-    expect(WEBHOOK_QUICKSTARTS.javascript.highlightLanguage).toBe("js");
-    expect(WEBHOOK_QUICKSTARTS.python.scaffoldCommand).toContain(
-      ".microfeed/webhooks/endpoint1 --language python",
-    );
-    expect(WEBHOOK_QUICKSTARTS.python.highlightLanguage).toBe("python");
-    expect(WEBHOOK_QUICKSTARTS.python.installCommands).toEqual([
-      "python3 -m venv .venv",
-      ". .venv/bin/activate",
-      "pip install -r requirements.txt",
-    ]);
-    expect(WEBHOOK_QUICKSTARTS.python.runCommand).toContain("python server.py");
-    expect(output).toContain("no additional");
-    expect(output).toContain("passcode is needed");
     expect(output).toContain("Content automation guide");
 
     const disabledOutput = renderToStaticMarkup(React.createElement(
@@ -229,6 +202,67 @@ describe("Webhook Admin", () => {
     expect(retainedOutput).toContain(
       "yarn manage deploy --enable-webhooks --instance personal",
     );
+  });
+
+  it("keeps the scaffolded receiver quickstart in local development", () => {
+    const output = renderToStaticMarkup(React.createElement(WebhookOverviewApp, {
+      localDevelopment: true,
+      overview: {
+        activeEndpoints: 0,
+        alerts: [],
+        dailyLimit: 1_000,
+        deliveriesToday: 0,
+        enabled: true,
+        infrastructureState: "enabled",
+        endpointLimit: 20,
+        endpoints: 0,
+        estimatedQueueOperationsToday: 0,
+        recentFailures: 0,
+      },
+    }));
+    const quickstartSection = output.slice(
+      output.indexOf("Build and test your first endpoint"),
+      output.indexOf("Use webhooks safely"),
+    );
+    expect(quickstartSection.match(/<details /gu)).toHaveLength(4);
+    expect(output).toContain("Webhook simulation is running locally");
+    expect(output).toContain(".microfeed/webhooks/");
+    expect(output).toContain("packages/cli/.microfeed/");
+    expect(output).toContain(
+      'href="/admin/webhooks/endpoints/?quickstart=1"',
+    );
+    expect(output).toContain("This is your");
+    expect(output).toContain("MICROFEED_WEBHOOK_SECRET");
+    expect(output).toContain("Scaffold the JavaScript receiver");
+    expect(output).toContain("Install and run the JavaScript receiver");
+    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand);
+    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.directoryCommand);
+    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.runCommand);
+    expect(output).toContain("Copy server.cjs");
+    expect(output).toContain(
+      'aria-label="JavaScript webhook receiver code"',
+    );
+    expect(output).toContain("language-js");
+    expect(output).toContain('class="token keyword"');
+    expect(output).toContain("readonly=\"\"");
+    expect(output).toContain('app.listen(3000, &quot;127.0.0.1&quot;');
+    expect(output).not.toContain("yarn microfeed webhook listen --tunnel");
+    expect(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand).toContain(
+      ".microfeed/webhooks/endpoint1 --language javascript",
+    );
+    expect(WEBHOOK_QUICKSTARTS.javascript.highlightLanguage).toBe("js");
+    expect(WEBHOOK_QUICKSTARTS.python.scaffoldCommand).toContain(
+      ".microfeed/webhooks/endpoint1 --language python",
+    );
+    expect(WEBHOOK_QUICKSTARTS.python.highlightLanguage).toBe("python");
+    expect(WEBHOOK_QUICKSTARTS.python.installCommands).toEqual([
+      "python3 -m venv .venv",
+      ". .venv/bin/activate",
+      "pip install -r requirements.txt",
+    ]);
+    expect(WEBHOOK_QUICKSTARTS.python.runCommand).toContain("python server.py");
+    expect(output).toContain("no additional");
+    expect(output).toContain("passcode is needed");
   });
 
   it("renders signing-secret, endpoint-limit, pause recovery, filters, and redelivery controls", () => {
