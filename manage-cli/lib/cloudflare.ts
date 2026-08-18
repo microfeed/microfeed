@@ -160,10 +160,15 @@ interface CloudflareApiResultInfo {
 }
 
 interface CloudflareApiEnvelope<T> {
-  errors?: Array<{message?: unknown}>;
+  errors?: Array<{code?: unknown; message?: unknown}>;
   result?: T;
   result_info?: CloudflareApiResultInfo;
   success?: boolean;
+}
+
+export function isCloudflareAuthenticationError(error: unknown): boolean {
+  const detail = error instanceof Error ? error.message : String(error);
+  return /\bcode:\s*10000\b/iu.test(detail);
 }
 
 export interface R2ObjectListing {
@@ -664,7 +669,16 @@ export class CloudflareClient {
     }
     if (!response.ok || data.success === false) {
       const detail = data.errors
-        ?.map(({message}) => typeof message === "string" ? message : "")
+        ?.map(({code, message}) => {
+          const text = typeof message === "string" ? message : "";
+          const identifier = typeof code === "number" ||
+              typeof code === "string"
+            ? String(code)
+            : "";
+          return identifier
+            ? `${text || "Cloudflare API error"} [code: ${identifier}]`
+            : text;
+        })
         .filter(Boolean)
         .join("; ");
       throw new Error(
@@ -709,7 +723,13 @@ export class CloudflareClient {
   }
 
   private async apiGet<T>(path: string): Promise<T> {
-    return (await this.apiRequest<T>(path)).result;
+    try {
+      return (await this.apiRequest<T>(path)).result;
+    } catch (error) {
+      if (!isCloudflareAuthenticationError(error)) throw error;
+      this.credentialsPromise = undefined;
+      return (await this.apiRequest<T>(path)).result;
+    }
   }
 
   private async apiDelete(path: string): Promise<void> {

@@ -5,6 +5,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {
   assertNoPagesCollision,
   CloudflareClient,
+  isCloudflareAuthenticationError,
   OAUTH_SCOPES,
   pagesCollisionMessage,
   pagesDomainAttachedMessage,
@@ -210,6 +211,59 @@ describe("CloudflareClient", () => {
       ),
       expect.objectContaining({method: "DELETE"}),
     );
+  });
+
+  it("preserves Cloudflare authentication codes from direct API responses", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult(
+      JSON.stringify({token: "oauth-token", type: "oauth"}),
+    ));
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      errors: [{code: 10000, message: "Authentication error"}],
+      result: null,
+      success: false,
+    }, {status: 401})));
+    const cloudflare = new CloudflareClient(runner);
+
+    const error = await cloudflare.queueByName("account-id", "feed-webhooks")
+      .catch((failure: unknown) => failure);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain(
+      "Authentication error [code: 10000]",
+    );
+    expect(isCloudflareAuthenticationError(error)).toBe(true);
+  });
+
+  it("refreshes credentials once for a read-only Cloudflare authentication failure", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult(
+      JSON.stringify({token: "oauth-token", type: "oauth"}),
+    ));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        errors: [{code: 10000, message: "Authentication error"}],
+        result: null,
+        success: false,
+      }, {status: 401}))
+      .mockResolvedValueOnce(Response.json({
+        errors: [],
+        result: [{
+          queue_id: "queue-id",
+          queue_name: "feed-webhooks",
+          settings: {delivery_paused: false},
+        }],
+        success: true,
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    const cloudflare = new CloudflareClient(runner);
+
+    await expect(cloudflare.queueByName("account-id", "feed-webhooks"))
+      .resolves.toEqual({
+        deliveryPaused: false,
+        id: "queue-id",
+        name: "feed-webhooks",
+      });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(runner).toHaveBeenCalledTimes(2);
   });
 
   it("requests only the selected OAuth scopes and OS keyring storage", async () => {
