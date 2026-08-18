@@ -276,17 +276,17 @@ describe("versioned theme storage", () => {
 
   it("lists searchable, sorted metadata without serializing theme bundles", async () => {
     const store = new ThemeStore(env.FEED_DB);
-    const first = packageData(`worker.alpha.${crypto.randomUUID()}`);
+    const first = packageData("worker.alpha.search-fixture");
     first.manifest.name = "Alpha Editorial";
     first.manifest.author = "Ada";
-    const second = packageData(`worker.beta.${crypto.randomUUID()}`);
+    const second = packageData("worker.beta.search-fixture");
     second.manifest.name = "Beta Journal";
     second.manifest.author = "Bea";
     const installed = await Promise.all([
       store.installVersion({...first, source: {kind: "github", url: "https://github.com/example/alpha"}}),
       store.installVersion({...second, source: {kind: "local-directory", path: "/beta"}}),
     ]);
-    const derivedPackage = packageData(`worker.derived.${crypto.randomUUID()}`);
+    const derivedPackage = packageData("worker.derived.search-fixture");
     derivedPackage.manifest.name = "Derived Alpha";
     await store.installVersion({
       ...derivedPackage,
