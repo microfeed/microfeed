@@ -248,8 +248,9 @@ inspector with in-memory duplicate tracking, not a production queue.
 Use the tools for distinct jobs:
 
 - `webhook scaffold` creates a receiver project offline.
-- `webhook listen` verifies, displays, and optionally forwards signed local
-  deliveries.
+- `webhook listen` verifies, displays, and optionally forwards signed
+  deliveries. Add `--tunnel` to receive a deployed site's test through a
+  temporary Cloudflare Quick Tunnel.
 - `webhook sample <event>` reads one exact unsigned example from an instance's
   generated OpenAPI contract.
 - Admin Event Explorer sends a real signed, budgeted, retryable test.
@@ -258,6 +259,13 @@ Every endpoint receives one unique `whsec_…` signing secret. Store it only in
 `MICROFEED_WEBHOOK_SECRET`. The Standard Webhooks signature authenticates
 microfeed and detects tampering; no additional passcode or URL credential is
 needed.
+
+For a deployed site, run `yarn microfeed webhook listen --tunnel`. If
+`cloudflared` is missing, the interactive command offers to download a pinned
+official binary into a versioned microfeed cache and verifies its SHA-256
+digest. It installs nothing system-wide. Register the printed temporary HTTPS
+`/webhook` URL, paste the endpoint secret into the visible prompt, and stop
+the listener after the Event Explorer test.
 
 Within a microfeed clone, `.microfeed/webhooks/<endpoint-name>/` is the
 recommended development location. The clone ignores `.microfeed/`, so local

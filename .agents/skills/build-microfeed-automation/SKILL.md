@@ -120,9 +120,16 @@ deterministic code and durable state.
    credential, or custom header.
 3. Use `yarn microfeed webhook listen` on `127.0.0.1:8978/webhook` when an
    inspector or exact-body forwarder is more useful than a project. Supply the
-   secret through the hidden prompt, `MICROFEED_WEBHOOK_SECRET`, or
+   secret through the visible prompt, `MICROFEED_WEBHOOK_SECRET`, or
    `--secret-file`; never add a plaintext `--secret` flag. Use `--forward-to`
-   only for another explicit loopback server.
+   only for another explicit loopback server. To receive a deployed instance's
+   short-lived test on the local listener, prefer `yarn microfeed webhook
+   listen --tunnel`. It uses an installed `cloudflared` or, after explicit
+   approval, downloads a pinned official binary into the microfeed cache and
+   verifies its SHA-256 digest. Register only the printed temporary `/webhook`
+   URL, keep signature verification enabled, and stop the listener after the
+   test. Treat the public Quick Tunnel as development infrastructure, never a
+   production receiver or durable relay.
 4. Inspect the event first with `yarn microfeed webhook sample <event> --json`
    or Admin Event Explorer. On loopback Admin, terminal printing is
    side-effect-free; an endpoint send uses normal Queue, retry, and daily-budget

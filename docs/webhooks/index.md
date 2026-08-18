@@ -219,10 +219,23 @@ its in-memory duplicate tracking and console output with durable acceptance
 before deploying real actions.
 
 Use `yarn microfeed webhook listen` when you want a verified inspector or
-forwarder without creating a receiver project. Use `yarn microfeed webhook
-sample <event> --json` to read an unsigned exact example from the instance's
-OpenAPI contract. Event Explorer sends are real signed deliveries that use the
-normal Queue, retry policy, delivery history, and daily budget.
+forwarder without creating a receiver project. For a deployed instance, add
+`--tunnel`: the CLI prints a temporary public HTTPS endpoint, offers to
+download and verify an app-scoped `cloudflared` helper when needed, and stops
+the Quick Tunnel together with the listener. Register the printed URL, paste
+the signing secret into the visible prompt, and send the Event
+Explorer test. Use `yarn microfeed webhook sample <event> --json` to read an
+unsigned exact example from the instance's OpenAPI contract. Event Explorer
+sends are real signed deliveries that use the normal Queue, retry policy,
+delivery history, and daily budget.
+
+```console
+yarn microfeed webhook listen --tunnel
+```
+
+Quick Tunnels are temporary development tools, not production endpoints. The
+random URL changes on every run and is publicly reachable while the command is
+active; Standard Webhooks signature verification remains required.
 
 ## Authentication and limits
 

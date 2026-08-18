@@ -1,10 +1,17 @@
 import {createHmac, timingSafeEqual} from "node:crypto";
 import {mkdir, readFile, readdir, stat, writeFile} from "node:fs/promises";
-import {createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse} from "node:http";
+import {createServer, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse} from "node:http";
 import type {AddressInfo} from "node:net";
 import path from "node:path";
+import {createInterface} from "node:readline/promises";
+import type {Readable, Writable} from "node:stream";
 import {fileURLToPath} from "node:url";
 import {parseOptions, stringFlag} from "./arguments.js";
+import {
+  resolveCloudflared,
+  startCloudflaredQuickTunnel,
+  type CloudflaredQuickTunnel,
+} from "./cloudflared.js";
 import {CliError} from "./errors.js";
 import {publicSiteOrigin, type GlobalOptions} from "./http.js";
 
@@ -75,37 +82,18 @@ export function validatedForwardUrl(value: string | undefined): string | undefin
   return url.toString();
 }
 
-async function hiddenPrompt(prompt: string): Promise<string> {
-  if (!process.stdin.isTTY || !process.stdin.setRawMode) {
+export async function promptForWebhookSecret(
+  input: Readable = process.stdin,
+  output: Writable = process.stderr,
+): Promise<string> {
+  if (!(input as Readable & {isTTY?: boolean}).isTTY) {
     throw new CliError("Set MICROFEED_WEBHOOK_SECRET or use --secret-file when stdin is not a terminal.");
   }
-  process.stderr.write(prompt);
-  process.stdin.setRawMode(true);
-  process.stdin.resume();
-  let value = "";
+  const prompt = createInterface({input, output, terminal: true});
   try {
-    return await new Promise<string>((resolve, reject) => {
-      const onData = (chunk: Buffer) => {
-        for (const byte of chunk) {
-          if (byte === 3) {
-            process.stdin.off("data", onData);
-            reject(new CliError("Canceled.", 130));
-          } else if (byte === 13 || byte === 10) {
-            process.stdin.off("data", onData);
-            process.stderr.write("\n");
-            resolve(value);
-          } else if (byte === 8 || byte === 127) {
-            value = value.slice(0, -1);
-          } else if (byte >= 32) {
-            value += String.fromCharCode(byte);
-          }
-        }
-      };
-      process.stdin.on("data", onData);
-    });
+    return await prompt.question("Webhook signing secret (visible while typing): ");
   } finally {
-    process.stdin.setRawMode(false);
-    process.stdin.pause();
+    prompt.close();
   }
 }
 
@@ -114,7 +102,7 @@ async function resolveSecret(secretFile: string | undefined): Promise<string> {
     ? await readFile(secretFile, "utf8").catch((error: unknown) => {
         throw new CliError(`Could not read --secret-file: ${error instanceof Error ? error.message : String(error)}`);
       })
-    : process.env.MICROFEED_WEBHOOK_SECRET ?? await hiddenPrompt("Webhook signing secret: ");
+    : process.env.MICROFEED_WEBHOOK_SECRET ?? await promptForWebhookSecret();
   const secret = value.trim();
   signingKey(secret);
   return secret;
@@ -438,37 +426,118 @@ async function webhookScaffoldCommand(
   ].join("\n"));
 }
 
+async function closeListener(server: Server | undefined): Promise<void> {
+  if (!server?.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  });
+}
+
+async function waitForListenerStop(
+  tunnel: CloudflaredQuickTunnel | undefined,
+): Promise<void> {
+  let resolveSignal!: () => void;
+  const signal = new Promise<void>((resolve) => {
+    resolveSignal = resolve;
+  });
+  const stop = () => resolveSignal();
+  process.once("SIGINT", stop);
+  process.once("SIGTERM", stop);
+  try {
+    const result = await Promise.race([
+      signal.then(() => ({kind: "signal" as const})),
+      ...(tunnel
+        ? [tunnel.exited.then((exit) => ({exit, kind: "tunnel" as const}))]
+        : []),
+    ]);
+    if (result.kind === "tunnel") {
+      const detail = result.exit.error?.message ??
+        (result.exit.signal
+          ? `signal ${result.exit.signal}`
+          : `exit code ${result.exit.code ?? "unknown"}`);
+      throw new CliError(
+        `The temporary cloudflared tunnel stopped unexpectedly (${detail}). ` +
+          "The local listener has been stopped; rerun the command to get a new URL.",
+      );
+    }
+  } finally {
+    process.off("SIGINT", stop);
+    process.off("SIGTERM", stop);
+  }
+}
+
 async function webhookListenCommand(args: string[], json: boolean): Promise<void> {
-  const parsed = parseOptions(args, new Set(["forward-to", "port", "secret-file"]));
+  const parsed = parseOptions(
+    args,
+    new Set(["cloudflared-path", "forward-to", "port", "secret-file"]),
+    new Set(["install-cloudflared", "tunnel"]),
+  );
   if (parsed.positionals.length > 0) throw new CliError("webhook listen does not accept positional arguments.");
+  const tunnelRequested = parsed.flags.tunnel === true;
+  const installCloudflared = parsed.flags["install-cloudflared"] === true;
+  const cloudflaredPath = stringFlag(parsed, "cloudflared-path");
+  if (!tunnelRequested && (installCloudflared || cloudflaredPath)) {
+    throw new CliError(
+      "--install-cloudflared and --cloudflared-path require --tunnel.",
+    );
+  }
+  if (installCloudflared && cloudflaredPath) {
+    throw new CliError(
+      "Use either --install-cloudflared or --cloudflared-path, not both.",
+    );
+  }
   const portInput = stringFlag(parsed, "port");
   const port = portInput === undefined ? DEFAULT_PORT : Number(portInput);
   if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new CliError("--port must be an integer from 1 to 65535.");
-  const options: ListenOptions = {
-    forwardTo: validatedForwardUrl(stringFlag(parsed, "forward-to")),
-    json,
-    port,
-    secret: await resolveSecret(stringFlag(parsed, "secret-file")),
-  };
-  const seen = new Set<string>();
-  const server = createServer((request, response) => {
-    void handleWebhook(request, response, options, seen).catch((error) => {
-      process.stderr.write(`microfeed: webhook listener error: ${error instanceof Error ? error.message : String(error)}\n`);
-      if (!response.headersSent) response.writeHead(500);
-      response.end();
+  let tunnel: CloudflaredQuickTunnel | undefined;
+  let server: Server | undefined;
+  try {
+    if (tunnelRequested) {
+      const resolved = await resolveCloudflared({
+        allowDownload: installCloudflared,
+        explicitPath: cloudflaredPath,
+      });
+      if (resolved.source === "download") {
+        process.stderr.write(`Verified cloudflared was cached at ${resolved.path}.\n`);
+      }
+      tunnel = await startCloudflaredQuickTunnel({
+        executablePath: resolved.path,
+        port,
+      });
+      process.stderr.write([
+        "Temporary public webhook endpoint:",
+        tunnel.publicEndpointUrl,
+        "",
+        "Create this HTTPS endpoint in Admin → Webhooks → Endpoints, reveal its one-time whsec_… signing secret, then enter that secret below.",
+        "The random URL is public only while this command runs. Signature verification still rejects unauthenticated requests, and this tunnel is for development only.",
+        "",
+      ].join("\n"));
+    }
+    const options: ListenOptions = {
+      forwardTo: validatedForwardUrl(stringFlag(parsed, "forward-to")),
+      json,
+      port,
+      secret: await resolveSecret(stringFlag(parsed, "secret-file")),
+    };
+    const seen = new Set<string>();
+    server = createServer((request, response) => {
+      void handleWebhook(request, response, options, seen).catch((error) => {
+        process.stderr.write(`microfeed: webhook listener error: ${error instanceof Error ? error.message : String(error)}\n`);
+        if (!response.headersSent) response.writeHead(500);
+        response.end();
+      });
     });
-  });
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(port, "127.0.0.1", () => resolve());
-  });
-  const address = server.address() as AddressInfo;
-  process.stderr.write(`Listening for verified microfeed webhooks at http://127.0.0.1:${address.port}/webhook${options.forwardTo ? ` and forwarding to ${options.forwardTo}` : ""}. Press Ctrl+C to stop.\n`);
-  await new Promise<void>((resolve) => {
-    const stop = () => server.close(() => resolve());
-    process.once("SIGINT", stop);
-    process.once("SIGTERM", stop);
-  });
+    await new Promise<void>((resolve, reject) => {
+      server!.once("error", reject);
+      server!.listen(port, "127.0.0.1", () => resolve());
+    });
+    const address = server.address() as AddressInfo;
+    process.stderr.write(`Listening for verified microfeed webhooks at http://127.0.0.1:${address.port}/webhook${options.forwardTo ? ` and forwarding to ${options.forwardTo}` : ""}${tunnel ? ` through ${tunnel.publicEndpointUrl}` : ""}. Press Ctrl+C to stop.\n`);
+    await waitForListenerStop(tunnel);
+  } finally {
+    await closeListener(server);
+    await tunnel?.stop();
+  }
 }
 
 export async function webhookCommand(

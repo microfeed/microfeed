@@ -145,7 +145,7 @@ For every authenticated REST request, the CLI:
 | `item delete <item-id>` | Delete an item after exact-ID confirmation. | Permanently deletes remote content. |
 | `media upload <file>` | Upload standalone media for rich content or later API use. | Creates a remote media object but does not edit an item. |
 | `webhook scaffold <directory>` | Copy a runnable JavaScript or Python webhook inspector project. | Creates one new local directory; works offline and never installs, starts, or authenticates anything. |
-| `webhook listen` | Verify, display, and optionally forward local webhook deliveries. | Starts a loopback-only local server; does not create a remote endpoint or relay. |
+| `webhook listen` | Verify, display, and optionally forward webhook deliveries. | Starts a loopback listener and, with explicit `--tunnel`, a temporary public Quick Tunnel; never creates a microfeed endpoint or hosted relay. |
 | `webhook sample <event>` | Read one exact event example from the selected instance's OpenAPI contract. | Read-only; does not authenticate or change the instance. |
 | `api <method> <path>` | Call a relative `/api/v1/…` REST endpoint. | Depends on the method and endpoint. |
 
@@ -784,32 +784,72 @@ the OpenAPI webhook operation's JavaScript and Python `x-codeSamples`.
 
 ## `yarn microfeed webhook listen`
 
-**Purpose:** Start a loopback-only development receiver, verify Standard
-Webhooks signatures against exact request bytes, print each event, and
-optionally forward it to another loopback server.
+**Purpose:** Start a development receiver, verify Standard Webhooks signatures
+against exact request bytes, print each event, and optionally make the
+loopback listener temporarily reachable from a deployed microfeed instance.
 
 **Changes:** Listens on `127.0.0.1:8978/webhook` until interrupted. It does not
-change local content or any remote microfeed resource.
+change local content or any remote microfeed resource. `--tunnel` starts a
+temporary Cloudflare Quick Tunnel subprocess and may, with explicit approval,
+download one verified `cloudflared` executable into a versioned microfeed cache.
 
 ```console
 yarn microfeed webhook listen \
   [--secret-file <path>] \
   [--forward-to <url>] \
   [--port <1-65535>] \
+  [--tunnel] \
+  [--install-cloudflared|--cloudflared-path <path>] \
   [--json]
 ```
 
 | Option | Meaning |
 | --- | --- |
-| `--secret-file <path>` | Read the signing secret from a UTF-8 file. Without it or `MICROFEED_WEBHOOK_SECRET`, the listener uses a hidden terminal prompt. |
+| `--secret-file <path>` | Read the signing secret from a UTF-8 file. Without it or `MICROFEED_WEBHOOK_SECRET`, the listener uses a visible terminal prompt so pasted text can be checked before submission. |
 | `--forward-to <url>` | Forward verified requests to an HTTP loopback URL with an explicit port. Exact body bytes and webhook headers are preserved. |
 | `--port <1-65535>` | Change the loopback listener port from its 8978 default. |
+| `--tunnel` | Start a free, temporary Cloudflare Quick Tunnel and print its random public HTTPS `/webhook` URL. |
+| `--install-cloudflared` | With `--tunnel`, explicitly approve downloading the pinned official helper without an interactive confirmation. |
+| `--cloudflared-path <path>` | With `--tunnel`, use a managed `cloudflared` executable instead of PATH or the microfeed cache. |
 | `--json` | Write one NDJSON object for each verified delivery. |
 
 There is deliberately no plaintext `--secret` option. Add
 `http://127.0.0.1:8978/webhook` under **Admin → Webhooks → Endpoints**, then use
 the endpoint's revealed signing secret with the listener. Deployed endpoints
 require HTTPS; this HTTP exception exists only for local development.
+
+To receive a signed test from a deployed instance without deploying a receiver,
+run:
+
+```console
+yarn microfeed webhook listen --tunnel
+```
+
+Plain `webhook listen` remains loopback-only. Tunnel mode first looks for
+`cloudflared` on PATH and then in the versioned microfeed cache. When neither
+exists in an interactive terminal, it shows the pinned version, approximate
+download size, cache destination, and asks before downloading. The CLI obtains
+the executable from Cloudflare's official GitHub release, verifies the exact
+asset SHA-256 digest, installs nothing system-wide, requests no administrator
+access, and does not modify PATH. For a non-interactive terminal, explicitly
+add `--install-cloudflared` or provide `--cloudflared-path`.
+
+After Cloudflare returns the temporary hostname, the CLI prints the exact
+public `/webhook` URL before asking for the endpoint's signing secret. Create
+that URL under **Admin → Webhooks → Endpoints**, reveal the endpoint's `whsec_…`
+secret, and paste it into the visible prompt. Then send `webhook.test` from Event
+Explorer. Status and tunnel diagnostics stay on stderr, so `--json` stdout
+remains one NDJSON object per verified delivery.
+
+The random Quick Tunnel URL is public and works only while this command is
+running. Standard Webhooks verification remains the authentication boundary;
+invalid requests are rejected before printing or forwarding. Quick Tunnels are
+free development infrastructure with no uptime guarantee, not a production
+receiver or hosted microfeed relay. Pressing Ctrl+C stops both the listener and
+its child tunnel. A new run receives a new URL, so delete or update the
+temporary endpoint afterward. See Cloudflare's [Quick Tunnel
+documentation](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/)
+and [official downloads](https://developers.cloudflare.com/tunnel/downloads/).
 
 Without a forward target, a verified delivery returns `204`. Forwarding has a
 nine-second timeout and returns `502` for connection failure or `504` for a
@@ -818,6 +858,8 @@ still forwarded so the target's own deduplication can be tested.
 
 ```console
 yarn microfeed webhook listen
+
+yarn microfeed webhook listen --tunnel
 
 MICROFEED_WEBHOOK_SECRET=whsec_... \
   yarn microfeed webhook listen --json
