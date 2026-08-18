@@ -258,6 +258,22 @@ describe("versioned theme storage", () => {
     expect(purge).toHaveBeenCalledTimes(4);
   });
 
+  it("keeps bundled package IDs reserved and gives user drafts local identities", async () => {
+    const store = new ThemeStore(env.FEED_DB);
+    const reserved = packageData("microfeed.future-theme");
+    await expect(store.installVersion({
+      ...reserved,
+      source: {kind: "local-directory"},
+    })).rejects.toThrow("reserved for bundled microfeed themes");
+
+    const draft = await store.createDraft({
+      ...reserved,
+      originKind: "theme",
+    });
+    expect(draft.packageId).toBe("local.microfeed.future-theme");
+    await store.discardDraft(draft.id);
+  });
+
   it("lists searchable, sorted metadata without serializing theme bundles", async () => {
     const store = new ThemeStore(env.FEED_DB);
     const first = packageData(`worker.alpha.${crypto.randomUUID()}`);

@@ -11,6 +11,10 @@ runtime fallback when no valid active version is available.
 local, preview, and production instances install and activate it during
 initialization. It includes the complete authoring workspace:
 
+The `microfeed.*` package namespace is reserved for themes shipped from this
+repository. Site-specific versions must fork to `local.*`; third-party theme
+repositories must use a package ID controlled by their author.
+
 - Tailwind CSS v4 and Vite build sources
 - Vanilla TypeScript progressive enhancements
 - Source templates, fixtures, schemas, and the theme-development skill

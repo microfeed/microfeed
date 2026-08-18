@@ -26,6 +26,9 @@ import {
   MICROFEED_VERSION,
 } from "@/shared/Version";
 import {
+  assertUserThemePackageId,
+  isReservedThemePackageId,
+  LOCAL_THEME_PACKAGE_ID_PREFIX,
   THEME_MAX_ASSET_BYTES,
   THEME_MAX_INSTALLED_VERSIONS,
   THEME_MAX_TEMPLATE_BYTES,
@@ -373,6 +376,10 @@ export function initializedThemeManifest(
   const directoryName = path.basename(path.resolve(outputDirectory));
   const displayName = directoryName.replace(/[-_]+/gu, " ").trim() || "microfeed";
   const description = `Initialized from ${source.manifest.packageId}@${source.manifest.version} (${source.kind}).`;
+  const packageId = overrides.packageId ??
+    `${LOCAL_THEME_PACKAGE_ID_PREFIX}${normalizedPackageSegment(directoryName)}`
+      .slice(0, 120).replace(/[._-]+$/u, "");
+  assertUserThemePackageId(packageId);
   return themeManifestV1Schema.parse({
     $schema: ".microfeed/schemas/manifest.schema.json",
     assets: source.manifest.assets,
@@ -385,8 +392,7 @@ export function initializedThemeManifest(
     license: source.manifest.license,
     microfeed: source.manifest.microfeed,
     name: overrides.name ?? `${displayName} theme`,
-    packageId: overrides.packageId ??
-      `local.${normalizedPackageSegment(directoryName)}`.slice(0, 120).replace(/[._-]+$/u, ""),
+    packageId,
     version: overrides.version ?? "0.1.0",
   });
 }
@@ -946,6 +952,15 @@ async function installLocal(
 }
 
 async function installResolved(target: Target, resolved: ResolvedThemeSource) {
+  if (resolved.source.kind === "bundled") {
+    if (!isReservedThemePackageId(resolved.loaded.manifest.packageId)) {
+      throw new Error(
+        "Bundled microfeed themes must use a package ID beginning with microfeed.",
+      );
+    }
+  } else {
+    assertUserThemePackageId(resolved.loaded.manifest.packageId);
+  }
   return target.local ? installLocal(target, resolved) : installRemote(target, resolved);
 }
 

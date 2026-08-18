@@ -111,6 +111,42 @@ afterEach(async () => {
 });
 
 describe("theme repository initialization", () => {
+  it("reserves microfeed package IDs while defaulting user forks to local IDs", async () => {
+    const {theme} = await freshModules();
+    const source = {
+      assetOwnerThemeId: null,
+      bundle,
+      checksumSha256: null,
+      fallbackReason: null,
+      kind: "installed" as const,
+      manifest,
+      themeId: "source-theme",
+    };
+    expect(theme.initializedThemeManifest(
+      source,
+      "/tmp/my-theme",
+    ).packageId).toBe("local.my-theme");
+    expect(() => theme.initializedThemeManifest(
+      source,
+      "/tmp/my-theme",
+      {packageId: "microfeed.my-theme"},
+    )).toThrow("reserved for bundled microfeed themes");
+    expect(theme.initializedThemeManifest(
+      source,
+      "/tmp/my-theme",
+      {packageId: "org.example.my-theme"},
+    ).packageId).toBe("org.example.my-theme");
+
+    await expect(theme.themeCommand({
+      action: "install",
+      instance: "personal",
+      local: true,
+      source: path.join(repositoryRoot, "themes/default"),
+    }, commandRunner())).rejects.toThrow(
+      "reserved for bundled microfeed themes",
+    );
+  });
+
   it("installs and activates the bundled default only for pristine initialization", async () => {
     const {theme} = await freshModules();
     const runner = commandRunner();
