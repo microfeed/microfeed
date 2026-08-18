@@ -72,6 +72,7 @@ export const WEBHOOK_DELIVERY_STATUSES = [
   "suppressed_endpoint_paused",
   "canceled_endpoint_paused",
   "canceled_endpoint_disabled",
+  "canceled_webhooks_disabled",
 ] as const;
 
 export type WebhookDeliveryStatus =
@@ -147,6 +148,7 @@ export interface WebhookOverview {
   dailyLimit: number;
   deliveriesToday: number;
   enabled: boolean;
+  infrastructureState: "unprovisioned" | "enabled" | "disabled";
   endpointLimit: number;
   endpoints: number;
   estimatedQueueOperationsToday: number;

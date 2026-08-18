@@ -292,6 +292,77 @@ describe("webhook limits migration", () => {
     ).get()).toEqual({daily_delivery_limit: 1_000});
   });
 
+  it("preserves deliveries and attempts while adding infrastructure cancellation", async () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    db.exec(await readFile(
+      path.join(repositoryRoot, "migrations/0017_webhooks.sql"),
+      "utf8",
+    ));
+    db.exec(`
+      INSERT INTO webhook_endpoints
+        (id, name, url, secret_ciphertext)
+      VALUES ('endpoint', 'Endpoint', 'https://example.com/webhook', 'cipher');
+      INSERT INTO webhook_events
+        (id, event_type, subject_type, subject_id, payload_json, origin,
+          request_id, correlation_id, budget_day)
+      VALUES ('event', 'webhook.test', 'webhook', 'test', '{}', 'system',
+        'request', 'correlation', '2026-08-17');
+      INSERT INTO webhook_deliveries
+        (id, event_id, endpoint_id, endpoint_url)
+      VALUES ('delivery', 'event', 'endpoint', 'https://example.com/webhook');
+      INSERT INTO webhook_delivery_attempts
+        (delivery_id, attempt_number, outcome, duration_ms)
+      VALUES ('delivery', 1, 'retry', 10);
+    `);
+
+    const migration = await readFile(
+      path.join(
+        repositoryRoot,
+        "migrations/0020_webhook_infrastructure_disable.sql",
+      ),
+      "utf8",
+    );
+    db.exec(`BEGIN;\n${migration}\nCOMMIT;`);
+    db.prepare(`
+      UPDATE webhook_deliveries
+      SET status = 'canceled_webhooks_disabled'
+      WHERE id = 'delivery'
+    `).run();
+
+    expect(db.prepare(
+      "SELECT status FROM webhook_deliveries WHERE id = 'delivery'",
+    ).get()).toEqual({status: "canceled_webhooks_disabled"});
+    expect(db.prepare(
+      "SELECT delivery_id, attempt_number FROM webhook_delivery_attempts",
+    ).all()).toEqual([{attempt_number: 1, delivery_id: "delivery"}]);
+    expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+  });
+
+  it("uses remote D1-compatible trigger and foreign-key migration syntax", async () => {
+    for (const filename of [
+      "0017_webhooks.sql",
+      "0019_webhook_delivery_budget.sql",
+    ]) {
+      const migration = await readFile(
+        path.join(repositoryRoot, "migrations", filename),
+        "utf8",
+      );
+      expect(migration).toMatch(/SELECT \(CASE WHEN changes\(\) = 0/u);
+      expect(migration).not.toMatch(/SELECT CASE WHEN changes\(\) = 0/u);
+    }
+
+    const lifecycleMigration = await readFile(
+      path.join(
+        repositoryRoot,
+        "migrations/0020_webhook_infrastructure_disable.sql",
+      ),
+      "utf8",
+    );
+    expect(lifecycleMigration).toContain("PRAGMA defer_foreign_keys = true;");
+    expect(lifecycleMigration).not.toContain("PRAGMA foreign_keys");
+  });
+
   it("atomically enforces endpoint slots and deletion semantics", async () => {
     const db = await database();
     const insert = db.prepare("INSERT INTO webhook_endpoints (id, name, url, secret_ciphertext, status) VALUES (?, ?, ?, 'cipher', ?)");

@@ -78,6 +78,24 @@ describe("microfeed CLI help", () => {
     expect(help).toContain("not checked into microfeed");
   });
 
+  it("documents explicit temporary tunneling and rejects tunnel-only options", async () => {
+    const help = renderCliHelp(["webhook", "listen"]);
+    expect(help).toContain("--tunnel");
+    expect(help).toContain("--install-cloudflared");
+    expect(help).toContain("--cloudflared-path <path>");
+    expect(help).toContain("temporary Cloudflare Quick Tunnel");
+    await expect(run(["webhook", "listen", "--install-cloudflared"]))
+      .rejects.toThrow(/require --tunnel/u);
+    await expect(run([
+      "webhook",
+      "listen",
+      "--tunnel",
+      "--install-cloudflared",
+      "--cloudflared-path",
+      "/managed/cloudflared",
+    ])).rejects.toThrow(/either --install-cloudflared or --cloudflared-path/u);
+  });
+
   it("explains how owners enable API access and when agents must pause", () => {
     const remoteTopics = [
       ["login"],

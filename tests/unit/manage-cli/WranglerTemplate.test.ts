@@ -5,6 +5,7 @@ import {describe, expect, it} from "vitest";
 import {
   adminAuthMode,
   requiredSecrets,
+  webhookQueueName,
   workersCacheEnabled,
   workersDevEnabled,
 } from "../../../manage-cli/lib/config";
@@ -114,7 +115,23 @@ describe("Wrangler configuration template", () => {
     expect(requiredSecrets(config)).not.toContain("WEBHOOK_SECRET_KEY");
     expect(requiredSecrets({
       ...config,
-      webhooks: {enabled: true, queueName: "feed-webhooks", reuse: false},
+      webhooks: {queueName: "feed-webhooks", state: "enabled"},
     })).toContain("WEBHOOK_SECRET_KEY");
+    expect(requiredSecrets({
+      ...config,
+      webhooks: {queueName: "feed-webhooks", state: "disabled"},
+    })).toContain("WEBHOOK_SECRET_KEY");
+  });
+
+  it("derives collision-resistant environment-specific Queue names", () => {
+    expect(webhookQueueName("microfeed-personal")).toBe(
+      "microfeed-personal-webhooks",
+    );
+    const first = webhookQueueName("a".repeat(63));
+    const second = webhookQueueName(`${"a".repeat(62)}b`);
+    expect(first).toHaveLength(63);
+    expect(second).toHaveLength(63);
+    expect(first).not.toBe(second);
+    expect(first).toMatch(/-[a-f0-9]{10}-webhooks$/u);
   });
 });

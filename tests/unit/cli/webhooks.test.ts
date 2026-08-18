@@ -2,12 +2,13 @@ import {createHmac, randomBytes} from "node:crypto";
 import {mkdtemp, readFile, readdir, rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
-import {Readable} from "node:stream";
+import {PassThrough, Readable} from "node:stream";
 
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {
   handleWebhook,
+  promptForWebhookSecret,
   readWebhookSample,
   resolveWebhookScaffoldDirectory,
   scaffoldWebhookReceiver,
@@ -103,6 +104,24 @@ describe("microfeed webhook listener signatures", () => {
 
 describe("microfeed webhook listener behavior", () => {
   const secret = `whsec_${Buffer.alloc(32, 7).toString("base64")}`;
+
+  it("uses a visible line editor that accepts bracketed terminal paste", async () => {
+    const input = new PassThrough() as PassThrough & {isTTY?: boolean};
+    const output = new PassThrough() as PassThrough & {isTTY?: boolean};
+    input.isTTY = true;
+    output.isTTY = true;
+    let displayed = "";
+    output.on("data", (chunk: Buffer) => {
+      displayed += chunk.toString("utf8");
+    });
+
+    const answer = promptForWebhookSecret(input, output);
+    input.write(`\u001b[200~${secret}\u001b[201~\r`);
+
+    await expect(answer).resolves.toBe(secret);
+    expect(displayed).toContain("visible while typing");
+    expect(displayed).toContain(secret);
+  });
 
   it("allows only explicit HTTP loopback forwarding targets", () => {
     expect(validatedForwardUrl("http://127.0.0.1:3000/hook"))

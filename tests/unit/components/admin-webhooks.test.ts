@@ -111,6 +111,7 @@ describe("Webhook Admin", () => {
         dailyLimit: 1_000,
         deliveriesToday: 250,
         enabled: true,
+        infrastructureState: "enabled",
         endpointLimit: 20,
         endpoints: 2,
         estimatedQueueOperationsToday: 750,
@@ -190,6 +191,7 @@ describe("Webhook Admin", () => {
           dailyLimit: 1_000,
           deliveriesToday: 0,
           enabled: false,
+          infrastructureState: "unprovisioned",
           endpointLimit: 20,
           endpoints: 0,
           estimatedQueueOperationsToday: 0,
@@ -202,6 +204,31 @@ describe("Webhook Admin", () => {
       "yarn manage deploy --enable-webhooks --instance personal",
     );
     expect(disabledOutput).toContain("Enable production webhooks");
+
+    const retainedOutput = renderToStaticMarkup(React.createElement(
+      WebhookOverviewApp,
+      {
+        instanceName: "personal",
+        overview: {
+          activeEndpoints: 0,
+          alerts: [],
+          dailyLimit: 1_000,
+          deliveriesToday: 0,
+          enabled: false,
+          endpointLimit: 20,
+          endpoints: 1,
+          estimatedQueueOperationsToday: 0,
+          infrastructureState: "disabled",
+          recentFailures: 0,
+        },
+      },
+    ));
+    expect(retainedOutput).toContain("Production webhooks are disabled");
+    expect(retainedOutput).toContain("Queue is paused and detached");
+    expect(retainedOutput).toContain("Re-enable production webhooks");
+    expect(retainedOutput).toContain(
+      "yarn manage deploy --enable-webhooks --instance personal",
+    );
   });
 
   it("renders signing-secret, endpoint-limit, pause recovery, filters, and redelivery controls", () => {

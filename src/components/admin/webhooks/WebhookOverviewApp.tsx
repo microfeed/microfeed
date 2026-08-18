@@ -79,6 +79,13 @@ export default function WebhookOverviewApp({
   const deploymentCommand = `yarn manage deploy ${
     deploymentEnvironment === "preview" ? "--preview " : ""
   }--enable-webhooks --instance ${instanceName}`;
+  const disableCommand = `yarn manage deploy ${
+    deploymentEnvironment === "preview" ? "--preview " : ""
+  }--disable-webhooks --instance ${instanceName}`;
+  const infrastructureState = overview.infrastructureState ??
+    (overview.enabled ? "enabled" : "unprovisioned");
+  const localSimulationEnabled = localDevelopment && overview.enabled &&
+    infrastructureState === "enabled";
   const agentDeploymentPrompt = `Enable ${deploymentLabel.toLowerCase()} webhooks for my saved microfeed site "${instanceName}". Follow the deploy-microfeed skill, review the deploy section of docs/manage-cli.md, and run ${deploymentCommand}. Do not change another site or environment. After deployment, run yarn manage status --instance ${instanceName} and report whether the webhook Queue and binding are ready.`;
 
   const copy = async (value: string, label: string) => {
@@ -92,9 +99,11 @@ export default function WebhookOverviewApp({
         action={<WebhookEnablementDialog
           agentPrompt={agentDeploymentPrompt}
           command={deploymentCommand}
+          disableCommand={disableCommand}
           deploymentLabel={deploymentLabel}
           enabled={overview.enabled}
           endpointUrl={endpointUrl}
+          infrastructureState={infrastructureState}
           localDevelopment={localDevelopment}
           onCopy={copy}
         />}
@@ -102,22 +111,30 @@ export default function WebhookOverviewApp({
         title="Webhook availability"
       >
         <div className="flex items-start gap-3">
-          {localDevelopment || overview.enabled
+          {localSimulationEnabled || overview.enabled
             ? <CheckCircle2Icon className="mt-0.5 size-5 text-emerald-600" aria-hidden="true" />
             : <AlertTriangleIcon className="mt-0.5 size-5 text-amber-600" aria-hidden="true" />}
           <div>
             <p className="font-medium">
               {localDevelopment
-                ? "Webhook simulation is running locally"
+                ? localSimulationEnabled
+                  ? "Webhook simulation is running locally"
+                  : "Webhook simulation is disabled for this run"
                 : overview.enabled
                 ? `${deploymentLabel} webhooks are enabled`
-                : `${deploymentLabel} webhooks are not enabled`}
+                : infrastructureState === "disabled"
+                ? `${deploymentLabel} webhooks are disabled`
+                : `${deploymentLabel} webhooks have not been provisioned`}
             </p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               {localDevelopment
-                ? "yarn dev uses Wrangler's local Queue simulation. It creates no Cloudflare resources, requests no Queue permissions, and incurs no Cloudflare charge."
+                ? localSimulationEnabled
+                  ? "yarn dev uses Wrangler's local Queue simulation. It creates no Cloudflare resources, requests no Queue permissions, and incurs no Cloudflare charge."
+                  : "This yarn dev run omitted the local Queue and Cron simulation. The saved preview and production webhook states were not changed."
                 : overview.enabled
                 ? "Deliveries are stored in D1 and dispatched through this deployment's dedicated Cloudflare Queue. Reconciliation runs hourly and cleanup runs once daily while at least one endpoint is configured."
+                : infrastructureState === "disabled"
+                ? "The dedicated Queue, signing-secret encryption key, endpoint configuration, and delivery history are preserved. The Queue is paused and detached, and this Worker has no Queue consumer or Cron trigger."
                 : "Ordinary deployments keep webhooks off. Enable them explicitly only when this deployment is ready to create and use a dedicated Cloudflare Queue."}
             </p>
             {!localDevelopment && !overview.enabled && (
@@ -570,17 +587,21 @@ function BudgetMetric({
 function WebhookEnablementDialog({
   agentPrompt,
   command,
+  disableCommand,
   deploymentLabel,
   enabled,
   endpointUrl,
+  infrastructureState,
   localDevelopment,
   onCopy,
 }: {
   agentPrompt: string;
   command: string;
+  disableCommand: string;
   deploymentLabel: "Preview" | "Production";
   enabled: boolean;
   endpointUrl: string;
+  infrastructureState: WebhookOverview["infrastructureState"];
   localDevelopment: boolean;
   onCopy: (value: string, label: string) => Promise<void>;
 }) {
@@ -591,6 +612,8 @@ function WebhookEnablementDialog({
           ? "How local simulation works"
           : enabled
           ? "Enable or stop webhooks"
+          : infrastructureState === "disabled"
+          ? `Re-enable ${deploymentLabel.toLowerCase()} webhooks`
           : `Enable ${deploymentLabel.toLowerCase()} webhooks`}
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
@@ -607,7 +630,9 @@ function WebhookEnablementDialog({
             <p className="mt-1 text-muted-foreground">
               Plain <code>yarn dev</code> runs Wrangler's local Queue simulation
               with an isolated D1 database and local secret. It requires no
-              Cloudflare permission, resource, deployment, or payment.
+              Cloudflare permission, resource, deployment, or payment. Use
+              <code> yarn dev --disable-webhooks</code> to omit the Queue and
+              Cron simulation for one run without changing a deployed site.
             </p>
           </div>
           <div className="rounded-xl border p-4">
@@ -622,7 +647,8 @@ function WebhookEnablementDialog({
               cleaning, or using the Queue. Queue operations share the
               Cloudflare account's allowance, and Worker execution is metered
               separately. Sites that do not use webhooks should not provision
-              these resources.
+              these resources. Re-enabling a previously disabled environment
+              reuses its exact Queue and encryption secret.
             </p>
             <p className="mt-3 font-medium">Run it manually</p>
             <QuickstartCommand copyLabel="Deployment command" onCopy={onCopy} value={command} />
@@ -636,13 +662,16 @@ function WebhookEnablementDialog({
           <div className="rounded-xl border p-4">
             <p className="font-medium">Stop webhook delivery</p>
             <p className="mt-1 text-muted-foreground">
-              Open <a className="font-medium text-foreground underline underline-offset-4" href={endpointUrl}>Webhooks → Endpoints</a>,
-              then disable or delete every endpoint. Disabling cancels pending
-              deliveries and prevents new reservations; deletion also frees
-              the endpoint slot. The deployed Queue remains provisioned for
-              later reuse, but with no configured endpoints the hourly trigger
-              skips reconciliation and daily cleanup after one D1 check.
+              Disable webhook infrastructure to pause and purge the dedicated
+              Queue, cancel pending deliveries, and remove its Worker binding,
+              consumer, and Cron trigger. Endpoint settings, delivery history,
+              Queue identity, and encryption secret remain available for later
+              re-enablement. This differs from disabling individual endpoints
+              in <a className="font-medium text-foreground underline underline-offset-4" href={endpointUrl}>Webhooks → Endpoints</a>.
             </p>
+            {!localDevelopment && (
+              <QuickstartCommand copyLabel="Disable command" onCopy={onCopy} value={disableCommand} />
+            )}
           </div>
           {localDevelopment && (
             <p className="rounded-xl bg-emerald-500/10 p-4">

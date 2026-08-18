@@ -16,6 +16,52 @@ verification gateway. See the [automation-platform
 comparison](../automation/#automation-platforms-n8n-and-zapier) for where
 acknowledgment, signature verification, and downstream retries belong.
 
+## Test a production deployment with a temporary endpoint
+
+You can receive a real signed event from a deployed production site on your
+computer without first deploying a receiver. From a microfeed repository clone,
+start the verified listener with a temporary Cloudflare Quick Tunnel:
+
+```console
+yarn microfeed webhook listen --tunnel
+```
+
+Plain `webhook listen` accepts only local traffic. With `--tunnel`, the CLI uses
+an existing `cloudflared` executable or offers to download a pinned official
+version into microfeed's app cache. The download requires confirmation and is
+verified by SHA-256; it does not install anything system-wide or require
+administrator access.
+
+The CLI prints a random public URL such as
+`https://example.trycloudflare.com/webhook` before asking for a signing secret.
+Keep that terminal open, then:
+
+1. Open the production site's **Admin → Webhooks → Endpoints** page and choose
+   **Add endpoint**.
+2. Paste the exact temporary HTTPS URL, choose the events you want to inspect,
+   and create the endpoint.
+3. Reveal the `whsec_…` signing secret and paste it into the CLI's visible
+   prompt. The secret is used locally to reject unsigned or modified requests;
+   it is never sent to `cloudflared`.
+4. Open **Webhooks → Event explorer**, select the new endpoint and
+   `webhook.test`, then confirm **Send test**.
+5. Verify that the signed payload appears in the terminal and that the
+   production delivery is marked `succeeded` in **Webhooks → Deliveries**.
+
+An Event Explorer send is a real, budgeted delivery and may retry. The Quick
+Tunnel URL is publicly reachable only while the command runs, changes on the
+next run, and has no uptime guarantee. Press Ctrl+C when testing is complete;
+this stops both the listener and its child tunnel. Then delete the temporary
+endpoint, or replace its URL with a durable production receiver, so later
+events do not fail and retry against an expired address.
+
+Use this workflow for production-deployment verification only. It is not a
+production webhook host, durable relay, or substitute for a receiver that
+queues work before acknowledging it. See [Build webhook endpoints](../endpoints/)
+for the production architecture and the [`webhook listen` reference](/microfeed-cli/#yarn-microfeed-webhook-listen)
+for tunnel options such as `--install-cloudflared` and
+`--cloudflared-path`.
+
 ## Delivery states
 
 | Status | Meaning | Operator action |
@@ -27,6 +73,7 @@ acknowledgment, signature verification, and downstream retries belong.
 | `suppressed_endpoint_paused` | The endpoint was auto-paused. | Repair, test successfully, and explicitly resume. |
 | `canceled_endpoint_paused` | Pending work was canceled when the circuit opened. | Choose manual redelivery after recovery. |
 | `canceled_endpoint_disabled` | An administrator disabled or deleted the endpoint. | Re-enable only if intentional. |
+| `canceled_webhooks_disabled` | The owner disabled webhook infrastructure for this deployed environment. | Re-enable infrastructure, then manually redeliver only events that remain useful. |
 
 Responses are limited to 4 KiB of diagnostics. Secrets, authorization headers,
 and complete remote pages are not stored. Redirects are never followed.
@@ -113,12 +160,29 @@ those implementation details in a receiver.
 
 ## Safe shutdown
 
+For one integration:
+
 1. Disable the endpoint so no new work is queued.
 2. Let the automation's durable queue drain or cancel jobs according to policy.
 3. Resolve or export audit records and pending approvals.
 4. Delete the endpoint to free its slot.
 5. Revoke its API credential and destination permissions.
 6. Remove secrets from the runtime and secret manager.
+
+To stop the microfeed environment's webhook Worker invocations as well, run
+the appropriate infrastructure command after reviewing its target:
+
+```console
+# Replace <instance-name> with a saved instance name.
+yarn manage deploy --disable-webhooks --instance <instance-name>
+```
+
+Add `--preview` before `--disable-webhooks` for preview. The command cancels
+pending microfeed deliveries and purges the Queue rather than draining it. It
+removes the producer, consumer, and Cron while retaining the Queue, endpoint
+configuration, encrypted signing secrets, and history. Re-enable with the
+matching `--enable-webhooks` command; events from the disabled interval are not
+replayed.
 
 ## Production readiness checklist
 

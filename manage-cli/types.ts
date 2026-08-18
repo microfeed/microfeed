@@ -7,6 +7,11 @@ export interface Account {
 
 export type InstanceHosting = "cloudflare" | "local";
 export type R2SetupMode = "automatic" | "disabled";
+export type WebhookInfrastructureState =
+  | "unprovisioned"
+  | "enabled"
+  | "disabled";
+export type WebhookInfrastructureTransition = "enabling" | "disabling";
 
 export interface MicrofeedConfig {
   accountId: string | null;
@@ -36,9 +41,10 @@ export interface MicrofeedConfig {
     fingerprint: string;
   };
   webhooks?: {
-    enabled: boolean;
+    queueId?: string;
     queueName: string;
-    reuse: boolean;
+    state: WebhookInfrastructureState;
+    transition?: WebhookInfrastructureTransition;
   };
   workerName?: string;
 }

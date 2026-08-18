@@ -126,6 +126,92 @@ describe("Pages collision preflight", () => {
 });
 
 describe("CloudflareClient", () => {
+  it("reads Worker Cron wrappers and manages Queue consumers through the Cloudflare API", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth token --json") {
+        return commandResult(JSON.stringify({
+          token: "oauth-token",
+          type: "oauth",
+        }));
+      }
+      throw new Error(`Unexpected command: ${args.join(" ")}`);
+    });
+    const fetchMock = vi.fn(async (
+      input: URL | RequestInfo,
+      init?: RequestInit,
+    ) => {
+      const url = new URL(
+        input instanceof Request ? input.url : input.toString(),
+      );
+      if (url.pathname.endsWith("/workers/scripts/feed/schedules")) {
+        return Response.json({
+          errors: [],
+          result: {schedules: [{cron: "0 * * * *"}]},
+          success: true,
+        });
+      }
+      if (url.pathname.endsWith("/queues/queue-id/consumers") && !init?.method) {
+        return Response.json({
+          errors: [],
+          result: [
+            {
+              consumer_id: "consumer-id",
+              script: "feed",
+              type: "worker",
+            },
+            {
+              consumer_id: "legacy-consumer-id",
+              script_name: "legacy-feed",
+              type: "worker",
+            },
+            {
+              consumer_id: "service-consumer-id",
+              service: "service-feed",
+              type: "worker",
+            },
+          ],
+          success: true,
+        });
+      }
+      if (url.pathname.endsWith(
+        "/queues/queue-id/consumers/consumer-id",
+      ) && init?.method === "DELETE") {
+        return Response.json({errors: [], result: {}, success: true});
+      }
+      throw new Error(`Unexpected request: ${url.href}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new CloudflareClient(runner);
+
+    await expect(client.workerSchedules("account-id", "feed"))
+      .resolves.toEqual(["0 * * * *"]);
+    await expect(client.queueConsumers("account-id", "queue-id"))
+      .resolves.toEqual([
+        {id: "consumer-id", scriptName: "feed", type: "worker"},
+        {
+          id: "legacy-consumer-id",
+          scriptName: "legacy-feed",
+          type: "worker",
+        },
+        {
+          id: "service-consumer-id",
+          scriptName: "service-feed",
+          type: "worker",
+        },
+      ]);
+    await client.deleteQueueConsumer(
+      "account-id",
+      "queue-id",
+      "consumer-id",
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "/accounts/account-id/queues/queue-id/consumers/consumer-id",
+      ),
+      expect.objectContaining({method: "DELETE"}),
+    );
+  });
+
   it("requests only the selected OAuth scopes and OS keyring storage", async () => {
     const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult());
     await new CloudflareClient(runner).login();
@@ -136,6 +222,40 @@ describe("CloudflareClient", () => {
       ["login", "--use-keyring", "--scopes", ...OAUTH_SCOPES],
       expect.objectContaining({interactive: true}),
     );
+  });
+
+  it("reauthorizes the active named profile when adding OAuth scopes", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth list") {
+        return commandResult([
+          "│ Profile │ Bound Directories │",
+          `│ company │ ${repositoryRoot} │`,
+        ].join("\n"));
+      }
+      return commandResult();
+    });
+
+    await new CloudflareClient(runner, ["queues:write"]).login();
+
+    expect(runner).toHaveBeenCalledWith(
+      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      [
+        "auth",
+        "create",
+        "company",
+        "--scopes",
+        ...OAUTH_SCOPES,
+        "queues:write",
+      ],
+      expect.objectContaining({interactive: true}),
+    );
+    expect(runner).toHaveBeenCalledWith(
+      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      ["auth", "activate", "company", repositoryRoot],
+      expect.objectContaining({cwd: repositoryRoot}),
+    );
+    expect(runner.mock.calls.some(([, args]) => args[0] === "login"))
+      .toBe(false);
   });
 
   it("turns OAuth rejection or callback failure into a non-destructive error", async () => {
@@ -218,7 +338,7 @@ describe("CloudflareClient", () => {
     ) => ({
       avg: {retryCount},
       count,
-      dimensions: {actionType, queueID: "queue-id"},
+      dimensions: {actionType},
       sum: {billableOperations, bytes: billableOperations * 64},
     });
     const fetchMock = vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
@@ -238,6 +358,7 @@ describe("CloudflareClient", () => {
           variables: Record<string, string>;
         };
         expect(body.query).toContain("queueMessageOperationsAdaptiveGroups");
+        expect(body.query).not.toContain("queueID");
         expect(body.variables).toMatchObject({
           accountTag: "account-id",
           queueId: "queue-id",
@@ -447,6 +568,7 @@ describe("CloudflareClient", () => {
       adminPath: "private-admin",
       customDomains: ["feed.example.com"],
       d1: {id: "database-id", name: "feed-db"},
+      deploymentEnvironment: "production",
       instanceId: "instance-id",
       projectName: "feed",
       r2Name: "feed-media",
@@ -454,6 +576,7 @@ describe("CloudflareClient", () => {
       r2SetupMode: "automatic",
       workerName: "feed-worker",
       webhookQueueName: "feed-webhooks",
+      webhookState: "enabled",
       workersDevUrl:
         "https://feed-worker.example-account.workers.dev",
     }]);

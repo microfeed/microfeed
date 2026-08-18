@@ -802,7 +802,7 @@ describe("webhook reconciliation and retention", () => {
     await env.FEED_DB.prepare(
       "UPDATE webhook_endpoints SET status = 'disabled' WHERE id = 'scheduled'",
     ).run();
-    expect(await hasConfiguredWebhookEndpoints(env.FEED_DB)).toBe(true);
+    expect(await hasConfiguredWebhookEndpoints(env.FEED_DB)).toBe(false);
     await env.FEED_DB.prepare(
       "UPDATE webhook_endpoints SET status = 'active' WHERE id = 'scheduled'",
     ).run();
