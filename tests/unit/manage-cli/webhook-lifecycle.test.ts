@@ -55,6 +55,8 @@ function remoteConfig(): MicrofeedConfig {
 interface RemoteState {
   backlog: number;
   consumer: boolean;
+  consumerDeleteCount: number;
+  consumerScriptName: string;
   crons: string[];
   paused: boolean;
   producer: boolean;
@@ -70,6 +72,8 @@ async function lifecycleHarness(
   const state: RemoteState = {
     backlog: 0,
     consumer: false,
+    consumerDeleteCount: 0,
+    consumerScriptName: "feed",
     crons: [],
     paused: false,
     producer: false,
@@ -146,7 +150,7 @@ async function lifecycleHarness(
       const saved = await readConfig();
       const enabled = saved?.webhooks?.state === "enabled";
       state.producer = enabled;
-      state.consumer = enabled;
+      if (enabled) state.consumer = true;
       state.crons = enabled ? ["0 * * * *"] : [];
       const secretIndex = args.indexOf("--secrets-file");
       if (secretIndex >= 0) {
@@ -160,7 +164,10 @@ async function lifecycleHarness(
 
   const apiResult = (result: unknown) =>
     Response.json({errors: [], result, success: true});
-  const fetchMock = vi.fn(async (input: URL | RequestInfo) => {
+  const fetchMock = vi.fn(async (
+    input: URL | RequestInfo,
+    init?: RequestInit,
+  ) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     const pathname = url.pathname;
     if (url.hostname === "feed.example.workers.dev") {
@@ -182,9 +189,21 @@ async function lifecycleHarness(
         oldest_message_timestamp_ms: 0,
       });
     }
+    if (
+      pathname.endsWith(`/queues/${state.queueId}/consumers/consumer-id`) &&
+      init?.method === "DELETE"
+    ) {
+      state.consumer = false;
+      state.consumerDeleteCount += 1;
+      return apiResult({});
+    }
     if (pathname.endsWith(`/queues/${state.queueId}/consumers`)) {
       return apiResult(state.consumer
-        ? [{consumer_id: "consumer-id", script_name: "feed", type: "worker"}]
+        ? [{
+            consumer_id: "consumer-id",
+            script_name: state.consumerScriptName,
+            type: "worker",
+          }]
         : []);
     }
     if (pathname.endsWith("/workers/scripts/feed/settings")) {
@@ -307,6 +326,7 @@ describe("reversible webhook infrastructure", () => {
     expect(harness.state).toMatchObject({
       backlog: 0,
       consumer: false,
+      consumerDeleteCount: 1,
       crons: [],
       paused: true,
       producer: false,
@@ -378,5 +398,79 @@ describe("reversible webhook infrastructure", () => {
     }, harness.runner)).rejects.toThrow("replacement Queue was not changed");
     expect(harness.runner.mock.calls.some(([, args]) => args[0] === "deploy"))
       .toBe(false);
+  });
+
+  it("resumes consumer detachment without redeploying an already detached Worker", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig({
+      ...remoteConfig(),
+      completedSteps: [
+        ...remoteConfig().completedSteps,
+        "webhook-queue-ready",
+        "webhook-secret-created",
+        "webhook-disable-queue-purged",
+      ],
+      webhooks: {
+        queueId: "queue-id",
+        queueName: "feed-webhooks",
+        state: "disabled",
+        transition: "disabling",
+      },
+    });
+    const harness = await lifecycleHarness(() => config.readConfig(false, "feed"));
+    harness.state.consumer = true;
+    harness.state.paused = true;
+    harness.state.queuePresent = true;
+    vi.stubGlobal("fetch", harness.fetchMock);
+
+    await commands.deployCommand({
+      "disable-webhooks": true,
+      instance: "feed",
+    }, harness.runner);
+
+    expect(harness.state.consumer).toBe(false);
+    expect(harness.state.consumerDeleteCount).toBe(1);
+    expect(harness.state.purgeCount).toBe(0);
+    expect(harness.deployedConfigs).toEqual([]);
+    await expect(config.readConfig(false, "feed")).resolves.toMatchObject({
+      webhooks: {
+        queueId: "queue-id",
+        queueName: "feed-webhooks",
+        state: "disabled",
+      },
+    });
+    expect((await config.readConfig(false, "feed"))?.webhooks?.transition)
+      .toBeUndefined();
+  });
+
+  it("refuses to detach an unexpected Queue consumer", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig({
+      ...remoteConfig(),
+      completedSteps: [
+        ...remoteConfig().completedSteps,
+        "webhook-queue-ready",
+        "webhook-secret-created",
+      ],
+      webhooks: {
+        queueId: "queue-id",
+        queueName: "feed-webhooks",
+        state: "enabled",
+      },
+    });
+    const harness = await lifecycleHarness(() => config.readConfig(false, "feed"));
+    harness.state.consumer = true;
+    harness.state.consumerScriptName = "unrelated-worker";
+    harness.state.crons = ["0 * * * *"];
+    harness.state.producer = true;
+    harness.state.queuePresent = true;
+    vi.stubGlobal("fetch", harness.fetchMock);
+
+    await expect(commands.deployCommand({
+      "disable-webhooks": true,
+      instance: "feed",
+    }, harness.runner)).rejects.toThrow("unexpected consumer configuration");
+    expect(harness.state.consumer).toBe(true);
+    expect(harness.state.consumerDeleteCount).toBe(0);
   });
 });
