@@ -97,6 +97,7 @@ export default defineConfig({
           label: "Webhooks and integrations",
           items: [
             { label: "Webhooks overview", link: "/webhooks/" },
+            { label: "Test webhooks without code", link: "/webhooks/testing/" },
             { label: "Build webhook endpoints", link: "/webhooks/endpoints/" },
             { label: "Operate and troubleshoot webhooks", link: "/webhooks/operations/" },
           ],

@@ -869,8 +869,9 @@ yarn microfeed webhook listen \
   --forward-to http://127.0.0.1:3000/hooks/microfeed
 ```
 
-See [Webhooks and integrations](/webhooks/) for enablement, endpoint creation,
-signed testing, and safe shutdown.
+See [Test webhooks without code](/webhooks/testing/) for the local and deployed
+signed-testing workflows. See [Webhooks and integrations](/webhooks/) for
+enablement, endpoint creation, and safe shutdown.
 
 ## `yarn microfeed webhook sample`
 
