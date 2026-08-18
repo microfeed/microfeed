@@ -7,9 +7,13 @@ runtime fallback when no valid active version is available.
 
 ## `default`
 
-`themes/default` is the format-v2 `microfeed.default@1.1.8` theme. New pristine
+`themes/default` is the format-v2 `microfeed.default@1.1.10` theme. New pristine
 local, preview, and production instances install and activate it during
 initialization. It includes the complete authoring workspace:
+
+The `microfeed.*` package namespace is reserved for themes shipped from this
+repository. Site-specific versions must fork to `local.*`; third-party theme
+repositories must use a package ID controlled by their author.
 
 - Tailwind CSS v4 and Vite build sources
 - Vanilla TypeScript progressive enhancements
@@ -28,6 +32,16 @@ checked-in output:
 yarn workspace @microfeed/default-theme-source build
 yarn workspace @microfeed/default-theme-source check
 ```
+
+Before publishing changed installable files, increment the immutable version in
+`microfeed-theme.json`, then record its canonical checksum:
+
+```console
+yarn theme:release
+```
+
+The release ledger is append-only. `yarn check` and `yarn manage deploy` reject
+changed package bytes under an existing version before a site can be updated.
 
 Installing it manually creates an inactive version and does not change the
 public site:

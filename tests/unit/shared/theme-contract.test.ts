@@ -10,6 +10,10 @@ import type {
   ThemeManifestV1,
 } from "@/shared/themes/ThemeContract";
 import {
+  assertUserThemePackageId,
+  isReservedThemePackageId,
+} from "@/shared/themes/ThemeContract";
+import {
   ThemeValidationError,
   validateThemePackage,
 } from "@/shared/themes/ThemeValidation";
@@ -48,6 +52,17 @@ function bundle(): ThemeBundleV1 {
 }
 
 describe("theme contract", () => {
+  it("reserves microfeed package IDs for bundled themes", () => {
+    expect(isReservedThemePackageId("microfeed.default")).toBe(true);
+    expect(isReservedThemePackageId("microfeed.future-theme")).toBe(true);
+    expect(isReservedThemePackageId("local.microfeed.default")).toBe(false);
+    expect(isReservedThemePackageId("example.theme")).toBe(false);
+    expect(() => assertUserThemePackageId("microfeed.default"))
+      .toThrow("reserved for bundled microfeed themes");
+    expect(() => assertUserThemePackageId("local.microfeed.default"))
+      .not.toThrow();
+  });
+
   it("validates immutable SemVer packages against the running release", () => {
     expect(validateThemePackage(manifest(), bundle(), "1.0.1")).toEqual({
       bundle: bundle(),

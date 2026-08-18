@@ -476,8 +476,11 @@ The derived package receives a separate `local.<directory-name>` package ID
 and starts at `0.1.0`, so edits cannot overwrite the source version. Its source
 license and microfeed compatibility range are preserved. Use `--package-id`,
 `--name`, `--version`, and `--author` to set publish-ready metadata during
-initialization, or edit the generated manifest before the first install. Pass
-`--no-git` when another tool will initialize version control.
+initialization, or edit the generated manifest before the first install.
+Package IDs beginning with `microfeed.` are reserved for bundled themes. Use a
+`local.*` identity for a site-specific version or a package ID you control for
+a distributable theme. Pass `--no-git` when another tool will initialize
+version control.
 
 The generated repository also contains the `develop-microfeed-theme` coding
 agent skill. It exports the rendered theme package, not the build sources of
@@ -513,6 +516,10 @@ omitted, export uses
 initializes a local Git repository on `main`; without that flag, Git behavior
 is unchanged. It never stages, commits, creates a remote, pushes, installs,
 activates, or otherwise changes the public site.
+
+Export preserves an installed identity for inspection, archival, or continued
+development by that package's owner. Do not modify and republish an exported
+`microfeed.*` package. Use `theme init` to fork its appearance under `local.*`.
 
 With `--json`, a successful export returns `packageId`, `version`, `themeId`,
 `selection`, `output`, and `gitInitialized`. If Git initialization fails, the
@@ -568,7 +575,7 @@ yarn manage theme <init|install|list|update|activate|deactivate|rollback|export|
 | `--ref <ref>` | Select a Git branch, tag, or commit for install or update. |
 | `--path <directory>` | Select the theme directory inside a GitHub repository. |
 | `--output <directory>` | Choose the empty directory used by init or export; export defaults under `.microfeed/themes/`. |
-| `--package-id <id>` | Set the new package ID created by init. |
+| `--package-id <id>` | Set the new package ID created by init; `microfeed.*` is reserved for bundled themes. |
 | `--name <name>` | Set the new theme name created by init. |
 | `--version <semver>` | Set the initial semantic version created by init. |
 | `--author <name>` | Set the new theme author created by init. |
@@ -622,6 +629,11 @@ and must not be reused. Deletion rejects the active version, soft-deletes D1
 metadata first, and retains an asset owner while any published version or draft
 still references it. Failed asset cleanup remains retryable by repeating the
 same confirmed delete command.
+
+The `microfeed.*` namespace is reserved for bundled themes and cannot be used
+by local-directory or GitHub installations. The literal `default` source is a
+trusted bundled install. Admin-created versions and ordinary site-specific
+forks use `local.*` package IDs.
 
 Each environment is limited to 50 non-deleted installed versions and 20
 drafts. An idempotent reinstall of identical content still succeeds at the

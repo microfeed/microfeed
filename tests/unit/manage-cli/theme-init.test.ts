@@ -111,6 +111,42 @@ afterEach(async () => {
 });
 
 describe("theme repository initialization", () => {
+  it("reserves microfeed package IDs while defaulting user forks to local IDs", async () => {
+    const {theme} = await freshModules();
+    const source = {
+      assetOwnerThemeId: null,
+      bundle,
+      checksumSha256: null,
+      fallbackReason: null,
+      kind: "installed" as const,
+      manifest,
+      themeId: "source-theme",
+    };
+    expect(theme.initializedThemeManifest(
+      source,
+      "/tmp/my-theme",
+    ).packageId).toBe("local.my-theme");
+    expect(() => theme.initializedThemeManifest(
+      source,
+      "/tmp/my-theme",
+      {packageId: "microfeed.my-theme"},
+    )).toThrow("reserved for bundled microfeed themes");
+    expect(theme.initializedThemeManifest(
+      source,
+      "/tmp/my-theme",
+      {packageId: "org.example.my-theme"},
+    ).packageId).toBe("org.example.my-theme");
+
+    await expect(theme.themeCommand({
+      action: "install",
+      instance: "personal",
+      local: true,
+      source: path.join(repositoryRoot, "themes/default"),
+    }, commandRunner())).rejects.toThrow(
+      "reserved for bundled microfeed themes",
+    );
+  });
+
   it("installs and activates the bundled default only for pristine initialization", async () => {
     const {theme} = await freshModules();
     const runner = commandRunner();
@@ -165,13 +201,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "default",
-      version: "1.1.8",
+      version: "1.1.10",
     });
     expect(stored).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "default",
-      version: "1.1.8",
+      version: "1.1.10",
     });
   });
 
@@ -260,7 +296,7 @@ describe("theme repository initialization", () => {
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
         sourceKind: "bundled",
-        version: "1.1.8",
+        version: "1.1.10",
       });
       await expect(theme.installDefaultThemeForV1Appearance(
         savedConfig(),
@@ -268,12 +304,12 @@ describe("theme repository initialization", () => {
         false,
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
-        version: "1.1.8",
+        version: "1.1.10",
       });
       expect(stored).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.8",
+        version: "1.1.10",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(1);

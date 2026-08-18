@@ -42,7 +42,10 @@ By default it creates an independent Git repository on `main` with a new
 `local.my-theme@0.1.0` identity.
 
 Use `--package-id`, `--name`, `--version`, and `--author` to choose publishable
-metadata. Use `--no-git` when another tool owns Git initialization.
+metadata. Package IDs beginning with `microfeed.` are reserved for themes
+bundled by microfeed. Keep the generated `local.*` identity for a site-specific
+theme, or choose a package ID you control for a distributable theme. Use
+`--no-git` when another tool owns Git initialization.
 
 ## Export an installed version
 
@@ -60,6 +63,10 @@ Use `--active` instead of a theme ID to export the active installed version.
 The command writes a verified package to an empty directory and can initialize
 Git, but it does not stage, commit, create a remote, push, install, activate,
 or otherwise change the live site.
+
+An export preserves the installed package identity for inspection and archival.
+Do not modify and republish an exported `microfeed.*` theme. Run `theme init`
+instead; it forks the same appearance under a new `local.*` identity.
 
 Inside a microfeed clone, the default export destination is the ignored
 `.microfeed/themes/<package-id>-<version>/` workspace. Commit and push the

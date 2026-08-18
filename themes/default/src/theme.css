@@ -335,7 +335,7 @@ html[data-theme-preference="dark"] .mf-theme-trigger-icon[data-microfeed-theme-i
 
 .mf-footer-link,
 .mf-footer-link:visited {
-  color: var(--mf-text);
+  color: #19b7fa;
 }
 
 .mf-back-link {

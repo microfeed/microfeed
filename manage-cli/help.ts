@@ -211,7 +211,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--ref <ref>", "Select a Git branch, tag, or commit for install/update."),
       option("--path <directory>", "Select the theme directory inside a GitHub repository."),
       option("--output <directory>", "Choose the empty init/export directory; export defaults under .microfeed/themes/."),
-      option("--package-id <id>", "Set the new package ID created by init."),
+      option("--package-id <id>", "Set the new package ID created by init; microfeed.* is reserved for bundled themes."),
       option("--name <name>", "Set the new theme name created by init."),
       option("--version <semver>", "Set the initial semantic version created by init."),
       option("--author <name>", "Set the new theme author created by init."),

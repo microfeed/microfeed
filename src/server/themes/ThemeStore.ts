@@ -18,6 +18,8 @@ import type {
   ThemeState,
 } from "@/shared/themes/ThemeContract";
 import {
+  assertUserThemePackageId,
+  LOCAL_THEME_PACKAGE_ID_PREFIX,
   THEME_LIST_PAGE_SIZE,
   THEME_MAX_DRAFTS,
   THEME_MAX_INSTALLED_VERSIONS,
@@ -83,8 +85,9 @@ function results<T extends Record<string, unknown>>(
 }
 
 function localPackageId(packageId: string): string {
-  if (packageId.startsWith("local.")) return packageId;
-  return `local.${packageId}`.slice(0, 120).replace(/[._-]+$/u, "");
+  if (packageId.startsWith(LOCAL_THEME_PACKAGE_ID_PREFIX)) return packageId;
+  return `${LOCAL_THEME_PACKAGE_ID_PREFIX}${packageId}`
+    .slice(0, 120).replace(/[._-]+$/u, "");
 }
 
 function nextPatchVersion(versions: string[], sourceVersion: string): string {
@@ -417,6 +420,7 @@ export default class ThemeStore {
       input.bundle,
       MICROFEED_VERSION,
     );
+    assertUserThemePackageId(manifest.packageId);
     const checksum = await sha256Hex(canonicalThemePackage(manifest, bundle));
     const existing = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",

@@ -137,7 +137,7 @@ describe("versioned theme storage", () => {
       id: "bundled-default-v2",
       packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.1.8",
+      version: "1.1.10",
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });
@@ -256,6 +256,22 @@ describe("versioned theme storage", () => {
     await store.deactivate();
     expect((await store.getState()).activeThemeId).toBeNull();
     expect(purge).toHaveBeenCalledTimes(4);
+  });
+
+  it("keeps bundled package IDs reserved and gives user drafts local identities", async () => {
+    const store = new ThemeStore(env.FEED_DB);
+    const reserved = packageData("microfeed.future-theme");
+    await expect(store.installVersion({
+      ...reserved,
+      source: {kind: "local-directory"},
+    })).rejects.toThrow("reserved for bundled microfeed themes");
+
+    const draft = await store.createDraft({
+      ...reserved,
+      originKind: "theme",
+    });
+    expect(draft.packageId).toBe("local.microfeed.future-theme");
+    await store.discardDraft(draft.id);
   });
 
   it("lists searchable, sorted metadata without serializing theme bundles", async () => {

@@ -12,6 +12,21 @@ export const THEME_MAX_INSTALLED_VERSIONS = 50;
 export const THEME_MAX_DRAFTS = 20;
 export const THEME_LIST_PAGE_SIZE = 20;
 export const THEME_SEARCH_MAX_LENGTH = 100;
+export const LOCAL_THEME_PACKAGE_ID_PREFIX = "local.";
+export const RESERVED_THEME_PACKAGE_ID_PREFIX = "microfeed.";
+
+export function isReservedThemePackageId(packageId: string): boolean {
+  return packageId.startsWith(RESERVED_THEME_PACKAGE_ID_PREFIX);
+}
+
+export function assertUserThemePackageId(packageId: string): void {
+  if (!isReservedThemePackageId(packageId)) return;
+  throw new Error(
+    `Theme package IDs beginning with "${RESERVED_THEME_PACKAGE_ID_PREFIX}" ` +
+      "are reserved for bundled microfeed themes. Use a local.* identity for " +
+      "a site-specific theme or a package ID you control for a distributable theme.",
+  );
+}
 
 export const THEME_LIST_SORTS = [
   "status",
