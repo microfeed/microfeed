@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 
+import AdminCodeEditor from "@/components/admin/shared/AdminCodeEditor";
 import AdminSectionCard from "@/components/admin/shared/AdminSectionCard";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -69,7 +70,9 @@ export default function WebhookEventExplorerApp({
   const [query, setQuery] = useState("");
   const [subjects, setSubjects] = useState<WebhookExplorerSubject[]>([]);
   const [subjectId, setSubjectId] = useState("");
-  const [endpointId, setEndpointId] = useState(initialEndpointId ?? "");
+  const [endpointId, setEndpointId] = useState(() =>
+    initialEndpointId ?? endpoints.find(({status}) => status === "active")?.id ?? ""
+  );
   const [preview, setPreview] = useState<WebhookExplorerPreview>();
   const [view, setView] = useState<ViewName>("payload");
   const [busy, setBusy] = useState(false);
@@ -195,6 +198,11 @@ export default function WebhookEventExplorerApp({
     : view === "headers"
     ? preview?.headers
     : preview?.schema;
+  const displayedJson = preview
+    ? JSON.stringify(displayed, null, 2)
+    : busy
+    ? "Generating preview…"
+    : "Choose content to preview.";
   const deliveriesUrl = deliveryId
     ? `${adminUrl("webhooks/deliveries", browserAdminPath())}?delivery_id=${encodeURIComponent(deliveryId)}`
     : "";
@@ -289,7 +297,14 @@ export default function WebhookEventExplorerApp({
               <Button disabled={!preview} onClick={() => void copy(true)} size="sm" type="button" variant="outline">Copy formatted JSON</Button>
             </div>
           </div>
-          <pre className="min-h-96 max-h-[44rem] overflow-auto rounded-xl bg-muted p-4 text-xs leading-5">{preview ? JSON.stringify(displayed, null, 2) : busy ? "Generating preview…" : "Choose content to preview."}</pre>
+          <AdminCodeEditor
+            ariaLabel={`${view.charAt(0).toUpperCase() + view.slice(1)} JSON`}
+            code={displayedJson}
+            language="json"
+            maxHeight="44rem"
+            minHeight="24rem"
+            readOnly
+          />
         </div>
       </AdminSectionCard>
     </div>

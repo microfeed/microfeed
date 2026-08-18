@@ -95,7 +95,30 @@ describe("Webhook Admin", () => {
     expect(output).toContain("Print in yarn dev");
     expect(output).toContain("Subscription mismatch");
     expect(output).toContain("1,000-delivery daily budget");
+    expect(output).toContain('aria-label="Payload JSON"');
+    expect(output).toContain("language-json");
     expect(output).not.toContain("Endpoint quickstart");
+
+    const activeEndpoint = {
+      ...endpoint,
+      id: "whe_active_latest",
+      name: "Latest active endpoint",
+      status: "active" as const,
+    };
+    const defaultEndpointOutput = renderToStaticMarkup(React.createElement(
+      WebhookEventExplorerApp,
+      {
+        endpoints: [
+          {...endpoint, id: "whe_disabled_newest", status: "disabled" as const},
+          activeEndpoint,
+          {...activeEndpoint, id: "whe_active_older", name: "Older active endpoint"},
+        ],
+        localPrintAvailable: false,
+      },
+    ));
+    expect(defaultEndpointOutput).toContain(
+      '<option value="whe_active_latest" selected="">Latest active endpoint — active</option>',
+    );
   });
 
   it("shows cost, failure, event, and setup guidance on the overview", () => {
@@ -130,56 +153,56 @@ describe("Webhook Admin", () => {
     expect(output).toContain("Enable or stop webhooks");
     expect(output).toContain("Standard Webhooks");
     expect(output).toContain("Build and test your first endpoint");
+    expect(output).toContain("No-code testing");
+    expect(output).toContain("Build with code");
     const quickstartSection = output.slice(
       output.indexOf("Build and test your first endpoint"),
       output.indexOf("Use webhooks safely"),
     );
     expect(quickstartSection.match(/<details /gu)).toHaveLength(4);
     expect(quickstartSection).not.toContain("<details open");
-    expect(output).toContain(".microfeed/webhooks/");
-    expect(output).toContain("packages/cli/.microfeed/");
-    expect(output).toContain(
-      'href="/admin/webhooks/endpoints/?quickstart=1"',
-    );
-    expect(output).toContain("This is your");
-    expect(output).toContain("MICROFEED_WEBHOOK_SECRET");
-    expect(output).toContain("Scaffold the JavaScript receiver");
+    expect(output).toContain("yarn microfeed webhook listen --tunnel");
+    expect(output).toContain("Temporary public webhook endpoint");
+    expect(output).toContain("https://…trycloudflare.com/webhook");
+    expect(output).toContain('href="/admin/webhooks/endpoints/"');
+    expect(output).toContain("Start the temporary webhook listener");
     expect(output).toContain("Create the webhook endpoint");
-    expect(output).toContain("Install and run the JavaScript receiver");
+    expect(output).toContain("Enter the signing secret");
     expect(output).toContain("Send and verify a test event");
-    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand);
-    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.directoryCommand);
-    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.runCommand);
-    expect(output).toContain("Copy server.cjs");
-    expect(output).toContain(
-      'aria-label="JavaScript webhook receiver code"',
-    );
-    expect(output).toContain("language-js");
-    expect(output).toContain('class="token keyword"');
-    expect(output).toContain("readonly=\"\"");
-    expect(output).toContain('app.listen(3000, &quot;127.0.0.1&quot;');
+    expect(output).toContain("Quick Tunnels have no uptime guarantee");
     expect(output).toContain(
       'href="/admin/webhooks/events/?event=webhook.test"',
     );
+    expect(output).not.toContain(".microfeed/webhooks/");
+    expect(output).not.toContain("Receiver language");
     expect(output).not.toContain("Open endpoint quickstart");
     expect(output).not.toContain("Endpoint quickstart");
-    expect(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand).toContain(
-      ".microfeed/webhooks/endpoint1 --language javascript",
-    );
-    expect(WEBHOOK_QUICKSTARTS.javascript.highlightLanguage).toBe("js");
-    expect(WEBHOOK_QUICKSTARTS.python.scaffoldCommand).toContain(
-      ".microfeed/webhooks/endpoint1 --language python",
-    );
-    expect(WEBHOOK_QUICKSTARTS.python.highlightLanguage).toBe("python");
-    expect(WEBHOOK_QUICKSTARTS.python.installCommands).toEqual([
-      "python3 -m venv .venv",
-      ". .venv/bin/activate",
-      "pip install -r requirements.txt",
-    ]);
-    expect(WEBHOOK_QUICKSTARTS.python.runCommand).toContain("python server.py");
-    expect(output).toContain("no additional");
-    expect(output).toContain("passcode is needed");
     expect(output).toContain("Content automation guide");
+
+    const publicCodeOutput = renderToStaticMarkup(React.createElement(
+      WebhookOverviewApp,
+      {
+        initialQuickstartMode: "code",
+        overview: {
+          activeEndpoints: 1,
+          alerts: [],
+          dailyLimit: 1_000,
+          deliveriesToday: 0,
+          enabled: true,
+          infrastructureState: "enabled",
+          endpointLimit: 20,
+          endpoints: 1,
+          estimatedQueueOperationsToday: 0,
+          recentFailures: 0,
+        },
+      },
+    ));
+    expect(publicCodeOutput).toContain("https://hooks.example.com/webhook");
+    expect(publicCodeOutput).toContain("0.0.0.0");
+    expect(publicCodeOutput).toContain("process.env.PORT");
+    expect(publicCodeOutput).not.toContain(
+      'app.listen(3000, &quot;127.0.0.1&quot;',
+    );
 
     const disabledOutput = renderToStaticMarkup(React.createElement(
       WebhookOverviewApp,
@@ -231,6 +254,90 @@ describe("Webhook Admin", () => {
     );
   });
 
+  it("keeps the scaffolded receiver quickstart in local development", () => {
+    const output = renderToStaticMarkup(React.createElement(WebhookOverviewApp, {
+      initialQuickstartMode: "code",
+      localDevelopment: true,
+      overview: {
+        activeEndpoints: 0,
+        alerts: [],
+        dailyLimit: 1_000,
+        deliveriesToday: 0,
+        enabled: true,
+        infrastructureState: "enabled",
+        endpointLimit: 20,
+        endpoints: 0,
+        estimatedQueueOperationsToday: 0,
+        recentFailures: 0,
+      },
+    }));
+    const quickstartSection = output.slice(
+      output.indexOf("Build and test your first endpoint"),
+      output.indexOf("Use webhooks safely"),
+    );
+    expect(quickstartSection.match(/<details /gu)).toHaveLength(4);
+    expect(output).toContain("Webhook simulation is running locally");
+    expect(output).toContain(".microfeed/webhooks/");
+    expect(output).toContain("packages/cli/.microfeed/");
+    expect(output).toContain(
+      'href="/admin/webhooks/endpoints/?quickstart=1"',
+    );
+    expect(output).toContain("Store it as");
+    expect(output).toContain("MICROFEED_WEBHOOK_SECRET");
+    expect(output).toContain("Scaffold the JavaScript receiver");
+    expect(output).toContain("Install and run the JavaScript receiver");
+    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand);
+    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.directoryCommand);
+    expect(output).toContain(WEBHOOK_QUICKSTARTS.javascript.runCommand);
+    expect(output).toContain("Copy server.cjs");
+    expect(output).toContain(
+      'aria-label="JavaScript webhook receiver code"',
+    );
+    expect(output).toContain("language-js");
+    expect(output).toContain('class="token keyword"');
+    expect(output).toContain("readonly=\"\"");
+    expect(output).toContain('app.listen(3000, &quot;127.0.0.1&quot;');
+    expect(output).not.toContain("yarn microfeed webhook listen --tunnel");
+    expect(WEBHOOK_QUICKSTARTS.javascript.scaffoldCommand).toContain(
+      ".microfeed/webhooks/endpoint1 --language javascript",
+    );
+    expect(WEBHOOK_QUICKSTARTS.javascript.highlightLanguage).toBe("js");
+    expect(WEBHOOK_QUICKSTARTS.python.scaffoldCommand).toContain(
+      ".microfeed/webhooks/endpoint1 --language python",
+    );
+    expect(WEBHOOK_QUICKSTARTS.python.highlightLanguage).toBe("python");
+    expect(WEBHOOK_QUICKSTARTS.python.installCommands).toEqual([
+      "python3 -m venv .venv",
+      ". .venv/bin/activate",
+      "pip install -r requirements.txt",
+    ]);
+    expect(WEBHOOK_QUICKSTARTS.python.runCommand).toContain("python server.py");
+    expect(output).toContain("no additional");
+    expect(output).toContain("passcode is needed");
+
+    const noCodeOutput = renderToStaticMarkup(React.createElement(
+      WebhookOverviewApp,
+      {
+        localDevelopment: true,
+        overview: {
+          activeEndpoints: 0,
+          alerts: [],
+          dailyLimit: 1_000,
+          deliveriesToday: 0,
+          enabled: true,
+          infrastructureState: "enabled",
+          endpointLimit: 20,
+          endpoints: 0,
+          estimatedQueueOperationsToday: 0,
+          recentFailures: 0,
+        },
+      },
+    ));
+    expect(noCodeOutput).toContain("yarn microfeed webhook listen");
+    expect(noCodeOutput).toContain("http://127.0.0.1:8978/webhook");
+    expect(noCodeOutput).not.toContain("--tunnel");
+  });
+
   it("renders signing-secret, endpoint-limit, pause recovery, filters, and redelivery controls", () => {
     const endpoints = renderToStaticMarkup(React.createElement(WebhookEndpointsApp, {
       enabled: true,
@@ -243,7 +350,11 @@ describe("Webhook Admin", () => {
     expect(endpoints).toContain("10 consecutive terminal failures");
     expect(endpoints).toContain("Send a successful test");
     expect(endpoints).toContain(">Resume<");
+    expect(endpoints).toContain("Auto-paused");
+    expect(endpoints).toContain('role="switch"');
     expect(endpoints).toContain("Signing secret");
+    expect(endpoints).not.toContain(">Disable</button>");
+    expect(endpoints).not.toContain(">Enable</button>");
     expect(endpoints).not.toContain(">Rotate secret</button>");
     expect(endpoints).not.toContain("Endpoint quickstart");
     const source = readFileSync(new URL(
@@ -254,6 +365,17 @@ describe("Webhook Admin", () => {
     expect(source).toContain("Copy signing secret");
     expect(source).toContain("Rotate signing secret");
     expect(source).toContain("previous secret remains valid for 24 hours");
+
+    const activeEndpoints = renderToStaticMarkup(React.createElement(
+      WebhookEndpointsApp,
+      {
+        enabled: true,
+        initialEndpoints: [{...endpoint, status: "active" as const}],
+      },
+    ));
+    expect(activeEndpoints).toContain("Active");
+    expect(activeEndpoints).toContain('data-checked=""');
+    expect(activeEndpoints).not.toContain(">Disable</button>");
 
     const emptyEndpoints = renderToStaticMarkup(React.createElement(WebhookEndpointsApp, {
       enabled: true,
@@ -303,5 +425,43 @@ describe("Webhook Admin", () => {
     expect(deliveries).toContain("All statuses");
     expect(deliveries).toContain("6 attempts");
     expect(deliveries).toContain("Payload, correlation chain");
+    expect(deliveries).toContain("text-red-700");
+
+    const successfulDelivery = {
+      attemptCount: 1,
+      completedAt: "2026-08-14T12:00:00.000Z",
+      createdAt: "2026-08-14T12:00:00.000Z",
+      endpointId: endpoint.id,
+      endpointName: endpoint.name,
+      endpointUrl: endpoint.url,
+      eventId: "evt_success",
+      eventType: "webhook.test" as const,
+      id: "whd_success",
+      isManual: false,
+      isTest: true,
+      responseStatus: 204,
+      status: "succeeded" as const,
+    };
+    const successfulDetails = renderToStaticMarkup(React.createElement(
+      WebhookDeliveriesApp,
+      {
+        endpoints: [endpoint],
+        initialDeliveries: [successfulDelivery],
+        initialSelected: {
+          ...successfulDelivery,
+          attempts: [{
+            attemptNumber: 1,
+            createdAt: "2026-08-14T12:00:00.000Z",
+            durationMs: 25,
+            outcome: "succeeded",
+            responseStatus: 204,
+          }],
+          payload: {test: true, type: "webhook.test"},
+        },
+      },
+    ));
+    expect(successfulDetails).toContain("text-emerald-700");
+    expect(successfulDetails).toContain(">succeeded</span>");
+    expect(successfulDetails).toContain(">204</span>");
   });
 });
