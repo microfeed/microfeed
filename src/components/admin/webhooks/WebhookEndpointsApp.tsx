@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
+import {Switch} from "@/components/ui/switch";
 import {showToast} from "@/client/ToastUtils";
 import type {WebhookEndpointSummary} from "@/shared/Webhooks";
 import {adminUrl, browserAdminPath} from "@/shared/AdminPath";
@@ -145,15 +146,18 @@ export default function WebhookEndpointsApp({
       setBusy(false);
     }
   };
-  const setStatus = async (endpoint: WebhookEndpointSummary) => {
+  const setStatus = async (
+    endpoint: WebhookEndpointSummary,
+    active: boolean,
+  ) => {
     setBusy(true);
     try {
       await requestJson(`endpoints/${endpoint.id}`, {
-        body: JSON.stringify({status: endpoint.status === "active" ? "disabled" : "active"}),
+        body: JSON.stringify({status: active ? "active" : "disabled"}),
         method: "PUT",
       });
       await refresh();
-      showToast(endpoint.status === "active" ? "Endpoint disabled." : "Endpoint enabled.", "success");
+      showToast(active ? "Endpoint enabled." : "Endpoint disabled.", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), "error");
     } finally {
@@ -365,7 +369,29 @@ export default function WebhookEndpointsApp({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold">{endpoint.name}</h3>
-                      <Status value={endpoint.status} />
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          aria-label={`${endpoint.name} endpoint status`}
+                          checked={endpoint.status === "active"}
+                          disabled={busy || endpoint.status === "auto_paused"}
+                          id={`webhook-endpoint-status-${endpoint.id}`}
+                          onCheckedChange={(checked) => void setStatus(endpoint, checked)}
+                        />
+                        <Label
+                          className={endpoint.status === "auto_paused"
+                            ? "text-amber-700 dark:text-amber-300"
+                            : endpoint.status === "active"
+                            ? "text-emerald-700 dark:text-emerald-300"
+                            : "text-muted-foreground"}
+                          htmlFor={`webhook-endpoint-status-${endpoint.id}`}
+                        >
+                          {endpoint.status === "auto_paused"
+                            ? "Auto-paused"
+                            : endpoint.status === "active"
+                            ? "Active"
+                            : "Disabled"}
+                        </Label>
+                      </div>
                     </div>
                     <p className="mt-1 break-all text-sm text-muted-foreground">{endpoint.url}</p>
                     <p className="mt-2 text-xs text-muted-foreground">{endpoint.events.join(", ")} · {endpoint.consecutiveTerminalFailures} consecutive terminal failures</p>
@@ -376,9 +402,7 @@ export default function WebhookEndpointsApp({
                     <Button disabled={busy} onClick={() => openSecret(endpoint)} size="sm" type="button" variant="outline">Signing secret</Button>
                     {endpoint.status === "auto_paused" ? (
                       <Button disabled={busy || !endpoint.resumeTestedAt} onClick={() => action(endpoint, "resume")} size="sm" type="button">Resume</Button>
-                    ) : (
-                      <Button disabled={busy} onClick={() => setStatus(endpoint)} size="sm" type="button" variant="outline">{endpoint.status === "active" ? "Disable" : "Enable"}</Button>
-                    )}
+                    ) : null}
                     <Button disabled={busy} onClick={() => action(endpoint, "delete")} size="sm" type="button" variant="destructive">Delete</Button>
                   </div>
                 </div>
@@ -457,8 +481,4 @@ function EndpointForm({
       </div>
     </form>
   );
-}
-
-function Status({value}: {value: string}) {
-  return <span className="rounded-full border px-2 py-0.5 text-xs font-medium capitalize">{value.replace("_", " ")}</span>;
 }
