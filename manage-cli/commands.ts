@@ -100,6 +100,7 @@ import {
   runCommand,
   runYarnScript,
 } from "./lib/process";
+import {verifyBundledThemeRelease} from "./lib/bundled-theme-release";
 import {
   askConfirm,
   askPassword,
@@ -1607,6 +1608,7 @@ async function deployConfiguredProject(
   initializeAdmin = false,
   initializeDefaultTheme = false,
 ): Promise<MicrofeedConfig> {
+  await verifyBundledThemeRelease(repositoryRoot);
   const sourceCommitSha = await repositoryCommitSha(context.runner);
   await configureAdminAuth(context, config);
   await generateWranglerConfig(config);
@@ -3075,6 +3077,7 @@ export async function deployCommand(
     preview,
     context.instanceName,
   );
+  await verifyBundledThemeRelease(repositoryRoot);
   if (
     !local &&
     (enableWebhooks || disableWebhooks || webhookEnabled(config) ||

@@ -39,6 +39,7 @@ describe("bundled theme packages", () => {
     expect(occurrences(bodyStart, "data-microfeed-search-open")).toBe(2);
     expect(occurrences(bodyStart, 'class="mf-nav-overflow"')).toBe(1);
     expect(bodyEnd).toContain("<footer");
+    expect(bodyEnd).toContain('class="mf-footer-link"');
     expect(bodyEnd).toContain("<script>");
     for (const template of [feed, item, page, search]) {
       expect(template).not.toContain('class="mf-site-nav"');
@@ -52,6 +53,9 @@ describe("bundled theme packages", () => {
     expect(sourceStyles).toMatch(/\.mf-site-nav\s*\{[\s\S]*?flex:\s*none;/u);
     expect(sourceStyles).toMatch(/main\s*\{[\s\S]*?flex:\s*1 0 auto;/u);
     expect(sourceStyles).toMatch(/footer\s*\{[\s\S]*?flex:\s*none;/u);
+    expect(sourceStyles).toMatch(
+      /\.mf-footer-link,[\s\S]*?\.mf-footer-link:visited\s*\{\s*color:\s*#19b7fa;/u,
+    );
     expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)\s*\{[\s\S]*?html:not\(\.rss-document\)\s*\{[\s\S]*?padding-right:\s*1em;[\s\S]*?padding-left:\s*1em;/u);
     expect(sourceStyles).not.toMatch(/footer\s*\{[^}]*position:\s*fixed/gu);
   });
@@ -163,6 +167,8 @@ describe("bundled theme packages", () => {
     expect(rssStylesheet).toContain("max-width:50rem");
     expect(rssStylesheet).toContain("width&lt;=600px");
     expect(rssStylesheet).toContain("rss/channel/atom:link[@rel='next']");
+    expect(rssStylesheet).toContain('class="mf-footer-link"');
+    expect(rssSource).toContain('class="mf-footer-link"');
     expect(rssStylesheet).toContain("var(--mf-accent)");
     expect(rssStylesheet).not.toContain("microfeed:compiled-tailwind");
     expect(rssSource).toContain("microfeed:compiled-tailwind");
@@ -180,7 +186,7 @@ describe("bundled theme packages", () => {
       assets: [],
       formatVersion: 2,
       packageId: "microfeed.default",
-      version: "1.1.8",
+      version: "1.1.10",
     });
     expect(application.version).toBe("1.0.5");
   });

@@ -1,0 +1,17 @@
+{
+  "packageId": "microfeed.default",
+  "releases": [
+    {
+      "checksumSha256": "9d06c9287803bee5a1b34e674f2058d2830efa934d7dd5da0eb2cf7f24a37915",
+      "version": "1.1.8"
+    },
+    {
+      "checksumSha256": "ca97ebdb3e84cf7679e44e4183df313af49d9d178ef6d36fb3dfc0b43e8ffa13",
+      "version": "1.1.9"
+    },
+    {
+      "checksumSha256": "36b18a97fe67aaf298d53eb8ac8ade35b6290ae38a4af25f4bc089a91e6a65d8",
+      "version": "1.1.10"
+    }
+  ]
+}

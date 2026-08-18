@@ -7,6 +7,6 @@ Before changing Pages, shared navigation, or public search, read the bundled [pu
 1. Edit `src/templates/`, `src/theme.css`, or `src/main.ts`.
 2. Run `yarn build` from this directory (or `yarn workspace @microfeed/default-theme-source build` from the microfeed repository).
 3. Run `yarn validate`, `yarn test`, and `yarn preview` from this directory.
-4. Bump the immutable SemVer in both manifests before publishing changed content.
+4. Bump the immutable SemVer in `microfeed-theme.json`, then run `yarn theme:release` from the repository root to append its canonical checksum. Existing release checksums can never be replaced.
 
 Do not hand-edit compiled output except through an Admin-derived draft. Never activate a theme or create screenshots without explicit permission.
