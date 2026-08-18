@@ -332,9 +332,16 @@ after the Worker switch
 captures any item write completed by the previous Worker version. An incomplete
 pass stops deployment instead of serving partially normalized search data.
 When the site's current public appearance uses a format-v1 theme, deployment
-also installs the bundled default format-v2 theme as an inactive version. It
-never activates that version or changes the site's current appearance; preview
-and activation remain explicit actions in **Settings → Themes**.
+installs the bundled default format-v2 theme as an inactive version. Once a site
+has a bundled-theme lineage, later deployments keep its inactive bundled
+candidate current as well. Deployment never activates or replaces the current
+appearance; preview and activation remain explicit actions in **Settings →
+Themes**. After the current bundled version is available, deployment
+soft-deletes older inactive versions of that same bundled package when they are
+not the rollback target or referenced by a draft, another version, or theme
+assets. Active, previous, referenced, current, newer, user-installed, and
+invalid-version records are preserved. The soft-deleted identities remain
+reserved while their installed theme slots become available again.
 The complete repository test suite remains part of `yarn check` and continuous
 integration. Cloudflare mode then tags the Worker version with the current Git
 commit, deploys it, and verifies the Worker. The protected dashboard uses that
