@@ -41,7 +41,7 @@ the dashboard updates it to the publication time. A date you chose yourself is
 preserved. If public visibility is enabled, use the external link to inspect the
 page.
 
-![Creating a new microfeed item with media type, upload, image, title, publication, visibility, and description controls](/images/screenshots/2-dashboard-2-add-item.png)
+![Creating a new microfeed item with media type, upload, image, title, publication, visibility, and description controls](https://media-cdn.microfeed.org/production/media/rich-editor/items/sJQ1j_8by7r/image-a60d5e0fcf04fa16e342cc7a4522f1bf.png)
 
 ## Upload media
 

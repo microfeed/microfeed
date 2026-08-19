@@ -19,7 +19,7 @@ and selection changes. If a save fails, your edits remain in the form and the
 action changes to **Retry save**. Keep the page open until the latest changes
 are saved.
 
-![Editing a microfeed channel image, title, publisher, website, categories, language, and description](/images/screenshots/2-dashboard-2-edit-channel.png)
+![Editing a microfeed channel image, title, publisher, website, categories, language, and description](https://media-cdn.microfeed.org/production/themes/dc5664ff-bfe1-4dd6-82ba-f16449fd853a/assets/admin-edit-channel.png)
 
 ## Keep the copyright year current
 

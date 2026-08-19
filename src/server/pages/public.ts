@@ -66,11 +66,13 @@ export async function loadPublicPageRoute(
   const fallback = !requested;
 
   const navigation = await navigationPages(loaded.database.FEED_DB, request);
+  const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
   const assetBaseUrl = themeAssetBaseUrl(
     runtimeEnv,
     request.url,
     loaded.content.activeTheme?.assetOwnerThemeId,
     loaded.content.activeTheme?.bundle.assets,
+    webSettings.publicBucketUrl,
   );
   const extraContext = {navigation_pages: navigation};
   const theme = new Theme(
@@ -89,8 +91,6 @@ export async function loadPublicPageRoute(
     assetBaseUrl,
     extraContext,
   );
-  const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
-
   return {
     kind: "page",
     layout: {
