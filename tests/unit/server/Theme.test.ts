@@ -120,6 +120,36 @@ describe("production theme selection", () => {
     );
   });
 
+  it("uses the R2 custom domain for stored immutable theme asset keys", () => {
+    expect(themeAssetBaseUrl(
+      {DEPLOYMENT_ENVIRONMENT: "production"},
+      "https://www.example.test/",
+      "owner-id",
+      [{
+        contentType: "image/png",
+        key: "production/themes/owner-id/assets/images/logo.png",
+        path: "assets/images/logo.png",
+        sha256: "a".repeat(64),
+        size: 10,
+      }],
+      "https://media-cdn.example.test/",
+    )).toBe(
+      "https://media-cdn.example.test/production/themes/owner-id/assets/",
+    );
+  });
+
+  it("uses the R2 custom domain for the generated theme asset path", () => {
+    expect(themeAssetBaseUrl(
+      {DEPLOYMENT_ENVIRONMENT: "production"},
+      "https://www.example.test/",
+      "owner-id",
+      [],
+      "https://media-cdn.example.test/",
+    )).toBe(
+      "https://media-cdn.example.test/production/themes/owner-id/assets/",
+    );
+  });
+
   it("selects a valid active D1 theme", () => {
     const theme = new Theme(feed, settings, null, stored());
     expect(theme.getWebFeed().html).toBe("installed Feed title test.installed");

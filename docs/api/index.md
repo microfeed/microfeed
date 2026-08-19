@@ -55,7 +55,7 @@ payload for every retry. When a webhook-triggered integration writes back,
 also propagate the event's correlation ID and use the triggering event ID as
 the causation ID so the receiver can recognize its own effects.
 
-![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](/images/screenshots/3-api-1.png)
+![The microfeed API Explorer showing parameters, JavaScript fetch code, and the response schema for fetching a feed](https://media-cdn.microfeed.org/production/themes/dc5664ff-bfe1-4dd6-82ba-f16449fd853a/assets/admin-api-overview.png)
 
 Every direct integration request requires an `mf_…` API key sent as a Bearer
 credential. A named key can allow reads, writes, or both; write permission does

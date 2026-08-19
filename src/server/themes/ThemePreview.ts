@@ -84,6 +84,7 @@ export async function themePreviewResponse(
     request.url,
     storedTheme.assetOwnerThemeId,
     storedTheme.bundle.assets,
+    loaded.content.settings?.webGlobalSettings?.publicBucketUrl,
   );
   const page = {
     content_html: "<p>This is a standalone Page preview.</p>",
