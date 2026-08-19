@@ -93,14 +93,7 @@ microfeed provides a simple yet powerful [admin dashboard](https://docs.microfee
 where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-<p align="center">
-  <a href="docs/public/images/screenshots/2-dashboard-1-home.png">
-    <img src="docs/public/images/screenshots/2-dashboard-1-home.png" width="45%" alt="Dashboard home">
-  </a>
-  <a href="docs/public/images/screenshots/2-dashboard-2-add-item.png">
-    <img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">
-  </a>
-</p>
+<img src="https://github.com/user-attachments/assets/c09752ab-b59f-47ae-9fae-029895c2b6a4" width="100%" alt="Dashboard home">
 
 For agentic content management, the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
