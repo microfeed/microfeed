@@ -16,8 +16,15 @@ import {
   renderThemeTemplate,
   themeContext,
 } from "../../../src/shared/themes/ThemeRenderer";
-import {themeContextSchema} from "../../../src/shared/themes/ThemeContract";
+import {
+  themeContextSchema,
+  type ThemeManifestV1,
+} from "../../../src/shared/themes/ThemeContract";
 import {themeRssPreviewDocument} from "../../../src/shared/themes/RssPreview";
+import {
+  manifestSearchItemDestination,
+  resolveThemeSearchItemUrl,
+} from "../../../src/shared/themes/ThemeSearch";
 import {ThemeValidationError} from "../../../src/shared/themes/ThemeValidation";
 import {BUILT_IN_FIXTURES} from "./fixtures";
 import {renderThemeKitHelp} from "./help";
@@ -75,8 +82,15 @@ async function validate(args: Arguments): Promise<void> {
   output({assets: theme.assetFiles.length, ok: true, packageId: theme.manifest.packageId, version: theme.manifest.version}, args.options.json === true);
 }
 
-function contexts(fixture: Record<string, unknown>, packageId: string, version: string) {
-  const context = themeContext(fixture, {assetBaseUrl: "/assets/", packageId, version});
+function contexts(
+  fixture: Record<string, unknown>,
+  manifest: ThemeManifestV1,
+) {
+  const context = themeContext(fixture, {
+    assetBaseUrl: "/assets/",
+    packageId: manifest.packageId,
+    version: manifest.version,
+  });
   const items = Array.isArray(fixture.items)
     ? fixture.items.map(recordValue).filter((item): item is Record<string, unknown> => item !== undefined)
     : [];
@@ -124,18 +138,27 @@ function contexts(fixture: Record<string, unknown>, packageId: string, version: 
     recordValue(fixture._microfeed)?.base_url ?? fixture.home_page_url,
     "https://example.test/",
   ) ?? "https://example.test/";
+  const searchItemDestination = manifestSearchItemDestination(manifest);
   const previewResults: PublicSearchResult[] = items.slice(0, 5).map(
     (item, index) => {
       const id = stringValue(item.id) ?? `preview-item-${index + 1}`;
       const microfeed = recordValue(item._microfeed);
+      const attachment = Array.isArray(item.attachments)
+        ? recordValue(item.attachments[0])
+        : undefined;
+      const webUrl = absoluteUrl(microfeed?.web_url, baseUrl) ??
+        new URL(`/i/${encodeURIComponent(id)}/`, baseUrl).toString();
       return {
         content_text: stringValue(item.content_text) ?? "Published item preview",
         date_published: stringValue(item.date_published) ?? previewPublishedAt,
         id,
         title: stringValue(item.title) ?? `Preview item ${index + 1}`,
         type: "item" as const,
-        url: absoluteUrl(microfeed?.web_url ?? item.url, baseUrl) ??
-          new URL(`/i/${encodeURIComponent(id)}/`, baseUrl).toString(),
+        url: resolveThemeSearchItemUrl(searchItemDestination, {
+          attachmentUrl: absoluteUrl(attachment?.url, baseUrl),
+          itemUrl: absoluteUrl(item.url, baseUrl),
+          webUrl,
+        }),
       };
     },
   );
@@ -181,7 +204,7 @@ export function standaloneThemePreviewDocument(
     pageContext,
     previewResults,
     searchContext,
-  } = contexts(fixture, theme.manifest.packageId, theme.manifest.version);
+  } = contexts(fixture, theme.manifest);
   const templates = {
     feed: [theme.bundle.webFeed, context],
     item: [theme.bundle.webItem, itemContext],
@@ -212,7 +235,10 @@ async function test(args: Arguments): Promise<void> {
   );
   const tests: Array<{fixture: string; ok: boolean}> = [];
   for (const [name, fixture] of await fixtureEntries(theme.directory)) {
-    const {context, itemContext, pageContext, searchContext} = contexts(fixture, theme.manifest.packageId, theme.manifest.version);
+    const {context, itemContext, pageContext, searchContext} = contexts(
+      fixture,
+      theme.manifest,
+    );
     const first = {
       feed: renderThemeTemplate(theme.bundle.webFeed, context),
       header: renderThemeTemplate(theme.bundle.webHeader, context),
@@ -418,7 +444,7 @@ async function preview(args: Arguments): Promise<void> {
       return;
     }
     const view = url.searchParams.get("view") ?? "feed";
-    const {context} = contexts(selectedFixture, theme.manifest.packageId, theme.manifest.version);
+    const {context} = contexts(selectedFixture, theme.manifest);
     response.setHeader("cache-control", "no-store");
     response.setHeader("content-security-policy", "sandbox allow-scripts; default-src 'self' https: data: blob:; img-src 'self' https: data: blob:; font-src 'self' https: data:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: data: 'unsafe-inline'; connect-src https:");
     response.setHeader("content-type", "text/html; charset=utf-8");

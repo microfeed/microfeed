@@ -3,6 +3,12 @@ import * as z from "zod";
 export const THEME_FORMAT_VERSION_V1 = 1 as const;
 export const THEME_FORMAT_VERSION_V2 = 2 as const;
 export const THEME_FORMAT_VERSION = THEME_FORMAT_VERSION_V2;
+export const THEME_SEARCH_ITEM_DESTINATIONS = [
+  "web",
+  "url",
+  "attachment",
+] as const;
+export const DEFAULT_THEME_SEARCH_ITEM_DESTINATION = "web" as const;
 export const THEME_MAX_TEMPLATE_BYTES = 128 * 1024;
 export const THEME_MAX_TEXT_BYTES = 512 * 1024;
 export const THEME_MAX_ASSET_BYTES = 5 * 1024 * 1024;
@@ -113,6 +119,9 @@ export const themeManifestV2Schema = themeManifestBaseSchema.extend({
     webSearch: themePathSchema,
   }),
   formatVersion: z.literal(THEME_FORMAT_VERSION_V2),
+  searchItemDestination: z.enum(THEME_SEARCH_ITEM_DESTINATIONS).optional().meta({
+    description: "Where item results in public Search link. Use web for the local microfeed item page (JSON Feed items[]._microfeed.web_url and the RSS item link fallback), url for JSON Feed items[].url and the RSS item link, or attachment for JSON Feed items[].attachments[0].url and the RSS enclosure URL. Missing selected values fall back to the local item page.",
+  }),
 });
 
 // Compatibility export retained for theme-kit and management callers. It now
@@ -356,6 +365,8 @@ export const themeDraftSchema = z.object({
 });
 
 export type ThemeManifestV1 = z.infer<typeof themeManifestV1Schema>;
+export type ThemeSearchItemDestination =
+  typeof THEME_SEARCH_ITEM_DESTINATIONS[number];
 export type ThemeBundleV1 = z.infer<typeof themeBundleV1Schema>;
 export type ThemeContext = z.infer<typeof themeContextSchema>;
 export type ThemeDraft = z.infer<typeof themeDraftSchema>;

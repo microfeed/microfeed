@@ -7,6 +7,7 @@ import ThemeStore from "@/server/themes/ThemeStore";
 import {themePreviewResponse} from "@/server/themes/ThemePreview";
 import {POST as manageTheme} from "@/pages/.well-known/microfeed/theme-management/index";
 import {sha256Hex} from "@/shared/themes/ThemeRenderer";
+import {STATUSES} from "@/shared/Constants";
 import type {
   ThemeBundleV1,
   ThemeManifestV1,
@@ -65,6 +66,9 @@ describe("versioned theme storage", () => {
       ),
       env.FEED_DB.prepare(
         "UPDATE settings SET data = '{}' WHERE category = 'customCode'",
+      ),
+      env.FEED_DB.prepare(
+        "DELETE FROM items WHERE id = 'theme-preview-search-destination'",
       ),
     ]);
   });
@@ -189,6 +193,18 @@ describe("versioned theme storage", () => {
     const purge = vi.fn().mockResolvedValue({errors: [], success: true});
     const store = new ThemeStore(env.FEED_DB, {purge});
     const source = packageData(`worker.flow.${crypto.randomUUID()}`);
+    source.bundle.webPage = "<main>{{page.title}}</main>";
+    source.bundle.webSearch = "<main>{{#search.results}}{{title}}{{/search.results}}</main>";
+    source.manifest = {
+      ...source.manifest,
+      files: {
+        ...source.manifest.files,
+        webPage: "page.mustache",
+        webSearch: "search.mustache",
+      },
+      formatVersion: 2,
+      searchItemDestination: "web",
+    };
     const installed = await store.installVersion({
       ...source,
       source: {kind: "local-directory", path: "/theme"},
@@ -211,12 +227,27 @@ describe("versioned theme storage", () => {
     });
     expect(draft.packageId).toBe(`local.${source.manifest.packageId}`);
     expect(draft.version).toBe("1.0.1");
+    if (draft.manifest.formatVersion !== 2) {
+      throw new Error("Expected a format-v2 theme draft.");
+    }
     const saved = await store.saveDraft(draft.id, {
       bundle: {...draft.bundle, webFeed: "<main>custom {{title}}</main>"},
-      manifest: {...draft.manifest, version: "1.1.0"},
+      manifest: {
+        ...draft.manifest,
+        searchItemDestination: "url",
+        version: "1.1.0",
+      },
     });
+    if (saved.manifest.formatVersion !== 2) {
+      throw new Error("Expected the saved draft to remain format v2.");
+    }
+    expect(saved.manifest.searchItemDestination).toBe("url");
     expect((await store.listDrafts()).some(({id}) => id === draft.id)).toBe(true);
     const published = await store.publishDraft(saved.id);
+    if (published.manifest.formatVersion !== 2) {
+      throw new Error("Expected the published theme to remain format v2.");
+    }
+    expect(published.manifest.searchItemDestination).toBe("url");
     expect((await store.getState()).activeThemeId).toBeNull();
     expect(await store.getDraft(saved.id)).toBeNull();
     const collisionDraft = await store.createDraft({
@@ -446,7 +477,7 @@ describe("versioned theme storage", () => {
     await expect(store.saveDraft(heldDraft.id, {
       bundle: {...heldDraft.bundle, assets: []},
       manifest: {...heldDraft.manifest, assets: []},
-    })).rejects.toThrow("six text slots");
+    })).rejects.toThrow("supported behavior settings");
     const publishDraft = await store.createDraft({
       ...source,
       assetOwnerThemeId: owner.id,
@@ -489,6 +520,7 @@ describe("versioned theme storage", () => {
         webSearch: "search.mustache",
       },
       formatVersion: 2,
+      searchItemDestination: "url",
     };
     source.bundle.webHeader = "<script>document.body.dataset.theme='ran'</script>";
     const theme = await store.installVersion({
@@ -509,6 +541,22 @@ describe("versioned theme storage", () => {
     const replay = await manageTheme({request: managementRequest()} as never) as Response;
     expect(replay.status).toBe(401);
 
+    const previewDatabase = new FeedDb(
+      env,
+      new Request("http://localhost:4321/"),
+    );
+    await previewDatabase.getContent();
+    await previewDatabase.putContent({
+      item: {
+        description: "Theme preview searchable result",
+        id: "theme-preview-search-destination",
+        link: "https://publisher.example/preview-search-result",
+        pubDateMs: Date.parse("2026-08-19T10:00:00.000Z"),
+        status: STATUSES.PUBLISHED,
+        title: "Theme preview search destination",
+      },
+    });
+
     const preview = await themePreviewResponse(
       env,
       new Request("http://localhost:4321/admin/ajax/themes/id/preview?view=feed"),
@@ -524,7 +572,14 @@ describe("versioned theme storage", () => {
     expect(previewHtml).toContain("document.body.dataset.theme='ran'");
     expect(previewHtml).toContain("data-microfeed-search-dialog");
     expect(previewHtml).toContain("data-microfeed-search-preview-results");
+    expect(previewHtml).toContain(
+      'data-microfeed-search-results-context="popup"',
+    );
+    expect(previewHtml).toContain("mf-public-search-result__domain");
     expect(previewHtml).toContain('"date_published":');
+    expect(previewHtml).toContain(
+      '"url":"https://publisher.example/preview-search-result"',
+    );
     expect(previewHtml).toContain(
       "Live search is unavailable in preview. Showing preview results instead.",
     );

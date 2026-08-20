@@ -33,6 +33,19 @@ search.
 microfeed versions, the theme file paths, and optional assets. One package ID
 and version identifies one immutable set of content.
 
+A format v2 manifest may also declare `searchItemDestination` to control where
+item results open in both the popup and `/search/`:
+
+| Value | Item destination and feed field |
+| --- | --- |
+| `web` | The local microfeed item page from JSON Feed `items[]._microfeed.web_url`. RSS uses it as `<item><link>` only when Item URL is empty. |
+| `url` | The custom Item URL from JSON Feed `items[].url` and RSS `<item><link>`. |
+| `attachment` | The media attachment from JSON Feed `items[].attachments[0].url` and RSS `<item><enclosure url="…">`. |
+
+Omission is equivalent to `web`. When the selected custom value is missing,
+microfeed falls back to the local item page; Page results always keep their
+local Page URL.
+
 The render context begins with the public JSON Feed and adds:
 
 - `current_year`;
@@ -115,6 +128,36 @@ The `webSearch` slot owns the surrounding layout for `/search/`. Use
 The optional details hook adds a short date and excerpt to each result. The
 dialog and results use stable `data-microfeed-search-*` hooks and
 `mf-public-search*` classes for targeted styling.
+
+Every rendered result exposes title, type, destination hostname, and optional
+details elements. The hostname comes from the resolved link destination and is
+hidden by default. Enable it for Item results and customize the two result
+surfaces independently in the Web header:
+
+```css
+[data-microfeed-search-result-type="item"] {
+  --mf-search-result-domain-display: inline;
+}
+
+[data-microfeed-search-results-context="popup"] .mf-public-search-result {
+  padding: 0.6rem;
+}
+
+[data-microfeed-search-results-context="page"] .mf-public-search-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.mf-public-search-result__domain {
+  color: var(--mf-muted);
+}
+```
+
+Use `.mf-public-search-result__title`, `__type`, `__domain`, and `__details`
+for individual parts. The result link also has
+`data-microfeed-search-result-type="item|page"`; its container has
+`data-microfeed-search-results-context="popup|page"`. Keep the supplied link
+and text nodes instead of reconstructing untrusted result HTML.
 
 Define `--mf-accent`, `--mf-background`, `--mf-surface`, `--mf-text`,
 `--mf-muted`, and `--mf-border` color tokens so the injected dialog follows the

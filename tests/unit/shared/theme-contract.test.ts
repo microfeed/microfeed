@@ -17,6 +17,10 @@ import {
   ThemeValidationError,
   validateThemePackage,
 } from "@/shared/themes/ThemeValidation";
+import {
+  manifestSearchItemDestination,
+  resolveThemeSearchItemUrl,
+} from "@/shared/themes/ThemeSearch";
 
 function manifest(): ThemeManifestV1 {
   return {
@@ -51,6 +55,27 @@ function bundle(): ThemeBundleV1 {
   };
 }
 
+function v2Package(searchItemDestination?: "attachment" | "url" | "web") {
+  const sourceManifest = manifest();
+  return {
+    bundle: {
+      ...bundle(),
+      webPage: "<main>{{page.title}}</main>",
+      webSearch: "<main>{{#search.results}}{{title}}{{/search.results}}</main>",
+    },
+    manifest: {
+      ...sourceManifest,
+      files: {
+        ...sourceManifest.files,
+        webPage: "page.mustache",
+        webSearch: "search.mustache",
+      },
+      formatVersion: 2 as const,
+      ...(searchItemDestination ? {searchItemDestination} : {}),
+    },
+  };
+}
+
 describe("theme contract", () => {
   it("reserves microfeed package IDs for bundled themes", () => {
     expect(isReservedThemePackageId("microfeed.default")).toBe(true);
@@ -78,6 +103,42 @@ describe("theme contract", () => {
       bundle(),
       "1.0.1",
     )).toThrow("does not include microfeed 1.0.1");
+  });
+
+  it("validates optional v2 search destinations and defaults omission to web", () => {
+    for (const destination of ["web", "url", "attachment"] as const) {
+      const source = v2Package(destination);
+      expect(validateThemePackage(source.manifest, source.bundle).manifest)
+        .toMatchObject({searchItemDestination: destination});
+      expect(manifestSearchItemDestination(source.manifest)).toBe(destination);
+    }
+    const omitted = v2Package();
+    expect(validateThemePackage(omitted.manifest, omitted.bundle).manifest)
+      .not.toHaveProperty("searchItemDestination");
+    expect(manifestSearchItemDestination(omitted.manifest)).toBe("web");
+    expect(manifestSearchItemDestination(manifest())).toBe("web");
+    expect(() => validateThemePackage(
+      {...omitted.manifest, searchItemDestination: "external" as never},
+      omitted.bundle,
+    )).toThrow(ThemeValidationError);
+  });
+
+  it("resolves item search destinations with local-page fallbacks", () => {
+    const urls = {
+      attachmentUrl: "https://example.test/media/episode.mp3",
+      itemUrl: "https://publisher.example/episode",
+      webUrl: "https://example.test/i/episode/",
+    };
+    expect(resolveThemeSearchItemUrl("web", urls)).toBe(urls.webUrl);
+    expect(resolveThemeSearchItemUrl("url", urls)).toBe(urls.itemUrl);
+    expect(resolveThemeSearchItemUrl("attachment", urls))
+      .toBe(urls.attachmentUrl);
+    expect(resolveThemeSearchItemUrl("url", {
+      webUrl: urls.webUrl,
+    })).toBe(urls.webUrl);
+    expect(resolveThemeSearchItemUrl("attachment", {
+      webUrl: urls.webUrl,
+    })).toBe(urls.webUrl);
   });
 
   it("rejects traversal, malformed Mustache, and mismatched asset declarations", () => {

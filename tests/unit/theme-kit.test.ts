@@ -306,14 +306,20 @@ describe("@microfeed/theme-kit package loading", () => {
     const theme = await loadThemePackage(
       path.join(repositoryRoot, "themes/default"),
     );
+    if (theme.manifest.formatVersion !== 2) {
+      throw new Error("The bundled default theme must use format v2.");
+    }
+    theme.manifest.searchItemDestination = "url";
     const html = standaloneThemePreviewDocument(theme, {
       home_page_url: "https://example.test/",
       items: [{
         _microfeed: {web_url: "https://example.test/i/searchable/"},
+        attachments: [{url: "https://example.test/media/searchable.mp3"}],
         content_text: "A searchable preview excerpt.",
         date_published: "2026-08-13T10:00:00.000Z",
         id: "searchable",
         title: "Searchable preview item",
+        url: "https://publisher.example/searchable",
       }],
       title: "Search preview fixture",
       version: "https://jsonfeed.org/version/1.1",
@@ -321,11 +327,15 @@ describe("@microfeed/theme-kit package loading", () => {
 
     expect(html).toContain("data-microfeed-search-open");
     expect(html).toContain("data-microfeed-search-dialog");
+    expect(html).toContain("data-microfeed-search-results-context=\"popup\"");
+    expect(html).toContain("mf-public-search-result__domain");
+    expect(html).toContain("data-microfeed-search-result-type");
     expect(html).toContain(
       "Live search is unavailable in preview. Showing preview results instead.",
     );
     expect(html).toContain('"title":"Searchable preview item"');
     expect(html).toContain('"date_published":"2026-08-13T10:00:00.000Z"');
+    expect(html).toContain('"url":"https://publisher.example/searchable"');
     expect(html).toContain("lockBackgroundScroll(scrollPosition)");
     expect(html).toContain("(event.metaKey || event.ctrlKey)");
   });

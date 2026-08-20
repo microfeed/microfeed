@@ -18,13 +18,15 @@ A format v2 theme owns:
 - The RSS browser stylesheet.
 - Visible search triggers, Search page markup, and responsive Page navigation.
 - CSS that customizes the platform-provided search interface.
+- The optional manifest choice for item search-result destinations.
 
 microfeed owns:
 
 - Page visibility, public routing, the editable 404 fallback, and navigation
   filtering and ordering.
 - The public search endpoint, popup dialog, Command/Ctrl+K behavior, typeahead
-  debounce and cancellation, safe highlighting, and result rendering.
+  debounce and cancellation, safe highlighting, result rendering, and
+  destination fallback behavior.
 - Injecting the search dialog and its script after the theme's Body end slot.
 
 Do not copy the search dialog, call `/search.json` yourself, or implement
@@ -145,6 +147,25 @@ Standalone and Admin previews use representative item and Page results. They
 display a warning because live Ajax search is deliberately disabled in preview.
 The Search page template and popup remain fully styleable there.
 
+## Search result destinations
+
+Set the optional format v2 manifest field `searchItemDestination` to choose
+where Item results open in both the popup and the dedicated Search page:
+
+- `web` opens the local microfeed Item page from JSON Feed
+  `items[]._microfeed.web_url`. RSS uses this as `<item><link>` only when Item
+  URL is empty. This is the default when omitted.
+- `url` opens JSON Feed `items[].url`, the same value used for RSS
+  `<item><link>`, when present.
+- `attachment` opens the media attachment at JSON Feed
+  `items[].attachments[0].url`, the same value used for RSS
+  `<item><enclosure url="…">`, when present.
+
+The `url` and `attachment` choices fall back to the local Item page when the
+selected value is missing. Page results always open their local Page URL.
+microfeed normalizes local media paths and keeps attachment analytics tracking;
+themes should render the supplied result link without rebuilding it.
+
 ## Search styling
 
 Define these tokens in the Web header to align the injected popup with the
@@ -167,7 +188,38 @@ Prefer the tokens for broad design changes. For targeted rules, use the stable
 - `.mf-public-search`
 - `.mf-public-search__panel`, `__header`, `__close`, `__input-row`, and
   `__results`
-- `.mf-public-search-result`, `__type`, and `__details`
+- `.mf-public-search-result`, `__title`, `__type`, `__domain`, and `__details`
+
+The results container receives
+`data-microfeed-search-results-context="popup|page"`, and each result link
+receives `data-microfeed-search-result-type="item|page"`. Use those attributes
+to style the popup and Search page differently or to target only Items.
+
+The domain element contains the resolved link destination's hostname, including
+subdomains, and is hidden by default. Opt in with the inherited display token:
+
+```css
+[data-microfeed-search-result-type="item"] {
+  --mf-search-result-domain-display: inline;
+}
+
+[data-microfeed-search-results-context="popup"] .mf-public-search-result {
+  padding: 0.6rem;
+}
+
+[data-microfeed-search-results-context="page"] .mf-public-search-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.mf-public-search-result__domain {
+  color: var(--mf-muted);
+}
+```
+
+microfeed creates the link and every text node safely. Restyle or hide the
+documented parts; do not replace result rendering with theme JavaScript or
+reconstruct result HTML.
 
 Keep focus styles, labels, keyboard behavior, mobile layout, and reduced-motion
 preferences accessible.
