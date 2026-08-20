@@ -6,6 +6,9 @@ export interface FeedSettings {
   access?: {
     currentPolicy?: AccessPolicy;
   };
+  analytics?: {
+    urls?: string[];
+  };
   apiSettings?: {
     enabled?: boolean;
     publicDocsEnabled?: boolean;

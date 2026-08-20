@@ -394,6 +394,10 @@ export function initializedThemeManifest(
     microfeed: source.manifest.microfeed,
     name: overrides.name ?? `${displayName} theme`,
     packageId,
+    ...(source.manifest.formatVersion === 2 &&
+        source.manifest.searchItemDestination
+      ? {searchItemDestination: source.manifest.searchItemDestination}
+      : {}),
     version: overrides.version ?? "0.1.0",
   });
 }

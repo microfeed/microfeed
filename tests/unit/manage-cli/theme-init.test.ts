@@ -136,6 +136,28 @@ describe("theme repository initialization", () => {
       "/tmp/my-theme",
       {packageId: "org.example.my-theme"},
     ).packageId).toBe("org.example.my-theme");
+    const initializedV2 = theme.initializedThemeManifest({
+      ...source,
+      bundle: {
+        ...source.bundle,
+        webPage: "<main>{{page.title}}</main>",
+        webSearch: "<main>{{#search.results}}{{title}}{{/search.results}}</main>",
+      },
+      manifest: {
+        ...source.manifest,
+        files: {
+          ...source.manifest.files,
+          webPage: "source/page.mustache",
+          webSearch: "source/search.mustache",
+        },
+        formatVersion: 2,
+        searchItemDestination: "attachment",
+      },
+    }, "/tmp/my-theme");
+    if (initializedV2.formatVersion !== 2) {
+      throw new Error("Expected initialized format-v2 manifest.");
+    }
+    expect(initializedV2.searchItemDestination).toBe("attachment");
 
     await expect(theme.themeCommand({
       action: "install",

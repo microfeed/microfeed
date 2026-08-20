@@ -63,6 +63,27 @@ describe("Admin versioned themes", () => {
     );
   });
 
+  it("offers v2 search destinations without exposing raw manifest editing", async () => {
+    const draftEditor = await source(
+      "components/admin/themes/ThemeDraftEditorApp.tsx",
+    );
+    expect(draftEditor).toContain("draft.manifest.formatVersion === 2");
+    expect(draftEditor).toContain("DEFAULT_THEME_SEARCH_ITEM_DESTINATION");
+    expect(draftEditor).toContain("searchItemDestination");
+    expect(draftEditor).toContain('value: "web"');
+    expect(draftEditor).toContain('value: "url"');
+    expect(draftEditor).toContain('value: "attachment"');
+    expect(draftEditor).toContain('label: "Media attachment"');
+    expect(draftEditor).not.toContain('label: "Main attachment"');
+    expect(draftEditor).toContain("AdminRadioGroup");
+    expect(draftEditor).not.toContain("JSON.stringify(draft.manifest");
+    const detailsStart = draftEditor.indexOf('<details className="mt-5');
+    const detailsEnd = draftEditor.indexOf("</details>", detailsStart);
+    const searchLinks = draftEditor.indexOf("Search result links");
+    expect(searchLinks).toBeGreaterThan(detailsStart);
+    expect(searchLinks).toBeLessThan(detailsEnd);
+  });
+
   it("presents only current themes as compact installed versions", async () => {
     const [themes, installHelp, route] = await Promise.all([
       source("components/admin/themes/ThemesApp.tsx"),

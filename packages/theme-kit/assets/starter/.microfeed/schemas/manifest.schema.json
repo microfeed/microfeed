@@ -244,6 +244,15 @@
         "formatVersion": {
           "type": "number",
           "const": 2
+        },
+        "searchItemDestination": {
+          "description": "Where item results in public Search link. Use web for the local microfeed item page (JSON Feed items[]._microfeed.web_url and the RSS item link fallback), url for JSON Feed items[].url and the RSS item link, or attachment for JSON Feed items[].attachments[0].url and the RSS enclosure URL. Missing selected values fall back to the local item page.",
+          "type": "string",
+          "enum": [
+            "web",
+            "url",
+            "attachment"
+          ]
         }
       },
       "required": [

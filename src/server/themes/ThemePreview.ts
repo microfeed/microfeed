@@ -11,6 +11,10 @@ import {
   publicSearchHtml,
   type PublicSearchResult,
 } from "@/shared/PublicSearch";
+import {
+  manifestSearchItemDestination,
+  resolveThemeSearchItemUrl,
+} from "@/shared/themes/ThemeSearch";
 
 type PreviewTheme = StoredThemeVersion | ThemeDraft;
 
@@ -123,10 +127,22 @@ export async function themePreviewResponse(
     },
   ];
   const extraContext = {navigation_pages: navigationPages};
+  const searchItemDestination = manifestSearchItemDestination(
+    storedTheme.manifest,
+  );
   const previewSearchResults: PublicSearchResult[] = loaded.publicFeed.items
     .slice(0, 5)
     .map((item, index) => {
       const microfeed = item._microfeed as Record<string, unknown> | undefined;
+      const attachmentValue = Array.isArray(item.attachments)
+        ? item.attachments[0]
+        : undefined;
+      const attachment = attachmentValue && typeof attachmentValue === "object"
+        ? attachmentValue as Record<string, unknown>
+        : undefined;
+      const webUrl = typeof microfeed?.web_url === "string"
+        ? microfeed.web_url
+        : new URL(`/i/preview-item-${index + 1}/`, request.url).toString();
       return {
         content_text: String(item.content_text ?? "Published item preview"),
         date_published: typeof item.date_published === "string"
@@ -137,9 +153,13 @@ export async function themePreviewResponse(
           ? item.title
           : `Preview item ${index + 1}`,
         type: "item" as const,
-        url: typeof microfeed?.web_url === "string"
-          ? microfeed.web_url
-          : new URL(`/i/preview-item-${index + 1}/`, request.url).toString(),
+        url: resolveThemeSearchItemUrl(searchItemDestination, {
+          attachmentUrl: typeof attachment?.url === "string"
+            ? attachment.url
+            : undefined,
+          itemUrl: typeof item.url === "string" ? item.url : undefined,
+          webUrl,
+        }),
       };
     });
   if (previewSearchResults.length === 0) {

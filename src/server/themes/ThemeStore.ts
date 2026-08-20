@@ -550,7 +550,7 @@ export default class ThemeStore {
         JSON.stringify(existing.bundle.assets)
     ) {
       throw new Error(
-        "Admin drafts may edit only theme metadata and the six text slots; packaged files and assets are inherited unchanged.",
+        "Admin drafts may edit only theme metadata, supported behavior settings, and text slots; packaged files and assets are inherited unchanged.",
       );
     }
     await this.database.prepare(

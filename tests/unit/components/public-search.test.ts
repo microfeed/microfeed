@@ -1,9 +1,32 @@
+import {runInNewContext} from "node:vm";
 import {describe, expect, it} from "vitest";
 
 import {
   PUBLIC_SEARCH_PREVIEW_WARNING,
   publicSearchHtml,
 } from "@/shared/PublicSearch";
+
+function inlineFunction(
+  source: string,
+  name: string,
+): (...args: unknown[]) => unknown {
+  const start = source.indexOf(`function ${name}(`);
+  const braceStart = source.indexOf("{", start);
+  if (start < 0 || braceStart < 0) throw new Error(`Missing ${name}.`);
+  let depth = 0;
+  for (let index = braceStart; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    if (source[index] !== "}") continue;
+    depth -= 1;
+    if (depth !== 0) continue;
+    const functionSource = source.slice(start, index + 1);
+    return runInNewContext(`(${functionSource})`, {
+      URL,
+      window: {location: {origin: "https://feed.example.com"}},
+    }) as (...args: unknown[]) => unknown;
+  }
+  throw new Error(`Unclosed ${name}.`);
+}
 
 describe("public search modal", () => {
   it("submits Enter to the full search page", () => {
@@ -102,6 +125,45 @@ describe("public search modal", () => {
     expect(source).toContain(
       'title.className = "mf-public-search-result__title"',
     );
+  });
+
+  it("adds opt-in destination hostnames and stable row selectors", () => {
+    const source = publicSearchHtml();
+
+    expect(source).toContain(
+      'data-microfeed-search-results-context="popup"',
+    );
+    expect(source).toContain(
+      'container.setAttribute("data-microfeed-search-results-context", context)',
+    );
+    expect(source).toContain(
+      'link.setAttribute("data-microfeed-search-result-type", resultType)',
+    );
+    expect(source).toContain(
+      'domain.className = "mf-public-search-result__domain"',
+    );
+    expect(source).toContain("domain.textContent = hostname");
+    expect(source).toMatch(
+      /\.mf-public-search-result__domain\s*\{[\s\S]*?display: var\(--mf-search-result-domain-display, none\);/u,
+    );
+  });
+
+  it("derives destination hostnames without changing result URLs", () => {
+    const source = publicSearchHtml();
+    const resultHostname = inlineFunction(source, "resultHostname");
+
+    expect(resultHostname("https://www.publisher.example/episode"))
+      .toBe("www.publisher.example");
+    expect(resultHostname("/i/local-result/"))
+      .toBe("feed.example.com");
+    expect(resultHostname(
+      "https://analytics.example/redirect/media/episode.mp3",
+    )).toBe("analytics.example");
+    expect(resultHostname("http://[invalid"))
+      .toBe("");
+    expect(resultHostname(""))
+      .toBe("");
+    expect(source).toContain("link.href = item.url");
   });
 
   it("renders dated, highlighted excerpts only for detailed result lists", () => {

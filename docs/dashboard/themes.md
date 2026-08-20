@@ -68,6 +68,20 @@ Saving or installing a draft never changes public output. Activation
 confirmation identifies the package, version, source, commit when available,
 and checksum.
 
+For format v2 drafts, **Search result links** selects where item results open
+in both the search popup and the Search page: the local microfeed item page, an
+item's custom URL, or its media attachment. Expand **Theme details** to find
+this setting. Each option identifies the corresponding JSON Feed and RSS field:
+`items[]._microfeed.web_url` and the fallback RSS item link for the local page,
+`items[].url` and RSS `<item><link>` for Item URL, or
+`items[].attachments[0].url` and RSS `<item><enclosure url="…">` for Media
+attachment. Items without the selected custom value fall back to their local
+item page, and Page results always stay local. The selector is saved with the
+draft and shown in its isolated preview before the new version is installed.
+Admin intentionally exposes only supported theme metadata, behavior settings,
+and text slots—not raw manifest JSON or packaged file, asset, and package
+identity fields.
+
 The bundled Default theme exposes a readable `microfeed-design-tokens` block
 near the top of **Web header**. Change its accent, background, surface, text,
 muted, and border values for a focused color update without editing compiled
