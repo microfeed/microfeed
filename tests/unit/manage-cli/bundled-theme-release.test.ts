@@ -14,9 +14,12 @@ import {fileURLToPath} from "node:url";
 import {inc} from "semver";
 import {afterEach, describe, expect, it} from "vitest";
 
+import {BUNDLED_THEME_CATALOG} from "@/shared/themes/BundledThemeCatalog";
 import {
   recordBundledThemeRelease,
+  recordBundledThemeReleases,
   verifyBundledThemeRelease,
+  verifyBundledThemeReleases,
 } from "../../../manage-cli/lib/bundled-theme-release";
 
 const repositoryRoot = path.resolve(
@@ -31,11 +34,13 @@ async function temporaryRepository(): Promise<string> {
   );
   temporaryRepositories.push(directory);
   await mkdir(path.join(directory, "themes"), {recursive: true});
-  await cp(
-    path.join(repositoryRoot, "themes/default"),
-    path.join(directory, "themes/default"),
-    {recursive: true},
-  );
+  await Promise.all(BUNDLED_THEME_CATALOG.map(({directory: themeDirectory}) =>
+    cp(
+      path.join(repositoryRoot, "themes", themeDirectory),
+      path.join(directory, "themes", themeDirectory),
+      {recursive: true},
+    )
+  ));
   return directory;
 }
 
@@ -49,6 +54,13 @@ describe("bundled theme release registry", () => {
   it("matches the exact current immutable package", async () => {
     await expect(verifyBundledThemeRelease(repositoryRoot)).resolves
       .toMatchObject({packageId: "microfeed.default"});
+  });
+
+  it("verifies and records every catalog ledger", async () => {
+    await expect(verifyBundledThemeReleases(repositoryRoot)).resolves
+      .toEqual([expect.objectContaining({packageId: "microfeed.default"})]);
+    await expect(recordBundledThemeReleases(repositoryRoot)).resolves
+      .toEqual([expect.objectContaining({recorded: false})]);
   });
 
   it("rejects changed package bytes under a released version", async () => {

@@ -1,9 +1,15 @@
-# Bundled microfeed theme
+# Built-in microfeed themes
 
-This directory contains the one source package that ships with microfeed. D1
-is the runtime source of truth after a theme is installed; `themes/default` is
-the versioned, reviewable input used to create that installed copy and the
-runtime fallback when no valid active version is available.
+This directory contains the source packages registered in microfeed's ordered
+Built-in theme catalog. D1 is the runtime source of truth after a package is
+installed. The management CLI reads catalog packages from disk, verifies each
+independent immutable release ledger, and synchronizes their current releases
+during initialization and deployment.
+
+`themes/default` remains the only package embedded in the Worker as the
+emergency runtime fallback when no valid active version is available. Other
+Built-in package contents are persisted in D1 by the management CLI and are not
+added to the Worker bundle.
 
 ## `default`
 
@@ -47,16 +53,16 @@ Installing it manually creates an inactive version and does not change the
 public site:
 
 ```console
-yarn manage theme install default --instance <instance-name>
+yarn manage theme install bundled:default --instance <instance-name>
 ```
 
 ## Working with the bundled theme
 
-Fresh-instance initialization installs and activates the bundled default.
-Manual installation creates an inactive version, and deployment never silently
-activates a different theme on an existing site. Older themes that are already
-installed remain self-contained in D1; they do not depend on a source folder in
-this repository.
+Fresh-instance initialization installs every current Built-in release and
+activates only Default. Manual installation creates an inactive version, and
+deployment never silently activates a different theme on an existing site.
+Older themes that are already installed remain self-contained in D1; they do
+not depend on a source folder in this repository.
 
 Run the shared conformance suite after changing the package:
 

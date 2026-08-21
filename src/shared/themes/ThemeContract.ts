@@ -15,7 +15,7 @@ export const THEME_MAX_TEXT_BYTES = 512 * 1024;
 export const THEME_MAX_ASSET_BYTES = 5 * 1024 * 1024;
 export const THEME_MAX_TOTAL_ASSET_BYTES = 20 * 1024 * 1024;
 export const THEME_MAX_ASSETS = 100;
-export const THEME_MAX_INSTALLED_VERSIONS = 50;
+export const THEME_MAX_CUSTOM_INSTALLED_VERSIONS = 100;
 export const THEME_MAX_DRAFTS = 20;
 export const THEME_LIST_PAGE_SIZE = 20;
 export const THEME_SEARCH_MAX_LENGTH = 100;
@@ -52,6 +52,9 @@ export interface ThemeListOptions {
   q: string;
   sort: ThemeListSort;
 }
+
+export const THEME_ADMIN_TABS = ["built-in", "custom"] as const;
+export type ThemeAdminTab = typeof THEME_ADMIN_TABS[number];
 
 export const THEME_FILE_KEYS_V1 = [
   "webFeed",
@@ -457,15 +460,30 @@ export interface ThemeListPagination {
   totalPages: number;
 }
 
+export interface BuiltInThemeGroup {
+  catalogKey: string | null;
+  currentVersion: string | null;
+  packageId: string;
+  source: string | null;
+  versions: ThemeVersionSummary[];
+}
+
 export interface ThemeListResponse {
+  builtInGroups: BuiltInThemeGroup[];
+  counts: {
+    builtInThemes: number;
+    builtInVersions: number;
+    customVersions: number;
+  };
   drafts: ThemeDraftSummary[];
   limits: {
+    customInstalled: typeof THEME_MAX_CUSTOM_INSTALLED_VERSIONS;
     drafts: typeof THEME_MAX_DRAFTS;
-    installed: typeof THEME_MAX_INSTALLED_VERSIONS;
   };
   pagination: ThemeListPagination;
+  scope: ThemeAdminTab;
   state: ThemeState;
-  themes: ThemeVersionSummary[];
+  customThemes: ThemeVersionSummary[];
 }
 
 export interface ThemeState {

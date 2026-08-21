@@ -13,8 +13,8 @@ import type {
   ThemeManifestV1,
 } from "@/shared/themes/ThemeContract";
 import {
+  THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_DRAFTS,
-  THEME_MAX_INSTALLED_VERSIONS,
 } from "@/shared/themes/ThemeContract";
 
 function packageData(packageId: string, version = "1.0.0"):
@@ -347,6 +347,9 @@ describe("versioned theme storage", () => {
 
   it("lists searchable, sorted metadata without serializing theme bundles", async () => {
     const store = new ThemeStore(env.FEED_DB);
+    await store.ensureThemeMigration({});
+    expect((await store.listSummaries({page: 1, q: "", sort: "status"}))
+      .scope).toBe("built-in");
     const first = packageData("worker.alpha.search-fixture");
     first.manifest.name = "Alpha Editorial";
     first.manifest.author = "Ada";
@@ -366,27 +369,46 @@ describe("versioned theme storage", () => {
     });
     await store.activate(installed[1]!.id);
     const searched = await store.listSummaries({page: 1, q: "ADA", sort: "name-desc"});
+    expect(searched.scope).toBe("custom");
     expect(searched.pagination).toMatchObject({page: 1, pageSize: 20, total: 1, totalPages: 1});
-    expect(searched.limits).toEqual({drafts: 20, installed: 50});
-    expect(searched.themes[0]).toMatchObject({name: "Alpha Editorial", assetCount: 0});
-    expect(searched.themes[0]).not.toHaveProperty("bundle");
+    expect(searched.limits).toEqual({customInstalled: 100, drafts: 20});
+    expect(searched.counts).toEqual({
+      builtInThemes: 1,
+      builtInVersions: 1,
+      customVersions: 3,
+    });
+    expect(searched.builtInGroups[0]).toMatchObject({
+      catalogKey: "default",
+      currentVersion: "1.1.15",
+      packageId: "microfeed.default",
+      source: "bundled:default",
+    });
+    expect(searched.customThemes[0]).toMatchObject({name: "Alpha Editorial", assetCount: 0});
+    expect(searched.customThemes[0]).not.toHaveProperty("bundle");
     expect(searched.drafts).toEqual([]);
     const derivedSummary = await store.listSummaries({
       page: 1,
       q: "Derived Alpha",
       sort: "status",
     });
-    expect(derivedSummary.themes[0]).toMatchObject({
+    expect(derivedSummary.customThemes[0]).toMatchObject({
       originThemeId: installed[0]!.id,
       originThemeName: "Alpha Editorial",
       originThemeVersion: installed[0]!.version,
     });
     const byStatus = await store.listSummaries({page: 1, q: "", sort: "status"});
-    expect(byStatus.themes[0]?.id).toBe(installed[1]!.id);
+    expect(byStatus.customThemes[0]?.id).toBe(installed[1]!.id);
+    expect((await store.listSummaries(
+      {page: 1, q: "", sort: "status"},
+      "built-in",
+    )).scope).toBe("built-in");
   });
 
-  it("enforces installed and draft limits while retaining a blocked publication", async () => {
+  it("enforces the Custom quota without counting Built-in versions", async () => {
     const store = new ThemeStore(env.FEED_DB);
+    await store.ensureThemeMigration({});
+    await expect(store.deleteVersion("bundled-default-v2", env.MEDIA_BUCKET))
+      .rejects.toThrow("Built-in themes");
     const source = packageData(`worker.limit.base.${crypto.randomUUID()}`);
     const base = await store.installVersion({...source, source: {kind: "local-directory"}});
     const draft = await store.createDraft({
@@ -397,7 +419,7 @@ describe("versioned theme storage", () => {
     const manifestJson = JSON.stringify(source.manifest);
     const bundleJson = JSON.stringify(source.bundle);
     await env.FEED_DB.batch(Array.from(
-      {length: THEME_MAX_INSTALLED_VERSIONS - 1},
+      {length: THEME_MAX_CUSTOM_INSTALLED_VERSIONS - 2},
       (_, index) => env.FEED_DB.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
@@ -412,15 +434,23 @@ describe("versioned theme storage", () => {
         String(index).padStart(64, "0").slice(-64),
       ),
     ));
+    const hundredth = await store.installVersion({
+      ...packageData(`worker.limit.hundredth.${crypto.randomUUID()}`),
+      source: {kind: "local-directory"},
+    });
+    expect((await store.listSummaries({page: 1, q: "", sort: "status"}))
+      .counts.customVersions).toBe(THEME_MAX_CUSTOM_INSTALLED_VERSIONS);
     await expect(store.installVersion({
       ...packageData(`worker.limit.extra.${crypto.randomUUID()}`),
       source: {kind: "local-directory"},
-    })).rejects.toThrow(`${THEME_MAX_INSTALLED_VERSIONS} installed theme versions`);
+    })).rejects.toThrow(
+      `${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions`,
+    );
     await expect(store.installVersion({...source, source: {kind: "local-directory"}}))
       .resolves.toMatchObject({id: base.id});
     await expect(store.publishDraft(draft.id)).rejects.toThrow("draft has been retained");
     await expect(store.getDraft(draft.id)).resolves.toMatchObject({id: draft.id});
-    await store.deleteVersion("limit-0", env.MEDIA_BUCKET);
+    await store.deleteVersion(hundredth.id, env.MEDIA_BUCKET);
     await expect(store.publishDraft(draft.id)).resolves.toMatchObject({packageId: draft.packageId});
     expect(await store.getDraft(draft.id)).toBeNull();
 

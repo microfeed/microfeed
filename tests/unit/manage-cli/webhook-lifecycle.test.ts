@@ -21,7 +21,7 @@ async function freshModules() {
   process.env.MICROFEED_STATE_DIRECTORY = directory;
   vi.stubEnv("MICROFEED_INSTANCE", "");
   vi.doMock("../../../manage-cli/theme", () => ({
-    installDefaultThemeForV1Appearance: vi.fn(async () => null),
+    synchronizeBundledThemes: vi.fn(async () => []),
   }));
   vi.resetModules();
   const commands = await import("../../../manage-cli/commands");

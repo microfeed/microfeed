@@ -6,7 +6,10 @@ import ThemesApp from "@/components/admin/themes/ThemesApp";
 import {NAV_ITEMS} from "@/shared/Constants";
 import {adminUrl} from "@/shared/AdminPath";
 import ThemeStore from "@/server/themes/ThemeStore";
-import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
+import {
+  parseThemeAdminTab,
+  parseThemeListOptions,
+} from "@/shared/themes/ThemeListing";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 
 const {feedContent, onboardingResult} = Astro.locals;
@@ -15,8 +18,11 @@ if (!feedContent || !onboardingResult) {
 }
 const store = new ThemeStore(env.FEED_DB, cache);
 await store.ensureThemeMigration(feedContent.settings);
-const options = parseThemeListOptions(new URL(Astro.request.url).searchParams);
-const listing = await store.listSummaries(options);
+const searchParams = new URL(Astro.request.url).searchParams;
+const options = parseThemeListOptions(searchParams);
+const requestedTab = parseThemeAdminTab(searchParams);
+const listing = await store.listSummaries(options, requestedTab);
+const initialTab = listing.scope;
 const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
 ---
 
@@ -39,6 +45,7 @@ const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
     initialListing={listing}
     initialQuery={options.q}
     initialSort={options.sort}
+    {initialTab}
     {instanceName}
   >
     <AdminPageFallback slot="fallback" kind="settings" />

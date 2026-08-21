@@ -7,6 +7,7 @@ import {
 } from "@/server/cache/public-cache";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import type {
+  BuiltInThemeGroup,
   StoredThemeVersion,
   ThemeBundleV1,
   ThemeDraft,
@@ -15,17 +16,24 @@ import type {
   ThemeListSort,
   ThemeManifestV1,
   ThemePreviewFixture,
+  ThemeAdminTab,
   ThemeSourceKind,
   ThemeState,
+  ThemeVersionSummary,
 } from "@/shared/themes/ThemeContract";
 import {
   assertUserThemePackageId,
   LOCAL_THEME_PACKAGE_ID_PREFIX,
   THEME_LIST_PAGE_SIZE,
+  THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_DRAFTS,
-  THEME_MAX_INSTALLED_VERSIONS,
   themePreviewFixtureSchema,
 } from "@/shared/themes/ThemeContract";
+import {
+  BUNDLED_FALLBACK_THEME,
+  BUNDLED_THEME_CATALOG,
+  bundledThemeCatalogEntryByPackageId,
+} from "@/shared/themes/BundledThemeCatalog";
 import {
   canonicalThemePackage,
   sha256Hex,
@@ -146,6 +154,61 @@ const DRAFT_SUMMARY_COLUMNS = `
   COALESCE(json_array_length(json_extract(manifest_json, '$.assets')), 0)
     AS asset_count`;
 
+function builtInThemeGroups(
+  rows: Array<Record<string, unknown>>,
+  state: ThemeState,
+): BuiltInThemeGroup[] {
+  const byPackage = new Map<string, ThemeVersionSummary[]>();
+  for (const row of rows) {
+    const summary = storedThemeSummaryFromRow(row);
+    const versions = byPackage.get(summary.packageId) ?? [];
+    versions.push(summary);
+    byPackage.set(summary.packageId, versions);
+  }
+  const packageOrder = new Map(
+    BUNDLED_THEME_CATALOG.map((entry) => [
+      entry.packageId,
+      entry.order,
+    ]),
+  );
+  return [...byPackage].map(([packageId, versions]) => {
+    const catalog = bundledThemeCatalogEntryByPackageId(packageId);
+    versions.sort((left, right) => {
+      const leftRank = left.version === catalog?.manifest.version
+        ? 0
+        : left.id === state.activeThemeId
+        ? 1
+        : left.id === state.previousThemeId
+        ? 2
+        : 3;
+      const rightRank = right.version === catalog?.manifest.version
+        ? 0
+        : right.id === state.activeThemeId
+        ? 1
+        : right.id === state.previousThemeId
+        ? 2
+        : 3;
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      return semver.rcompare(
+        semver.valid(left.version) ?? "0.0.0",
+        semver.valid(right.version) ?? "0.0.0",
+      ) || right.createdAt.localeCompare(left.createdAt) ||
+        left.id.localeCompare(right.id);
+    });
+    return {
+      catalogKey: catalog?.key ?? null,
+      currentVersion: catalog?.manifest.version ?? null,
+      packageId,
+      source: catalog?.source ?? null,
+      versions,
+    };
+  }).sort((left, right) => {
+    const leftOrder = packageOrder.get(left.packageId) ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = packageOrder.get(right.packageId) ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder || left.packageId.localeCompare(right.packageId);
+  });
+}
+
 export default class ThemeStore {
   constructor(
     private readonly database: D1Database,
@@ -177,18 +240,22 @@ export default class ThemeStore {
     return results(result).map(themeDraftFromRow);
   }
 
-  async listSummaries(options: ThemeListOptions): Promise<ThemeListResponse> {
+  async listSummaries(
+    options: ThemeListOptions,
+    requestedScope: ThemeAdminTab | null = null,
+  ): Promise<ThemeListResponse> {
     const page = Math.max(1, Math.trunc(options.page));
     const search = options.q ? escapedLike(options.q) : null;
     const where = search
-      ? `WHERE themes.deleted_at IS NULL AND (
+      ? `WHERE themes.deleted_at IS NULL
+        AND themes.source_kind != 'bundled' AND (
           lower(themes.name) LIKE ? ESCAPE '\\' OR
           lower(themes.package_id) LIKE ? ESCAPE '\\' OR
           lower(themes.version) LIKE ? ESCAPE '\\' OR
           lower(COALESCE(json_extract(themes.manifest_json, '$.author'), '')) LIKE ? ESCAPE '\\' OR
           lower(COALESCE(themes.source_url, '')) LIKE ? ESCAPE '\\'
         )`
-      : "WHERE themes.deleted_at IS NULL";
+      : "WHERE themes.deleted_at IS NULL AND themes.source_kind != 'bundled'";
     const sortSql = {
       "installed-asc": "themes.created_at ASC, themes.id ASC",
       "installed-desc": "themes.created_at DESC, themes.id ASC",
@@ -200,7 +267,8 @@ export default class ThemeStore {
         ELSE 2 END ASC, themes.created_at DESC, themes.id ASC`,
     } satisfies Record<ThemeListSort, string>;
     const parameters = search ? [search, search, search, search, search] : [];
-    const [themeRows, countRow, draftRows, state] = await Promise.all([
+    const [themeRows, countRow, customCountRow, builtInRows, draftRows, state] =
+      await Promise.all([
       this.database.prepare(
         `SELECT ${THEME_SUMMARY_COLUMNS}
          FROM themes
@@ -219,17 +287,43 @@ export default class ThemeStore {
         `SELECT count(*) AS total FROM themes ${where.replaceAll("themes.", "themes.")}`,
       ).bind(...parameters).first<{total: number}>(),
       this.database.prepare(
+        `SELECT count(*) AS total FROM themes
+         WHERE deleted_at IS NULL AND source_kind != 'bundled'`,
+      ).first<{total: number}>(),
+      this.database.prepare(
+        `SELECT ${THEME_SUMMARY_COLUMNS}
+         FROM themes
+         LEFT JOIN themes AS origin_themes
+           ON origin_themes.id = themes.origin_theme_id
+         WHERE themes.deleted_at IS NULL AND themes.source_kind = 'bundled'
+         ORDER BY themes.package_id ASC, themes.created_at DESC`,
+      ).all(),
+      this.database.prepare(
         `SELECT ${DRAFT_SUMMARY_COLUMNS}
          FROM theme_drafts ORDER BY updated_at DESC`,
       ).all(),
       this.getState(),
     ]);
     const total = Number(countRow?.total ?? 0);
+    const builtInGroups = builtInThemeGroups(results(builtInRows), state);
+    const activeIsBuiltIn = builtInGroups.some((group) =>
+      group.versions.some(({id}) => id === state.activeThemeId)
+    );
     return {
+      builtInGroups,
+      counts: {
+        builtInThemes: builtInGroups.length,
+        builtInVersions: builtInGroups.reduce(
+          (sum, group) => sum + group.versions.length,
+          0,
+        ),
+        customVersions: Number(customCountRow?.total ?? 0),
+      },
+      customThemes: results(themeRows).map(storedThemeSummaryFromRow),
       drafts: results(draftRows).map(themeDraftSummaryFromRow),
       limits: {
+        customInstalled: THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
         drafts: THEME_MAX_DRAFTS,
-        installed: THEME_MAX_INSTALLED_VERSIONS,
       },
       pagination: {
         page,
@@ -237,8 +331,10 @@ export default class ThemeStore {
         total,
         totalPages: Math.ceil(total / THEME_LIST_PAGE_SIZE),
       },
+      scope: requestedScope ?? (
+        state.activeThemeId && !activeIsBuiltIn ? "custom" : "built-in"
+      ),
       state,
-      themes: results(themeRows).map(storedThemeSummaryFromRow),
     };
   }
 
@@ -411,9 +507,9 @@ export default class ThemeStore {
       this.database.prepare(
         `INSERT OR IGNORE INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          preview_fixture_json, source_kind, checksum_sha256, origin_theme_id,
-          asset_owner_theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'bundled', ?, NULL, NULL)`,
+          preview_fixture_json, source_kind, source_path, checksum_sha256,
+          origin_theme_id, asset_owner_theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'bundled', ?, ?, NULL, NULL)`,
       ).bind(
         defaultThemeId,
         validated.manifest.packageId,
@@ -422,6 +518,7 @@ export default class ThemeStore {
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
         JSON.stringify(previewFixture),
+        BUNDLED_FALLBACK_THEME.source,
         checksum,
       ),
       this.database.prepare(
@@ -494,7 +591,8 @@ export default class ThemeStore {
         preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
       ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+        WHERE (SELECT count(*) FROM themes
+               WHERE deleted_at IS NULL AND source_kind != 'bundled') < ?
       RETURNING id`,
     ).bind(
       id,
@@ -512,11 +610,11 @@ export default class ThemeStore {
       checksum,
       input.originThemeId ?? null,
       assetOwnerThemeId,
-      THEME_MAX_INSTALLED_VERSIONS,
+      THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
     ).first<{id: string}>();
     if (!inserted) {
       throw new Error(
-        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+        `This environment already has ${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions. Delete an inactive Custom version before installing another.`,
       );
     }
     const installed = await this.getVersion(id);
@@ -659,7 +757,8 @@ export default class ThemeStore {
           preview_fixture_json, source_kind, checksum_sha256, origin_theme_id,
           asset_owner_theme_id
         ) SELECT ?, ?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?
-          WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+          WHERE (SELECT count(*) FROM themes
+                 WHERE deleted_at IS NULL AND source_kind != 'bundled') < ?
         RETURNING id`,
       ).bind(
         themeId,
@@ -672,11 +771,11 @@ export default class ThemeStore {
         checksum,
         draft.originThemeId,
         draft.assetOwnerThemeId,
-        THEME_MAX_INSTALLED_VERSIONS,
+        THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
       ).first<{id: string}>();
     if (!inserted) {
       throw new Error(
-        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version, then install this draft again. The draft has been retained.`,
+        `This environment already has ${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions. Delete an inactive Custom version, then install this draft again. The draft has been retained.`,
       );
     }
     await this.database.prepare("DELETE FROM theme_drafts WHERE id = ?")
@@ -771,6 +870,11 @@ export default class ThemeStore {
   async deleteVersion(id: string, bucket?: R2Bucket | null): Promise<void> {
     const theme = await this.getVersion(id, true);
     if (!theme) throw new Error("Theme version not found.");
+    if (theme.sourceKind === "bundled") {
+      throw new Error(
+        "Built-in themes are managed by microfeed deployment and cannot be deleted manually.",
+      );
+    }
     const state = await this.getState();
     if (state.activeThemeId === id) {
       throw new Error("Deactivate or replace the active theme before deleting it.");

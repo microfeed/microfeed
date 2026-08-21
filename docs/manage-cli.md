@@ -210,6 +210,9 @@ D1 or R2 resources are created. If initialization is interrupted later, retrying
 preserves whether each recorded resource was created for this site or explicitly
 reused. The fresh-target snapshot fingerprint is recorded after initialization,
 including optional custom-domain and login setup, has finished.
+Fresh initialization installs every current Built-in theme release and
+activates only the Default fallback. A resumed run installs any missing
+packages without changing an already selected theme.
 
 ```console
 yarn manage init [--instance <name>] [--preview|--local] [options]
@@ -331,17 +334,17 @@ unified item-and-Page search index before it becomes available. A second pass
 after the Worker switch
 captures any item write completed by the previous Worker version. An incomplete
 pass stops deployment instead of serving partially normalized search data.
-When the site's current public appearance uses a format-v1 theme, deployment
-installs the bundled default format-v2 theme as an inactive version. Once a site
-has a bundled-theme lineage, later deployments keep its inactive bundled
-candidate current as well. Deployment never activates or replaces the current
-appearance; preview and activation remain explicit actions in **Settings →
-Themes**. After the current bundled version is available, deployment
-soft-deletes older inactive versions of that same bundled package when they are
-not the rollback target or referenced by a draft, another version, or theme
-assets. Active, previous, referenced, current, newer, user-installed, and
-invalid-version records are preserved. The soft-deleted identities remain
-reserved while their installed theme slots become available again.
+Every deployment synchronizes the registered Built-in catalog from the current
+checkout. Missing and newer Built-in releases are installed inactive, and the
+active and previous selections are never changed. Preview and activation remain
+explicit actions in **Settings → Themes**. Synchronization is idempotent and can
+resume after a partial run. After a current Built-in release is available,
+deployment soft-deletes older releases of the same package when they are not
+active, previous, referenced by a draft or another version, or needed for theme
+assets. Current, newer, referenced, user-installed, and invalid-version records
+are preserved. A matching previously deleted Built-in release can be restored
+only when its package, version, source kind, and checksum still match the
+catalog.
 The complete repository test suite remains part of `yarn check` and continuous
 integration. Cloudflare mode then tags the Worker version with the current Git
 commit, deploys it, and verifies the Worker. The protected dashboard uses that
@@ -549,15 +552,17 @@ and tags are resolved to an exact commit before the manifest and declared files
 are downloaded. V1 does not store GitHub credentials and does not support
 private repositories.
 
-The reserved bundled source installs the rendered modern default from the
-current microfeed checkout:
+Canonical `bundled:<key>` sources install registered rendered packages from the
+current microfeed checkout. The compatibility alias `default` continues to
+resolve to `bundled:default`:
 
 ```console
-yarn manage theme install default --instance <instance-name>
+yarn manage theme install bundled:default --instance <instance-name>
 ```
 
 Like every manual install, it remains inactive until explicitly activated.
-`theme update` reloads a bundled default version from the current checkout.
+`theme update` reloads the matching canonical Built-in package when the selected
+version came from the catalog.
 
 Install and update always create an inactive version. Preview it in
 **Settings → Themes**, then activate it separately. Templates and manifests are
@@ -608,8 +613,8 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance personal \
 yarn manage theme install https://github.com/example/microfeed-theme \
   --instance personal
 
-# Reinstall the modern bundled default as an inactive version.
-yarn manage theme install default --instance personal
+# Reinstall the current Default Built-in release as an inactive version.
+yarn manage theme install bundled:default --instance personal
 
 # Exercise a local checkout without changing the deployed site.
 yarn manage theme install ~/microfeed-themes/my-theme --local --instance personal
@@ -637,16 +642,20 @@ metadata first, and retains an asset owner while any published version or draft
 still references it. Failed asset cleanup remains retryable by repeating the
 same confirmed delete command.
 
-The `microfeed.*` namespace is reserved for bundled themes and cannot be used
-by local-directory or GitHub installations. The literal `default` source is a
-trusted bundled install. Admin-created versions and ordinary site-specific
-forks use `local.*` package IDs.
+The `microfeed.*` namespace is reserved for Built-in themes and cannot be used
+by local-directory or GitHub installations. Canonical `bundled:<key>` sources
+are trusted catalog installs; `default` remains a compatibility alias for
+`bundled:default`. Admin-created versions and ordinary site-specific forks use
+`local.*` package IDs and count as Custom versions even when derived from a
+Built-in package.
 
-Each environment is limited to 50 non-deleted installed versions and 20
-drafts. An idempotent reinstall of identical content still succeeds at the
-installed-version limit. Delete an inactive version to free a slot; if Admin
-installation reaches the limit, its draft remains available. `theme list`
-selects only package and source metadata, not the full theme bundles.
+Each environment is limited to 100 non-deleted Custom versions and 20 drafts.
+Built-in versions do not consume the Custom quota and cannot be manually
+deleted; deployment synchronization prunes safe superseded releases. An
+idempotent reinstall of identical Custom content still succeeds at the limit.
+Delete an inactive Custom version to free a slot; if Admin installation reaches
+the limit, its draft remains available. `theme list` selects only package and
+source metadata, not the full theme bundles.
 
 ## `yarn manage snapshot`
 
