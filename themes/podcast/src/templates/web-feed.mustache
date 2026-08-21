@@ -1,0 +1,56 @@
+<main class="pod-main">
+  <section class="pod-hero">
+    <div class="pod-cover-wrap">
+      {{#icon}}<img class="pod-cover" src="{{icon}}" alt="{{title}} cover art" loading="eager" />{{/icon}}
+      {{^icon}}<div class="pod-cover pod-cover-fallback" aria-hidden="true">◉</div>{{/icon}}
+    </div>
+    <div class="pod-hero-copy">
+      <p class="pod-kicker">Independent podcast</p>
+      <h1>{{title}}</h1>
+      {{#authors}}<p class="pod-byline">Hosted by {{name}}</p>{{/authors}}
+      {{#description}}<div class="pod-description">{{{description}}}</div>{{/description}}
+      <div class="pod-subscribe" aria-label="Subscribe to {{title}}">
+        {{#_microfeed.subscribe_methods}}
+        <a href="{{url}}">{{#image}}<img src="{{image}}" alt="" loading="lazy" />{{/image}}<span>{{name}}</span></a>
+        {{/_microfeed.subscribe_methods}}
+      </div>
+    </div>
+  </section>
+
+  <section class="pod-episodes" aria-labelledby="latest-episodes">
+    <div class="pod-section-heading">
+      <p>From the archive</p>
+      <h2 id="latest-episodes">Latest episodes</h2>
+    </div>
+    {{^items.length}}
+    <div class="pod-empty"><span aria-hidden="true">◌</span><h3>Quiet for now</h3><p>The next episode will appear here when it is published.</p></div>
+    {{/items.length}}
+    <div class="pod-episode-list">
+      {{#items}}
+      <article class="pod-episode-card">
+        <a class="pod-episode-art" href="{{_microfeed.web_url}}" aria-label="Open {{title}}">
+          {{#image}}<img src="{{image}}" alt="" loading="lazy" />{{/image}}
+          {{^image}}{{#icon}}<img src="{{icon}}" alt="" loading="lazy" />{{/icon}}{{^icon}}<span aria-hidden="true">◉</span>{{/icon}}{{/image}}
+        </a>
+        <div class="pod-episode-copy">
+          <div class="pod-episode-meta">
+            <time>{{_microfeed.date_published_short}}</time>
+            {{#_microfeed.duration_hhmmss}}<span>{{_microfeed.duration_hhmmss}}</span>{{/_microfeed.duration_hhmmss}}
+            {{#_microfeed.itunes:season}}<span>Season {{_microfeed.itunes:season}}</span>{{/_microfeed.itunes:season}}
+          </div>
+          <h3><a href="{{_microfeed.web_url}}">{{title}}</a></h3>
+          {{#content_text}}<p class="pod-episode-summary">{{content_text}}</p>{{/content_text}}
+          {{#_microfeed.is_audio}}
+          {{#attachments}}<audio controls preload="metadata" src="{{url}}">Your browser does not support audio.</audio>{{/attachments}}
+          {{/_microfeed.is_audio}}
+          <a class="pod-listen-link" href="{{_microfeed.web_url}}">Episode details <span aria-hidden="true">→</span></a>
+        </div>
+      </article>
+      {{/items}}
+    </div>
+    <nav class="pod-pagination" aria-label="Pagination">
+      {{#_microfeed.prev_url}}<a href="{{_microfeed.prev_url}}">← Newer</a>{{/_microfeed.prev_url}}
+      {{#_microfeed.next_url}}<a href="{{_microfeed.next_url}}">Older →</a>{{/_microfeed.next_url}}
+    </nav>
+  </section>
+</main>

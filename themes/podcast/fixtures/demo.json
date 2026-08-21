@@ -1,0 +1,212 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Signal & Story",
+  "home_page_url": "https://example.test/",
+  "feed_url": "https://example.test/json/",
+  "description": "<p>Conversations with independent makers about the sounds, places, and ideas behind meaningful work.</p>",
+  "icon": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microphone_1.jpg",
+  "authors": [
+    {"name": "Mara Chen"}
+  ],
+  "language": "en",
+  "items": [
+    {
+      "id": "city-wakes",
+      "url": "https://example.test/episodes/city-wakes/",
+      "title": "The sound of a city waking up",
+      "content_text": "Field recordist Ren Ito explains how a familiar street becomes a layered composition before sunrise.",
+      "content_html": "<p>Field recordist <strong>Ren Ito</strong> explains how a familiar street becomes a layered composition before sunrise.</p><h2>In this episode</h2><ul><li>Listening for rhythm in ordinary places</li><li>Building a portable recording kit</li><li>Leaving room for silence</li></ul><blockquote>Good field recordings are invitations to notice more.</blockquote>",
+      "date_published": "2026-08-20T14:00:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microphone_1.jpg",
+      "authors": [{"name": "Mara Chen"}, {"name": "Ren Ito"}],
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg",
+          "mime_type": "audio/ogg",
+          "size_in_bytes": 1092440,
+          "duration_in_seconds": 31
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 20, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "itunes:episode": 12,
+        "itunes:episodeType": "full",
+        "itunes:explicit": false,
+        "itunes:season": 2,
+        "json_url": "https://example.test/json/items/city-wakes/",
+        "rss_url": "https://example.test/rss/items/city-wakes/",
+        "status": "published",
+        "web_url": "https://example.test/i/city-wakes/"
+      }
+    },
+    {
+      "id": "patient-tools",
+      "url": "https://example.test/episodes/patient-tools/",
+      "title": "Tools that reward patience",
+      "content_text": "Designer Lena Ortiz on choosing slower tools and making technology feel humane.",
+      "content_html": "<p>Designer Lena Ortiz on choosing slower tools and making technology feel humane.</p>",
+      "date_published": "2026-08-13T14:00:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg",
+          "mime_type": "audio/ogg",
+          "duration_in_seconds": 31
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 13, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "itunes:episode": 11,
+        "itunes:episodeType": "full",
+        "itunes:season": 2,
+        "json_url": "https://example.test/json/items/patient-tools/",
+        "rss_url": "https://example.test/rss/items/patient-tools/",
+        "status": "published",
+        "web_url": "https://example.test/i/patient-tools/"
+      }
+    },
+    {
+      "id": "studio-dispatch",
+      "url": "https://example.test/episodes/studio-dispatch/",
+      "title": "Studio dispatch: finding motion in still water",
+      "content_text": "A short video dispatch from the field between full conversations.",
+      "content_html": "<p>A short video dispatch from the field between full conversations.</p>",
+      "date_published": "2026-08-09T10:30:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm",
+          "mime_type": "video/webm",
+          "duration_in_seconds": 3.4
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 9, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/studio-dispatch/",
+        "rss_url": "https://example.test/rss/items/studio-dispatch/",
+        "status": "published",
+        "web_url": "https://example.test/i/studio-dispatch/"
+      }
+    },
+    {
+      "id": "listening-room",
+      "url": "https://example.test/notes/listening-room/",
+      "title": "Inside our new listening room",
+      "content_text": "A photo note about the small room where each conversation is edited.",
+      "content_html": "<p>A photo note about the small room where each conversation is edited.</p>",
+      "date_published": "2026-08-05T09:15:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
+          "mime_type": "image/jpeg"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 5, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/listening-room/",
+        "rss_url": "https://example.test/rss/items/listening-room/",
+        "status": "published",
+        "web_url": "https://example.test/i/listening-room/"
+      }
+    },
+    {
+      "id": "season-guide",
+      "url": "https://example.test/notes/season-guide/",
+      "title": "Download the season-two listening guide",
+      "content_text": "A printable companion with guest notes and further listening.",
+      "content_html": "<p>A printable companion with guest notes and further listening.</p>",
+      "date_published": "2026-08-01T08:00:00Z",
+      "attachments": [
+        {
+          "url": "https://example.test/media/signal-and-story-season-two.pdf",
+          "mime_type": "application/pdf",
+          "size_in_bytes": 840000
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 1, 2026",
+        "is_document": true,
+        "json_url": "https://example.test/json/items/season-guide/",
+        "rss_url": "https://example.test/rss/items/season-guide/",
+        "status": "published",
+        "web_url": "https://example.test/i/season-guide/"
+      }
+    },
+    {
+      "id": "guest-reading",
+      "external_url": "https://publisher.example/interviews/listening-as-practice/",
+      "title": "Guest reading: listening as a creative practice",
+      "content_text": "A useful essay from a recent guest, shared from elsewhere on the web.",
+      "content_html": "<p>A useful essay from a recent guest, shared from elsewhere on the web.</p>",
+      "date_published": "2026-07-28T17:00:00Z",
+      "attachments": [
+        {
+          "url": "https://publisher.example/interviews/listening-as-practice/",
+          "mime_type": "text/html"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Jul 28, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/guest-reading/",
+        "rss_url": "https://example.test/rss/items/guest-reading/",
+        "status": "published",
+        "web_url": "https://example.test/i/guest-reading/"
+      }
+    }
+  ],
+  "navigation_pages": [
+    {"id": "page-about", "navigation_label": "About", "navigation_order": 10, "slug": "about", "title": "About the show", "url": "https://example.test/about/"},
+    {"id": "page-host", "navigation_label": "Host", "navigation_order": 20, "slug": "host", "title": "Meet the host", "url": "https://example.test/host/"},
+    {"id": "page-contact", "navigation_label": "Contact", "navigation_order": 30, "slug": "contact", "title": "Contact", "url": "https://example.test/contact/"}
+  ],
+  "page": {
+    "content_html": "<p><strong>Signal &amp; Story</strong> is a weekly conversation about independent creative work.</p><h2>Listen closely</h2><p>Each episode pairs a thoughtful interview with field sound and a short reading list.</p>",
+    "content_text": "Signal & Story is a weekly conversation about independent creative work.",
+    "date_created": "2026-01-10T09:00:00Z",
+    "date_modified": "2026-08-18T09:00:00Z",
+    "date_published": "2026-01-10T09:00:00Z",
+    "id": "page-about",
+    "is_not_found_page": false,
+    "meta_description": "About Signal & Story.",
+    "navigation_label": "About",
+    "navigation_order": 10,
+    "show_in_navigation": true,
+    "slug": "about",
+    "status": "published",
+    "title": "About the show",
+    "url": "https://example.test/about/"
+  },
+  "search": {
+    "query": "listening",
+    "results": [
+      {"content_text": "Field recordist Ren Ito explains how a familiar street becomes a layered composition before sunrise.", "date_published": "2026-08-20T14:00:00Z", "id": "city-wakes", "title": "The sound of a city waking up", "type": "item", "url": "https://example.test/i/city-wakes/"},
+      {"content_text": "Signal & Story is a weekly conversation about independent creative work.", "date_published": "2026-01-10T09:00:00Z", "id": "page-about", "title": "About the show", "type": "page", "url": "https://example.test/about/"}
+    ]
+  },
+  "_microfeed": {
+    "base_url": "https://example.test/",
+    "categories": [{"name": "Arts"}, {"name": "Society & Culture"}],
+    "copyright": "© 2026 Signal & Story",
+    "items_next_cursor": "older-episodes",
+    "items_order": "desc",
+    "items_sort": "published_at",
+    "microfeed_version": "1.0.0",
+    "next_url": "https://example.test/?next_cursor=older-episodes",
+    "subscribe_methods": [
+      {"enabled": true, "name": "RSS", "type": "rss", "url": "https://example.test/rss/"},
+      {"enabled": true, "name": "JSON Feed", "type": "json", "url": "https://example.test/json/"}
+    ],
+    "itunes:explicit": false,
+    "itunes:title": "Signal & Story",
+    "itunes:type": "episodic"
+  }
+}

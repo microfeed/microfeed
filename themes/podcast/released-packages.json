@@ -1,0 +1,9 @@
+{
+  "packageId": "microfeed.podcast",
+  "releases": [
+    {
+      "checksumSha256": "9f5f186534ed7ab9bd766d367cef114f98e49d9d42ed64a35b3dc0764fa35dd2",
+      "version": "1.0.0"
+    }
+  ]
+}

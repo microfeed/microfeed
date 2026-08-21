@@ -1,0 +1,9 @@
+{
+  "packageId": "microfeed.photo",
+  "releases": [
+    {
+      "checksumSha256": "ad8b99fc45f29d1abc7b9eddc870a35faf5c820cf4092d6773dbddb29c3518ae",
+      "version": "1.0.0"
+    }
+  ]
+}

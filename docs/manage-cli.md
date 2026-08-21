@@ -558,7 +558,14 @@ resolve to `bundled:default`:
 
 ```console
 yarn manage theme install bundled:default --instance <instance-name>
+yarn manage theme install bundled:podcast --instance <instance-name>
+yarn manage theme install bundled:blog --instance <instance-name>
+yarn manage theme install bundled:photo --instance <instance-name>
 ```
+
+The registered keys in this release are `default`, `podcast`, `blog`, and
+`photo`. Each source maps to its independent `microfeed.*` package and immutable
+release ledger.
 
 Like every manual install, it remains inactive until explicitly activated.
 `theme update` reloads the matching canonical Built-in package when the selected
@@ -615,6 +622,9 @@ yarn manage theme install https://github.com/example/microfeed-theme \
 
 # Reinstall the current Default Built-in release as an inactive version.
 yarn manage theme install bundled:default --instance personal
+
+# Install the current Podcast showcase release as an inactive version.
+yarn manage theme install bundled:podcast --instance personal
 
 # Exercise a local checkout without changing the deployed site.
 yarn manage theme install ~/microfeed-themes/my-theme --local --instance personal

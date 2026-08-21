@@ -1,4 +1,7 @@
+import BLOG_MANIFEST from "../../../themes/blog/microfeed-theme.json";
 import DEFAULT_MANIFEST from "../../../themes/default/microfeed-theme.json";
+import PHOTO_MANIFEST from "../../../themes/photo/microfeed-theme.json";
+import PODCAST_MANIFEST from "../../../themes/podcast/microfeed-theme.json";
 
 import {
   themeManifestV1Schema,
@@ -38,6 +41,9 @@ function catalogEntry(
 
 export const BUNDLED_THEME_CATALOG: readonly BundledThemeCatalogEntry[] = [
   catalogEntry("default", "default", 0, true, DEFAULT_MANIFEST),
+  catalogEntry("podcast", "podcast", 1, false, PODCAST_MANIFEST),
+  catalogEntry("blog", "blog", 2, false, BLOG_MANIFEST),
+  catalogEntry("photo", "photo", 3, false, PHOTO_MANIFEST),
 ];
 
 function assertValidCatalog(

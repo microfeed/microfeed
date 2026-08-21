@@ -58,9 +58,13 @@ describe("bundled theme release registry", () => {
 
   it("verifies and records every catalog ledger", async () => {
     await expect(verifyBundledThemeReleases(repositoryRoot)).resolves
-      .toEqual([expect.objectContaining({packageId: "microfeed.default"})]);
+      .toEqual(BUNDLED_THEME_CATALOG.map(({packageId}) =>
+        expect.objectContaining({packageId})
+      ));
     await expect(recordBundledThemeReleases(repositoryRoot)).resolves
-      .toEqual([expect.objectContaining({recorded: false})]);
+      .toEqual(BUNDLED_THEME_CATALOG.map(() =>
+        expect.objectContaining({recorded: false})
+      ));
   });
 
   it("rejects changed package bytes under a released version", async () => {
@@ -112,5 +116,22 @@ describe("bundled theme release registry", () => {
     await expect(recordBundledThemeRelease(directory)).resolves.toMatchObject({
       recorded: false,
     });
+  });
+
+  it("records the first release in an empty package ledger", async () => {
+    const directory = await temporaryRepository();
+    await writeFile(
+      path.join(directory, "themes/podcast/released-packages.json"),
+      `${JSON.stringify({packageId: "microfeed.podcast", releases: []}, null, 2)}\n`,
+      "utf8",
+    );
+
+    await expect(recordBundledThemeRelease(directory, "podcast")).resolves
+      .toMatchObject({
+        identity: {packageId: "microfeed.podcast", version: "1.0.0"},
+        recorded: true,
+      });
+    await expect(verifyBundledThemeRelease(directory, "podcast")).resolves
+      .toMatchObject({packageId: "microfeed.podcast", version: "1.0.0"});
   });
 });

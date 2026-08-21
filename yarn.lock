@@ -2855,6 +2855,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@microfeed/blog-theme-source@workspace:themes/blog":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/blog-theme-source@workspace:themes/blog"
+  dependencies:
+    "@microfeed/theme-kit": "workspace:^"
+    "@tailwindcss/vite": "npm:^4.1.14"
+    tailwindcss: "npm:^4.0.14"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
+  languageName: unknown
+  linkType: soft
+
 "@microfeed/cli@workspace:packages/cli":
   version: 0.0.0-use.local
   resolution: "@microfeed/cli@workspace:packages/cli"
@@ -2874,6 +2886,30 @@ __metadata:
 "@microfeed/default-theme-source@workspace:themes/default":
   version: 0.0.0-use.local
   resolution: "@microfeed/default-theme-source@workspace:themes/default"
+  dependencies:
+    "@microfeed/theme-kit": "workspace:^"
+    "@tailwindcss/vite": "npm:^4.1.14"
+    tailwindcss: "npm:^4.0.14"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
+  languageName: unknown
+  linkType: soft
+
+"@microfeed/photo-theme-source@workspace:themes/photo":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/photo-theme-source@workspace:themes/photo"
+  dependencies:
+    "@microfeed/theme-kit": "workspace:^"
+    "@tailwindcss/vite": "npm:^4.1.14"
+    tailwindcss: "npm:^4.0.14"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
+  languageName: unknown
+  linkType: soft
+
+"@microfeed/podcast-theme-source@workspace:themes/podcast":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/podcast-theme-source@workspace:themes/podcast"
   dependencies:
     "@microfeed/theme-kit": "workspace:^"
     "@tailwindcss/vite": "npm:^4.1.14"

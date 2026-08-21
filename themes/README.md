@@ -11,6 +11,15 @@ emergency runtime fallback when no valid active version is available. Other
 Built-in package contents are persisted in D1 by the management CLI and are not
 added to the Worker bundle.
 
+The current catalog includes these canonical sources:
+
+| Source | Package | Focus |
+| --- | --- | --- |
+| `bundled:default` | `microfeed.default` | General-purpose feed |
+| `bundled:podcast` | `microfeed.podcast` | Audio shows and episode notes |
+| `bundled:blog` | `microfeed.blog` | Editorial essays and rich text |
+| `bundled:photo` | `microfeed.photo` | Image-led galleries and captions |
+
 ## `default`
 
 `themes/default` is the format-v2 `microfeed.default@1.1.15` theme. New pristine
@@ -55,6 +64,10 @@ public site:
 ```console
 yarn manage theme install bundled:default --instance <instance-name>
 ```
+
+Replace `default` with `podcast`, `blog`, or `photo` to install another current
+Built-in release manually. Deployment normally synchronizes every registered
+release without requiring these commands.
 
 ## Working with the bundled theme
 

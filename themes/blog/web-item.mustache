@@ -1,0 +1,28 @@
+<main class="blog-main blog-reader">
+  <a class="blog-back" href="/">← Back to the journal</a>
+  <article class="blog-story">
+    <header class="blog-story-header">
+      <p class="blog-rubric">Field notes</p>
+      <h1>{{items.0.title}}</h1>
+      {{#items.0.content_text}}<p class="blog-story-deck">{{items.0.content_text}}</p>{{/items.0.content_text}}
+      <div class="blog-story-meta">
+        {{#items.0.authors}}<span>By {{name}}</span>{{/items.0.authors}}
+        <time>{{items.0._microfeed.date_published_short}}</time>
+        {{#items.0._microfeed.duration_hhmmss}}<span>{{items.0._microfeed.duration_hhmmss}}</span>{{/items.0._microfeed.duration_hhmmss}}
+      </div>
+    </header>
+    {{#items.0.image}}<figure class="blog-story-figure"><img src="{{items.0.image}}" alt="" loading="eager" /></figure>{{/items.0.image}}
+    <div class="blog-story-body">
+      {{#items.0._microfeed.is_audio}}{{#items.0.attachments}}<div class="blog-media-block"><strong>Listen to this story</strong><audio controls preload="metadata" src="{{url}}">Your browser does not support audio.</audio></div>{{/items.0.attachments}}{{/items.0._microfeed.is_audio}}
+      {{#items.0._microfeed.is_video}}{{#items.0.attachments}}<video controls preload="metadata" poster="{{items.0.image}}"><source src="{{url}}" type="{{mime_type}}" />Your browser does not support video.</video>{{/items.0.attachments}}{{/items.0._microfeed.is_video}}
+      {{#items.0._microfeed.is_image}}{{#items.0.attachments}}<a class="blog-inline-image" href="{{url}}"><img src="{{url}}" alt="" loading="eager" /></a>{{/items.0.attachments}}{{/items.0._microfeed.is_image}}
+      {{#items.0._microfeed.is_document}}{{#items.0.attachments}}<a class="blog-resource" href="{{url}}">Download the resource →</a>{{/items.0.attachments}}{{/items.0._microfeed.is_document}}
+      {{#items.0._microfeed.is_external_url}}{{#items.0.attachments}}<a class="blog-resource" href="{{url}}" rel="noopener nofollow">Read the original →</a>{{/items.0.attachments}}{{/items.0._microfeed.is_external_url}}
+      {{#items.0.content_html}}<div class="blog-rich-content">{{{items.0.content_html}}}</div>{{/items.0.content_html}}
+    </div>
+    <footer class="blog-story-footer">
+      <span>Continue reading</span>
+      <div class="blog-subscribe">{{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}</div>
+    </footer>
+  </article>
+</main>

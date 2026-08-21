@@ -24,7 +24,7 @@ const releasedThemeSchema = z.object({
 
 const bundledThemeReleasesSchema = z.object({
   packageId: z.string().min(1),
-  releases: z.array(releasedThemeSchema).min(1),
+  releases: z.array(releasedThemeSchema),
 }).strict();
 
 export interface BundledThemeReleaseIdentity {
@@ -177,8 +177,8 @@ export async function recordBundledThemeRelease(
       recorded: false,
     };
   }
-  const latest = registry.releases.at(-1)!;
-  if (!gt(current.version, latest.version)) {
+  const latest = registry.releases.at(-1);
+  if (latest && !gt(current.version, latest.version)) {
     throw new Error(
       `${current.version} must be newer than the latest bundled theme ` +
         `release, ${latest.version}.`,

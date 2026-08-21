@@ -11,7 +11,12 @@ import {
 
 describe("Built-in theme catalog", () => {
   it("has unique ordered identities and exactly one fallback", () => {
-    expect(BUNDLED_THEME_CATALOG.map(({key}) => key)).toEqual(["default"]);
+    expect(BUNDLED_THEME_CATALOG.map(({key}) => key)).toEqual([
+      "default",
+      "podcast",
+      "blog",
+      "photo",
+    ]);
     expect(new Set(BUNDLED_THEME_CATALOG.map(({key}) => key)).size)
       .toBe(BUNDLED_THEME_CATALOG.length);
     expect(new Set(BUNDLED_THEME_CATALOG.map(({directory}) => directory)).size)
@@ -19,7 +24,12 @@ describe("Built-in theme catalog", () => {
     expect(new Set(
       BUNDLED_THEME_CATALOG.map(({packageId}) => packageId),
     ).size).toBe(BUNDLED_THEME_CATALOG.length);
-    expect(BUNDLED_THEME_CATALOG.map(({order}) => order)).toEqual([0]);
+    expect(BUNDLED_THEME_CATALOG.map(({order}) => order)).toEqual([
+      0,
+      1,
+      2,
+      3,
+    ]);
     expect(BUNDLED_THEME_CATALOG.filter(({fallback}) => fallback))
       .toEqual([BUNDLED_FALLBACK_THEME]);
     expect(BUNDLED_FALLBACK_THEME.manifest.packageId)
@@ -36,5 +46,7 @@ describe("Built-in theme catalog", () => {
     expect(bundledThemeCatalogEntryBySource("bundled:missing")).toBeNull();
     expect(canonicalBundledThemeSource(entry.manifest.packageId))
       .toBe("bundled:default");
+    expect(bundledThemeCatalogEntryBySource("bundled:podcast")?.packageId)
+      .toBe("microfeed.podcast");
   });
 });

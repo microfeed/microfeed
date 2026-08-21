@@ -1,0 +1,23 @@
+{
+  "$schema": "./.microfeed/schemas/manifest.schema.json",
+  "formatVersion": 2,
+  "packageId": "microfeed.photo",
+  "name": "Photo Grid",
+  "version": "1.0.0",
+  "author": "microfeed",
+  "license": "AGPL-3.0",
+  "description": "A responsive visual journal with an immersive photo grid, large image views, captions, and keyboard-friendly gallery links.",
+  "previewFixture": "fixtures/demo.json",
+  "microfeed": "*",
+  "files": {
+    "webFeed": "web-feed.mustache",
+    "webItem": "web-item.mustache",
+    "webPage": "web-page.mustache",
+    "webSearch": "web-search.mustache",
+    "webHeader": "web-header.mustache",
+    "webBodyStart": "web-body-start.mustache",
+    "webBodyEnd": "web-body-end.mustache",
+    "rssStylesheet": "rss-stylesheet.xsl"
+  },
+  "assets": []
+}
