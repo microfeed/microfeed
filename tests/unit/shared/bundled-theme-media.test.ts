@@ -20,7 +20,7 @@ interface Fixture {
 }
 
 interface MediaNotes {
-  media: Array<{license: string; sourcePage: string; url: string}>;
+  media: Array<{licenseName: string; sourcePage: string; url: string}>;
 }
 
 async function filesUnder(directory: string): Promise<string[]> {
@@ -69,7 +69,7 @@ describe("Built-in theme fixture media", () => {
         expect(parsed.hostname, `${entry.key}: ${url}`).not.toBe("example.test");
         const media = documented.get(url);
         expect(media, `${entry.key}: missing license notes for ${url}`).toBeDefined();
-        expect(media?.license.trim()).not.toBe("");
+        expect(media?.licenseName.trim()).not.toBe("");
         expect(new URL(media!.sourcePage).protocol).toBe("https:");
       }
 
