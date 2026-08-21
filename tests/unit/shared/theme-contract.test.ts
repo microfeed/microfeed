@@ -12,9 +12,12 @@ import type {
 import {
   assertUserThemePackageId,
   isReservedThemePackageId,
+  LEGACY_THEME_DESCRIPTION_MAX_LENGTH,
+  THEME_DESCRIPTION_MAX_LENGTH,
 } from "@/shared/themes/ThemeContract";
 import {
   ThemeValidationError,
+  validateStoredThemePackage,
   validateThemePackage,
 } from "@/shared/themes/ThemeValidation";
 import {
@@ -103,6 +106,36 @@ describe("theme contract", () => {
       bundle(),
       "1.0.1",
     )).toThrow("does not include microfeed 1.0.1");
+  });
+
+  it("caps new descriptions at 280 characters without invalidating stored legacy metadata", () => {
+    expect(validateThemePackage({
+      ...manifest(),
+      description: "x".repeat(THEME_DESCRIPTION_MAX_LENGTH),
+    }, bundle()).manifest.description).toHaveLength(
+      THEME_DESCRIPTION_MAX_LENGTH,
+    );
+    expect(() => validateThemePackage({
+      ...manifest(),
+      description: "x".repeat(THEME_DESCRIPTION_MAX_LENGTH + 1),
+    }, bundle())).toThrow(ThemeValidationError);
+    expect(validateStoredThemePackage({
+      ...manifest(),
+      description: "x".repeat(LEGACY_THEME_DESCRIPTION_MAX_LENGTH),
+    }, bundle()).manifest.description).toHaveLength(
+      LEGACY_THEME_DESCRIPTION_MAX_LENGTH,
+    );
+  });
+
+  it("validates safe preview fixture paths", () => {
+    expect(validateThemePackage({
+      ...manifest(),
+      previewFixture: "fixtures/preview.json",
+    }, bundle()).manifest.previewFixture).toBe("fixtures/preview.json");
+    expect(() => validateThemePackage({
+      ...manifest(),
+      previewFixture: "../preview.json",
+    }, bundle())).toThrow("Path traversal");
   });
 
   it("validates optional v2 search destinations and defaults omission to web", () => {
@@ -218,5 +251,19 @@ describe("theme contract", () => {
       {...bundle(), assets: [{...asset, key: "preview/themes/two/assets/logo.png"}]},
     );
     expect(left).toBe(right);
+  });
+
+  it("includes a declared fixture in checksums without changing fixture-free packages", () => {
+    const fixtureFree = canonicalThemePackage(manifest(), bundle());
+    expect(JSON.parse(fixtureFree)).not.toHaveProperty("previewFixture");
+    const first = canonicalThemePackage(manifest(), bundle(), {
+      items: [{id: "one", title: "One"}],
+      version: "https://jsonfeed.org/version/1.1",
+    });
+    const second = canonicalThemePackage(manifest(), bundle(), {
+      items: [{id: "two", title: "Two"}],
+      version: "https://jsonfeed.org/version/1.1",
+    });
+    expect(first).not.toBe(second);
   });
 });

@@ -91,14 +91,12 @@ function contexts(
     packageId: manifest.packageId,
     version: manifest.version,
   });
-  const items = Array.isArray(fixture.items)
-    ? fixture.items.map(recordValue).filter((item): item is Record<string, unknown> => item !== undefined)
-    : [];
+  const items = context.items;
   const previewPublishedAt = items
     .map((item) => stringValue(item.date_published))
     .find((value): value is string => value !== undefined) ??
     new Date().toISOString();
-  const page = {
+  const page = context.page ?? {
     content_html: "<p>Standalone Page content.</p>",
     content_text: "Standalone Page content.",
     date_created: previewPublishedAt,
@@ -115,32 +113,46 @@ function contexts(
     title: "About",
     url: "https://example.test/about/",
   };
-  const navigation_pages = [
-    page,
-    {
-      id: "page-contact",
-      navigation_label: "Contact",
-      navigation_order: 20,
-      slug: "contact",
-      title: "Contact",
-      url: "https://example.test/contact/",
-    },
-    {
-      id: "page-projects",
-      navigation_label: "Projects",
-      navigation_order: 30,
-      slug: "projects",
-      title: "Projects",
-      url: "https://example.test/projects/",
-    },
-  ];
+  const navigation_pages = context.navigation_pages?.length
+    ? context.navigation_pages
+    : [
+      page,
+      {
+        id: "page-contact",
+        navigation_label: "Contact",
+        navigation_order: 20,
+        slug: "contact",
+        title: "Contact",
+        url: "https://example.test/contact/",
+      },
+      {
+        id: "page-projects",
+        navigation_label: "Projects",
+        navigation_order: 30,
+        slug: "projects",
+        title: "Projects",
+        url: "https://example.test/projects/",
+      },
+    ];
   const baseUrl = absoluteUrl(
     recordValue(fixture._microfeed)?.base_url ?? fixture.home_page_url,
     "https://example.test/",
   ) ?? "https://example.test/";
   const searchItemDestination = manifestSearchItemDestination(manifest);
-  const previewResults: PublicSearchResult[] = items.slice(0, 5).map(
-    (item, index) => {
+  const suppliedSearchResults: PublicSearchResult[] =
+    (context.search?.results ?? [])
+    .map((result) => ({
+      content_text: result.content_text,
+      date_published: result.date_published,
+      highlights: result.highlights,
+      id: result.id,
+      title: result.title,
+      type: result.type,
+      url: result.url,
+    }));
+  const previewResults: PublicSearchResult[] = suppliedSearchResults.length > 0
+    ? suppliedSearchResults
+    : items.slice(0, 5).map((item, index) => {
       const id = stringValue(item.id) ?? `preview-item-${index + 1}`;
       const microfeed = recordValue(item._microfeed);
       const attachment = Array.isArray(item.attachments)
@@ -160,8 +172,7 @@ function contexts(
           webUrl,
         }),
       };
-    },
-  );
+    });
   if (previewResults.length === 0) {
     previewResults.push({
       content_text: "This representative item shows how a search result is styled.",
@@ -172,24 +183,30 @@ function contexts(
       url: new URL("/i/preview-item/", baseUrl).toString(),
     });
   }
-  for (const navigationPage of navigation_pages) {
-    previewResults.push({
-      content_text: navigationPage.id === page.id
-        ? page.content_text
-        : `Representative content for the ${navigationPage.title} Page.`,
-      date_published: previewPublishedAt,
-      id: navigationPage.id,
-      title: navigationPage.title,
-      type: "page",
-      url: navigationPage.url,
-    });
+  if (suppliedSearchResults.length === 0) {
+    for (const navigationPage of navigation_pages) {
+      previewResults.push({
+        content_text: navigationPage.id === page.id
+          ? page.content_text
+          : `Representative content for the ${navigationPage.title} Page.`,
+        date_published: previewPublishedAt,
+        id: navigationPage.id,
+        title: navigationPage.title,
+        type: "page",
+        url: navigationPage.url,
+      });
+    }
   }
   return {
     context: {...context, navigation_pages},
-    itemContext: {...context, navigation_pages, item: (fixture.items as Array<Record<string, unknown>> | undefined)?.[0]},
+    itemContext: {...context, navigation_pages, item: items[0]},
     pageContext: {...context, navigation_pages, page},
     previewResults,
-    searchContext: {...context, navigation_pages, search: {query: "hello", results: previewResults}},
+    searchContext: {
+      ...context,
+      navigation_pages,
+      search: {query: context.search?.query ?? "hello", results: previewResults},
+    },
   };
 }
 
@@ -394,7 +411,8 @@ async function preview(args: Arguments): Promise<void> {
   const theme = await loadThemePackage(
     resolveInvocationPath(args.positionals[0] ?? "."),
   );
-  let selectedFixture: Record<string, unknown> = BUILT_IN_FIXTURES.minimal!;
+  let selectedFixture: Record<string, unknown> = theme.previewFixture ??
+    BUILT_IN_FIXTURES.minimal!;
   const fixture = optionString(args, "fixture");
   const feedUrl = optionString(args, "feed-url");
   if (feedUrl) {

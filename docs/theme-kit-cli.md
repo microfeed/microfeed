@@ -139,6 +139,7 @@ Loads the complete installable package and validates:
 - Manifest format, semantic version, and microfeed compatibility.
 - The six format-v1 or eight format-v2 declared text-file paths and their size limits.
 - Mustache templates and the complete RSS XSL stylesheet.
+- The optional declared `previewFixture` path, JSON object, and 128 KiB limit.
 - Declared asset paths, symlinks, file types, per-file limits, and total limits.
 - Missing, undeclared, absolute, or traversing paths.
 
@@ -197,8 +198,10 @@ sandboxed content security policy.
 | `--fixture <name-or-file>` | Use one built-in fixture name or the path to a JSON fixture file. |
 | `--feed-url <url>` | Download a public microfeed JSON Feed and use it as preview data. |
 
-When neither option is supplied, preview uses the `minimal` fixture. Use only
-one data option at a time. `<directory>` defaults to the current directory.
+When neither option is supplied, preview uses the theme's declared
+`previewFixture`. Packages without one fall back to the built-in `minimal`
+fixture. Use only one data option at a time. `<directory>` defaults to the
+current directory.
 
 The server continues running until you stop it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 Previewing never installs or activates the package.
@@ -220,8 +223,10 @@ and writes formatted JSON to `<file>`.
 - Review copied titles, descriptions, media URLs, and other content before
   committing the fixture to a public repository.
 
-Use the saved path with `preview --fixture <file>`, or keep it under
-`fixtures/` so `test` includes it automatically.
+Use the saved path with `preview --fixture <file>`, keep it under `fixtures/`
+so `test` includes it automatically, or declare that relative path as the
+manifest's `previewFixture` to make it the package's default local and Admin
+demo dataset.
 
 ## Typical local sequence
 

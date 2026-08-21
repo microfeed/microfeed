@@ -7,7 +7,11 @@ import {promisify} from "node:util";
 
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ThemeBundleV1, ThemeManifestV1} from "@/shared/themes/ThemeContract";
+import type {
+  ThemeBundleV1,
+  ThemeManifestV1,
+  ThemePreviewFixture,
+} from "@/shared/themes/ThemeContract";
 import {themeKitCompatibilityRange} from "@/shared/ThemeKitVersion";
 import {
   MICROFEED_PACKAGE_MANAGER,
@@ -46,6 +50,12 @@ const bundle: ThemeBundleV1 = {
   webFeed: "active feed {{title}}",
   webHeader: "active header",
   webItem: "active item {{items.0.title}}",
+};
+
+const previewFixture: ThemePreviewFixture = {
+  items: [{id: "fixture-item", title: "Fixture item"}],
+  title: "Theme fixture",
+  version: "https://jsonfeed.org/version/1.1",
 };
 
 function savedConfig(): MicrofeedConfig {
@@ -111,6 +121,25 @@ afterEach(async () => {
 });
 
 describe("theme repository initialization", () => {
+  it("updates legacy bundled rows from the current checkout", async () => {
+    const {theme} = await freshModules();
+    expect(theme.themeUpdateSource({
+      sourceKind: "bundled",
+      sourcePath: null,
+      sourceUrl: null,
+    })).toBe("default");
+    expect(theme.themeUpdateSource({
+      sourceKind: "github",
+      sourcePath: null,
+      sourceUrl: "https://github.com/example/theme",
+    })).toBe("https://github.com/example/theme");
+    expect(theme.themeUpdateSource({
+      sourceKind: "admin",
+      sourcePath: null,
+      sourceUrl: null,
+    })).toBeNull();
+  });
+
   it("reserves microfeed package IDs while defaulting user forks to local IDs", async () => {
     const {theme} = await freshModules();
     const source = {
@@ -120,6 +149,7 @@ describe("theme repository initialization", () => {
       fallbackReason: null,
       kind: "installed" as const,
       manifest,
+      previewFixture: null,
       themeId: "source-theme",
     };
     expect(theme.initializedThemeManifest(
@@ -187,21 +217,22 @@ describe("theme repository initialization", () => {
       if (request.sql.includes("INSERT INTO themes")) {
         const values = request.params!;
         stored = {
-          asset_owner_theme_id: values[13],
+          asset_owner_theme_id: values[14],
           bundle_json: values[5],
-          checksum_sha256: values[11],
+          checksum_sha256: values[12],
           created_at: "2026-08-10T00:00:00.000Z",
           deleted_at: null,
           id: values[0],
           manifest_json: values[4],
           name: values[3],
-          origin_theme_id: values[12],
+          origin_theme_id: values[13],
           package_id: values[1],
-          source_commit: values[10],
-          source_kind: values[6],
-          source_path: values[9],
-          source_ref: values[8],
-          source_url: values[7],
+          preview_fixture_json: values[6],
+          source_commit: values[11],
+          source_kind: values[7],
+          source_path: values[10],
+          source_ref: values[9],
+          source_url: values[8],
           version: values[2],
         };
         return d1Response([{id: values[0]}]);
@@ -230,13 +261,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "default",
-      version: "1.1.10",
+      version: "1.1.15",
     });
     expect(stored).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "default",
-      version: "1.1.10",
+      version: "1.1.15",
     });
   });
 
@@ -293,21 +324,22 @@ describe("theme repository initialization", () => {
         if (request.sql.includes("INSERT INTO themes")) {
           const values = request.params!;
           stored = {
-            asset_owner_theme_id: values[13],
+            asset_owner_theme_id: values[14],
             bundle_json: values[5],
-            checksum_sha256: values[11],
+            checksum_sha256: values[12],
             created_at: "2026-08-10T00:00:00.000Z",
             deleted_at: null,
             id: values[0],
             manifest_json: values[4],
             name: values[3],
-            origin_theme_id: values[12],
+            origin_theme_id: values[13],
             package_id: values[1],
-            source_commit: values[10],
-            source_kind: values[6],
-            source_path: values[9],
-            source_ref: values[8],
-            source_url: values[7],
+            preview_fixture_json: values[6],
+            source_commit: values[11],
+            source_kind: values[7],
+            source_path: values[10],
+            source_ref: values[9],
+            source_url: values[8],
             version: values[2],
           };
           return d1Response([{id: values[0]}]);
@@ -332,7 +364,7 @@ describe("theme repository initialization", () => {
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
         sourceKind: "bundled",
-        version: "1.1.10",
+        version: "1.1.15",
       });
       await expect(theme.installDefaultThemeForV1Appearance(
         savedConfig(),
@@ -340,12 +372,12 @@ describe("theme repository initialization", () => {
         false,
       )).resolves.toMatchObject({
         packageId: "microfeed.default",
-        version: "1.1.10",
+        version: "1.1.15",
       });
       expect(stored).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.10",
+        version: "1.1.15",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(1);
@@ -490,21 +522,22 @@ describe("theme repository initialization", () => {
       if (request.sql.includes("INSERT INTO themes")) {
         const values = request.params!;
         stored = {
-          asset_owner_theme_id: values[13],
+          asset_owner_theme_id: values[14],
           bundle_json: values[5],
-          checksum_sha256: values[11],
+          checksum_sha256: values[12],
           created_at: "2026-08-18T00:00:00.000Z",
           deleted_at: null,
           id: values[0],
           manifest_json: values[4],
           name: values[3],
-          origin_theme_id: values[12],
+          origin_theme_id: values[13],
           package_id: values[1],
-          source_commit: values[10],
-          source_kind: values[6],
-          source_path: values[9],
-          source_ref: values[8],
-          source_url: values[7],
+          preview_fixture_json: values[6],
+          source_commit: values[11],
+          source_kind: values[7],
+          source_path: values[10],
+          source_ref: values[9],
+          source_url: values[8],
           version: values[2],
         };
         return d1Response([{id: values[0]}]);
@@ -536,7 +569,7 @@ describe("theme repository initialization", () => {
       false,
     )).resolves.toMatchObject({
       packageId: "microfeed.default",
-      version: "1.1.10",
+      version: "1.1.15",
     });
     expect(pruned).toEqual(["old-bundled"]);
   });
@@ -547,7 +580,11 @@ describe("theme repository initialization", () => {
     const runner = commandRunner();
     const assetBytes = new TextEncoder().encode("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>");
     const assetPath = "assets/logo.svg";
-    const activeManifest = {...manifest, assets: [assetPath]};
+    const activeManifest = {
+      ...manifest,
+      assets: [assetPath],
+      previewFixture: "fixtures/custom.json",
+    };
     const activeBundle = {
       ...bundle,
       assets: [{
@@ -578,6 +615,7 @@ describe("theme repository initialization", () => {
           name: manifest.name,
           origin_theme_id: null,
           package_id: manifest.packageId,
+          preview_fixture_json: JSON.stringify(previewFixture),
           requested_active_theme_id: "active-theme-id",
           source_commit: "b".repeat(40),
           source_kind: "github",
@@ -612,6 +650,8 @@ describe("theme repository initialization", () => {
     });
     await expect(readFile(path.join(output, "web-feed.mustache"), "utf8"))
       .resolves.toBe("active feed {{title}}\n");
+    await expect(readFile(path.join(output, "fixtures/custom.json"), "utf8"))
+      .resolves.toContain('"title": "Fixture item"');
     const initializedPackage = JSON.parse(
       await readFile(path.join(output, "package.json"), "utf8"),
     ) as {devDependencies?: Record<string, string>};
@@ -653,7 +693,11 @@ describe("theme repository initialization", () => {
       "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>",
     );
     const assetPath = "assets/logo.svg";
-    const exportedManifest = {...manifest, assets: [assetPath]};
+    const exportedManifest = {
+      ...manifest,
+      assets: [assetPath],
+      previewFixture: "fixtures/custom.json",
+    };
     const exportedBundle = {
       ...bundle,
       assets: [{
@@ -681,6 +725,7 @@ describe("theme repository initialization", () => {
           name: manifest.name,
           origin_theme_id: null,
           package_id: manifest.packageId,
+          preview_fixture_json: JSON.stringify(previewFixture),
           source_commit: "d".repeat(40),
           source_kind: "github",
           source_path: null,
@@ -707,6 +752,8 @@ describe("theme repository initialization", () => {
     expect(writtenManifest).toEqual(exportedManifest);
     await expect(readFile(path.join(output, assetPath), "utf8"))
       .resolves.toContain("<svg");
+    await expect(readFile(path.join(output, "fixtures/custom.json"), "utf8"))
+      .resolves.toContain('"title": "Fixture item"');
     const exportedPackage = JSON.parse(
       await readFile(path.join(output, "package.json"), "utf8"),
     ) as {

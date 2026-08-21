@@ -68,10 +68,12 @@
       {{/_microfeed.subscribe_methods.length}}
       <div class="flex flex-wrap">
         {{#_microfeed.subscribe_methods}}
-        <a href="{{url}}" class="mr-4 mb-2">
+        <a href="{{url}}" class="mr-4 mb-2" aria-label="{{name}}">
           <div class="flex items-center">
-            <img src="{{image}}" class="img-sm flex-none" alt="{{name}}" loading="lazy"/>
-            <div class="flex-1 ml-1 text-sm hide-mobile">{{name}}</div>
+            {{#image}}
+            <img src="{{image}}" class="img-sm flex-none" alt="" loading="lazy"/>
+            {{/image}}
+            <div class="flex-none text-sm{{#image}} ml-1 hide-mobile{{/image}}">{{name}}</div>
           </div>
         </a>
         {{/_microfeed.subscribe_methods}}

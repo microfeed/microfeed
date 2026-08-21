@@ -48,6 +48,10 @@ Every installed version is immutable. Editing creates a draft and then a new
 version; it never changes an installed row in place. Only one version is
 active, and installing another version does not change the public site.
 
+Theme cards show the package's optional short description before the folded
+details. Authors use this summary to explain what the theme is good for and
+which content types or layouts it supports.
+
 Themes are full-trust, owner-installed code. An activated theme can run the
 same browser HTML, CSS, and JavaScript as shared website code. Install only
 packages and versions you trust.
@@ -67,6 +71,10 @@ want to change:
 Saving or installing a draft never changes public output. Activation
 confirmation identifies the package, version, source, commit when available,
 and checksum.
+
+Expand **Theme details** to edit the optional **Short description**. It is
+limited to 280 characters and is shown on the installed theme card after the
+draft becomes a version.
 
 For format v2 drafts, **Search result links** selects where item results open
 in both the search popup and the Search page: the local microfeed item page, an
@@ -94,6 +102,14 @@ previous version so an operator can roll back with `yarn manage theme rollback`
 if the new design causes a problem. Delete only inactive versions that are no
 longer needed; the active version cannot be deleted.
 
+When a theme packages its own preview fixture, each newly opened preview starts
+with **Demo content** so the theme can demonstrate its supported content and
+layout. Switch to **Current site** to render the instance's published feed.
+That choice applies to Feed, Item, Search, and RSS and stays selected while you
+change views, viewport size, or open the preview in a new tab. Page and
+navigation examples remain synthetic. Themes without a fixture use Current
+site data.
+
 An environment can keep up to 50 non-deleted installed versions and 20 drafts.
 If the limit is full, delete an unused inactive version or draft and retry.
 
@@ -116,11 +132,13 @@ microfeed never silently changes the active theme.
 
 ## Storage and backups
 
-D1 stores installed theme versions, drafts, and active/previous state. R2 is
-optional for text-only themes and stores declared package assets when a theme
-uses them. Portable snapshots include the theme records and the complete R2
-bucket, so installed versions, drafts, state, and packaged assets restore
-together.
+D1 stores installed theme versions, drafts, their optional preview fixtures,
+and active/previous state. R2 is optional for text-only themes and stores
+declared package assets when a theme uses them. Portable snapshots include the
+theme records and the complete R2 bucket, so installed versions, drafts,
+preview fixtures, state, and packaged assets restore together. Theme
+initialization and export also write a declared preview fixture back into the
+portable package.
 
 For authoring details, continue with:
 

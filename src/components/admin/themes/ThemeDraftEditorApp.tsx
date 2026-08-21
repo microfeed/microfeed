@@ -11,9 +11,11 @@ import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import ThemePreviewDialog from "@/components/admin/themes/ThemePreviewDialog";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
+import {Textarea} from "@/components/ui/textarea";
 import {ADMIN_URLS} from "@/shared/StringUtils";
 import {
   DEFAULT_THEME_SEARCH_ITEM_DESTINATION,
+  THEME_DESCRIPTION_MAX_LENGTH,
   type ThemeDraft,
   type ThemeManifestV1,
   type ThemeSearchItemDestination,
@@ -24,7 +26,7 @@ interface Props {
   themeEditorLinks: ThemeEditorLinks;
 }
 
-type ThemeFieldKey = "author" | "license" | "microfeed" | "name" | "packageId" | "version";
+type ThemeFieldKey = "author" | "description" | "license" | "microfeed" | "name" | "packageId" | "version";
 type ThemeManifestUpdates = Partial<Record<ThemeFieldKey, string>> & {
   searchItemDestination?: ThemeSearchItemDestination;
 };
@@ -33,6 +35,10 @@ const THEME_FIELD_HELP: Record<ThemeFieldKey, {description: string; label: strin
   author: {
     description: "Credits the person or organization responsible for this version. Keep upstream attribution when appropriate, or name the owner of a locally derived design.",
     label: "Author",
+  },
+  description: {
+    description: "A concise summary of what this theme is best for and the main content or website features it supports. It appears in the installed theme list.",
+    label: "Short description",
   },
   license: {
     description: "States the terms under which this theme may be used, modified, and shared. Prefer a standard SPDX identifier such as AGPL-3.0 or MIT.",
@@ -102,6 +108,14 @@ export default function ThemeDraftEditorApp({
   const validateRequiredMetadata = () => {
     if (!draft.manifest.name.trim()) throw new Error("Theme name is required.");
     if (!draft.manifest.version.trim()) throw new Error("Theme version is required.");
+    if (
+      (draft.manifest.description?.length ?? 0) >
+        THEME_DESCRIPTION_MAX_LENGTH
+    ) {
+      throw new Error(
+        `Short description is limited to ${THEME_DESCRIPTION_MAX_LENGTH} characters.`,
+      );
+    }
   };
   const save = async ({notify = true}: {notify?: boolean} = {}): Promise<ThemeDraft> => {
     validateRequiredMetadata();
@@ -169,6 +183,26 @@ export default function ThemeDraftEditorApp({
           Attribution, package identity, and compatibility metadata travel with the installed version.
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <ThemeFieldLabel field="description" onExplain={setHelpField} />
+            <Textarea
+              aria-describedby="theme-description-help theme-description-count"
+              aria-labelledby="theme-description-label"
+              id="theme-description"
+              maxLength={THEME_DESCRIPTION_MAX_LENGTH}
+              onChange={(event) => updateManifest({description: event.target.value})}
+              rows={3}
+              value={draft.manifest.description ?? ""}
+            />
+            <div className="mt-1 flex items-start justify-between gap-3 text-xs text-muted-foreground">
+              <p id="theme-description-help">
+                Describe what the theme is good for and its most useful features.
+              </p>
+              <p className="shrink-0 tabular-nums" id="theme-description-count">
+                {(draft.manifest.description ?? "").length}/{THEME_DESCRIPTION_MAX_LENGTH}
+              </p>
+            </div>
+          </div>
           <div>
             <ThemeFieldLabel field="author" onExplain={setHelpField} />
             <Input aria-labelledby="theme-author-label" id="theme-author" value={draft.manifest.author} onChange={(event) => updateManifest({author: event.target.value})} />
@@ -256,7 +290,8 @@ export default function ThemeDraftEditorApp({
       </div>
     </div>
     <ThemePreviewDialog
-      description="Uses the saved draft and current public site data"
+      description={draft.manifest.description}
+      hasPreviewFixture={Boolean(draft.manifest.previewFixture)}
       label={`${draft.name} ${draft.version}`}
       onOpenChange={setPreviewOpen}
       open={previewOpen}

@@ -24,6 +24,10 @@ describe("Admin versioned themes", () => {
     expect(preview).toContain("LoaderCircleIcon");
     expect(preview).toContain("onLoad={() => setLoadedFrameKey(frameKey)}");
     expect(preview).toContain("const loading = loadedFrameKey !== frameKey");
+    expect(preview).toContain('data: dataSource');
+    expect(preview).toContain('"Demo content"');
+    expect(preview).toContain('"Current site"');
+    expect(preview).toContain('hasPreviewFixture ? "fixture" : "site"');
     expect(preview).toContain(
       "Live search is unavailable in preview. Showing preview results instead.",
     );
@@ -47,7 +51,7 @@ describe("Admin versioned themes", () => {
     expect(draftEditor).toContain('className="theme-preview-button"');
     expect(draftEditor).toContain("if (changed) await save({notify: false});");
     expect(draftEditor).toContain(
-      "Uses the saved draft and current public site data",
+      "hasPreviewFixture={Boolean(draft.manifest.previewFixture)}",
     );
     expect(draftEditor).toContain(
       'Discard draft "${draft.name}" (${draft.version})?',
@@ -101,6 +105,10 @@ describe("Admin versioned themes", () => {
     expect(themes).not.toContain('originKind: "built-in"');
     expect(themes).toContain('originKind: "theme"');
     expect(themes).toContain("ajaxThemePreview(theme.id)");
+    expect(themes).toContain("theme.manifest.description");
+    expect(themes).toContain(
+      "hasPreviewFixture: Boolean(theme.manifest.previewFixture)",
+    );
     expect(themes).toContain("Installed at");
     expect(themes).toContain("<time");
     expect(themes).toContain("<details");
@@ -123,7 +131,11 @@ describe("Admin versioned themes", () => {
     );
     expect(themes).toContain("originThemeLabel(theme)");
     expect(themes).not.toContain("Origin theme: ${theme.originThemeId}");
+    expect(themes).toContain('theme.sourceKind === "bundled"');
+    expect(themes).toContain("Update this theme");
+    expect(themes).toContain("Copy update command");
     expect(themes).toContain("Export this version");
+    expect(themes).toContain("Copy export command");
     expect(themes).toContain("for backup or continued development");
     expect(themes).toContain(
       ".microfeed/themes/${theme.packageId}-${theme.version} --git",
@@ -141,6 +153,9 @@ describe("Admin versioned themes", () => {
     expect(draftEditor).toContain('<details className="mt-5');
     expect(draftEditor).toContain("Theme details");
     expect(draftEditor).toContain("THEME_FIELD_HELP");
+    expect(draftEditor).toContain('<ThemeFieldLabel field="description"');
+    expect(draftEditor).toContain("THEME_DESCRIPTION_MAX_LENGTH");
+    expect(draftEditor).toContain('id="theme-description-count"');
     expect(draftEditor).toContain("Read the theme guide");
   });
 

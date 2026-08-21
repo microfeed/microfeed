@@ -1,4 +1,4 @@
-import {loadPublishedFeed} from "@/server/feed/feed";
+import {loadFeed, loadPublishedFeed} from "@/server/feed/feed";
 import FeedPublicRssBuilder from "@/server/feed/FeedPublicRssBuilder";
 import Theme from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
@@ -15,6 +15,7 @@ import {
   manifestSearchItemDestination,
   resolveThemeSearchItemUrl,
 } from "@/shared/themes/ThemeSearch";
+import type {PublicFeed} from "@/types";
 
 type PreviewTheme = StoredThemeVersion | ThemeDraft;
 
@@ -31,6 +32,7 @@ function previewVersion(theme: PreviewTheme): StoredThemeVersion {
     name: theme.name,
     originThemeId: theme.originThemeId,
     packageId: theme.packageId,
+    previewFixture: theme.previewFixture,
     sourceCommit: null,
     sourceKind: "admin",
     sourcePath: null,
@@ -69,7 +71,8 @@ export async function themePreviewResponse(
   request: Request,
   previewTheme: PreviewTheme,
 ): Promise<Response> {
-  const view = new URL(request.url).searchParams.get("view") ?? "feed";
+  const requestUrl = new URL(request.url);
+  const view = requestUrl.searchParams.get("view") ?? "feed";
   const supportsPagesAndSearch = previewTheme.manifest.formatVersion === 2;
   if (
     !["feed", "item", "rss", "rss-stylesheet", "page", "search"].includes(view) ||
@@ -77,8 +80,28 @@ export async function themePreviewResponse(
   ) {
     return new Response("Unknown preview view.", {status: 400});
   }
-  const loaded = await loadPublishedFeed(runtimeEnv, request, {limit: 20});
-  const previewPublishedAt = loaded.publicFeed.items
+  const requestedData = requestUrl.searchParams.get("data");
+  if (
+    requestedData !== null &&
+    requestedData !== "fixture" &&
+    requestedData !== "site"
+  ) {
+    return new Response("Unknown preview data source.", {status: 400});
+  }
+  const dataSource = requestedData ??
+    (previewTheme.previewFixture ? "fixture" : "site");
+  if (dataSource === "fixture" && !previewTheme.previewFixture) {
+    return new Response("This theme does not include a preview fixture.", {
+      status: 400,
+    });
+  }
+  const loaded = dataSource === "site"
+    ? await loadPublishedFeed(runtimeEnv, request, {limit: 20})
+    : await loadFeed(runtimeEnv, request, {includeItems: false});
+  const publicFeed = (dataSource === "fixture"
+    ? previewTheme.previewFixture
+    : "publicFeed" in loaded ? loaded.publicFeed : null) as PublicFeed;
+  const previewPublishedAt = publicFeed.items
     .map((item) => item.date_published)
     .find((value): value is string => typeof value === "string") ??
     new Date().toISOString();
@@ -130,7 +153,7 @@ export async function themePreviewResponse(
   const searchItemDestination = manifestSearchItemDestination(
     storedTheme.manifest,
   );
-  const previewSearchResults: PublicSearchResult[] = loaded.publicFeed.items
+  const previewSearchResults: PublicSearchResult[] = publicFeed.items
     .slice(0, 5)
     .map((item, index) => {
       const microfeed = item._microfeed as Record<string, unknown> | undefined;
@@ -185,7 +208,7 @@ export async function themePreviewResponse(
     });
   }
   const theme = new Theme(
-    loaded.publicFeed,
+    publicFeed,
     loaded.content.settings,
     null,
     storedTheme,
@@ -200,9 +223,10 @@ export async function themePreviewResponse(
   if (view === "rss") {
     const stylesheet = theme.getRssStylesheet().stylesheet;
     const stylesheetUrl = new URL(request.url);
-    stylesheetUrl.search = "?view=rss-stylesheet";
+    stylesheetUrl.searchParams.set("view", "rss-stylesheet");
+    stylesheetUrl.searchParams.set("data", dataSource);
     const rss = new FeedPublicRssBuilder(
-      loaded.publicFeed,
+      publicFeed,
       new URL(request.url).origin,
     ).getRssData().replace(
       /<\?xml-stylesheet href="[^"]+" type="text\/xsl"\?>/u,
@@ -214,14 +238,14 @@ export async function themePreviewResponse(
   }
 
   const shared = new Theme(
-    loaded.publicFeed,
+    publicFeed,
     loaded.content.settings,
     "shared",
     storedTheme,
     assetBaseUrl,
     extraContext,
   );
-  const item = loaded.publicFeed.items[0] ?? {};
+  const item = publicFeed.items[0] ?? {};
   const body = view === "item"
     ? theme.getWebItem(item).html
     : view === "page"
@@ -233,7 +257,7 @@ export async function themePreviewResponse(
     ? publicSearchHtml({previewResults: previewSearchResults})
     : "";
   return new Response(
-    `<!doctype html><html lang="${String(loaded.publicFeed.language ?? "en")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${shared.getWebHeader().html}${theme.getWebHeader().html}</head><body>${shared.getWebBodyStart().html}${theme.getWebBodyStart().html}${body}${shared.getWebBodyEnd().html}${theme.getWebBodyEnd().html}${publicSearch}</body></html>`,
+    `<!doctype html><html lang="${String(publicFeed.language ?? "en")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${shared.getWebHeader().html}${theme.getWebHeader().html}</head><body>${shared.getWebBodyStart().html}${theme.getWebBodyStart().html}${body}${shared.getWebBodyEnd().html}${theme.getWebBodyEnd().html}${publicSearch}</body></html>`,
     {headers: previewHeaders(request.url)},
   );
 }

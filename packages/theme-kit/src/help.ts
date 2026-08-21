@@ -12,15 +12,18 @@ Start an isolated local preview with feed, item, Page, Search, RSS, mobile, and 
 
 Options:
   --fixture <name-or-file>  Use a built-in fixture name or JSON fixture file
-  --feed-url <url>          Use a public microfeed JSON Feed as preview data`,
+  --feed-url <url>          Use a public microfeed JSON Feed as preview data
+
+Without a data option, use the manifest's previewFixture or fall back to the
+built-in minimal fixture.`,
   test: `Usage: theme-kit test <directory> [--json]
 
 Render every built-in and package fixture, verify deterministic output, parse
 the generated HTML, and validate the rendered RSS XSL stylesheet.`,
   validate: `Usage: theme-kit validate <directory> [--json]
 
-Validate the manifest, compatibility range, declared text files, packaged
-assets, paths, file types, sizes, Mustache, and RSS XSL.`,
+Validate the manifest, compatibility range, declared text files and preview
+fixture, packaged assets, paths, file types, sizes, Mustache, and RSS XSL.`,
   "fixture pull": `Usage: theme-kit fixture pull <json-feed-url> --output <file>
 
 Download and validate a public JSON Feed for local theme development. The

@@ -21,7 +21,13 @@ interface Props {
   instanceName: string;
 }
 
-interface Preview {label: string; supportsPagesAndSearch: boolean; url: string}
+interface Preview {
+  description?: string;
+  hasPreviewFixture: boolean;
+  label: string;
+  supportsPagesAndSearch: boolean;
+  url: string;
+}
 
 async function requestJson(url: string, init?: RequestInit): Promise<any> {
   const response = await fetch(url, {
@@ -170,13 +176,17 @@ export default function ThemesApp({
       <div className="mt-4 grid gap-3">
         {listing.themes.length === 0 && <div className="rounded-xl border border-dashed p-10 text-center"><h3 className="font-medium">No installed themes found</h3><p className="mt-1 text-sm text-muted-foreground">Try a different search, or open the installation guide above.</p></div>}
         {listing.themes.map((theme) => {
-          const canUpdate = (theme.sourceKind === "bundled" && theme.sourcePath === "default")
-            || Boolean(theme.sourceUrl || theme.sourcePath);
-          const command = canUpdate
-            ? `yarn manage theme update ${theme.id} --instance ${instanceName}`
-            : `yarn manage theme export ${theme.id} --instance ${instanceName} --output .microfeed/themes/${theme.packageId}-${theme.version} --git`;
+          const canUpdate = theme.sourceKind === "bundled" ||
+            Boolean(theme.sourceUrl || theme.sourcePath);
+          const updateCommand = `yarn manage theme update ${theme.id} --instance ${instanceName}`;
+          const exportCommand = `yarn manage theme export ${theme.id} --instance ${instanceName} --output .microfeed/themes/${theme.packageId}-${theme.version} --git`;
           return <article className="rounded-xl border p-4" key={theme.id}>
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><h3 className="font-medium">{theme.name}</h3><Status theme={theme} state={listing.state}/></div><code className="text-xs text-muted-foreground">{theme.packageId}@{theme.version}</code><InstalledAt value={theme.createdAt}/></div><div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => createVersion(theme.id)} variant="outline">Create new version</Button><Button onClick={() => setPreview({label: `${theme.name} ${theme.version}`, supportsPagesAndSearch: theme.manifest.formatVersion === 2, url: ADMIN_URLS.ajaxThemePreview(theme.id)})} variant="outline">Preview</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => activate(theme)}>Activate</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => deleteTheme(theme)} variant="destructive">Delete</Button></div></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><h3 className="font-medium">{theme.name}</h3><Status theme={theme} state={listing.state}/></div><code className="text-xs text-muted-foreground">{theme.packageId}@{theme.version}</code><InstalledAt value={theme.createdAt}/></div><div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => createVersion(theme.id)} variant="outline">Create new version</Button><Button onClick={() => setPreview({description: theme.manifest.description, hasPreviewFixture: Boolean(theme.manifest.previewFixture), label: `${theme.name} ${theme.version}`, supportsPagesAndSearch: theme.manifest.formatVersion === 2, url: ADMIN_URLS.ajaxThemePreview(theme.id)})} variant="outline">Preview</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => activate(theme)}>Activate</Button><Button disabled={busy || listing.state.activeThemeId === theme.id} onClick={() => deleteTheme(theme)} variant="destructive">Delete</Button></div></div>
+            {theme.manifest.description && (
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                {theme.manifest.description}
+              </p>
+            )}
             <details className="mt-3 border-t pt-3 text-xs">
               <summary className="cursor-pointer font-medium text-muted-foreground">Details</summary>
               <dl className="mt-3 grid gap-1 text-muted-foreground md:grid-cols-2">
@@ -189,16 +199,30 @@ export default function ThemesApp({
                 <div><dt className="inline font-medium text-foreground">Origin theme: </dt><dd className="inline">{originThemeLabel(theme)}</dd></div>
                 <div className="md:col-span-2"><dt className="inline font-medium text-foreground">Checksum: </dt><dd className="inline break-all">{theme.checksumSha256}</dd></div>
               </dl>
-              <div className="mt-4 rounded-lg border bg-muted/50 p-3">
-                <p className="mb-2 text-muted-foreground">
-                  <strong className="text-foreground">{canUpdate ? "Update this version" : "Export this version"}:</strong>{" "}
-                  {canUpdate
-                    ? "Check its original source and install a newer SemVer as another inactive version."
-                    : "Write the installed six-file package and inherited assets to a standalone directory for backup or continued development. Exporting does not change the live site."}
-                </p>
-                <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
-                  <code className="min-w-0 flex-1 overflow-x-auto">{command}</code>
-                  <Button aria-label="Copy command" onClick={() => copy(command)} size="icon-sm" variant="ghost"><CopyIcon/></Button>
+              <div className="mt-4 grid gap-3">
+                {canUpdate && (
+                  <div className="rounded-lg border bg-muted/50 p-3">
+                    <p className="mb-2 text-muted-foreground">
+                      <strong className="text-foreground">Update this theme:</strong>{" "}
+                      {theme.sourceKind === "bundled"
+                        ? "Install the bundled theme from this microfeed checkout as another inactive version. Preview it before activating."
+                        : "Check its original source and install a newer SemVer as another inactive version."}
+                    </p>
+                    <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
+                      <code className="min-w-0 flex-1 overflow-x-auto">{updateCommand}</code>
+                      <Button aria-label="Copy update command" onClick={() => copy(updateCommand)} size="icon-sm" variant="ghost"><CopyIcon/></Button>
+                    </div>
+                  </div>
+                )}
+                <div className="rounded-lg border bg-muted/50 p-3">
+                  <p className="mb-2 text-muted-foreground">
+                    <strong className="text-foreground">Export this version:</strong>{" "}
+                    Write the installed package and inherited assets to a standalone directory for backup or continued development. Exporting does not change the live site.
+                  </p>
+                  <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
+                    <code className="min-w-0 flex-1 overflow-x-auto">{exportCommand}</code>
+                    <Button aria-label="Copy export command" onClick={() => copy(exportCommand)} size="icon-sm" variant="ghost"><CopyIcon/></Button>
+                  </div>
                 </div>
               </div>
             </details>
@@ -215,6 +239,8 @@ export default function ThemesApp({
     />
 
     {preview && <ThemePreviewDialog
+      description={preview.description}
+      hasPreviewFixture={preview.hasPreviewFixture}
       label={preview.label}
       onOpenChange={(open) => {if (!open) setPreview(null);}}
       open

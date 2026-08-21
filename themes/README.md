@@ -7,7 +7,7 @@ runtime fallback when no valid active version is available.
 
 ## `default`
 
-`themes/default` is the format-v2 `microfeed.default@1.1.10` theme. New pristine
+`themes/default` is the format-v2 `microfeed.default@1.1.15` theme. New pristine
 local, preview, and production instances install and activate it during
 initialization. It includes the complete authoring workspace:
 
@@ -63,6 +63,11 @@ Run the shared conformance suite after changing the package:
 ```console
 yarn theme-kit:test
 ```
+
+Bundled-theme fixtures must reference stable, direct HTTPS URLs for
+royalty-free image, audio, and video examples. Prefer CC0 or public-domain
+media, document its source and license in the theme's maintainer notes, and do
+not check media binaries into a bundled theme.
 
 For repository authoring, Admin drafts, packaged assets, and storage details,
 read the [versioned themes guide](../docs/dashboard/themes.md).

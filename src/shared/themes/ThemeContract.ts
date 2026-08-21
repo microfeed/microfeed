@@ -10,6 +10,7 @@ export const THEME_SEARCH_ITEM_DESTINATIONS = [
 ] as const;
 export const DEFAULT_THEME_SEARCH_ITEM_DESTINATION = "web" as const;
 export const THEME_MAX_TEMPLATE_BYTES = 128 * 1024;
+export const THEME_MAX_PREVIEW_FIXTURE_BYTES = 128 * 1024;
 export const THEME_MAX_TEXT_BYTES = 512 * 1024;
 export const THEME_MAX_ASSET_BYTES = 5 * 1024 * 1024;
 export const THEME_MAX_TOTAL_ASSET_BYTES = 20 * 1024 * 1024;
@@ -18,6 +19,8 @@ export const THEME_MAX_INSTALLED_VERSIONS = 50;
 export const THEME_MAX_DRAFTS = 20;
 export const THEME_LIST_PAGE_SIZE = 20;
 export const THEME_SEARCH_MAX_LENGTH = 100;
+export const THEME_DESCRIPTION_MAX_LENGTH = 280;
+export const LEGACY_THEME_DESCRIPTION_MAX_LENGTH = 500;
 export const LOCAL_THEME_PACKAGE_ID_PREFIX = "local.";
 export const RESERVED_THEME_PACKAGE_ID_PREFIX = "microfeed.";
 
@@ -78,34 +81,44 @@ const themePathSchema = z.string()
     "Path traversal is not allowed.",
   );
 
-const themeManifestBaseSchema = z.object({
-  $schema: z.string().trim().min(1).max(240).optional(),
-  assets: z.array(themePathSchema).max(THEME_MAX_ASSETS).default([]),
-  author: z.string().trim().min(1).max(160),
-  description: z.string().trim().max(500).optional(),
-  homepage: z.url().optional(),
-  license: z.string().trim().min(1).max(100),
-  microfeed: z.string().trim().min(1).max(100),
-  name: z.string().trim().min(1).max(100),
-  packageId: z.string()
-    .trim()
-    .min(3)
-    .max(120)
-    .regex(
-      /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/u,
-      "Use lowercase letters, numbers, dots, underscores, and hyphens.",
-    ),
-  repository: z.url().optional(),
-  version: z.string().trim().min(1).max(100),
-});
+function manifestBaseSchema(descriptionMaxLength: number) {
+  return z.object({
+    $schema: z.string().trim().min(1).max(240).optional(),
+    assets: z.array(themePathSchema).max(THEME_MAX_ASSETS).default([]),
+    author: z.string().trim().min(1).max(160),
+    description: z.string().trim().max(descriptionMaxLength).optional(),
+    homepage: z.url().optional(),
+    license: z.string().trim().min(1).max(100),
+    microfeed: z.string().trim().min(1).max(100),
+    name: z.string().trim().min(1).max(100),
+    packageId: z.string()
+      .trim()
+      .min(3)
+      .max(120)
+      .regex(
+        /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/u,
+        "Use lowercase letters, numbers, dots, underscores, and hyphens.",
+      ),
+    previewFixture: themePathSchema.optional(),
+    repository: z.url().optional(),
+    version: z.string().trim().min(1).max(100),
+  });
+}
+
+const themeManifestBaseSchema = manifestBaseSchema(
+  THEME_DESCRIPTION_MAX_LENGTH,
+);
+const storedThemeManifestBaseSchema = manifestBaseSchema(
+  LEGACY_THEME_DESCRIPTION_MAX_LENGTH,
+);
 
 const themeManifestFilesV1Schema = z.object({
-    rssStylesheet: themePathSchema,
-    webBodyEnd: themePathSchema,
-    webBodyStart: themePathSchema,
-    webFeed: themePathSchema,
-    webHeader: themePathSchema,
-    webItem: themePathSchema,
+  rssStylesheet: themePathSchema,
+  webBodyEnd: themePathSchema,
+  webBodyStart: themePathSchema,
+  webFeed: themePathSchema,
+  webHeader: themePathSchema,
+  webItem: themePathSchema,
 });
 
 export const themeManifestFormatV1Schema = themeManifestBaseSchema.extend({
@@ -124,12 +137,33 @@ export const themeManifestV2Schema = themeManifestBaseSchema.extend({
   }),
 });
 
+const storedThemeManifestFormatV1Schema = storedThemeManifestBaseSchema.extend({
+  files: themeManifestFilesV1Schema,
+  formatVersion: z.literal(THEME_FORMAT_VERSION_V1),
+});
+
+const storedThemeManifestV2Schema = storedThemeManifestBaseSchema.extend({
+  files: themeManifestFilesV1Schema.extend({
+    webPage: themePathSchema,
+    webSearch: themePathSchema,
+  }),
+  formatVersion: z.literal(THEME_FORMAT_VERSION_V2),
+  searchItemDestination: z.enum(THEME_SEARCH_ITEM_DESTINATIONS).optional().meta({
+    description: "Where item results in public Search link. Use web for the local microfeed item page (JSON Feed items[]._microfeed.web_url and the RSS item link fallback), url for JSON Feed items[].url and the RSS item link, or attachment for JSON Feed items[].attachments[0].url and the RSS enclosure URL. Missing selected values fall back to the local item page.",
+  }),
+});
+
 // Compatibility export retained for theme-kit and management callers. It now
 // accepts both the original six-slot format and the eight-slot v2 format.
 export const themeManifestV1Schema = z.discriminatedUnion("formatVersion", [
   themeManifestFormatV1Schema,
   themeManifestV2Schema,
 ]);
+
+export const storedThemeManifestV1Schema = z.discriminatedUnion(
+  "formatVersion",
+  [storedThemeManifestFormatV1Schema, storedThemeManifestV2Schema],
+);
 
 export const themeAssetSchema = z.object({
   contentType: z.string().min(1),
@@ -202,6 +236,11 @@ export const themeItemSchema = z.object({
   language: z.string().optional(),
   title: z.string(),
   url: z.string().optional(),
+}).loose();
+
+export const themePreviewFixtureSchema = z.object({
+  items: z.array(themeItemSchema),
+  version: z.string(),
 }).loose();
 
 const themeSubscribeMethodSchema = z.object({
@@ -338,10 +377,11 @@ export const storedThemeVersionSchema = z.object({
   createdAt: z.string(),
   deletedAt: z.string().nullable(),
   id: z.string().min(1),
-  manifest: themeManifestV1Schema,
+  manifest: storedThemeManifestV1Schema,
   name: z.string(),
   originThemeId: z.string().nullable(),
   packageId: z.string(),
+  previewFixture: themePreviewFixtureSchema.nullable(),
   sourceCommit: z.string().nullable(),
   sourceKind: themeSourceKindSchema,
   sourcePath: z.string().nullable(),
@@ -355,16 +395,18 @@ export const themeDraftSchema = z.object({
   bundle: themeBundleV1Schema,
   createdAt: z.string(),
   id: z.string().min(1),
-  manifest: themeManifestV1Schema,
+  manifest: storedThemeManifestV1Schema,
   name: z.string(),
   originKind: z.enum(["built-in", "theme"]),
   originThemeId: z.string().nullable(),
   packageId: z.string(),
+  previewFixture: themePreviewFixtureSchema.nullable(),
   updatedAt: z.string(),
   version: z.string(),
 });
 
 export type ThemeManifestV1 = z.infer<typeof themeManifestV1Schema>;
+export type ThemePreviewFixture = z.infer<typeof themePreviewFixtureSchema>;
 export type ThemeSearchItemDestination =
   typeof THEME_SEARCH_ITEM_DESTINATIONS[number];
 export type ThemeBundleV1 = z.infer<typeof themeBundleV1Schema>;
