@@ -16,6 +16,9 @@ describe("Built-in theme catalog", () => {
       "podcast",
       "blog",
       "photo",
+      "video",
+      "curation",
+      "changelog",
     ]);
     expect(new Set(BUNDLED_THEME_CATALOG.map(({key}) => key)).size)
       .toBe(BUNDLED_THEME_CATALOG.length);
@@ -29,6 +32,9 @@ describe("Built-in theme catalog", () => {
       1,
       2,
       3,
+      4,
+      5,
+      6,
     ]);
     expect(BUNDLED_THEME_CATALOG.filter(({fallback}) => fallback))
       .toEqual([BUNDLED_FALLBACK_THEME]);
@@ -48,5 +54,14 @@ describe("Built-in theme catalog", () => {
       .toBe("bundled:default");
     expect(bundledThemeCatalogEntryBySource("bundled:podcast")?.packageId)
       .toBe("microfeed.podcast");
+    expect(bundledThemeCatalogEntryBySource("bundled:video")?.packageId)
+      .toBe("microfeed.video");
+    expect(bundledThemeCatalogEntryBySource("bundled:curation")?.manifest)
+      .toMatchObject({
+        packageId: "microfeed.curation",
+        searchItemDestination: "attachment",
+      });
+    expect(bundledThemeCatalogEntryBySource("bundled:changelog")?.packageId)
+      .toBe("microfeed.changelog");
   });
 });

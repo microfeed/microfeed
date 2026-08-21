@@ -19,6 +19,9 @@ The current catalog includes these canonical sources:
 | `bundled:podcast` | `microfeed.podcast` | Audio shows and episode notes |
 | `bundled:blog` | `microfeed.blog` | Editorial essays and rich text |
 | `bundled:photo` | `microfeed.photo` | Image-led galleries and captions |
+| `bundled:video` | `microfeed.video` | Poster-led films and viewing notes |
+| `bundled:curation` | `microfeed.curation` | Annotated outbound links and sources |
+| `bundled:changelog` | `microfeed.changelog` | Product launches, improvements, and fixes |
 
 ## `default`
 
@@ -65,9 +68,10 @@ public site:
 yarn manage theme install bundled:default --instance <instance-name>
 ```
 
-Replace `default` with `podcast`, `blog`, or `photo` to install another current
-Built-in release manually. Deployment normally synchronizes every registered
-release without requiring these commands.
+Replace `default` with `podcast`, `blog`, `photo`, `video`, `curation`, or
+`changelog` to install another current Built-in release manually. Deployment
+normally synchronizes every registered release without requiring these
+commands.
 
 ## Working with the bundled theme
 

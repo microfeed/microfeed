@@ -70,11 +70,13 @@ The URL records `tab=built-in` or `tab=custom`. Without an explicit tab, Admin
 opens the tab containing the active theme and otherwise starts with Built-in
 themes.
 
-The catalog currently includes Default for a general-purpose feed, Podcast for
-audio shows, Editorial Blog for essays and rich text, and Photo Grid for
-image-led galleries. Fresh initialization installs all of them but activates
-only Default. Existing deployments synchronize a missing or newer Built-in
-release as inactive, so the public site never changes appearance automatically.
+The catalog includes Default for a general-purpose feed, Podcast for audio
+shows, Editorial Blog for essays and rich text, Photo Grid for image-led
+galleries, Video Channel for films, Link Digest for outbound reading lists, and
+Product Changelog for release timelines. Fresh initialization installs all
+seven but activates only Default. Existing deployments synchronize a missing
+or newer Built-in release as inactive, so the public site never changes
+appearance automatically.
 
 ### Create a new version in Admin
 

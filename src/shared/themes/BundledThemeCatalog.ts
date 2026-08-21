@@ -1,7 +1,10 @@
 import BLOG_MANIFEST from "../../../themes/blog/microfeed-theme.json";
+import CHANGELOG_MANIFEST from "../../../themes/changelog/microfeed-theme.json";
+import CURATION_MANIFEST from "../../../themes/curation/microfeed-theme.json";
 import DEFAULT_MANIFEST from "../../../themes/default/microfeed-theme.json";
 import PHOTO_MANIFEST from "../../../themes/photo/microfeed-theme.json";
 import PODCAST_MANIFEST from "../../../themes/podcast/microfeed-theme.json";
+import VIDEO_MANIFEST from "../../../themes/video/microfeed-theme.json";
 
 import {
   themeManifestV1Schema,
@@ -44,6 +47,9 @@ export const BUNDLED_THEME_CATALOG: readonly BundledThemeCatalogEntry[] = [
   catalogEntry("podcast", "podcast", 1, false, PODCAST_MANIFEST),
   catalogEntry("blog", "blog", 2, false, BLOG_MANIFEST),
   catalogEntry("photo", "photo", 3, false, PHOTO_MANIFEST),
+  catalogEntry("video", "video", 4, false, VIDEO_MANIFEST),
+  catalogEntry("curation", "curation", 5, false, CURATION_MANIFEST),
+  catalogEntry("changelog", "changelog", 6, false, CHANGELOG_MANIFEST),
 ];
 
 function assertValidCatalog(

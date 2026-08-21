@@ -9,6 +9,11 @@ const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
 const mediaExtension = /\.(?:avif|gif|jpe?g|m4a|mov|mp3|mp4|ogg|png|svg|wav|webm|webp)$/iu;
 
 interface FixtureItem {
+  _microfeed?: {
+    is_audio?: boolean;
+    is_image?: boolean;
+    is_video?: boolean;
+  };
   attachments?: Array<{mime_type?: string; url?: string}>;
   banner_image?: string;
   image?: string;
@@ -76,6 +81,23 @@ describe("Built-in theme fixture media", () => {
       const packagedMedia = (await filesUnder(directory))
         .filter((filename) => mediaExtension.test(filename));
       expect(packagedMedia, entry.key).toEqual([]);
+    }
+  });
+
+  it("puts each showcase theme's primary format first", async () => {
+    const expectedFlag = new Map([
+      ["podcast", "is_audio"],
+      ["photo", "is_image"],
+      ["video", "is_video"],
+    ] as const);
+    for (const entry of BUNDLED_THEME_CATALOG) {
+      const flag = expectedFlag.get(entry.key as "podcast" | "photo" | "video");
+      if (!flag) continue;
+      const fixture = JSON.parse(await readFile(
+        path.join(repositoryRoot, "themes", entry.directory, entry.manifest.previewFixture!),
+        "utf8",
+      )) as Fixture;
+      expect(fixture.items?.[0]?._microfeed?.[flag], entry.key).toBe(true);
     }
   });
 });

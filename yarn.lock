@@ -2867,6 +2867,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@microfeed/changelog-theme-source@workspace:themes/changelog":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/changelog-theme-source@workspace:themes/changelog"
+  dependencies:
+    "@microfeed/theme-kit": "workspace:^"
+    "@tailwindcss/vite": "npm:^4.1.14"
+    tailwindcss: "npm:^4.0.14"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
+  languageName: unknown
+  linkType: soft
+
 "@microfeed/cli@workspace:packages/cli":
   version: 0.0.0-use.local
   resolution: "@microfeed/cli@workspace:packages/cli"
@@ -2880,6 +2892,18 @@ __metadata:
       optional: true
   bin:
     microfeed: dist/index.js
+  languageName: unknown
+  linkType: soft
+
+"@microfeed/curation-theme-source@workspace:themes/curation":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/curation-theme-source@workspace:themes/curation"
+  dependencies:
+    "@microfeed/theme-kit": "workspace:^"
+    "@tailwindcss/vite": "npm:^4.1.14"
+    tailwindcss: "npm:^4.0.14"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
   languageName: unknown
   linkType: soft
 
@@ -2936,6 +2960,18 @@ __metadata:
   bin:
     microfeed-theme: ./dist/cli.js
     theme-kit: ./dist/cli.js
+  languageName: unknown
+  linkType: soft
+
+"@microfeed/video-theme-source@workspace:themes/video":
+  version: 0.0.0-use.local
+  resolution: "@microfeed/video-theme-source@workspace:themes/video"
+  dependencies:
+    "@microfeed/theme-kit": "workspace:^"
+    "@tailwindcss/vite": "npm:^4.1.14"
+    tailwindcss: "npm:^4.0.14"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
   languageName: unknown
   linkType: soft
 
