@@ -1,9 +1,22 @@
 import {
+  THEME_ADMIN_TABS,
   THEME_LIST_SORTS,
   THEME_SEARCH_MAX_LENGTH,
   type ThemeListSort,
   type ThemeListOptions,
+  type ThemeAdminTab,
 } from "./ThemeContract";
+
+export function parseThemeAdminTab(
+  searchParams: URLSearchParams,
+): ThemeAdminTab | null {
+  const requested = searchParams.get("tab");
+  if (requested === null) return null;
+  if (THEME_ADMIN_TABS.includes(requested as ThemeAdminTab)) {
+    return requested as ThemeAdminTab;
+  }
+  throw new Error("Unknown theme tab.");
+}
 
 export function parseThemeListOptions(
   searchParams: URLSearchParams,

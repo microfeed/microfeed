@@ -1,0 +1,256 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Open Frame",
+  "home_page_url": "https://example.test/",
+  "feed_url": "https://example.test/json/",
+  "description": "<p>A visual notebook about landscapes, structures, and the quiet details between them.</p>",
+  "icon": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+  "authors": [{"name": "Samira Okafor"}],
+  "language": "en",
+  "items": [
+    {
+      "id": "after-rain",
+      "url": "https://example.test/frames/after-rain/",
+      "title": "After the rain, everything leans green",
+      "content_text": "A hillside holds the last of the afternoon light after a fast summer storm.",
+      "content_html": "<p>A hillside holds the last of the afternoon light after a fast summer storm.</p><p>I stayed until the path emptied and the smallest sounds returned.</p>",
+      "date_published": "2026-08-20T17:20:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+      "authors": [{"name": "Samira Okafor"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 20, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/after-rain/",
+        "rss_url": "https://example.test/rss/items/after-rain/",
+        "status": "published",
+        "web_url": "https://example.test/i/after-rain/"
+      }
+    },
+    {
+      "id": "long-ridge",
+      "url": "https://example.test/frames/long-ridge/",
+      "title": "The long ridge",
+      "content_text": "Cloud and stone moving at different speeds.",
+      "content_html": "<p>Cloud and stone moving at different speeds.</p>",
+      "date_published": "2026-08-18T07:45:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/9/94/Mountain_and_Landscape.jpg",
+      "authors": [{"name": "Samira Okafor"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Mountain_and_Landscape.jpg", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 18, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/long-ridge/",
+        "rss_url": "https://example.test/rss/items/long-ridge/",
+        "status": "published",
+        "web_url": "https://example.test/i/long-ridge/"
+      }
+    },
+    {
+      "id": "civic-lines",
+      "url": "https://example.test/frames/civic-lines/",
+      "title": "Civic lines",
+      "content_text": "Repeating columns turn a public building into a study in rhythm.",
+      "content_html": "<p>Repeating columns turn a public building into a study in rhythm.</p>",
+      "date_published": "2026-08-15T12:10:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
+      "authors": [{"name": "Samira Okafor"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 15, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/civic-lines/",
+        "rss_url": "https://example.test/rss/items/civic-lines/",
+        "status": "published",
+        "web_url": "https://example.test/i/civic-lines/"
+      }
+    },
+    {
+      "id": "thirty-seconds",
+      "url": "https://example.test/frames/thirty-seconds/",
+      "title": "Thirty seconds of night",
+      "content_text": "Long exposure turns the city into a diagram of movement.",
+      "content_html": "<p>Long exposure turns the city into a diagram of movement.</p>",
+      "date_published": "2026-08-12T23:05:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
+      "authors": [{"name": "Samira Okafor"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 12, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/thirty-seconds/",
+        "rss_url": "https://example.test/rss/items/thirty-seconds/",
+        "status": "published",
+        "web_url": "https://example.test/i/thirty-seconds/"
+      }
+    },
+    {
+      "id": "oslo-sunset",
+      "url": "https://example.test/frames/oslo-sunset/",
+      "title": "Pocket-camera sunset",
+      "content_text": "A small camera, a long horizon, and the last color over Oslo.",
+      "content_html": "<p>A small camera, a long horizon, and the last color over Oslo.</p>",
+      "date_published": "2026-08-10T20:40:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Landscape_picture.JPG",
+      "authors": [{"name": "Samira Okafor"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Landscape_picture.JPG", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 10, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/oslo-sunset/",
+        "rss_url": "https://example.test/rss/items/oslo-sunset/",
+        "status": "published",
+        "web_url": "https://example.test/i/oslo-sunset/"
+      }
+    },
+    {
+      "id": "studio-portrait",
+      "url": "https://example.test/frames/studio-portrait/",
+      "title": "Object portrait: microphone",
+      "content_text": "Soft focus isolates one tool from the room around it.",
+      "content_html": "<p>Soft focus isolates one tool from the room around it.</p>",
+      "date_published": "2026-08-08T13:30:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microphone_1.jpg",
+      "authors": [{"name": "Samira Okafor"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microphone_1.jpg", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 8, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/studio-portrait/",
+        "rss_url": "https://example.test/rss/items/studio-portrait/",
+        "status": "published",
+        "web_url": "https://example.test/i/studio-portrait/"
+      }
+    },
+    {
+      "id": "sound-of-water",
+      "url": "https://example.test/field-notes/sound-of-water/",
+      "title": "Sound of water",
+      "content_text": "A thirty-one second field recording from the edge of the path.",
+      "content_html": "<p>A thirty-one second field recording from the edge of the path.</p>",
+      "date_published": "2026-08-05T16:00:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg", "mime_type": "audio/ogg", "duration_in_seconds": 31}],
+      "_microfeed": {
+        "date_published_short": "Aug 5, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "json_url": "https://example.test/json/items/sound-of-water/",
+        "rss_url": "https://example.test/rss/items/sound-of-water/",
+        "status": "published",
+        "web_url": "https://example.test/i/sound-of-water/"
+      }
+    },
+    {
+      "id": "water-loop",
+      "url": "https://example.test/motion/water-loop/",
+      "title": "Water loop",
+      "content_text": "A short moving study from the same afternoon.",
+      "content_html": "<p>A short moving study from the same afternoon.</p>",
+      "date_published": "2026-08-03T16:00:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm", "mime_type": "video/webm", "duration_in_seconds": 3.4}],
+      "_microfeed": {
+        "date_published_short": "Aug 3, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/water-loop/",
+        "rss_url": "https://example.test/rss/items/water-loop/",
+        "status": "published",
+        "web_url": "https://example.test/i/water-loop/"
+      }
+    },
+    {
+      "id": "packing-light",
+      "url": "https://example.test/notes/packing-light/",
+      "title": "Packing light for a long walk",
+      "content_text": "A plain-text kit list for making photographs without carrying a studio.",
+      "content_html": "<p>A plain-text kit list for making photographs without carrying a studio.</p>",
+      "date_published": "2026-08-01T09:00:00Z",
+      "_microfeed": {
+        "date_published_short": "Aug 1, 2026",
+        "json_url": "https://example.test/json/items/packing-light/",
+        "rss_url": "https://example.test/rss/items/packing-light/",
+        "status": "published",
+        "web_url": "https://example.test/i/packing-light/"
+      }
+    },
+    {
+      "id": "contact-sheets",
+      "url": "https://example.test/resources/contact-sheets/",
+      "title": "Download: annotated contact sheets",
+      "content_text": "A PDF showing the frames around the final selections.",
+      "content_html": "<p>A PDF showing the frames around the final selections.</p>",
+      "date_published": "2026-07-29T09:00:00Z",
+      "attachments": [{"url": "https://example.test/media/annotated-contact-sheets.pdf", "mime_type": "application/pdf", "size_in_bytes": 2100000}],
+      "_microfeed": {
+        "date_published_short": "Jul 29, 2026",
+        "is_document": true,
+        "json_url": "https://example.test/json/items/contact-sheets/",
+        "rss_url": "https://example.test/rss/items/contact-sheets/",
+        "status": "published",
+        "web_url": "https://example.test/i/contact-sheets/"
+      }
+    },
+    {
+      "id": "gallery-visit",
+      "external_url": "https://gallery.example/exhibitions/slow-looking/",
+      "title": "Elsewhere: an exhibition about slow looking",
+      "content_text": "A gallery program worth visiting and reading.",
+      "content_html": "<p>A gallery program worth visiting and reading.</p>",
+      "date_published": "2026-07-25T11:00:00Z",
+      "attachments": [{"url": "https://gallery.example/exhibitions/slow-looking/", "mime_type": "text/html"}],
+      "_microfeed": {
+        "date_published_short": "Jul 25, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/gallery-visit/",
+        "rss_url": "https://example.test/rss/items/gallery-visit/",
+        "status": "published",
+        "web_url": "https://example.test/i/gallery-visit/"
+      }
+    }
+  ],
+  "navigation_pages": [
+    {"id": "page-about", "navigation_label": "About", "navigation_order": 10, "slug": "about", "title": "About Open Frame", "url": "https://example.test/about/"},
+    {"id": "page-projects", "navigation_label": "Projects", "navigation_order": 20, "slug": "projects", "title": "Projects", "url": "https://example.test/projects/"},
+    {"id": "page-contact", "navigation_label": "Contact", "navigation_order": 30, "slug": "contact", "title": "Contact", "url": "https://example.test/contact/"}
+  ],
+  "page": {
+    "content_html": "<p><strong>Open Frame</strong> is an ongoing visual notebook by Samira Okafor.</p><h2>Working slowly</h2><p>The project follows ordinary landscapes and built environments across seasons.</p>",
+    "content_text": "Open Frame is an ongoing visual notebook by Samira Okafor.",
+    "date_created": "2026-01-08T09:00:00Z",
+    "date_modified": "2026-08-18T09:00:00Z",
+    "date_published": "2026-01-08T09:00:00Z",
+    "id": "page-about",
+    "is_not_found_page": false,
+    "meta_description": "About Open Frame.",
+    "navigation_label": "About",
+    "navigation_order": 10,
+    "show_in_navigation": true,
+    "slug": "about",
+    "status": "published",
+    "title": "About Open Frame",
+    "url": "https://example.test/about/"
+  },
+  "search": {
+    "query": "landscape",
+    "results": [
+      {"content_text": "A hillside holds the last of the afternoon light after a fast summer storm.", "date_published": "2026-08-20T17:20:00Z", "id": "after-rain", "title": "After the rain, everything leans green", "type": "item", "url": "https://example.test/i/after-rain/"},
+      {"content_text": "Open Frame is an ongoing visual notebook by Samira Okafor.", "date_published": "2026-01-08T09:00:00Z", "id": "page-about", "title": "About Open Frame", "type": "page", "url": "https://example.test/about/"}
+    ]
+  },
+  "_microfeed": {
+    "base_url": "https://example.test/",
+    "categories": [{"name": "Photography"}, {"name": "Landscape"}],
+    "copyright": "© 2026 Open Frame",
+    "items_next_cursor": "older-frames",
+    "items_order": "desc",
+    "items_sort": "published_at",
+    "microfeed_version": "1.0.0",
+    "next_url": "https://example.test/?next_cursor=older-frames",
+    "subscribe_methods": [
+      {"enabled": true, "name": "RSS", "type": "rss", "url": "https://example.test/rss/"},
+      {"enabled": true, "name": "JSON Feed", "type": "json", "url": "https://example.test/json/"}
+    ]
+  }
+}

@@ -88,17 +88,29 @@ describe("Admin versioned themes", () => {
     expect(searchLinks).toBeLessThan(detailsEnd);
   });
 
-  it("presents only current themes as compact installed versions", async () => {
+  it("separates Built-in groups from quota-scoped Custom versions", async () => {
     const [themes, installHelp, route] = await Promise.all([
       source("components/admin/themes/ThemesApp.tsx"),
       source("components/admin/themes/ThemeInstallHelpDialog.tsx"),
       source("pages/[adminPath]/settings/themes/index.astro"),
     ]);
-    expect(themes).toContain("Installed themes");
+    expect(themes).toContain("Built-in themes (");
+    expect(themes).toContain("Custom themes (");
+    expect(themes).toContain('role="tablist"');
+    expect(themes).toContain('role="tabpanel"');
+    expect(themes).toContain("new URLSearchParams({tab})");
+    expect(themes).toContain('if (tab === "custom")');
+    expect(themes).toContain("setPage(1)");
+    expect(themes).toContain('event.key === "ArrowLeft"');
+    expect(themes).toContain("tabIndex={tab ===");
+    expect(themes).toContain("builtInGroups.map");
+    expect(themes).toContain("Version history");
+    expect(themes).toContain("Current release");
+    expect(themes).toContain("Demo content");
+    expect(themes).toContain("Built-in themes are synchronized");
+    expect(themes).toContain("Custom theme versions used");
+    expect(themes).toContain("Built-in themes do not use this quota");
     expect(themes).toContain("Version drafts");
-    expect(themes).toContain(
-      "Installed versions are immutable. Create a new version to make changes.",
-    );
     expect(themes).toContain("Create new version");
     expect(themes).not.toContain("Customize");
     expect(themes).toContain('action: "customize"');
@@ -114,8 +126,10 @@ describe("Admin versioned themes", () => {
     expect(themes).toContain("<details");
     expect(themes).not.toContain("Deleted versions");
     expect(themes).not.toContain("Theme state");
-    expect(themes).not.toContain("Built-in default");
-    expect(route).toContain("store.listSummaries(options)");
+    expect(themes).toContain("Built-in");
+    expect(route).toContain("store.listSummaries(options, requestedTab)");
+    expect(route).toContain("parseThemeAdminTab(searchParams)");
+    expect(route).toContain("initialTab = listing.scope");
     expect(themes).toContain("Search name, package, version, author, or source");
     expect(themes).toContain("Newest installed");
     expect(themes).toContain("window.history.replaceState");
@@ -124,6 +138,8 @@ describe("Admin versioned themes", () => {
       "yarn manage theme install &lt;github-url-or-directory&gt;",
     );
     expect(installHelp).toContain("Install a community theme");
+    expect(installHelp).toContain("Install a Built-in theme");
+    expect(installHelp).toContain("bundled:default");
     expect(installHelp).toContain("Create a new version in Admin");
     expect(installHelp).toContain("https://docs.microfeed.org/dashboard/themes/");
     expect(installHelp).toContain(
@@ -131,8 +147,9 @@ describe("Admin versioned themes", () => {
     );
     expect(themes).toContain("originThemeLabel(theme)");
     expect(themes).not.toContain("Origin theme: ${theme.originThemeId}");
-    expect(themes).toContain('theme.sourceKind === "bundled"');
+    expect(themes).toContain("!builtIn && (");
     expect(themes).toContain("Update this theme");
+    expect(themes).toContain("theme install ${builtInSource}");
     expect(themes).toContain("Copy update command");
     expect(themes).toContain("Export this version");
     expect(themes).toContain("Copy export command");

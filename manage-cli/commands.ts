@@ -100,7 +100,7 @@ import {
   runCommand,
   runYarnScript,
 } from "./lib/process";
-import {verifyBundledThemeRelease} from "./lib/bundled-theme-release";
+import {verifyBundledThemeReleases} from "./lib/bundled-theme-release";
 import {
   askConfirm,
   askPassword,
@@ -1608,7 +1608,7 @@ async function deployConfiguredProject(
   initializeAdmin = false,
   initializeDefaultTheme = false,
 ): Promise<MicrofeedConfig> {
-  await verifyBundledThemeRelease(repositoryRoot);
+  await verifyBundledThemeReleases(repositoryRoot);
   const sourceCommitSha = await repositoryCommitSha(context.runner);
   await configureAdminAuth(context, config);
   await generateWranglerConfig(config);
@@ -1620,13 +1620,13 @@ async function deployConfiguredProject(
   markStep(config, "migrations-applied");
   await writeConfig(config);
   if (initializeDefaultTheme) {
-    const {installDefaultThemeForInitialization} = await import("./theme");
-    await installDefaultThemeForInitialization(config, context.runner, false);
+    const {installBundledThemesForInitialization} = await import("./theme");
+    await installBundledThemesForInitialization(config, context.runner, false);
     markStep(config, "default-theme-installed");
     await writeConfig(config);
   } else {
-    const {installDefaultThemeForV1Appearance} = await import("./theme");
-    await installDefaultThemeForV1Appearance(config, context.runner, false);
+    const {synchronizeBundledThemes} = await import("./theme");
+    await synchronizeBundledThemes(config, context.runner, false);
   }
   if (initializeAdmin) {
     await prepareInitialAdminSetup(context, config);
@@ -2396,8 +2396,8 @@ async function initializeLocal(context: CommandContext): Promise<void> {
     local: true,
     persistTo: localPersistencePath(config),
   });
-  const {installDefaultThemeForInitialization} = await import("./theme");
-  await installDefaultThemeForInitialization(config, context.runner, true);
+  const {installBundledThemesForInitialization} = await import("./theme");
+  await installBundledThemesForInitialization(config, context.runner, true);
   markStep(config, "default-theme-installed");
   await writeConfig(config);
 
@@ -3077,7 +3077,7 @@ export async function deployCommand(
     preview,
     context.instanceName,
   );
-  await verifyBundledThemeRelease(repositoryRoot);
+  await verifyBundledThemeReleases(repositoryRoot);
   if (
     !local &&
     (enableWebhooks || disableWebhooks || webhookEnabled(config) ||
@@ -3114,8 +3114,8 @@ export async function deployCommand(
       local: true,
       persistTo: localPersistencePath(config),
     });
-    const {installDefaultThemeForV1Appearance} = await import("./theme");
-    await installDefaultThemeForV1Appearance(config, context.runner, true);
+    const {synchronizeBundledThemes} = await import("./theme");
+    await synchronizeBundledThemes(config, context.runner, true);
     markStep(config, "migrations-applied");
     await writeConfig(config);
     await runChecks(context.runner, config);

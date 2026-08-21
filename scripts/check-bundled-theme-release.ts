@@ -2,23 +2,25 @@ import path from "node:path";
 import {fileURLToPath, pathToFileURL} from "node:url";
 
 import {
-  recordBundledThemeRelease,
-  verifyBundledThemeRelease,
+  recordBundledThemeReleases,
+  verifyBundledThemeReleases,
 } from "../manage-cli/lib/bundled-theme-release";
 
 export async function checkBundledThemeRelease(
   repositoryRoot: string,
   record: boolean,
 ): Promise<string> {
-  const result = record
-    ? await recordBundledThemeRelease(repositoryRoot)
-    : {
-      identity: await verifyBundledThemeRelease(repositoryRoot),
+  const results = record
+    ? await recordBundledThemeReleases(repositoryRoot)
+    : (await verifyBundledThemeReleases(repositoryRoot)).map((identity) => ({
+      identity,
       recorded: false,
-    };
-  const action = record && result.recorded ? "Recorded" : "Verified";
-  return `${action} ${result.identity.packageId}@${result.identity.version} ` +
-    `(${result.identity.checksumSha256}).`;
+    }));
+  return results.map((result) => {
+    const action = record && result.recorded ? "Recorded" : "Verified";
+    return `${action} ${result.identity.packageId}@${result.identity.version} ` +
+      `(${result.identity.checksumSha256}).`;
+  }).join("\n");
 }
 
 async function main(): Promise<void> {

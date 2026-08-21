@@ -118,6 +118,14 @@ The [theme contract](/themes/contract/) describes the templates and render
 context. The [asset guide](/themes/assets/) covers Vite, Webpack, Tailwind,
 inline output, and packaged files.
 
+## Built-in package media
+
+Built-in theme fixtures use stable direct HTTPS URLs for royalty-free image,
+audio, and video examples. Maintainers record each remote asset's source and
+license in that package's notes. Media binaries are not committed to a
+Built-in theme package; only its portable text templates, manifest, fixture,
+schemas, build sources, and release ledger live in this repository.
+
 ## Validate, test, and preview
 
 ```console

@@ -9,6 +9,11 @@ import {
   canonicalThemePackage,
   sha256Hex,
 } from "../../src/shared/themes/ThemeRenderer";
+import {
+  BUNDLED_THEME_CATALOG,
+  bundledThemeCatalogEntryByKey,
+  type BundledThemeCatalogEntry,
+} from "../../src/shared/themes/BundledThemeCatalog";
 
 const releasedThemeSchema = z.object({
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -19,7 +24,7 @@ const releasedThemeSchema = z.object({
 
 const bundledThemeReleasesSchema = z.object({
   packageId: z.string().min(1),
-  releases: z.array(releasedThemeSchema).min(1),
+  releases: z.array(releasedThemeSchema),
 }).strict();
 
 export interface BundledThemeReleaseIdentity {
@@ -36,17 +41,29 @@ interface BundledThemeReleaseRegistry {
   }>;
 }
 
-function releaseRegistryFilename(repositoryRoot: string): string {
+function catalogEntry(key: string): BundledThemeCatalogEntry {
+  const entry = bundledThemeCatalogEntryByKey(key);
+  if (!entry) throw new Error(`Unknown Built-in theme key: ${key}`);
+  return entry;
+}
+
+function releaseRegistryFilename(
+  repositoryRoot: string,
+  entry: BundledThemeCatalogEntry,
+): string {
   return path.join(
     repositoryRoot,
-    "themes/default/released-packages.json",
+    "themes",
+    entry.directory,
+    "released-packages.json",
   );
 }
 
 async function releaseRegistry(
   repositoryRoot: string,
+  entry: BundledThemeCatalogEntry,
 ): Promise<BundledThemeReleaseRegistry> {
-  const filename = releaseRegistryFilename(repositoryRoot);
+  const filename = releaseRegistryFilename(repositoryRoot, entry);
   let parsed: unknown;
   try {
     parsed = JSON.parse(await readFile(filename, "utf8"));
@@ -78,9 +95,11 @@ async function releaseRegistry(
 
 export async function currentBundledThemeRelease(
   repositoryRoot: string,
+  key = "default",
 ): Promise<BundledThemeReleaseIdentity> {
+  const entry = catalogEntry(key);
   const loaded = await loadThemePackage(
-    path.join(repositoryRoot, "themes/default"),
+    path.join(repositoryRoot, "themes", entry.directory),
   );
   return {
     checksumSha256: await sha256Hex(
@@ -128,19 +147,23 @@ function releasedIdentity(
 
 export async function verifyBundledThemeRelease(
   repositoryRoot: string,
+  key = "default",
 ): Promise<BundledThemeReleaseIdentity> {
+  const entry = catalogEntry(key);
   return releasedIdentity(
-    await releaseRegistry(repositoryRoot),
-    await currentBundledThemeRelease(repositoryRoot),
+    await releaseRegistry(repositoryRoot, entry),
+    await currentBundledThemeRelease(repositoryRoot, key),
   );
 }
 
 export async function recordBundledThemeRelease(
   repositoryRoot: string,
+  key = "default",
 ): Promise<{identity: BundledThemeReleaseIdentity; recorded: boolean}> {
+  const entry = catalogEntry(key);
   const [registry, current] = await Promise.all([
-    releaseRegistry(repositoryRoot),
-    currentBundledThemeRelease(repositoryRoot),
+    releaseRegistry(repositoryRoot, entry),
+    currentBundledThemeRelease(repositoryRoot, key),
   ]);
   if (registry.packageId !== current.packageId) {
     releasedIdentity(registry, current);
@@ -154,8 +177,8 @@ export async function recordBundledThemeRelease(
       recorded: false,
     };
   }
-  const latest = registry.releases.at(-1)!;
-  if (!gt(current.version, latest.version)) {
+  const latest = registry.releases.at(-1);
+  if (latest && !gt(current.version, latest.version)) {
     throw new Error(
       `${current.version} must be newer than the latest bundled theme ` +
         `release, ${latest.version}.`,
@@ -166,9 +189,25 @@ export async function recordBundledThemeRelease(
     version: current.version,
   });
   await writeFile(
-    releaseRegistryFilename(repositoryRoot),
+    releaseRegistryFilename(repositoryRoot, entry),
     `${JSON.stringify(registry, null, 2)}\n`,
     "utf8",
   );
   return {identity: current, recorded: true};
+}
+
+export async function verifyBundledThemeReleases(
+  repositoryRoot: string,
+): Promise<BundledThemeReleaseIdentity[]> {
+  return Promise.all(BUNDLED_THEME_CATALOG.map(({key}) =>
+    verifyBundledThemeRelease(repositoryRoot, key)
+  ));
+}
+
+export async function recordBundledThemeReleases(
+  repositoryRoot: string,
+): Promise<Array<{identity: BundledThemeReleaseIdentity; recorded: boolean}>> {
+  return Promise.all(BUNDLED_THEME_CATALOG.map(({key}) =>
+    recordBundledThemeRelease(repositoryRoot, key)
+  ));
 }

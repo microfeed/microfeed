@@ -7,7 +7,10 @@ import {
   singleWebhookEventCommit,
   webhookEventsCommit,
 } from "@/server/webhooks/emission";
-import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
+import {
+  parseThemeAdminTab,
+  parseThemeListOptions,
+} from "@/shared/themes/ThemeListing";
 import {webhookThemeSnapshot} from "@/shared/WebhookExamples";
 
 function errorResponse(error: unknown): Response {
@@ -18,9 +21,11 @@ function errorResponse(error: unknown): Response {
 
 export const GET: APIRoute = async ({request}) => {
   try {
-    const options = parseThemeListOptions(new URL(request.url).searchParams);
+    const searchParams = new URL(request.url).searchParams;
+    const tab = parseThemeAdminTab(searchParams);
+    const options = parseThemeListOptions(searchParams);
     return jsonResponse(
-      await new ThemeStore(env.FEED_DB, cache).listSummaries(options),
+      await new ThemeStore(env.FEED_DB, cache).listSummaries(options, tab),
     );
   } catch (error) {
     return errorResponse(error);

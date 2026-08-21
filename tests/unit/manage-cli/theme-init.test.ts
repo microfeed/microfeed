@@ -12,6 +12,7 @@ import type {
   ThemeManifestV1,
   ThemePreviewFixture,
 } from "@/shared/themes/ThemeContract";
+import {BUNDLED_THEME_CATALOG} from "@/shared/themes/BundledThemeCatalog";
 import {themeKitCompatibilityRange} from "@/shared/ThemeKitVersion";
 import {
   MICROFEED_PACKAGE_MANAGER,
@@ -124,16 +125,19 @@ describe("theme repository initialization", () => {
   it("updates legacy bundled rows from the current checkout", async () => {
     const {theme} = await freshModules();
     expect(theme.themeUpdateSource({
+      packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: null,
       sourceUrl: null,
-    })).toBe("default");
+    })).toBe("bundled:default");
     expect(theme.themeUpdateSource({
+      packageId: "example.github",
       sourceKind: "github",
       sourcePath: null,
       sourceUrl: "https://github.com/example/theme",
     })).toBe("https://github.com/example/theme");
     expect(theme.themeUpdateSource({
+      packageId: "example.admin",
       sourceKind: "admin",
       sourcePath: null,
       sourceUrl: null,
@@ -197,12 +201,18 @@ describe("theme repository initialization", () => {
     }, commandRunner())).rejects.toThrow(
       "reserved for bundled microfeed themes",
     );
+    await expect(theme.themeCommand({
+      action: "install",
+      instance: "personal",
+      local: true,
+      source: "bundled:missing",
+    }, commandRunner())).rejects.toThrow("Unknown Built-in theme source");
   });
 
-  it("installs and activates the bundled default only for pristine initialization", async () => {
+  it("installs the Built-in catalog and activates only Default for pristine initialization", async () => {
     const {theme} = await freshModules();
     const runner = commandRunner();
-    let stored: Record<string, unknown> | null = null;
+    const stored = new Map<string, Record<string, unknown>>();
     vi.stubGlobal("fetch", vi.fn(async (_input: URL | RequestInfo, init?: RequestInit) => {
       const request = JSON.parse(String(init?.body)) as {params?: unknown[]; sql: string};
       if (request.sql.includes("FROM theme_state") && request.sql.includes("LIMIT 1")) {
@@ -212,11 +222,12 @@ describe("theme repository initialization", () => {
         return d1Response([{channels: 0, drafts: 0, items: 0, other_themes: 0, settings: 0}]);
       }
       if (request.sql.includes("WHERE package_id = ? AND version = ?")) {
-        return d1Response([]);
+        const row = stored.get(String(request.params?.[0]));
+        return d1Response(row ? [row] : []);
       }
       if (request.sql.includes("INSERT INTO themes")) {
         const values = request.params!;
-        stored = {
+        const row = {
           asset_owner_theme_id: values[14],
           bundle_json: values[5],
           checksum_sha256: values[12],
@@ -235,17 +246,23 @@ describe("theme repository initialization", () => {
           source_url: values[8],
           version: values[2],
         };
+        stored.set(String(values[1]), row);
         return d1Response([{id: values[0]}]);
       }
       if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
-        return d1Response(stored ? [stored] : []);
+        const row = [...stored.values()].find(({id}) =>
+          id === request.params?.[0]
+        );
+        return d1Response(row ? [row] : []);
       }
       if (request.sql.includes("SELECT id, version, asset_owner_theme_id FROM themes")) {
-        return d1Response(stored ? [{
-          asset_owner_theme_id: stored.asset_owner_theme_id,
-          id: stored.id,
-          version: stored.version,
-        }] : []);
+        return d1Response([...stored.values()]
+          .filter(({package_id}) => package_id === request.params?.[0])
+          .map((row) => ({
+            asset_owner_theme_id: row.asset_owner_theme_id,
+            id: row.id,
+            version: row.version,
+          })));
       }
       if (request.sql.includes("UPDATE theme_state SET active_theme_id")) {
         return d1Response([{active_theme_id: request.params?.[0]}]);
@@ -253,22 +270,25 @@ describe("theme repository initialization", () => {
       throw new Error(`Unexpected D1 query: ${request.sql}`);
     }));
 
-    await expect(theme.installDefaultThemeForInitialization(
+    await expect(theme.installBundledThemesForInitialization(
       savedConfig(),
       runner,
       false,
     )).resolves.toMatchObject({
       packageId: "microfeed.default",
       sourceKind: "bundled",
-      sourcePath: "default",
+      sourcePath: "bundled:default",
       version: "1.1.15",
     });
-    expect(stored).toMatchObject({
+    expect(stored.get("microfeed.default")).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
-      source_path: "default",
+      source_path: "bundled:default",
       version: "1.1.15",
     });
+    expect([...stored.keys()]).toEqual(BUNDLED_THEME_CATALOG.map(
+      ({packageId}) => packageId,
+    ));
   });
 
   it(
@@ -277,7 +297,8 @@ describe("theme repository initialization", () => {
       const {theme} = await freshModules();
       const runner = commandRunner();
       const queries: string[] = [];
-      let stored: Record<string, unknown> | null = null;
+      const stored = new Map<string, Record<string, unknown>>();
+      let restored = 0;
       const active = {
         asset_owner_theme_id: null,
         bundle_json: JSON.stringify(bundle),
@@ -319,11 +340,12 @@ describe("theme repository initialization", () => {
           return d1Response([]);
         }
         if (request.sql.includes("WHERE package_id = ? AND version = ?")) {
-          return d1Response(stored ? [stored] : []);
+          const row = stored.get(String(request.params?.[0]));
+          return d1Response(row ? [row] : []);
         }
         if (request.sql.includes("INSERT INTO themes")) {
           const values = request.params!;
-          stored = {
+          const row = {
             asset_owner_theme_id: values[14],
             bundle_json: values[5],
             checksum_sha256: values[12],
@@ -342,56 +364,94 @@ describe("theme repository initialization", () => {
             source_url: values[8],
             version: values[2],
           };
+          stored.set(String(values[1]), row);
           return d1Response([{id: values[0]}]);
         }
         if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
-          return d1Response(stored ? [stored] : []);
+          const row = [...stored.values()].find(({id}) =>
+            id === request.params?.[0]
+          );
+          return d1Response(row ? [row] : []);
+        }
+        if (request.sql.includes("UPDATE themes SET deleted_at = NULL")) {
+          const row = [...stored.values()].find(({id}) =>
+            id === request.params?.[1]
+          );
+          if (row) {
+            row.deleted_at = null;
+            row.source_path = request.params?.[0];
+          }
+          restored += 1;
+          return d1Response(row ? [{id: row.id}] : []);
         }
         if (request.sql.includes("SELECT id, version, asset_owner_theme_id FROM themes")) {
-          return d1Response(stored ? [{
-            asset_owner_theme_id: stored.asset_owner_theme_id,
-            id: stored.id,
-            version: stored.version,
-          }] : []);
+          return d1Response([...stored.values()]
+            .filter(({package_id}) => package_id === request.params?.[0])
+            .map((row) => ({
+              asset_owner_theme_id: row.asset_owner_theme_id,
+              id: row.id,
+              version: row.version,
+            })));
         }
         throw new Error(`Unexpected D1 query: ${request.sql}`);
       }));
 
-      await expect(theme.installDefaultThemeForV1Appearance(
+      await expect(theme.synchronizeBundledThemes(
         savedConfig(),
         runner,
         false,
-      )).resolves.toMatchObject({
-        packageId: "microfeed.default",
-        sourceKind: "bundled",
-        version: "1.1.15",
-      });
-      await expect(theme.installDefaultThemeForV1Appearance(
+      )).resolves.toEqual(BUNDLED_THEME_CATALOG.map(({packageId}) =>
+        expect.objectContaining({packageId, sourceKind: "bundled"})
+      ));
+      await expect(theme.synchronizeBundledThemes(
         savedConfig(),
         runner,
         false,
-      )).resolves.toMatchObject({
-        packageId: "microfeed.default",
-        version: "1.1.15",
-      });
-      expect(stored).toMatchObject({
+      )).resolves.toEqual(BUNDLED_THEME_CATALOG.map(({packageId}) =>
+        expect.objectContaining({packageId})
+      ));
+      const storedRow = stored.get("microfeed.default") ?? null;
+      if (!storedRow) throw new Error("Expected the Built-in row to be stored.");
+      storedRow.deleted_at = "2026-08-18T00:00:00.000Z";
+      await expect(theme.synchronizeBundledThemes(
+        savedConfig(),
+        runner,
+        false,
+      )).resolves.toEqual(BUNDLED_THEME_CATALOG.map(({packageId}) =>
+        expect.objectContaining({
+          deletedAt: null,
+          packageId,
+          sourceKind: "bundled",
+        })
+      ));
+      expect(stored.get("microfeed.default")).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
         version: "1.1.15",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
-        .toHaveLength(1);
+        .toHaveLength(BUNDLED_THEME_CATALOG.length);
+      expect(restored).toBe(1);
       expect(queries.some((sql) => sql.includes("UPDATE theme_state")))
         .toBe(false);
+      storedRow.deleted_at = "2026-08-19T00:00:00.000Z";
+      storedRow.source_kind = "migration";
+      await expect(theme.synchronizeBundledThemes(
+        savedConfig(),
+        runner,
+        false,
+      )).rejects.toThrow("without Built-in source metadata");
+      expect(restored).toBe(1);
     },
   );
 
   it(
-    "does not install another default when the effective theme is already v2",
+    "synchronizes a missing Built-in release without changing an active v2 theme",
     async () => {
       const {theme} = await freshModules();
       const runner = commandRunner();
       const queries: string[] = [];
+      const stored = new Map<string, Record<string, unknown>>();
       const v2Manifest = {
         ...manifest,
         files: {
@@ -410,8 +470,54 @@ describe("theme repository initialization", () => {
         _input: URL | RequestInfo,
         init?: RequestInit,
       ) => {
-        const request = JSON.parse(String(init?.body)) as {sql: string};
+        const request = JSON.parse(String(init?.body)) as {
+          params?: unknown[];
+          sql: string;
+        };
         queries.push(request.sql);
+        if (request.sql.includes("WHERE package_id = ? AND version = ?")) {
+          const row = stored.get(String(request.params?.[0]));
+          return d1Response(row ? [row] : []);
+        }
+        if (request.sql.includes("INSERT INTO themes")) {
+          const values = request.params!;
+          const row = {
+            asset_owner_theme_id: values[14],
+            bundle_json: values[5],
+            checksum_sha256: values[12],
+            created_at: "2026-08-10T00:00:00.000Z",
+            deleted_at: null,
+            id: values[0],
+            manifest_json: values[4],
+            name: values[3],
+            origin_theme_id: values[13],
+            package_id: values[1],
+            preview_fixture_json: values[6],
+            source_commit: values[11],
+            source_kind: values[7],
+            source_path: values[10],
+            source_ref: values[9],
+            source_url: values[8],
+            version: values[2],
+          };
+          stored.set(String(values[1]), row);
+          return d1Response([{id: values[0]}]);
+        }
+        if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
+          const row = [...stored.values()].find(({id}) =>
+            id === request.params?.[0]
+          );
+          return d1Response(row ? [row] : []);
+        }
+        if (request.sql.includes("SELECT id, version, asset_owner_theme_id FROM themes")) {
+          return d1Response([...stored.values()]
+            .filter(({package_id}) => package_id === request.params?.[0])
+            .map((row) => ({
+              asset_owner_theme_id: row.asset_owner_theme_id,
+              id: row.id,
+              version: row.version,
+            })));
+        }
         if (request.sql.includes("sqlite_master")) {
           return d1Response([{name: "themes"}, {name: "theme_state"}]);
         }
@@ -448,12 +554,16 @@ describe("theme repository initialization", () => {
         throw new Error(`Unexpected D1 query: ${request.sql}`);
       }));
 
-      await expect(theme.installDefaultThemeForV1Appearance(
+      await expect(theme.synchronizeBundledThemes(
         savedConfig(),
         runner,
         false,
-      )).resolves.toBeNull();
-      expect(queries.some((sql) => sql.includes("INSERT INTO themes")))
+      )).resolves.toEqual(BUNDLED_THEME_CATALOG.map(({packageId}) =>
+        expect.objectContaining({packageId, sourceKind: "bundled"})
+      ));
+      expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
+        .toHaveLength(BUNDLED_THEME_CATALOG.length);
+      expect(queries.some((sql) => sql.includes("UPDATE theme_state")))
         .toBe(false);
     },
   );
@@ -475,7 +585,7 @@ describe("theme repository initialization", () => {
       webPage: "page {{page.title}}",
       webSearch: "search {{search.query}}",
     };
-    let stored: Record<string, unknown> | null = null;
+    const stored = new Map<string, Record<string, unknown>>();
     const pruned: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (
       _input: URL | RequestInfo,
@@ -517,11 +627,12 @@ describe("theme repository initialization", () => {
         return d1Response([{installed: 1}]);
       }
       if (request.sql.includes("WHERE package_id = ? AND version = ?")) {
-        return d1Response([]);
+        const row = stored.get(String(request.params?.[0]));
+        return d1Response(row ? [row] : []);
       }
       if (request.sql.includes("INSERT INTO themes")) {
         const values = request.params!;
-        stored = {
+        const row = {
           asset_owner_theme_id: values[14],
           bundle_json: values[5],
           checksum_sha256: values[12],
@@ -540,21 +651,31 @@ describe("theme repository initialization", () => {
           source_url: values[8],
           version: values[2],
         };
+        stored.set(String(values[1]), row);
         return d1Response([{id: values[0]}]);
       }
       if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
-        return d1Response(stored ? [stored] : []);
+        const row = [...stored.values()].find(({id}) =>
+          id === request.params?.[0]
+        );
+        return d1Response(row ? [row] : []);
       }
       if (request.sql.includes("SELECT id, version, asset_owner_theme_id FROM themes")) {
-        return d1Response([{
-          asset_owner_theme_id: null,
-          id: "old-bundled",
-          version: "1.1.8",
-        }, ...(stored ? [{
-          asset_owner_theme_id: stored.asset_owner_theme_id,
-          id: stored.id,
-          version: stored.version,
-        }] : [])]);
+        const currentPackageId = request.params?.[0];
+        return d1Response([
+          ...(currentPackageId === "microfeed.default" ? [{
+            asset_owner_theme_id: null,
+            id: "old-bundled",
+            version: "1.1.8",
+          }] : []),
+          ...[...stored.values()]
+            .filter(({package_id}) => package_id === currentPackageId)
+            .map((row) => ({
+              asset_owner_theme_id: row.asset_owner_theme_id,
+              id: row.id,
+              version: row.version,
+            })),
+        ]);
       }
       if (request.sql.startsWith("UPDATE themes\n  SET deleted_at")) {
         pruned.push(String(request.params?.[0]));
@@ -563,14 +684,13 @@ describe("theme repository initialization", () => {
       throw new Error(`Unexpected D1 query: ${request.sql}`);
     }));
 
-    await expect(theme.installDefaultThemeForV1Appearance(
+    await expect(theme.synchronizeBundledThemes(
       savedConfig(),
       runner,
       false,
-    )).resolves.toMatchObject({
-      packageId: "microfeed.default",
-      version: "1.1.15",
-    });
+    )).resolves.toEqual(BUNDLED_THEME_CATALOG.map(({packageId}) =>
+      expect.objectContaining({packageId})
+    ));
     expect(pruned).toEqual(["old-bundled"]);
   });
 
@@ -1097,6 +1217,51 @@ describe("theme repository initialization", () => {
       "theme export requires exactly one of <theme-id> or --active.",
     );
     expect(runner).not.toHaveBeenCalled();
+  });
+
+  it("rejects manual CLI deletion of a Built-in version", async () => {
+    const {theme} = await freshModules();
+    vi.stubGlobal("fetch", vi.fn(async (
+      _input: URL | RequestInfo,
+      init?: RequestInit,
+    ) => {
+      const request = JSON.parse(String(init?.body)) as {sql: string};
+      if (request.sql.includes("SELECT * FROM themes WHERE id = ?")) {
+        return d1Response([{
+          asset_owner_theme_id: null,
+          bundle_json: JSON.stringify(bundle),
+          checksum_sha256: "a".repeat(64),
+          created_at: "2026-08-10T00:00:00.000Z",
+          deleted_at: null,
+          id: "bundled-default-test",
+          manifest_json: JSON.stringify({
+            ...manifest,
+            packageId: "microfeed.default",
+            version: "1.1.15",
+          }),
+          name: "microfeed default",
+          origin_theme_id: null,
+          package_id: "microfeed.default",
+          preview_fixture_json: null,
+          source_commit: null,
+          source_kind: "bundled",
+          source_path: "bundled:default",
+          source_ref: null,
+          source_url: null,
+          version: "1.1.15",
+        }]);
+      }
+      throw new Error(`Unexpected D1 query: ${request.sql}`);
+    }));
+
+    await expect(theme.themeCommand({
+      action: "delete",
+      confirm: "bundled-default-test",
+      instance: "personal",
+      "theme-id": "bundled-default-test",
+    }, commandRunner())).rejects.toThrow(
+      "Built-in themes are managed by microfeed deployment",
+    );
   });
 
   it("can fork the selected theme from a pre-versioning instance", async () => {

@@ -56,6 +56,28 @@ Themes are full-trust, owner-installed code. An activated theme can run the
 same browser HTML, CSS, and JavaScript as shared website code. Install only
 packages and versions you trust.
 
+The Themes screen separates the catalog into two tabs:
+
+- **Built-in themes** groups versions by their `microfeed.*` package lineage.
+  The current checkout release appears first, and preserved older releases are
+  available under **Version history**. Deployment synchronizes these packages,
+  so Admin never offers a Delete action for them.
+- **Custom themes** contains Admin-created, GitHub, local-directory, and
+  migrated versions. Drafts appear first, while search, sorting, counts, and
+  pagination apply only to installed Custom versions.
+
+The URL records `tab=built-in` or `tab=custom`. Without an explicit tab, Admin
+opens the tab containing the active theme and otherwise starts with Built-in
+themes.
+
+The catalog includes Default for a general-purpose feed, Podcast for audio
+shows, Editorial Blog for essays and rich text, Photo Grid for image-led
+galleries, Video Channel for films, Link Digest for outbound reading lists, and
+Product Changelog for release timelines. Fresh initialization installs all
+seven but activates only Default. Existing deployments synchronize a missing
+or newer Built-in release as inactive, so the public site never changes
+appearance automatically.
+
 ### Create a new version in Admin
 
 Open **Settings → Themes** and select **Create new version** on the theme you
@@ -99,8 +121,9 @@ CSS.
 
 Use **Preview** before activating any installed version. Activation records the
 previous version so an operator can roll back with `yarn manage theme rollback`
-if the new design causes a problem. Delete only inactive versions that are no
-longer needed; the active version cannot be deleted.
+if the new design causes a problem. Delete only inactive Custom versions that
+are no longer needed; the active version and every Built-in version are
+protected from manual deletion.
 
 When a theme packages its own preview fixture, each newly opened preview starts
 with **Demo content** so the theme can demonstrate its supported content and
@@ -110,8 +133,9 @@ change views, viewport size, or open the preview in a new tab. Page and
 navigation examples remain synthetic. Themes without a fixture use Current
 site data.
 
-An environment can keep up to 50 non-deleted installed versions and 20 drafts.
-If the limit is full, delete an unused inactive version or draft and retry.
+An environment can keep up to 100 non-deleted Custom versions and 20 drafts.
+Built-in versions do not consume this quota. If a limit is full, delete an
+unused inactive Custom version or draft and retry.
 
 Repository-installed themes are managed from the connected clone with `yarn
 manage theme`. The [Build and release a theme](/themes/) guide covers creating,

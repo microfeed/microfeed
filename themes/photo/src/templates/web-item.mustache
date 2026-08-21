@@ -1,0 +1,22 @@
+<main class="photo-main photo-item-main">
+  <div class="photo-item-topline"><a href="/">← Contact sheet</a><span>{{items.0._microfeed.date_published_short}}</span></div>
+  <article class="photo-item">
+    <header class="photo-item-header">
+      <p class="photo-kicker">Frame</p>
+      <h1>{{items.0.title}}</h1>
+      {{#items.0.authors}}<p>By {{name}}</p>{{/items.0.authors}}
+    </header>
+    <div class="photo-item-media">
+      {{#items.0._microfeed.is_image}}{{#items.0.attachments}}<a href="{{url}}" aria-label="Open full-size image"><img src="{{url}}" alt="" loading="eager" /></a>{{/items.0.attachments}}{{/items.0._microfeed.is_image}}
+      {{#items.0._microfeed.is_video}}{{#items.0.attachments}}<video controls preload="metadata" poster="{{items.0.image}}"><source src="{{url}}" type="{{mime_type}}" />Your browser does not support video.</video>{{/items.0.attachments}}{{/items.0._microfeed.is_video}}
+      {{#items.0._microfeed.is_audio}}{{#items.0.image}}<img src="{{items.0.image}}" alt="" loading="eager" />{{/items.0.image}}{{#items.0.attachments}}<audio controls preload="metadata" src="{{url}}">Your browser does not support audio.</audio>{{/items.0.attachments}}{{/items.0._microfeed.is_audio}}
+      {{^items.0._microfeed.is_image}}{{^items.0._microfeed.is_video}}{{^items.0._microfeed.is_audio}}{{#items.0.image}}<img src="{{items.0.image}}" alt="" loading="eager" />{{/items.0.image}}{{/items.0._microfeed.is_audio}}{{/items.0._microfeed.is_video}}{{/items.0._microfeed.is_image}}
+    </div>
+    <div class="photo-item-caption">
+      {{#items.0.content_html}}<div class="photo-rich-content">{{{items.0.content_html}}}</div>{{/items.0.content_html}}
+      {{^items.0.content_html}}<p>{{items.0.content_text}}</p>{{/items.0.content_html}}
+      {{#items.0._microfeed.is_document}}{{#items.0.attachments}}<a class="photo-action" href="{{url}}">Download file →</a>{{/items.0.attachments}}{{/items.0._microfeed.is_document}}
+      {{#items.0._microfeed.is_external_url}}{{#items.0.attachments}}<a class="photo-action" href="{{url}}" rel="noopener nofollow">Visit source →</a>{{/items.0.attachments}}{{/items.0._microfeed.is_external_url}}
+    </div>
+  </article>
+</main>

@@ -82,12 +82,12 @@ async function freshModules(
     vi.doUnmock("@clack/prompts");
   }
   vi.doMock("../../../manage-cli/theme", () => ({
-    installDefaultThemeForV1Appearance: vi.fn(async () => null),
-    installDefaultThemeForInitialization: vi.fn(async () => ({
+    installBundledThemesForInitialization: vi.fn(async () => ({
       id: "bundled-default-test",
       packageId: "microfeed.default",
       version: "1.2.3",
     })),
+    synchronizeBundledThemes: vi.fn(async () => []),
   }));
   vi.resetModules();
   // Import commands first so its config and prompt dependencies populate
@@ -737,7 +737,7 @@ describe("first-class local instances", () => {
       local: true,
     }, runner);
 
-    expect(theme.installDefaultThemeForV1Appearance).toHaveBeenCalledWith(
+    expect(theme.synchronizeBundledThemes).toHaveBeenCalledWith(
       expect.objectContaining({instanceName: "content-only"}),
       runner,
       true,

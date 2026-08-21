@@ -5,8 +5,8 @@ import {
   type ThemeManifestV1,
   type ThemePreviewFixture,
 } from "@/shared/themes/ThemeContract";
+import {BUNDLED_FALLBACK_THEME} from "@/shared/themes/BundledThemeCatalog";
 import {SETTINGS_CATEGORIES} from "@/shared/Constants";
-import DEFAULT_MANIFEST from "../../../themes/default/microfeed-theme.json";
 import DEFAULT_PREVIEW_FIXTURE from "../../../themes/default/fixtures/editorial.json";
 import DEFAULT_WEB_HEADER from "../../../themes/default/web-header.mustache?raw";
 import DEFAULT_WEB_BODY_END from "../../../themes/default/web-body-end.mustache?raw";
@@ -31,9 +31,7 @@ export const BUNDLED_DEFAULT_THEME_BUNDLE: ThemeBundleV1 = {
   webSearch: DEFAULT_WEB_SEARCH,
 };
 
-export const BUNDLED_DEFAULT_THEME_MANIFEST = themeManifestV1Schema.parse(
-  DEFAULT_MANIFEST,
-);
+export const BUNDLED_DEFAULT_THEME_MANIFEST = BUNDLED_FALLBACK_THEME.manifest;
 
 export const BUNDLED_DEFAULT_THEME_PREVIEW_FIXTURE: ThemePreviewFixture =
   themePreviewFixtureSchema.parse(DEFAULT_PREVIEW_FIXTURE);
