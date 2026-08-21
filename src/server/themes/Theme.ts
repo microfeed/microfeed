@@ -10,7 +10,7 @@ import {
   themeContext,
   type ThemeRuntimeMetadata,
 } from "@/shared/themes/ThemeRenderer";
-import {validateThemePackage} from "@/shared/themes/ThemeValidation";
+import {validateStoredThemePackage} from "@/shared/themes/ThemeValidation";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {manifestSearchItemDestination} from "@/shared/themes/ThemeSearch";
 import {
@@ -27,7 +27,7 @@ export function themeSupportsPagesAndSearch(
     return BUNDLED_DEFAULT_THEME_MANIFEST.formatVersion >= 2;
   }
   try {
-    return validateThemePackage(
+    return validateStoredThemePackage(
       installedTheme.manifest,
       installedTheme.bundle,
       MICROFEED_VERSION,
@@ -45,7 +45,7 @@ export function activeThemeSearchItemDestination(
   );
   if (!installedTheme) return fallback;
   try {
-    return manifestSearchItemDestination(validateThemePackage(
+    return manifestSearchItemDestination(validateStoredThemePackage(
       installedTheme.manifest,
       installedTheme.bundle,
       MICROFEED_VERSION,
@@ -83,7 +83,7 @@ export default class Theme {
       this.themeBundle = null;
       if (installedTheme) {
         try {
-          validateThemePackage(
+          validateStoredThemePackage(
             installedTheme.manifest,
             installedTheme.bundle,
             MICROFEED_VERSION,
@@ -103,7 +103,7 @@ export default class Theme {
       }
     } else if (installedTheme) {
       try {
-        const validated = validateThemePackage(
+        const validated = validateStoredThemePackage(
           installedTheme.manifest,
           installedTheme.bundle,
           MICROFEED_VERSION,

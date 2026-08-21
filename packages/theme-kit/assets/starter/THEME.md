@@ -43,6 +43,11 @@ controller.
 
 Theme code is trusted when activated, so install only repositories you trust.
 
+Keep the optional manifest `description` to 280 characters or fewer. Use it to
+say what the theme is good for and which content types or layouts it supports.
+Declare one `previewFixture` when representative demo content helps show those
+capabilities; `yarn preview` uses that JSON fixture by default.
+
 Declare every packaged asset in the manifest. For files under `assets/`,
 reference them as `{{_theme.asset_base_url}}logo.png` (without repeating the
 `assets/` directory). The preview server and an installed site resolve that

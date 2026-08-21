@@ -58,6 +58,7 @@ function stored(overrides: Partial<StoredThemeVersion> = {}): StoredThemeVersion
     sourceUrl: null,
     version: manifest.version,
     ...overrides,
+    previewFixture: overrides.previewFixture ?? null,
   };
 }
 
@@ -156,6 +157,13 @@ describe("production theme selection", () => {
     expect(theme.getWebItem(feed.items[0]!).html).toBe(
       "installed Item one / Item one",
     );
+  });
+
+  it("keeps stored legacy descriptions up to 500 characters compatible", () => {
+    const theme = new Theme(feed, settings, null, stored({
+      manifest: {...manifest, description: "x".repeat(500)},
+    }));
+    expect(theme.getWebFeed().html).toBe("installed Feed title test.installed");
   });
 
   it("keeps shared custom code wrapped around installed themes", () => {

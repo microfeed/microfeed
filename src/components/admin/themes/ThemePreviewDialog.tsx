@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {ExternalLinkIcon, LoaderCircleIcon, XIcon} from "lucide-react";
 
 import {Button} from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
 
 type PreviewView = "feed" | "item" | "page" | "search" | "rss";
 type PreviewViewport = "mobile" | "desktop";
+type PreviewDataSource = "fixture" | "site";
 
 const VIEW_LABELS: Record<PreviewView, string> = {
   feed: "Feed",
@@ -28,6 +29,7 @@ const VIEWPORT_LABELS: Record<PreviewViewport, string> = {
 
 interface Props {
   description?: string;
+  hasPreviewFixture?: boolean;
   label: string;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -38,6 +40,7 @@ interface Props {
 
 export default function ThemePreviewDialog({
   description,
+  hasPreviewFixture = false,
   label,
   onOpenChange,
   open,
@@ -47,10 +50,22 @@ export default function ThemePreviewDialog({
 }: Props) {
   const [view, setView] = useState<PreviewView>("feed");
   const [viewport, setViewport] = useState<PreviewViewport>("desktop");
-  const renderedUrl = `${previewUrl}?view=${view}`;
+  const [dataSource, setDataSource] = useState<PreviewDataSource>(
+    hasPreviewFixture ? "fixture" : "site",
+  );
+  const renderedUrl = `${previewUrl}?${new URLSearchParams({
+    data: dataSource,
+    view,
+  })}`;
   const frameKey = `${revision}:${view}:${renderedUrl}`;
   const [loadedFrameKey, setLoadedFrameKey] = useState<string | null>(null);
   const loading = loadedFrameKey !== frameKey;
+
+  useEffect(() => {
+    if (!open) return;
+    setDataSource(hasPreviewFixture ? "fixture" : "site");
+    setLoadedFrameKey(null);
+  }, [hasPreviewFixture, open]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) setLoadedFrameKey(null);
@@ -93,6 +108,22 @@ export default function ThemePreviewDialog({
               </Button>
             ))}
             <span aria-hidden="true" className="mx-1 h-6 border-l" />
+            {hasPreviewFixture && ([
+              ["fixture", "Demo content"],
+              ["site", "Current site"],
+            ] as const).map(([candidate, candidateLabel]) => (
+              <Button
+                key={candidate}
+                onClick={() => setDataSource(candidate)}
+                size="sm"
+                variant={dataSource === candidate ? "secondary" : "ghost"}
+              >
+                {candidateLabel}
+              </Button>
+            ))}
+            {hasPreviewFixture && (
+              <span aria-hidden="true" className="mx-1 h-6 border-l" />
+            )}
             {(["mobile", "desktop"] as const).map((candidate) => (
               <Button
                 key={candidate}

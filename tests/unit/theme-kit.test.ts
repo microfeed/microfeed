@@ -15,6 +15,7 @@ import {
 } from "../../packages/theme-kit/src/cli";
 import {renderThemeKitHelp} from "../../packages/theme-kit/src/help";
 import {
+  THEME_MAX_PREVIEW_FIXTURE_BYTES,
   THEME_MAX_TEMPLATE_BYTES,
   themeContextSchema,
   themeManifestV1Schema,
@@ -96,6 +97,10 @@ describe("@microfeed/theme-kit package loading", () => {
       "https://docs.microfeed.org/theme-kit-cli/",
     );
     expect(renderThemeKitHelp("validate")).toContain("[--json]");
+    expect(renderThemeKitHelp("validate")).toMatch(/preview\s+fixture/u);
+    expect(renderThemeKitHelp("preview")).toContain(
+      "manifest's previewFixture",
+    );
     expect(renderThemeKitHelp("fixture pull")).toContain("--output <file>");
   });
 
@@ -232,6 +237,8 @@ describe("@microfeed/theme-kit package loading", () => {
     expect(loaded.manifest.packageId).toBe("example.my-theme");
     expect(loaded.assetFiles).toEqual([]);
     expect(loaded.bundle.webFeed).toContain("{{#items}}");
+    expect(loaded.manifest.previewFixture).toBe("fixtures/custom.json");
+    expect(loaded.previewFixture?.items).toHaveLength(2);
     const starterPackage = JSON.parse(await readFile(
       new URL("../../packages/theme-kit/assets/starter/package.json", import.meta.url),
       "utf8",
@@ -370,6 +377,41 @@ describe("@microfeed/theme-kit package loading", () => {
     manifest.files.webFeed = "linked-feed.mustache";
     await writeFile(manifestFile, JSON.stringify(manifest));
     await expect(loadThemePackage(directory)).rejects.toThrow("Symlinks are not allowed");
+  });
+
+  it("rejects missing, malformed, non-object, and oversized preview fixtures", async () => {
+    const missing = await themeDirectory();
+    const missingManifestFile = path.join(missing, "microfeed-theme.json");
+    const missingManifest = JSON.parse(
+      await readFile(missingManifestFile, "utf8"),
+    );
+    missingManifest.previewFixture = "fixtures/missing.json";
+    await writeFile(missingManifestFile, JSON.stringify(missingManifest));
+    await expect(loadThemePackage(missing)).rejects.toThrow("missing.json");
+
+    const malformed = await themeDirectory();
+    await writeFile(
+      path.join(malformed, "fixtures/custom.json"),
+      "{not-json",
+    );
+    await expect(loadThemePackage(malformed)).rejects.toThrow(
+      "preview fixture is not valid JSON",
+    );
+
+    const nonObject = await themeDirectory();
+    await writeFile(path.join(nonObject, "fixtures/custom.json"), "[]");
+    await expect(loadThemePackage(nonObject)).rejects.toThrow();
+
+    const oversized = await themeDirectory();
+    await writeFile(
+      path.join(oversized, "fixtures/custom.json"),
+      JSON.stringify({
+        description: "x".repeat(THEME_MAX_PREVIEW_FIXTURE_BYTES),
+        items: [],
+        version: "https://jsonfeed.org/version/1.1",
+      }),
+    );
+    await expect(loadThemePackage(oversized)).rejects.toThrow("exceeds");
   });
 
   it("rejects unsupported declared asset types", async () => {

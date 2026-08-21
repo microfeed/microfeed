@@ -40,6 +40,7 @@ import {
   type ThemeBundleV1,
   type ThemeFileKey,
   type ThemeManifestV1,
+  type ThemePreviewFixture,
   type ThemeState,
   type ThemeVersionSummary,
 } from "@/shared/themes/ThemeContract";
@@ -47,7 +48,10 @@ import {
   canonicalThemePackage,
   sha256Hex,
 } from "@/shared/themes/ThemeRenderer";
-import {validateThemePackage} from "@/shared/themes/ThemeValidation";
+import {
+  validateStoredThemePackage,
+  validateThemePackage,
+} from "@/shared/themes/ThemeValidation";
 import {
   generatedExportedThemeRepositoryReadme,
   generatedInitializedThemeRepositoryReadme,
@@ -98,6 +102,7 @@ interface EffectiveTheme {
   fallbackReason: string | null;
   kind: "bundled-fallback" | "installed" | "legacy";
   manifest: ThemeManifestV1;
+  previewFixture: ThemePreviewFixture | null;
   themeId: string | null;
 }
 
@@ -105,6 +110,7 @@ interface ThemePackageFiles {
   assetOwnerThemeId: string | null;
   bundle: ThemeBundleV1;
   manifest: ThemeManifestV1;
+  previewFixture: ThemePreviewFixture | null;
 }
 
 interface WriteThemePackageOptions {
@@ -178,6 +184,7 @@ async function bundledFallbackTheme(): Promise<EffectiveTheme> {
     fallbackReason: null,
     kind: "bundled-fallback",
     manifest: loaded.manifest,
+    previewFixture: loaded.previewFixture,
     themeId: null,
   };
 }
@@ -237,8 +244,10 @@ function legacyTheme(
       microfeed: "*",
       name: `${currentTheme} (legacy)`,
       packageId: `legacy.${normalizedId}`.slice(0, 120),
+      previewFixture: undefined,
       version: "0.0.0",
     }),
+    previewFixture: null,
     themeId: null,
   };
 }
@@ -260,7 +269,7 @@ function installedTheme(
   }
   try {
     const stored = storedThemeFromRow(row);
-    const validated = validateThemePackage(
+    const validated = validateStoredThemePackage(
       stored.manifest,
       stored.bundle,
       MICROFEED_VERSION,
@@ -274,6 +283,7 @@ function installedTheme(
         fallbackReason: null,
         kind: "installed",
         manifest: validated.manifest,
+        previewFixture: stored.previewFixture,
         themeId: stored.id,
       },
     };
@@ -394,6 +404,9 @@ export function initializedThemeManifest(
     microfeed: source.manifest.microfeed,
     name: overrides.name ?? `${displayName} theme`,
     packageId,
+    ...(source.manifest.previewFixture
+      ? {previewFixture: source.manifest.previewFixture}
+      : {}),
     ...(source.manifest.formatVersion === 2 &&
         source.manifest.searchItemDestination
       ? {searchItemDestination: source.manifest.searchItemDestination}
@@ -648,6 +661,15 @@ async function resolveThemeSource(
   };
 }
 
+export function themeUpdateSource(
+  theme: Pick<StoredThemeVersion, "sourceKind" | "sourcePath" | "sourceUrl">,
+): string | null {
+  // Bundled rows installed before source paths were persisted still refer to
+  // the default theme shipped by the current checkout.
+  if (theme.sourceKind === "bundled") return "default";
+  return theme.sourceUrl ?? theme.sourcePath;
+}
+
 function bundleForOwner(
   loaded: LoadedThemePackage,
   environment: string,
@@ -774,7 +796,11 @@ async function installRemote(
     bundle,
     MICROFEED_VERSION,
   );
-  const checksum = await sha256Hex(canonicalThemePackage(validated.manifest, validated.bundle));
+  const checksum = await sha256Hex(canonicalThemePackage(
+    validated.manifest,
+    validated.bundle,
+    resolved.loaded.previewFixture,
+  ));
   const [existing] = await target.client.queryD1WithParameters(
     target.config,
     "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
@@ -820,9 +846,9 @@ async function installRemote(
       target.config,
       `INSERT INTO themes (
         id, package_id, version, name, manifest_json, bundle_json,
-        source_kind, source_url, source_ref, source_path, source_commit,
+        preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
       RETURNING id`,
       [
@@ -832,6 +858,9 @@ async function installRemote(
         validated.manifest.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        resolved.loaded.previewFixture
+          ? JSON.stringify(resolved.loaded.previewFixture)
+          : null,
         resolved.source.kind,
         resolved.source.url,
         resolved.source.ref,
@@ -876,7 +905,11 @@ async function installLocal(
       id,
     );
     const validated = validateThemePackage(resolved.loaded.manifest, bundle, MICROFEED_VERSION);
-    const checksum = await sha256Hex(canonicalThemePackage(validated.manifest, validated.bundle));
+    const checksum = await sha256Hex(canonicalThemePackage(
+      validated.manifest,
+      validated.bundle,
+      resolved.loaded.previewFixture,
+    ));
     const existingRow = await local.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
     ).bind(validated.manifest.packageId, validated.manifest.version)
@@ -915,9 +948,9 @@ async function installLocal(
       const inserted = await local.database.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          source_kind, source_url, source_ref, source_path, source_commit,
+          preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
           checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
           WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
         RETURNING id`,
       ).bind(
@@ -927,6 +960,9 @@ async function installLocal(
         validated.manifest.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        resolved.loaded.previewFixture
+          ? JSON.stringify(resolved.loaded.previewFixture)
+          : null,
         resolved.source.kind,
         resolved.source.url,
         resolved.source.ref,
@@ -1208,7 +1244,11 @@ async function managementAction(
         ).bind(themeId ?? "").first<Record<string, unknown>>();
         if (!row) throw new Error("Theme version not found.");
         const theme = storedThemeFromRow(row);
-        validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
+        validateStoredThemePackage(
+          theme.manifest,
+          theme.bundle,
+          MICROFEED_VERSION,
+        );
         const updated = await local.database.prepare(
           `UPDATE theme_state SET previous_theme_id = active_theme_id,
            active_theme_id = ?, updated_at = CURRENT_TIMESTAMP
@@ -1241,7 +1281,11 @@ async function managementAction(
           ).bind(state.previousThemeId).first();
           if (!previous) throw new Error("The previous theme is unavailable.");
           const theme = storedThemeFromRow(previous as Record<string, unknown>);
-          validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
+          validateStoredThemePackage(
+            theme.manifest,
+            theme.bundle,
+            MICROFEED_VERSION,
+          );
         }
         const updated = await local.database.prepare(
           `UPDATE theme_state SET active_theme_id = previous_theme_id,
@@ -1412,6 +1456,21 @@ async function writeThemePackage(
         withFinalNewline(theme.bundle[key as keyof typeof theme.manifest.files]),
       );
     }
+    if (theme.manifest.previewFixture) {
+      if (!theme.previewFixture) {
+        throw new Error(
+          `The declared preview fixture is missing: ${theme.manifest.previewFixture}`,
+        );
+      }
+      await writeRelative(
+        theme.manifest.previewFixture,
+        `${JSON.stringify(theme.previewFixture, null, 2)}\n`,
+      );
+    } else if (theme.previewFixture) {
+      throw new Error(
+        "The stored preview fixture has no manifest.previewFixture path.",
+      );
+    }
     if (theme.bundle.assets.length > 0) {
       if (target.local) {
         const local = await localResources(target);
@@ -1454,13 +1513,15 @@ async function writeThemePackage(
       if (theme.manifest.assets.length === 0) {
         await writeRelative("assets/.gitkeep", "");
       }
-      await writeRelative(
-        "fixtures/custom.json",
-        await readFile(path.join(
-          repositoryRoot,
-          "packages/theme-kit/assets/starter/fixtures/custom.json",
-        )),
-      );
+      if (!writtenPaths.has("fixtures/custom.json")) {
+        await writeRelative(
+          "fixtures/custom.json",
+          await readFile(path.join(
+            repositoryRoot,
+            "packages/theme-kit/assets/starter/fixtures/custom.json",
+          )),
+        );
+      }
       for (const relativePath of [
         "CLAUDE.md",
         ".agents/skills/develop-microfeed-theme/SKILL.md",
@@ -1525,6 +1586,7 @@ async function initializeThemeRepository(
       assetOwnerThemeId: source.assetOwnerThemeId,
       bundle: validated.bundle,
       manifest: validated.manifest,
+      previewFixture: source.previewFixture,
     },
     outputDirectory,
     {repositoryScaffold: {
@@ -1624,9 +1686,7 @@ export async function themeCommand(
     throw new Error(`Theme ${themeId ?? "<missing>"} was not found.${guidance}`);
   }
   if (action === "update") {
-    const source = theme!.sourceKind === "bundled" && theme!.sourcePath === "default"
-      ? "default"
-      : theme!.sourceUrl ?? theme!.sourcePath;
+    const source = themeUpdateSource(theme!);
     if (!source) throw new Error("This theme version has no update source.");
     const updateFlags = {...flags};
     if (!updateFlags.ref && theme!.sourceRef) updateFlags.ref = theme!.sourceRef;

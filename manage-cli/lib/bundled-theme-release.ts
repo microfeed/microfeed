@@ -84,7 +84,11 @@ export async function currentBundledThemeRelease(
   );
   return {
     checksumSha256: await sha256Hex(
-      canonicalThemePackage(loaded.manifest, loaded.bundle),
+      canonicalThemePackage(
+        loaded.manifest,
+        loaded.bundle,
+        loaded.previewFixture,
+      ),
     ),
     packageId: loaded.manifest.packageId,
     version: loaded.manifest.version,

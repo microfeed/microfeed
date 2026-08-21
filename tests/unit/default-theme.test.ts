@@ -177,18 +177,80 @@ describe("bundled theme packages", () => {
     expect(rssStylesheet).not.toContain('"Noto\n');
   });
 
-  it("ships one immutable bundled default package without assets", async () => {
-    const [application, modern] = await Promise.all([
+  it("ships one immutable bundled default package with representative demo content", async () => {
+    const [application, fixture, modern] = await Promise.all([
       readFile(path.join(root, "package.json"), "utf8").then(JSON.parse),
+      readFile(path.join(root, "themes/default/fixtures/editorial.json"), "utf8")
+        .then(JSON.parse),
       readFile(path.join(root, "themes/default/microfeed-theme.json"), "utf8").then(JSON.parse),
     ]);
     expect(modern).toMatchObject({
       assets: [],
+      description: "A minimalist, responsive feed for text, audio, video, images, documents, standalone Pages, and search.",
       formatVersion: 2,
       packageId: "microfeed.default",
-      version: "1.1.10",
+      previewFixture: "fixtures/editorial.json",
+      version: "1.1.15",
     });
+    expect(fixture.items[0]).toMatchObject({
+      _microfeed: {is_audio: true},
+      id: "audio-field-recording",
+    });
+    expect(fixture.items.map((item: {_microfeed?: Record<string, boolean>}) =>
+      item._microfeed
+    )).toEqual(expect.arrayContaining([
+      expect.objectContaining({is_video: true}),
+      expect.objectContaining({is_image: true}),
+      expect.objectContaining({is_document: true}),
+      expect.objectContaining({is_external_url: true}),
+    ]));
+    expect(fixture).toMatchObject({
+      _microfeed: {
+        items_next_cursor: expect.any(String),
+        subscribe_methods: expect.any(Array),
+      },
+      authors: expect.any(Array),
+      navigation_pages: expect.any(Array),
+      page: {id: "page-about"},
+      search: {results: expect.any(Array)},
+    });
+    for (const method of fixture._microfeed.subscribe_methods) {
+      expect(method.image).toMatch(/^data:image\/svg\+xml,/u);
+    }
+    const remoteMediaUrls = [
+      fixture.icon,
+      ...fixture.items.flatMap((item: {
+        attachments?: {mime_type?: string; url: string}[];
+        image?: string;
+      }) => [
+        item.image,
+        ...(item.attachments ?? [])
+          .filter(({mime_type}) => /^(?:audio|image|video)\//u.test(mime_type ?? ""))
+          .map(({url}) => url),
+      ]),
+    ].filter((url): url is string => typeof url === "string");
+    expect(remoteMediaUrls).not.toHaveLength(0);
+    for (const url of remoteMediaUrls) {
+      expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//u);
+      expect(url).not.toContain("example.test");
+    }
     expect(application.version).toBe("1.0.5");
+  });
+
+  it("renders subscription methods without broken or duplicated image text", async () => {
+    const [feed, item, styles] = await Promise.all([
+      readFile(path.join(root, "themes/default/src/templates/web-feed.mustache"), "utf8"),
+      readFile(path.join(root, "themes/default/src/templates/web-item.mustache"), "utf8"),
+      readFile(path.join(root, "themes/default/src/theme.css"), "utf8"),
+    ]);
+    for (const template of [feed, item]) {
+      expect(template).toContain("{{#image}}");
+      expect(template).toContain('alt=""');
+      expect(template).toContain('aria-label="{{name}}"');
+      expect(template).toContain("flex-none text-sm{{#image}} ml-1 hide-mobile{{/image}}");
+      expect(template).not.toContain('alt="{{name}}"');
+    }
+    expect(styles).toMatch(/\.img-sm\s*\{[\s\S]*?width:\s*1em;[\s\S]*?height:\s*1em;/u);
   });
 
   it("keeps the generated theme-authoring skill synchronized", async () => {

@@ -658,6 +658,8 @@ pre code {
 }
 
 .img-sm {
+  width: 1em;
+  height: 1em;
   max-width: 1em;
   border-radius: 0.2em;
 }

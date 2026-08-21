@@ -30,8 +30,20 @@ search.
 ## Manifest and render context
 
 `microfeed-theme.json` declares package identity, semantic version, compatible
-microfeed versions, the theme file paths, and optional assets. One package ID
-and version identifies one immutable set of content.
+microfeed versions, the theme file paths, and optional assets. Its optional
+`description` is a short, public summary of what the theme is good for and is
+limited to 280 characters. One package ID and version identifies one immutable
+set of content.
+
+A theme may also declare one `previewFixture`, such as
+`fixtures/editorial.json`. The value must be a safe relative path to a UTF-8
+JSON object no larger than 128 KiB. Admin uses this theme-specific fixture as
+the default demo dataset while still allowing the owner to switch to the
+current site's published content. A declared fixture is stored independently
+from templates and assets, participates in the immutable package checksum, and
+survives installation, Admin-derived drafts, publication, `theme init`, and
+`theme export`. Admin drafts inherit it but cannot edit it. Themes without a
+declared fixture continue previewing current-site data.
 
 A format v2 manifest may also declare `searchItemDestination` to control where
 item results open in both the popup and `/search/`:
@@ -175,15 +187,16 @@ Package limits are:
 
 - 128 KiB per text slot;
 - 512 KiB total theme text;
+- 128 KiB for the optional declared preview fixture;
 - 100 declared assets;
 - 5 MiB per asset; and
 - 20 MiB total assets.
 
-Validation rejects absolute paths, traversal, symlinks, undeclared files,
-malformed Mustache, invalid semantic versions, incompatible microfeed ranges,
-and unsupported asset types. Tests check deterministic rendering, HTML
-structure, and valid RSS XSL; themes are trusted code, so they do not sanitize
-intentional HTML or JavaScript.
+Validation rejects absolute paths, traversal, symlinks, missing or malformed
+declared preview fixtures, undeclared files, malformed Mustache, invalid
+semantic versions, incompatible microfeed ranges, and unsupported asset types.
+Tests check deterministic rendering, HTML structure, and valid RSS XSL; themes
+are trusted code, so they do not sanitize intentional HTML or JavaScript.
 
 Continue with [Bundle CSS, JavaScript, and assets](/themes/assets/) or return to
 [Build and release a theme](/themes/).

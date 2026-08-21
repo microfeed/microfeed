@@ -14,6 +14,7 @@ import type {
   ThemeListResponse,
   ThemeListSort,
   ThemeManifestV1,
+  ThemePreviewFixture,
   ThemeSourceKind,
   ThemeState,
 } from "@/shared/themes/ThemeContract";
@@ -23,12 +24,16 @@ import {
   THEME_LIST_PAGE_SIZE,
   THEME_MAX_DRAFTS,
   THEME_MAX_INSTALLED_VERSIONS,
+  themePreviewFixtureSchema,
 } from "@/shared/themes/ThemeContract";
 import {
   canonicalThemePackage,
   sha256Hex,
 } from "@/shared/themes/ThemeRenderer";
-import {validateThemePackage} from "@/shared/themes/ThemeValidation";
+import {
+  validateStoredThemePackage,
+  validateThemePackage,
+} from "@/shared/themes/ThemeValidation";
 import {
   commitDatabaseMutation,
   type DatabaseMutationCommit,
@@ -44,6 +49,7 @@ import {
   BUNDLED_DEFAULT_THEME_BUNDLE,
   BUNDLED_DEFAULT_THEME_ID,
   BUNDLED_DEFAULT_THEME_MANIFEST,
+  BUNDLED_DEFAULT_THEME_PREVIEW_FIXTURE,
   legacyThemeMigrationSource,
   MIGRATED_LEGACY_THEME_ID,
 } from "./BundledThemes";
@@ -62,6 +68,7 @@ export interface InstallThemeInput {
   id?: string;
   manifest: ThemeManifestV1;
   originThemeId?: string | null;
+  previewFixture?: ThemePreviewFixture | null;
   source: ThemeSource;
 }
 
@@ -71,6 +78,7 @@ export interface CreateDraftInput {
   manifest: ThemeManifestV1;
   originKind: "built-in" | "theme";
   originThemeId?: string | null;
+  previewFixture?: ThemePreviewFixture | null;
 }
 
 export interface SaveDraftInput {
@@ -82,6 +90,26 @@ function results<T extends Record<string, unknown>>(
   result: D1Result<unknown>,
 ): T[] {
   return (result.results ?? []) as T[];
+}
+
+function validatedPreviewFixture(
+  manifest: ThemeManifestV1,
+  fixture: unknown,
+): ThemePreviewFixture | null {
+  if (!manifest.previewFixture) {
+    if (fixture !== null && fixture !== undefined) {
+      throw new Error(
+        "A preview fixture must be declared by manifest.previewFixture.",
+      );
+    }
+    return null;
+  }
+  if (fixture === null || fixture === undefined) {
+    throw new Error(
+      `The declared preview fixture is missing: ${manifest.previewFixture}`,
+    );
+  }
+  return themePreviewFixtureSchema.parse(fixture);
 }
 
 function localPackageId(packageId: string): string {
@@ -359,9 +387,14 @@ export default class ThemeStore {
       BUNDLED_DEFAULT_THEME_BUNDLE,
       MICROFEED_VERSION,
     );
+    const previewFixture = validatedPreviewFixture(
+      validated.manifest,
+      BUNDLED_DEFAULT_THEME_PREVIEW_FIXTURE,
+    );
     const checksum = await sha256Hex(canonicalThemePackage(
       validated.manifest,
       validated.bundle,
+      previewFixture,
     ));
     const existingRow = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
@@ -378,8 +411,9 @@ export default class ThemeStore {
       this.database.prepare(
         `INSERT OR IGNORE INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, 'bundled', ?, NULL, NULL)`,
+          preview_fixture_json, source_kind, checksum_sha256, origin_theme_id,
+          asset_owner_theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'bundled', ?, NULL, NULL)`,
       ).bind(
         defaultThemeId,
         validated.manifest.packageId,
@@ -387,6 +421,7 @@ export default class ThemeStore {
         validated.manifest.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        JSON.stringify(previewFixture),
         checksum,
       ),
       this.database.prepare(
@@ -420,8 +455,16 @@ export default class ThemeStore {
       input.bundle,
       MICROFEED_VERSION,
     );
+    const previewFixture = validatedPreviewFixture(
+      manifest,
+      input.previewFixture,
+    );
     assertUserThemePackageId(manifest.packageId);
-    const checksum = await sha256Hex(canonicalThemePackage(manifest, bundle));
+    const checksum = await sha256Hex(canonicalThemePackage(
+      manifest,
+      bundle,
+      previewFixture,
+    ));
     const existing = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
     ).bind(manifest.packageId, manifest.version)
@@ -448,9 +491,9 @@ export default class ThemeStore {
     const inserted = await this.database.prepare(
       `INSERT INTO themes (
         id, package_id, version, name, manifest_json, bundle_json,
-        source_kind, source_url, source_ref, source_path, source_commit,
+        preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
       RETURNING id`,
     ).bind(
@@ -460,6 +503,7 @@ export default class ThemeStore {
       manifest.name,
       JSON.stringify(manifest),
       JSON.stringify(bundle),
+      previewFixture ? JSON.stringify(previewFixture) : null,
       input.source.kind,
       input.source.url ?? null,
       input.source.ref ?? null,
@@ -481,7 +525,11 @@ export default class ThemeStore {
   }
 
   async createDraft(input: CreateDraftInput): Promise<ThemeDraft> {
-    const source = validateThemePackage(input.manifest, input.bundle);
+    const source = validateStoredThemePackage(input.manifest, input.bundle);
+    const previewFixture = validatedPreviewFixture(
+      source.manifest,
+      input.previewFixture,
+    );
     const packageId = localPackageId(source.manifest.packageId);
     const versionRows = await this.database.prepare(
       `SELECT version FROM themes WHERE package_id = ?
@@ -504,8 +552,8 @@ export default class ThemeStore {
     const inserted = await this.database.prepare(
       `INSERT INTO theme_drafts (
         id, package_id, version, name, manifest_json, bundle_json,
-        origin_kind, origin_theme_id, asset_owner_theme_id
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+        preview_fixture_json, origin_kind, origin_theme_id, asset_owner_theme_id
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         WHERE (SELECT count(*) FROM theme_drafts) < ?
       RETURNING id`,
     ).bind(
@@ -515,6 +563,7 @@ export default class ThemeStore {
       manifest.name,
       JSON.stringify(manifest),
       JSON.stringify(source.bundle),
+      previewFixture ? JSON.stringify(previewFixture) : null,
       input.originKind,
       input.originThemeId ?? null,
       input.assetOwnerThemeId ?? null,
@@ -546,11 +595,13 @@ export default class ThemeStore {
         JSON.stringify(existing.manifest.files) ||
       JSON.stringify(validated.manifest.assets) !==
         JSON.stringify(existing.manifest.assets) ||
+      validated.manifest.previewFixture !==
+        existing.manifest.previewFixture ||
       JSON.stringify(validated.bundle.assets) !==
         JSON.stringify(existing.bundle.assets)
     ) {
       throw new Error(
-        "Admin drafts may edit only theme metadata, supported behavior settings, and text slots; packaged files and assets are inherited unchanged.",
+        "Admin drafts may edit only theme metadata, supported behavior settings, and text slots; packaged files, assets, and the preview fixture are inherited unchanged.",
       );
     }
     await this.database.prepare(
@@ -586,7 +637,11 @@ export default class ThemeStore {
       MICROFEED_VERSION,
     );
     const checksum = await sha256Hex(
-      canonicalThemePackage(validated.manifest, validated.bundle),
+      canonicalThemePackage(
+        validated.manifest,
+        validated.bundle,
+        draft.previewFixture,
+      ),
     );
     const existing = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
@@ -601,8 +656,9 @@ export default class ThemeStore {
     const inserted = await this.database.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) SELECT ?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?
+          preview_fixture_json, source_kind, checksum_sha256, origin_theme_id,
+          asset_owner_theme_id
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?
           WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
         RETURNING id`,
       ).bind(
@@ -612,6 +668,7 @@ export default class ThemeStore {
         draft.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        draft.previewFixture ? JSON.stringify(draft.previewFixture) : null,
         checksum,
         draft.originThemeId,
         draft.assetOwnerThemeId,
@@ -635,7 +692,7 @@ export default class ThemeStore {
   ): Promise<ThemeState> {
     const theme = await this.getVersion(id);
     if (!theme) throw new Error("Theme version not found.");
-    validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
+    validateStoredThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
     const before = await this.getState();
     if (before.activeThemeId === id) return before;
     const now = new Date().toISOString();
@@ -684,7 +741,11 @@ export default class ThemeStore {
     if (before.previousThemeId) {
       const previous = await this.getVersion(before.previousThemeId);
       if (!previous) throw new Error("The previous theme is unavailable.");
-      validateThemePackage(previous.manifest, previous.bundle, MICROFEED_VERSION);
+      validateStoredThemePackage(
+        previous.manifest,
+        previous.bundle,
+        MICROFEED_VERSION,
+      );
     }
     const now = new Date().toISOString();
     const state: ThemeState = {

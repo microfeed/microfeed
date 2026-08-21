@@ -45,6 +45,7 @@ export const POST: APIRoute = async ({request}) => {
           manifest: source.manifest,
           originKind,
           originThemeId: source.id,
+          previewFixture: source.previewFixture,
         });
         return jsonResponse({draft}, {status: 201});
       }

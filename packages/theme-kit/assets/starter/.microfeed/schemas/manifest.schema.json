@@ -26,7 +26,7 @@
         },
         "description": {
           "type": "string",
-          "maxLength": 500
+          "maxLength": 280
         },
         "homepage": {
           "type": "string",
@@ -52,6 +52,11 @@
           "minLength": 3,
           "maxLength": 120,
           "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        },
+        "previewFixture": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
         },
         "repository": {
           "type": "string",
@@ -149,7 +154,7 @@
         },
         "description": {
           "type": "string",
-          "maxLength": 500
+          "maxLength": 280
         },
         "homepage": {
           "type": "string",
@@ -175,6 +180,11 @@
           "minLength": 3,
           "maxLength": 120,
           "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        },
+        "previewFixture": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
         },
         "repository": {
           "type": "string",

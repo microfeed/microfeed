@@ -10,3 +10,16 @@ Before changing Pages, shared navigation, or public search, read the bundled [pu
 4. Bump the immutable SemVer in `microfeed-theme.json`, then run `yarn theme:release` from the repository root to append its canonical checksum. Existing release checksums can never be replaced.
 
 Do not hand-edit compiled output except through an Admin-derived draft. Never activate a theme or create screenshots without explicit permission.
+
+## Fixture media
+
+Keep preview fixtures lightweight and portable: reference stable, direct HTTPS
+URLs for royalty-free image, audio, and video assets. Prefer CC0 or public-domain
+media, verify the license before using it, and record the source page here. Do
+not check image, audio, or video binaries into a bundled theme.
+
+The default fixture currently uses these CC0 files from Wikimedia Commons:
+
+- [Notebook-front-front.png](https://commons.wikimedia.org/wiki/File:Notebook-front-front.png)
+- [Swale.ogg](https://commons.wikimedia.org/wiki/File:Swale.ogg)
+- [RunningWater.webm](https://commons.wikimedia.org/wiki/File:RunningWater.webm)

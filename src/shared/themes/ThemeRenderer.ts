@@ -5,6 +5,7 @@ import type {
   ThemeBundleV1,
   ThemeContext,
   ThemeManifestV1,
+  ThemePreviewFixture,
 } from "./ThemeContract";
 import {THEME_FILE_KEYS} from "./ThemeContract";
 import {THEME_FILE_KEYS_V1} from "./ThemeContract";
@@ -59,12 +60,17 @@ export function renderThemeSlot(
 export function canonicalThemePackage(
   manifest: ThemeManifestV1,
   bundle: ThemeBundleV1,
+  previewFixture?: ThemePreviewFixture | null,
 ): string {
   const orderedBundle = Object.fromEntries(Object.entries({
     ...bundle,
     assets: bundle.assets.map(({key: _key, ...asset}) => asset),
   }).sort(([left], [right]) => left.localeCompare(right)));
-  return JSON.stringify({manifest, bundle: orderedBundle});
+  return JSON.stringify({
+    manifest,
+    bundle: orderedBundle,
+    ...(previewFixture ? {previewFixture} : {}),
+  });
 }
 
 export async function sha256Hex(value: string | Uint8Array): Promise<string> {
