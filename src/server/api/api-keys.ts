@@ -1,8 +1,10 @@
 import {SETTINGS_CATEGORIES} from "@/shared/Constants";
 import {
+  API_KEY_SCOPES,
   resolveApiAccessSettings,
   type ApiAccessSettings,
   type ApiKeyRecord,
+  type ApiKeyScope,
   updateApiAccessEnabled,
 } from "@/shared/Api";
 
@@ -11,6 +13,7 @@ interface ApiKeyRow {
   created_at_ms: number;
   id: string;
   name: string;
+  scopes: string;
   updated_at_ms: number;
 }
 
@@ -31,8 +34,22 @@ function apiKeyFromRow(row: ApiKeyRow): ApiKeyRecord {
     createdAtMs: Number(row.created_at_ms),
     id: row.id,
     name: row.name,
+    scopes: normalizeApiKeyScopes(row.scopes),
     updatedAtMs: Number(row.updated_at_ms),
   };
+}
+
+function normalizeApiKeyScopes(scopes: unknown): ApiKeyScope[] {
+  const values = Array.isArray(scopes)
+    ? scopes
+    : typeof scopes === "string"
+    ? scopes.split(/\s+/u)
+    : [];
+  const normalized = [...new Set(values)].filter((scope): scope is ApiKeyScope =>
+    typeof scope === "string" &&
+    (API_KEY_SCOPES as readonly string[]).includes(scope)
+  );
+  return normalized.length ? normalized : [...API_KEY_SCOPES];
 }
 
 function normalizeApiKeyName(name: string): string {
@@ -140,7 +157,7 @@ export async function listApiKeys(
   database: D1Database,
 ): Promise<ApiKeyRecord[]> {
   const result = await database.prepare(
-    "SELECT id, name, api_key, created_at_ms, updated_at_ms " +
+    "SELECT id, name, api_key, scopes, created_at_ms, updated_at_ms " +
       "FROM api_keys ORDER BY created_at_ms DESC, id DESC",
   ).all<ApiKeyRow>();
   return result.results.map(apiKeyFromRow);
@@ -151,7 +168,7 @@ export async function findApiKey(
   id: string,
 ): Promise<ApiKeyRecord | null> {
   const row = await database.prepare(
-    "SELECT id, name, api_key, created_at_ms, updated_at_ms " +
+    "SELECT id, name, api_key, scopes, created_at_ms, updated_at_ms " +
       "FROM api_keys WHERE id = ? LIMIT 1",
   ).bind(id).first<ApiKeyRow>();
   return row ? apiKeyFromRow(row) : null;
@@ -170,10 +187,22 @@ export async function apiKeyExists(
   return row?.found === 1;
 }
 
+export async function apiKeyScopes(
+  database: D1Database,
+  providedApiKey: string,
+): Promise<Set<ApiKeyScope> | null> {
+  if (!providedApiKey) return null;
+  const row = await database.prepare(
+    "SELECT scopes FROM api_keys WHERE api_key = ? LIMIT 1",
+  ).bind(providedApiKey).first<{scopes: string}>();
+  return row ? new Set(normalizeApiKeyScopes(row.scopes)) : null;
+}
+
 export async function createApiKey(
   database: D1Database,
   input: {
     name: string;
+    scopes?: ApiKeyScope[];
     settings?: ApiAccessSettings;
   },
 ): Promise<ApiKeyRecord> {
@@ -183,6 +212,7 @@ export async function createApiKey(
     createdAtMs: now,
     id: crypto.randomUUID(),
     name: normalizeApiKeyName(input.name),
+    scopes: normalizeApiKeyScopes(input.scopes),
     updatedAtMs: now,
   };
   const statements = [
@@ -194,12 +224,13 @@ export async function createApiKey(
       : []),
     database.prepare(
       "INSERT INTO api_keys " +
-        "(id, name, api_key, created_at_ms, updated_at_ms) " +
-        "VALUES (?, ?, ?, ?, ?)",
+        "(id, name, api_key, scopes, created_at_ms, updated_at_ms) " +
+        "VALUES (?, ?, ?, ?, ?, ?)",
     ).bind(
       apiKey.id,
       apiKey.name,
       apiKey.apiKey,
+      apiKey.scopes.join(" "),
       apiKey.createdAtMs,
       apiKey.updatedAtMs,
     ),

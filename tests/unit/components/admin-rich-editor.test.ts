@@ -7,17 +7,17 @@ const source = (filename: string) => readFile(
 );
 
 describe("Admin rich editor", () => {
-  it("distinguishes wrapped lines from new paragraphs", async () => {
+  it("keeps a consistent gap between every rich-text block", async () => {
     const adminStyles = await source("styles/admin.css");
 
     expect(adminStyles).toMatch(
-      /\.admin-rich-editor \.ql-container \.ql-editor \{[\s\S]*?line-height: 1\.6;/u,
+      /\.admin-rich-editor \.ql-container \.ql-editor \{[\s\S]*?--mf-rich-block-gap: 1\.2rem;[\s\S]*?line-height: 1\.6;/u,
     );
     expect(adminStyles).toMatch(
-      /\.admin-rich-editor \.ql-container \.ql-editor p \{\s*margin: 0;\s*\}/u,
+      /\.admin-rich-editor \.ql-container \.ql-editor > \* \{\s*margin-block: 0;\s*\}/u,
     );
     expect(adminStyles).toMatch(
-      /\.admin-rich-editor \.ql-container \.ql-editor p \+ p \{\s*margin-top: 1em;\s*\}/u,
+      /\.admin-rich-editor \.ql-container \.ql-editor > \* \+ \* \{\s*margin-top: var\(--mf-rich-block-gap\);\s*\}/u,
     );
   });
 });

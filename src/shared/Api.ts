@@ -3,11 +3,15 @@ export interface ApiAccessSettings {
   publicDocsEnabled: boolean;
 }
 
+export const API_KEY_SCOPES = ["content:read", "content:write"] as const;
+export type ApiKeyScope = typeof API_KEY_SCOPES[number];
+
 export interface ApiKeyRecord {
   apiKey: string;
   createdAtMs: number;
   id: string;
   name: string;
+  scopes: ApiKeyScope[];
   updatedAtMs: number;
 }
 

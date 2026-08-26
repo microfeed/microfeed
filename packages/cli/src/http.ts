@@ -210,6 +210,13 @@ export async function apiOrigin(options: GlobalOptions): Promise<string> {
   return (await credentials(options)).origin;
 }
 
+export async function publicSiteOrigin(options: GlobalOptions): Promise<string> {
+  const environmentUrl = process.env.MICROFEED_URL?.trim();
+  if (environmentUrl) return normalizeOrigin(environmentUrl);
+  const store = await readStore();
+  return selectedInstance(store, options.instance).instance.origin;
+}
+
 function responseBody(text: string, contentType: string | null): unknown {
   if (!text) return null;
   if (contentType?.includes("json")) {

@@ -34,11 +34,13 @@ if (unavailable) {
 const notFoundPage = unavailable
   ? await loadPublicNotFoundPageRoute(env, Astro.request)
   : undefined;
+const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const assetBaseUrl = themeAssetBaseUrl(
   env,
   Astro.request.url,
   loaded.content.activeTheme?.assetOwnerThemeId,
   loaded.content.activeTheme?.bundle.assets,
+  webSettings.publicBucketUrl,
 );
 const navigation = await navigationPages(loaded.database.FEED_DB, Astro.request);
 const extraContext = {navigation_pages: navigation};
@@ -58,7 +60,6 @@ const sharedTheme = new Theme(
   assetBaseUrl,
   extraContext,
 );
-const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const canonicalUrl = itemId && item
   ? PUBLIC_URLS.webItem(itemId, String(item.title ?? ""), Astro.url.origin)
   : undefined;

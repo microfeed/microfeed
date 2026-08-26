@@ -1,4 +1,4 @@
-import {apiKeyExists, readApiAccessSettings} from "./api-keys";
+import {apiKeyScopes, readApiAccessSettings} from "./api-keys";
 import {builtInAdminAuthEnabled} from "@/shared/AdminAuth";
 import {
   API_BASE_PATH,
@@ -136,15 +136,20 @@ export async function decideApiRequest(
   }
   const apiKey = providedApiKey(request);
   if (!apiKey) return "unauthorized";
-  if (await apiKeyExists(database, apiKey)) return "allow-integration";
+  const requiredScope = ["GET", "HEAD"].includes(request.method.toUpperCase())
+    ? OAUTH_SCOPES.READ
+    : OAUTH_SCOPES.WRITE;
+  const integrationScopes = await apiKeyScopes(database, apiKey);
+  if (integrationScopes) {
+    return integrationScopes.has(requiredScope)
+      ? "allow-integration"
+      : "insufficient-scope";
+  }
   if (!builtInAdminAuthEnabled(adminAuthMode)) {
     return "unauthorized";
   }
   const grant = await verifyOAuthAccessToken(database, apiKey);
   if (!grant) return "unauthorized";
-  const requiredScope = ["GET", "HEAD"].includes(request.method.toUpperCase())
-    ? OAUTH_SCOPES.READ
-    : OAUTH_SCOPES.WRITE;
   return grant.scopes.has(requiredScope)
     ? "allow-integration"
     : "insufficient-scope";

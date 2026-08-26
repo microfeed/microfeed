@@ -1,0 +1,44 @@
+<main class="blog-main">
+  <section class="blog-intro">
+    <p class="blog-rubric">Ideas for a more thoughtful web</p>
+    <h1>{{title}}</h1>
+    {{#description}}<div class="blog-deck">{{{description}}}</div>{{/description}}
+    <div class="blog-intro-meta">
+      {{#authors}}<span>Edited by {{name}}</span>{{/authors}}
+      <div class="blog-subscribe">{{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}</div>
+    </div>
+  </section>
+
+  <section class="blog-articles" aria-labelledby="blog-latest">
+    <div class="blog-section-rule"><h2 id="blog-latest">Latest stories</h2><span>Issue 08 · {{current_year}}</span></div>
+    {{^items.length}}<div class="blog-empty"><p>Edition forthcoming.</p><h3>No stories have been published yet.</h3></div>{{/items.length}}
+    <div class="blog-grid">
+      {{#items}}
+      <article class="blog-card">
+        {{#image}}<a class="blog-card-image" href="{{_microfeed.web_url}}"><img src="{{image}}" alt="" loading="lazy" /></a>{{/image}}
+        <div class="blog-card-copy">
+          <div class="blog-card-label">
+            {{#_microfeed.is_audio}}Audio essay{{/_microfeed.is_audio}}
+            {{#_microfeed.is_video}}Film{{/_microfeed.is_video}}
+            {{#_microfeed.is_image}}Photo note{{/_microfeed.is_image}}
+            {{#_microfeed.is_document}}Resource{{/_microfeed.is_document}}
+            {{#_microfeed.is_external_url}}Elsewhere{{/_microfeed.is_external_url}}
+            {{^_microfeed.is_audio}}{{^_microfeed.is_video}}{{^_microfeed.is_image}}{{^_microfeed.is_document}}{{^_microfeed.is_external_url}}Essay{{/_microfeed.is_external_url}}{{/_microfeed.is_document}}{{/_microfeed.is_image}}{{/_microfeed.is_video}}{{/_microfeed.is_audio}}
+          </div>
+          <h3><a href="{{_microfeed.web_url}}">{{title}}</a></h3>
+          {{#content_text}}<p class="blog-excerpt">{{content_text}}</p>{{/content_text}}
+          <div class="blog-card-meta">
+            {{#authors}}<span>By {{name}}</span>{{/authors}}
+            <time>{{_microfeed.date_published_short}}</time>
+            {{#_microfeed.duration_hhmmss}}<span>{{_microfeed.duration_hhmmss}}</span>{{/_microfeed.duration_hhmmss}}
+          </div>
+        </div>
+      </article>
+      {{/items}}
+    </div>
+    <nav class="blog-pagination" aria-label="Pagination">
+      {{#_microfeed.prev_url}}<a href="{{_microfeed.prev_url}}">← Newer issue</a>{{/_microfeed.prev_url}}
+      {{#_microfeed.next_url}}<a href="{{_microfeed.next_url}}">Older issue →</a>{{/_microfeed.next_url}}
+    </nav>
+  </section>
+</main>

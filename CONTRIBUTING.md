@@ -91,11 +91,14 @@ compatible starter range with one command:
 
 ```console
 yarn version:set 1.2.3
+yarn theme:release
 ```
 
 Use an exact semantic version. The command verifies every target before it
-writes anything. Private workspace metadata, examples, fixtures, tests, and the
-lockfile do not need patch-release edits.
+writes anything. `yarn theme:release` records the bundled theme's immutable
+canonical checksum and refuses to replace any released version. Private
+workspace metadata, examples, fixtures, tests, and the lockfile do not need
+patch-release edits.
 
 ## Open a pull request
 

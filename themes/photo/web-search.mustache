@@ -1,0 +1,15 @@
+<main class="photo-main photo-prose-main">
+  <a class="photo-back" href="/">← {{title}}</a>
+  <section class="photo-search-page">
+    <p class="photo-kicker">Archive index</p>
+    <h1>Find a frame</h1>
+    <form action="/search/" method="get" role="search">
+      <label for="photo-search-input">Search photographs, captions, and pages</label>
+      <div class="photo-search-field">
+        <input id="photo-search-input" name="q" type="search" value="{{search.query}}" placeholder="Landscape, city, studio…" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
+        <button type="submit">Search</button>
+      </div>
+      <div class="photo-search-results" aria-live="polite" data-microfeed-search-results data-microfeed-search-details></div>
+    </form>
+  </section>
+</main>

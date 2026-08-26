@@ -39,6 +39,8 @@ const OBSOLETE_NATIVE_VIDEO_CLASSES = new Set([
   "ql-native-video",
   "ql-video",
 ]);
+const DEFAULT_MEDIA_MAX_WIDTH = "600px";
+const DEFAULT_MEDIA_WIDTH = "100%";
 const DEFAULT_VIDEO_ASPECT_RATIO = "16 / 9";
 const FALLBACK_DIMENSION_PATTERN =
   /^(?:auto|min-content|max-content|fit-content|0|(?:\d+(?:\.\d+)?|\.\d+)(?:%|px|em|rem|vw|vh|vmin|vmax|ch|ex|cm|mm|in|pt|pc))$/iu;
@@ -186,6 +188,19 @@ export function applyRichEditorMediaSettings(
   if (!element.style.cssText) {
     element.removeAttribute("style");
   }
+}
+
+export function applyRichEditorMediaEmbedDefaults(
+  element: HTMLElement,
+  mediaType: RichEditorMediaType,
+) {
+  applyRichEditorMediaSettings(element, mediaType, {
+    alt: "",
+    height: mediaType === "video" ? "auto" : "",
+    style: `max-width: ${DEFAULT_MEDIA_MAX_WIDTH};`,
+    title: "",
+    width: DEFAULT_MEDIA_WIDTH,
+  });
 }
 
 export function findRichEditorMediaElement(

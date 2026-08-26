@@ -8,7 +8,12 @@ import {
   ItemSearchUnavailableError,
   searchContent,
 } from "@/server/items/search";
-import {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
+import {
+  activeThemeSearchItemDestination,
+  themeSupportsPagesAndSearch,
+} from "@/server/themes/Theme";
+import {buildAudioUrlWithTracking} from "@/shared/StringUtils";
+import {resolveThemeSearchItemUrl} from "@/shared/themes/ThemeSearch";
 
 export const GET: APIRoute = async ({request}) => {
   const url = new URL(request.url);
@@ -30,6 +35,10 @@ export const GET: APIRoute = async ({request}) => {
     return jsonResponse({error: "Not found."}, {status: 404});
   }
   try {
+    const searchItemDestination = activeThemeSearchItemDestination(
+      loaded.content.activeTheme,
+    );
+    const trackingUrls = loaded.content.settings?.analytics?.urls ?? [];
     const response = await searchContent(loaded.database.FEED_DB, request, {
       fields: ["title", "content"],
       limit: 12,
@@ -47,7 +56,15 @@ export const GET: APIRoute = async ({request}) => {
         id: item.id,
         title: item.title,
         type: item.type,
-        url: item.web_url,
+        url: item.type === "item"
+          ? resolveThemeSearchItemUrl(searchItemDestination, {
+              attachmentUrl: item.attachment_url
+                ? buildAudioUrlWithTracking(item.attachment_url, trackingUrls)
+                : undefined,
+              itemUrl: item.item_url,
+              webUrl: item.web_url,
+            })
+          : item.web_url,
       })),
     }, {headers: {"cache-control": "private, no-store"}});
   } catch (error) {

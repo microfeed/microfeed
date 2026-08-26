@@ -39,6 +39,8 @@ describe("bundled theme packages", () => {
     expect(occurrences(bodyStart, "data-microfeed-search-open")).toBe(2);
     expect(occurrences(bodyStart, 'class="mf-nav-overflow"')).toBe(1);
     expect(bodyEnd).toContain("<footer");
+    // Fork customization: the "Powered by microfeed" footer credit is removed.
+    expect(bodyEnd).not.toContain("Powered by");
     expect(bodyEnd).toContain("<script>");
     for (const template of [feed, item, page, search]) {
       expect(template).not.toContain('class="mf-site-nav"');
@@ -52,11 +54,14 @@ describe("bundled theme packages", () => {
     expect(sourceStyles).toMatch(/\.mf-site-nav\s*\{[\s\S]*?flex:\s*none;/u);
     expect(sourceStyles).toMatch(/main\s*\{[\s\S]*?flex:\s*1 0 auto;/u);
     expect(sourceStyles).toMatch(/footer\s*\{[\s\S]*?flex:\s*none;/u);
+    expect(sourceStyles).toMatch(
+      /\.mf-footer-link,[\s\S]*?\.mf-footer-link:visited\s*\{\s*color:\s*#19b7fa;/u,
+    );
     expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)\s*\{[\s\S]*?html:not\(\.rss-document\)\s*\{[\s\S]*?padding-right:\s*1em;[\s\S]*?padding-left:\s*1em;/u);
     expect(sourceStyles).not.toMatch(/footer\s*\{[^}]*position:\s*fixed/gu);
   });
 
-  it("uses a responsive search field and overflows navigation after two pages", async () => {
+  it("uses responsive search and collapses Page links into a mobile menu", async () => {
     const [bodyStart, feed, item, page, search, sourceStyles, sourceScript] = await Promise.all([
       readFile(path.join(root, "themes/default/web-body-start.mustache"), "utf8"),
       readFile(path.join(root, "themes/default/web-feed.mustache"), "utf8"),
@@ -77,8 +82,13 @@ describe("bundled theme packages", () => {
     expect(bodyStart).toContain('type="search"');
     expect(bodyStart).toContain('class="mf-search-icon-button"');
     expect(bodyStart).toContain("data-microfeed-nav-overflow");
-    expect(bodyStart.indexOf('class="mf-site-search"'))
+    expect(bodyStart).toContain('class="mf-nav-overflow-menu-icon"');
+    expect(bodyStart.indexOf('class="mf-site-brand"'))
       .toBeLessThan(bodyStart.indexOf('class="mf-nav-links"'));
+    expect(bodyStart.indexOf('class="mf-nav-links"'))
+      .toBeLessThan(bodyStart.indexOf('class="mf-site-search"'));
+    expect(bodyStart.indexOf('class="mf-site-search"'))
+      .toBeLessThan(bodyStart.indexOf('class="mf-theme-menu"'));
     expect(bodyStart).toContain("readonly");
     expect(bodyStart).toContain('aria-haspopup="dialog"');
     expect(bodyStart).toContain('aria-controls="microfeed-search-dialog"');
@@ -91,16 +101,21 @@ describe("bundled theme packages", () => {
       expect(template).toContain('<div class="icon-arrow-left">{{title}}</div>');
     }
 
-    expect(sourceScript).toContain("if (links.length <= 2) continue");
+    expect(sourceScript).toContain('window.matchMedia("(max-width: 600px)")');
+    expect(sourceScript).toContain("if (mobileNavigation.matches)");
+    expect(sourceScript).toContain("for (const link of links) menu.append(link)");
+    expect(sourceScript).toContain("for (const link of links.slice(0, 2))");
     expect(sourceScript).toContain("for (const link of links.slice(2))");
     expect(sourceStyles).toMatch(/\.mf-site-search\s*\{[\s\S]*?display:\s*grid;/u);
     expect(sourceStyles).toMatch(/\.mf-site-search\s*\{[\s\S]*?width:\s*min\(13\.5rem, 38vw\);/u);
     expect(sourceStyles).toMatch(/\.mf-site-search input\[type="search"\]\s*\{[\s\S]*?font-size:\s*0\.875rem;/u);
     expect(sourceStyles).toMatch(/\.mf-site-nav\s*\{[\s\S]*?justify-content:\s*space-between;/u);
-    expect(sourceStyles).toMatch(/\.mf-nav-links\s*\{[\s\S]*?margin-left:\s*auto;/u);
-    expect(sourceStyles).not.toMatch(/\.mf-site-search\s*\{[^}]*margin-left:\s*auto;/u);
+    expect(sourceStyles).toMatch(/\.mf-site-search\s*\{[\s\S]*?margin-left:\s*auto;/u);
+    expect(sourceStyles).not.toMatch(/\.mf-nav-links\s*\{[^}]*margin-left:\s*auto;/u);
     expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-site-search\s*\{\s*display:\s*none;/u);
     expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-search-icon-button\s*\{[\s\S]*?display:\s*inline-flex;/u);
+    expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-nav-links > a\s*\{[\s\S]*?display:\s*none;/u);
+    expect(sourceStyles).toMatch(/@media only screen and \(max-width: 600px\)[\s\S]*?\.mf-nav-overflow-menu-icon\s*\{[\s\S]*?display:\s*block;/u);
     expect(sourceStyles).toMatch(/html \.mf-public-search\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?margin:\s*auto;/u);
     expect(sourceStyles).toMatch(/\.mf-nav-overflow summary:hover\s*\{[\s\S]*?opacity:\s*65%;/u);
     expect(search).toContain('class="mf-visually-hidden"');
@@ -119,7 +134,7 @@ describe("bundled theme packages", () => {
     expect(sourceStyles).toMatch(/\.mf-search-page-results \.mf-public-search-result__details mark\s*\{[\s\S]*?background:\s*color-mix\(/u);
   });
 
-  it("distinguishes wrapped rich-text lines from separate paragraphs", async () => {
+  it("keeps a consistent gap between every rendered rich-text block", async () => {
     const [feed, item, page, sourceStyles] = await Promise.all([
       readFile(path.join(root, "themes/default/src/templates/web-feed.mustache"), "utf8"),
       readFile(path.join(root, "themes/default/src/templates/web-item.mustache"), "utf8"),
@@ -131,13 +146,13 @@ describe("bundled theme packages", () => {
       expect(template).toContain('class="mf-rich-content"');
     }
     expect(sourceStyles).toMatch(
-      /\.mf-rich-content \{\s*line-height:\s*1\.6;\s*\}/u,
+      /\.mf-rich-content \{[\s\S]*?--mf-rich-block-gap:\s*1rem;[\s\S]*?line-height:\s*1\.6;/u,
     );
     expect(sourceStyles).toMatch(
-      /\.mf-rich-content p \{\s*margin:\s*0;\s*\}/u,
+      /\.mf-rich-content > \* \{\s*margin-block:\s*0;\s*\}/u,
     );
     expect(sourceStyles).toMatch(
-      /\.mf-rich-content p \+ p \{\s*margin-top:\s*1em;\s*\}/u,
+      /\.mf-rich-content > \* \+ \* \{\s*margin-top:\s*var\(--mf-rich-block-gap\);\s*\}/u,
     );
   });
 
@@ -153,6 +168,8 @@ describe("bundled theme packages", () => {
     expect(rssStylesheet).toContain("max-width:50rem");
     expect(rssStylesheet).toContain("width&lt;=600px");
     expect(rssStylesheet).toContain("rss/channel/atom:link[@rel='next']");
+    expect(rssStylesheet).toContain('class="mf-footer-link"');
+    expect(rssSource).toContain('class="mf-footer-link"');
     expect(rssStylesheet).toContain("var(--mf-accent)");
     expect(rssStylesheet).not.toContain("microfeed:compiled-tailwind");
     expect(rssSource).toContain("microfeed:compiled-tailwind");
@@ -161,18 +178,80 @@ describe("bundled theme packages", () => {
     expect(rssStylesheet).not.toContain('"Noto\n');
   });
 
-  it("ships one immutable bundled default package without assets", async () => {
-    const [application, modern] = await Promise.all([
+  it("ships one immutable bundled default package with representative demo content", async () => {
+    const [application, fixture, modern] = await Promise.all([
       readFile(path.join(root, "package.json"), "utf8").then(JSON.parse),
+      readFile(path.join(root, "themes/default/fixtures/editorial.json"), "utf8")
+        .then(JSON.parse),
       readFile(path.join(root, "themes/default/microfeed-theme.json"), "utf8").then(JSON.parse),
     ]);
     expect(modern).toMatchObject({
       assets: [],
+      description: "A minimalist, responsive feed for text, audio, video, images, documents, standalone Pages, and search.",
       formatVersion: 2,
       packageId: "microfeed.default",
-      version: "1.1.8",
+      previewFixture: "fixtures/editorial.json",
+      version: "1.1.16",
     });
-    expect(application.version).toBe("1.0.4");
+    expect(fixture.items[0]).toMatchObject({
+      _microfeed: {is_audio: true},
+      id: "audio-field-recording",
+    });
+    expect(fixture.items.map((item: {_microfeed?: Record<string, boolean>}) =>
+      item._microfeed
+    )).toEqual(expect.arrayContaining([
+      expect.objectContaining({is_video: true}),
+      expect.objectContaining({is_image: true}),
+      expect.objectContaining({is_document: true}),
+      expect.objectContaining({is_external_url: true}),
+    ]));
+    expect(fixture).toMatchObject({
+      _microfeed: {
+        items_next_cursor: expect.any(String),
+        subscribe_methods: expect.any(Array),
+      },
+      authors: expect.any(Array),
+      navigation_pages: expect.any(Array),
+      page: {id: "page-about"},
+      search: {results: expect.any(Array)},
+    });
+    for (const method of fixture._microfeed.subscribe_methods) {
+      expect(method.image).toMatch(/^data:image\/svg\+xml,/u);
+    }
+    const remoteMediaUrls = [
+      fixture.icon,
+      ...fixture.items.flatMap((item: {
+        attachments?: {mime_type?: string; url: string}[];
+        image?: string;
+      }) => [
+        item.image,
+        ...(item.attachments ?? [])
+          .filter(({mime_type}) => /^(?:audio|image|video)\//u.test(mime_type ?? ""))
+          .map(({url}) => url),
+      ]),
+    ].filter((url): url is string => typeof url === "string");
+    expect(remoteMediaUrls).not.toHaveLength(0);
+    for (const url of remoteMediaUrls) {
+      expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//u);
+      expect(url).not.toContain("example.test");
+    }
+    expect(application.version).toBe("1.0.5");
+  });
+
+  it("renders subscription methods without broken or duplicated image text", async () => {
+    const [feed, item, styles] = await Promise.all([
+      readFile(path.join(root, "themes/default/src/templates/web-feed.mustache"), "utf8"),
+      readFile(path.join(root, "themes/default/src/templates/web-item.mustache"), "utf8"),
+      readFile(path.join(root, "themes/default/src/theme.css"), "utf8"),
+    ]);
+    for (const template of [feed, item]) {
+      expect(template).toContain("{{#image}}");
+      expect(template).toContain('alt=""');
+      expect(template).toContain('aria-label="{{name}}"');
+      expect(template).toContain("flex-none text-sm{{#image}} ml-1 hide-mobile{{/image}}");
+      expect(template).not.toContain('alt="{{name}}"');
+    }
+    expect(styles).toMatch(/\.img-sm\s*\{[\s\S]*?width:\s*1em;[\s\S]*?height:\s*1em;/u);
   });
 
   it("keeps the generated theme-authoring skill synchronized", async () => {
@@ -184,10 +263,5 @@ describe("bundled theme packages", () => {
     ]);
     expect(starter).toBe(repository);
     expect(modern).toBe(repository);
-    expect(repository).toContain("## Bundle CSS and JavaScript");
-    expect(repository).toContain("Vite or Webpack output");
-    expect(repository).toContain("{{_theme.asset_base_url}}theme.js");
-    expect(repository).toContain("uploaded to immutable R2 keys");
-    expect(repository).toContain("Never create screenshots unless the user explicitly asks");
   });
 });

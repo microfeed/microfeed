@@ -9,6 +9,7 @@ import {
   themeContextSchema,
   themeManifestV1Schema,
 } from "../../../src/shared/themes/ThemeContract";
+import {BUNDLED_THEME_CATALOG} from "../../../src/shared/themes/BundledThemeCatalog";
 import starterManifest from "../assets/starter/microfeed-theme.json";
 import {
   generatedGenericThemeRepositoryReadme,
@@ -21,8 +22,12 @@ const outputDirectory = path.join(packageRoot, "dist");
 await rm(outputDirectory, {force: true, recursive: true});
 const schemaDirectory = path.join(packageRoot, "assets", "starter", ".microfeed", "schemas");
 await mkdir(schemaDirectory, {recursive: true});
-const defaultSchemaDirectory = path.join(repositoryRoot, "themes", "default", ".microfeed", "schemas");
-await mkdir(defaultSchemaDirectory, {recursive: true});
+const bundledSchemaDirectories = BUNDLED_THEME_CATALOG.map(({directory}) =>
+  path.join(repositoryRoot, "themes", directory, ".microfeed", "schemas")
+);
+await Promise.all(bundledSchemaDirectories.map((directory) =>
+  mkdir(directory, {recursive: true})
+));
 const manifestSchema = `${JSON.stringify(z.toJSONSchema(themeManifestV1Schema), null, 2)}\n`;
 const contextSchema = `${JSON.stringify(z.toJSONSchema(themeContextSchema), null, 2)}\n`;
 await Promise.all([
@@ -33,8 +38,10 @@ await Promise.all([
   ),
   writeFile(path.join(schemaDirectory, "manifest.schema.json"), manifestSchema),
   writeFile(path.join(schemaDirectory, "theme-context.schema.json"), contextSchema),
-  writeFile(path.join(defaultSchemaDirectory, "manifest.schema.json"), manifestSchema),
-  writeFile(path.join(defaultSchemaDirectory, "theme-context.schema.json"), contextSchema),
+  ...bundledSchemaDirectories.flatMap((directory) => [
+    writeFile(path.join(directory, "manifest.schema.json"), manifestSchema),
+    writeFile(path.join(directory, "theme-context.schema.json"), contextSchema),
+  ]),
 ]);
 await build({
   bundle: true,

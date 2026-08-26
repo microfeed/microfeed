@@ -115,4 +115,19 @@ describe("API-key migration", () => {
     ]);
     database.close();
   });
+
+  it("preserves existing keys with read and write access when scopes are added", async () => {
+    const database = createDatabase();
+    database.exec(await migration());
+    database.prepare(
+      "INSERT INTO api_keys (id, name, api_key, created_at_ms, updated_at_ms) VALUES ('one', 'One', 'mf_one', 1, 1)",
+    ).run();
+    database.exec(await readFile(
+      path.join(repositoryRoot, "migrations", "0018_api_key_scopes.sql"),
+      "utf8",
+    ));
+    expect(database.prepare("SELECT scopes FROM api_keys WHERE id = 'one'").get())
+      .toEqual({scopes: "content:read content:write"});
+    database.close();
+  });
 });

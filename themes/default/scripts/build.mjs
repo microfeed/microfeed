@@ -42,6 +42,15 @@ const designTokenCss = `/* microfeed design tokens
   --mf-muted: #57606a;
   --mf-border: #dcdcdc;
 }
+
+.dark {
+  --mf-accent: #58c7f3;
+  --mf-background: #0d1117;
+  --mf-surface: #161b22;
+  --mf-text: #f0f3f6;
+  --mf-muted: #9da7b3;
+  --mf-border: #30363d;
+}
 `;
 const tokenBlock = `<style id="microfeed-design-tokens">
 ${designTokenCss}</style>`;

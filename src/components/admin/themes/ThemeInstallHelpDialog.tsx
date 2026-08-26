@@ -60,14 +60,15 @@ export default function ThemeInstallHelpDialog({
 
           <section className="grid gap-3">
             <div>
-              <h3 className="font-semibold">Install the bundled default</h3>
+              <h3 className="font-semibold">Install a Built-in theme</h3>
               <p className="mt-1 text-muted-foreground">
-                This installs the default theme from your current microfeed
-                checkout as another inactive version.
+                Deployment synchronizes the Built-in catalog automatically.
+                You can also install a specific release from the current
+                microfeed checkout; it remains inactive for preview.
               </p>
             </div>
             <Command>
-              {`yarn manage theme install default --instance ${instanceName}`}
+              {`yarn manage theme install bundled:default --instance ${instanceName}`}
             </Command>
           </section>
 

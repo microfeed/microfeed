@@ -40,7 +40,8 @@ describe("repository management command", () => {
       "yarn test:deploy:unit && yarn test:deploy:worker",
     );
     expect(scripts["test:deploy:unit"]).toBe(
-      "TZ=UTC vitest run tests/unit/api-key-migration.test.ts " +
+      "yarn theme:release-check && TZ=UTC vitest run " +
+        "tests/unit/api-key-migration.test.ts " +
         "tests/unit/item-idempotency-migration.test.ts " +
         "tests/unit/item-search-migration.test.ts " +
         "tests/unit/item-timestamp-migration.test.ts",

@@ -1,0 +1,20 @@
+<header class="pod-shell">
+  <a class="pod-wordmark" href="/" aria-label="{{title}} home">
+    <span class="pod-wordmark-dot" aria-hidden="true"></span>
+    <span>{{title}}</span>
+  </a>
+  <nav class="pod-nav" aria-label="Site navigation">
+    {{#navigation_pages}}<a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>{{/navigation_pages}}
+  </nav>
+  <button class="pod-search-button" type="button" aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open>
+    <span aria-hidden="true">⌕</span><span class="pod-search-label">Search</span>
+  </button>
+  <details class="pod-theme-menu" data-theme-menu>
+    <summary aria-label="Choose color theme">◐</summary>
+    <div role="menu" aria-label="Color theme">
+      <button type="button" role="menuitemradio" aria-checked="true" data-theme-option="system">System</button>
+      <button type="button" role="menuitemradio" aria-checked="false" data-theme-option="light">Light</button>
+      <button type="button" role="menuitemradio" aria-checked="false" data-theme-option="dark">Dark</button>
+    </div>
+  </details>
+</header>

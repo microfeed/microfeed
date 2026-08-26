@@ -3,10 +3,11 @@
   "formatVersion": 2,
   "packageId": "microfeed.default",
   "name": "microfeed default",
-  "version": "1.1.8",
+  "version": "1.1.16",
   "author": "microfeed",
   "license": "AGPL-3.0",
-  "description": "The familiar microfeed design with a footer that stays at the bottom on short pages.",
+  "description": "A minimalist, responsive feed for text, audio, video, images, documents, standalone Pages, and search.",
+  "previewFixture": "fixtures/editorial.json",
   "microfeed": "*",
   "files": {
     "webFeed": "web-feed.mustache",

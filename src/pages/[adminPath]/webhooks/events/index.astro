@@ -1,0 +1,46 @@
+---
+import {env} from "cloudflare:workers";
+
+import WebhookEventExplorerApp from "@/components/admin/webhooks/WebhookEventExplorerApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {listWebhookEndpoints, webhookOverview} from "@/server/webhooks/store";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {isLocalDevelopmentHostname} from "@/shared/StringUtils";
+import {WEBHOOK_EVENT_TYPE_SET, type WebhookEventType} from "@/shared/Webhooks";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+const [endpoints, overview] = await Promise.all([
+  listWebhookEndpoints(env.FEED_DB),
+  webhookOverview(env),
+]);
+const eventParameter = Astro.url.searchParams.get("event");
+const initialEventType = eventParameter && WEBHOOK_EVENT_TYPE_SET.has(eventParameter)
+  ? eventParameter as WebhookEventType
+  : "webhook.test";
+const endpointParameter = Astro.url.searchParams.get("endpoint");
+const initialEndpointId = endpoints.some(({id}) => id === endpointParameter)
+  ? endpointParameter ?? undefined
+  : undefined;
+const localPrintAvailable = isLocalDevelopmentHostname(Astro.url.hostname);
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.WEBHOOKS}
+  documentTitle="Webhook Event explorer | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Webhook Event explorer"
+  webhookActivePage="event_explorer"
+  webhookNavigation
+>
+  <WebhookEventExplorerApp
+    client:only="react"
+    dailyLimit={overview.dailyLimit}
+    deliveriesToday={overview.deliveriesToday}
+    {endpoints}
+    {initialEndpointId}
+    {initialEventType}
+    {localPrintAvailable}
+  />
+</AdminShell>

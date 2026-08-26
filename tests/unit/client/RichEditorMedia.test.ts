@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import {
+  applyRichEditorMediaEmbedDefaults,
   applyRichEditorMediaSettings,
   isValidMediaDimension,
   richEditorMediaEmbedFormat,
@@ -116,6 +117,32 @@ describe("rich editor media helpers", () => {
   it("starts pointer dragging only after intentional movement", () => {
     expect(shouldStartRichEditorMediaDrag(10, 10, 13, 14)).toBe(false);
     expect(shouldStartRichEditorMediaDrag(10, 10, 16, 10)).toBe(true);
+  });
+
+  it("applies responsive defaults to new image embeds", () => {
+    const {attributes, declarations, element} = fakeMediaElement("IMG");
+
+    applyRichEditorMediaEmbedDefaults(element, "image");
+
+    expect(attributes.get("width")).toBe("100%");
+    expect(attributes.has("height")).toBe(false);
+    expect(declarations.get("max-width")).toBe("600px");
+    expect(declarations.get("--resize-width")).toBe("100%");
+    expect(element.dataset.relativeSize).toBe("true");
+  });
+
+  it("applies responsive defaults to new video embeds", () => {
+    const {attributes, declarations, element} = fakeMediaElement("VIDEO");
+
+    applyRichEditorMediaEmbedDefaults(element, "video");
+
+    expect(attributes.get("width")).toBe("100%");
+    expect(attributes.has("height")).toBe(false);
+    expect(declarations.get("max-width")).toBe("600px");
+    expect(declarations.get("width")).toBe("100%");
+    expect(declarations.get("height")).toBe("auto");
+    expect(declarations.get("--resize-width")).toBe("100%");
+    expect(element.dataset.relativeSize).toBe("true");
   });
 
   it("accepts practical CSS media dimensions and rejects invalid values", () => {

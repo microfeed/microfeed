@@ -22,7 +22,9 @@ parent workspace; `yarn install` populates it. The local Yarn configuration
 preapproves only the official `@microfeed/theme-kit` package, leaving package
 gates in place for every other dependency.
 
-To preview against a public microfeed JSON Feed instead of a bundled fixture:
+When the manifest declares a `previewFixture`, `yarn preview` uses that
+theme-specific demo content by default. To preview against a public microfeed
+JSON Feed instead:
 
 ```console
 yarn preview --feed-url https://example.com/json/
@@ -30,8 +32,14 @@ yarn preview --feed-url https://example.com/json/
 
 Read [THEME.md](./THEME.md), `microfeed-theme.json`, and the schemas under
 `.microfeed/schemas/` before editing. Establish a clean validation and test
-baseline before the first commit. If this directory is not already a Git
-repository, initialize it after those checks pass:
+baseline before the first commit.
+
+Coding-agent workflows remain canonical under `.agents/skills/`.
+`CLAUDE.md` directs Claude Code to the same theme-development skill without
+duplicating it.
+
+If this directory is not already a Git repository, initialize it after those
+checks pass:
 
 ```console
 git init --initial-branch main

@@ -23,6 +23,7 @@ const NAVIGATION_PATHS: Array<[AdminNavItemId, string]> = [
   [NAV_ITEMS.CONTACT_MESSAGES, "contact-messages"],
   [NAV_ITEMS.MEDIA_LIBRARY, "media-library"],
   [NAV_ITEMS.API, "api"],
+  [NAV_ITEMS.WEBHOOKS, "webhooks"],
   [NAV_ITEMS.SETTINGS, "settings"],
 ];
 

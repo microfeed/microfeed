@@ -283,7 +283,9 @@ describe("source architecture", () => {
 
     expect(itemsList).not.toContain('@/components/ui/card');
     expect(itemsList).not.toContain("NAV_ITEMS_DICT");
-    expect(itemsList).toContain("<ItemListTable data={data} feed={feed} />");
+    expect(itemsList).toContain("useAdminCollection<AdminItemListResponse>");
+    expect(itemsList).toContain("listing={listing}");
+    expect(itemsList).not.toContain("feed={feed}");
   });
 
   it("keeps web settings as three independent cards", async () => {

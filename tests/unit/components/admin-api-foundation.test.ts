@@ -12,18 +12,19 @@ import {
   buildApiExampleCode,
   highlightApiExampleCode,
 } from "@/components/admin/api/ApiTryIt";
-import {updateApiAccessEnabled} from "@/shared/Api";
+import {type ApiKeyRecord, updateApiAccessEnabled} from "@/shared/Api";
 
 const deployment = {
   deployedAt: "2026-08-05T12:00:00.000Z",
   protected: true,
 };
 
-const apiKey = {
+const apiKey: ApiKeyRecord = {
   apiKey: "mf_abcdefghijklmnopqrstuvwxyz",
   createdAtMs: 1_725_000_000_000,
   id: "api-key-1",
   name: "Publishing",
+  scopes: ["content:read", "content:write"],
   updatedAtMs: 1_725_000_000_000,
 };
 

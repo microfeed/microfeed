@@ -2,6 +2,7 @@ import type {AdminNavigationItem} from "@/shared/AdminNavigation";
 import type {AdminSettingsSection} from "@/shared/AdminSettingsNavigation";
 import type {AdminApiPageId} from "@/shared/AdminApiNavigation";
 import type {AdminAccountSection} from "@/shared/AdminAccountNavigation";
+import type {AdminWebhookPageId} from "@/shared/AdminWebhookNavigation";
 
 export interface AdminBreadcrumb {
   childName?: string;
@@ -64,6 +65,13 @@ export interface AdminApiSidebarData {
   backUrl: string;
   deployment: AdminDeploymentSummary;
   pageUrls: Record<AdminApiPageId, string>;
+}
+
+export interface AdminWebhookSidebarData {
+  activePage: AdminWebhookPageId;
+  backUrl: string;
+  deployment: AdminDeploymentSummary;
+  pageUrls: Record<AdminWebhookPageId, string>;
 }
 
 export function adminChannelSummary(

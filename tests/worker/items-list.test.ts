@@ -2,6 +2,7 @@ import {env} from "cloudflare:workers";
 import {describe, expect, it} from "vitest";
 
 import FeedDb, {getFetchItemsParams} from "@/server/feed/FeedDb";
+import {listAdminItems} from "@/server/items/admin-list";
 import {ITEMS_SORT_ORDERS, STATUSES} from "@/shared/Constants";
 import {
   decodeItemCursor,
@@ -103,6 +104,13 @@ async function page(
     {"status__!=": STATUSES.DELETED},
     2,
   ));
+}
+
+async function adminPage(searchParams: Record<string, string>) {
+  const request = new Request(
+    `https://feed.example.com/admin/ajax/items/?${new URLSearchParams(searchParams)}`,
+  );
+  return listAdminItems(env.FEED_DB, request, {limit: 2});
 }
 
 describe("deterministic item pagination", () => {
@@ -223,5 +231,51 @@ describe("deterministic item pagination", () => {
     expect(malformed.items.map(({id}: {id: string}) => id)).toEqual(expected);
     expect(numeric.items.map(({id}: {id: string}) => id)).toEqual(expected);
     expect(malformed.items_prev_cursor).toBeUndefined();
+  });
+});
+
+describe("admin item summary pagination", () => {
+  it("navigates both directions for every canonical key and order", async () => {
+    await databaseWithItems();
+
+    for (const sort of Object.values(ITEM_SORTS)) {
+      for (const order of Object.values(ITEM_ORDERS)) {
+        const forwardPages: string[][] = [];
+        const seenIds: string[] = [];
+        let response = await adminPage({order, sort});
+
+        while (true) {
+          const ids = response.items.map(({id}) => id);
+          expect(ids).not.toHaveLength(0);
+          forwardPages.push(ids);
+          seenIds.push(...ids);
+          expect(response.sort).toBe(sort);
+          expect(response.order).toBe(order);
+          if (!response.nextCursor) break;
+          expect(decodeItemCursor(String(response.nextCursor))).toBeDefined();
+          response = await adminPage({
+            next_cursor: String(response.nextCursor),
+            order,
+            sort,
+          });
+        }
+
+        expect(seenIds).toEqual(expectedIds(sort, order));
+        expect(new Set(seenIds).size).toBe(ITEMS.length);
+
+        for (let index = forwardPages.length - 2; index >= 0; index -= 1) {
+          expect(response.prevCursor).toBeDefined();
+          response = await adminPage({
+            order,
+            prev_cursor: String(response.prevCursor),
+            sort,
+          });
+          expect(response.items.map(({id}) => id)).toEqual(
+            forwardPages[index],
+          );
+        }
+        expect(response.prevCursor).toBeUndefined();
+      }
+    }
   });
 });

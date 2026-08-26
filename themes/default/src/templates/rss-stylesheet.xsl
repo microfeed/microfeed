@@ -173,8 +173,8 @@
               <div><xsl:value-of select="rss/channel/copyright"/></div>
             </xsl:if>
             <div>
-              Powered by <a href="https://www.microfeed.org/">microfeed</a>
-              (a <a href="https://www.listennotes.com/">Listen Notes</a> project)
+              Powered by <a class="mf-footer-link" href="https://www.microfeed.org/">microfeed</a>
+              (a <a class="mf-footer-link" href="https://www.listennotes.com/">Listen Notes</a> project)
             </div>
           </footer>
         </main>

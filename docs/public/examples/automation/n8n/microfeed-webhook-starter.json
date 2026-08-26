@@ -1,0 +1,157 @@
+{
+  "name": "microfeed webhook starter (verified)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "microfeed",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "74a67140-c68c-49ce-af30-26b98750c58b",
+      "name": "Receive microfeed webhook",
+      "webhookId": "9484fef9-7bb5-43cf-b650-639792d1f75a"
+    },
+    {
+      "parameters": {
+        "jsCode": "const {Webhook} = require(\"standardwebhooks\");\n\nconst input = $input.first();\nconst headers = input.json.headers || {};\nconst secret = $env.MICROFEED_WEBHOOK_SECRET;\nconst encodedBody = input.binary?.data?.data;\n\nif (!secret || !encodedBody) {\n  return [{json: {verified: false, error: \"Missing signing secret or raw body.\"}}];\n}\n\ntry {\n  const event = new Webhook(secret).verify(Buffer.from(encodedBody, \"base64\"), {\n    \"webhook-id\": headers[\"webhook-id\"] || \"\",\n    \"webhook-signature\": headers[\"webhook-signature\"] || \"\",\n    \"webhook-timestamp\": headers[\"webhook-timestamp\"] || \"\",\n  });\n\n  return [{json: {\n    verified: true,\n    delivery_id: headers[\"webhook-id\"],\n    production_effects_allowed: event.test === false,\n    event,\n  }}];\n} catch {\n  return [{json: {verified: false, error: \"Invalid webhook signature.\"}}];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "id": "8061775e-d152-405e-aea1-5a0e7a3c0039",
+      "name": "Verify Standard Webhooks signature"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d45b9adc-ed56-4314-9be1-9bbfc4184642",
+              "leftValue": "={{ $json.verified }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [480, 0],
+      "id": "5dcd5625-1bdb-49f6-bd31-1596e035046e",
+      "name": "Signature is valid"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [720, -100],
+      "id": "5868b9e4-f188-4e4b-a9e2-284777651033",
+      "name": "Accept verified delivery"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Invalid webhook signature.",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [720, 140],
+      "id": "b0febaf2-552b-479a-b824-25d2559d6bba",
+      "name": "Reject invalid signature"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ab17fa0e-4fd2-4332-b27a-c81993f1f4aa",
+              "leftValue": "={{ $json.production_effects_allowed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [960, -100],
+      "id": "04ff791c-8930-43b1-bcad-4a72b85b25c1",
+      "name": "Real event"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1200, -180],
+      "id": "24e38773-9fae-4a76-aeb2-69dba025e5e7",
+      "name": "Production action placeholder"
+    }
+  ],
+  "connections": {
+    "Receive microfeed webhook": {
+      "main": [[{"node": "Verify Standard Webhooks signature", "type": "main", "index": 0}]]
+    },
+    "Verify Standard Webhooks signature": {
+      "main": [[{"node": "Signature is valid", "type": "main", "index": 0}]]
+    },
+    "Signature is valid": {
+      "main": [
+        [{"node": "Accept verified delivery", "type": "main", "index": 0}],
+        [{"node": "Reject invalid signature", "type": "main", "index": 0}]
+      ]
+    },
+    "Accept verified delivery": {
+      "main": [[{"node": "Real event", "type": "main", "index": 0}]]
+    },
+    "Real event": {
+      "main": [
+        [{"node": "Production action placeholder", "type": "main", "index": 0}],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}

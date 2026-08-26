@@ -19,11 +19,13 @@ const navigation = await navigationPages(
 const unavailable = shouldHidePublicWeb(loaded.content) ||
   !themeSupportsPagesAndSearch(loaded.content.activeTheme);
 if (unavailable) Astro.response.status = 404;
+const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const assetBaseUrl = themeAssetBaseUrl(
   env,
   Astro.request.url,
   loaded.content.activeTheme?.assetOwnerThemeId,
   loaded.content.activeTheme?.bundle.assets,
+  webSettings.publicBucketUrl,
 );
 const extraContext = {navigation_pages: navigation};
 const theme = new Theme(
@@ -42,7 +44,6 @@ const sharedTheme = new Theme(
   assetBaseUrl,
   extraContext,
 );
-const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const query = Astro.url.searchParams.get("q")?.trim() ?? "";
 ---
 

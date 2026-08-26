@@ -10,9 +10,20 @@ import type {
   ThemeManifestV1,
 } from "@/shared/themes/ThemeContract";
 import {
+  assertUserThemePackageId,
+  isReservedThemePackageId,
+  LEGACY_THEME_DESCRIPTION_MAX_LENGTH,
+  THEME_DESCRIPTION_MAX_LENGTH,
+} from "@/shared/themes/ThemeContract";
+import {
   ThemeValidationError,
+  validateStoredThemePackage,
   validateThemePackage,
 } from "@/shared/themes/ThemeValidation";
+import {
+  manifestSearchItemDestination,
+  resolveThemeSearchItemUrl,
+} from "@/shared/themes/ThemeSearch";
 
 function manifest(): ThemeManifestV1 {
   return {
@@ -47,7 +58,39 @@ function bundle(): ThemeBundleV1 {
   };
 }
 
+function v2Package(searchItemDestination?: "attachment" | "url" | "web") {
+  const sourceManifest = manifest();
+  return {
+    bundle: {
+      ...bundle(),
+      webPage: "<main>{{page.title}}</main>",
+      webSearch: "<main>{{#search.results}}{{title}}{{/search.results}}</main>",
+    },
+    manifest: {
+      ...sourceManifest,
+      files: {
+        ...sourceManifest.files,
+        webPage: "page.mustache",
+        webSearch: "search.mustache",
+      },
+      formatVersion: 2 as const,
+      ...(searchItemDestination ? {searchItemDestination} : {}),
+    },
+  };
+}
+
 describe("theme contract", () => {
+  it("reserves microfeed package IDs for bundled themes", () => {
+    expect(isReservedThemePackageId("microfeed.default")).toBe(true);
+    expect(isReservedThemePackageId("microfeed.future-theme")).toBe(true);
+    expect(isReservedThemePackageId("local.microfeed.default")).toBe(false);
+    expect(isReservedThemePackageId("example.theme")).toBe(false);
+    expect(() => assertUserThemePackageId("microfeed.default"))
+      .toThrow("reserved for bundled microfeed themes");
+    expect(() => assertUserThemePackageId("local.microfeed.default"))
+      .not.toThrow();
+  });
+
   it("validates immutable SemVer packages against the running release", () => {
     expect(validateThemePackage(manifest(), bundle(), "1.0.1")).toEqual({
       bundle: bundle(),
@@ -63,6 +106,72 @@ describe("theme contract", () => {
       bundle(),
       "1.0.1",
     )).toThrow("does not include microfeed 1.0.1");
+  });
+
+  it("caps new descriptions at 280 characters without invalidating stored legacy metadata", () => {
+    expect(validateThemePackage({
+      ...manifest(),
+      description: "x".repeat(THEME_DESCRIPTION_MAX_LENGTH),
+    }, bundle()).manifest.description).toHaveLength(
+      THEME_DESCRIPTION_MAX_LENGTH,
+    );
+    expect(() => validateThemePackage({
+      ...manifest(),
+      description: "x".repeat(THEME_DESCRIPTION_MAX_LENGTH + 1),
+    }, bundle())).toThrow(ThemeValidationError);
+    expect(validateStoredThemePackage({
+      ...manifest(),
+      description: "x".repeat(LEGACY_THEME_DESCRIPTION_MAX_LENGTH),
+    }, bundle()).manifest.description).toHaveLength(
+      LEGACY_THEME_DESCRIPTION_MAX_LENGTH,
+    );
+  });
+
+  it("validates safe preview fixture paths", () => {
+    expect(validateThemePackage({
+      ...manifest(),
+      previewFixture: "fixtures/preview.json",
+    }, bundle()).manifest.previewFixture).toBe("fixtures/preview.json");
+    expect(() => validateThemePackage({
+      ...manifest(),
+      previewFixture: "../preview.json",
+    }, bundle())).toThrow("Path traversal");
+  });
+
+  it("validates optional v2 search destinations and defaults omission to web", () => {
+    for (const destination of ["web", "url", "attachment"] as const) {
+      const source = v2Package(destination);
+      expect(validateThemePackage(source.manifest, source.bundle).manifest)
+        .toMatchObject({searchItemDestination: destination});
+      expect(manifestSearchItemDestination(source.manifest)).toBe(destination);
+    }
+    const omitted = v2Package();
+    expect(validateThemePackage(omitted.manifest, omitted.bundle).manifest)
+      .not.toHaveProperty("searchItemDestination");
+    expect(manifestSearchItemDestination(omitted.manifest)).toBe("web");
+    expect(manifestSearchItemDestination(manifest())).toBe("web");
+    expect(() => validateThemePackage(
+      {...omitted.manifest, searchItemDestination: "external" as never},
+      omitted.bundle,
+    )).toThrow(ThemeValidationError);
+  });
+
+  it("resolves item search destinations with local-page fallbacks", () => {
+    const urls = {
+      attachmentUrl: "https://example.test/media/episode.mp3",
+      itemUrl: "https://publisher.example/episode",
+      webUrl: "https://example.test/i/episode/",
+    };
+    expect(resolveThemeSearchItemUrl("web", urls)).toBe(urls.webUrl);
+    expect(resolveThemeSearchItemUrl("url", urls)).toBe(urls.itemUrl);
+    expect(resolveThemeSearchItemUrl("attachment", urls))
+      .toBe(urls.attachmentUrl);
+    expect(resolveThemeSearchItemUrl("url", {
+      webUrl: urls.webUrl,
+    })).toBe(urls.webUrl);
+    expect(resolveThemeSearchItemUrl("attachment", {
+      webUrl: urls.webUrl,
+    })).toBe(urls.webUrl);
   });
 
   it("rejects traversal, malformed Mustache, and mismatched asset declarations", () => {
@@ -142,5 +251,19 @@ describe("theme contract", () => {
       {...bundle(), assets: [{...asset, key: "preview/themes/two/assets/logo.png"}]},
     );
     expect(left).toBe(right);
+  });
+
+  it("includes a declared fixture in checksums without changing fixture-free packages", () => {
+    const fixtureFree = canonicalThemePackage(manifest(), bundle());
+    expect(JSON.parse(fixtureFree)).not.toHaveProperty("previewFixture");
+    const first = canonicalThemePackage(manifest(), bundle(), {
+      items: [{id: "one", title: "One"}],
+      version: "https://jsonfeed.org/version/1.1",
+    });
+    const second = canonicalThemePackage(manifest(), bundle(), {
+      items: [{id: "two", title: "Two"}],
+      version: "https://jsonfeed.org/version/1.1",
+    });
+    expect(first).not.toBe(second);
   });
 });

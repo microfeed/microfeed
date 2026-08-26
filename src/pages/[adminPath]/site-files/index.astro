@@ -1,21 +1,17 @@
 ---
-import {env} from "cloudflare:workers";
-
 import SiteFilesApp from "@/components/admin/site-files/SiteFilesApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import AdminShell from "@/layouts/AdminShell.astro";
 import {NAV_ITEMS} from "@/shared/Constants";
-import {listSiteFiles} from "@/server/site-files/service";
 
 const {feedContent, onboardingResult} = Astro.locals;
 if (!feedContent || !onboardingResult) {
   throw new Error("Admin feed context was not initialized.");
 }
-const files = await listSiteFiles(env.FEED_DB, Astro.request);
 ---
 
 <AdminShell activeNavItem={NAV_ITEMS.SITE_FILES} documentTitle="Site Files | microfeed.org" {feedContent} {onboardingResult} pageTitle="Site Files">
-  <SiteFilesApp client:load {files}>
+  <SiteFilesApp client:only="react">
     <AdminPageFallback slot="fallback" kind="list" />
   </SiteFilesApp>
 </AdminShell>

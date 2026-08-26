@@ -21,11 +21,13 @@ if (!unavailable && !loaded.onboarding.requiredOk) {
 if (unavailable) {
   Astro.response.status = 404;
 }
+const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 const assetBaseUrl = themeAssetBaseUrl(
   env,
   Astro.request.url,
   loaded.content.activeTheme?.assetOwnerThemeId,
   loaded.content.activeTheme?.bundle.assets,
+  webSettings.publicBucketUrl,
 );
 const navigation = await navigationPages(loaded.database.FEED_DB, Astro.request);
 const extraContext = {navigation_pages: navigation};
@@ -45,7 +47,6 @@ const sharedTheme = new Theme(
   assetBaseUrl,
   extraContext,
 );
-const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
 ---
 
 {unavailable ? (

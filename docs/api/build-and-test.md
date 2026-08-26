@@ -1,28 +1,56 @@
 ---
-title: Build and test integrations
-description: Use generated examples, API Explorer, cursor pagination, and the media upload flow safely.
+title: Build an API integration
+description: Create a least-privilege credential, inspect the instance contract, test requests, and handle writes, pagination, uploads, and errors safely.
 ---
 
-Start with a named API key created for this integration and the generated
-contract from the exact microfeed instance you will call. Send the key in the
-`Authorization: Bearer` header on every authenticated request.
+Build against the generated contract from the exact microfeed instance your
+integration will call. Use a separate named credential for this integration so
+the owner can rotate or revoke it without interrupting another client.
 
-This page is for developers building a direct API integration. To publish from
-a terminal or coding agent without handling a raw key, use the
-[microfeed CLI guide](../cli/) instead.
+For a terminal or local coding agent, use the [microfeed CLI
+workflow](/automation/cli/) instead of copying a raw API key. For an
+event-driven workflow, start with the [Content automation
+overview](/automation/).
 
-## Test in the dashboard
+## 1. Create a least-privilege key
 
-Open **API → API Explorer**, choose an API key, and select an operation. The
-explorer keeps the selected key in memory and does not store it. Requests stay
-disabled until API access is on and a key is selected.
+Enable API access under **Admin → API → API Settings**, then create a named key
+under **API Authentication**. Grant read permission for integrations that only
+index, export, or inspect content. Add write permission only when the
+integration must create, update, or delete content.
 
-For a smaller first test, **API Overview** provides JavaScript and cURL examples
-for the feed endpoint. Choose a key and run the example from the dashboard.
+Store the resulting `mf_…` value in the integration's secret manager as
+`MICROFEED_API_KEY`. Send it only as a Bearer header:
 
-## Call the API from code
+```http
+Authorization: Bearer YOUR_API_KEY
+```
 
-Use the microfeed site URL, `/api/v1/` base path, and Bearer authentication:
+## 2. Inspect the instance contract
+
+When **Publish API docs** is enabled, the instance exposes:
+
+- `/api/v1/` for the interactive Scalar reference;
+- `/api/v1/openapi.json` and `/api/v1/openapi.yaml` for tools and generated
+  clients; and
+- `/api/v1/llms.txt` and `/api/v1/llms-full.txt` for coding agents.
+
+Use those files for the current paths, fields, validation rules, permissions,
+and responses. Do not copy a request shape from another microfeed version or
+scrape the Admin dashboard.
+
+## 3. Test in API Explorer
+
+Open **Admin → API → API Explorer**, choose the integration key, and select an
+operation. The explorer keeps the selected key in memory and does not store it.
+Requests remain disabled until API access is on and a key is selected.
+
+Begin with a read-only feed request. Confirm the response matches the schema in
+the same explorer before adding a write.
+
+## 4. Make a read request
+
+Replace the example origin with the root URL of the microfeed site:
 
 ```js
 const response = await fetch("https://feed.example.com/api/v1/feed/?limit=3", {
@@ -35,50 +63,63 @@ if (!response.ok) throw new Error(`microfeed returned ${response.status}`);
 const feed = await response.json();
 ```
 
-Keep the key in your platform’s secret manager or environment configuration,
-not in source code.
+Keep the key in process configuration rather than source code, logs, URLs, or
+request bodies.
 
-## Follow pagination links
+## 5. Make an idempotent write
 
-Feed responses can include `next_url` and `prev_url`. Follow those exact URLs
-instead of constructing cursors yourself. To start a listing, choose
-`sort=created_at|updated_at|published_at`, `order=asc|desc`, and a supported
-`limit` documented by the current OpenAPI file.
+Validate an item payload before creating it when the current contract exposes
+the validation operation. For the real create, generate one stable key for the
+logical item and reuse the same key and payload after a timeout or transport
+failure:
 
-## Upload media
+```js
+const response = await fetch("https://feed.example.com/api/v1/items/", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.MICROFEED_API_KEY}`,
+    "Content-Type": "application/json",
+    "Idempotency-Key": logicalItemId,
+  },
+  body: JSON.stringify(item),
+});
+```
 
-microfeed distinguishes two item fields:
+Do not generate a new idempotency key for each retry. If a webhook started the
+action, also send `Microfeed-Correlation-Id` with the original correlation ID
+and `Microfeed-Causation-Id` with the triggering event ID. Use idempotency only
+where the generated operation documents it.
 
-- `image` is item cover art or a thumbnail.
-- `attachments[0]` is the one main audio, video, document, image, or external
-  link. JSON Feed exposes it as an attachment and RSS exposes it as
-  `<enclosure>`.
+## 6. Handle pagination, uploads, and errors
 
-The REST upload is a three-step flow:
+Feed and search responses can include `next_url` and `prev_url`. Follow those
+exact same-origin URLs instead of constructing or decoding cursors yourself.
 
-1. Call `POST /api/v1/media_files/presigned_urls/` with the file category, intended
-   item ID, MIME type, size, and local filename information required by the
-   schema. Include `item_id` for attachments and all standalone audio, video,
-   or document uploads. It may be omitted for standalone or cover images.
-2. `PUT` the raw file bytes to the returned short-lived `presigned_url` without
-   a Bearer credential.
-3. Save the returned `media_url` inside `content_html`, as
-   `attachments[0].url`, as `image`, or as the channel icon through the
-   appropriate API operation. Include attachment category, MIME type, byte
-   size, and optional audio/video duration when populating an attachment.
+Media upload is a three-step flow:
 
-The upload URL is same-origin and short-lived. A 503 response means media
-storage is unavailable for this instance; do not invent a different bucket or
-upload destination. Do not log or persist the short-lived URL.
+1. Call `POST /api/v1/media_files/presigned_urls/` with the metadata required by
+   the current schema.
+2. `PUT` the raw bytes to the returned short-lived, same-origin
+   `presigned_url` without a Bearer credential.
+3. Save the permanent `media_url` in the documented item, channel, Page, or
+   rich-content field.
 
-## Design for changes
+An item `image` is cover art or a thumbnail. `attachments[0]` is its one main
+audio, video, document, image, or external attachment and becomes the RSS
+enclosure. Do not log or persist the prepared upload URL.
 
-- Generate clients or validate requests against the instance’s current
-  [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) at
-  `/api/v1/openapi.json` or [OpenAPI YAML](https://www.microfeed.org/api/v1/openapi.yaml)
-  at `/api/v1/openapi.yaml`.
-- Treat unknown response fields as forward-compatible additions.
-- Handle documented 400, 401, 403, 404, and 503 responses explicitly.
-- Do not scrape the Admin dashboard or reuse its browser session.
-- Use a unique named API key so the instance owner can rotate or revoke only
-  this integration.
+Handle documented responses explicitly:
+
+- `400` for invalid input;
+- `401` for a missing or invalid key;
+- `403` for insufficient permission;
+- `404` for a missing resource or disabled API;
+- `409` for an idempotency conflict; and
+- `503` when an optional service such as media storage is unavailable.
+
+Treat unknown response fields as forward-compatible additions. Retry only when
+the method, idempotency behavior, and documented response make the action safe.
+
+For visual event-driven workflows, continue with the [n8n and Zapier
+comparison](/automation/#automation-platforms-n8n-and-zapier). For a custom
+receiver, use [Build webhook endpoints](/webhooks/endpoints/).

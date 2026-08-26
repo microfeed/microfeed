@@ -1,0 +1,9 @@
+{
+  "packageId": "microfeed.curation",
+  "releases": [
+    {
+      "checksumSha256": "0c1f8f3fa76edbdecab4a7e60567ffb8253ba0d4c00e525d969a94aec38b6651",
+      "version": "1.0.0"
+    }
+  ]
+}

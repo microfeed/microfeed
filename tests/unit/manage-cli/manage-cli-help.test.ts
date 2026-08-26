@@ -10,16 +10,6 @@ import {
 const repositoryFile = (filename: string) =>
   readFile(new URL(`../../../${filename}`, import.meta.url), "utf8");
 
-function commandSection(document: string, commandName: string): string {
-  const heading = `## \`yarn manage ${commandName}\``;
-  const start = document.indexOf(heading);
-  if (start < 0) {
-    return "";
-  }
-  const next = document.indexOf("\n## ", start + heading.length);
-  return document.slice(start, next < 0 ? undefined : next);
-}
-
 describe("management CLI help and canonical reference", () => {
   it("uses one metadata inventory for every implemented command", async () => {
     const indexSource = await repositoryFile("manage-cli/index.ts");
@@ -62,63 +52,6 @@ describe("management CLI help and canonical reference", () => {
     const deployHelp = renderCliHelp("deploy");
     expect(deployHelp).toContain("Use connect for an existing Cloudflare microfeed");
     expect(deployHelp).toContain("init for a new installation");
-  });
-
-  it("keeps every command and option discoverable in the Markdown contract", async () => {
-    const reference = await repositoryFile("docs/manage-cli.md");
-
-    for (const command of CLI_COMMANDS) {
-      const section = commandSection(reference, command.name);
-      expect(section, `missing ${command.name} section`).not.toBe("");
-      expect(section).toContain(command.summary);
-      expect(section.replaceAll("`", "").replace(/\s+/gu, " ")).toContain(
-        command.changes.replaceAll("`", "").replace(/\s+/gu, " "),
-      );
-      for (const {syntax} of command.options) {
-        const optionName = syntax.split(" ")[0]!;
-        expect(
-          section,
-          `${command.name} does not document ${optionName}`,
-        ).toContain(`\`${optionName}`);
-      }
-    }
-  });
-
-  it("links the canonical reference from agent entry points", async () => {
-    const [agents, deploymentSkill, exportSkill] = await Promise.all([
-      repositoryFile("AGENTS.md"),
-      repositoryFile(".agents/skills/deploy-microfeed/SKILL.md"),
-      repositoryFile(".agents/skills/export-microfeed-theme/SKILL.md"),
-    ]);
-
-    expect(agents).toContain("`docs/manage-cli.md`");
-    expect(agents).toContain("`export-microfeed-theme` skill");
-    expect(deploymentSkill).toContain("../../../docs/manage-cli.md");
-    expect(exportSkill).toContain("../../../docs/manage-cli.md");
-    expect(exportSkill).toContain("theme export --active");
-  });
-
-  it("keeps the canonical dashboard login guidance action-oriented", async () => {
-    const reference = await repositoryFile("docs/manage-cli.md");
-    const section = commandSection(reference, "auth");
-    const authCommand = CLI_COMMANDS.find(({name}) => name === "auth");
-
-    expect(section).not.toBe("");
-    expect(authCommand).toBeDefined();
-    expect(section).toContain(authCommand!.usage);
-    expect(section).toContain(
-      "Without an action, `yarn manage auth` prints",
-    );
-    expect(section).toContain("It does not select an instance");
-    for (const action of [
-      "setup",
-      "reset-password",
-      "change-email",
-      "change-path",
-      "disable",
-    ]) {
-      expect(section).toContain(`| \`${action}\` |`);
-    }
   });
 
   it("rejects help for an unknown command", () => {

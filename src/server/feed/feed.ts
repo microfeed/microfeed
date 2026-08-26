@@ -16,6 +16,7 @@ import ThemeStore from "@/server/themes/ThemeStore";
 export interface FeedQuery {
   adminProtection?: AdminProtectionStatus;
   includeActiveTheme?: boolean;
+  includeItems?: boolean;
   itemsOrder?: ItemOrder;
   itemsSort?: ItemSort;
   limit?: number;
@@ -35,7 +36,7 @@ export async function loadFeed(
   publicCachePurger?: PublicCachePurger,
 ): Promise<LoadedFeed> {
   const database = new FeedDb(runtimeEnv, request, publicCachePurger);
-  const fetchItems = query
+  const fetchItems = query && query.includeItems !== false
     ? getFetchItemsParams(
         request,
         query.queryKwargs ?? {},

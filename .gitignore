@@ -115,6 +115,7 @@ webpack-stats.json
 .wrangler/
 .vars.toml
 .yarn/*
+# Local microfeed instance state and development scaffolds.
 .microfeed/
 !packages/theme-kit/assets/starter/.microfeed/
 !packages/theme-kit/assets/starter/.microfeed/schemas/

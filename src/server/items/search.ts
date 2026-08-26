@@ -53,9 +53,11 @@ interface BaseSearchResult {
 }
 
 export interface ItemSearchResult extends BaseSearchResult {
+  attachment_url?: string;
   date_published: string;
   date_published_ms: number;
   image?: string;
+  item_url?: string;
   type: "item";
 }
 
@@ -104,12 +106,14 @@ interface SearchCursor {
 }
 
 interface SearchRow extends Record<string, unknown> {
+  attachment_url: string | null;
   content_text: string;
   content_type: SearchContentType;
   highlighted_content: string;
   highlighted_title: string;
   id: string;
   image: string | null;
+  item_url: string | null;
   meta_description: string | null;
   navigation_label: string;
   navigation_order: number;
@@ -311,27 +315,43 @@ function resultFromRow(
   const image = row.image
     ? urlJoinWithRelative(publicBucketUrl ?? "/media/", row.image, baseUrl)
     : undefined;
+  const itemUrl = row.item_url
+    ? urlJoinWithRelative(baseUrl, row.item_url, baseUrl)
+    : undefined;
+  const attachmentUrl = row.attachment_url
+    ? urlJoinWithRelative(
+        publicBucketUrl ?? "/media/",
+        row.attachment_url,
+        baseUrl,
+      )
+    : undefined;
   const itemPublished = published ?? {
     iso: new Date(0).toISOString(),
     milliseconds: 0,
   };
   return {
     ...common,
+    ...(attachmentUrl ? {attachment_url: attachmentUrl} : {}),
     date_published: itemPublished.iso,
     date_published_ms: itemPublished.milliseconds,
     ...(image ? {image} : {}),
+    ...(itemUrl ? {item_url: itemUrl} : {}),
     type: "item",
   };
 }
 
 function parsedRows(rows: Array<Record<string, unknown>>): SearchRow[] {
   return rows.map((row) => ({
+    attachment_url: typeof row.attachment_url === "string"
+      ? row.attachment_url
+      : null,
     content_text: String(row.content_text ?? ""),
     content_type: row.content_type === "page" ? "page" : "item",
     highlighted_content: String(row.highlighted_content ?? ""),
     highlighted_title: String(row.highlighted_title ?? row.title ?? ""),
     id: String(row.id ?? ""),
     image: typeof row.image === "string" ? row.image : null,
+    item_url: typeof row.item_url === "string" ? row.item_url : null,
     meta_description: typeof row.meta_description === "string"
       ? row.meta_description
       : null,
@@ -444,6 +464,8 @@ const SEARCH_SELECT = `
   d.updated_at,
   COALESCE(d.published_at, d.updated_at) AS sort_at,
   d.image,
+  json_extract(i.data, '$.link') AS item_url,
+  json_extract(i.data, '$.mediaFile.url') AS attachment_url,
   COALESCE(p.slug, '') AS slug,
   p.meta_description,
   COALESCE(p.show_in_navigation, 0) AS show_in_navigation,
@@ -469,6 +491,8 @@ async function exactRows(
         AS highlighted_content
     FROM site_search_exact
     JOIN site_search_documents d ON d.id = site_search_exact.rowid
+    LEFT JOIN items i
+      ON d.content_type = 'item' AND i.id = d.content_id
     LEFT JOIN pages p
       ON d.content_type = 'page' AND p.id = d.content_id
     WHERE site_search_exact MATCH ? AND ${filters.sql}${after.sql}
@@ -503,6 +527,8 @@ async function fuzzyRows(
     FROM site_search_title_trigram
     JOIN site_search_documents d
       ON d.id = site_search_title_trigram.rowid
+    LEFT JOIN items i
+      ON d.content_type = 'item' AND i.id = d.content_id
     LEFT JOIN pages p
       ON d.content_type = 'page' AND p.id = d.content_id
     WHERE site_search_title_trigram MATCH ?

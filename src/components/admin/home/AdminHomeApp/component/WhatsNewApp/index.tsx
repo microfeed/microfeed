@@ -47,7 +47,7 @@ export default class WhatsNewApp extends React.Component<any, any> {
             </div>
           </div>))}
           {items.length > 0 ? <div className="text-right">
-            <a href={OUR_BRAND.whatsnewWebsite} target="_blank">Read more <span className="lh-icon-arrow-right" /></a>
+            <a href={`${OUR_BRAND.whatsnewWebsite}/#whats-new`} target="_blank">Read more <span className="lh-icon-arrow-right" /></a>
           </div> : <div className="-text-xs text-muted-color mt-1">
             No news.
           </div>}

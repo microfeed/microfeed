@@ -4,7 +4,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "microfeed",
   "workers_dev": true,
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-07-29",
   "compatibility_flags": ["nodejs_compat"],
   "cache": {
@@ -20,6 +20,9 @@
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
+  "secrets": {
+    "required": ["UPLOAD_SIGNING_KEY", "BETTER_AUTH_SECRET", "WEBHOOK_SECRET_KEY"]
+  },
   "d1_databases": [
     {
       "binding": "FEED_DB",
@@ -31,5 +34,24 @@
       "binding": "MEDIA_BUCKET"
     }
   ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "WEBHOOK_QUEUE",
+        "queue": "microfeed-webhooks"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "microfeed-webhooks",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 5
+      }
+    ]
+  },
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
   "routes": []
 }

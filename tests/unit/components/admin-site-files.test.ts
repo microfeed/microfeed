@@ -6,7 +6,7 @@ import {describe, expect, it} from "vitest";
 import SiteFileEditorApp, {
   siteFileEditorLanguage,
 } from "@/components/admin/site-files/SiteFileEditorApp";
-import SiteFilesApp from "@/components/admin/site-files/SiteFilesApp";
+import {SiteFilesList} from "@/components/admin/site-files/SiteFilesApp";
 import type {SiteFileRecord} from "@/shared/SiteFiles";
 
 describe("Site File editor", () => {
@@ -126,20 +126,21 @@ describe("Site File editor", () => {
       system: true,
       url: "https://example.com/robots.txt",
     };
-    const output = renderToStaticMarkup(React.createElement(SiteFilesApp, {
-      files: [
-        baseFile,
-        {
-          ...baseFile,
-          enabled: false,
-          filename: "security.txt",
-          generator: undefined,
-          id: "security-file",
-          mode: "override",
-          system: false,
-        },
-      ],
-    }));
+    const files: SiteFileRecord[] = [
+      baseFile,
+      {
+        ...baseFile,
+        enabled: false,
+        filename: "security.txt",
+        generator: undefined,
+        id: "security-file",
+        mode: "override",
+        system: false,
+      },
+    ];
+    const output = renderToStaticMarkup(
+      React.createElement(SiteFilesList, {files}),
+    );
 
     expect(output).toContain("bg-emerald-500/12");
     expect(output).toContain(">Published</span>");

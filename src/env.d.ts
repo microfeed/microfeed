@@ -27,6 +27,9 @@ declare global {
     MICROFEED_INSTANCE_NAME?: string;
     MICROFEED_R2_BUCKET_NAME?: string;
     MICROFEED_R2_SETUP_MODE?: "automatic" | "disabled";
+    MICROFEED_WEBHOOK_QUEUE_ID?: string;
+    MICROFEED_WEBHOOK_QUEUE_NAME?: string;
+    MICROFEED_WEBHOOK_STATE?: "unprovisioned" | "enabled" | "disabled";
     MICROFEED_WORKER_NAME?: string;
     MICROFEED_SETUP_ADMIN_EMAIL?: string;
     MICROFEED_SETUP_ADMIN_PASSWORD?: string;
@@ -46,6 +49,9 @@ declare global {
       MICROFEED_INSTANCE_NAME?: string;
       MICROFEED_R2_BUCKET_NAME?: string;
       MICROFEED_R2_SETUP_MODE?: "automatic" | "disabled";
+      MICROFEED_WEBHOOK_QUEUE_ID?: string;
+      MICROFEED_WEBHOOK_QUEUE_NAME?: string;
+      MICROFEED_WEBHOOK_STATE?: "unprovisioned" | "enabled" | "disabled";
       MICROFEED_WORKER_NAME?: string;
       MICROFEED_SETUP_ADMIN_EMAIL?: string;
       MICROFEED_SETUP_ADMIN_PASSWORD?: string;

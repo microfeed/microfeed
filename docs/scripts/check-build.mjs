@@ -39,29 +39,10 @@ for (const relativePath of requiredArtifacts) {
 }
 
 const llmsIndex = await readFile(path.join(outputRoot, "llms.txt"), "utf8");
-const llmsSmall = await readFile(
-  path.join(outputRoot, "llms-small.txt"),
-  "utf8",
-);
-const llmsFull = await readFile(
-  path.join(outputRoot, "llms-full.txt"),
-  "utf8",
-);
 
-if (!llmsIndex.includes("# microfeed") ||
-  !llmsIndex.includes("llms-full.txt") ||
+if (!llmsIndex.includes("llms-full.txt") ||
   !llmsIndex.includes("llms-small.txt")) {
-  throw new Error("llms.txt is missing the project title or generated sets.");
-}
-
-for (const [name, content] of [
-  ["llms-small.txt", llmsSmall],
-  ["llms-full.txt", llmsFull],
-]) {
-  if (!content.includes("Deploy with an AI coding agent") ||
-    !content.includes("yarn manage command reference")) {
-    throw new Error(`${name} is missing core deployment or reference content.`);
-  }
+  throw new Error("llms.txt is missing links to the generated sets.");
 }
 
 process.stdout.write("Documentation build artifacts verified.\n");

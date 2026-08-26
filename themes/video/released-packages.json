@@ -1,0 +1,9 @@
+{
+  "packageId": "microfeed.video",
+  "releases": [
+    {
+      "checksumSha256": "f60312affc48806eecd68e86f99266367051a4af781bb84342857aaf3c47d334",
+      "version": "1.0.0"
+    }
+  ]
+}

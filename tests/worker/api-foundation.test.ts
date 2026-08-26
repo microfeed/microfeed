@@ -187,6 +187,43 @@ describe("API access decisions", () => {
     }))).toBe("invalid");
   });
 
+  it("enforces least-privilege scopes for named API keys", async () => {
+    await updateApiAccessSettings(env.FEED_DB, {
+      enabled: true,
+      publicDocsEnabled: false,
+    });
+    const reader = await createApiKey(env.FEED_DB, {
+      name: "Read-only automation",
+      scopes: ["content:read"],
+    });
+    const writer = await createApiKey(env.FEED_DB, {
+      name: "Write-only automation",
+      scopes: ["content:write"],
+    });
+    expect(await decideApiRequest(
+      env.FEED_DB,
+      new Request(`${ORIGIN}${API_BASE_PATH}items/`, {
+        headers: {authorization: `Bearer ${reader.apiKey}`},
+        method: "POST",
+      }),
+      `${API_BASE_PATH}items/`,
+    )).toBe("insufficient-scope");
+    expect(await decideApiRequest(
+      env.FEED_DB,
+      request(`${API_BASE_PATH}feed/`, {
+        authorization: `Bearer ${writer.apiKey}`,
+      }),
+      `${API_BASE_PATH}feed/`,
+    )).toBe("insufficient-scope");
+    expect(await decideApiRequest(
+      env.FEED_DB,
+      request(`${API_BASE_PATH}feed/`, {
+        authorization: `Bearer ${reader.apiKey}`,
+      }),
+      `${API_BASE_PATH}feed/`,
+    )).toBe("allow-integration");
+  });
+
   it("never authenticates against the rollback JSON", async () => {
     await env.FEED_DB.prepare(
       "INSERT INTO settings (category, data) VALUES ('apiSettings', ?)",

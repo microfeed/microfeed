@@ -1,1 +1,25 @@
+<script>
+  (() => {
+    const storageKey = "microfeed-public-theme";
+    const supportedThemes = ["system", "light", "dark"];
+    let preference = "light";
+
+    try {
+      const savedPreference = window.localStorage.getItem(storageKey);
+      if (supportedThemes.includes(savedPreference)) preference = savedPreference;
+    } catch {
+      // Keep the light default when storage is unavailable.
+    }
+
+    const isDark = preference === "dark" || (
+      preference === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    );
+
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.dataset.themePreference = preference;
+    document.documentElement.dataset.colorMode = isDark ? "dark" : "light";
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+  })();
+</script>
 <!-- Default-theme styles and progressive enhancements are compiled above. -->

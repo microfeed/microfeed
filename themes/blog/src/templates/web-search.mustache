@@ -1,0 +1,15 @@
+<main class="blog-main blog-reader">
+  <a class="blog-back" href="/">← {{title}}</a>
+  <section class="blog-search-page">
+    <p class="blog-rubric">The index</p>
+    <h1>Search the journal</h1>
+    <form action="/search/" method="get" role="search">
+      <label for="blog-search-input">Search stories and pages</label>
+      <div class="blog-search-field">
+        <input id="blog-search-input" name="q" type="search" value="{{search.query}}" placeholder="Design, places, independent publishing…" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
+        <button type="submit">Find</button>
+      </div>
+      <div class="blog-search-results" aria-live="polite" data-microfeed-search-results data-microfeed-search-details></div>
+    </form>
+  </section>
+</main>

@@ -7,8 +7,8 @@ import type {
 } from "@/shared/themes/ThemeContract";
 import {
   storedThemeVersionSchema,
+  storedThemeManifestV1Schema,
   themeDraftSchema,
-  themeManifestV1Schema,
   themeSourceKindSchema,
 } from "@/shared/themes/ThemeContract";
 
@@ -33,6 +33,10 @@ function parseJson(value: unknown, field: string): unknown {
   }
 }
 
+function parseNullableJson(value: unknown, field: string): unknown | null {
+  return value === null || value === undefined ? null : parseJson(value, field);
+}
+
 export function storedThemeFromRow(row: DatabaseRow): StoredThemeVersion {
   return storedThemeVersionSchema.parse({
     assetOwnerThemeId: nullableString(row.asset_owner_theme_id),
@@ -41,10 +45,16 @@ export function storedThemeFromRow(row: DatabaseRow): StoredThemeVersion {
     createdAt: requiredString(row.created_at, "created_at"),
     deletedAt: nullableString(row.deleted_at),
     id: requiredString(row.id, "id"),
-    manifest: parseJson(row.manifest_json, "manifest_json"),
+    manifest: storedThemeManifestV1Schema.parse(
+      parseJson(row.manifest_json, "manifest_json"),
+    ),
     name: requiredString(row.name, "name"),
     originThemeId: nullableString(row.origin_theme_id),
     packageId: requiredString(row.package_id, "package_id"),
+    previewFixture: parseNullableJson(
+      row.preview_fixture_json,
+      "preview_fixture_json",
+    ),
     sourceCommit: nullableString(row.source_commit),
     sourceKind: requiredString(row.source_kind, "source_kind"),
     sourcePath: nullableString(row.source_path),
@@ -60,11 +70,17 @@ export function themeDraftFromRow(row: DatabaseRow): ThemeDraft {
     bundle: parseJson(row.bundle_json, "bundle_json"),
     createdAt: requiredString(row.created_at, "created_at"),
     id: requiredString(row.id, "id"),
-    manifest: parseJson(row.manifest_json, "manifest_json"),
+    manifest: storedThemeManifestV1Schema.parse(
+      parseJson(row.manifest_json, "manifest_json"),
+    ),
     name: requiredString(row.name, "name"),
     originKind: requiredString(row.origin_kind, "origin_kind"),
     originThemeId: nullableString(row.origin_theme_id),
     packageId: requiredString(row.package_id, "package_id"),
+    previewFixture: parseNullableJson(
+      row.preview_fixture_json,
+      "preview_fixture_json",
+    ),
     updatedAt: requiredString(row.updated_at, "updated_at"),
     version: requiredString(row.version, "version"),
   });
@@ -80,7 +96,9 @@ export function storedThemeSummaryFromRow(
     createdAt: requiredString(row.created_at, "created_at"),
     deletedAt: nullableString(row.deleted_at),
     id: requiredString(row.id, "id"),
-    manifest: themeManifestV1Schema.parse(parseJson(row.manifest_json, "manifest_json")),
+    manifest: storedThemeManifestV1Schema.parse(
+      parseJson(row.manifest_json, "manifest_json"),
+    ),
     name: requiredString(row.name, "name"),
     originThemeId: nullableString(row.origin_theme_id),
     originThemeName: nullableString(row.origin_theme_name),
@@ -101,7 +119,9 @@ export function themeDraftSummaryFromRow(row: DatabaseRow): ThemeDraftSummary {
     assetOwnerThemeId: nullableString(row.asset_owner_theme_id),
     createdAt: requiredString(row.created_at, "created_at"),
     id: requiredString(row.id, "id"),
-    manifest: themeManifestV1Schema.parse(parseJson(row.manifest_json, "manifest_json")),
+    manifest: storedThemeManifestV1Schema.parse(
+      parseJson(row.manifest_json, "manifest_json"),
+    ),
     name: requiredString(row.name, "name"),
     originKind: requiredString(row.origin_kind, "origin_kind") as ThemeDraftSummary["originKind"],
     originThemeId: nullableString(row.origin_theme_id),

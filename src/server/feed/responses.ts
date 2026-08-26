@@ -142,6 +142,7 @@ export async function rssStylesheetResponse(request: Request): Promise<Response>
       request.url,
       loaded.content.activeTheme?.assetOwnerThemeId,
       loaded.content.activeTheme?.bundle.assets,
+      loaded.content.settings?.webGlobalSettings?.publicBucketUrl,
     ),
   );
   return new Response(theme.getRssStylesheet().stylesheet, {

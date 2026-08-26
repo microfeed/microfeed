@@ -8,9 +8,12 @@ import type {
 } from "../../../src/shared/themes/ThemeContract";
 import {
   THEME_MAX_ASSET_BYTES,
+  THEME_MAX_PREVIEW_FIXTURE_BYTES,
   THEME_MAX_TEMPLATE_BYTES,
   THEME_MAX_TOTAL_ASSET_BYTES,
   themeManifestV1Schema,
+  themePreviewFixtureSchema,
+  type ThemePreviewFixture,
 } from "../../../src/shared/themes/ThemeContract";
 import {validateThemePackage} from "../../../src/shared/themes/ThemeValidation";
 
@@ -35,6 +38,7 @@ export interface LoadedThemePackage {
   bundle: ThemeBundleV1;
   directory: string;
   manifest: ThemeManifestV1;
+  previewFixture: ThemePreviewFixture | null;
 }
 
 async function safeFile(
@@ -82,6 +86,16 @@ export async function loadThemePackage(directory: string): Promise<LoadedThemePa
   const manifest = themeManifestV1Schema.parse(
     JSON.parse(await readTextFile(manifestFilename, "microfeed-theme.json")),
   );
+  if (
+    manifest.previewFixture &&
+    [...Object.values(manifest.files), ...manifest.assets].includes(
+      manifest.previewFixture,
+    )
+  ) {
+    throw new Error(
+      `Preview fixture path conflicts with another declared package file: ${manifest.previewFixture}`,
+    );
+  }
   const fileEntries = await Promise.all(Object.entries(manifest.files).map(
     async ([key, relativePath]) => [
       key,
@@ -121,6 +135,27 @@ export async function loadThemePackage(directory: string): Promise<LoadedThemePa
       size: asset.bytes.byteLength,
     })),
   } as ThemeBundleV1;
+  let previewFixture: ThemePreviewFixture | null = null;
+  if (manifest.previewFixture) {
+    const fixtureText = await readTextFile(
+      await safeFile(
+        root,
+        manifest.previewFixture,
+        THEME_MAX_PREVIEW_FIXTURE_BYTES,
+      ),
+      manifest.previewFixture,
+    );
+    let fixtureInput: unknown;
+    try {
+      fixtureInput = JSON.parse(fixtureText);
+    } catch (error) {
+      throw new Error(
+        `Theme preview fixture is not valid JSON: ${manifest.previewFixture}`,
+        {cause: error},
+      );
+    }
+    previewFixture = themePreviewFixtureSchema.parse(fixtureInput);
+  }
   const validated = validateThemePackage(manifest, bundle);
-  return {...validated, assetFiles, directory: root};
+  return {...validated, assetFiles, directory: root, previewFixture};
 }

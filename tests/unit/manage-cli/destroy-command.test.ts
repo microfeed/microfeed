@@ -17,7 +17,20 @@ interface CloudflareState {
   objects: string[];
   r2: boolean;
   r2DeleteFailures?: number;
+  webhook?: {
+    consumers: Array<{
+      id: string;
+      scriptName?: string;
+      type: string;
+    }>;
+    id: string;
+    name: string;
+    paused: boolean;
+    schedules: string[];
+    state: "enabled" | "disabled";
+  };
   worker: boolean;
+  workerDeleteFailures?: number;
 }
 
 function commandResult(
@@ -71,6 +84,7 @@ function cloudflareHarness(state: CloudflareState): {
     "d1:write",
     "pages:write",
     "zone:read",
+    ...(state.webhook ? ["queues:write"] : []),
   ];
   const runner = vi.fn<CommandRunner>(async (_executable, args) => {
     const command = args.join(" ");
@@ -109,6 +123,14 @@ function cloudflareHarness(state: CloudflareState): {
       }
       state.r2 = false;
       return commandResult("Deleted bucket");
+    }
+    if (command === `queues pause-delivery ${state.webhook?.name}`) {
+      state.webhook!.paused = true;
+      return commandResult("Paused");
+    }
+    if (command === `queues delete ${state.webhook?.name}`) {
+      delete state.webhook;
+      return commandResult("Deleted Queue");
     }
     throw new Error(`Unexpected command: ${command}`);
   });
@@ -160,10 +182,81 @@ function cloudflareHarness(state: CloudflareState): {
           text: "instance-id",
           type: "plain_text",
         },
+        ...(state.webhook
+          ? [
+              {
+                name: "MICROFEED_WEBHOOK_QUEUE_ID",
+                text: state.webhook.id,
+                type: "plain_text",
+              },
+              {
+                name: "MICROFEED_WEBHOOK_QUEUE_NAME",
+                text: state.webhook.name,
+                type: "plain_text",
+              },
+              {
+                name: "MICROFEED_WEBHOOK_STATE",
+                text: state.webhook.state,
+                type: "plain_text",
+              },
+              ...(state.webhook.state === "enabled"
+                ? [{
+                    name: "WEBHOOK_QUEUE",
+                    queue_name: state.webhook.name,
+                    type: "queue",
+                  }]
+                : []),
+            ]
+          : []),
       ]});
     }
     if (pathname.endsWith("/feed/subdomain") && !init?.method) {
       return apiResult({enabled: false});
+    }
+    if (pathname.endsWith("/workers/scripts/feed/schedules") && !init?.method) {
+      return apiResult((state.webhook?.schedules ?? []).map((cron) => ({cron})));
+    }
+    if (pathname.endsWith("/workers/scripts/feed/schedules") && init?.method === "PUT") {
+      const schedules = JSON.parse(String(init.body)) as Array<{cron: string}>;
+      if (state.webhook) state.webhook.schedules = schedules.map(({cron}) => cron);
+      return apiResult(schedules);
+    }
+    if (pathname.endsWith("/queues") && !init?.method) {
+      return apiResult(state.webhook
+        ? [{
+            queue_id: state.webhook.id,
+            queue_name: state.webhook.name,
+            settings: {delivery_paused: state.webhook.paused},
+          }]
+        : []);
+    }
+    if (state.webhook &&
+      pathname.endsWith(`/queues/${state.webhook.id}/metrics`) &&
+      !init?.method) {
+      return apiResult({
+        backlog_bytes: 0,
+        backlog_count: 0,
+        oldest_message_timestamp_ms: 0,
+      });
+    }
+    if (state.webhook &&
+      pathname.endsWith(`/queues/${state.webhook.id}/consumers`) &&
+      !init?.method) {
+      return apiResult(state.webhook.consumers.map((consumer) => ({
+        consumer_id: consumer.id,
+        script_name: consumer.scriptName,
+        type: consumer.type,
+      })));
+    }
+    if (state.webhook && init?.method === "DELETE" &&
+      pathname.includes(`/queues/${state.webhook.id}/consumers/`)) {
+      const consumerId = decodeURIComponent(pathname.slice(
+        pathname.lastIndexOf("/") + 1,
+      ));
+      state.webhook.consumers = state.webhook.consumers.filter(
+        ({id}) => id !== consumerId,
+      );
+      return apiResult({});
     }
     if (
       pathname.endsWith("/d1/database/database-id") &&
@@ -173,6 +266,21 @@ function cloudflareHarness(state: CloudflareState): {
       return apiResult({});
     }
     if (pathname.endsWith("/workers/scripts/feed") && init?.method === "DELETE") {
+      if ((state.webhook?.consumers.length ?? 0) > 0) {
+        return Response.json({
+          errors: [{message: "Cannot delete Worker with a Queue consumer"}],
+          result: null,
+          success: false,
+        }, {status: 409});
+      }
+      if ((state.workerDeleteFailures ?? 0) > 0) {
+        state.workerDeleteFailures = (state.workerDeleteFailures ?? 0) - 1;
+        return Response.json({
+          errors: [{message: "Temporary Worker deletion failure"}],
+          result: null,
+          success: false,
+        }, {status: 503});
+      }
       expect(url.searchParams.get("force")).toBe("false");
       state.worker = false;
       state.domain = false;
@@ -300,6 +408,208 @@ describe("guarded Cloudflare destroy", () => {
     expect(noteText).not.toContain("Cloudflare Access applications");
     expect(noteText).not.toContain("certificate-id");
     expect(noteText).not.toContain("ssl-tls/edge-certificates");
+  });
+
+  it.each(["enabled", "disabled"] as const)(
+    "deletes a verified %s webhook Queue and removes Cron schedules",
+    async (webhookState) => {
+      const {commands, config} = await freshModules();
+      await config.writeConfig(savedConfig({
+        completedSteps: [
+          "r2-ready",
+          "webhook-queue-ready",
+          "webhook-secret-created",
+        ],
+        webhooks: {
+          queueId: "queue-id",
+          queueName: "feed-webhooks",
+          state: webhookState,
+        },
+      }));
+      const state: CloudflareState = {
+        d1: true,
+        domain: true,
+        objects: [],
+        r2: true,
+        webhook: {
+          consumers: webhookState === "enabled"
+            ? [{id: "consumer-id", scriptName: "feed", type: "worker"}]
+            : [],
+          id: "queue-id",
+          name: "feed-webhooks",
+          paused: webhookState === "disabled",
+          schedules: webhookState === "enabled" ? ["0 * * * *"] : [],
+          state: webhookState,
+        },
+        worker: true,
+      };
+      const {fetchMock, runner} = cloudflareHarness(state);
+      vi.stubGlobal("fetch", fetchMock);
+      const output = vi.spyOn(process.stdout, "write").mockImplementation(
+        () => true,
+      );
+
+      await commands.destroyCommand({
+        "dry-run": true,
+        instance: "feed",
+      }, runner);
+      expect(output.mock.calls.flat().join("\n")).toContain(
+        "Webhook Queue: feed-webhooks (queue-id) — DELETE",
+      );
+      expect(output.mock.calls.flat().join("\n")).toContain(
+        webhookState === "enabled"
+          ? "Webhook Queue consumer: feed (consumer-id) — REMOVE"
+          : "Webhook Queue consumer: none",
+      );
+
+      await commands.destroyCommand({
+        confirm: "feed",
+        instance: "feed",
+      }, runner);
+      expect(state.webhook).toBeUndefined();
+      expect(runner.mock.calls.filter(([, args]) =>
+        args.join(" ") === "queues delete feed-webhooks"
+      )).toHaveLength(1);
+      const consumerDeleteIndex = fetchMock.mock.calls.findIndex(
+        ([input, init]) =>
+          new URL(input instanceof Request ? input.url : input.toString())
+            .pathname.endsWith("/queues/queue-id/consumers/consumer-id") &&
+          init?.method === "DELETE",
+      );
+      const workerDeleteIndex = fetchMock.mock.calls.findIndex(
+        ([input, init]) =>
+          new URL(input instanceof Request ? input.url : input.toString())
+            .pathname.endsWith("/workers/scripts/feed") &&
+          init?.method === "DELETE",
+      );
+      if (webhookState === "enabled") {
+        expect(consumerDeleteIndex).toBeGreaterThanOrEqual(0);
+        expect(workerDeleteIndex).toBeGreaterThan(consumerDeleteIndex);
+      } else {
+        expect(consumerDeleteIndex).toBe(-1);
+      }
+      if (webhookState === "enabled") {
+        expect(runner.mock.calls.map(([, args]) => args.join(" "))).toContain(
+          "queues pause-delivery feed-webhooks",
+        );
+        expect(fetchMock.mock.calls.some(([input, init]) =>
+          new URL(input instanceof Request ? input.url : input.toString())
+            .pathname.endsWith("/workers/scripts/feed/schedules") &&
+          init?.method === "PUT"
+        )).toBe(true);
+      }
+      await expect(config.readConfig(false, "feed")).resolves.toBeNull();
+    },
+  );
+
+  it("refuses to detach an unexpected Queue consumer", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig(savedConfig({
+      completedSteps: ["r2-ready", "webhook-queue-ready"],
+      webhooks: {
+        queueId: "queue-id",
+        queueName: "feed-webhooks",
+        state: "enabled",
+      },
+    }));
+    const state: CloudflareState = {
+      d1: true,
+      domain: true,
+      objects: [],
+      r2: true,
+      webhook: {
+        consumers: [{
+          id: "foreign-consumer-id",
+          scriptName: "another-worker",
+          type: "worker",
+        }],
+        id: "queue-id",
+        name: "feed-webhooks",
+        paused: false,
+        schedules: ["0 * * * *"],
+        state: "enabled",
+      },
+      worker: true,
+    };
+    const {fetchMock, runner} = cloudflareHarness(state);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(commands.destroyCommand({
+      confirm: "feed",
+      instance: "feed",
+    }, runner)).rejects.toThrow(/unexpected consumer configuration/u);
+
+    expect(state.webhook?.paused).toBe(false);
+    expect(state.webhook?.consumers).toEqual([{
+      id: "foreign-consumer-id",
+      scriptName: "another-worker",
+      type: "worker",
+    }]);
+    expect(state.worker).toBe(true);
+    expect(state.d1).toBe(true);
+    expect(state.r2).toBe(true);
+  });
+
+  it("resumes after detaching the Queue consumer before Worker deletion", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig(savedConfig({
+      completedSteps: ["r2-ready", "webhook-queue-ready"],
+      webhooks: {
+        queueId: "queue-id",
+        queueName: "feed-webhooks",
+        state: "enabled",
+      },
+    }));
+    const state: CloudflareState = {
+      d1: true,
+      domain: true,
+      objects: [],
+      r2: true,
+      webhook: {
+        consumers: [{
+          id: "consumer-id",
+          scriptName: "feed",
+          type: "worker",
+        }],
+        id: "queue-id",
+        name: "feed-webhooks",
+        paused: false,
+        schedules: ["0 * * * *"],
+        state: "enabled",
+      },
+      worker: true,
+      workerDeleteFailures: 1,
+    };
+    const {fetchMock, runner} = cloudflareHarness(state);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(commands.destroyCommand({
+      confirm: "feed",
+      instance: "feed",
+    }, runner)).rejects.toThrow(/Temporary Worker deletion failure/u);
+    expect(state.webhook?.consumers).toEqual([]);
+    await expect(config.readConfig(false, "feed")).resolves.toEqual(
+      expect.objectContaining({
+        completedSteps: expect.arrayContaining([
+          "destroy-webhook-consumer-detached",
+        ]),
+      }),
+    );
+
+    await commands.destroyCommand({
+      confirm: "feed",
+      instance: "feed",
+    }, runner);
+
+    const consumerDeletes = fetchMock.mock.calls.filter(([input, init]) =>
+      new URL(input instanceof Request ? input.url : input.toString())
+        .pathname.endsWith("/queues/queue-id/consumers/consumer-id") &&
+      init?.method === "DELETE"
+    );
+    expect(consumerDeletes).toHaveLength(1);
+    expect(state.worker).toBe(false);
+    expect(state.webhook).toBeUndefined();
+    await expect(config.readConfig(false, "feed")).resolves.toBeNull();
   });
 
   it("always preserves reused data resources", async () => {

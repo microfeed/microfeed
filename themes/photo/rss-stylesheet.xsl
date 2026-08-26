@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet version="1.0"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:atom="http://www.w3.org/2005/Atom"
+                exclude-result-prefixes="atom">
+  <xsl:output method="html" encoding="UTF-8" indent="yes"/>
+  <xsl:template match="/">
+    <html class="rss-document" lang="en">
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title><xsl:value-of select="rss/channel/title"/> · Photo RSS</title>
+        <style>:root {
+  --mf-accent: #365a4a;
+  --mf-background: #eef0eb;
+  --mf-surface: #dde2da;
+  --mf-text: #172019;
+  --mf-muted: #5b685f;
+  --mf-border: #bdc7be;
+  --photo-overlay: rgba(9, 15, 11, 0.78);
+}
+
+.dark {
+  --mf-accent: #9ed4b7;
+  --mf-background: #0d100e;
+  --mf-surface: #1a201c;
+  --mf-text: #eef5ef;
+  --mf-muted: #a2afa6;
+  --mf-border: #364139;
+  --photo-overlay: rgba(5, 8, 6, 0.82);
+}
+/*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
+@layer theme;@layer utilities{.grid{display:grid}}*{box-sizing:border-box}html{background:var(--mf-background);min-height:100%;color:var(--mf-text);font-family:Inter,ui-sans-serif,system-ui,sans-serif;line-height:1.55}body{background:var(--mf-background);min-height:100dvh;margin:0}a{color:var(--mf-accent);text-underline-offset:.18em}button,summary,a{cursor:pointer}img,video{max-width:100%}audio{width:100%;accent-color:var(--mf-accent)}.photo-shell,.photo-main,.photo-footer{width:min(92rem,100% - 2rem);margin:0 auto}.photo-shell{border-bottom:1px solid var(--mf-border);grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:1rem;padding:1rem 0;display:grid}.photo-brand{min-width:0;color:var(--mf-text);letter-spacing:.03em;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap;align-items:center;gap:.55rem;font-size:.88rem;font-weight:800;text-decoration:none;display:inline-flex;overflow:hidden}.photo-brand>span{border:2px solid var(--mf-text);place-items:center;width:1.7rem;height:1.7rem;display:grid}.photo-nav{gap:1rem;display:flex}.photo-nav a{color:var(--mf-muted);font-size:.75rem;font-weight:700;text-decoration:none}.photo-nav a:hover{color:var(--mf-text)}.photo-search-open,.photo-theme-menu summary{border:1px solid var(--mf-border);width:2.35rem;height:2.35rem;color:var(--mf-text);font:inherit;background:0 0;border-radius:50%;place-items:center;padding:0;font-size:1.1rem;display:grid}.photo-theme-menu{position:relative}.photo-theme-menu summary{list-style:none}.photo-theme-menu summary::-webkit-details-marker{display:none}.photo-theme-menu>div{z-index:40;border:1px solid var(--mf-border);background:var(--mf-background);gap:.15rem;min-width:9rem;padding:.35rem;display:grid;position:absolute;top:calc(100% + .5rem);right:0;box-shadow:0 1rem 3rem #040a0640}.photo-theme-menu button{color:var(--mf-text);font:inherit;text-align:left;background:0 0;border:0;padding:.5rem .65rem}.photo-theme-menu button[aria-checked=true]{background:var(--mf-surface);color:var(--mf-accent);font-weight:800}.photo-main{min-height:calc(100dvh - 12rem);padding-bottom:5rem}.photo-intro{grid-template-columns:minmax(0,1.45fr) minmax(19rem,.55fr);align-items:end;gap:2rem 5rem;padding:clamp(3.5rem,9vw,8rem) 0;display:grid}.photo-kicker{color:var(--mf-accent);letter-spacing:.18em;text-transform:uppercase;margin:0 0 .65rem;font-size:.7rem;font-weight:800}.photo-intro h1{letter-spacing:-.075em;max-width:11ch;margin:0;font-size:clamp(3.5rem,9vw,8.8rem);font-weight:500;line-height:.82}.photo-intro-copy{border-left:1px solid var(--mf-border);color:var(--mf-muted);padding-left:1.5rem;font-size:.95rem}.photo-intro-copy>div>p{margin-top:0}.photo-intro-copy>p{font-size:.78rem;font-weight:700}.photo-subscribe{flex-wrap:wrap;gap:.45rem;margin-top:1rem;display:flex}.photo-subscribe a{border:1px solid var(--mf-border);color:var(--mf-text);text-transform:uppercase;padding:.35rem .55rem;font-size:.68rem;font-weight:800;text-decoration:none}.photo-section-heading{border-bottom:1px solid var(--mf-text);justify-content:space-between;align-items:baseline;gap:1rem;padding-bottom:.65rem;display:flex}.photo-section-heading h2{letter-spacing:.14em;text-transform:uppercase;margin:0;font-size:.76rem}.photo-section-heading span{color:var(--mf-muted);font-size:.68rem}.photo-grid{grid-auto-flow:dense;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:15rem;gap:.55rem;padding-top:.55rem;display:grid}.photo-tile{background:var(--mf-surface);min-height:0;position:relative;overflow:hidden}.photo-tile:nth-child(7n+1){grid-area:span 2/span 2}.photo-tile:nth-child(7n+4){grid-column:span 2}.photo-tile:nth-child(7n+6){grid-row:span 2}.photo-tile>a{color:#fff;width:100%;height:100%;text-decoration:none;display:block;position:relative}.photo-tile img{object-fit:cover;width:100%;height:100%;transition:filter .22s,transform .22s}.photo-tile-caption{background:linear-gradient(transparent, var(--photo-overlay));opacity:0;justify-content:space-between;align-items:flex-end;gap:1rem;padding:2.5rem .9rem .8rem;transition:opacity .18s;display:flex;position:absolute;inset:auto 0 0}.photo-tile-caption strong{max-width:24ch;font-size:.88rem;line-height:1.2}.photo-tile-caption>span{color:#ffffffc7;text-transform:uppercase;flex:none;font-size:.62rem}.photo-tile:hover img,.photo-tile:focus-within img{filter:saturate(.78)brightness(.76);transform:scale(1.02)}.photo-tile:hover .photo-tile-caption,.photo-tile:focus-within .photo-tile-caption{opacity:1}.photo-tile>a:focus-visible{outline:.24rem solid var(--mf-accent);outline-offset:-.24rem}.photo-tile-text>a{background:var(--mf-surface);color:var(--mf-text);grid-template-rows:1fr auto;padding:1rem;display:grid}.photo-tile-text .photo-tile-caption{color:var(--mf-text);opacity:1;background:0 0;padding:0;position:static}.photo-tile-text .photo-tile-caption>span{color:var(--mf-muted)}.photo-tile-symbol{color:var(--mf-accent);place-self:center;font-size:4rem;font-weight:300}.photo-empty{border-bottom:1px solid var(--mf-border);text-align:center;padding:7rem 1rem}.photo-empty>span{color:var(--mf-accent);font-size:4rem}.photo-empty h3{margin:.5rem 0 0;font-size:1.5rem;font-weight:500}.photo-empty p{color:var(--mf-muted);margin:.25rem 0}.photo-pagination{justify-content:space-between;gap:1rem;padding-top:1.5rem;display:flex}.photo-pagination a{color:var(--mf-text);text-transform:uppercase;font-size:.72rem;font-weight:800;text-decoration:none}.photo-item-main{padding-top:1.4rem}.photo-item-topline{color:var(--mf-muted);text-transform:uppercase;justify-content:space-between;gap:1rem;padding-bottom:1.2rem;font-size:.68rem;font-weight:800;display:flex}.photo-item-topline a{color:var(--mf-text);text-decoration:none}.photo-item{grid-template-columns:minmax(15rem,.42fr) minmax(0,1.58fr);gap:2rem;display:grid}.photo-item-header{align-self:start;position:sticky;top:1rem}.photo-item-header h1{letter-spacing:-.065em;margin:0;font-size:clamp(2.7rem,6vw,6.7rem);font-weight:500;line-height:.9}.photo-item-header>p:last-child{color:var(--mf-muted);font-size:.78rem}.photo-item-media{min-width:0}.photo-item-media>a{display:block}.photo-item-media img,.photo-item-media video{object-fit:contain;object-position:top center;width:100%;max-height:85vh;display:block}.photo-item-media audio{margin-top:1rem;display:block}.photo-item-caption{max-width:48rem;color:var(--mf-muted);grid-column:2;padding:1rem 0 3rem}.photo-rich-content{font-size:1rem;line-height:1.75}.photo-rich-content h2{color:var(--mf-text);letter-spacing:-.02em;margin-top:2em;font-size:1.5rem;font-weight:500}.photo-rich-content blockquote{border-left:2px solid var(--mf-accent);margin-left:0;padding-left:1rem}.photo-rich-content img{height:auto}.photo-action{border:1px solid var(--mf-text);color:var(--mf-text);text-transform:uppercase;margin-top:1rem;padding:.65rem .85rem;font-size:.72rem;font-weight:800;text-decoration:none;display:inline-block}.photo-prose-main{max-width:62rem;padding-top:2rem}.photo-back{color:var(--mf-muted);text-transform:uppercase;margin-bottom:3rem;font-size:.7rem;font-weight:800;text-decoration:none;display:inline-block}.photo-page,.photo-search-page{max-width:48rem;margin:0 auto}.photo-page h1,.photo-search-page h1{letter-spacing:-.07em;margin:0 0 2rem;font-size:clamp(3rem,8vw,7rem);font-weight:500;line-height:.9}.photo-page-not-found{border:1px dashed var(--mf-border);text-align:center;padding:3rem}.photo-search-page form>label{color:var(--mf-muted);text-transform:uppercase;margin-bottom:.55rem;font-size:.72rem;font-weight:800;display:block}.photo-search-field{border:1px solid var(--mf-border);background:var(--mf-surface);grid-template-columns:minmax(0,1fr) auto;display:grid}.photo-search-field input{min-width:0;color:var(--mf-text);font:inherit;background:0 0;border:0;outline:0;padding:.85rem .9rem}.photo-search-field button{background:var(--mf-text);color:var(--mf-background);font:inherit;text-transform:uppercase;border:0;padding:.8rem 1rem;font-size:.72rem;font-weight:800}.photo-search-results{gap:.5rem;margin-top:1rem;display:grid}.photo-search-results .mf-public-search-result{border:1px solid var(--mf-border);background:var(--mf-surface);color:var(--mf-text);border-radius:0}.photo-search-results .mf-public-search-result__details{color:var(--mf-muted)}.mf-public-search{background:var(--mf-background);color:var(--mf-text)}.mf-public-search::backdrop{background:#030704b8}.mf-public-search__panel{border:1px solid var(--mf-border);background:var(--mf-background);border-radius:0}.mf-public-search-result{border-radius:0}.mf-public-search-result:hover{background:var(--mf-surface)}.photo-footer{border-top:1px solid var(--mf-border);color:var(--mf-muted);text-transform:uppercase;justify-content:space-between;gap:1rem;padding:1.5rem 0 3rem;font-size:.68rem;display:flex}.photo-footer a{font-weight:800}.rss-page{background:var(--mf-background);color:var(--mf-text);margin:0;font-family:Inter,system-ui,sans-serif}.rss-container{width:min(72rem,100% - 2rem);margin:0 auto;padding:3rem 0}.rss-header{border-bottom:1px solid var(--mf-text);grid-template-columns:1fr 1fr;align-items:end;gap:2rem;padding-bottom:2rem;display:grid}.rss-header h1{letter-spacing:-.07em;margin:0;font-size:clamp(3rem,8vw,7rem);font-weight:500;line-height:.9}.rss-header p{color:var(--mf-muted)}.rss-grid{grid-template-columns:repeat(3,1fr);gap:.6rem;padding-top:.6rem;display:grid}.rss-item{border:1px solid var(--mf-border);background:var(--mf-surface);padding:1rem}.rss-item img,.rss-item video{width:100%}.rss-item h2{font-size:1.1rem;line-height:1.2}.rss-meta{color:var(--mf-muted);text-transform:uppercase;font-size:.66rem}.rss-footer{text-align:center;padding-top:2rem}@media (width&lt;=900px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-item{grid-template-columns:1fr}.photo-item-header{position:static}.photo-item-caption{grid-column:1}.rss-grid{grid-template-columns:repeat(2,1fr)}}@media (width&lt;=640px){.photo-shell{grid-template-columns:minmax(0,1fr) auto auto}.photo-nav{grid-area:2/1/auto/-1;overflow-x:auto}.photo-intro{grid-template-columns:1fr;gap:2rem;padding:3.5rem 0}.photo-intro-copy{border-top:1px solid var(--mf-border);border-left:0;padding:1rem 0 0}.photo-grid{grid-auto-rows:12rem}.photo-tile:nth-child(n){grid-area:span 1/span 1}.photo-tile:nth-child(5n+1){grid-column:span 2}.photo-tile-caption{opacity:1}.photo-footer{flex-direction:column}.rss-header,.rss-grid{grid-template-columns:1fr}}@media (prefers-reduced-motion:reduce){*,:before,:after{transition:none!important}}
+/*$vite$:1*/</style>
+      </head>
+      <body class="rss-page">
+        <main class="rss-container">
+          <header class="rss-header">
+            <div><p class="photo-kicker">Visual RSS feed</p><h1><xsl:value-of select="rss/channel/title"/></h1></div>
+            <div>
+              <xsl:if test="rss/channel/description"><div><xsl:value-of select="rss/channel/description" disable-output-escaping="yes"/></div></xsl:if>
+              <xsl:if test="rss/channel/link[1]"><p><a><xsl:attribute name="href"><xsl:value-of select="rss/channel/link[1]"/></xsl:attribute>Open the contact sheet →</a></p></xsl:if>
+            </div>
+          </header>
+          <section class="rss-grid" aria-label="Frames">
+            <xsl:for-each select="rss/channel/item">
+              <article class="rss-item">
+                <xsl:if test="enclosure/@url">
+                  <xsl:choose>
+                    <xsl:when test="starts-with(enclosure/@type, 'image')"><a><xsl:attribute name="href"><xsl:value-of select="enclosure/@url"/></xsl:attribute><img alt=""><xsl:attribute name="src"><xsl:value-of select="enclosure/@url"/></xsl:attribute></img></a></xsl:when>
+                    <xsl:when test="starts-with(enclosure/@type, 'video')"><video controls="controls" preload="metadata"><xsl:attribute name="src"><xsl:value-of select="enclosure/@url"/></xsl:attribute></video></xsl:when>
+                    <xsl:when test="starts-with(enclosure/@type, 'audio')"><audio controls="controls" preload="metadata"><xsl:attribute name="src"><xsl:value-of select="enclosure/@url"/></xsl:attribute></audio></xsl:when>
+                  </xsl:choose>
+                </xsl:if>
+                <div class="rss-meta"><xsl:value-of select="pubDate"/></div>
+                <h2><a><xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute><xsl:value-of select="title"/></a></h2>
+                <xsl:if test="description"><div><xsl:value-of select="description" disable-output-escaping="yes"/></div></xsl:if>
+              </article>
+            </xsl:for-each>
+          </section>
+          <xsl:if test="rss/channel/atom:link[@rel='prev' or @rel='next']">
+            <nav class="photo-pagination" aria-label="Pagination">
+              <xsl:if test="rss/channel/atom:link[@rel='prev']"><a><xsl:attribute name="href"><xsl:value-of select="rss/channel/atom:link[@rel='prev']/@href"/></xsl:attribute>← Newer</a></xsl:if>
+              <xsl:if test="rss/channel/atom:link[@rel='next']"><a><xsl:attribute name="href"><xsl:value-of select="rss/channel/atom:link[@rel='next']/@href"/></xsl:attribute>Older →</a></xsl:if>
+            </nav>
+          </xsl:if>
+          <footer class="rss-footer"><p>Published with <a href="https://www.microfeed.org/">microfeed</a></p></footer>
+        </main>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>

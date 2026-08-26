@@ -1,0 +1,30 @@
+---
+import {env} from "cloudflare:workers";
+
+import WebhookEndpointsApp from "@/components/admin/webhooks/WebhookEndpointsApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {listWebhookEndpoints, webhookOverview} from "@/server/webhooks/store";
+import {NAV_ITEMS} from "@/shared/Constants";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+const [initialEndpoints, overview] = await Promise.all([
+  listWebhookEndpoints(env.FEED_DB),
+  webhookOverview(env),
+]);
+const initialQuickstart = Astro.url.searchParams.get("quickstart") === "1";
+---
+
+<AdminShell
+  activeNavItem={NAV_ITEMS.WEBHOOKS}
+  documentTitle="Webhook endpoints | microfeed.org"
+  {feedContent}
+  {onboardingResult}
+  pageTitle="Webhook endpoints"
+  webhookActivePage="endpoints"
+  webhookNavigation
+>
+  <div class="mx-auto max-w-6xl">
+    <WebhookEndpointsApp client:only="react" enabled={overview.enabled} {initialEndpoints} {initialQuickstart} />
+  </div>
+</AdminShell>

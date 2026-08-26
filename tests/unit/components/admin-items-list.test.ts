@@ -1,9 +1,14 @@
 import React from "react";
 import {renderToStaticMarkup} from "react-dom/server";
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
-import AllItemsApp from "@/components/admin/items/AllItemsApp";
+import {ItemListTable} from "@/components/admin/items/AllItemsApp";
+import type {
+  AdminItemListResponse,
+  AdminItemMediaSummary,
+} from "@/shared/AdminCollections";
 import {STATUSES} from "@/shared/Constants";
+import {normalizeItemStatusFilter} from "@/shared/ItemList";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import type {FeedItem} from "@/types";
 
@@ -35,32 +40,34 @@ const ITEMS: FeedItem[] = [
 function renderItemsList(
   search = "?status=published&sort=updated_at&order=desc",
   items: FeedItem[] = ITEMS,
+  loading = false,
 ) {
-  vi.stubGlobal("window", {
-    location: {
-      hostname: "feed.example.com",
-      search,
-    },
-  });
+  const searchParams = new URLSearchParams(search);
+  const listing: AdminItemListResponse = {
+    items: [],
+    nextCursor: "cursor_value",
+    order: ITEM_ORDERS.DESC,
+    sort: ITEM_SORTS.UPDATED_AT,
+    statusFilter: normalizeItemStatusFilter(searchParams.get("status")),
+  };
+  const data = items.map((item) => ({
+    createdAtMs: Number(item.createdAtMs),
+    id: String(item.id),
+    ...(item.image
+      ? {imageUrl: `https://media.example.com/${item.image}`}
+      : {}),
+    mediaFile: item.mediaFile as AdminItemMediaSummary | undefined,
+    pubDateMs: Number(item.pubDateMs),
+    publicBucketUrl: "https://media.example.com/",
+    status: Number(item.status),
+    title: String(item.title),
+    updatedAtMs: Number(item.updatedAtMs),
+  }));
 
   return renderToStaticMarkup(
-    React.createElement(AllItemsApp, {
-      feedContent: {
-        items,
-        items_next_cursor: "cursor_value",
-        items_order: ITEM_ORDERS.DESC,
-        items_sort: ITEM_SORTS.UPDATED_AT,
-        settings: {
-          webGlobalSettings: {
-            publicBucketUrl: "https://media.example.com/",
-          },
-        },
-      },
-    }),
+    React.createElement(ItemListTable, {data, listing, loading}),
   );
 }
-
-afterEach(() => vi.unstubAllGlobals());
 
 describe("admin items list", () => {
   it("renders the requested filters and six-column layout", () => {
@@ -155,5 +162,16 @@ describe("admin items list", () => {
     expect(output).toContain("No unlisted items yet.");
     expect(output).toContain("Add a new item");
     expect(output).toContain("mt-4 !text-white hover:!text-white");
+  });
+
+  it("disables list navigation while refreshed rows are loading", () => {
+    const output = renderItemsList(
+      "?status=published&sort=updated_at&order=desc",
+      ITEMS,
+      true,
+    );
+
+    expect(output).toContain('aria-disabled="true"');
+    expect(output).toContain("cursor-not-allowed opacity-70");
   });
 });

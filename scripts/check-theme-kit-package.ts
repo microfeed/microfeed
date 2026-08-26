@@ -80,6 +80,7 @@ try {
     packedLicense,
     starterPackage,
     starterReadme,
+    packedClaudeBridge,
     packedSkill,
   ] = await Promise.all([
       readFile(path.join(packageDirectory, "README.md"), "utf8"),
@@ -87,6 +88,7 @@ try {
       readFile(path.join(packageDirectory, "LICENSE"), "utf8"),
       readFile(path.join(packageDirectory, "assets/starter/package.json"), "utf8"),
       readFile(path.join(packageDirectory, "assets/starter/README.md"), "utf8"),
+      readFile(path.join(packageDirectory, "assets/starter/CLAUDE.md"), "utf8"),
       readFile(path.join(
         packageDirectory,
         "assets/starter/.agents/skills/develop-microfeed-theme/SKILL.md",
@@ -117,6 +119,9 @@ try {
       !parsedStarterPackage.scripts?.preview ||
       !starterReadme.includes("generic standalone microfeed theme repository") ||
       !starterReadme.includes("yarn preview --feed-url https://example.com/json/") ||
+      !packedClaudeBridge.includes(
+        ".agents/skills/develop-microfeed-theme/SKILL.md",
+      ) ||
       !packedSkill.includes("Never create screenshots unless the user explicitly asks")) {
     throw new Error("The packed generic theme scaffold is incomplete or stale.");
   }
@@ -186,6 +191,15 @@ try {
     initializedPackage.devDependencies?.["@microfeed/theme-kit"] ?? "",
   )) {
     throw new Error("The packed init command generated a stale local dependency.");
+  }
+  const initializedClaudeBridge = await readFile(
+    path.join(initializedTheme, "CLAUDE.md"),
+    "utf8",
+  );
+  if (!initializedClaudeBridge.includes(
+    ".agents/skills/develop-microfeed-theme/SKILL.md",
+  )) {
+    throw new Error("The packed init command omitted its Claude Code bridge.");
   }
 
   const dlxHelp = run("yarn", [

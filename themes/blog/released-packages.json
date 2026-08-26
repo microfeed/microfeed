@@ -1,0 +1,9 @@
+{
+  "packageId": "microfeed.blog",
+  "releases": [
+    {
+      "checksumSha256": "03cf5f9e508f3e613c31985f7408867d6ebf1c328e7e93e9b1027e1a70d06bb9",
+      "version": "1.0.0"
+    }
+  ]
+}

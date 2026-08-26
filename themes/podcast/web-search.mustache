@@ -1,0 +1,15 @@
+<main class="pod-main pod-prose-main">
+  <a class="pod-back" href="/">← {{title}}</a>
+  <section class="pod-search-page">
+    <p class="pod-kicker">Explore the archive</p>
+    <h1>Search episodes</h1>
+    <form action="/search/" method="get" role="search">
+      <label for="pod-search-input">Find a guest, topic, or phrase</label>
+      <div class="pod-search-field">
+        <input id="pod-search-input" name="q" type="search" value="{{search.query}}" placeholder="Try “publishing”" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
+        <button type="submit">Search</button>
+      </div>
+      <div class="pod-search-results" aria-live="polite" data-microfeed-search-results data-microfeed-search-details></div>
+    </form>
+  </section>
+</main>

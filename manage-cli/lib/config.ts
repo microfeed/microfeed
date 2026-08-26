@@ -1,4 +1,4 @@
-import {randomBytes, randomUUID} from "node:crypto";
+import {createHash, randomBytes, randomUUID} from "node:crypto";
 import {
   mkdir,
   readFile,
@@ -20,6 +20,7 @@ import type {
   InstanceHosting,
   MicrofeedConfig,
   R2SetupMode,
+  WebhookInfrastructureState,
 } from "../types";
 import {repositoryRoot} from "./process";
 
@@ -123,6 +124,23 @@ function normalizedR2SetupMode(
   return value.setupMode === "disabled" ? "disabled" : "automatic";
 }
 
+function normalizedWebhookState(
+  value: Record<string, unknown>,
+  completedSteps: readonly string[],
+): WebhookInfrastructureState {
+  if (
+    value.state === "unprovisioned" ||
+    value.state === "enabled" ||
+    value.state === "disabled"
+  ) {
+    return value.state;
+  }
+  if (value.enabled === true) return "enabled";
+  return completedSteps.includes("webhook-queue-ready")
+    ? "disabled"
+    : "unprovisioned";
+}
+
 function validateConfig(
   value: unknown,
   source = ".microfeed configuration",
@@ -209,6 +227,29 @@ function validateConfig(
       value.deploymentEnvironment === "production" ||
       value.deploymentEnvironment === "preview"
     ) &&
+    (
+      value.webhooks === undefined ||
+      (
+        isRecord(value.webhooks) &&
+        typeof value.webhooks.queueName === "string" &&
+        value.webhooks.queueName.length > 0 &&
+        (
+          value.webhooks.state === "unprovisioned" ||
+          value.webhooks.state === "enabled" ||
+          value.webhooks.state === "disabled" ||
+          typeof value.webhooks.enabled === "boolean"
+        ) &&
+        (
+          value.webhooks.queueId === undefined ||
+          typeof value.webhooks.queueId === "string"
+        ) &&
+        (
+          value.webhooks.transition === undefined ||
+          value.webhooks.transition === "enabling" ||
+          value.webhooks.transition === "disabling"
+        )
+      )
+    ) &&
     (value.hosting === undefined ||
       value.hosting === "cloudflare" ||
       value.hosting === "local");
@@ -260,6 +301,25 @@ function validateConfig(
       : {}),
     ...(typeof value.workerName === "string"
       ? {workerName: value.workerName}
+      : {}),
+    ...(isRecord(value.webhooks)
+      ? {
+          webhooks: {
+            ...(typeof value.webhooks.queueId === "string" &&
+                value.webhooks.queueId
+              ? {queueId: value.webhooks.queueId}
+              : {}),
+            queueName: value.webhooks.queueName as string,
+            state: normalizedWebhookState(
+              value.webhooks,
+              normalizedCompletedSteps,
+            ),
+            ...(value.webhooks.transition === "enabling" ||
+                value.webhooks.transition === "disabling"
+              ? {transition: value.webhooks.transition}
+              : {}),
+          },
+        }
       : {}),
   };
 }
@@ -520,7 +580,30 @@ export function requiredSecrets(config: MicrofeedConfig): string[] {
     ...(adminAuthMode(config) === "built-in"
       ? ["BETTER_AUTH_SECRET"]
       : []),
+    ...(webhookProvisioned(config) ? ["WEBHOOK_SECRET_KEY"] : []),
   ];
+}
+
+export function webhookState(
+  config: MicrofeedConfig,
+): WebhookInfrastructureState {
+  return config.webhooks?.state ?? "unprovisioned";
+}
+
+export function webhookProvisioned(config: MicrofeedConfig): boolean {
+  return webhookState(config) !== "unprovisioned";
+}
+
+export function webhookEnabled(config: MicrofeedConfig): boolean {
+  return webhookState(config) === "enabled";
+}
+
+export function webhookQueueName(worker: string): string {
+  const suffix = "-webhooks";
+  if (worker.length + suffix.length <= 63) return `${worker}${suffix}`;
+  const hash = createHash("sha256").update(worker).digest("hex").slice(0, 10);
+  const prefixLength = 63 - suffix.length - hash.length - 1;
+  return `${worker.slice(0, prefixLength).replace(/-+$/u, "")}-${hash}${suffix}`;
 }
 
 export function workerName(config: MicrofeedConfig): string {
@@ -560,6 +643,10 @@ export function localConfig(instanceName = "local"): MicrofeedConfig {
       name: `${resourcePrefix}-media`,
       reuse: false,
       setupMode: "automatic",
+    },
+    webhooks: {
+      state: "unprovisioned",
+      queueName: `${resourcePrefix}-webhooks`,
     },
   };
 }
@@ -627,6 +714,9 @@ async function ensureLocalDevVars(config: MicrofeedConfig): Promise<void> {
     currentDevVars.includes("BETTER_AUTH_SECRET=")
       ? ""
       : `BETTER_AUTH_SECRET=${randomBytes(32).toString("base64url")}`,
+    currentDevVars.includes("WEBHOOK_SECRET_KEY=")
+      ? ""
+      : `WEBHOOK_SECRET_KEY=${randomBytes(32).toString("base64url")}`,
   ].filter(Boolean);
   if (additions.length > 0) {
     const prefix = currentDevVars && !currentDevVars.endsWith("\n")
@@ -660,6 +750,27 @@ export async function generateWranglerConfig(
         {binding: "MEDIA_BUCKET", bucket_name: config.r2.name},
       ], null, 2)},`
     : "";
+  const webhookBindings = webhookEnabled(config)
+    ? `"queues": ${JSON.stringify({
+        consumers: [{
+          max_batch_size: 1,
+          max_batch_timeout: 1,
+          max_retries: 5,
+          queue: config.webhooks!.queueName,
+        }],
+        producers: [{
+          binding: "WEBHOOK_QUEUE",
+          queue: config.webhooks!.queueName,
+        }],
+      }, null, 2)},\n  "triggers": {"crons": ["0 * * * *"]},`
+    : `"queues": {"consumers": [], "producers": []},\n  "triggers": {"crons": []},`;
+  const webhookMetadata = config.webhooks
+    ? {
+        queueId: config.webhooks.queueId ?? "",
+        queueName: config.webhooks.queueName,
+        state: webhookState(config),
+      }
+    : {queueId: "", queueName: "", state: "unprovisioned"};
   const rendered = template
     .replaceAll("__PROJECT_ROOT__", relativeRoot)
     .replaceAll("__WORKER_NAME__", workerName(config))
@@ -682,8 +793,12 @@ export async function generateWranglerConfig(
     )
     .replaceAll("__INSTANCE_ID__", config.instanceId)
     .replaceAll("__INSTANCE_NAME__", config.instanceName)
+    .replaceAll("__WEBHOOK_QUEUE_ID__", webhookMetadata.queueId)
+    .replaceAll("__WEBHOOK_QUEUE_NAME__", webhookMetadata.queueName)
+    .replaceAll("__WEBHOOK_STATE__", webhookMetadata.state)
     .replace("__REQUIRED_SECRETS__", JSON.stringify(secrets))
     .replace("__R2_BINDING__", r2Binding)
+    .replace("__WEBHOOK_BINDINGS__", webhookBindings)
     .replace("__ROUTES__", routes);
   await mkdir(path.dirname(targetPath), {recursive: true});
   const temporaryPath = `${targetPath}.tmp`;

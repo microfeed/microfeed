@@ -1,6 +1,7 @@
 import {ITEM_STATUSES_STRINGS_DICT, STATUSES} from "@/shared/Constants";
 import type FeedCrudManager from "@/server/feed/FeedCrudManager";
 import type FeedDb from "@/server/feed/FeedDb";
+import type {DatabaseMutationCommit} from "@/server/mutation";
 
 type ItemInput = Record<string, any>;
 
@@ -35,13 +36,14 @@ export async function createItem(
   feedCrud: FeedCrudManager,
   input: ItemInput,
   reservedId?: string,
+  commit?: DatabaseMutationCommit<Record<string, unknown>>,
 ): Promise<string> {
   const {id: _ignored, ...fields} = input;
   return feedCrud.upsertItem(normalizedInput(
     {...fields, ...(reservedId ? {id: reservedId} : {})},
     STATUSES.PUBLISHED,
     Date.now(),
-  ));
+  ), commit);
 }
 
 export async function updateItem(
@@ -49,6 +51,7 @@ export async function updateItem(
   feedCrud: FeedCrudManager,
   id: string,
   input: ItemInput,
+  commit?: DatabaseMutationCommit<Record<string, unknown>>,
 ): Promise<ItemInput | null> {
   const existing = await database.getItemById(id);
   if (!existing) return null;
@@ -72,7 +75,7 @@ export async function updateItem(
     pubDateMs: patch.pubDateMs ?? existing.pubDateMs,
     status: patch.status ?? existing.status,
   };
-  await feedCrud.saveInternalItem(item);
+  await feedCrud.saveInternalItem(item, commit);
   return item;
 }
 
@@ -80,9 +83,13 @@ export async function deleteItem(
   database: FeedDb,
   feedCrud: FeedCrudManager,
   id: string,
+  commit?: DatabaseMutationCommit<Record<string, unknown>>,
 ): Promise<boolean> {
   const existing = await database.getItemById(id);
   if (!existing) return false;
-  await feedCrud.saveInternalItem({...existing, id, status: STATUSES.DELETED});
+  await feedCrud.saveInternalItem(
+    {...existing, id, status: STATUSES.DELETED},
+    commit,
+  );
   return true;
 }

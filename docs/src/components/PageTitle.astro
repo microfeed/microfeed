@@ -1,0 +1,170 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+
+const { entry } = Astro.locals.starlightRoute;
+const showSourceActions = entry.id !== "index";
+const sourcePath = `docs/${entry.filePath}`;
+const encodedSourcePath = sourcePath
+  .split("/")
+  .map((segment) => encodeURIComponent(segment))
+  .join("/");
+const rawSourceUrl = `https://raw.githubusercontent.com/microfeed/microfeed/refs/heads/main/${encodedSourcePath}`;
+---
+
+<h1 id="_top">{entry.data.title}</h1>
+
+{
+  showSourceActions && (
+    <nav
+      aria-label="Markdown source actions"
+      class="markdown-source-actions print:hidden"
+      data-pagefind-ignore
+    >
+      <button
+        class="markdown-source-action"
+        data-copy-markdown
+        data-source-url={rawSourceUrl}
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="copy-icon"
+          fill="none"
+          height="20"
+          viewBox="0 0 24 24"
+          width="20"
+        >
+          <rect height="13" rx="2" stroke="currentColor" stroke-width="2" width="11" x="8" y="8"></rect>
+          <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path>
+        </svg>
+        <span data-copy-markdown-label>Copy Markdown</span>
+      </button>
+      <a
+        class="markdown-source-action"
+        href={rawSourceUrl}
+        rel="noreferrer"
+        target="_blank"
+      >
+        <Icon name="document" size="1.15rem" />
+        <span>View as Markdown</span>
+      </a>
+    </nav>
+  )
+}
+
+<script>
+  const fallbackCopy = (text: string) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    if (!copied) throw new Error("The browser rejected the copy command.");
+  };
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    "[data-copy-markdown]",
+  )) {
+    button.addEventListener("click", async () => {
+      const label = button.querySelector<HTMLElement>(
+        "[data-copy-markdown-label]",
+      );
+      const sourceUrl = button.dataset.sourceUrl;
+      if (!label || !sourceUrl || button.disabled) return;
+
+      button.disabled = true;
+      label.textContent = "Copying…";
+      try {
+        const response = await fetch(sourceUrl, {
+          headers: { Accept: "text/plain" },
+        });
+        if (!response.ok) {
+          throw new Error(`Markdown request returned ${response.status}.`);
+        }
+        const markdown = await response.text();
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(markdown);
+        } else {
+          fallbackCopy(markdown);
+        }
+        label.textContent = "Copied";
+      } catch (error) {
+        console.error("Unable to copy the Markdown source.", error);
+        label.textContent = "Copy failed";
+      } finally {
+        window.setTimeout(() => {
+          label.textContent = "Copy Markdown";
+          button.disabled = false;
+        }, 2000);
+      }
+    });
+  }
+</script>
+
+<style>
+  @layer starlight.core {
+    h1 {
+      margin-top: 1rem;
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-h1);
+      font-weight: 600;
+      line-height: var(--sl-line-height-headings);
+    }
+
+    .markdown-source-actions {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.25rem;
+      margin-top: 1rem;
+      padding-block: 0.35rem;
+    }
+
+    .markdown-source-action {
+      display: inline-flex;
+      min-height: 2.5rem;
+      align-items: center;
+      gap: 0.5rem;
+      border: 0;
+      background: transparent;
+      padding: 0.45rem 0.9rem;
+      color: var(--sl-color-gray-3);
+      cursor: pointer;
+      font: inherit;
+      font-size: var(--sl-text-sm);
+      font-weight: 600;
+      line-height: 1.25;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .markdown-source-action:hover {
+      color: var(--sl-color-white);
+    }
+
+    .markdown-source-action:disabled {
+      color: var(--sl-color-gray-4);
+      cursor: wait;
+    }
+
+    .copy-icon {
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 30rem) {
+      .markdown-source-action {
+        padding-inline: 0.25rem;
+      }
+    }
+
+    @media print {
+      .markdown-source-actions {
+        display: none;
+      }
+    }
+  }
+</style>

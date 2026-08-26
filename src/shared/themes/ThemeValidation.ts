@@ -11,6 +11,7 @@ import {
   THEME_MAX_TOTAL_ASSET_BYTES,
   themeBundleV1Schema,
   themeManifestV1Schema,
+  storedThemeManifestV1Schema,
   type ThemeBundleV1,
   type ThemeManifestV1,
 } from "./ThemeContract";
@@ -44,7 +45,34 @@ export function validateThemePackage(
   bundleInput: unknown,
   microfeedVersion?: string,
 ): ValidatedThemePackage {
-  const manifestResult = themeManifestV1Schema.safeParse(manifestInput);
+  return validateThemePackageWithSchema(
+    manifestInput,
+    bundleInput,
+    themeManifestV1Schema,
+    microfeedVersion,
+  );
+}
+
+export function validateStoredThemePackage(
+  manifestInput: unknown,
+  bundleInput: unknown,
+  microfeedVersion?: string,
+): ValidatedThemePackage {
+  return validateThemePackageWithSchema(
+    manifestInput,
+    bundleInput,
+    storedThemeManifestV1Schema,
+    microfeedVersion,
+  );
+}
+
+function validateThemePackageWithSchema(
+  manifestInput: unknown,
+  bundleInput: unknown,
+  manifestSchema: typeof themeManifestV1Schema | typeof storedThemeManifestV1Schema,
+  microfeedVersion?: string,
+): ValidatedThemePackage {
+  const manifestResult = manifestSchema.safeParse(manifestInput);
   const bundleResult = themeBundleV1Schema.safeParse(bundleInput);
   const diagnostics: string[] = [];
   if (!manifestResult.success) {

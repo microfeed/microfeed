@@ -51,14 +51,22 @@ import {
 import {DEFAULT_NOT_FOUND_PAGE_ID} from "@/shared/Pages";
 import {STATUSES} from "@/shared/Constants";
 import {SITE_FILE_TEMPLATE_COLLECTION_LIMIT} from "@/shared/SiteFiles";
+import {
+  buildAudioUrlWithTracking,
+  PUBLIC_URLS,
+} from "@/shared/StringUtils";
 import type {
   ThemeBundleV1,
   ThemeManifestV1,
+  ThemeSearchItemDestination,
 } from "@/shared/themes/ThemeContract";
 
 const ORIGIN = "https://feed.example.com";
 
-function v2Theme(): {bundle: ThemeBundleV1; manifest: ThemeManifestV1} {
+function v2Theme(
+  searchItemDestination?: ThemeSearchItemDestination,
+  suffix = "",
+): {bundle: ThemeBundleV1; manifest: ThemeManifestV1} {
   return {
     bundle: {
       assets: [],
@@ -89,7 +97,8 @@ function v2Theme(): {bundle: ThemeBundleV1; manifest: ThemeManifestV1} {
       license: "MIT",
       microfeed: "*",
       name: "Test v2",
-      packageId: "tests.pages-v2",
+      packageId: `tests.pages-v2${suffix ? `.${suffix}` : ""}`,
+      ...(searchItemDestination ? {searchItemDestination} : {}),
       version: "1.0.0",
     },
   };
@@ -102,12 +111,15 @@ async function database(pathname = "/"): Promise<FeedDb> {
   return db;
 }
 
-async function activateV2(): Promise<void> {
+async function activateV2(
+  searchItemDestination?: ThemeSearchItemDestination,
+  suffix = "",
+): Promise<void> {
   const store = new ThemeStore(env.FEED_DB);
-  const theme = v2Theme();
+  const theme = v2Theme(searchItemDestination, suffix);
   const installed = await store.installVersion({
     ...theme,
-    id: "tests-pages-v2",
+    id: `tests-pages-v2${suffix ? `-${suffix}` : ""}`,
     source: {kind: "admin"},
   });
   await store.activate(installed.id);
@@ -188,10 +200,13 @@ beforeEach(async () => {
       "UPDATE site_search_metadata SET ready = 1 WHERE id = 1",
     ),
     env.FEED_DB.prepare(
+      "DELETE FROM items WHERE id LIKE 'search-destination%'",
+    ),
+    env.FEED_DB.prepare(
       "UPDATE theme_state SET active_theme_id = NULL, previous_theme_id = NULL",
     ),
     env.FEED_DB.prepare(
-      "DELETE FROM themes WHERE id IN ('tests-pages-v1', 'tests-pages-v2')",
+      "DELETE FROM themes WHERE id = 'tests-pages-v1' OR id LIKE 'tests-pages-v2%'",
     ),
     env.FEED_DB.prepare(
       "DELETE FROM settings WHERE category = 'apiSettings'",
@@ -381,6 +396,86 @@ describe("public Pages", () => {
     expect(result?.date_published).toEqual(expect.any(String));
     expect(result?.highlights?.content_text?.some(({matched}) => matched))
       .toBe(true);
+  });
+
+  it("uses the active v2 theme destination for public item search links", async () => {
+    const request = new Request(`${ORIGIN}/search-destination-page/`);
+    const db = await database("/search-destination-page/");
+    const trackingUrls = ["https://analytics.example/redirect/"];
+    await db.putContent({
+      item: {
+        description: "A destination needle with custom links.",
+        id: "search-destination",
+        link: "https://publisher.example/custom-item",
+        mediaFile: {url: "production/media/search-destination.mp3"},
+        pubDateMs: Date.parse("2026-08-18T10:00:00.000Z"),
+        status: STATUSES.PUBLISHED,
+        title: "Destination needle item",
+      },
+      settings: {analytics: {urls: trackingUrls}},
+    });
+    await db.putContent({
+      item: {
+        description: "A destination needle without optional links.",
+        id: "search-destination-fallback",
+        pubDateMs: Date.parse("2026-08-17T10:00:00.000Z"),
+        status: STATUSES.PUBLISHED,
+        title: "Destination needle fallback",
+      },
+    });
+    const page = await createPage(db, request, {
+      content_html: "<p>A destination needle Page.</p>",
+      navigation_label: "Search destination",
+      slug: "search-destination-page",
+      status: "published",
+      title: "Destination needle Page",
+    });
+    const getResults = async () => {
+      const response = await apiContext(
+        searchJson,
+        db,
+        new Request(`${ORIGIN}/search.json?q=destination+needle`),
+      );
+      expect(response.status).toBe(200);
+      return (await response.json() as {
+        items: Array<{id: string; type: "item" | "page"; url: string}>;
+      }).items;
+    };
+    const expectedWebUrl = PUBLIC_URLS.webItem(
+      "search-destination",
+      "Destination needle item",
+      ORIGIN,
+    );
+    const expectedFallbackUrl = PUBLIC_URLS.webItem(
+      "search-destination-fallback",
+      "Destination needle fallback",
+      ORIGIN,
+    );
+
+    await activateV2("web", "destination-web");
+    let results = await getResults();
+    expect(results.find(({id}) => id === "search-destination")?.url)
+      .toBe(expectedWebUrl);
+
+    await activateV2("url", "destination-url");
+    results = await getResults();
+    expect(results.find(({id}) => id === "search-destination")?.url)
+      .toBe("https://publisher.example/custom-item");
+    expect(results.find(({id}) => id === "search-destination-fallback")?.url)
+      .toBe(expectedFallbackUrl);
+
+    await activateV2("attachment", "destination-attachment");
+    results = await getResults();
+    expect(results.find(({id}) => id === "search-destination")?.url).toBe(
+      buildAudioUrlWithTracking(
+        "/media/production/media/search-destination.mp3",
+        trackingUrls,
+      ),
+    );
+    expect(results.find(({id}) => id === "search-destination-fallback")?.url)
+      .toBe(expectedFallbackUrl);
+    expect(results.find(({id}) => id === page.id)?.url)
+      .toBe(`${ORIGIN}/search-destination-page/`);
   });
 
   it("keeps Unlisted Pages public only at their direct URL", async () => {

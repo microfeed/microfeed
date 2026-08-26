@@ -30,6 +30,7 @@ export default defineConfig({
         },
       ],
       components: {
+        PageTitle: "./src/components/PageTitle.astro",
         SocialIcons: "./src/components/GitHubRepoButtons.astro",
       },
       editLink: {
@@ -60,8 +61,16 @@ export default defineConfig({
             { label: "Edit channel", link: "/dashboard/edit-channel/" },
             { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
             { label: "Themes and website code", link: "/dashboard/themes/" },
-            { label: "Pages and Site Files", link: "/dashboard/pages-search-and-site-files/" },
+            { label: "Pages, search, and Site Files", link: "/dashboard/pages-search-and-site-files/" },
             { label: "Site access", link: "/dashboard/customize/" },
+          ],
+        },
+        {
+          label: "Theme development",
+          items: [
+            { label: "Build and release a theme", link: "/themes/" },
+            { label: "Theme contract and rendering", link: "/themes/contract/" },
+            { label: "Bundle CSS, JavaScript, and assets", link: "/themes/assets/" },
           ],
         },
         {
@@ -81,22 +90,44 @@ export default defineConfig({
           items: [
             { label: "API overview", link: "/api/" },
             { label: "Bearer authentication", link: "/api/authentication/" },
-            { label: "Build and test integrations", link: "/api/build-and-test/" },
+            { label: "Build an API integration", link: "/api/build-and-test/" },
           ],
         },
         {
-          label: "@microfeed/cli and AI agents",
+          label: "Webhooks and integrations",
           items: [
-            { label: "Manage content with @microfeed/cli", link: "/api/cli/" },
-            { label: "Manage content with AI agents", link: "/api/ai-agents/" },
+            { label: "Webhooks overview", link: "/webhooks/" },
+            { label: "Test webhooks without code", link: "/webhooks/testing/" },
+            { label: "Build webhook endpoints", link: "/webhooks/endpoints/" },
+            { label: "Operate and troubleshoot webhooks", link: "/webhooks/operations/" },
+          ],
+        },
+        {
+          label: "Content automation",
+          items: [
+            { label: "Content automation overview", link: "/automation/" },
+            {
+              label: "Connect automation platforms",
+              items: [
+                { label: "Connect microfeed to n8n", link: "/automation/platforms/n8n/" },
+                { label: "Connect microfeed to Zapier", link: "/automation/platforms/zapier/" },
+              ],
+            },
+            {
+              label: "@microfeed/cli and AI agents",
+              items: [
+                { label: "Manage content with @microfeed/cli", link: "/automation/cli/" },
+                { label: "Manage content with AI agents", link: "/automation/ai-agents/" },
+              ],
+            },
           ],
         },
         {
           label: "Reference",
           items: [
-            { label: "yarn manage command reference", link: "/manage-cli/" },
-            { label: "microfeed cli reference", link: "/microfeed-cli/" },
-            { label: "theme-kit cli reference", link: "/theme-kit-cli/" },
+            { label: "yarn manage reference", link: "/manage-cli/" },
+            { label: "@microfeed/cli reference", link: "/microfeed-cli/" },
+            { label: "@microfeed/theme-kit reference", link: "/theme-kit-cli/" },
             { label: "Glossary", link: "/reference/glossary/" },
           ],
         },
@@ -113,7 +144,7 @@ export default defineConfig({
           description:
             "microfeed is an open-source CMS that publishes one collection as a website, RSS feed, and JSON Feed from the owner's Cloudflare account.",
           details:
-            "Use the Installation guides for deployment workflows. Use the yarn manage reference for site-management commands and the microfeed CLI reference for content commands and safety rules.",
+            "Use the Installation guides for deployment workflows. Use the yarn manage reference for site-management commands and the @microfeed/cli reference for content commands and safety rules.",
           promote: ["index", "start-here/**", "manage-cli", "microfeed-cli", "theme-kit-cli"],
           demote: ["contribute/**"],
           customSets: [
@@ -133,7 +164,19 @@ export default defineConfig({
               label: "Manage content with @microfeed/cli and AI agents",
               description:
                 "The guided CLI workflow, AI-agent conventions, and complete content-management command reference.",
-              paths: ["api/cli", "api/ai-agents", "microfeed-cli"],
+              paths: ["automation/cli", "automation/ai-agents", "microfeed-cli"],
+            },
+            {
+              label: "Build content automations and integrations",
+              description:
+                "Choose APIs, webhooks, or the CLI; connect n8n and Zapier; build secure webhook endpoints; and operate production automations.",
+              paths: ["automation/**", "webhooks/**", "api/index", "api/authentication", "microfeed-cli"],
+            },
+            {
+              label: "Build microfeed themes",
+              description:
+                "Customize an installed theme, develop standalone theme packages, understand the render contract, and bundle browser assets.",
+              paths: ["dashboard/themes", "themes/**", "theme-kit-cli", "manage-cli"],
             },
           ],
           optionalLinks: [

@@ -1,6 +1,6 @@
 ---
 name: develop-microfeed
-description: Develop and contribute changes to the microfeed repository safely from branch creation through validation, commit, push, and draft pull request. Use when Codex is asked to implement a feature, fix a bug, refactor code, add tests, update documentation or CI, or perform other repository maintenance. Do not use for read-only questions, explanations, reviews, or status reports.
+description: Develop and contribute changes to the microfeed repository safely from branch creation through validation, commit, push, and draft pull request. Use when a coding agent is asked to implement a feature, fix a bug, refactor code, add tests, update documentation or CI, or perform other repository maintenance. Do not use for read-only questions, explanations, reviews, or status reports.
 ---
 
 # Develop microfeed

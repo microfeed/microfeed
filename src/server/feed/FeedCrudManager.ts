@@ -3,6 +3,7 @@ import {
   randomShortUUID,
 } from "@/shared/StringUtils";
 import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT, LANGUAGE_CODES_LIST} from "@/shared/Constants";
+import type {DatabaseMutationCommit} from "@/server/mutation";
 
 const LANGUAGE_CODES = LANGUAGE_CODES_LIST.map((lc: any) => lc.code);
 
@@ -157,7 +158,10 @@ export default class FeedCrudManager {
     return internalSchema;
   }
 
-  async upsertItem(item: any) {
+  async upsertItem(
+    item: any,
+    commit?: DatabaseMutationCommit<Record<string, unknown>>,
+  ) {
     const itemId = item.id ? item.id : randomShortUUID();
     const guid = item.guid ? item.guid : itemId;
     this.feedContent.item = {
@@ -165,13 +169,28 @@ export default class FeedCrudManager {
       id: itemId,
       guid,
     };
-    await this.feedDb.putContent({item: this.feedContent.item});
+    await this.feedDb.putContent(
+      {item: this.feedContent.item},
+      commit
+        ? (statements: D1PreparedStatement[]) =>
+          commit(statements, this.feedContent.item)
+        : undefined,
+    );
     return itemId;
   }
 
-  async saveInternalItem(item: any) {
+  async saveInternalItem(
+    item: any,
+    commit?: DatabaseMutationCommit<Record<string, unknown>>,
+  ) {
     this.feedContent.item = item;
-    await this.feedDb.putContent({item: this.feedContent.item});
+    await this.feedDb.putContent(
+      {item: this.feedContent.item},
+      commit
+        ? (statements: D1PreparedStatement[]) =>
+          commit(statements, this.feedContent.item)
+        : undefined,
+    );
     return item.id;
   }
 
@@ -179,12 +198,21 @@ export default class FeedCrudManager {
    * Assume it's primary channel for now
    * @param channel {Object}
    */
-  async upsertChannel(channel: any) {
+  async upsertChannel(
+    channel: any,
+    commit?: DatabaseMutationCommit<Record<string, unknown>>,
+  ) {
     this.feedContent.channel = {
       ...this.feedContent.channel,
       ...this._publicToInternalSchemaForChannel(channel),
     };
-    await this.feedDb.putContent({channel: this.feedContent.channel});
+    await this.feedDb.putContent(
+      {channel: this.feedContent.channel},
+      commit
+        ? (statements: D1PreparedStatement[]) =>
+          commit(statements, this.feedContent.channel)
+        : undefined,
+    );
     return this.feedContent.id;
   }
 }

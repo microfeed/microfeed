@@ -1,8 +1,21 @@
 import {describe, expect, it} from "vitest";
 
-import {parseThemeListOptions} from "@/shared/themes/ThemeListing";
+import {
+  parseThemeAdminTab,
+  parseThemeListOptions,
+} from "@/shared/themes/ThemeListing";
 
 describe("theme listing query", () => {
+  it("accepts only Built-in and Custom tab scopes", () => {
+    expect(parseThemeAdminTab(new URLSearchParams())).toBeNull();
+    expect(parseThemeAdminTab(new URLSearchParams("tab=built-in")))
+      .toBe("built-in");
+    expect(parseThemeAdminTab(new URLSearchParams("tab=custom")))
+      .toBe("custom");
+    expect(() => parseThemeAdminTab(new URLSearchParams("tab=deleted")))
+      .toThrow("Unknown theme tab");
+  });
+
   it("normalizes valid search, sort, and page values", () => {
     expect(parseThemeListOptions(new URLSearchParams(
       "q=%20Editorial%20&sort=name-asc&page=2",

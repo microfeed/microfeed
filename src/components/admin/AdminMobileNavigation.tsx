@@ -13,11 +13,13 @@ import AdminSidebar from "./AdminSidebar";
 import AdminSettingsSidebar from "./settings/AdminSettingsSidebar";
 import AdminApiSidebar from "./api/AdminApiSidebar";
 import AdminAccountSidebar from "./account/AdminAccountSidebar";
+import AdminWebhookSidebar from "./webhooks/AdminWebhookSidebar";
 import type {
   AdminAccountSidebarData,
   AdminApiSidebarData,
   AdminSettingsSidebarData,
   AdminSidebarData,
+  AdminWebhookSidebarData,
 } from "./admin-shell-types";
 
 interface Props {
@@ -25,9 +27,10 @@ interface Props {
   apiSidebar?: AdminApiSidebarData;
   settingsSidebar?: AdminSettingsSidebarData;
   sidebar: AdminSidebarData;
+  webhookSidebar?: AdminWebhookSidebarData;
 }
 
-export default function AdminMobileNavigation({accountSidebar, apiSidebar, settingsSidebar, sidebar}: Props) {
+export default function AdminMobileNavigation({accountSidebar, apiSidebar, settingsSidebar, sidebar, webhookSidebar}: Props) {
   const [navigationOpen, setNavigationOpen] = useState(false);
 
   return (
@@ -57,6 +60,11 @@ export default function AdminMobileNavigation({accountSidebar, apiSidebar, setti
         ) : apiSidebar ? (
           <AdminApiSidebar
             data={apiSidebar}
+            onNavigate={() => setNavigationOpen(false)}
+          />
+        ) : webhookSidebar ? (
+          <AdminWebhookSidebar
+            data={webhookSidebar}
             onNavigate={() => setNavigationOpen(false)}
           />
         ) : settingsSidebar ? (

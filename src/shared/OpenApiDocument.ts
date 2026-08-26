@@ -25,9 +25,17 @@ import {
   apiSiteFilePreviewResponseSchema,
   apiUploadInputSchema,
   apiUploadOutputSchema,
+  apiWebhookContextHeadersSchema,
+  apiWebhookDeliveryHeadersSchema,
+  apiWebhookEventSchema,
 } from "./ApiSchemas";
+import {
+  WEBHOOK_EVENT_DEFINITIONS,
+  WEBHOOK_EVENT_EXAMPLES,
+} from "./WebhookExamples";
 import {MICROFEED_VERSION} from "./Version";
 import {API_BASE_PATH} from "./ApiVersion";
+import {WEBHOOK_OPENAPI_CODE_SAMPLES} from "./WebhookQuickstarts";
 import * as z from "zod";
 
 const json = (schema: z.ZodType) => ({
@@ -44,7 +52,7 @@ const error = (description: string) => ({
 const itemPath = z.object({
   itemId: apiItemIdSchema,
 });
-const itemCreateHeaders = z.object({
+const itemCreateHeaders = apiWebhookContextHeadersSchema.extend({
   "Idempotency-Key": apiIdempotencyKeySchema.optional(),
 });
 const channelPath = z.object({
@@ -86,6 +94,42 @@ export const OPENAPI_DOCUMENT = createDocument({
     },
   },
   servers: [{url: API_BASE_PATH, description: "This microfeed instance API"}],
+  webhooks: {
+    microfeedEvent: {
+      post: {
+        "x-codeSamples": [...WEBHOOK_OPENAPI_CODE_SAMPLES],
+        security: [],
+        operationId: "receiveMicrofeedWebhook",
+        summary: "Receive a microfeed webhook event",
+        description:
+          "microfeed sends this signed request to each subscribed endpoint. " +
+          "Verify the Standard Webhooks headers against the exact raw body, " +
+          "deduplicate by webhook-id, durably accept the work, and then return 2xx.",
+        requestParams: {header: apiWebhookDeliveryHeadersSchema},
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              examples: Object.fromEntries(WEBHOOK_EVENT_DEFINITIONS.map(
+                ({description, name, type}) => [
+                  type,
+                  {description, summary: name, value: WEBHOOK_EVENT_EXAMPLES[type]},
+                ],
+              )),
+              schema: apiWebhookEventSchema,
+            },
+          },
+        },
+        responses: {
+          "2XX": {description: "The receiver durably accepted the event."},
+          default: {
+            description:
+              "A non-2xx response. Retryable statuses follow the documented delivery policy.",
+          },
+        },
+      },
+    },
+  },
   tags: [
     {name: "Feed", description: "Read the complete feed."},
     {name: "Items", description: "Create and manage feed items."},
@@ -181,7 +225,10 @@ export const OPENAPI_DOCUMENT = createDocument({
           "main media attachment/RSS enclosure. The image field remains separate " +
           "cover art.",
         tags: ["Items"],
-        requestParams: {path: itemPath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: itemPath,
+        },
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiItemInputSchema}},
@@ -198,7 +245,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "deleteItem",
         summary: "Delete an item",
         tags: ["Items"],
-        requestParams: {path: itemPath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: itemPath,
+        },
         responses: {
           "200": success(z.object({})),
           "400": error("The item ID is invalid."),
@@ -226,6 +276,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         summary: "Create a Page",
         description: "Creates a top-level Page. A format v2 theme must be active before the Page can be published.",
         tags: ["Pages"],
+        requestParams: {header: apiWebhookContextHeadersSchema},
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiPageCreateInputSchema}},
@@ -275,7 +326,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         summary: "Update a Page",
         description: "Updates a Page. The built-in 404 Page allows content edits, but its path, published state, navigation exclusion, and existence are protected.",
         tags: ["Pages"],
-        requestParams: {path: pagePath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: pagePath,
+        },
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiPageInputSchema}},
@@ -294,7 +348,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "deletePage",
         summary: "Delete a Page",
         tags: ["Pages"],
-        requestParams: {path: pagePath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: pagePath,
+        },
         responses: {
           "200": success(z.object({})),
           "400": error("The built-in 404 Page cannot be deleted."),
@@ -319,6 +376,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "createSiteFile",
         summary: "Create a Site File",
         tags: ["Site Files"],
+        requestParams: {header: apiWebhookContextHeadersSchema},
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiSiteFileInputSchema}},
@@ -386,7 +444,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "updateSiteFile",
         summary: "Update a Site File draft",
         tags: ["Site Files"],
-        requestParams: {path: siteFilePath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: siteFilePath,
+        },
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiSiteFileInputSchema}},
@@ -403,7 +464,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "deleteSiteFile",
         summary: "Delete a custom Site File",
         tags: ["Site Files"],
-        requestParams: {path: siteFilePath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: siteFilePath,
+        },
         responses: {
           "200": success(z.object({})),
           "400": error("Generated Site Files cannot be deleted."),
@@ -418,7 +482,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "publishSiteFile",
         summary: "Publish a Site File draft",
         tags: ["Site Files"],
-        requestParams: {path: siteFilePath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: siteFilePath,
+        },
         responses: {
           "200": success(apiSiteFileOutputSchema),
           "400": error("The Site File content is invalid."),
@@ -433,7 +500,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "resetSiteFile",
         summary: "Reset a generated Site File",
         tags: ["Site Files"],
-        requestParams: {path: siteFilePath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: siteFilePath,
+        },
         responses: {
           "200": success(apiSiteFileOutputSchema),
           "400": error("Only generated Site Files can be reset."),
@@ -470,7 +540,10 @@ export const OPENAPI_DOCUMENT = createDocument({
         operationId: "updatePrimaryChannel",
         summary: "Update the primary channel",
         tags: ["Channel"],
-        requestParams: {path: channelPath},
+        requestParams: {
+          header: apiWebhookContextHeadersSchema,
+          path: channelPath,
+        },
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiChannelInputSchema}},
@@ -494,6 +567,7 @@ export const OPENAPI_DOCUMENT = createDocument({
           "attachment is published as the RSS enclosure. Include item_id for an " +
           "attachment; omit it only for cover-image uploads.",
         tags: ["Media"],
+        requestParams: {header: apiWebhookContextHeadersSchema},
         requestBody: {
           required: true,
           content: {"application/json": {schema: apiUploadInputSchema}},
@@ -512,7 +586,9 @@ export const OPENAPI_DOCUMENT = createDocument({
       bearerAuth: {
         type: "http",
         scheme: "bearer",
-        description: "A full-access mf_ API key sent using Bearer authentication.",
+        description:
+          "A named mf_ integration credential sent using Bearer authentication. " +
+          "The credential must have the read or write permission required by the operation.",
       },
     },
   },

@@ -14,7 +14,10 @@ import {
 import Requests from "@/client/requests";
 import {showToast} from "@/client/ToastUtils";
 import {Button} from "@/components/ui/button";
-import {richEditorMediaEmbedFormat} from "@/client/RichEditorMedia";
+import {
+  applyRichEditorMediaEmbedDefaults,
+  richEditorMediaEmbedFormat,
+} from "@/client/RichEditorMedia";
 
 const UPLOAD_STATUS__START = 1;
 
@@ -151,8 +154,14 @@ export default class RichEditorMediaDialog extends React.Component<any, any> {
         index,
         richEditorMediaEmbedFormat(mediaType),
         url,
-        Quill.sources.USER,
+        Quill.sources.SILENT,
       );
+      const [mediaBlot] = quill.getLeaf(index);
+      const mediaElement = mediaBlot?.domNode;
+      if (mediaElement instanceof HTMLElement) {
+        applyRichEditorMediaEmbedDefaults(mediaElement, mediaType);
+        quill.update(Quill.sources.SILENT);
+      }
       quill.insertText(index + 1, "\n", Quill.sources.USER);
       quill.setSelection(index + 2, 0, Quill.sources.SILENT);
       this.setState({url: null});

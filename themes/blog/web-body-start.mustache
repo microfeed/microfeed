@@ -1,0 +1,21 @@
+<header class="blog-shell">
+  <div class="blog-shell-topline"><span>Independent writing</span><span>{{current_year}}</span></div>
+  <div class="blog-shell-main">
+    <a class="blog-masthead" href="/">{{title}}</a>
+    <div class="blog-shell-actions">
+      <button type="button" class="blog-search-open" aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open>Search <span aria-hidden="true">⌘K</span></button>
+      <details class="blog-theme-menu" data-theme-menu>
+        <summary aria-label="Choose color theme">Theme</summary>
+        <div role="menu" aria-label="Color theme">
+          <button type="button" role="menuitemradio" aria-checked="true" data-theme-option="system">System</button>
+          <button type="button" role="menuitemradio" aria-checked="false" data-theme-option="light">Light</button>
+          <button type="button" role="menuitemradio" aria-checked="false" data-theme-option="dark">Dark</button>
+        </div>
+      </details>
+    </div>
+  </div>
+  <nav class="blog-nav" aria-label="Site navigation">
+    <a href="/">Latest</a>
+    {{#navigation_pages}}<a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>{{/navigation_pages}}
+  </nav>
+</header>

@@ -1,0 +1,36 @@
+<main class="photo-main">
+  <section class="photo-intro">
+    <div>
+      <p class="photo-kicker">Visual journal</p>
+      <h1>{{title}}</h1>
+    </div>
+    <div class="photo-intro-copy">
+      {{#description}}<div>{{{description}}}</div>{{/description}}
+      {{#authors}}<p>Photographs and notes by {{name}}</p>{{/authors}}
+      <div class="photo-subscribe">{{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}</div>
+    </div>
+  </section>
+
+  <section aria-labelledby="photo-latest">
+    <div class="photo-section-heading"><h2 id="photo-latest">Recent work</h2><span>Open any frame for the full story</span></div>
+    {{^items.length}}<div class="photo-empty"><span aria-hidden="true">▧</span><h3>The contact sheet is empty.</h3><p>New photographs will appear here when published.</p></div>{{/items.length}}
+    <div class="photo-grid">
+      {{#items}}
+      <article class="photo-tile{{^image}} photo-tile-text{{/image}}">
+        <a href="{{_microfeed.web_url}}" aria-label="View {{title}}">
+          {{#image}}<img src="{{image}}" alt="" loading="lazy" />{{/image}}
+          {{^image}}<span class="photo-tile-symbol" aria-hidden="true">{{#_microfeed.is_audio}}∿{{/_microfeed.is_audio}}{{#_microfeed.is_video}}▶{{/_microfeed.is_video}}{{#_microfeed.is_document}}↧{{/_microfeed.is_document}}{{#_microfeed.is_external_url}}↗{{/_microfeed.is_external_url}}{{^_microfeed.is_audio}}{{^_microfeed.is_video}}{{^_microfeed.is_document}}{{^_microfeed.is_external_url}}¶{{/_microfeed.is_external_url}}{{/_microfeed.is_document}}{{/_microfeed.is_video}}{{/_microfeed.is_audio}}</span>{{/image}}
+          <span class="photo-tile-caption">
+            <strong>{{title}}</strong>
+            <span>{{_microfeed.date_published_short}}{{#_microfeed.duration_hhmmss}} · {{_microfeed.duration_hhmmss}}{{/_microfeed.duration_hhmmss}}</span>
+          </span>
+        </a>
+      </article>
+      {{/items}}
+    </div>
+    <nav class="photo-pagination" aria-label="Pagination">
+      {{#_microfeed.prev_url}}<a href="{{_microfeed.prev_url}}">← Newer frames</a>{{/_microfeed.prev_url}}
+      {{#_microfeed.next_url}}<a href="{{_microfeed.next_url}}">Older frames →</a>{{/_microfeed.next_url}}
+    </nav>
+  </section>
+</main>

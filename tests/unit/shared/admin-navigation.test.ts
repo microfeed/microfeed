@@ -22,6 +22,7 @@ describe("getAdminNavigationItems", () => {
       [NAV_ITEMS.CONTACT_MESSAGES, "/studio/contact-messages/"],
       [NAV_ITEMS.MEDIA_LIBRARY, "/studio/media-library/"],
       [NAV_ITEMS.API, "/studio/api/"],
+      [NAV_ITEMS.WEBHOOKS, "/studio/webhooks/"],
       [NAV_ITEMS.SETTINGS, "/studio/settings/"],
     ]);
     expect(items.filter((item) => item.active).map((item) => item.id)).toEqual([
