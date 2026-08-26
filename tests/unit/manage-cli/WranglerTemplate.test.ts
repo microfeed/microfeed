@@ -5,6 +5,7 @@ import {describe, expect, it} from "vitest";
 import {
   adminAuthMode,
   requiredSecrets,
+  webhookQueueName,
   workersCacheEnabled,
   workersDevEnabled,
 } from "../../../manage-cli/lib/config";
@@ -39,6 +40,7 @@ describe("Wrangler configuration template", () => {
           '["UPLOAD_SIGNING_KEY","BETTER_AUTH_SECRET"]',
         )
         .replace("__R2_BINDING__", '"r2_buckets": [],')
+        .replace("__WEBHOOK_BINDINGS__", "")
         .replace("__R2_SETUP_MODE__", "automatic")
         .replace("__ROUTES__", "[]"),
     ) as {
@@ -107,5 +109,29 @@ describe("Wrangler configuration template", () => {
     expect(requiredSecrets(publicAdminConfig)).toEqual([
       "UPLOAD_SIGNING_KEY",
     ]);
+  });
+
+  it("requires the webhook encryption secret only after explicit opt-in", () => {
+    expect(requiredSecrets(config)).not.toContain("WEBHOOK_SECRET_KEY");
+    expect(requiredSecrets({
+      ...config,
+      webhooks: {queueName: "feed-webhooks", state: "enabled"},
+    })).toContain("WEBHOOK_SECRET_KEY");
+    expect(requiredSecrets({
+      ...config,
+      webhooks: {queueName: "feed-webhooks", state: "disabled"},
+    })).toContain("WEBHOOK_SECRET_KEY");
+  });
+
+  it("derives collision-resistant environment-specific Queue names", () => {
+    expect(webhookQueueName("microfeed-personal")).toBe(
+      "microfeed-personal-webhooks",
+    );
+    const first = webhookQueueName("a".repeat(63));
+    const second = webhookQueueName(`${"a".repeat(62)}b`);
+    expect(first).toHaveLength(63);
+    expect(second).toHaveLength(63);
+    expect(first).not.toBe(second);
+    expect(first).toMatch(/-[a-f0-9]{10}-webhooks$/u);
   });
 });

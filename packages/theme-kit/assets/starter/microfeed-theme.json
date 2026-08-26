@@ -6,7 +6,9 @@
   "version": "0.1.0",
   "author": "Your name",
   "license": "AGPL-3.0",
+  "description": "A flexible starting point for a custom microfeed website.",
   "microfeed": ">=1.0.0 <2.0.0",
+  "previewFixture": "fixtures/custom.json",
   "files": {
     "webFeed": "web-feed.mustache",
     "webItem": "web-item.mustache",

@@ -130,6 +130,9 @@ describe("snapshot migration history", () => {
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_create_idempotency");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("item_search_metadata");
     expect(SNAPSHOT_TABLES.ephemeral).toContain("site_search_documents");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_endpoints");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_deliveries");
+    expect(SNAPSHOT_TABLES.ephemeral).toContain("webhook_settings");
     expect(SNAPSHOT_TABLES.durable).toContain("pages");
     expect(SNAPSHOT_TABLES.durable).toContain("site_files");
   });
@@ -282,7 +285,8 @@ function snapshotSql(
     "SELECT name, sql, tbl_name, type FROM sqlite_schema " +
       "WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' " +
       `${includeIndexes ? "" : "AND type <> 'index' "}` +
-      "ORDER BY type DESC, name",
+      "ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 " +
+      "WHEN 'trigger' THEN 2 ELSE 3 END, name",
   ).all() as Array<{
     name: string;
     sql: string;
@@ -343,14 +347,16 @@ describe("migration upgrades from historical snapshot positions", () => {
       restored.exec(
         `PRAGMA defer_foreign_keys=ON; BEGIN TRANSACTION;\n${exported.data}\nCOMMIT;`,
       );
-      const repairedIndexes: string[] = [];
+      const repairedIndexes = new Map<string, string>();
       for (const migration of migrations.slice(0, position)) {
-        repairedIndexes.push(...migrationIndexDefinitions(await readFile(
+        for (const definition of migrationIndexDefinitions(await readFile(
           path.join(repositoryRoot, "migrations", migration.filename),
           "utf8",
-        )).map(({sql}) => sql));
+        ))) {
+          repairedIndexes.set(definition.name, definition.sql);
+        }
       }
-      restored.exec(repairedIndexes.join("\n"));
+      restored.exec([...repairedIndexes.values()].join("\n"));
       await applyMigrationRange(restored, migrations, position, migrations.length);
 
       for (const database of [normal, restored]) {
@@ -376,12 +382,12 @@ describe("migration upgrades from historical snapshot positions", () => {
             "sql IS NOT NULL ORDER BY name",
         ).all() as Array<{name: string}>;
         expect(indexes.map(({name}) => name)).toEqual(
-          (await Promise.all(migrations.map(async (migration) =>
+          [...new Set((await Promise.all(migrations.map(async (migration) =>
             migrationIndexDefinitions(await readFile(
               path.join(repositoryRoot, "migrations", migration.filename),
               "utf8",
             ))
-          ))).flat().map(({name}) => name).sort(),
+          ))).flat().map(({name}) => name))].sort(),
         );
         const tables = database.prepare(
           "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name",

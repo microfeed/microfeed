@@ -7,13 +7,14 @@ import ThemeStore from "@/server/themes/ThemeStore";
 import {themePreviewResponse} from "@/server/themes/ThemePreview";
 import {POST as manageTheme} from "@/pages/.well-known/microfeed/theme-management/index";
 import {sha256Hex} from "@/shared/themes/ThemeRenderer";
+import {STATUSES} from "@/shared/Constants";
 import type {
   ThemeBundleV1,
   ThemeManifestV1,
 } from "@/shared/themes/ThemeContract";
 import {
+  THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_DRAFTS,
-  THEME_MAX_INSTALLED_VERSIONS,
 } from "@/shared/themes/ThemeContract";
 
 function packageData(packageId: string, version = "1.0.0"):
@@ -65,6 +66,9 @@ describe("versioned theme storage", () => {
       ),
       env.FEED_DB.prepare(
         "UPDATE settings SET data = '{}' WHERE category = 'customCode'",
+      ),
+      env.FEED_DB.prepare(
+        "DELETE FROM items WHERE id = 'theme-preview-search-destination'",
       ),
     ]);
   });
@@ -137,7 +141,7 @@ describe("versioned theme storage", () => {
       id: "bundled-default-v2",
       packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.1.8",
+      version: "1.1.16",
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });
@@ -169,12 +173,15 @@ describe("versioned theme storage", () => {
     );
     expect(loaded.content.activeTheme?.id).toBe(active.id);
     expect((await store.getState()).activeThemeId).toBe(active.id);
-    expect(await store.getVersion("legacy-theme-v1")).toMatchObject({
+    const migratedTheme = await store.getVersion("legacy-theme-v1");
+    expect(migratedTheme).toMatchObject({
       name: "Imported site theme",
       packageId: "local.legacy-theme",
+      previewFixture: null,
       sourceKind: "migration",
       version: "1.0.0",
     });
+    expect(migratedTheme?.manifest).not.toHaveProperty("previewFixture");
     const retained = await env.FEED_DB.prepare(
       "SELECT data FROM settings WHERE category = 'customCode'",
     ).first<{data: string}>();
@@ -189,18 +196,38 @@ describe("versioned theme storage", () => {
     const purge = vi.fn().mockResolvedValue({errors: [], success: true});
     const store = new ThemeStore(env.FEED_DB, {purge});
     const source = packageData(`worker.flow.${crypto.randomUUID()}`);
+    const previewFixture = {
+      items: [{id: "fixture-item", title: "Fixture item"}],
+      version: "https://jsonfeed.org/version/1.1",
+    };
+    source.bundle.webPage = "<main>{{page.title}}</main>";
+    source.bundle.webSearch = "<main>{{#search.results}}{{title}}{{/search.results}}</main>";
+    source.manifest = {
+      ...source.manifest,
+      files: {
+        ...source.manifest.files,
+        webPage: "page.mustache",
+        webSearch: "search.mustache",
+      },
+      formatVersion: 2,
+      previewFixture: "fixtures/preview.json",
+      searchItemDestination: "web",
+    };
     const installed = await store.installVersion({
       ...source,
+      previewFixture,
       source: {kind: "local-directory", path: "/theme"},
     });
     const repeated = await store.installVersion({
       ...source,
+      previewFixture,
       source: {kind: "local-directory", path: "/theme"},
     });
     expect(repeated.id).toBe(installed.id);
     await expect(store.installVersion({
       bundle: {...source.bundle, webFeed: "changed"},
       manifest: source.manifest,
+      previewFixture,
       source: {kind: "local-directory"},
     })).rejects.toThrow("different content");
 
@@ -208,23 +235,67 @@ describe("versioned theme storage", () => {
       ...source,
       originKind: "theme",
       originThemeId: installed.id,
+      previewFixture,
     });
     expect(draft.packageId).toBe(`local.${source.manifest.packageId}`);
     expect(draft.version).toBe("1.0.1");
+    expect(draft.previewFixture).toEqual(previewFixture);
+    if (draft.manifest.formatVersion !== 2) {
+      throw new Error("Expected a format-v2 theme draft.");
+    }
+    await expect(store.saveDraft(draft.id, {
+      bundle: draft.bundle,
+      manifest: {
+        ...draft.manifest,
+        description: "x".repeat(281),
+      },
+    })).rejects.toThrow("280");
     const saved = await store.saveDraft(draft.id, {
       bundle: {...draft.bundle, webFeed: "<main>custom {{title}}</main>"},
-      manifest: {...draft.manifest, version: "1.1.0"},
+      manifest: {
+        ...draft.manifest,
+        description: "x".repeat(280),
+        searchItemDestination: "url",
+        version: "1.1.0",
+      },
     });
+    if (saved.manifest.formatVersion !== 2) {
+      throw new Error("Expected the saved draft to remain format v2.");
+    }
+    expect(saved.manifest.description).toHaveLength(280);
+    expect(saved.manifest.searchItemDestination).toBe("url");
     expect((await store.listDrafts()).some(({id}) => id === draft.id)).toBe(true);
     const published = await store.publishDraft(saved.id);
+    if (published.manifest.formatVersion !== 2) {
+      throw new Error("Expected the published theme to remain format v2.");
+    }
+    expect(published.manifest.searchItemDestination).toBe("url");
+    expect(published.previewFixture).toEqual(previewFixture);
     expect((await store.getState()).activeThemeId).toBeNull();
     expect(await store.getDraft(saved.id)).toBeNull();
+
+    const legacyDescriptionSource = packageData(
+      `worker.legacy-description.${crypto.randomUUID()}`,
+    );
+    legacyDescriptionSource.manifest.description = "x".repeat(500);
+    const legacyDescriptionDraft = await store.createDraft({
+      ...legacyDescriptionSource,
+      originKind: "theme",
+    });
+    expect(legacyDescriptionDraft.manifest.description).toHaveLength(500);
+    await expect(store.saveDraft(legacyDescriptionDraft.id, {
+      bundle: legacyDescriptionDraft.bundle,
+      manifest: legacyDescriptionDraft.manifest,
+    })).rejects.toThrow("280");
+    await store.discardDraft(legacyDescriptionDraft.id);
+
     const collisionDraft = await store.createDraft({
       assetOwnerThemeId: published.assetOwnerThemeId,
       bundle: published.bundle,
       manifest: published.manifest,
       originKind: "theme",
       originThemeId: published.id,
+      previewFixture: published.previewFixture,
     });
     const collision = await store.saveDraft(collisionDraft.id, {
       bundle: collisionDraft.bundle,
@@ -258,19 +329,38 @@ describe("versioned theme storage", () => {
     expect(purge).toHaveBeenCalledTimes(4);
   });
 
+  it("keeps bundled package IDs reserved and gives user drafts local identities", async () => {
+    const store = new ThemeStore(env.FEED_DB);
+    const reserved = packageData("microfeed.future-theme");
+    await expect(store.installVersion({
+      ...reserved,
+      source: {kind: "local-directory"},
+    })).rejects.toThrow("reserved for bundled microfeed themes");
+
+    const draft = await store.createDraft({
+      ...reserved,
+      originKind: "theme",
+    });
+    expect(draft.packageId).toBe("local.microfeed.future-theme");
+    await store.discardDraft(draft.id);
+  });
+
   it("lists searchable, sorted metadata without serializing theme bundles", async () => {
     const store = new ThemeStore(env.FEED_DB);
-    const first = packageData(`worker.alpha.${crypto.randomUUID()}`);
+    await store.ensureThemeMigration({});
+    expect((await store.listSummaries({page: 1, q: "", sort: "status"}))
+      .scope).toBe("built-in");
+    const first = packageData("worker.alpha.search-fixture");
     first.manifest.name = "Alpha Editorial";
     first.manifest.author = "Ada";
-    const second = packageData(`worker.beta.${crypto.randomUUID()}`);
+    const second = packageData("worker.beta.search-fixture");
     second.manifest.name = "Beta Journal";
     second.manifest.author = "Bea";
     const installed = await Promise.all([
       store.installVersion({...first, source: {kind: "github", url: "https://github.com/example/alpha"}}),
       store.installVersion({...second, source: {kind: "local-directory", path: "/beta"}}),
     ]);
-    const derivedPackage = packageData(`worker.derived.${crypto.randomUUID()}`);
+    const derivedPackage = packageData("worker.derived.search-fixture");
     derivedPackage.manifest.name = "Derived Alpha";
     await store.installVersion({
       ...derivedPackage,
@@ -279,27 +369,46 @@ describe("versioned theme storage", () => {
     });
     await store.activate(installed[1]!.id);
     const searched = await store.listSummaries({page: 1, q: "ADA", sort: "name-desc"});
+    expect(searched.scope).toBe("custom");
     expect(searched.pagination).toMatchObject({page: 1, pageSize: 20, total: 1, totalPages: 1});
-    expect(searched.limits).toEqual({drafts: 20, installed: 50});
-    expect(searched.themes[0]).toMatchObject({name: "Alpha Editorial", assetCount: 0});
-    expect(searched.themes[0]).not.toHaveProperty("bundle");
+    expect(searched.limits).toEqual({customInstalled: 100, drafts: 20});
+    expect(searched.counts).toEqual({
+      builtInThemes: 1,
+      builtInVersions: 1,
+      customVersions: 3,
+    });
+    expect(searched.builtInGroups[0]).toMatchObject({
+      catalogKey: "default",
+      currentVersion: "1.1.16",
+      packageId: "microfeed.default",
+      source: "bundled:default",
+    });
+    expect(searched.customThemes[0]).toMatchObject({name: "Alpha Editorial", assetCount: 0});
+    expect(searched.customThemes[0]).not.toHaveProperty("bundle");
     expect(searched.drafts).toEqual([]);
     const derivedSummary = await store.listSummaries({
       page: 1,
       q: "Derived Alpha",
       sort: "status",
     });
-    expect(derivedSummary.themes[0]).toMatchObject({
+    expect(derivedSummary.customThemes[0]).toMatchObject({
       originThemeId: installed[0]!.id,
       originThemeName: "Alpha Editorial",
       originThemeVersion: installed[0]!.version,
     });
     const byStatus = await store.listSummaries({page: 1, q: "", sort: "status"});
-    expect(byStatus.themes[0]?.id).toBe(installed[1]!.id);
+    expect(byStatus.customThemes[0]?.id).toBe(installed[1]!.id);
+    expect((await store.listSummaries(
+      {page: 1, q: "", sort: "status"},
+      "built-in",
+    )).scope).toBe("built-in");
   });
 
-  it("enforces installed and draft limits while retaining a blocked publication", async () => {
+  it("enforces the Custom quota without counting Built-in versions", async () => {
     const store = new ThemeStore(env.FEED_DB);
+    await store.ensureThemeMigration({});
+    await expect(store.deleteVersion("bundled-default-v2", env.MEDIA_BUCKET))
+      .rejects.toThrow("Built-in themes");
     const source = packageData(`worker.limit.base.${crypto.randomUUID()}`);
     const base = await store.installVersion({...source, source: {kind: "local-directory"}});
     const draft = await store.createDraft({
@@ -310,7 +419,7 @@ describe("versioned theme storage", () => {
     const manifestJson = JSON.stringify(source.manifest);
     const bundleJson = JSON.stringify(source.bundle);
     await env.FEED_DB.batch(Array.from(
-      {length: THEME_MAX_INSTALLED_VERSIONS - 1},
+      {length: THEME_MAX_CUSTOM_INSTALLED_VERSIONS - 2},
       (_, index) => env.FEED_DB.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
@@ -325,15 +434,23 @@ describe("versioned theme storage", () => {
         String(index).padStart(64, "0").slice(-64),
       ),
     ));
+    const hundredth = await store.installVersion({
+      ...packageData(`worker.limit.hundredth.${crypto.randomUUID()}`),
+      source: {kind: "local-directory"},
+    });
+    expect((await store.listSummaries({page: 1, q: "", sort: "status"}))
+      .counts.customVersions).toBe(THEME_MAX_CUSTOM_INSTALLED_VERSIONS);
     await expect(store.installVersion({
       ...packageData(`worker.limit.extra.${crypto.randomUUID()}`),
       source: {kind: "local-directory"},
-    })).rejects.toThrow(`${THEME_MAX_INSTALLED_VERSIONS} installed theme versions`);
+    })).rejects.toThrow(
+      `${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions`,
+    );
     await expect(store.installVersion({...source, source: {kind: "local-directory"}}))
       .resolves.toMatchObject({id: base.id});
     await expect(store.publishDraft(draft.id)).rejects.toThrow("draft has been retained");
     await expect(store.getDraft(draft.id)).resolves.toMatchObject({id: draft.id});
-    await store.deleteVersion("limit-0", env.MEDIA_BUCKET);
+    await store.deleteVersion(hundredth.id, env.MEDIA_BUCKET);
     await expect(store.publishDraft(draft.id)).resolves.toMatchObject({packageId: draft.packageId});
     expect(await store.getDraft(draft.id)).toBeNull();
 
@@ -430,7 +547,7 @@ describe("versioned theme storage", () => {
     await expect(store.saveDraft(heldDraft.id, {
       bundle: {...heldDraft.bundle, assets: []},
       manifest: {...heldDraft.manifest, assets: []},
-    })).rejects.toThrow("six text slots");
+    })).rejects.toThrow("supported behavior settings");
     const publishDraft = await store.createDraft({
       ...source,
       assetOwnerThemeId: owner.id,
@@ -473,10 +590,27 @@ describe("versioned theme storage", () => {
         webSearch: "search.mustache",
       },
       formatVersion: 2,
+      previewFixture: "fixtures/preview.json",
+      searchItemDestination: "url",
     };
     source.bundle.webHeader = "<script>document.body.dataset.theme='ran'</script>";
+    const previewFixture = {
+      items: [{
+        _microfeed: {
+          web_url: "https://example.test/i/fixture-preview/",
+        },
+        content_text: "Theme-specific fixture search result",
+        date_published: "2026-08-20T10:00:00.000Z",
+        id: "fixture-preview",
+        title: "Theme-specific fixture preview",
+        url: "https://fixture.example/preview-result",
+      }],
+      title: "Theme fixture feed",
+      version: "https://jsonfeed.org/version/1.1",
+    };
     const theme = await store.installVersion({
       ...source,
+      previewFixture,
       source: {kind: "local-directory"},
     });
     const token = crypto.randomUUID() + crypto.randomUUID();
@@ -493,6 +627,22 @@ describe("versioned theme storage", () => {
     const replay = await manageTheme({request: managementRequest()} as never) as Response;
     expect(replay.status).toBe(401);
 
+    const previewDatabase = new FeedDb(
+      env,
+      new Request("http://localhost:4321/"),
+    );
+    await previewDatabase.getContent();
+    await previewDatabase.putContent({
+      item: {
+        description: "Theme preview searchable result",
+        id: "theme-preview-search-destination",
+        link: "https://publisher.example/preview-search-result",
+        pubDateMs: Date.parse("2026-08-19T10:00:00.000Z"),
+        status: STATUSES.PUBLISHED,
+        title: "Theme preview search destination",
+      },
+    });
+
     const preview = await themePreviewResponse(
       env,
       new Request("http://localhost:4321/admin/ajax/themes/id/preview?view=feed"),
@@ -508,12 +658,55 @@ describe("versioned theme storage", () => {
     expect(previewHtml).toContain("document.body.dataset.theme='ran'");
     expect(previewHtml).toContain("data-microfeed-search-dialog");
     expect(previewHtml).toContain("data-microfeed-search-preview-results");
+    expect(previewHtml).toContain(
+      'data-microfeed-search-results-context="popup"',
+    );
+    expect(previewHtml).toContain("mf-public-search-result__domain");
     expect(previewHtml).toContain('"date_published":');
+    expect(previewHtml).toContain(
+      '"url":"https://fixture.example/preview-result"',
+    );
     expect(previewHtml).toContain(
       "Live search is unavailable in preview. Showing preview results instead.",
     );
     expect(previewHtml).toContain("event.metaKey || event.ctrlKey");
     expect(previewHtml).toContain("dialog.showModal()");
+
+    const sitePreview = await themePreviewResponse(
+      env,
+      new Request(
+        "http://localhost:4321/admin/ajax/themes/id/preview?view=feed&data=site",
+      ),
+      theme,
+    );
+    expect(await sitePreview.text()).toContain(
+      '"url":"https://publisher.example/preview-search-result"',
+    );
+
+    const unknownData = await themePreviewResponse(
+      env,
+      new Request(
+        "http://localhost:4321/admin/ajax/themes/id/preview?view=feed&data=unknown",
+      ),
+      theme,
+    );
+    expect(unknownData.status).toBe(400);
+
+    const withoutFixtureSource = packageData(
+      `worker.preview-without-fixture.${crypto.randomUUID()}`,
+    );
+    const withoutFixture = await store.installVersion({
+      ...withoutFixtureSource,
+      source: {kind: "local-directory"},
+    });
+    const missingFixture = await themePreviewResponse(
+      env,
+      new Request(
+        "http://localhost:4321/admin/ajax/themes/id/preview?view=feed&data=fixture",
+      ),
+      withoutFixture,
+    );
+    expect(missingFixture.status).toBe(400);
 
     const searchPreview = await themePreviewResponse(
       env,
@@ -524,7 +717,18 @@ describe("versioned theme storage", () => {
     );
     const searchPreviewHtml = await searchPreview.text();
     expect(searchPreviewHtml).toContain('class="preview-result"');
+    expect(searchPreviewHtml).toContain("Theme-specific fixture preview");
     expect(searchPreviewHtml).toContain("About");
+    const siteSearchPreview = await themePreviewResponse(
+      env,
+      new Request(
+        "http://localhost:4321/admin/ajax/themes/id/preview?view=search&data=site",
+      ),
+      theme,
+    );
+    expect(await siteSearchPreview.text()).toContain(
+      "Theme preview search destination",
+    );
 
     source.bundle.rssStylesheet = [
       '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">',
@@ -534,6 +738,7 @@ describe("versioned theme storage", () => {
     const rssTheme = await store.installVersion({
       ...source,
       manifest: {...source.manifest, packageId: `${source.manifest.packageId}.rss`},
+      previewFixture,
       source: {kind: "local-directory"},
     });
     const rssPreviewUrl = "http://localhost:4321/admin/ajax/themes/id/preview?view=rss";
@@ -547,10 +752,19 @@ describe("versioned theme storage", () => {
     );
     const rssPreviewHtml = await rssPreview.text();
     expect(rssPreviewHtml).toContain("new XSLTProcessor()");
+    expect(rssPreviewHtml).toContain("https://fixture.example/preview-result");
     expect(rssPreviewHtml).toContain(
       "http://localhost:4321/admin/ajax/themes/id/preview?view=rss-stylesheet",
     );
     expect(rssPreviewHtml).toContain("RSS preview rendered");
+    const siteRssPreview = await themePreviewResponse(
+      env,
+      new Request(`${rssPreviewUrl}&data=site`),
+      rssTheme,
+    );
+    expect(await siteRssPreview.text()).toContain(
+      "https://publisher.example/preview-search-result",
+    );
     const rssStylesheet = await themePreviewResponse(
       env,
       new Request(rssPreviewUrl.replace("view=rss", "view=rss-stylesheet")),

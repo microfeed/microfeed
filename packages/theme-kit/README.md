@@ -42,8 +42,8 @@ output.
 
 This is the recommended path when you already have a microfeed instance. Run
 the command from a microfeed checkout. It exports the effective active theme,
-declared assets, schemas, fixtures, local scripts, and agent skill, then starts
-an independent Git repository:
+declared assets, schemas, fixtures, local scripts, agent skill, and Claude Code
+bridge, then starts an independent Git repository:
 
 ```console
 yarn manage theme init ~/microfeed-themes/my-theme \
@@ -99,6 +99,7 @@ workspace from the microfeed repository into its own repository.
 A format v2 theme is a directory with `microfeed-theme.json` and eight required text files. Format v1 themes with the original six slots remain compatible:
 
 ```text
+CLAUDE.md
 README.md
 microfeed-theme.json
 THEME.md
@@ -145,6 +146,9 @@ avoid activation or screenshots without explicit permission. Its bundled
 theme, compose all eight format v2 slots, render Page navigation, connect and
 style the platform-owned search popup and Search page, and preview those
 features without duplicating microfeed's runtime behavior.
+
+Claude Code reads the generated `CLAUDE.md`, which directs it to the same
+canonical skill without duplicating the workflow under `.claude/skills/`.
 
 ## Where code and assets are stored
 

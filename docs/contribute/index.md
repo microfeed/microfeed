@@ -33,8 +33,8 @@ yarn docs:dev
 2. Keep application code under `src/`, management tooling under `manage-cli/`,
    and documentation-site content under `docs/`.
 3. Keep the canonical command references synchronized whenever behavior changes:
-   [`yarn manage`](/manage-cli/), the [microfeed CLI](/microfeed-cli/), and the
-   [theme-kit CLI](/theme-kit-cli/).
+   [`yarn manage`](/manage-cli/), [`@microfeed/cli`](/microfeed-cli/), and
+   [`@microfeed/theme-kit`](/theme-kit-cli/).
 4. Add or update tests for observable behavior.
 5. Run `git diff --check` and `yarn check`.
 6. Stop any development server you started.

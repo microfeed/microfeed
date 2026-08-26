@@ -7,6 +7,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminApiSidebar from "@/components/admin/api/AdminApiSidebar";
 import AdminAccountSidebar from "@/components/admin/account/AdminAccountSidebar";
 import AdminSettingsSidebar from "@/components/admin/settings/AdminSettingsSidebar";
+import AdminWebhookSidebar from "@/components/admin/webhooks/AdminWebhookSidebar";
 import AdminThemeScript from "@/components/admin/AdminThemeScript.astro";
 import AdminTopBar from "@/components/admin/AdminTopBar.astro";
 import {Toaster} from "@/components/ui/sonner";
@@ -19,6 +20,7 @@ import type {
   AdminIdentitySummary,
   AdminSettingsSidebarData,
   AdminSidebarData,
+  AdminWebhookSidebarData,
 } from "@/components/admin/admin-shell-types";
 import {cloudflareAccessIdentity} from "@/server/auth/admin-protection";
 import {adminUrl, normalizeAdminPath} from "@/shared/AdminPath";
@@ -33,6 +35,11 @@ import {
   adminApiPageUrl,
   type AdminApiPageId,
 } from "@/shared/AdminApiNavigation";
+import {
+  ADMIN_WEBHOOK_PAGES,
+  adminWebhookPageUrl,
+  type AdminWebhookPageId,
+} from "@/shared/AdminWebhookNavigation";
 import {
   PUBLIC_URLS,
   resolvePublicBucketUrl,
@@ -57,6 +64,8 @@ interface Props {
   pageTitle: string;
   settingsActiveSection?: AdminSettingsSection["id"];
   settingsNavigation?: boolean;
+  webhookActivePage?: AdminWebhookPageId;
+  webhookNavigation?: boolean;
 }
 
 const {
@@ -72,6 +81,8 @@ const {
   pageTitle,
   settingsActiveSection,
   settingsNavigation = false,
+  webhookActivePage = "overview",
+  webhookNavigation = false,
 } = Astro.props;
 const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
 const accessIdentity = cloudflareAccessIdentity(Astro.request);
@@ -157,6 +168,19 @@ const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
       ) as AdminApiSidebarData["pageUrls"],
     }
   : undefined;
+const webhookSidebar: AdminWebhookSidebarData | undefined = webhookNavigation
+  ? {
+      activePage: webhookActivePage,
+      backUrl: adminUrl("", adminPath),
+      deployment,
+      pageUrls: Object.fromEntries(
+        ADMIN_WEBHOOK_PAGES.map((page) => [
+          page.id,
+          adminWebhookPageUrl(page, adminPath),
+        ]),
+      ) as AdminWebhookSidebarData["pageUrls"],
+    }
+  : undefined;
 ---
 
 <!doctype html>
@@ -184,7 +208,7 @@ const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
       <aside
         class:list={[
           "sticky top-0 hidden h-svh shrink-0 overflow-hidden bg-sidebar lg:block",
-          settingsNavigation || apiNavigation || accountNavigation ? "w-[19rem]" : "w-[17rem]",
+          settingsNavigation || apiNavigation || accountNavigation || webhookNavigation ? "w-[19rem]" : "w-[17rem]",
         ]}
       >
         {
@@ -192,6 +216,8 @@ const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
             <AdminAccountSidebar client:load data={accountSidebar} />
           ) : apiSidebar ? (
             <AdminApiSidebar client:load data={apiSidebar} />
+          ) : webhookSidebar ? (
+            <AdminWebhookSidebar client:load data={webhookSidebar} />
           ) : settingsSidebar ? (
             <AdminSettingsSidebar client:load data={settingsSidebar} />
           ) : (
@@ -209,6 +235,7 @@ const apiSidebar: AdminApiSidebarData | undefined = apiNavigation
           {pageTitle}
           {settingsSidebar}
           {sidebar}
+          {webhookSidebar}
         >
           <div slot="toolbar"><slot name="toolbar" /></div>
         </AdminTopBar>

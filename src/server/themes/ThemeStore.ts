@@ -7,6 +7,7 @@ import {
 } from "@/server/cache/public-cache";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import type {
+  BuiltInThemeGroup,
   StoredThemeVersion,
   ThemeBundleV1,
   ThemeDraft,
@@ -14,19 +15,37 @@ import type {
   ThemeListResponse,
   ThemeListSort,
   ThemeManifestV1,
+  ThemePreviewFixture,
+  ThemeAdminTab,
   ThemeSourceKind,
   ThemeState,
+  ThemeVersionSummary,
 } from "@/shared/themes/ThemeContract";
 import {
+  assertUserThemePackageId,
+  LOCAL_THEME_PACKAGE_ID_PREFIX,
   THEME_LIST_PAGE_SIZE,
+  THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_DRAFTS,
-  THEME_MAX_INSTALLED_VERSIONS,
+  themePreviewFixtureSchema,
 } from "@/shared/themes/ThemeContract";
+import {
+  BUNDLED_FALLBACK_THEME,
+  BUNDLED_THEME_CATALOG,
+  bundledThemeCatalogEntryByPackageId,
+} from "@/shared/themes/BundledThemeCatalog";
 import {
   canonicalThemePackage,
   sha256Hex,
 } from "@/shared/themes/ThemeRenderer";
-import {validateThemePackage} from "@/shared/themes/ThemeValidation";
+import {
+  validateStoredThemePackage,
+  validateThemePackage,
+} from "@/shared/themes/ThemeValidation";
+import {
+  commitDatabaseMutation,
+  type DatabaseMutationCommit,
+} from "@/server/mutation";
 import {
   storedThemeFromRow,
   storedThemeSummaryFromRow,
@@ -38,6 +57,7 @@ import {
   BUNDLED_DEFAULT_THEME_BUNDLE,
   BUNDLED_DEFAULT_THEME_ID,
   BUNDLED_DEFAULT_THEME_MANIFEST,
+  BUNDLED_DEFAULT_THEME_PREVIEW_FIXTURE,
   legacyThemeMigrationSource,
   MIGRATED_LEGACY_THEME_ID,
 } from "./BundledThemes";
@@ -56,6 +76,7 @@ export interface InstallThemeInput {
   id?: string;
   manifest: ThemeManifestV1;
   originThemeId?: string | null;
+  previewFixture?: ThemePreviewFixture | null;
   source: ThemeSource;
 }
 
@@ -65,6 +86,7 @@ export interface CreateDraftInput {
   manifest: ThemeManifestV1;
   originKind: "built-in" | "theme";
   originThemeId?: string | null;
+  previewFixture?: ThemePreviewFixture | null;
 }
 
 export interface SaveDraftInput {
@@ -78,9 +100,30 @@ function results<T extends Record<string, unknown>>(
   return (result.results ?? []) as T[];
 }
 
+function validatedPreviewFixture(
+  manifest: ThemeManifestV1,
+  fixture: unknown,
+): ThemePreviewFixture | null {
+  if (!manifest.previewFixture) {
+    if (fixture !== null && fixture !== undefined) {
+      throw new Error(
+        "A preview fixture must be declared by manifest.previewFixture.",
+      );
+    }
+    return null;
+  }
+  if (fixture === null || fixture === undefined) {
+    throw new Error(
+      `The declared preview fixture is missing: ${manifest.previewFixture}`,
+    );
+  }
+  return themePreviewFixtureSchema.parse(fixture);
+}
+
 function localPackageId(packageId: string): string {
-  if (packageId.startsWith("local.")) return packageId;
-  return `local.${packageId}`.slice(0, 120).replace(/[._-]+$/u, "");
+  if (packageId.startsWith(LOCAL_THEME_PACKAGE_ID_PREFIX)) return packageId;
+  return `${LOCAL_THEME_PACKAGE_ID_PREFIX}${packageId}`
+    .slice(0, 120).replace(/[._-]+$/u, "");
 }
 
 function nextPatchVersion(versions: string[], sourceVersion: string): string {
@@ -110,6 +153,61 @@ const DRAFT_SUMMARY_COLUMNS = `
   origin_theme_id, asset_owner_theme_id, created_at, updated_at,
   COALESCE(json_array_length(json_extract(manifest_json, '$.assets')), 0)
     AS asset_count`;
+
+function builtInThemeGroups(
+  rows: Array<Record<string, unknown>>,
+  state: ThemeState,
+): BuiltInThemeGroup[] {
+  const byPackage = new Map<string, ThemeVersionSummary[]>();
+  for (const row of rows) {
+    const summary = storedThemeSummaryFromRow(row);
+    const versions = byPackage.get(summary.packageId) ?? [];
+    versions.push(summary);
+    byPackage.set(summary.packageId, versions);
+  }
+  const packageOrder = new Map(
+    BUNDLED_THEME_CATALOG.map((entry) => [
+      entry.packageId,
+      entry.order,
+    ]),
+  );
+  return [...byPackage].map(([packageId, versions]) => {
+    const catalog = bundledThemeCatalogEntryByPackageId(packageId);
+    versions.sort((left, right) => {
+      const leftRank = left.version === catalog?.manifest.version
+        ? 0
+        : left.id === state.activeThemeId
+        ? 1
+        : left.id === state.previousThemeId
+        ? 2
+        : 3;
+      const rightRank = right.version === catalog?.manifest.version
+        ? 0
+        : right.id === state.activeThemeId
+        ? 1
+        : right.id === state.previousThemeId
+        ? 2
+        : 3;
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      return semver.rcompare(
+        semver.valid(left.version) ?? "0.0.0",
+        semver.valid(right.version) ?? "0.0.0",
+      ) || right.createdAt.localeCompare(left.createdAt) ||
+        left.id.localeCompare(right.id);
+    });
+    return {
+      catalogKey: catalog?.key ?? null,
+      currentVersion: catalog?.manifest.version ?? null,
+      packageId,
+      source: catalog?.source ?? null,
+      versions,
+    };
+  }).sort((left, right) => {
+    const leftOrder = packageOrder.get(left.packageId) ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = packageOrder.get(right.packageId) ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder || left.packageId.localeCompare(right.packageId);
+  });
+}
 
 export default class ThemeStore {
   constructor(
@@ -142,18 +240,22 @@ export default class ThemeStore {
     return results(result).map(themeDraftFromRow);
   }
 
-  async listSummaries(options: ThemeListOptions): Promise<ThemeListResponse> {
+  async listSummaries(
+    options: ThemeListOptions,
+    requestedScope: ThemeAdminTab | null = null,
+  ): Promise<ThemeListResponse> {
     const page = Math.max(1, Math.trunc(options.page));
     const search = options.q ? escapedLike(options.q) : null;
     const where = search
-      ? `WHERE themes.deleted_at IS NULL AND (
+      ? `WHERE themes.deleted_at IS NULL
+        AND themes.source_kind != 'bundled' AND (
           lower(themes.name) LIKE ? ESCAPE '\\' OR
           lower(themes.package_id) LIKE ? ESCAPE '\\' OR
           lower(themes.version) LIKE ? ESCAPE '\\' OR
           lower(COALESCE(json_extract(themes.manifest_json, '$.author'), '')) LIKE ? ESCAPE '\\' OR
           lower(COALESCE(themes.source_url, '')) LIKE ? ESCAPE '\\'
         )`
-      : "WHERE themes.deleted_at IS NULL";
+      : "WHERE themes.deleted_at IS NULL AND themes.source_kind != 'bundled'";
     const sortSql = {
       "installed-asc": "themes.created_at ASC, themes.id ASC",
       "installed-desc": "themes.created_at DESC, themes.id ASC",
@@ -165,7 +267,8 @@ export default class ThemeStore {
         ELSE 2 END ASC, themes.created_at DESC, themes.id ASC`,
     } satisfies Record<ThemeListSort, string>;
     const parameters = search ? [search, search, search, search, search] : [];
-    const [themeRows, countRow, draftRows, state] = await Promise.all([
+    const [themeRows, countRow, customCountRow, builtInRows, draftRows, state] =
+      await Promise.all([
       this.database.prepare(
         `SELECT ${THEME_SUMMARY_COLUMNS}
          FROM themes
@@ -184,17 +287,43 @@ export default class ThemeStore {
         `SELECT count(*) AS total FROM themes ${where.replaceAll("themes.", "themes.")}`,
       ).bind(...parameters).first<{total: number}>(),
       this.database.prepare(
+        `SELECT count(*) AS total FROM themes
+         WHERE deleted_at IS NULL AND source_kind != 'bundled'`,
+      ).first<{total: number}>(),
+      this.database.prepare(
+        `SELECT ${THEME_SUMMARY_COLUMNS}
+         FROM themes
+         LEFT JOIN themes AS origin_themes
+           ON origin_themes.id = themes.origin_theme_id
+         WHERE themes.deleted_at IS NULL AND themes.source_kind = 'bundled'
+         ORDER BY themes.package_id ASC, themes.created_at DESC`,
+      ).all(),
+      this.database.prepare(
         `SELECT ${DRAFT_SUMMARY_COLUMNS}
          FROM theme_drafts ORDER BY updated_at DESC`,
       ).all(),
       this.getState(),
     ]);
     const total = Number(countRow?.total ?? 0);
+    const builtInGroups = builtInThemeGroups(results(builtInRows), state);
+    const activeIsBuiltIn = builtInGroups.some((group) =>
+      group.versions.some(({id}) => id === state.activeThemeId)
+    );
     return {
+      builtInGroups,
+      counts: {
+        builtInThemes: builtInGroups.length,
+        builtInVersions: builtInGroups.reduce(
+          (sum, group) => sum + group.versions.length,
+          0,
+        ),
+        customVersions: Number(customCountRow?.total ?? 0),
+      },
+      customThemes: results(themeRows).map(storedThemeSummaryFromRow),
       drafts: results(draftRows).map(themeDraftSummaryFromRow),
       limits: {
+        customInstalled: THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
         drafts: THEME_MAX_DRAFTS,
-        installed: THEME_MAX_INSTALLED_VERSIONS,
       },
       pagination: {
         page,
@@ -202,8 +331,10 @@ export default class ThemeStore {
         total,
         totalPages: Math.ceil(total / THEME_LIST_PAGE_SIZE),
       },
+      scope: requestedScope ?? (
+        state.activeThemeId && !activeIsBuiltIn ? "custom" : "built-in"
+      ),
       state,
-      themes: results(themeRows).map(storedThemeSummaryFromRow),
     };
   }
 
@@ -352,9 +483,14 @@ export default class ThemeStore {
       BUNDLED_DEFAULT_THEME_BUNDLE,
       MICROFEED_VERSION,
     );
+    const previewFixture = validatedPreviewFixture(
+      validated.manifest,
+      BUNDLED_DEFAULT_THEME_PREVIEW_FIXTURE,
+    );
     const checksum = await sha256Hex(canonicalThemePackage(
       validated.manifest,
       validated.bundle,
+      previewFixture,
     ));
     const existingRow = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
@@ -371,8 +507,9 @@ export default class ThemeStore {
       this.database.prepare(
         `INSERT OR IGNORE INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, 'bundled', ?, NULL, NULL)`,
+          preview_fixture_json, source_kind, source_path, checksum_sha256,
+          origin_theme_id, asset_owner_theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'bundled', ?, ?, NULL, NULL)`,
       ).bind(
         defaultThemeId,
         validated.manifest.packageId,
@@ -380,6 +517,8 @@ export default class ThemeStore {
         validated.manifest.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        JSON.stringify(previewFixture),
+        BUNDLED_FALLBACK_THEME.source,
         checksum,
       ),
       this.database.prepare(
@@ -413,7 +552,16 @@ export default class ThemeStore {
       input.bundle,
       MICROFEED_VERSION,
     );
-    const checksum = await sha256Hex(canonicalThemePackage(manifest, bundle));
+    const previewFixture = validatedPreviewFixture(
+      manifest,
+      input.previewFixture,
+    );
+    assertUserThemePackageId(manifest.packageId);
+    const checksum = await sha256Hex(canonicalThemePackage(
+      manifest,
+      bundle,
+      previewFixture,
+    ));
     const existing = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
     ).bind(manifest.packageId, manifest.version)
@@ -440,10 +588,11 @@ export default class ThemeStore {
     const inserted = await this.database.prepare(
       `INSERT INTO themes (
         id, package_id, version, name, manifest_json, bundle_json,
-        source_kind, source_url, source_ref, source_path, source_commit,
+        preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE (SELECT count(*) FROM themes
+               WHERE deleted_at IS NULL AND source_kind != 'bundled') < ?
       RETURNING id`,
     ).bind(
       id,
@@ -452,6 +601,7 @@ export default class ThemeStore {
       manifest.name,
       JSON.stringify(manifest),
       JSON.stringify(bundle),
+      previewFixture ? JSON.stringify(previewFixture) : null,
       input.source.kind,
       input.source.url ?? null,
       input.source.ref ?? null,
@@ -460,11 +610,11 @@ export default class ThemeStore {
       checksum,
       input.originThemeId ?? null,
       assetOwnerThemeId,
-      THEME_MAX_INSTALLED_VERSIONS,
+      THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
     ).first<{id: string}>();
     if (!inserted) {
       throw new Error(
-        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+        `This environment already has ${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions. Delete an inactive Custom version before installing another.`,
       );
     }
     const installed = await this.getVersion(id);
@@ -473,7 +623,11 @@ export default class ThemeStore {
   }
 
   async createDraft(input: CreateDraftInput): Promise<ThemeDraft> {
-    const source = validateThemePackage(input.manifest, input.bundle);
+    const source = validateStoredThemePackage(input.manifest, input.bundle);
+    const previewFixture = validatedPreviewFixture(
+      source.manifest,
+      input.previewFixture,
+    );
     const packageId = localPackageId(source.manifest.packageId);
     const versionRows = await this.database.prepare(
       `SELECT version FROM themes WHERE package_id = ?
@@ -496,8 +650,8 @@ export default class ThemeStore {
     const inserted = await this.database.prepare(
       `INSERT INTO theme_drafts (
         id, package_id, version, name, manifest_json, bundle_json,
-        origin_kind, origin_theme_id, asset_owner_theme_id
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+        preview_fixture_json, origin_kind, origin_theme_id, asset_owner_theme_id
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         WHERE (SELECT count(*) FROM theme_drafts) < ?
       RETURNING id`,
     ).bind(
@@ -507,6 +661,7 @@ export default class ThemeStore {
       manifest.name,
       JSON.stringify(manifest),
       JSON.stringify(source.bundle),
+      previewFixture ? JSON.stringify(previewFixture) : null,
       input.originKind,
       input.originThemeId ?? null,
       input.assetOwnerThemeId ?? null,
@@ -538,11 +693,13 @@ export default class ThemeStore {
         JSON.stringify(existing.manifest.files) ||
       JSON.stringify(validated.manifest.assets) !==
         JSON.stringify(existing.manifest.assets) ||
+      validated.manifest.previewFixture !==
+        existing.manifest.previewFixture ||
       JSON.stringify(validated.bundle.assets) !==
         JSON.stringify(existing.bundle.assets)
     ) {
       throw new Error(
-        "Admin drafts may edit only theme metadata and the six text slots; packaged files and assets are inherited unchanged.",
+        "Admin drafts may edit only theme metadata, supported behavior settings, and text slots; packaged files, assets, and the preview fixture are inherited unchanged.",
       );
     }
     await this.database.prepare(
@@ -578,7 +735,11 @@ export default class ThemeStore {
       MICROFEED_VERSION,
     );
     const checksum = await sha256Hex(
-      canonicalThemePackage(validated.manifest, validated.bundle),
+      canonicalThemePackage(
+        validated.manifest,
+        validated.bundle,
+        draft.previewFixture,
+      ),
     );
     const existing = await this.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
@@ -593,9 +754,11 @@ export default class ThemeStore {
     const inserted = await this.database.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          source_kind, checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) SELECT ?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?
-          WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+          preview_fixture_json, source_kind, checksum_sha256, origin_theme_id,
+          asset_owner_theme_id
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, 'admin', ?, ?, ?
+          WHERE (SELECT count(*) FROM themes
+                 WHERE deleted_at IS NULL AND source_kind != 'bundled') < ?
         RETURNING id`,
       ).bind(
         themeId,
@@ -604,14 +767,15 @@ export default class ThemeStore {
         draft.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        draft.previewFixture ? JSON.stringify(draft.previewFixture) : null,
         checksum,
         draft.originThemeId,
         draft.assetOwnerThemeId,
-        THEME_MAX_INSTALLED_VERSIONS,
+        THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
       ).first<{id: string}>();
     if (!inserted) {
       throw new Error(
-        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version, then install this draft again. The draft has been retained.`,
+        `This environment already has ${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions. Delete an inactive Custom version, then install this draft again. The draft has been retained.`,
       );
     }
     await this.database.prepare("DELETE FROM theme_drafts WHERE id = ?")
@@ -621,65 +785,96 @@ export default class ThemeStore {
     return published;
   }
 
-  async activate(id: string): Promise<ThemeState> {
+  async activate(
+    id: string,
+    commit?: DatabaseMutationCommit<ThemeState>,
+  ): Promise<ThemeState> {
     const theme = await this.getVersion(id);
     if (!theme) throw new Error("Theme version not found.");
-    validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
-    const updated = await this.database.prepare(
+    validateStoredThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
+    const before = await this.getState();
+    if (before.activeThemeId === id) return before;
+    const now = new Date().toISOString();
+    const state: ThemeState = {
+      activeThemeId: id,
+      previousThemeId: before.activeThemeId,
+      updatedAt: now,
+    };
+    const statement = this.database.prepare(
       `UPDATE theme_state SET previous_theme_id = active_theme_id,
-       active_theme_id = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = 'current' AND (active_theme_id IS NULL OR active_theme_id != ?)
+       active_theme_id = ?, updated_at = ?
+       WHERE id = 'current'
          AND EXISTS (
            SELECT 1 FROM themes WHERE id = ? AND deleted_at IS NULL
-         )
-       RETURNING active_theme_id`,
-    ).bind(id, id, id).first<{active_theme_id: string}>();
-    if (!updated) {
-      const state = await this.getState();
-      if (state.activeThemeId === id) return state;
-      throw new Error("Theme version became unavailable before activation.");
-    }
+         )`,
+    ).bind(id, now, id);
+    await commitDatabaseMutation(this.database, [statement], state, commit);
     await this.purgeActiveTheme();
-    return this.getState();
+    return state;
   }
 
-  async deactivate(): Promise<ThemeState> {
-    await this.database.prepare(
+  async deactivate(
+    commit?: DatabaseMutationCommit<ThemeState>,
+  ): Promise<ThemeState> {
+    const before = await this.getState();
+    if (!before.activeThemeId) return before;
+    const now = new Date().toISOString();
+    const state: ThemeState = {
+      activeThemeId: null,
+      previousThemeId: before.activeThemeId,
+      updatedAt: now,
+    };
+    const statement = this.database.prepare(
       `UPDATE theme_state SET previous_theme_id = active_theme_id,
-       active_theme_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = 'current'`,
-    ).run();
+       active_theme_id = NULL, updated_at = ? WHERE id = 'current'`,
+    ).bind(now);
+    await commitDatabaseMutation(this.database, [statement], state, commit);
     await this.purgeActiveTheme();
-    return this.getState();
+    return state;
   }
 
-  async rollback(): Promise<ThemeState> {
-    const state = await this.getState();
-    if (state.previousThemeId) {
-      const previous = await this.getVersion(state.previousThemeId);
+  async rollback(
+    commit?: DatabaseMutationCommit<ThemeState>,
+  ): Promise<ThemeState> {
+    const before = await this.getState();
+    if (before.previousThemeId) {
+      const previous = await this.getVersion(before.previousThemeId);
       if (!previous) throw new Error("The previous theme is unavailable.");
-      validateThemePackage(previous.manifest, previous.bundle, MICROFEED_VERSION);
+      validateStoredThemePackage(
+        previous.manifest,
+        previous.bundle,
+        MICROFEED_VERSION,
+      );
     }
-    const updated = await this.database.prepare(
+    const now = new Date().toISOString();
+    const state: ThemeState = {
+      activeThemeId: before.previousThemeId,
+      previousThemeId: before.activeThemeId,
+      updatedAt: now,
+    };
+    const statement = this.database.prepare(
       `UPDATE theme_state SET active_theme_id = previous_theme_id,
-       previous_theme_id = active_theme_id, updated_at = CURRENT_TIMESTAMP
+       previous_theme_id = active_theme_id, updated_at = ?
        WHERE id = 'current' AND (
          previous_theme_id IS NULL OR EXISTS (
            SELECT 1 FROM themes
            WHERE id = theme_state.previous_theme_id AND deleted_at IS NULL
          )
-       )
-       RETURNING active_theme_id`,
-    ).first<{active_theme_id: string | null}>();
-    if (!updated) {
-      throw new Error("The previous theme became unavailable before rollback.");
-    }
+       )`,
+    ).bind(now);
+    await commitDatabaseMutation(this.database, [statement], state, commit);
     await this.purgeActiveTheme();
-    return this.getState();
+    return state;
   }
 
   async deleteVersion(id: string, bucket?: R2Bucket | null): Promise<void> {
     const theme = await this.getVersion(id, true);
     if (!theme) throw new Error("Theme version not found.");
+    if (theme.sourceKind === "bundled") {
+      throw new Error(
+        "Built-in themes are managed by microfeed deployment and cannot be deleted manually.",
+      );
+    }
     const state = await this.getState();
     if (state.activeThemeId === id) {
       throw new Error("Deactivate or replace the active theme before deleting it.");

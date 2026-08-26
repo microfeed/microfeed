@@ -28,6 +28,7 @@ export const POST: APIRoute = async ({request}) => {
   try {
     const apiKey = await createApiKey(env.FEED_DB, {
       name: parsed.data.name,
+      scopes: parsed.data.scopes,
       settings: parsed.data.settings,
     });
     return jsonResponse({apiKey, settings}, {status: 201});

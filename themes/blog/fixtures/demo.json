@@ -1,0 +1,180 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Common Thread Review",
+  "home_page_url": "https://example.test/",
+  "feed_url": "https://example.test/json/",
+  "description": "<p>Essays and field notes about design, cities, culture, and the people building patient alternatives.</p>",
+  "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notebook-front-front.png/960px-Notebook-front-front.png",
+  "authors": [{"name": "Nora Bell"}],
+  "language": "en",
+  "items": [
+    {
+      "id": "architecture-of-attention",
+      "url": "https://example.test/essays/architecture-of-attention/",
+      "title": "The architecture of attention",
+      "content_text": "What public rooms can teach digital products about pace, focus, and belonging.",
+      "content_html": "<p>Every room makes an argument about how we should move through it. A doorway slows us down; a bench gives us permission to stay.</p><h2>Designing for arrival</h2><p>The most generous spaces acknowledge that attention has a body. They create thresholds, landmarks, and places to pause instead of demanding immediate action.</p><blockquote>Good interfaces can feel less like instructions and more like invitations.</blockquote><p>Building this way requires restraint, but it also creates trust. People know where they are and why they might continue.</p>",
+      "date_published": "2026-08-19T15:00:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
+      "authors": [{"name": "Nora Bell"}],
+      "_microfeed": {
+        "date_published_short": "Aug 19, 2026",
+        "json_url": "https://example.test/json/items/architecture-of-attention/",
+        "rss_url": "https://example.test/rss/items/architecture-of-attention/",
+        "status": "published",
+        "web_url": "https://example.test/i/architecture-of-attention/"
+      }
+    },
+    {
+      "id": "night-shift",
+      "url": "https://example.test/dispatches/night-shift/",
+      "title": "Night shift: the city after the last train",
+      "content_text": "A photographic dispatch from the people who keep a city running while most of it sleeps.",
+      "content_html": "<p>A photographic dispatch from the people who keep a city running while most of it sleeps.</p>",
+      "date_published": "2026-08-16T22:30:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
+      "authors": [{"name": "Ishaan Reed"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg", "mime_type": "image/jpeg"}],
+      "_microfeed": {
+        "date_published_short": "Aug 16, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/night-shift/",
+        "rss_url": "https://example.test/rss/items/night-shift/",
+        "status": "published",
+        "web_url": "https://example.test/i/night-shift/"
+      }
+    },
+    {
+      "id": "small-web",
+      "url": "https://example.test/notes/small-web/",
+      "title": "Notes toward a smaller, kinder web",
+      "content_text": "Six working principles for publishing without turning every reader into a metric.",
+      "content_html": "<p>Six working principles for publishing without turning every reader into a metric.</p><ol><li>Own a durable address.</li><li>Publish complete feeds.</li><li>Prefer links over lock-in.</li></ol>",
+      "date_published": "2026-08-12T09:00:00Z",
+      "authors": [{"name": "Nora Bell"}],
+      "_microfeed": {
+        "date_published_short": "Aug 12, 2026",
+        "json_url": "https://example.test/json/items/small-web/",
+        "rss_url": "https://example.test/rss/items/small-web/",
+        "status": "published",
+        "web_url": "https://example.test/i/small-web/"
+      }
+    },
+    {
+      "id": "audio-letter",
+      "url": "https://example.test/audio/letter-from-the-field/",
+      "title": "Audio letter from the field",
+      "content_text": "A short listening note recorded beside moving water.",
+      "content_html": "<p>A short listening note recorded beside moving water.</p>",
+      "date_published": "2026-08-09T12:00:00Z",
+      "authors": [{"name": "Mina Park"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg", "mime_type": "audio/ogg", "duration_in_seconds": 31}],
+      "_microfeed": {
+        "date_published_short": "Aug 9, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "json_url": "https://example.test/json/items/audio-letter/",
+        "rss_url": "https://example.test/rss/items/audio-letter/",
+        "status": "published",
+        "web_url": "https://example.test/i/audio-letter/"
+      }
+    },
+    {
+      "id": "water-study",
+      "url": "https://example.test/films/water-study/",
+      "title": "A three-second study in motion",
+      "content_text": "A tiny film about texture, repetition, and the value of looking twice.",
+      "content_html": "<p>A tiny film about texture, repetition, and the value of looking twice.</p>",
+      "date_published": "2026-08-06T11:00:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+      "authors": [{"name": "Ishaan Reed"}],
+      "attachments": [{"url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm", "mime_type": "video/webm", "duration_in_seconds": 3.4}],
+      "_microfeed": {
+        "date_published_short": "Aug 6, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/water-study/",
+        "rss_url": "https://example.test/rss/items/water-study/",
+        "status": "published",
+        "web_url": "https://example.test/i/water-study/"
+      }
+    },
+    {
+      "id": "reader",
+      "url": "https://example.test/resources/summer-reader/",
+      "title": "The summer reader: twelve pieces worth keeping",
+      "content_text": "A downloadable collection of essays, interviews, and annotations.",
+      "content_html": "<p>A downloadable collection of essays, interviews, and annotations.</p>",
+      "date_published": "2026-08-02T08:30:00Z",
+      "attachments": [{"url": "https://example.test/media/common-thread-summer-reader.pdf", "mime_type": "application/pdf", "size_in_bytes": 1600000}],
+      "_microfeed": {
+        "date_published_short": "Aug 2, 2026",
+        "is_document": true,
+        "json_url": "https://example.test/json/items/reader/",
+        "rss_url": "https://example.test/rss/items/reader/",
+        "status": "published",
+        "web_url": "https://example.test/i/reader/"
+      }
+    },
+    {
+      "id": "public-space",
+      "external_url": "https://journal.example/features/public-space/",
+      "title": "Elsewhere: who gets to shape public space?",
+      "content_text": "A deeply reported piece from a publication we admire.",
+      "content_html": "<p>A deeply reported piece from a publication we admire.</p>",
+      "date_published": "2026-07-29T14:15:00Z",
+      "attachments": [{"url": "https://journal.example/features/public-space/", "mime_type": "text/html"}],
+      "_microfeed": {
+        "date_published_short": "Jul 29, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/public-space/",
+        "rss_url": "https://example.test/rss/items/public-space/",
+        "status": "published",
+        "web_url": "https://example.test/i/public-space/"
+      }
+    }
+  ],
+  "navigation_pages": [
+    {"id": "page-about", "navigation_label": "About", "navigation_order": 10, "slug": "about", "title": "About the Review", "url": "https://example.test/about/"},
+    {"id": "page-contributors", "navigation_label": "Contributors", "navigation_order": 20, "slug": "contributors", "title": "Contributors", "url": "https://example.test/contributors/"},
+    {"id": "page-contact", "navigation_label": "Pitch us", "navigation_order": 30, "slug": "pitch", "title": "Pitch the Review", "url": "https://example.test/pitch/"}
+  ],
+  "page": {
+    "content_html": "<p><strong>Common Thread Review</strong> is an independent journal for curious people who care about how things are made.</p><h2>Our editorial promise</h2><p>We publish slowly, credit generously, and keep every edition available in open formats.</p>",
+    "content_text": "Common Thread Review is an independent journal for curious people who care about how things are made.",
+    "date_created": "2026-01-05T09:00:00Z",
+    "date_modified": "2026-08-17T12:00:00Z",
+    "date_published": "2026-01-05T09:00:00Z",
+    "id": "page-about",
+    "is_not_found_page": false,
+    "meta_description": "About Common Thread Review.",
+    "navigation_label": "About",
+    "navigation_order": 10,
+    "show_in_navigation": true,
+    "slug": "about",
+    "status": "published",
+    "title": "About the Review",
+    "url": "https://example.test/about/"
+  },
+  "search": {
+    "query": "design",
+    "results": [
+      {"content_text": "What public rooms can teach digital products about pace, focus, and belonging.", "date_published": "2026-08-19T15:00:00Z", "id": "architecture-of-attention", "title": "The architecture of attention", "type": "item", "url": "https://example.test/i/architecture-of-attention/"},
+      {"content_text": "Common Thread Review is an independent journal for curious people who care about how things are made.", "date_published": "2026-01-05T09:00:00Z", "id": "page-about", "title": "About the Review", "type": "page", "url": "https://example.test/about/"}
+    ]
+  },
+  "_microfeed": {
+    "base_url": "https://example.test/",
+    "categories": [{"name": "Design"}, {"name": "Culture"}, {"name": "Cities"}],
+    "copyright": "© 2026 Common Thread Review",
+    "items_next_cursor": "issue-seven",
+    "items_order": "desc",
+    "items_sort": "published_at",
+    "microfeed_version": "1.0.0",
+    "next_url": "https://example.test/?next_cursor=issue-seven",
+    "subscribe_methods": [
+      {"enabled": true, "name": "RSS", "type": "rss", "url": "https://example.test/rss/"},
+      {"enabled": true, "name": "JSON Feed", "type": "json", "url": "https://example.test/json/"}
+    ]
+  }
+}

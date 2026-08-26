@@ -1,0 +1,9 @@
+{
+  "packageId": "microfeed.changelog",
+  "releases": [
+    {
+      "checksumSha256": "7a96923daebb77719fae2ad1528effef8d37b2b889eacb44c281982e379176bc",
+      "version": "1.0.0"
+    }
+  ]
+}

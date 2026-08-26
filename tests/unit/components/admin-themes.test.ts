@@ -24,6 +24,10 @@ describe("Admin versioned themes", () => {
     expect(preview).toContain("LoaderCircleIcon");
     expect(preview).toContain("onLoad={() => setLoadedFrameKey(frameKey)}");
     expect(preview).toContain("const loading = loadedFrameKey !== frameKey");
+    expect(preview).toContain('data: dataSource');
+    expect(preview).toContain('"Demo content"');
+    expect(preview).toContain('"Current site"');
+    expect(preview).toContain('hasPreviewFixture ? "fixture" : "site"');
     expect(preview).toContain(
       "Live search is unavailable in preview. Showing preview results instead.",
     );
@@ -47,7 +51,7 @@ describe("Admin versioned themes", () => {
     expect(draftEditor).toContain('className="theme-preview-button"');
     expect(draftEditor).toContain("if (changed) await save({notify: false});");
     expect(draftEditor).toContain(
-      "Uses the saved draft and current public site data",
+      "hasPreviewFixture={Boolean(draft.manifest.previewFixture)}",
     );
     expect(draftEditor).toContain(
       'Discard draft "${draft.name}" (${draft.version})?',
@@ -63,30 +67,69 @@ describe("Admin versioned themes", () => {
     );
   });
 
-  it("presents only current themes as compact installed versions", async () => {
+  it("offers v2 search destinations without exposing raw manifest editing", async () => {
+    const draftEditor = await source(
+      "components/admin/themes/ThemeDraftEditorApp.tsx",
+    );
+    expect(draftEditor).toContain("draft.manifest.formatVersion === 2");
+    expect(draftEditor).toContain("DEFAULT_THEME_SEARCH_ITEM_DESTINATION");
+    expect(draftEditor).toContain("searchItemDestination");
+    expect(draftEditor).toContain('value: "web"');
+    expect(draftEditor).toContain('value: "url"');
+    expect(draftEditor).toContain('value: "attachment"');
+    expect(draftEditor).toContain('label: "Media attachment"');
+    expect(draftEditor).not.toContain('label: "Main attachment"');
+    expect(draftEditor).toContain("AdminRadioGroup");
+    expect(draftEditor).not.toContain("JSON.stringify(draft.manifest");
+    const detailsStart = draftEditor.indexOf('<details className="mt-5');
+    const detailsEnd = draftEditor.indexOf("</details>", detailsStart);
+    const searchLinks = draftEditor.indexOf("Search result links");
+    expect(searchLinks).toBeGreaterThan(detailsStart);
+    expect(searchLinks).toBeLessThan(detailsEnd);
+  });
+
+  it("separates Built-in groups from quota-scoped Custom versions", async () => {
     const [themes, installHelp, route] = await Promise.all([
       source("components/admin/themes/ThemesApp.tsx"),
       source("components/admin/themes/ThemeInstallHelpDialog.tsx"),
       source("pages/[adminPath]/settings/themes/index.astro"),
     ]);
-    expect(themes).toContain("Installed themes");
+    expect(themes).toContain("Built-in themes (");
+    expect(themes).toContain("Custom themes (");
+    expect(themes).toContain('role="tablist"');
+    expect(themes).toContain('role="tabpanel"');
+    expect(themes).toContain("new URLSearchParams({tab})");
+    expect(themes).toContain('if (tab === "custom")');
+    expect(themes).toContain("setPage(1)");
+    expect(themes).toContain('event.key === "ArrowLeft"');
+    expect(themes).toContain("tabIndex={tab ===");
+    expect(themes).toContain("builtInGroups.map");
+    expect(themes).toContain("Version history");
+    expect(themes).toContain("Current release");
+    expect(themes).toContain("Demo content");
+    expect(themes).toContain("Built-in themes are synchronized");
+    expect(themes).toContain("Custom theme versions used");
+    expect(themes).toContain("Built-in themes do not use this quota");
     expect(themes).toContain("Version drafts");
-    expect(themes).toContain(
-      "Installed versions are immutable. Create a new version to make changes.",
-    );
     expect(themes).toContain("Create new version");
     expect(themes).not.toContain("Customize");
     expect(themes).toContain('action: "customize"');
     expect(themes).not.toContain('originKind: "built-in"');
     expect(themes).toContain('originKind: "theme"');
     expect(themes).toContain("ajaxThemePreview(theme.id)");
+    expect(themes).toContain("theme.manifest.description");
+    expect(themes).toContain(
+      "hasPreviewFixture: Boolean(theme.manifest.previewFixture)",
+    );
     expect(themes).toContain("Installed at");
     expect(themes).toContain("<time");
     expect(themes).toContain("<details");
     expect(themes).not.toContain("Deleted versions");
     expect(themes).not.toContain("Theme state");
-    expect(themes).not.toContain("Built-in default");
-    expect(route).toContain("store.listSummaries(options)");
+    expect(themes).toContain("Built-in");
+    expect(route).toContain("store.listSummaries(options, requestedTab)");
+    expect(route).toContain("parseThemeAdminTab(searchParams)");
+    expect(route).toContain("initialTab = listing.scope");
     expect(themes).toContain("Search name, package, version, author, or source");
     expect(themes).toContain("Newest installed");
     expect(themes).toContain("window.history.replaceState");
@@ -95,6 +138,8 @@ describe("Admin versioned themes", () => {
       "yarn manage theme install &lt;github-url-or-directory&gt;",
     );
     expect(installHelp).toContain("Install a community theme");
+    expect(installHelp).toContain("Install a Built-in theme");
+    expect(installHelp).toContain("bundled:default");
     expect(installHelp).toContain("Create a new version in Admin");
     expect(installHelp).toContain("https://docs.microfeed.org/dashboard/themes/");
     expect(installHelp).toContain(
@@ -102,7 +147,12 @@ describe("Admin versioned themes", () => {
     );
     expect(themes).toContain("originThemeLabel(theme)");
     expect(themes).not.toContain("Origin theme: ${theme.originThemeId}");
+    expect(themes).toContain("!builtIn && (");
+    expect(themes).toContain("Update this theme");
+    expect(themes).toContain("theme install ${builtInSource}");
+    expect(themes).toContain("Copy update command");
     expect(themes).toContain("Export this version");
+    expect(themes).toContain("Copy export command");
     expect(themes).toContain("for backup or continued development");
     expect(themes).toContain(
       ".microfeed/themes/${theme.packageId}-${theme.version} --git",
@@ -120,6 +170,9 @@ describe("Admin versioned themes", () => {
     expect(draftEditor).toContain('<details className="mt-5');
     expect(draftEditor).toContain("Theme details");
     expect(draftEditor).toContain("THEME_FIELD_HELP");
+    expect(draftEditor).toContain('<ThemeFieldLabel field="description"');
+    expect(draftEditor).toContain("THEME_DESCRIPTION_MAX_LENGTH");
+    expect(draftEditor).toContain('id="theme-description-count"');
     expect(draftEditor).toContain("Read the theme guide");
   });
 

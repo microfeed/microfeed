@@ -28,10 +28,12 @@ async function save(
   description: string,
   status = STATUSES.PUBLISHED,
   publishedAt = "2026-08-01T10:00:00.000Z",
+  extra: Record<string, unknown> = {},
 ): Promise<void> {
   await db.putContent({
     item: {
       description,
+      ...extra,
       id,
       pubDateMs: Date.parse(publishedAt),
       status,
@@ -149,6 +151,35 @@ describe("D1 item search", () => {
     expect(phrase.items).toEqual([]);
   });
 
+  it("returns normalized item and main-attachment URLs for internal consumers", async () => {
+    const db = await database();
+    await save(
+      db,
+      "search-destinations",
+      "Destination fields",
+      "Custom search links",
+      STATUSES.PUBLISHED,
+      "2026-08-01T10:00:00.000Z",
+      {
+        link: "/custom/destination/",
+        mediaFile: {url: "production/media/destination.mp3"},
+      },
+    );
+    const response = await searchItems(env.FEED_DB, new Request(
+      `${ORIGIN}/api/v1/search/?q=destination`,
+    ), {
+      fields: ["title", "content"],
+      limit: 5,
+      publicBucketUrl: "https://media.example.com/",
+      query: "destination ",
+      statuses: ["published"],
+    });
+    expect(response.items[0]).toMatchObject({
+      attachment_url: "https://media.example.com/production/media/destination.mp3",
+      item_url: `${ORIGIN}/custom/destination/`,
+    });
+  });
+
   it("filters statuses and dates and rejects a cursor used with another query", async () => {
     const db = await database();
     await save(
@@ -262,7 +293,18 @@ describe("D1 item search", () => {
 
   it("validates the public API transport and readiness response", async () => {
     const db = await database();
-    await save(db, "search-api", "API searchable item", "Stored text");
+    await save(
+      db,
+      "search-api",
+      "API searchable item",
+      "Stored text",
+      STATUSES.PUBLISHED,
+      "2026-08-01T10:00:00.000Z",
+      {
+        link: "https://publisher.example/search-api",
+        mediaFile: {url: "production/media/search-api.mp3"},
+      },
+    );
     const request = new Request(
       `${ORIGIN}/api/v1/search/?q=searchable&fields=title&limit=5`,
     );

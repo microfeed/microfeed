@@ -61,6 +61,26 @@ dashboard. A 401 on an integration endpoint means the request did not send a
 currently active API key as `Authorization: Bearer <api-key>`. If a key was
 rotated or revoked, update the integration immediately.
 
+## Webhook deliveries fail or stop
+
+Open **Admin → Webhooks → Deliveries** to inspect the status, attempts,
+response diagnostics, and suppression reason. Then run `yarn manage status` to
+check the saved infrastructure state. Enabled webhooks require the exact Queue,
+producer binding, Worker consumer, resumed delivery, and hourly Cron. Disabled
+webhooks require the retained Queue to be paused and empty with no binding,
+consumer, or Cron. Do not rotate a signing secret or redeliver an event until
+you know which receiver configuration and deployed environment are active.
+
+If disabling or re-enabling was interrupted, rerun the same `yarn manage
+deploy --disable-webhooks` or `--enable-webhooks` command for the exact instance
+and environment. The operation resumes from saved progress. Do not create,
+rename, resume, purge, or delete a similarly named Queue by hand; an unexpected
+Queue ID fails closed to protect another resource.
+
+Use [Operate and troubleshoot webhooks](/webhooks/operations/) for response
+handling, retries, budget suppression, auto-pause recovery, signing-secret
+rotation, and safe manual redelivery.
+
 ## Before reporting a bug
 
 Include the failing command, non-secret error text, operating system, and

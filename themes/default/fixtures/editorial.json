@@ -1,24 +1,242 @@
 {
   "version": "https://jsonfeed.org/version/1.1",
   "title": "The Field Notes",
-  "description": "Reporting and essays about technology, culture, and the people shaping both.",
-  "home_page_url": "https://example.com/",
-  "feed_url": "https://example.com/rss/",
-  "items": [
+  "description": "Independent stories, conversations, images, and useful files from people building a more thoughtful web.",
+  "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notebook-front-front.png/960px-Notebook-front-front.png",
+  "home_page_url": "https://example.test/",
+  "feed_url": "https://example.test/json/",
+  "language": "en-US",
+  "authors": [
     {
-      "id": "welcome",
-      "url": "https://example.com/welcome/",
-      "title": "A more thoughtful way to follow what matters",
-      "content_text": "A sample story showing the familiar rhythm of the bundled default theme.",
-      "content_html": "<p>A sample story showing the familiar rhythm of the bundled default theme.</p><blockquote>Independent publishing should feel personal.</blockquote>",
-      "date_published": "2026-08-10T12:00:00Z",
-      "_microfeed": {"date_published_short": "Aug 10, 2026"}
+      "name": "The Field Notes team"
     }
   ],
+  "items": [
+    {
+      "id": "audio-field-recording",
+      "url": "https://example.test/stories/audio-field-recording/",
+      "title": "Field recording: water moving through a small swale",
+      "content_text": "A short field recording followed by detailed notes about independent publishing.",
+      "content_html": "<p>A short field recording followed by detailed notes about independent publishing.</p><h2>In this episode</h2><p>We listen to moving water, then talk about durable archives, calm interfaces, and why a personal feed can hold many kinds of work.</p><blockquote>Publishing should feel like keeping good field notes.</blockquote><h3>Links and transcript</h3><pre><code>const publication = 'independent';</code></pre>",
+      "date_published": "2026-08-18T12:00:00Z",
+      "authors": [
+        {
+          "name": "Maya Chen"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg",
+          "mime_type": "audio/ogg",
+          "size_in_bytes": 1092440,
+          "duration_in_seconds": 31
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 18, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "json_url": "https://example.test/json/items/audio-field-recording/",
+        "rss_url": "https://example.test/rss/items/audio-field-recording/",
+        "status": "published",
+        "web_url": "https://example.test/i/audio-field-recording/"
+      }
+    },
+    {
+      "id": "running-water-video",
+      "url": "https://example.test/stories/running-water-video/",
+      "title": "Video: running water in the field",
+      "content_text": "A compact field video demonstrating responsive playback and production notes.",
+      "content_html": "<p>A compact field video demonstrating responsive playback and production notes.</p>",
+      "date_published": "2026-08-16T09:30:00Z",
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm",
+          "mime_type": "video/webm",
+          "duration_in_seconds": 3.4
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 16, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/running-water-video/",
+        "rss_url": "https://example.test/rss/items/running-water-video/",
+        "status": "published",
+        "web_url": "https://example.test/i/running-water-video/"
+      }
+    },
+    {
+      "id": "field-notebook",
+      "url": "https://example.test/stories/field-notebook/",
+      "title": "A notebook for collecting field observations",
+      "content_text": "A square image testing cover art and responsive media.",
+      "content_html": "<p>A square image testing cover art and responsive media.</p>",
+      "date_published": "2026-08-14T16:45:00Z",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notebook-front-front.png/960px-Notebook-front-front.png",
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notebook-front-front.png/960px-Notebook-front-front.png",
+          "mime_type": "image/png"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 14, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/field-notebook/",
+        "rss_url": "https://example.test/rss/items/field-notebook/",
+        "status": "published",
+        "web_url": "https://example.test/i/field-notebook/"
+      }
+    },
+    {
+      "id": "field-guide",
+      "url": "https://example.test/stories/field-guide/",
+      "title": "Download: the independent publisher’s field guide",
+      "content_text": "A document attachment demonstrating downloadable resources and enclosures.",
+      "content_html": "<p>A document attachment demonstrating downloadable resources and enclosures.</p>",
+      "date_published": "2026-08-12T08:15:00Z",
+      "attachments": [
+        {
+          "url": "https://example.test/media/independent-publisher-field-guide.pdf",
+          "mime_type": "application/pdf",
+          "size_in_bytes": 2457600
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 12, 2026",
+        "is_document": true,
+        "json_url": "https://example.test/json/items/field-guide/",
+        "rss_url": "https://example.test/rss/items/field-guide/",
+        "status": "published",
+        "web_url": "https://example.test/i/field-guide/"
+      }
+    },
+    {
+      "id": "reading-list",
+      "external_url": "https://publisher.example/reading-list/",
+      "title": "Elsewhere: a practical reading list",
+      "content_text": "An external destination showing how linked work appears beside locally published items.",
+      "content_html": "<p>An external destination showing how linked work appears beside locally published items.</p>",
+      "date_published": "2026-08-10T14:00:00Z",
+      "attachments": [
+        {
+          "url": "https://publisher.example/reading-list/",
+          "mime_type": "text/html"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 10, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/reading-list/",
+        "rss_url": "https://example.test/rss/items/reading-list/",
+        "status": "published",
+        "web_url": "https://example.test/i/reading-list/"
+      }
+    },
+    {
+      "id": "plain-text-note",
+      "url": "https://example.test/stories/plain-text-note/",
+      "title": "A short plain-text note",
+      "content_text": "Not every update needs rich media. This one tests the simplest publishing path.",
+      "content_html": "<p>Not every update needs rich media. This one tests the simplest publishing path.</p>",
+      "date_published": "2026-08-08T11:00:00Z",
+      "_microfeed": {
+        "date_published_short": "Aug 8, 2026",
+        "json_url": "https://example.test/json/items/plain-text-note/",
+        "rss_url": "https://example.test/rss/items/plain-text-note/",
+        "status": "published",
+        "web_url": "https://example.test/i/plain-text-note/"
+      }
+    }
+  ],
+  "navigation_pages": [
+    {
+      "id": "page-about",
+      "navigation_label": "About",
+      "navigation_order": 10,
+      "slug": "about",
+      "title": "About The Field Notes",
+      "url": "https://example.test/about/"
+    },
+    {
+      "id": "page-contact",
+      "navigation_label": "Contact",
+      "navigation_order": 20,
+      "slug": "contact",
+      "title": "Contact",
+      "url": "https://example.test/contact/"
+    }
+  ],
+  "page": {
+    "content_html": "<p>The Field Notes is an independent publication about thoughtful tools, places, and creative work.</p>",
+    "content_text": "The Field Notes is an independent publication about thoughtful tools, places, and creative work.",
+    "date_created": "2026-01-05T09:00:00Z",
+    "date_modified": "2026-08-18T12:00:00Z",
+    "date_published": "2026-01-05T09:00:00Z",
+    "id": "page-about",
+    "is_not_found_page": false,
+    "meta_description": "About The Field Notes and its independent publishing practice.",
+    "navigation_label": "About",
+    "navigation_order": 10,
+    "show_in_navigation": true,
+    "slug": "about",
+    "status": "published",
+    "title": "About The Field Notes",
+    "url": "https://example.test/about/"
+  },
+  "search": {
+    "query": "publishing",
+    "results": [
+      {
+        "content_text": "A short field recording followed by detailed notes about independent publishing.",
+        "date_published": "2026-08-18T12:00:00Z",
+        "id": "audio-field-recording",
+        "title": "Field recording: water moving through a small swale",
+        "type": "item",
+        "url": "https://example.test/i/audio-field-recording/"
+      },
+      {
+        "content_text": "The Field Notes is an independent publication about thoughtful tools, places, and creative work.",
+        "date_published": "2026-01-05T09:00:00Z",
+        "id": "page-about",
+        "title": "About The Field Notes",
+        "type": "page",
+        "url": "https://example.test/about/"
+      }
+    ]
+  },
   "_microfeed": {
-    "base_url": "https://example.com/",
-    "categories": [],
+    "base_url": "https://example.test/",
+    "categories": [
+      {
+        "name": "Independent publishing"
+      },
+      {
+        "name": "Design"
+      }
+    ],
+    "copyright": "© 2026 The Field Notes",
+    "items_next_cursor": "older-stories",
+    "items_order": "desc",
+    "items_sort": "published_at",
     "microfeed_version": "1.0.0",
-    "subscribe_methods": []
+    "next_url": "https://example.test/?next_cursor=older-stories",
+    "subscribe_methods": [
+      {
+        "enabled": true,
+        "image": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Crect%20width='24'%20height='24'%20rx='4'%20fill='%23f97316'/%3E%3Ccircle%20cx='7'%20cy='17'%20r='1.8'%20fill='white'/%3E%3Cpath%20d='M5.5%2011.5a7%207%200%200%201%207%207M5.5%206A12.5%2012.5%200%200%201%2018%2018.5'%20fill='none'%20stroke='white'%20stroke-width='2.2'%20stroke-linecap='round'/%3E%3C/svg%3E",
+        "name": "RSS",
+        "type": "rss",
+        "url": "https://example.test/rss/"
+      },
+      {
+        "enabled": true,
+        "image": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Crect%20width='24'%20height='24'%20rx='4'%20fill='%230ea5e9'/%3E%3Ctext%20x='12'%20y='16'%20text-anchor='middle'%20font-family='monospace'%20font-size='11'%20font-weight='700'%20fill='white'%3E%7B%7D%3C/text%3E%3C/svg%3E",
+        "name": "JSON Feed",
+        "type": "json",
+        "url": "https://example.test/json/"
+      }
+    ]
   }
 }

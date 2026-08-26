@@ -82,12 +82,12 @@ async function freshModules(
     vi.doUnmock("@clack/prompts");
   }
   vi.doMock("../../../manage-cli/theme", () => ({
-    installDefaultThemeForV1Appearance: vi.fn(async () => null),
-    installDefaultThemeForInitialization: vi.fn(async () => ({
+    installBundledThemesForInitialization: vi.fn(async () => ({
       id: "bundled-default-test",
       packageId: "microfeed.default",
       version: "1.2.3",
     })),
+    synchronizeBundledThemes: vi.fn(async () => []),
   }));
   vi.resetModules();
   // Import commands first so its config and prompt dependencies populate
@@ -737,7 +737,7 @@ describe("first-class local instances", () => {
       local: true,
     }, runner);
 
-    expect(theme.installDefaultThemeForV1Appearance).toHaveBeenCalledWith(
+    expect(theme.synchronizeBundledThemes).toHaveBeenCalledWith(
       expect.objectContaining({instanceName: "content-only"}),
       runner,
       true,
@@ -760,6 +760,86 @@ describe("first-class local instances", () => {
       "build",
     ]);
     expect(yarnScripts).not.toContain("test");
+  });
+
+  it("simulates webhooks automatically in dev without changing deployment opt-in", async () => {
+    const {commands, config, prompts} = await freshModules();
+    const info = vi.spyOn(prompts.log, "info").mockImplementation(
+      () => undefined,
+    );
+    const generatedDuringDev: string[] = [];
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      const itemSearch = itemSearchCommandResult(args);
+      if (itemSearch) return itemSearch;
+      if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
+        return commandResult("Migrations applied");
+      }
+      if (command.startsWith("d1 execute FEED_DB --local --command ")) {
+        return commandResult(JSON.stringify([{results: []}]));
+      }
+      if (args[0] === "dev:astro") {
+        const current = await config.readConfig(false, "webhook-local");
+        generatedDuringDev.push(await readFile(
+          config.wranglerConfigPath(current!),
+          "utf8",
+        ));
+        return commandResult();
+      }
+      if (["types", "typecheck", "test:deploy", "build"].includes(args[0]!)) {
+        return commandResult();
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    await config.ensureLocalOnlyConfig("webhook-local");
+
+    await commands.deployCommand({instance: "webhook-local", local: true}, runner);
+    let saved = await config.readConfig(false, "webhook-local");
+    let generated = await readFile(config.wranglerConfigPath(saved!), "utf8");
+    expect(saved?.webhooks).toMatchObject({state: "unprovisioned"});
+    expect(generated).not.toContain('"WEBHOOK_QUEUE"');
+    expect(generated).toContain('"queues": {"consumers": [], "producers": []}');
+    expect(generated).toContain('"crons": []');
+    expect(generated).not.toContain('"WEBHOOK_SECRET_KEY"');
+
+    await commands.devCommand({instance: "webhook-local"}, runner);
+    saved = await config.readConfig(false, "webhook-local");
+    generated = await readFile(config.wranglerConfigPath(saved!), "utf8");
+    expect(generatedDuringDev[0]).toContain('"binding": "WEBHOOK_QUEUE"');
+    expect(generatedDuringDev[0]).toContain('"WEBHOOK_SECRET_KEY"');
+    expect(saved?.webhooks).toMatchObject({state: "unprovisioned"});
+    expect(generated).not.toContain('"WEBHOOK_QUEUE"');
+
+    await commands.devCommand({
+      "disable-webhooks": true,
+      instance: "webhook-local",
+    }, runner);
+    expect(generatedDuringDev[1]).not.toContain('"WEBHOOK_QUEUE"');
+    expect(generatedDuringDev[1]).toContain('"crons": []');
+    expect((await config.readConfig(false, "webhook-local"))?.webhooks)
+      .toMatchObject({state: "unprovisioned"});
+
+    await commands.devCommand({
+      "enable-webhooks": true,
+      instance: "webhook-local",
+    }, runner);
+    expect(info).toHaveBeenCalledWith(expect.stringContaining(
+      "already enabled for every local development session",
+    ));
+
+    await commands.deployCommand({
+      "enable-webhooks": true,
+      instance: "webhook-local",
+      local: true,
+    }, runner);
+    saved = await config.readConfig(false, "webhook-local");
+    generated = await readFile(config.wranglerConfigPath(saved!), "utf8");
+    expect(saved?.webhooks).toMatchObject({state: "enabled"});
+    expect(saved?.webhooks?.queueName).toBe("microfeed-webhook-local-webhooks");
+    expect(generated).toContain('"binding": "WEBHOOK_QUEUE"');
+    expect(generated).toContain('"max_retries": 5');
+    expect(generated).toContain('"0 * * * *"');
+    expect(generated).toContain('"WEBHOOK_SECRET_KEY"');
   });
 
   it("stops local deployment preparation when smoke tests fail", async () => {
@@ -1275,6 +1355,54 @@ describe("saved configuration migration", () => {
     expect(persisted.completedSteps).toContain("r2-ready");
     expect(persisted).not.toHaveProperty("localInstance");
   });
+
+  it("maps legacy webhook booleans to lifecycle state", async () => {
+    const directory = await mkdtemp(
+      path.join(tmpdir(), "microfeed-instance-test-"),
+    );
+    temporaryDirectories.push(directory);
+    const instanceDirectory = path.join(directory, "instances", "legacy");
+    await mkdir(instanceDirectory, {recursive: true});
+    const filename = path.join(instanceDirectory, "config.json");
+    const legacy = {
+      ...completedRemoteConfig(),
+      completedSteps: ["d1-ready", "webhook-queue-ready"],
+      webhooks: {
+        enabled: true,
+        queueName: "feed-webhooks",
+        reuse: false,
+      },
+    };
+    await writeFile(filename, JSON.stringify(legacy), "utf8");
+    process.env.MICROFEED_STATE_DIRECTORY = directory;
+    vi.resetModules();
+    const config = await import("../../../manage-cli/lib/config");
+
+    await expect(config.readConfig(false, "legacy")).resolves.toEqual(
+      expect.objectContaining({
+        webhooks: expect.objectContaining({state: "enabled"}),
+      }),
+    );
+    await writeFile(filename, JSON.stringify({
+      ...legacy,
+      webhooks: {...legacy.webhooks, enabled: false},
+    }), "utf8");
+    await expect(config.readConfig(false, "legacy")).resolves.toEqual(
+      expect.objectContaining({
+        webhooks: expect.objectContaining({state: "disabled"}),
+      }),
+    );
+    await writeFile(filename, JSON.stringify({
+      ...legacy,
+      completedSteps: ["d1-ready"],
+      webhooks: {...legacy.webhooks, enabled: false},
+    }), "utf8");
+    await expect(config.readConfig(false, "legacy")).resolves.toEqual(
+      expect.objectContaining({
+        webhooks: expect.objectContaining({state: "unprovisioned"}),
+      }),
+    );
+  });
 });
 
 describe("connecting an existing Cloudflare instance", () => {
@@ -1288,6 +1416,7 @@ describe("connecting an existing Cloudflare instance", () => {
       "d1:write",
       "pages:write",
       "zone:read",
+      "queues:write",
     ];
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
@@ -1326,6 +1455,7 @@ describe("connecting an existing Cloudflare instance", () => {
         return commandResult(JSON.stringify([
           {name: "BETTER_AUTH_SECRET", type: "secret_text"},
           {name: "UPLOAD_SIGNING_KEY", type: "secret_text"},
+          {name: "WEBHOOK_SECRET_KEY", type: "secret_text"},
         ]));
       }
       throw new Error(`Unexpected command: ${command}`);
@@ -1376,10 +1506,22 @@ describe("connecting an existing Cloudflare instance", () => {
             text: "instance-id",
             type: "plain_text",
           },
+          {
+            name: "WEBHOOK_QUEUE",
+            queue_name: "feed-worker-webhooks",
+            type: "queue",
+          },
         ]});
       }
       if (url.pathname.endsWith("/feed-worker/subdomain")) {
         return apiResult({enabled: true});
+      }
+      if (url.pathname.endsWith("/queues")) {
+        return apiResult([{
+          queue_id: "queue-id",
+          queue_name: "feed-worker-webhooks",
+          settings: {delivery_paused: false},
+        }]);
       }
       throw new Error(`Unexpected request: ${url.href}`);
     });
@@ -1414,12 +1556,19 @@ describe("connecting an existing Cloudflare instance", () => {
         completedSteps: expect.arrayContaining([
           "better-auth-secret-created",
           "upload-signing-secret-created",
+          "webhook-queue-ready",
+          "webhook-secret-created",
         ]),
         customDomain: "feed.example.com",
         hosting: "cloudflare",
         instanceId: "instance-id",
         instanceName: "feed",
         workerName: "feed-worker",
+        webhooks: {
+          queueId: "queue-id",
+          queueName: "feed-worker-webhooks",
+          state: "enabled",
+        },
       }),
     );
     expect(await config.readActiveInstance()).toBe("feed");

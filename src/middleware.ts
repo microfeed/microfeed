@@ -9,6 +9,7 @@ import {
   normalizeAdminPath,
 } from "@/shared/AdminPath";
 import {STATUSES} from "@/shared/Constants";
+import {apiWebhookContextHeadersSchema} from "@/shared/ApiSchemas";
 import {itemQueryForStatusFilter} from "@/shared/ItemList";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
 import {
@@ -16,6 +17,7 @@ import {
   resolvePublicBucketUrl,
 } from "@/shared/StringUtils";
 import {
+  isAdminCollectionListPath,
   isExistingItemEditorPath,
   isPublicPageCandidateForDynamicAdminRoute,
 } from "./server/admin-routes";
@@ -177,6 +179,21 @@ const handleRequest = defineMiddleware(async (context, next) => {
       );
     }
 
+    if (isUnsafeMethod(context.request.method)) {
+      const automationContext = apiWebhookContextHeadersSchema.safeParse({
+        "Microfeed-Causation-Id":
+          context.request.headers.get("Microfeed-Causation-Id") ?? undefined,
+        "Microfeed-Correlation-Id":
+          context.request.headers.get("Microfeed-Correlation-Id") ?? undefined,
+      });
+      if (!automationContext.success) {
+        return Response.json(
+          {error: "Invalid microfeed automation context header."},
+          {status: 400},
+        );
+      }
+    }
+
     const loaded = await loadFeed(env, context.request, undefined, cache);
     const webGlobalSettings = loaded.content.settings?.webGlobalSettings ?? {};
     context.locals.feedDb = loaded.database;
@@ -286,10 +303,17 @@ const handleRequest = defineMiddleware(async (context, next) => {
     // precise 404 without fetching the default list first.
     const editingExistingItem = isExistingItemEditorPath(pathname, adminPath);
     if (!editingExistingItem) {
+      const collectionLoadsWithAjax = isAdminCollectionListPath(
+        pathname,
+        adminPath,
+      );
       let query;
       let itemsOrder;
       let itemsSort;
-      if (pathname.startsWith(adminUrl("items/list", adminPath))) {
+      if (
+        !collectionLoadsWithAjax &&
+        pathname.startsWith(adminUrl("items/list", adminPath))
+      ) {
         query = itemQueryForStatusFilter(
           context.url.searchParams.get("status"),
         );
@@ -309,6 +333,7 @@ const handleRequest = defineMiddleware(async (context, next) => {
         context.request,
         {
           adminProtection: protection,
+          includeItems: !collectionLoadsWithAjax,
           itemsOrder,
           itemsSort,
           ...(query

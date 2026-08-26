@@ -26,8 +26,11 @@ import {
   MICROFEED_VERSION,
 } from "@/shared/Version";
 import {
+  assertUserThemePackageId,
+  isReservedThemePackageId,
+  LOCAL_THEME_PACKAGE_ID_PREFIX,
   THEME_MAX_ASSET_BYTES,
-  THEME_MAX_INSTALLED_VERSIONS,
+  THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_TEMPLATE_BYTES,
   THEME_MAX_TOTAL_ASSET_BYTES,
   THEME_FILE_KEYS_V1,
@@ -37,14 +40,24 @@ import {
   type ThemeBundleV1,
   type ThemeFileKey,
   type ThemeManifestV1,
+  type ThemePreviewFixture,
   type ThemeState,
   type ThemeVersionSummary,
 } from "@/shared/themes/ThemeContract";
 import {
+  BUNDLED_FALLBACK_THEME,
+  BUNDLED_THEME_CATALOG,
+  bundledThemeCatalogEntryBySource,
+  canonicalBundledThemeSource,
+} from "@/shared/themes/BundledThemeCatalog";
+import {
   canonicalThemePackage,
   sha256Hex,
 } from "@/shared/themes/ThemeRenderer";
-import {validateThemePackage} from "@/shared/themes/ThemeValidation";
+import {
+  validateStoredThemePackage,
+  validateThemePackage,
+} from "@/shared/themes/ThemeValidation";
 import {
   generatedExportedThemeRepositoryReadme,
   generatedInitializedThemeRepositoryReadme,
@@ -54,10 +67,10 @@ import {
   loadThemePackage,
   type LoadedThemePackage,
 } from "../packages/theme-kit/src/package";
-import DEFAULT_THEME_MANIFEST from "../themes/default/microfeed-theme.json";
 import type {CommandRunner, MicrofeedConfig} from "./types";
 import type {Flags} from "./commands";
 import {CloudflareClient} from "./lib/cloudflare";
+import {pruneSupersededBundledThemeVersions} from "./lib/bundled-theme-pruning";
 import {
   cloudflareAccountId,
   defaultLocalInstance,
@@ -94,6 +107,7 @@ interface EffectiveTheme {
   fallbackReason: string | null;
   kind: "bundled-fallback" | "installed" | "legacy";
   manifest: ThemeManifestV1;
+  previewFixture: ThemePreviewFixture | null;
   themeId: string | null;
 }
 
@@ -101,6 +115,7 @@ interface ThemePackageFiles {
   assetOwnerThemeId: string | null;
   bundle: ThemeBundleV1;
   manifest: ThemeManifestV1;
+  previewFixture: ThemePreviewFixture | null;
 }
 
 interface WriteThemePackageOptions {
@@ -174,6 +189,7 @@ async function bundledFallbackTheme(): Promise<EffectiveTheme> {
     fallbackReason: null,
     kind: "bundled-fallback",
     manifest: loaded.manifest,
+    previewFixture: loaded.previewFixture,
     themeId: null,
   };
 }
@@ -233,8 +249,10 @@ function legacyTheme(
       microfeed: "*",
       name: `${currentTheme} (legacy)`,
       packageId: `legacy.${normalizedId}`.slice(0, 120),
+      previewFixture: undefined,
       version: "0.0.0",
     }),
+    previewFixture: null,
     themeId: null,
   };
 }
@@ -256,7 +274,7 @@ function installedTheme(
   }
   try {
     const stored = storedThemeFromRow(row);
-    const validated = validateThemePackage(
+    const validated = validateStoredThemePackage(
       stored.manifest,
       stored.bundle,
       MICROFEED_VERSION,
@@ -270,6 +288,7 @@ function installedTheme(
         fallbackReason: null,
         kind: "installed",
         manifest: validated.manifest,
+        previewFixture: stored.previewFixture,
         themeId: stored.id,
       },
     };
@@ -373,6 +392,10 @@ export function initializedThemeManifest(
   const directoryName = path.basename(path.resolve(outputDirectory));
   const displayName = directoryName.replace(/[-_]+/gu, " ").trim() || "microfeed";
   const description = `Initialized from ${source.manifest.packageId}@${source.manifest.version} (${source.kind}).`;
+  const packageId = overrides.packageId ??
+    `${LOCAL_THEME_PACKAGE_ID_PREFIX}${normalizedPackageSegment(directoryName)}`
+      .slice(0, 120).replace(/[._-]+$/u, "");
+  assertUserThemePackageId(packageId);
   return themeManifestV1Schema.parse({
     $schema: ".microfeed/schemas/manifest.schema.json",
     assets: source.manifest.assets,
@@ -385,8 +408,14 @@ export function initializedThemeManifest(
     license: source.manifest.license,
     microfeed: source.manifest.microfeed,
     name: overrides.name ?? `${displayName} theme`,
-    packageId: overrides.packageId ??
-      `local.${normalizedPackageSegment(directoryName)}`.slice(0, 120).replace(/[._-]+$/u, ""),
+    packageId,
+    ...(source.manifest.previewFixture
+      ? {previewFixture: source.manifest.previewFixture}
+      : {}),
+    ...(source.manifest.formatVersion === 2 &&
+        source.manifest.searchItemDestination
+      ? {searchItemDestination: source.manifest.searchItemDestination}
+      : {}),
     version: overrides.version ?? "0.1.0",
   });
 }
@@ -615,17 +644,23 @@ async function resolveThemeSource(
   source: string,
   flags: Flags,
 ): Promise<ResolvedThemeSource> {
-  if (source === "default") {
+  const bundled = bundledThemeCatalogEntryBySource(source);
+  if (bundled) {
     return {
-      loaded: await loadThemePackage(path.join(repositoryRoot, "themes/default")),
+      loaded: await loadThemePackage(
+        path.join(repositoryRoot, "themes", bundled.directory),
+      ),
       source: {
         commit: null,
         kind: "bundled",
-        path: "default",
+        path: bundled.source,
         ref: null,
         url: null,
       },
     };
+  }
+  if (source.startsWith("bundled:")) {
+    throw new Error(`Unknown Built-in theme source: ${source}`);
   }
   if (/^https?:\/\//iu.test(source)) {
     return githubThemeSource(source, flagString(flags, "ref"), flagString(flags, "path"));
@@ -635,6 +670,18 @@ async function resolveThemeSource(
     loaded: await loadThemePackage(directory),
     source: {commit: null, kind: "local-directory", path: directory, ref: null, url: null},
   };
+}
+
+export function themeUpdateSource(
+  theme: Pick<
+    StoredThemeVersion,
+    "packageId" | "sourceKind" | "sourcePath" | "sourceUrl"
+  >,
+): string | null {
+  if (theme.sourceKind === "bundled") {
+    return canonicalBundledThemeSource(theme.packageId) ?? theme.sourcePath;
+  }
+  return theme.sourceUrl ?? theme.sourcePath;
 }
 
 function bundleForOwner(
@@ -763,7 +810,11 @@ async function installRemote(
     bundle,
     MICROFEED_VERSION,
   );
-  const checksum = await sha256Hex(canonicalThemePackage(validated.manifest, validated.bundle));
+  const checksum = await sha256Hex(canonicalThemePackage(
+    validated.manifest,
+    validated.bundle,
+    resolved.loaded.previewFixture,
+  ));
   const [existing] = await target.client.queryD1WithParameters(
     target.config,
     "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
@@ -774,8 +825,55 @@ async function installRemote(
     if (theme.checksumSha256 !== checksum) {
       throw new Error(`${theme.packageId}@${theme.version} already exists with different content; increment the package version.`);
     }
+    if (
+      resolved.source.kind === "bundled" &&
+      theme.sourceKind !== "bundled"
+    ) {
+      throw new Error(
+        `${theme.packageId}@${theme.version} already exists without Built-in source metadata.`,
+      );
+    }
     if (theme.deletedAt) {
+      if (
+        resolved.source.kind === "bundled" &&
+        theme.sourceKind === "bundled" &&
+        bundle.assets.length === 0
+      ) {
+        const restored = await target.client.queryD1WithParameters(
+          target.config,
+          `UPDATE themes SET deleted_at = NULL, assets_deleted_at = NULL,
+           asset_cleanup_error = NULL, source_path = ?
+           WHERE id = ? AND deleted_at IS NOT NULL
+             AND package_id = ? AND version = ?
+             AND source_kind = 'bundled' AND checksum_sha256 = ?
+           RETURNING id`,
+          [
+            resolved.source.path,
+            theme.id,
+            validated.manifest.packageId,
+            validated.manifest.version,
+            checksum,
+          ],
+        );
+        if (restored.length === 0) {
+          throw new Error(
+            "The Built-in theme tombstone changed before it could be restored.",
+          );
+        }
+        return {...theme, deletedAt: null, sourcePath: resolved.source.path};
+      }
       throw new Error(`${theme.packageId}@${theme.version} was deleted; increment the package version before reinstalling it.`);
+    }
+    if (
+      resolved.source.kind === "bundled" &&
+      theme.sourcePath !== resolved.source.path
+    ) {
+      await target.client.queryD1WithParameters(
+        target.config,
+        "UPDATE themes SET source_path = ? WHERE id = ?",
+        [resolved.source.path, theme.id],
+      );
+      return {...theme, sourcePath: resolved.source.path};
     }
     return theme;
   }
@@ -809,10 +907,13 @@ async function installRemote(
       target.config,
       `INSERT INTO themes (
         id, package_id, version, name, manifest_json, bundle_json,
-        source_kind, source_url, source_ref, source_path, source_commit,
+        preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
         checksum_sha256, origin_theme_id, asset_owner_theme_id
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE ? = 'bundled' OR (
+          SELECT count(*) FROM themes
+          WHERE deleted_at IS NULL AND source_kind != 'bundled'
+        ) < ?
       RETURNING id`,
       [
         id,
@@ -821,6 +922,9 @@ async function installRemote(
         validated.manifest.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        resolved.loaded.previewFixture
+          ? JSON.stringify(resolved.loaded.previewFixture)
+          : null,
         resolved.source.kind,
         resolved.source.url,
         resolved.source.ref,
@@ -829,12 +933,13 @@ async function installRemote(
         checksum,
         null,
         bundle.assets.length > 0 ? id : null,
-        THEME_MAX_INSTALLED_VERSIONS,
+        resolved.source.kind,
+        THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
       ],
     );
     if (inserted.length === 0) {
       throw new Error(
-        `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+        `This environment already has ${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions. Delete an inactive Custom version before installing another.`,
       );
     }
   } catch (error) {
@@ -865,7 +970,11 @@ async function installLocal(
       id,
     );
     const validated = validateThemePackage(resolved.loaded.manifest, bundle, MICROFEED_VERSION);
-    const checksum = await sha256Hex(canonicalThemePackage(validated.manifest, validated.bundle));
+    const checksum = await sha256Hex(canonicalThemePackage(
+      validated.manifest,
+      validated.bundle,
+      resolved.loaded.previewFixture,
+    ));
     const existingRow = await local.database.prepare(
       "SELECT * FROM themes WHERE package_id = ? AND version = ? LIMIT 1",
     ).bind(validated.manifest.packageId, validated.manifest.version)
@@ -875,8 +984,55 @@ async function installLocal(
       if (existing.checksumSha256 !== checksum) {
         throw new Error(`${existing.packageId}@${existing.version} already exists with different content; increment the package version.`);
       }
+      if (
+        resolved.source.kind === "bundled" &&
+        existing.sourceKind !== "bundled"
+      ) {
+        throw new Error(
+          `${existing.packageId}@${existing.version} already exists without Built-in source metadata.`,
+        );
+      }
       if (existing.deletedAt) {
+        if (
+          resolved.source.kind === "bundled" &&
+          existing.sourceKind === "bundled" &&
+          bundle.assets.length === 0
+        ) {
+          const restored = await local.database.prepare(
+            `UPDATE themes SET deleted_at = NULL, assets_deleted_at = NULL,
+             asset_cleanup_error = NULL, source_path = ?
+             WHERE id = ? AND deleted_at IS NOT NULL
+               AND package_id = ? AND version = ?
+               AND source_kind = 'bundled' AND checksum_sha256 = ?
+             RETURNING id`,
+          ).bind(
+            resolved.source.path,
+            existing.id,
+            validated.manifest.packageId,
+            validated.manifest.version,
+            checksum,
+          ).first<{id: string}>();
+          if (!restored) {
+            throw new Error(
+              "The Built-in theme tombstone changed before it could be restored.",
+            );
+          }
+          return {
+            ...existing,
+            deletedAt: null,
+            sourcePath: resolved.source.path,
+          };
+        }
         throw new Error(`${existing.packageId}@${existing.version} was deleted; increment the package version before reinstalling it.`);
+      }
+      if (
+        resolved.source.kind === "bundled" &&
+        existing.sourcePath !== resolved.source.path
+      ) {
+        await local.database.prepare(
+          "UPDATE themes SET source_path = ? WHERE id = ?",
+        ).bind(resolved.source.path, existing.id).run();
+        return {...existing, sourcePath: resolved.source.path};
       }
       return existing;
     }
@@ -904,10 +1060,13 @@ async function installLocal(
       const inserted = await local.database.prepare(
         `INSERT INTO themes (
           id, package_id, version, name, manifest_json, bundle_json,
-          source_kind, source_url, source_ref, source_path, source_commit,
+          preview_fixture_json, source_kind, source_url, source_ref, source_path, source_commit,
           checksum_sha256, origin_theme_id, asset_owner_theme_id
-        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-          WHERE (SELECT count(*) FROM themes WHERE deleted_at IS NULL) < ?
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          WHERE ? = 'bundled' OR (
+            SELECT count(*) FROM themes
+            WHERE deleted_at IS NULL AND source_kind != 'bundled'
+          ) < ?
         RETURNING id`,
       ).bind(
         id,
@@ -916,6 +1075,9 @@ async function installLocal(
         validated.manifest.name,
         JSON.stringify(validated.manifest),
         JSON.stringify(validated.bundle),
+        resolved.loaded.previewFixture
+          ? JSON.stringify(resolved.loaded.previewFixture)
+          : null,
         resolved.source.kind,
         resolved.source.url,
         resolved.source.ref,
@@ -924,11 +1086,12 @@ async function installLocal(
         checksum,
         null,
         bundle.assets.length > 0 ? id : null,
-        THEME_MAX_INSTALLED_VERSIONS,
+        resolved.source.kind,
+        THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
       ).first<{id: string}>();
       if (!inserted) {
         throw new Error(
-          `This environment already has ${THEME_MAX_INSTALLED_VERSIONS} installed theme versions. Delete an inactive version before installing another.`,
+          `This environment already has ${THEME_MAX_CUSTOM_INSTALLED_VERSIONS} Custom theme versions. Delete an inactive Custom version before installing another.`,
         );
       }
       const row = await local.database.prepare(
@@ -945,8 +1108,78 @@ async function installLocal(
   }
 }
 
+async function pruneInstalledBundledThemeVersions(
+  target: Target,
+  installed: StoredThemeVersion,
+): Promise<void> {
+  if (target.local) {
+    const local = await localResources(target);
+    try {
+      await pruneSupersededBundledThemeVersions({
+        deleteAssets: async (keys) => {
+          if (keys.length > 0) await local.bucket.delete(keys);
+        },
+        query: async (sql, parameters = []) => {
+          const result = await local.database.prepare(sql)
+            .bind(...parameters)
+            .all<Record<string, unknown>>();
+          return result.results;
+        },
+      }, installed.packageId, installed.version);
+    } finally {
+      await local.close();
+    }
+    return;
+  }
+
+  await pruneSupersededBundledThemeVersions({
+    deleteAssets: async (keys) => {
+      if (keys.length === 0) return;
+      if (!isR2Ready(target.config)) {
+        throw new Error(
+          "R2 media storage is unavailable for bundled theme asset cleanup.",
+        );
+      }
+      const accountId = cloudflareAccountId(target.config);
+      await Promise.all(keys.map((key) => target.client.deleteR2Object(
+        accountId,
+        target.config.r2.name,
+        key,
+      )));
+    },
+    query: (sql, parameters = []) => target.client.queryD1WithParameters(
+      target.config,
+      sql,
+      parameters,
+    ),
+  }, installed.packageId, installed.version);
+}
+
 async function installResolved(target: Target, resolved: ResolvedThemeSource) {
-  return target.local ? installLocal(target, resolved) : installRemote(target, resolved);
+  if (resolved.source.kind === "bundled") {
+    const catalog = bundledThemeCatalogEntryBySource(
+      resolved.source.path ?? "",
+    );
+    if (
+      !catalog ||
+      !isReservedThemePackageId(resolved.loaded.manifest.packageId) ||
+      catalog.manifest.packageId !== resolved.loaded.manifest.packageId ||
+      catalog.manifest.version !== resolved.loaded.manifest.version
+    ) {
+      throw new Error(
+        "Built-in theme package metadata does not match the catalog registry.",
+      );
+    }
+  } else {
+    assertUserThemePackageId(resolved.loaded.manifest.packageId);
+  }
+  const installed = target.local
+    ? await installLocal(target, resolved)
+    : await installRemote(target, resolved);
+  if (resolved.source.kind === "bundled") {
+    await pruneInstalledBundledThemeVersions(target, installed);
+  }
+  return installed;
 }
 
 async function initializationThemeState(target: Target): Promise<ThemeState> {
@@ -996,17 +1229,20 @@ async function activateInitializationTheme(
 async function assertPristineThemeInitializationTarget(
   target: Target,
 ): Promise<void> {
+  const allowedBuiltIn = BUNDLED_THEME_CATALOG.map(
+    () => "(source_kind = 'bundled' AND package_id = ? AND version = ?)",
+  ).join(" OR ");
   const sql = `SELECT
     (SELECT count(*) FROM channels) AS channels,
     (SELECT count(*) FROM settings) AS settings,
     (SELECT count(*) FROM items) AS items,
     (SELECT count(*) FROM theme_drafts) AS drafts,
     (SELECT count(*) FROM themes
-      WHERE package_id != ? OR version != ?) AS other_themes`;
-  const parameters = [
-    DEFAULT_THEME_MANIFEST.packageId,
-    DEFAULT_THEME_MANIFEST.version,
-  ];
+      WHERE NOT (${allowedBuiltIn})) AS other_themes`;
+  const parameters = BUNDLED_THEME_CATALOG.flatMap(({manifest}) => [
+    manifest.packageId,
+    manifest.version,
+  ]);
   let row: Record<string, unknown> | null;
   if (target.local) {
     const local = await localResources(target);
@@ -1027,12 +1263,37 @@ async function assertPristineThemeInitializationTarget(
     .some((field) => Number(row?.[field] ?? 0) !== 0);
   if (dirty) {
     throw new Error(
-      "The database contains application data and is not a pristine or partially completed default-theme installation target.",
+      "The database contains application data and is not a pristine or partially completed Built-in-theme installation target.",
     );
   }
 }
 
-export async function installDefaultThemeForInitialization(
+async function installBundledCatalog(
+  target: Target,
+): Promise<StoredThemeVersion[]> {
+  const installed: StoredThemeVersion[] = [];
+  for (const entry of BUNDLED_THEME_CATALOG) {
+    installed.push(await installResolved(
+      target,
+      await resolveThemeSource(entry.source, {}),
+    ));
+  }
+  return installed;
+}
+
+export async function synchronizeBundledThemes(
+  config: MicrofeedConfig,
+  runner: CommandRunner = runCommand,
+  local = isLocalOnly(config),
+): Promise<StoredThemeVersion[]> {
+  return installBundledCatalog({
+    client: new CloudflareClient(runner),
+    config,
+    local,
+  });
+}
+
+export async function installBundledThemesForInitialization(
   config: MicrofeedConfig,
   runner: CommandRunner = runCommand,
   local = isLocalOnly(config),
@@ -1046,50 +1307,25 @@ export async function installDefaultThemeForInitialization(
   if (state.activeThemeId) {
     const active = await themeById(target, state.activeThemeId);
     if (
-      active?.packageId === DEFAULT_THEME_MANIFEST.packageId &&
-      active.version === DEFAULT_THEME_MANIFEST.version
+      active?.packageId !== BUNDLED_FALLBACK_THEME.manifest.packageId ||
+      active.version !== BUNDLED_FALLBACK_THEME.manifest.version
     ) {
-      return active;
+      throw new Error(
+        "The database already has an active theme and is not a pristine Built-in-theme initialization target.",
+      );
     }
-    throw new Error(
-      "The database already has an active theme and is not a pristine default-theme initialization target.",
-    );
+  } else {
+    await assertPristineThemeInitializationTarget(target);
   }
-  await assertPristineThemeInitializationTarget(target);
-  const installed = await installResolved(
-    target,
-    await resolveThemeSource("default", {}),
+  const installed = await installBundledCatalog(target);
+  const fallback = installed.find(
+    ({packageId}) => packageId === BUNDLED_FALLBACK_THEME.manifest.packageId,
   );
-  await activateInitializationTheme(target, installed.id);
-  return installed;
-}
-
-/**
- * Makes the current bundled v2 theme available to an upgraded site without
- * changing its public appearance. The effective-theme lookup also recognizes
- * pre-versioning custom themes as v1 appearances.
- */
-export async function installDefaultThemeForV1Appearance(
-  config: MicrofeedConfig,
-  runner: CommandRunner = runCommand,
-  local = isLocalOnly(config),
-): Promise<StoredThemeVersion | null> {
-  const target: Target = {
-    client: new CloudflareClient(runner),
-    config,
-    local,
-  };
-  const active = await effectiveTheme(target);
-  if (active.manifest.formatVersion !== 1) return null;
-  if (DEFAULT_THEME_MANIFEST.formatVersion !== 2) {
-    throw new Error(
-      "The bundled default must use theme format v2 before it can be installed for a v1 site.",
-    );
+  if (!fallback) throw new Error("The Built-in fallback theme was not installed.");
+  if (!state.activeThemeId) {
+    await activateInitializationTheme(target, fallback.id);
   }
-  return installResolved(
-    target,
-    await resolveThemeSource("default", {}),
-  );
+  return fallback;
 }
 
 async function managementAction(
@@ -1106,7 +1342,11 @@ async function managementAction(
         ).bind(themeId ?? "").first<Record<string, unknown>>();
         if (!row) throw new Error("Theme version not found.");
         const theme = storedThemeFromRow(row);
-        validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
+        validateStoredThemePackage(
+          theme.manifest,
+          theme.bundle,
+          MICROFEED_VERSION,
+        );
         const updated = await local.database.prepare(
           `UPDATE theme_state SET previous_theme_id = active_theme_id,
            active_theme_id = ?, updated_at = CURRENT_TIMESTAMP
@@ -1139,7 +1379,11 @@ async function managementAction(
           ).bind(state.previousThemeId).first();
           if (!previous) throw new Error("The previous theme is unavailable.");
           const theme = storedThemeFromRow(previous as Record<string, unknown>);
-          validateThemePackage(theme.manifest, theme.bundle, MICROFEED_VERSION);
+          validateStoredThemePackage(
+            theme.manifest,
+            theme.bundle,
+            MICROFEED_VERSION,
+          );
         }
         const updated = await local.database.prepare(
           `UPDATE theme_state SET active_theme_id = previous_theme_id,
@@ -1202,6 +1446,11 @@ async function deleteLocalTheme(
   ).bind(id).first<Record<string, unknown>>();
   if (!row) throw new Error("Theme version not found.");
   const theme = storedThemeFromRow(row);
+  if (theme.sourceKind === "bundled") {
+    throw new Error(
+      "Built-in themes are managed by microfeed deployment and cannot be deleted manually.",
+    );
+  }
   const state = await localState(database);
   if (state.activeThemeId === id) {
     throw new Error("Deactivate or replace the active theme before deleting it.");
@@ -1313,6 +1562,21 @@ async function writeThemePackage(
         withFinalNewline(theme.bundle[key as keyof typeof theme.manifest.files]),
       );
     }
+    if (theme.manifest.previewFixture) {
+      if (!theme.previewFixture) {
+        throw new Error(
+          `The declared preview fixture is missing: ${theme.manifest.previewFixture}`,
+        );
+      }
+      await writeRelative(
+        theme.manifest.previewFixture,
+        `${JSON.stringify(theme.previewFixture, null, 2)}\n`,
+      );
+    } else if (theme.previewFixture) {
+      throw new Error(
+        "The stored preview fixture has no manifest.previewFixture path.",
+      );
+    }
     if (theme.bundle.assets.length > 0) {
       if (target.local) {
         const local = await localResources(target);
@@ -1355,14 +1619,17 @@ async function writeThemePackage(
       if (theme.manifest.assets.length === 0) {
         await writeRelative("assets/.gitkeep", "");
       }
-      await writeRelative(
-        "fixtures/custom.json",
-        await readFile(path.join(
-          repositoryRoot,
-          "packages/theme-kit/assets/starter/fixtures/custom.json",
-        )),
-      );
+      if (!writtenPaths.has("fixtures/custom.json")) {
+        await writeRelative(
+          "fixtures/custom.json",
+          await readFile(path.join(
+            repositoryRoot,
+            "packages/theme-kit/assets/starter/fixtures/custom.json",
+          )),
+        );
+      }
       for (const relativePath of [
+        "CLAUDE.md",
         ".agents/skills/develop-microfeed-theme/SKILL.md",
         ".agents/skills/develop-microfeed-theme/agents/openai.yaml",
         ".agents/skills/develop-microfeed-theme/references/public-site.md",
@@ -1425,6 +1692,7 @@ async function initializeThemeRepository(
       assetOwnerThemeId: source.assetOwnerThemeId,
       bundle: validated.bundle,
       manifest: validated.manifest,
+      previewFixture: source.previewFixture,
     },
     outputDirectory,
     {repositoryScaffold: {
@@ -1490,7 +1758,11 @@ export async function themeCommand(
   }
   if (action === "install") {
     const source = flagString(flags, "source");
-    if (!source) throw new Error("theme install requires default, a GitHub URL, or a directory.");
+    if (!source) {
+      throw new Error(
+        "theme install requires bundled:<key>, default, a GitHub URL, or a directory.",
+      );
+    }
     const theme = await installResolved(target, await resolveThemeSource(source, flags));
     writeOutput(flags, {theme}, `Installed ${theme.packageId}@${theme.version} as inactive (${theme.id}).`);
     return;
@@ -1524,9 +1796,7 @@ export async function themeCommand(
     throw new Error(`Theme ${themeId ?? "<missing>"} was not found.${guidance}`);
   }
   if (action === "update") {
-    const source = theme!.sourceKind === "bundled" && theme!.sourcePath === "default"
-      ? "default"
-      : theme!.sourceUrl ?? theme!.sourcePath;
+    const source = themeUpdateSource(theme!);
     if (!source) throw new Error("This theme version has no update source.");
     const updateFlags = {...flags};
     if (!updateFlags.ref && theme!.sourceRef) updateFlags.ref = theme!.sourceRef;
@@ -1570,6 +1840,11 @@ export async function themeCommand(
     return;
   }
   if (action === "delete") {
+    if (theme!.sourceKind === "bundled") {
+      throw new Error(
+        "Built-in themes are managed by microfeed deployment and cannot be deleted manually.",
+      );
+    }
     if (flagString(flags, "confirm") !== theme!.id) {
       throw new Error(`Delete requires --confirm ${theme!.id}.`);
     }

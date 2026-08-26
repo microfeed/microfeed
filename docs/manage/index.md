@@ -40,5 +40,5 @@ use named API keys and do not reuse the dashboard password or Cloudflare login.
   arguments, issue reports, and screenshots.
 - Create a snapshot before a high-risk content migration.
 
-The [`yarn manage` command reference](/manage-cli/) is authoritative if this
+The [`yarn manage` reference](/manage-cli/) is authoritative if this
 task-oriented guide and an option listing ever appear to differ.

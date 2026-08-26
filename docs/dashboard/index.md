@@ -6,7 +6,7 @@ description: Learn where to publish content, edit channel details, configure set
 The Admin dashboard is the private control room for one microfeed channel. Its
 left navigation stays consistent while the main panel changes for each task.
 
-![The microfeed dashboard home page with public feed links and a completed setup checklist](/images/screenshots/2-dashboard-1-home.png)
+![The microfeed dashboard home page with public feed links and a completed setup checklist](https://media-cdn.microfeed.org/production/themes/dc5664ff-bfe1-4dd6-82ba-f16449fd853a/assets/admin-home.png)
 
 ## Main areas
 
@@ -21,6 +21,17 @@ categories, language, and description.
 
 **API** opens a dedicated area for availability, API keys, an interactive
 browser explorer, and public API documentation formats.
+
+**Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
+whether infrastructure was never provisioned, is enabled, or is disabled with
+its Queue preserved. It summarizes configured endpoints, daily
+delivery usage, Queue operations, and failures. Endpoints manages destination
+URLs, subscriptions, status, and signing secrets. Event explorer previews exact
+payloads and sends signed tests. Deliveries shows attempts, response
+diagnostics, suppression reasons, and redelivery controls. Start with
+[Webhooks and integrations](/webhooks/) before connecting an endpoint, and use
+[webhook operations](/webhooks/operations/) for retries, budgets, recovery, and
+cost accounting.
 
 **Settings** manages website themes and shared code, tracking URLs, subscribe
 methods, site access, media storage, feed ordering, and favicon. It does not

@@ -11,7 +11,7 @@ import {
   createSiteFile,
   deleteSiteFile,
   getSiteFileById,
-  listSiteFiles,
+  listAdminSiteFileSummaries,
   previewSiteFile,
   publishSiteFile,
   resetSiteFile,
@@ -19,6 +19,10 @@ import {
   SiteFileRequestError,
   updateSiteFile,
 } from "@/server/site-files/service";
+import {
+  contentMutationWebhookCommit,
+  singleWebhookEventCommit,
+} from "@/server/webhooks/emission";
 
 function serviceError(error: unknown): Response | undefined {
   if (error instanceof SiteFileRequestError) {
@@ -34,8 +38,11 @@ function database(request: Request): FeedDb {
   return new FeedDb(env, request, cache);
 }
 
-export const listAdminSiteFiles: APIRoute = async ({request}) =>
-  jsonResponse({items: await listSiteFiles(env.FEED_DB, request)});
+export const listAdminSiteFiles: APIRoute = async () =>
+  jsonResponse(
+    {items: await listAdminSiteFileSummaries(env.FEED_DB)},
+    {headers: {"cache-control": "private, no-store"}},
+  );
 
 export const createAdminSiteFile: APIRoute = async ({request}) => {
   const parsed = apiSiteFileInputSchema.safeParse(await request.json().catch(
@@ -45,10 +52,18 @@ export const createAdminSiteFile: APIRoute = async ({request}) => {
     return jsonResponse({error: "Invalid Site File."}, {status: 400});
   }
   try {
-    return jsonResponse(
-      await createSiteFile(database(request), request, parsed.data),
-      {status: 201},
+    const siteFile = await createSiteFile(
+      database(request),
+      request,
+      parsed.data,
+      contentMutationWebhookCommit(env, request, {
+        context: {origin: "dashboard"},
+        id: (result) => result.id,
+        kind: "site_file",
+        mutation: "created",
+      }),
     );
+    return jsonResponse(siteFile, {status: 201});
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;
@@ -73,15 +88,28 @@ export const updateAdminSiteFile: APIRoute = async ({params, request}) => {
     return jsonResponse({error: "Invalid Site File."}, {status: 400});
   }
   try {
+    const before = await getSiteFileById(
+      env.FEED_DB,
+      request,
+      params.siteFileId,
+    );
     const siteFile = await updateSiteFile(
       database(request),
       request,
       params.siteFileId,
       parsed.data,
+      contentMutationWebhookCommit(env, request, {
+        before: before as unknown as Record<string, unknown> | null,
+        context: {origin: "dashboard"},
+        id: params.siteFileId,
+        kind: "site_file",
+        mutation: "updated",
+      }),
     );
-    return siteFile
-      ? jsonResponse(siteFile)
-      : jsonResponse({error: "Site File not found."}, {status: 404});
+    if (!siteFile) {
+      return jsonResponse({error: "Site File not found."}, {status: 404});
+    }
+    return jsonResponse(siteFile);
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;
@@ -119,9 +147,25 @@ export const deleteAdminSiteFile: APIRoute = async ({params, request}) => {
     return jsonResponse({error: "Invalid Site File ID."}, {status: 400});
   }
   try {
-    return await deleteSiteFile(database(request), params.siteFileId)
-      ? jsonResponse({})
-      : jsonResponse({error: "Site File not found."}, {status: 404});
+    const before = await getSiteFileById(
+      env.FEED_DB,
+      request,
+      params.siteFileId,
+    );
+    if (!await deleteSiteFile(
+      database(request),
+      params.siteFileId,
+      contentMutationWebhookCommit(env, request, {
+        before: before as unknown as Record<string, unknown> | null,
+        context: {origin: "dashboard"},
+        id: params.siteFileId,
+        kind: "site_file",
+        mutation: "deleted",
+      }),
+    )) {
+      return jsonResponse({error: "Site File not found."}, {status: 404});
+    }
+    return jsonResponse({});
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;
@@ -141,10 +185,19 @@ async function mutate(
       database(context.request),
       context.request,
       context.params.siteFileId,
+      singleWebhookEventCommit(env, context.request, (result) => ({
+        object: result as unknown as Record<string, unknown>,
+        subjectId: result.id,
+        subjectType: "site_file",
+        type: action === publishSiteFile
+          ? "site_file.published"
+          : "site_file.reset",
+      }), {origin: "dashboard"}),
     );
-    return siteFile
-      ? jsonResponse(siteFile)
-      : jsonResponse({error: "Site File not found."}, {status: 404});
+    if (!siteFile) {
+      return jsonResponse({error: "Site File not found."}, {status: 404});
+    }
+    return jsonResponse(siteFile);
   } catch (error) {
     const response = serviceError(error);
     if (response) return response;

@@ -187,6 +187,7 @@ export const NAV_ITEMS = {
   CONTACT_MESSAGES: 'contact_messages',
   MEDIA_LIBRARY: 'media_library',
   API: 'api',
+  WEBHOOKS: 'webhooks',
   SETTINGS: 'settings',
 } as const;
 
@@ -220,6 +221,9 @@ export const NAV_ITEMS_DICT = {
   },
   [NAV_ITEMS.API]: {
     name: 'API',
+  },
+  [NAV_ITEMS.WEBHOOKS]: {
+    name: 'Webhooks',
   },
   [NAV_ITEMS.SETTINGS]: {
     name: 'Settings',

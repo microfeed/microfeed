@@ -1,0 +1,84 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Orbit Changelog",
+  "home_page_url": "https://example.test/",
+  "feed_url": "https://example.test/json/",
+  "description": "New features, careful improvements, and fixes from the team building Orbit.",
+  "icon": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+  "authors": [{"name": "Orbit Product Team"}],
+  "language": "en-US",
+  "items": [
+    {
+      "id": "projects-launch",
+      "url": "https://example.test/updates/projects-launch/",
+      "title": "Launch — Projects that explain themselves",
+      "content_html": "<p>Projects bring related work, decisions, and updates into one calm shared space.</p><h2>What’s included</h2><ul><li>A focused project overview</li><li>Milestones with clear owners</li><li>A lightweight decision log</li></ul><blockquote>Context should travel with the work.</blockquote><p>Projects are available today for every workspace.</p>",
+      "content_text": "Projects bring related work, decisions, and updates into one calm shared space.",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
+      "date_published": "2026-08-20T16:00:00Z",
+      "authors": [{"name": "Orbit Product Team"}],
+      "_microfeed": {"date_published_short":"Aug 20, 2026","json_url":"https://example.test/json/items/projects-launch/","rss_url":"https://example.test/rss/items/projects-launch/","status":"published","web_url":"https://example.test/i/projects-launch/"}
+    },
+    {
+      "id": "search-speed",
+      "url": "https://example.test/updates/search-speed/",
+      "title": "Improvement — Search feels instant",
+      "content_html": "<p>Search now returns useful results sooner, keeps keyboard focus predictable, and makes long excerpts easier to scan.</p>",
+      "content_text": "Search now returns useful results sooner, keeps keyboard focus predictable, and makes long excerpts easier to scan.",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
+      "date_published": "2026-08-14T15:00:00Z",
+      "authors": [{"name": "Nadia Cole"}],
+      "_microfeed": {"date_published_short":"Aug 14, 2026","json_url":"https://example.test/json/items/search-speed/","rss_url":"https://example.test/rss/items/search-speed/","status":"published","web_url":"https://example.test/i/search-speed/"}
+    },
+    {
+      "id": "upload-recovery",
+      "url": "https://example.test/updates/upload-recovery/",
+      "title": "Fix — Interrupted uploads recover cleanly",
+      "content_html": "<p>Large uploads now resume from a safe checkpoint and surface a clearer recovery action when a network disappears.</p>",
+      "content_text": "Large uploads now resume from a safe checkpoint and surface a clearer recovery action when a network disappears.",
+      "date_published": "2026-08-09T14:00:00Z",
+      "authors": [{"name": "Orbit Engineering"}],
+      "_microfeed": {"date_published_short":"Aug 9, 2026","json_url":"https://example.test/json/items/upload-recovery/","rss_url":"https://example.test/rss/items/upload-recovery/","status":"published","web_url":"https://example.test/i/upload-recovery/"}
+    },
+    {
+      "id": "projects-tour",
+      "url": "https://example.test/updates/projects-tour/",
+      "title": "Demo — A two-minute Projects tour",
+      "content_html": "<p>See how a project moves from a rough brief to a durable record.</p>",
+      "content_text": "See how a project moves from a rough brief to a durable record.",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
+      "date_published": "2026-08-03T13:00:00Z",
+      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm","mime_type":"video/webm","size_in_bytes":1915000,"duration_in_seconds":3}],
+      "_microfeed": {"date_published_short":"Aug 3, 2026","duration_hhmmss":"00:03","is_video":true,"json_url":"https://example.test/json/items/projects-tour/","rss_url":"https://example.test/rss/items/projects-tour/","status":"published","web_url":"https://example.test/i/projects-tour/"}
+    },
+    {
+      "id": "audio-release-notes",
+      "url": "https://example.test/updates/audio-release-notes/",
+      "title": "Inside Orbit — August release notes",
+      "content_html": "<p>A short conversation with the team about the tradeoffs behind this month’s work.</p>",
+      "content_text": "A short conversation with the team about the tradeoffs behind this month’s work.",
+      "date_published": "2026-07-29T12:00:00Z",
+      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg","mime_type":"audio/ogg","size_in_bytes":1092440,"duration_in_seconds":31}],
+      "_microfeed": {"date_published_short":"Jul 29, 2026","duration_hhmmss":"00:31","is_audio":true,"json_url":"https://example.test/json/items/audio-release-notes/","rss_url":"https://example.test/rss/items/audio-release-notes/","status":"published","web_url":"https://example.test/i/audio-release-notes/"}
+    },
+    {
+      "id": "migration-guide",
+      "url": "https://example.test/updates/migration-guide/",
+      "title": "Guide — Moving existing work into Projects",
+      "content_html": "<p>A printable migration checklist for teams bringing an active initiative into the new Projects space.</p>",
+      "content_text": "A printable migration checklist for teams bringing an active initiative into the new Projects space.",
+      "date_published": "2026-07-22T11:00:00Z",
+      "attachments": [{"url":"https://example.test/media/orbit-projects-migration.pdf","mime_type":"application/pdf"}],
+      "_microfeed": {"date_published_short":"Jul 22, 2026","is_document":true,"json_url":"https://example.test/json/items/migration-guide/","rss_url":"https://example.test/rss/items/migration-guide/","status":"published","web_url":"https://example.test/i/migration-guide/"}
+    }
+  ],
+  "navigation_pages": [
+    {"id":"page-product","navigation_label":"Product","navigation_order":1,"slug":"product","title":"About Orbit","url":"https://example.test/product/"},
+    {"id":"page-roadmap","navigation_label":"Roadmap","navigation_order":2,"slug":"roadmap","title":"Public roadmap","url":"https://example.test/roadmap/"},
+    {"id":"page-status","navigation_label":"Status","navigation_order":3,"slug":"status","title":"System status","url":"https://example.test/status/"}
+  ],
+  "page": {"id":"page-product","title":"About Orbit","slug":"product","content_html":"<p>Orbit helps small teams keep projects, decisions, and progress understandable.</p><h2>Built in public</h2><p>This changelog records meaningful launches, improvements, and fixes—not every internal commit.</p>","content_text":"Orbit helps small teams keep projects, decisions, and progress understandable.","date_created":"2026-01-01T00:00:00Z","date_modified":"2026-08-01T00:00:00Z","date_published":"2026-08-01T00:00:00Z","is_not_found_page":false,"meta_description":"About Orbit","navigation_label":"Product","navigation_order":1,"show_in_navigation":true,"status":"published","url":"https://example.test/product/"},
+  "search": {"query":"projects","results":[{"id":"projects-launch","title":"Launch — Projects that explain themselves","type":"item","url":"https://example.test/i/projects-launch/","date_published":"2026-08-20T16:00:00Z","content_text":"Projects bring related work, decisions, and updates into one calm shared space."},{"id":"page-product","title":"About Orbit","type":"page","url":"https://example.test/product/","content_text":"Orbit helps small teams keep projects, decisions, and progress understandable."}]},
+  "_microfeed": {"base_url":"https://example.test/","categories":[{"name":"Launches"},{"name":"Improvements"},{"name":"Fixes"}],"copyright":"© 2026 Orbit","description_text":"New features, careful improvements, and fixes from the team building Orbit.","items_next_cursor":"older-updates","items_order":"desc","items_sort":"published_at","items_sort_order":"Newest first","microfeed_version":"1.0.5","next_url":"https://example.test/?next_cursor=older-updates","subscribe_methods":[{"enabled":true,"id":"rss","name":"RSS","type":"rss","url":"https://example.test/rss/"},{"enabled":true,"id":"json","name":"JSON Feed","type":"json","url":"https://example.test/json/"}]},
+  "current_year": 2026
+}

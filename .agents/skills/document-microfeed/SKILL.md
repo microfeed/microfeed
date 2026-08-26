@@ -73,10 +73,14 @@ let an image be the only instruction.
 
 ## Validate documentation changes
 
+Do not add unit tests that freeze documentation or README prose, headings,
+links, command snippets, sidebar labels, or exact file contents. Documentation
+must remain manually editable without test churn. Test executable behavior,
+schemas, generators, and public contracts at their implementation boundaries.
+
 Run focused checks while iterating, then run:
 
 ```console
-yarn vitest run tests/unit/docs-site.test.ts
 yarn docs:check
 git diff --check
 yarn check

@@ -58,6 +58,7 @@ function stored(overrides: Partial<StoredThemeVersion> = {}): StoredThemeVersion
     sourceUrl: null,
     version: manifest.version,
     ...overrides,
+    previewFixture: overrides.previewFixture ?? null,
   };
 }
 
@@ -120,12 +121,49 @@ describe("production theme selection", () => {
     );
   });
 
+  it("uses the R2 custom domain for stored immutable theme asset keys", () => {
+    expect(themeAssetBaseUrl(
+      {DEPLOYMENT_ENVIRONMENT: "production"},
+      "https://www.example.test/",
+      "owner-id",
+      [{
+        contentType: "image/png",
+        key: "production/themes/owner-id/assets/images/logo.png",
+        path: "assets/images/logo.png",
+        sha256: "a".repeat(64),
+        size: 10,
+      }],
+      "https://media-cdn.example.test/",
+    )).toBe(
+      "https://media-cdn.example.test/production/themes/owner-id/assets/",
+    );
+  });
+
+  it("uses the R2 custom domain for the generated theme asset path", () => {
+    expect(themeAssetBaseUrl(
+      {DEPLOYMENT_ENVIRONMENT: "production"},
+      "https://www.example.test/",
+      "owner-id",
+      [],
+      "https://media-cdn.example.test/",
+    )).toBe(
+      "https://media-cdn.example.test/production/themes/owner-id/assets/",
+    );
+  });
+
   it("selects a valid active D1 theme", () => {
     const theme = new Theme(feed, settings, null, stored());
     expect(theme.getWebFeed().html).toBe("installed Feed title test.installed");
     expect(theme.getWebItem(feed.items[0]!).html).toBe(
       "installed Item one / Item one",
     );
+  });
+
+  it("keeps stored legacy descriptions up to 500 characters compatible", () => {
+    const theme = new Theme(feed, settings, null, stored({
+      manifest: {...manifest, description: "x".repeat(500)},
+    }));
+    expect(theme.getWebFeed().html).toBe("installed Feed title test.installed");
   });
 
   it("keeps shared custom code wrapped around installed themes", () => {

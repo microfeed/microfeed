@@ -113,13 +113,13 @@ export default class FeedPublicRssBuilder {
     if (this.jsonData.home_page_url) {
       linksTags.push(this.jsonData.home_page_url);
     }
-    if (this.jsonData._microfeed.items_next_cursor !== undefined) {
+    if (_microfeed.items_next_cursor !== undefined) {
       const {
         items_next_cursor,
         items_order,
         items_sort,
         items_sort_order,
-      } = this.jsonData._microfeed;
+      } = _microfeed;
       linksTags.push({
         '@_rel': 'next',
         '@_href': buildItemPaginationUrl(PUBLIC_URLS.rssFeed(this.baseUrl), {
@@ -131,13 +131,13 @@ export default class FeedPublicRssBuilder {
         '@_type': 'application/rss+xml',
       });
     }
-    if (this.jsonData._microfeed.items_prev_cursor !== undefined) {
+    if (_microfeed.items_prev_cursor !== undefined) {
       const {
         items_order,
         items_prev_cursor,
         items_sort,
         items_sort_order,
-      } = this.jsonData._microfeed;
+      } = _microfeed;
       linksTags.push({
         '@_rel': 'prev',
         '@_href': buildItemPaginationUrl(PUBLIC_URLS.rssFeed(this.baseUrl), {

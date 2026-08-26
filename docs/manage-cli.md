@@ -1,5 +1,5 @@
 ---
-title: yarn manage command reference
+title: yarn manage reference
 description: Canonical commands, options, side effects, and safety contracts for the microfeed management CLI.
 ---
 
@@ -210,6 +210,9 @@ D1 or R2 resources are created. If initialization is interrupted later, retrying
 preserves whether each recorded resource was created for this site or explicitly
 reused. The fresh-target snapshot fingerprint is recorded after initialization,
 including optional custom-domain and login setup, has finished.
+Fresh initialization installs every current Built-in theme release and
+activates only the Default fallback. A resumed run installs any missing
+packages without changing an already selected theme.
 
 ```console
 yarn manage init [--instance <name>] [--preview|--local] [options]
@@ -300,9 +303,11 @@ Discover an existing compatible microfeed Worker, including a content-only
 Worker identified by its D1 binding and saved R2 variables, verify its public
 identity, and save it in this clone. Cloudflare is not changed. Connected D1
 and any ready R2 resource are marked reused and preserved by later destruction.
+Use `--preview` only after production is connected; it recovers the preview's
+independent Worker and webhook Queue identity under the same saved instance.
 
 ```console
-yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
+yarn manage connect [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
 ```
 
 | Option | Meaning |
@@ -310,6 +315,7 @@ yarn manage connect [--account-id <id>] [--worker <name>] [--instance <name>]
 | `--account-id <id>` | Search one exact account. |
 | `--worker <name>` | Select an exact compatible Worker. |
 | `--instance <name>` | Choose the local saved name. |
+| `--preview` | Connect the preview Worker after its production instance is connected under the same local name. |
 | `--yes` | Run without selection prompts; requires `--worker` when several matches exist. |
 
 ## `yarn manage deploy`
@@ -328,10 +334,17 @@ unified item-and-Page search index before it becomes available. A second pass
 after the Worker switch
 captures any item write completed by the previous Worker version. An incomplete
 pass stops deployment instead of serving partially normalized search data.
-When the site's current public appearance uses a format-v1 theme, deployment
-also installs the bundled default format-v2 theme as an inactive version. It
-never activates that version or changes the site's current appearance; preview
-and activation remain explicit actions in **Settings → Themes**.
+Every deployment synchronizes the registered Built-in catalog from the current
+checkout. Missing and newer Built-in releases are installed inactive, and the
+active and previous selections are never changed. Preview and activation remain
+explicit actions in **Settings → Themes**. Synchronization is idempotent and can
+resume after a partial run. After a current Built-in release is available,
+deployment soft-deletes older releases of the same package when they are not
+active, previous, referenced by a draft or another version, or needed for theme
+assets. Current, newer, referenced, user-installed, and invalid-version records
+are preserved. A matching previously deleted Built-in release can be restored
+only when its package, version, source kind, and checksum still match the
+catalog.
 The complete repository test suite remains part of `yarn check` and continuous
 integration. Cloudflare mode then tags the Worker version with the current Git
 commit, deploys it, and verifies the Worker. The protected dashboard uses that
@@ -340,7 +353,7 @@ local data, performs the same preparation against local D1, and does not deploy
 or start a server.
 
 ```console
-yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
+yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]
 ```
 
 | Option | Meaning |
@@ -350,6 +363,8 @@ yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2]
 | `--preview` | Deploy preview instead of production. |
 | `--local` | Prepare an instance created with `init --local`; cannot target a Cloudflare-managed instance or be combined with `--preview`. |
 | `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
+| `--enable-webhooks` | Provision one dedicated production or preview Queue and endpoint-secret encryption key when needed, then bind its producer and consumer and install one hourly Cron. Re-enabling verifies and reuses the exact saved Queue ID and secret. With `--local`, prepares the simulated binding explicitly, although plain `dev` already does this temporarily. |
+| `--disable-webhooks` | For Cloudflare production or preview, pause and purge the dedicated Queue, cancel pending deliveries, and deploy empty producer, consumer, and Cron configuration. Retains the Queue, endpoint data, delivery history, and encryption secret. Cannot be combined with `--enable-webhooks` or `--local`. |
 | `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
 | `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
 
@@ -373,6 +388,45 @@ completing. A later failure remains resumable. The CLI records a fresh remote
 restore baseline only when D1 is still bootstrap-only and the new bucket is
 empty; failing that eligibility check does not undo working R2 setup.
 
+Webhook infrastructure has three saved states: `unprovisioned`, `enabled`, and
+`disabled`. Production and preview use separate, instance-specific Queue names
+and IDs. The first enable creates one Queue and one endpoint-secret encryption
+key. Later enablement, disabling, normal deployment, status, connection, and
+destruction verify that exact identity and fail closed if the Queue is missing
+or replaced. A same-named unknown Queue is never adopted automatically.
+
+Enabled configuration binds the Queue as producer and consumer and installs
+one hourly maintenance trigger. It reconciles delivery IDs saved in D1 but not
+handed to the Queue and performs 30-day retention cleanup on the 00:00 UTC run.
+When no active or auto-paused endpoint remains, the trigger exits after one D1
+check without reconciliation, cleanup, or Queue work.
+
+Before enabling or disabling, the CLI verifies the existing exact Queue
+identity when present and performs read-only Queue and D1 access checks through
+the same Wrangler profile used by the deployment. It retries each safe check
+once when Cloudflare returns authentication code `10000`. If the second check
+fails, the command stops
+before pausing, creating, purging, resuming, or detaching webhook resources and
+prints the exact deployment command to rerun in a fresh process. If Cloudflare
+rejects a later request, the saved transition remains resumable and the same
+recovery command is shown.
+
+Disabling is resumable. It records the transition, pauses delivery, and marks
+pending or retrying rows
+`canceled_webhooks_disabled`, deploys explicit empty Queue and Cron arrays,
+cancels again to close the deployment race, purges the dedicated Queue, and
+verifies that the Queue is retained, paused, empty, and detached. Endpoint
+settings, subscriptions, encrypted signing secrets, failure streaks, history,
+and the encryption key remain unchanged. Events during the disabled interval
+are not replayed. Re-enabling keeps the Queue paused while restoring the
+producer, consumer, and Cron, then resumes delivery after verification.
+
+An ordinary deployment preserves the saved lifecycle state. Repeating enable
+or disable verifies the state without creating another Queue or secret.
+Interrupted transitions resume on the next deployment. The reviewed destroy
+plan includes the Queue name, Queue ID, lifecycle state, backlog, and Cron
+schedules; confirmed destruction removes the exact Queue even when disabled.
+
 ## `yarn manage dev`
 
 **Purpose:** Run one site locally with isolated development data.
@@ -385,13 +439,22 @@ site is connected to Cloudflare, development uses isolated local D1 and R2
 simulations.
 
 ```console
-yarn manage dev [--instance <name>] [--preview]
+yarn manage dev [--instance <name>] [--preview] [--enable-webhooks|--disable-webhooks]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the local sandbox. |
 | `--preview` | Use preview configuration with isolated local data. |
+| `--enable-webhooks` | Optional explicit alias. Webhook simulation is already enabled for every local `dev` run. |
+| `--disable-webhooks` | Omit the simulated Queue producer, consumer, and Cron for this run only. Does not change saved production, preview, or later local behavior. |
+
+Plain `dev` always generates a temporary Wrangler configuration with the local
+Queue producer, consumer, hourly maintenance trigger, and local endpoint-secret
+encryption key. It creates no Cloudflare Queue or other resource, requests no
+Cloudflare permission, incurs no Cloudflare Queue or Worker charge, and does
+not change whether preview or production webhooks are enabled. The original
+generated configuration is restored when the development server exits.
 
 ## `yarn manage theme`
 
@@ -412,19 +475,22 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 D1 version, then the bundled default fallback. The command copies the source
 theme's available slots
 and any declared packaged assets into an empty directory, adds the authoring
-kit, schemas, fixture, local package scripts, and instructions, and initializes a Git
-repository on `main`. It recursively creates the destination and any missing
-parent directories, so `~/microfeed-themes/` does not need to exist first. It
-refuses to write into a non-empty destination. Keeping the generated directory
-outside the microfeed checkout prevents the standalone theme repository from
-being committed to microfeed accidentally.
+kit, schemas, fixture, local package scripts, agent skill, and `CLAUDE.md`
+bridge, and initializes a Git repository on `main`. It recursively creates the
+destination and any missing parent directories, so `~/microfeed-themes/` does
+not need to exist first. It refuses to write into a non-empty destination.
+Keeping the generated directory outside the microfeed checkout prevents the
+standalone theme repository from being committed to microfeed accidentally.
 
 The derived package receives a separate `local.<directory-name>` package ID
 and starts at `0.1.0`, so edits cannot overwrite the source version. Its source
 license and microfeed compatibility range are preserved. Use `--package-id`,
 `--name`, `--version`, and `--author` to set publish-ready metadata during
-initialization, or edit the generated manifest before the first install. Pass
-`--no-git` when another tool will initialize version control.
+initialization, or edit the generated manifest before the first install.
+Package IDs beginning with `microfeed.` are reserved for bundled themes. Use a
+`local.*` identity for a site-specific version or a package ID you control for
+a distributable theme. Pass `--no-git` when another tool will initialize
+version control.
 
 The generated repository also contains the `develop-microfeed-theme` coding
 agent skill. It exports the rendered theme package, not the build sources of
@@ -445,8 +511,9 @@ yarn manage theme export <theme-id> --instance personal \
 ```
 
 Export writes the templates, inherited assets, README, local package scripts,
-fixture, schemas, an independent `yarn.lock`, a pinned Yarn version, and a
-project-local `.yarnrc.yml` into an empty directory. The local Yarn
+fixture, schemas, agent skill, `CLAUDE.md` bridge, an independent `yarn.lock`,
+a pinned Yarn version, and a project-local `.yarnrc.yml` into an empty
+directory. The local Yarn
 configuration preapproves only `@microfeed/theme-kit`, so a newly published
 official toolkit can pass Yarn's package-age gate without weakening the gate
 for other packages. The generated dependency uses the compatible major range
@@ -460,6 +527,10 @@ initializes a local Git repository on `main`; without that flag, Git behavior
 is unchanged. It never stages, commits, creates a remote, pushes, installs,
 activates, or otherwise changes the public site.
 
+Export preserves an installed identity for inspection, archival, or continued
+development by that package's owner. Do not modify and republish an exported
+`microfeed.*` package. Use `theme init` to fork its appearance under `local.*`.
+
 With `--json`, a successful export returns `packageId`, `version`, `themeId`,
 `selection`, `output`, and `gitInitialized`. If Git initialization fails, the
 command exits unsuccessfully but retains the completed scaffold for inspection;
@@ -472,7 +543,7 @@ output and a normal build may replace it. The ignored repository remains local
 until you commit and push it from inside its own directory, and cleanup that
 removes ignored files can still delete it. Validate the untouched baseline
 before making the first commit. See
-[Export an installed theme with an AI coding agent](/dashboard/themes/#export-an-installed-theme-with-an-ai-coding-agent)
+[Export an installed version](/themes/#export-an-installed-version)
 for a copy-paste prompt that stops before commit or publication.
 
 Use this command to install a theme package from a local directory or a public
@@ -481,15 +552,27 @@ and tags are resolved to an exact commit before the manifest and declared files
 are downloaded. V1 does not store GitHub credentials and does not support
 private repositories.
 
-The reserved bundled source installs the rendered modern default from the
-current microfeed checkout:
+Canonical `bundled:<key>` sources install registered rendered packages from the
+current microfeed checkout. The compatibility alias `default` continues to
+resolve to `bundled:default`:
 
 ```console
-yarn manage theme install default --instance <instance-name>
+yarn manage theme install bundled:default --instance <instance-name>
+yarn manage theme install bundled:podcast --instance <instance-name>
+yarn manage theme install bundled:blog --instance <instance-name>
+yarn manage theme install bundled:photo --instance <instance-name>
+yarn manage theme install bundled:video --instance <instance-name>
+yarn manage theme install bundled:curation --instance <instance-name>
+yarn manage theme install bundled:changelog --instance <instance-name>
 ```
 
+The registered keys are `default`, `podcast`, `blog`, `photo`, `video`,
+`curation`, and `changelog`. Each source maps to its independent `microfeed.*`
+package and immutable release ledger.
+
 Like every manual install, it remains inactive until explicitly activated.
-`theme update` reloads a bundled default version from the current checkout.
+`theme update` reloads the matching canonical Built-in package when the selected
+version came from the catalog.
 
 Install and update always create an inactive version. Preview it in
 **Settings → Themes**, then activate it separately. Templates and manifests are
@@ -514,7 +597,7 @@ yarn manage theme <init|install|list|update|activate|deactivate|rollback|export|
 | `--ref <ref>` | Select a Git branch, tag, or commit for install or update. |
 | `--path <directory>` | Select the theme directory inside a GitHub repository. |
 | `--output <directory>` | Choose the empty directory used by init or export; export defaults under `.microfeed/themes/`. |
-| `--package-id <id>` | Set the new package ID created by init. |
+| `--package-id <id>` | Set the new package ID created by init; `microfeed.*` is reserved for bundled themes. |
 | `--name <name>` | Set the new theme name created by init. |
 | `--version <semver>` | Set the initial semantic version created by init. |
 | `--author <name>` | Set the new theme author created by init. |
@@ -540,8 +623,14 @@ yarn manage theme init ~/microfeed-themes/my-theme --instance personal \
 yarn manage theme install https://github.com/example/microfeed-theme \
   --instance personal
 
-# Reinstall the modern bundled default as an inactive version.
-yarn manage theme install default --instance personal
+# Reinstall the current Default Built-in release as an inactive version.
+yarn manage theme install bundled:default --instance personal
+
+# Install the current Podcast showcase release as an inactive version.
+yarn manage theme install bundled:podcast --instance personal
+
+# Install the Link Digest release, whose search results open original links.
+yarn manage theme install bundled:curation --instance personal
 
 # Exercise a local checkout without changing the deployed site.
 yarn manage theme install ~/microfeed-themes/my-theme --local --instance personal
@@ -569,11 +658,20 @@ metadata first, and retains an asset owner while any published version or draft
 still references it. Failed asset cleanup remains retryable by repeating the
 same confirmed delete command.
 
-Each environment is limited to 50 non-deleted installed versions and 20
-drafts. An idempotent reinstall of identical content still succeeds at the
-installed-version limit. Delete an inactive version to free a slot; if Admin
-installation reaches the limit, its draft remains available. `theme list`
-selects only package and source metadata, not the full theme bundles.
+The `microfeed.*` namespace is reserved for Built-in themes and cannot be used
+by local-directory or GitHub installations. Canonical `bundled:<key>` sources
+are trusted catalog installs; `default` remains a compatibility alias for
+`bundled:default`. Admin-created versions and ordinary site-specific forks use
+`local.*` package IDs and count as Custom versions even when derived from a
+Built-in package.
+
+Each environment is limited to 100 non-deleted Custom versions and 20 drafts.
+Built-in versions do not consume the Custom quota and cannot be manually
+deleted; deployment synchronization prunes safe superseded releases. An
+idempotent reinstall of identical Custom content still succeeds at the limit.
+Delete an inactive Custom version to free a slot; if Admin installation reaches
+the limit, its draft remains available. `theme list` selects only package and
+source metadata, not the full theme bundles.
 
 ## `yarn manage snapshot`
 
@@ -720,6 +818,9 @@ Durable tables currently include channels, items, Pages, Site Files, settings,
 users, and login accounts. Sessions, verification records, rate-limit state, and password
 setup/reset records are recreated empty. The target installation identity is
 rewritten, while the administrator email and password hash are preserved.
+Webhook endpoints, encrypted signing secrets, delivery history, budgets, and
+alerts are deployment-specific and are recreated empty; after a restore,
+create new endpoints and distribute their new signing secrets.
 `publicBucketUrl` is reset to `/media/`.
 
 ### Restore safety and recovery
@@ -812,6 +913,17 @@ ready, also verify both the exact bucket and the Worker's `MEDIA_BUCKET`
 binding. A verified content-only Worker is healthy and reports media as either
 subscription-pending or user-disabled.
 
+When webhooks are enabled, status also verifies the exact Queue ID, producer
+binding, Worker consumer, resumed delivery, and one hourly Cron. When disabled,
+it verifies that the same Queue is retained, paused, empty, and has no producer,
+consumer, or Cron. An unprovisioned environment expects none of those resources.
+For enabled infrastructure it prints realtime backlog and oldest-message data;
+Cloudflare-observed writes, reads, deletes, total billable operations, and
+average retries for that Queue since UTC midnight; account-wide Queue totals
+for the same window; microfeed-side delivery accounting; and the observation
+time. Cloudflare Analytics is operational telemetry rather than a billing
+invoice, so reconcile cost alerts with the account's Queues dashboard.
+
 ```console
 yarn manage status [--instance <name>] [--preview]
 ```
@@ -834,7 +946,9 @@ data unless explicitly preserved.
 
 Inventory and safely remove one saved Cloudflare deployment. Always begin with
 `--dry-run`; it prints the exact site, account, Worker, D1 ID/name, R2 bucket,
-custom address, local folder, actions, and inspection links.
+webhook Queue name and ID, lifecycle state, backlog, Cron schedules, custom
+address, local folder, actions, and inspection links. If a Queue consumer is
+attached, the plan includes its Worker name and consumer ID.
 
 ```console
 yarn manage destroy --instance <name> --dry-run
@@ -852,8 +966,14 @@ yarn manage destroy --instance <name> --confirm <name>
 
 `--yes` and `--local` are rejected. Reused data is always preserved. The
 command verifies installation identity, refuses unexpected or replacement
-resources, deletes the Worker before owned data, records completed steps, and
-removes local state last. Rerun the same confirmed command to resume a partial
+resources, pauses a dedicated webhook Queue, explicitly removes Cron schedules,
+cancels pending webhook deliveries when D1 is preserved, detaches only the
+single Queue consumer whose Worker name exactly matches the saved deployment,
+and verifies that no consumer remains. It then deletes the Worker and exact
+verified Queue before owned data. An unexpected, ambiguous, or replacement
+consumer fails closed without deleting it. `--keep-data` preserves D1 and R2,
+not the environment-specific Queue. Completed steps are recorded and local
+state is removed last. Rerun the same confirmed command to resume a partial
 removal.
 
 ## `yarn manage migrate-pages`

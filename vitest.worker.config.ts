@@ -22,6 +22,7 @@ export default defineConfig({
             path.join(root, "migrations"),
           ),
           UPLOAD_SIGNING_KEY: "worker-test-signing-key",
+          WEBHOOK_SECRET_KEY: "worker-test-webhook-encryption-key-32-bytes",
         },
       },
       wrangler: {

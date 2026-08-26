@@ -2,12 +2,20 @@
 import AllItemsApp from "@/components/admin/items/AllItemsApp";
 import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
 import {NAV_ITEMS} from "@/shared/Constants";
+import {normalizeAdminItemListLimit} from "@/shared/AdminCollections";
+import {resolvePublicBucketUrl} from "@/shared/StringUtils";
 import AdminShell from "../../../../layouts/AdminShell.astro";
 
 const {feedContent, onboardingResult} = Astro.locals;
 if (!feedContent || !onboardingResult) {
   throw new Error("Admin feed context was not initialized.");
 }
+const webSettings = feedContent.settings?.webGlobalSettings ?? {};
+const itemsPerPage = normalizeAdminItemListLimit(webSettings.itemsPerPage);
+const publicBucketUrl = resolvePublicBucketUrl(
+  webSettings.publicBucketUrl,
+  Astro.url.hostname,
+);
 ---
 
 <AdminShell
@@ -17,7 +25,7 @@ if (!feedContent || !onboardingResult) {
   {onboardingResult}
   pageTitle="All items"
 >
-  <AllItemsApp client:only="react" {feedContent}>
+  <AllItemsApp client:only="react" {itemsPerPage} {publicBucketUrl}>
     <AdminPageFallback slot="fallback" kind="list" />
   </AllItemsApp>
 </AdminShell>

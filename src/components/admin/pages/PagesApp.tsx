@@ -12,19 +12,27 @@ import {
 } from "lucide-react";
 
 import {showToast} from "@/client/ToastUtils";
+import {useAdminCollection} from "@/client/useAdminCollection";
+import {
+  AdminCollectionError,
+  AdminCollectionLoading,
+} from "@/components/admin/shared/AdminCollectionState";
 import {Button, buttonVariants} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import {ADMIN_URLS} from "@/shared/StringUtils";
-import type {PageRecord} from "@/shared/Pages";
+import type {
+  AdminPageListResponse,
+  AdminPageSummary,
+} from "@/shared/AdminCollections";
 
 type DropPosition = "after" | "before";
 
 export function reorderNavigationPageList(
-  pages: PageRecord[],
+  pages: AdminPageSummary[],
   draggedPageId: string,
   targetPageId: string,
   position: DropPosition,
-): PageRecord[] {
+): AdminPageSummary[] {
   if (draggedPageId === targetPageId) return pages;
   const draggedIndex = pages.findIndex(({id}) => id === draggedPageId);
   const targetIndex = pages.findIndex(({id}) => id === targetPageId);
@@ -54,7 +62,7 @@ async function responseJson(response: Response): Promise<unknown> {
   return data;
 }
 
-function PageDetails({page}: {page: PageRecord}) {
+function PageDetails({page}: {page: AdminPageSummary}) {
   return (
     <>
       <div className="min-w-0 flex-1">
@@ -97,7 +105,7 @@ function NavigationPageRow({
   index: number;
   last: boolean;
   moveWithKeyboard: (pageId: string, direction: -1 | 1) => void;
-  page: PageRecord;
+  page: AdminPageSummary;
 }) {
   return (
     <div
@@ -148,7 +156,7 @@ function NavigationPageRow({
   );
 }
 
-function PageCard({page}: {page: PageRecord}) {
+function PageCard({page}: {page: AdminPageSummary}) {
   return (
     <a
       className="flex items-center gap-3 rounded-[14px] border bg-card p-4 text-card-foreground shadow-xs transition hover:border-primary/40 hover:bg-accent/30"
@@ -159,11 +167,11 @@ function PageCard({page}: {page: PageRecord}) {
   );
 }
 
-export default function PagesApp({
+export function PagesList({
   pages,
   themeSupportsPages,
 }: {
-  pages: PageRecord[];
+  pages: AdminPageSummary[];
   themeSupportsPages: boolean;
 }) {
   const initialNavigationPages = pages
@@ -191,12 +199,12 @@ export default function PagesApp({
   const savedNavigationPagesRef = useRef(navigationPages);
   const savingOrderRef = useRef(false);
 
-  const setOrderedPages = useCallback((orderedPages: PageRecord[]) => {
+  const setOrderedPages = useCallback((orderedPages: AdminPageSummary[]) => {
     navigationPagesRef.current = orderedPages;
     setNavigationPages(orderedPages);
   }, []);
 
-  const persistOrder = useCallback(async (orderedPages: PageRecord[]) => {
+  const persistOrder = useCallback(async (orderedPages: AdminPageSummary[]) => {
     if (savingOrderRef.current) return;
     savingOrderRef.current = true;
     setSavingOrder(true);
@@ -384,6 +392,38 @@ export default function PagesApp({
           </p>
         </section>
       )}
+    </div>
+  );
+}
+
+export default function PagesApp() {
+  const {data, error, loading, retry} =
+    useAdminCollection<AdminPageListResponse>(
+      ADMIN_URLS.ajaxPages(),
+      "Could not load Pages.",
+    );
+  if (!data) {
+    return error
+      ? <AdminCollectionError message={error} retry={retry} />
+      : <AdminCollectionLoading label="Loading Pages" />;
+  }
+  return (
+    <div>
+      {error && (
+        <div className="mb-4">
+          <AdminCollectionError message={error} retry={retry} />
+        </div>
+      )}
+      <div
+        aria-busy={loading}
+        className={cn("transition-opacity", loading && "opacity-60")}
+      >
+        <PagesList
+          key={JSON.stringify(data.items)}
+          pages={data.items}
+          themeSupportsPages={data.themeSupportsPages}
+        />
+      </div>
     </div>
   );
 }

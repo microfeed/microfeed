@@ -39,7 +39,7 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
         <span>Search</span>
       </button>
     </div>
-    <div class="mf-public-search__results" aria-live="polite" data-microfeed-search-results></div>
+    <div class="mf-public-search__results" aria-live="polite" data-microfeed-search-results data-microfeed-search-results-context="popup"></div>
     {{PREVIEW_DATA}}
   </form>
 </dialog>
@@ -195,6 +195,13 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     font-size: 0.8em;
     text-transform: capitalize;
   }
+  .mf-public-search-result__domain {
+    display: var(--mf-search-result-domain-display, none);
+    margin-left: 0.45rem;
+    overflow-wrap: anywhere;
+    color: var(--mf-muted, GrayText);
+    font-size: 0.8em;
+  }
   .mf-public-search-message {
     margin: 0;
     padding: 0.75rem 0.8rem;
@@ -228,6 +235,54 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
   }
   let controller;
+  let lockedScrollPosition;
+  let previousScrollStyles;
+  let suppressTriggerFocus = false;
+  let triggerFocusSuppressionTimer;
+
+  function lockBackgroundScroll(scrollPosition) {
+    if (lockedScrollPosition !== undefined) return;
+    lockedScrollPosition = scrollPosition;
+    previousScrollStyles = {
+      bodyOverflow: document.body.style.overflow,
+      bodyPosition: document.body.style.position,
+      bodyTop: document.body.style.top,
+      bodyWidth: document.body.style.width,
+      rootOverflow: document.documentElement.style.overflow,
+    };
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = "-" + scrollPosition + "px";
+    document.body.style.width = "100%";
+  }
+
+  function unlockBackgroundScroll() {
+    if (lockedScrollPosition === undefined || !previousScrollStyles) return;
+    const scrollPosition = lockedScrollPosition;
+    document.documentElement.style.overflow = previousScrollStyles.rootOverflow;
+    document.body.style.overflow = previousScrollStyles.bodyOverflow;
+    document.body.style.position = previousScrollStyles.bodyPosition;
+    document.body.style.top = previousScrollStyles.bodyTop;
+    document.body.style.width = previousScrollStyles.bodyWidth;
+    lockedScrollPosition = undefined;
+    previousScrollStyles = undefined;
+    window.scrollTo(0, scrollPosition);
+  }
+
+  function suppressTriggerFocusUntilCloseSettles() {
+    suppressTriggerFocus = true;
+    window.clearTimeout(triggerFocusSuppressionTimer);
+    triggerFocusSuppressionTimer = window.setTimeout(() => {
+      suppressTriggerFocus = false;
+    }, 0);
+  }
+
+  function closeSearch() {
+    if (!dialog?.open) return;
+    suppressTriggerFocusUntilCloseSettles();
+    dialog.close();
+  }
 
   function resultContainer(input) {
     const scopes = [
@@ -243,6 +298,15 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       if (container) return container;
     }
     return null;
+  }
+
+  for (const container of document.querySelectorAll(
+    "[data-microfeed-search-results]",
+  )) {
+    const context = container.closest("[data-microfeed-search-dialog]")
+      ? "popup"
+      : "page";
+    container.setAttribute("data-microfeed-search-results-context", context);
   }
 
   function message(container, value) {
@@ -304,6 +368,15 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     link.appendChild(details);
   }
 
+  function resultHostname(value) {
+    if (typeof value !== "string" || !value.trim()) return "";
+    try {
+      return new URL(value, window.location.origin).hostname;
+    } catch {
+      return "";
+    }
+  }
+
   function showResults(container, items) {
     container.replaceChildren();
     if (items.length === 0) {
@@ -312,16 +385,25 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
     for (const item of items) {
       const link = document.createElement("a");
+      const resultType = item.type === "page" ? "page" : "item";
       link.className = "mf-public-search-result";
       link.href = item.url;
+      link.setAttribute("data-microfeed-search-result-type", resultType);
       const title = document.createElement("strong");
       title.className = "mf-public-search-result__title";
       title.textContent = item.title || "Untitled";
       const type = document.createElement("span");
       type.className = "mf-public-search-result__type";
-      type.textContent = item.type;
+      type.textContent = resultType;
       link.appendChild(title);
       link.appendChild(type);
+      const hostname = resultHostname(item.url);
+      if (hostname) {
+        const domain = document.createElement("span");
+        domain.className = "mf-public-search-result__domain";
+        domain.textContent = hostname;
+        link.appendChild(domain);
+      }
       if (container.hasAttribute("data-microfeed-search-details")) {
         appendResultDetails(link, item);
       }
@@ -405,7 +487,11 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       window.location.assign("/search/");
       return;
     }
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      const scrollPosition = window.scrollY;
+      dialog.showModal();
+      lockBackgroundScroll(scrollPosition);
+    }
     dialog.querySelector("[data-microfeed-search-input]")?.focus();
   }
 
@@ -413,6 +499,12 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     "[data-microfeed-search-open]",
   )) {
     trigger.addEventListener("click", openSearch);
+    if (trigger instanceof HTMLInputElement) {
+      trigger.addEventListener("focus", () => {
+        if (suppressTriggerFocus) return;
+        openSearch();
+      });
+    }
     if (!(trigger instanceof HTMLButtonElement)) {
       trigger.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
@@ -422,7 +514,9 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
   }
   dialog?.querySelector("[data-microfeed-search-close]")
-    ?.addEventListener("click", () => dialog.close());
+    ?.addEventListener("click", closeSearch);
+  dialog?.addEventListener("cancel", suppressTriggerFocusUntilCloseSettles);
+  dialog?.addEventListener("close", unlockBackgroundScroll);
   dialog?.querySelector("[data-microfeed-search-input]")
     ?.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" || event.isComposing) return;
@@ -434,10 +528,13 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       event.preventDefault();
       openSearch();
     }
-    if (event.key === "Escape" && dialog?.open) dialog.close();
+    if (event.key === "Escape" && dialog?.open) {
+      event.preventDefault();
+      closeSearch();
+    }
   });
   dialog?.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
+    if (event.target === dialog) closeSearch();
   });
 </script>`;
 

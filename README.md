@@ -66,7 +66,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a personal website with custom links
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless CMS with a GUI dashboard, JSON Feed, and generated API docs. Explore the public demo’s [interactive API reference](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
+* a headless CMS with a GUI dashboard, RSS Feed, JSON Feed, API, Webhooks, and [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Explore the public demo’s [interactive API docs](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
 * a themeable publishing platform with immutable D1-backed versions, isolated Admin drafts and previews, GitHub installation through `yarn manage theme`, and the standalone [`@microfeed/theme-kit`](https://www.npmjs.com/package/@microfeed/theme-kit) authoring CLI.
 * standalone public Pages, credential-free typeahead search with Command/Ctrl-K, and editable generated `robots.txt`, `llms.txt`, and `sitemap.xml` files.
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
@@ -93,14 +93,7 @@ microfeed provides a simple yet powerful [admin dashboard](https://docs.microfee
 where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-<p align="center">
-  <a href="docs/public/images/screenshots/2-dashboard-1-home.png">
-    <img src="docs/public/images/screenshots/2-dashboard-1-home.png" width="45%" alt="Dashboard home">
-  </a>
-  <a href="docs/public/images/screenshots/2-dashboard-2-add-item.png">
-    <img src="docs/public/images/screenshots/2-dashboard-2-add-item.png" width="45%" alt="Dashboard Add Item">
-  </a>
-</p>
+<img src="https://github.com/user-attachments/assets/c09752ab-b59f-47ae-9fae-029895c2b6a4" width="100%" alt="Dashboard home">
 
 For agentic content management, the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
@@ -191,7 +184,7 @@ Choose the publishing workflow that fits the task:
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through browser-authorized access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the
-  browser. See the [guided CLI workflow](https://docs.microfeed.org/api/cli/)
+  browser. See the [guided CLI workflow](https://docs.microfeed.org/automation/cli/)
   or the complete [`yarn microfeed`
   reference](https://docs.microfeed.org/microfeed-cli/).
 
@@ -221,8 +214,9 @@ Themes developed by the community can be installed from public GitHub
 repositories with `yarn manage theme`. Developers and AI coding agents can
 initialize a standalone theme repository, work with fixtures or a live public
 JSON Feed, use tools such as Tailwind CSS, and validate the package before it
-is installed. See [Themes and website code](https://docs.microfeed.org/dashboard/themes/)
-for the complete authoring, preview, installation, and asset workflow.
+is installed. See [Build and release a theme](https://docs.microfeed.org/themes/)
+for the complete authoring workflow and [Themes and website
+code](https://docs.microfeed.org/dashboard/themes/) for the site-owner controls.
 The only bundled source project is [`themes/default`](themes/default). It is a
 complete standalone Theme Kit workspace with Tailwind CSS, TypeScript,
 fixtures, validation, tests, and `yarn preview`. Its generated package has no
@@ -242,9 +236,8 @@ same published content.
 | Publish many content types | Share articles, podcasts, videos, images, documents, and curated external links from one feed. |
 | Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
 | Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
-| AI-agent workflows | Deploy and administer sites with `yarn manage`, then manage content through the official `@microfeed/cli` and documented API. |
+| Headless CMS and content automation | Read and update content through the API, receive signed change notifications through webhooks, and give local AI agents a friendlier workflow through `@microfeed/cli`. |
 | Versioned themes | Edit safely in Admin or install community themes from GitHub, preview inactive versions, and activate or roll back explicitly. |
-| Headless CMS and generated API docs | Use the public JSON Feed or authenticated API with OpenAPI, interactive reference pages, and agent-readable `llms.txt`. |
 | Your data on your Cloudflare account | Keep content metadata in D1 and optional media and theme assets in R2 under infrastructure you control. |
 | Portable backups | Export the database, media bucket, theme versions, and migration history together in an owner-readable snapshot. |
 | Custom domains and access controls | Use your own web address and choose public, headless, or offline delivery while protecting the dashboard separately. |
@@ -319,16 +312,18 @@ durable data, migration history, the entire R2 bucket, object metadata, and
 checksums:
 
 ```console
-yarn manage snapshot create --instance production --output backup.tar.gz
+# Replace <instance-name> with a saved instance name.
+yarn manage snapshot create --instance <instance-name> --output backup.tar.gz
 ```
 
 You can also download a Cloudflare site and immediately create a new local copy
 with its real content:
 
 ```console
+# Replace both placeholders with saved or new instance names.
 yarn manage snapshot pull \
-  --instance production \
-  --local-instance production-copy
+  --instance <instance-name> \
+  --local-instance <local-instance-name>
 ```
 
 Restore archives only with a checkout whose migration history exactly extends

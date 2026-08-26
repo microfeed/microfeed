@@ -1,5 +1,5 @@
 ---
-title: theme-kit cli reference
+title: "@microfeed/theme-kit reference"
 description: Complete command and option reference for the @microfeed/theme-kit authoring CLI.
 ---
 
@@ -11,9 +11,10 @@ theme.
 
 Use [`yarn manage theme`](/manage-cli/#yarn-manage-theme) from a microfeed
 checkout for instance operations such as export, install, update, activation,
-rollback, and deletion. See [Themes and website code](/dashboard/themes/) for
-the authoring workflow, storage model, and Vite, Webpack, Tailwind, D1, and R2
-examples.
+rollback, and deletion. See [Build and release a theme](/themes/) for the
+authoring workflow, [Theme contract and rendering](/themes/contract/) for the
+package contract, and [Bundle CSS, JavaScript, and assets](/themes/assets/) for
+Vite, Webpack, Tailwind, D1, and R2 examples.
 
 ## Run the CLI
 
@@ -112,9 +113,10 @@ theme-kit init <directory>
 Creates a generic theme repository scaffold containing `README.md`, the
 manifest, eight required theme files, schemas, fixtures, local package scripts,
 `THEME.md`, an independent empty `yarn.lock`, project-local Yarn settings, and
-the `develop-microfeed-theme` agent skill. The settings preapprove only the
-official `@microfeed/theme-kit` package while retaining Yarn package gates for
-every other dependency.
+the `develop-microfeed-theme` agent skill plus a `CLAUDE.md` bridge to that
+canonical workflow. The settings preapprove only the official
+`@microfeed/theme-kit` package while retaining Yarn package gates for every
+other dependency.
 
 - Missing parent directories are created.
 - The destination must be empty; existing files are never overwritten.
@@ -137,6 +139,7 @@ Loads the complete installable package and validates:
 - Manifest format, semantic version, and microfeed compatibility.
 - The six format-v1 or eight format-v2 declared text-file paths and their size limits.
 - Mustache templates and the complete RSS XSL stylesheet.
+- The optional declared `previewFixture` path, JSON object, and 128 KiB limit.
 - Declared asset paths, symlinks, file types, per-file limits, and total limits.
 - Missing, undeclared, absolute, or traversing paths.
 
@@ -195,8 +198,10 @@ sandboxed content security policy.
 | `--fixture <name-or-file>` | Use one built-in fixture name or the path to a JSON fixture file. |
 | `--feed-url <url>` | Download a public microfeed JSON Feed and use it as preview data. |
 
-When neither option is supplied, preview uses the `minimal` fixture. Use only
-one data option at a time. `<directory>` defaults to the current directory.
+When neither option is supplied, preview uses the theme's declared
+`previewFixture`. Packages without one fall back to the built-in `minimal`
+fixture. Use only one data option at a time. `<directory>` defaults to the
+current directory.
 
 The server continues running until you stop it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 Previewing never installs or activates the package.
@@ -218,8 +223,10 @@ and writes formatted JSON to `<file>`.
 - Review copied titles, descriptions, media URLs, and other content before
   committing the fixture to a public repository.
 
-Use the saved path with `preview --fixture <file>`, or keep it under
-`fixtures/` so `test` includes it automatically.
+Use the saved path with `preview --fixture <file>`, keep it under `fixtures/`
+so `test` includes it automatically, or declare that relative path as the
+manifest's `previewFixture` to make it the package's default local and Admin
+demo dataset.
 
 ## Typical local sequence
 

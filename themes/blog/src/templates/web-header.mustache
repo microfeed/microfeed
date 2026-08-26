@@ -1,0 +1,13 @@
+<script>
+  (() => {
+    const values = ["system", "light", "dark"];
+    let preference = "system";
+    try { const stored = window.localStorage.getItem("microfeed-public-theme"); if (values.includes(stored)) preference = stored; } catch {}
+    const dark = preference === "dark" || (preference === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.dataset.themePreference = preference;
+    document.documentElement.dataset.colorMode = dark ? "dark" : "light";
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+  })();
+</script>
+<!-- Editorial Blog styles and progressive enhancements are compiled above. -->

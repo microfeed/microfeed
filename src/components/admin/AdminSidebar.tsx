@@ -12,6 +12,7 @@ import {
   LayersIcon,
   MailIcon,
   ImagesIcon,
+  WebhookIcon,
 } from "lucide-react";
 
 import {
@@ -45,6 +46,7 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.CONTACT_MESSAGES]: MailIcon,
   [NAV_ITEMS.MEDIA_LIBRARY]: ImagesIcon,
   [NAV_ITEMS.API]: Code2Icon,
+  [NAV_ITEMS.WEBHOOKS]: WebhookIcon,
   [NAV_ITEMS.SETTINGS]: SettingsIcon,
 };
 

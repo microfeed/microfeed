@@ -438,6 +438,7 @@ export const ADMIN_URLS = {
   logout: () => adminUrl("logout", browserAdminPath()),
 
   ajaxFeed: () => adminUrl("ajax/feed", browserAdminPath()),
+  ajaxItems: () => adminUrl("ajax/items", browserAdminPath()),
   ajaxPages: () => adminUrl("ajax/pages", browserAdminPath()),
   ajaxPageOrder: () => adminUrl("ajax/pages/order", browserAdminPath()),
   ajaxPage: (id: string) => adminUrl(`ajax/pages/${id}`, browserAdminPath()),

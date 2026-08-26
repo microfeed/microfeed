@@ -1,4 +1,5 @@
 import nodePath from "node:path";
+import {setTimeout as delay} from "node:timers/promises";
 
 import {
   normalizeAdminAuthMode,
@@ -159,10 +160,15 @@ interface CloudflareApiResultInfo {
 }
 
 interface CloudflareApiEnvelope<T> {
-  errors?: Array<{message?: unknown}>;
+  errors?: Array<{code?: unknown; message?: unknown}>;
   result?: T;
   result_info?: CloudflareApiResultInfo;
   success?: boolean;
+}
+
+export function isCloudflareAuthenticationError(error: unknown): boolean {
+  const detail = error instanceof Error ? error.message : String(error);
+  return /\bcode:\s*10000\b/iu.test(detail);
 }
 
 export interface R2ObjectListing {
@@ -188,6 +194,42 @@ export interface WorkerDomain {
   service: string;
 }
 
+export interface QueueMetrics {
+  backlogBytes: number;
+  backlogCount: number;
+  oldestMessageTimestampMs: number;
+  observedAt: string;
+  queueId: string;
+}
+
+export interface QueueOperationSummary {
+  averageRetriesPerMessage: number;
+  bytes: number;
+  deletes: number;
+  reads: number;
+  total: number;
+  writes: number;
+}
+
+export interface QueueOperationMetrics {
+  account: QueueOperationSummary;
+  observedAt: string;
+  periodStart: string;
+  queue: QueueOperationSummary;
+}
+
+export interface QueueResource {
+  deliveryPaused: boolean;
+  id: string;
+  name: string;
+}
+
+export interface QueueConsumer {
+  id: string;
+  scriptName?: string;
+  type: "http_pull" | "worker" | string;
+}
+
 export interface DiscoveredMicrofeedWorker {
   accountId: string;
   accountName: string;
@@ -199,11 +241,15 @@ export interface DiscoveredMicrofeedWorker {
     name: string;
   };
   instanceId: string | null;
+  deploymentEnvironment: "preview" | "production";
   projectName: string;
   r2Name: string;
   r2Ready: boolean;
   r2SetupMode: R2SetupMode;
   workerName: string;
+  webhookQueueId?: string;
+  webhookQueueName?: string;
+  webhookState?: "unprovisioned" | "enabled" | "disabled";
   workersDevUrl: string | null;
 }
 
@@ -368,13 +414,26 @@ function parsePagesProjects(output: string): PagesProject[] {
 export class CloudflareClient {
   private credentialsPromise?: Promise<CloudflareCredentials>;
 
-  constructor(private readonly runner: CommandRunner) {}
+  constructor(
+    private readonly runner: CommandRunner,
+    private readonly additionalScopes: readonly string[] = [],
+  ) {}
+
+  private scopes(): string[] {
+    return [...new Set([...OAUTH_SCOPES, ...this.additionalScopes])];
+  }
 
   async login(): Promise<void> {
+    const {profile} = await this.profileState();
+    if (profile && profile !== "default") {
+      await this.authorizeProfile(profile);
+      await this.activateProfile(profile);
+      return;
+    }
     try {
       await runWrangler(
         this.runner,
-        ["login", "--use-keyring", "--scopes", ...OAUTH_SCOPES],
+        ["login", "--use-keyring", "--scopes", ...this.scopes()],
         {interactive: true},
       );
     } catch (error) {
@@ -393,7 +452,7 @@ export class CloudflareClient {
     try {
       await runWrangler(
         this.runner,
-        ["auth", "create", profile, "--scopes", ...OAUTH_SCOPES],
+        ["auth", "create", profile, "--scopes", ...this.scopes()],
         {
           env: {
             ...process.env,
@@ -526,7 +585,7 @@ export class CloudflareClient {
           (permission): permission is string => typeof permission === "string",
         )
       : [];
-    return OAUTH_SCOPES.every((scope) => permissions.includes(scope));
+    return this.scopes().every((scope) => permissions.includes(scope));
   }
 
   private async credentials(): Promise<CloudflareCredentials> {
@@ -610,7 +669,16 @@ export class CloudflareClient {
     }
     if (!response.ok || data.success === false) {
       const detail = data.errors
-        ?.map(({message}) => typeof message === "string" ? message : "")
+        ?.map(({code, message}) => {
+          const text = typeof message === "string" ? message : "";
+          const identifier = typeof code === "number" ||
+              typeof code === "string"
+            ? String(code)
+            : "";
+          return identifier
+            ? `${text || "Cloudflare API error"} [code: ${identifier}]`
+            : text;
+        })
         .filter(Boolean)
         .join("; ");
       throw new Error(
@@ -655,11 +723,53 @@ export class CloudflareClient {
   }
 
   private async apiGet<T>(path: string): Promise<T> {
-    return (await this.apiRequest<T>(path)).result;
+    try {
+      return (await this.apiRequest<T>(path)).result;
+    } catch (error) {
+      if (!isCloudflareAuthenticationError(error)) throw error;
+      this.credentialsPromise = undefined;
+      return (await this.apiRequest<T>(path)).result;
+    }
   }
 
   private async apiDelete(path: string): Promise<void> {
     await this.apiRequest<unknown>(path, {method: "DELETE"});
+  }
+
+  private async apiPut<T>(path: string, body: unknown): Promise<T> {
+    return (await this.apiRequest<T>(path, {
+      body: JSON.stringify(body),
+      headers: {"content-type": "application/json"},
+      method: "PUT",
+    })).result;
+  }
+
+  private async graphql<T>(
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<T> {
+    const credentials = await this.credentials();
+    const authorizationHeaders: Record<string, string> =
+      credentials.type === "api_key"
+        ? {"X-Auth-Email": credentials.email, "X-Auth-Key": credentials.key}
+        : {Authorization: `Bearer ${credentials.token}`};
+    const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      body: JSON.stringify({query, variables}),
+      headers: {"content-type": "application/json", ...authorizationHeaders},
+      method: "POST",
+    });
+    const data = await response.json().catch(() => null) as {
+      data?: T;
+      errors?: Array<{message?: unknown}>;
+    } | null;
+    if (!response.ok || !data?.data || data.errors?.length) {
+      const detail = data?.errors
+        ?.map(({message}) => typeof message === "string" ? message : "")
+        .filter(Boolean)
+        .join("; ");
+      throw new Error(detail || "Cloudflare Queue analytics are unavailable.");
+    }
+    return data.data;
   }
 
   async workerBindings(
@@ -771,6 +881,9 @@ export class CloudflareClient {
             const r2 = bindings.find(
               ({name, type}) => name === "MEDIA_BUCKET" && type === "r2_bucket",
             );
+            const webhookQueue = bindings.find(
+              ({name, type}) => name === "WEBHOOK_QUEUE" && type === "queue",
+            );
             const d1Id = typeof d1?.database_id === "string"
               ? d1.database_id
               : typeof d1?.id === "string"
@@ -779,6 +892,16 @@ export class CloudflareClient {
             const r2Name = typeof r2?.bucket_name === "string"
               ? r2.bucket_name
               : null;
+            const webhookQueueName = typeof webhookQueue?.queue_name === "string"
+              ? webhookQueue.queue_name
+              : typeof webhookQueue?.queue === "string"
+              ? webhookQueue.queue
+              : null;
+            if (webhookQueue && !webhookQueueName) {
+              throw new Error(
+                "WEBHOOK_QUEUE exists but its Queue name is not inspectable.",
+              );
+            }
             const d1Name = d1Id ? d1Names.get(d1Id) : undefined;
             const variables = new Map(
               bindings.flatMap((binding) =>
@@ -790,6 +913,17 @@ export class CloudflareClient {
               ),
             );
             const savedR2Name = variables.get("MICROFEED_R2_BUCKET_NAME");
+            const savedWebhookQueueName = variables.get(
+              "MICROFEED_WEBHOOK_QUEUE_NAME",
+            );
+            const effectiveWebhookQueueName = webhookQueueName ??
+              savedWebhookQueueName ?? undefined;
+            const savedWebhookState = variables.get("MICROFEED_WEBHOOK_STATE");
+            const webhookState = savedWebhookState === "enabled" ||
+                savedWebhookState === "disabled" ||
+                savedWebhookState === "unprovisioned"
+              ? savedWebhookState
+              : webhookQueueName ? "enabled" : undefined;
             const effectiveR2Name = r2Name ?? savedR2Name ?? null;
             if (!d1Id || !d1Name || !effectiveR2Name) {
               return null;
@@ -816,6 +950,10 @@ export class CloudflareClient {
               customDomains: (domainsByWorker.get(workerName) ?? [])
                 .sort((left, right) => left.localeCompare(right)),
               d1: {id: d1Id, name: d1Name},
+              deploymentEnvironment:
+                variables.get("DEPLOYMENT_ENVIRONMENT") === "preview"
+                  ? "preview"
+                  : "production",
               instanceId: variables.get("MICROFEED_INSTANCE_ID") ?? null,
               projectName: variables.get("CLOUDFLARE_PROJECT_NAME") ??
                 workerName,
@@ -823,6 +961,13 @@ export class CloudflareClient {
               r2Ready: r2Name !== null,
               r2SetupMode,
               workerName,
+              ...(variables.get("MICROFEED_WEBHOOK_QUEUE_ID")
+                ? {webhookQueueId: variables.get("MICROFEED_WEBHOOK_QUEUE_ID")!}
+                : {}),
+              ...(effectiveWebhookQueueName
+                ? {webhookQueueName: effectiveWebhookQueueName}
+                : {}),
+              ...(webhookState ? {webhookState} : {}),
               workersDevUrl:
                 subdomain.enabled === true && workersDevSubdomain
                   ? `https://${workerName}.${workersDevSubdomain}.workers.dev`
@@ -1151,6 +1296,275 @@ export class CloudflareClient {
     throw new Error(
       result.stderr.trim() || result.stdout.trim() ||
         "Unable to create R2 bucket.",
+    );
+  }
+
+  async queueExists(accountId: string, name: string): Promise<boolean> {
+    return Boolean(await this.queueByName(accountId, name));
+  }
+
+  async queueByName(
+    accountId: string,
+    name: string,
+  ): Promise<QueueResource | null> {
+    const queues = await this.apiGet<Array<Record<string, unknown>>>(
+      `/accounts/${encodeURIComponent(accountId)}/queues`,
+    );
+    const queue = queues.find((candidate) =>
+      String(candidate.queue_name ?? candidate.name ?? "") === name
+    );
+    const id = String(queue?.queue_id ?? queue?.id ?? "");
+    const settings = queue && typeof queue.settings === "object" &&
+        queue.settings !== null
+      ? queue.settings as Record<string, unknown>
+      : {};
+    return queue && id
+      ? {deliveryPaused: settings.delivery_paused === true, id, name}
+      : null;
+  }
+
+  async queueMetrics(accountId: string, name: string): Promise<QueueMetrics | null> {
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) return null;
+    const metrics = await this.apiGet<Record<string, unknown>>(
+      `/accounts/${encodeURIComponent(accountId)}/queues/` +
+        `${encodeURIComponent(queue.id)}/metrics`,
+    );
+    return {
+      backlogBytes: Number(metrics.backlog_bytes ?? 0),
+      backlogCount: Number(metrics.backlog_count ?? 0),
+      observedAt: new Date().toISOString(),
+      oldestMessageTimestampMs: Number(metrics.oldest_message_timestamp_ms ?? 0),
+      queueId: queue.id,
+    };
+  }
+
+  async queueConsumers(
+    accountId: string,
+    queueId: string,
+  ): Promise<QueueConsumer[]> {
+    const consumers = await this.apiGet<Array<Record<string, unknown>>>(
+      `/accounts/${encodeURIComponent(accountId)}/queues/` +
+        `${encodeURIComponent(queueId)}/consumers`,
+    );
+    return consumers.map((consumer) => {
+      const scriptName = [
+        consumer.script_name,
+        consumer.script,
+        consumer.service,
+      ].find((value): value is string => typeof value === "string");
+      return {
+        id: String(consumer.consumer_id ?? consumer.id ?? ""),
+        ...(scriptName ? {scriptName} : {}),
+        type: String(consumer.type ?? ""),
+      };
+    }).filter(({id}) => id.length > 0);
+  }
+
+  async deleteQueueConsumer(
+    accountId: string,
+    queueId: string,
+    consumerId: string,
+  ): Promise<void> {
+    await this.apiDelete(
+      `/accounts/${encodeURIComponent(accountId)}/queues/` +
+        `${encodeURIComponent(queueId)}/consumers/` +
+        encodeURIComponent(consumerId),
+    );
+  }
+
+  async queueOperationMetrics(
+    accountId: string,
+    name: string,
+  ): Promise<QueueOperationMetrics | null> {
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) return null;
+    const observedAt = new Date().toISOString();
+    const periodStart = `${observedAt.slice(0, 10)}T00:00:00Z`;
+    const query = `query QueueOperations(
+      $accountTag: string!, $queueId: string!,
+      $datetimeStart: Time!, $datetimeEnd: Time!
+    ) {
+      viewer {
+        accounts(filter: {accountTag: $accountTag}) {
+          queue: queueMessageOperationsAdaptiveGroups(
+            limit: 10000
+            filter: {
+              queueId: $queueId
+              datetime_geq: $datetimeStart
+              datetime_leq: $datetimeEnd
+            }
+          ) {
+            count
+            avg { retryCount }
+            sum { billableOperations bytes }
+            dimensions { actionType }
+          }
+          account: queueMessageOperationsAdaptiveGroups(
+            limit: 10000
+            filter: {
+              datetime_geq: $datetimeStart
+              datetime_leq: $datetimeEnd
+            }
+          ) {
+            count
+            avg { retryCount }
+            sum { billableOperations bytes }
+            dimensions { actionType }
+          }
+        }
+      }
+    }`;
+    interface OperationRow {
+      avg?: {retryCount?: unknown};
+      count?: unknown;
+      dimensions?: {actionType?: unknown};
+      sum?: {billableOperations?: unknown; bytes?: unknown};
+    }
+    const data = await this.graphql<{
+      viewer?: {accounts?: Array<{account?: OperationRow[]; queue?: OperationRow[]}>};
+    }>(query, {
+      accountTag: accountId,
+      datetimeEnd: observedAt,
+      datetimeStart: periodStart,
+      queueId: queue.id,
+    });
+    const account = data.viewer?.accounts?.[0];
+    const summarize = (rows: OperationRow[] = []): QueueOperationSummary => {
+      let retryWeight = 0;
+      let retries = 0;
+      const summary: QueueOperationSummary = {
+        averageRetriesPerMessage: 0,
+        bytes: 0,
+        deletes: 0,
+        reads: 0,
+        total: 0,
+        writes: 0,
+      };
+      for (const row of rows) {
+        const operations = Number(row.sum?.billableOperations ?? 0);
+        const bytes = Number(row.sum?.bytes ?? 0);
+        const count = Number(row.count ?? 0);
+        const averageRetries = Number(row.avg?.retryCount ?? 0);
+        summary.total += operations;
+        summary.bytes += bytes;
+        if (row.dimensions?.actionType === "WriteMessage") {
+          summary.writes += operations;
+        } else if (row.dimensions?.actionType === "ReadMessage") {
+          summary.reads += operations;
+          retries += averageRetries * count;
+          retryWeight += count;
+        } else if (row.dimensions?.actionType === "DeleteMessage") {
+          summary.deletes += operations;
+        }
+      }
+      summary.averageRetriesPerMessage = retryWeight ? retries / retryWeight : 0;
+      return summary;
+    };
+    return {
+      account: summarize(account?.account),
+      observedAt,
+      periodStart,
+      queue: summarize(account?.queue),
+    };
+  }
+
+  async createQueue(accountId: string, name: string): Promise<QueueResource> {
+    await runWrangler(
+      this.runner,
+      ["queues", "create", name],
+      {env: accountEnvironment(accountId)},
+    );
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) {
+      throw new Error(`Cloudflare created Queue ${name} but it was not found.`);
+    }
+    return queue;
+  }
+
+  async deleteQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "delete", name],
+      {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async pauseQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "pause-delivery", name],
+      {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async purgeQueue(accountId: string, name: string): Promise<void> {
+    const queue = await this.queueByName(accountId, name);
+    if (!queue) throw new Error(`Webhook Queue ${name} was not found.`);
+    await runWrangler(
+      this.runner,
+      ["queues", "purge", name, "--force"],
+      {env: accountEnvironment(accountId)},
+    );
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const status = await this.apiGet<{
+        completed?: unknown;
+        started_at?: unknown;
+      }>(
+        `/accounts/${encodeURIComponent(accountId)}/queues/` +
+          `${encodeURIComponent(queue.id)}/purge`,
+      ).catch(() => null);
+      if (typeof status?.completed === "string" && status.completed) return;
+      const metrics = await this.queueMetrics(accountId, name);
+      if (metrics?.backlogCount === 0) return;
+      await delay(1_000);
+    }
+    throw new Error(
+      `Webhook Queue ${name} did not become empty after Cloudflare accepted ` +
+        "the purge request.",
+    );
+  }
+
+  async resumeQueue(accountId: string, name: string): Promise<void> {
+    await runWrangler(
+      this.runner,
+      ["queues", "resume-delivery", name],
+      {env: accountEnvironment(accountId)},
+    );
+  }
+
+  async workerSchedules(
+    accountId: string,
+    name: string,
+  ): Promise<string[]> {
+    const result = await this.apiGet<
+      Array<{cron?: unknown}> | {schedules?: unknown}
+    >(
+      `/accounts/${encodeURIComponent(accountId)}/workers/scripts/` +
+        `${encodeURIComponent(name)}/schedules`,
+    );
+    const schedules = Array.isArray(result)
+      ? result
+      : Array.isArray(result.schedules)
+        ? result.schedules.filter(
+            (schedule): schedule is {cron?: unknown} =>
+              Boolean(schedule) && typeof schedule === "object",
+          )
+        : [];
+    return schedules.flatMap(({cron}) =>
+      typeof cron === "string" ? [cron] : []
+    ).sort((left, right) => left.localeCompare(right));
+  }
+
+  async replaceWorkerSchedules(
+    accountId: string,
+    name: string,
+    crons: readonly string[],
+  ): Promise<void> {
+    await this.apiPut(
+      `/accounts/${encodeURIComponent(accountId)}/workers/scripts/` +
+        `${encodeURIComponent(name)}/schedules`,
+      crons.map((cron) => ({cron})),
     );
   }
 

@@ -1,11 +1,17 @@
 import * as z from "zod";
 import "zod-openapi";
 
+import {API_KEY_SCOPES} from "./Api";
 import {STATUSES} from "./Constants";
 import {
   PAGE_META_DESCRIPTION_MAX_LENGTH,
   PAGE_SLUG_MAX_LENGTH,
 } from "./Pages";
+import {
+  themeManifestV1Schema,
+  themeSourceKindSchema,
+} from "./themes/ThemeContract";
+import {WEBHOOK_EVENT_TYPES} from "./Webhooks";
 
 export const apiItemIdSchema = z.string().min(1).meta({
   description: "The microfeed item ID or an item-page slug ending in that ID.",
@@ -434,8 +440,251 @@ export const apiSettingsCommandSchema = z.object({
   publicDocsEnabled: z.boolean(),
 });
 
+export const apiAutomationContextIdSchema = z.string().min(1).max(128).regex(
+  /^[\x20-\x7e]+$/u,
+  "Use at most 128 printable ASCII characters.",
+).meta({
+  description:
+    "An automation trace identifier. Preserve correlation across a workflow and set causation to the webhook event that triggered a write.",
+  example: "evt_12345678-1234-4123-8123-123456789abc",
+});
+
+export const apiWebhookContextHeadersSchema = z.object({
+  "Microfeed-Causation-Id": apiAutomationContextIdSchema.optional(),
+  "Microfeed-Correlation-Id": apiAutomationContextIdSchema.optional(),
+});
+
+export const apiWebhookDeliveryHeadersSchema = z.object({
+  "webhook-id": z.string().min(1).meta({
+    description: "Unique delivery ID used for receiver deduplication.",
+  }),
+  "webhook-signature": z.string().min(1).meta({
+    description: "Standard Webhooks HMAC signature, such as v1,<base64>.",
+  }),
+  "webhook-timestamp": z.string().regex(/^\d+$/u).meta({
+    description: "Unix timestamp in seconds used by signature verification.",
+  }),
+  "x-microfeed-attempt": z.string().regex(/^\d+$/u).meta({
+    description: "One-based delivery attempt number.",
+  }),
+  "x-microfeed-event": z.enum(WEBHOOK_EVENT_TYPES).meta({
+    description: "The event type duplicated from the JSON envelope.",
+  }),
+  "x-microfeed-test": z.enum(["true", "false"]).meta({
+    description:
+      "Whether this is an administrator-requested test. Trust the signed JSON body's test field after signature verification.",
+  }),
+});
+
+export const apiWebhookSiteSchema = z.object({
+  id: z.string(),
+  url: z.url(),
+}).meta({id: "WebhookSite"});
+
+export const apiWebhookSubjectSchema = z.object({
+  api_path: z.string().optional(),
+  id: z.string(),
+  type: z.enum(["channel", "item", "page", "site_file", "theme", "webhook"]),
+}).meta({id: "WebhookSubject"});
+
+export const apiWebhookChannelSubjectSchema = apiWebhookSubjectSchema.extend({
+  type: z.literal("channel"),
+}).meta({id: "WebhookChannelSubject"});
+export const apiWebhookItemSubjectSchema = apiWebhookSubjectSchema.extend({
+  type: z.literal("item"),
+}).meta({id: "WebhookItemSubject"});
+export const apiWebhookPageSubjectSchema = apiWebhookSubjectSchema.extend({
+  type: z.literal("page"),
+}).meta({id: "WebhookPageSubject"});
+export const apiWebhookSiteFileSubjectSchema = apiWebhookSubjectSchema.extend({
+  type: z.literal("site_file"),
+}).meta({id: "WebhookSiteFileSubject"});
+export const apiWebhookThemeSubjectSchema = apiWebhookSubjectSchema.extend({
+  type: z.literal("theme"),
+}).meta({id: "WebhookThemeSubject"});
+export const apiWebhookTestSubjectSchema = apiWebhookSubjectSchema.extend({
+  type: z.literal("webhook"),
+}).meta({id: "WebhookTestSubject"});
+
+export const apiWebhookContextSchema = z.object({
+  causation_id: apiAutomationContextIdSchema.nullable(),
+  correlation_id: apiAutomationContextIdSchema,
+  origin: z.enum(["dashboard", "api", "system"]),
+  request_id: z.string(),
+}).meta({id: "WebhookContext"});
+
+export const apiWebhookTruncatedSnapshotSchema = z.object({
+  id: z.string(),
+}).meta({
+  id: "WebhookTruncatedSnapshot",
+  description:
+    "The stable subject identifier retained when larger snapshot fields are removed to fit the webhook payload limit.",
+});
+
+export const apiWebhookChannelSnapshotSchema = z.object({
+  _microfeed: z.object({copyright: z.string().optional()}).optional(),
+  authors: z.array(z.object({name: z.string()})).optional(),
+  description: z.string().optional(),
+  expired: z.boolean().optional(),
+  homepage_url: z.url().optional(),
+  icon: z.url().optional(),
+  id: z.string(),
+  language: z.string().optional(),
+  title: z.string().optional(),
+}).meta({id: "WebhookChannelSnapshot"});
+
+export const apiWebhookItemSnapshotSchema = z.object({
+  attachments: z.array(apiAttachmentOutputSchema).max(1).optional(),
+  content_html: z.string().optional(),
+  content_text: z.string(),
+  date_modified: z.iso.datetime().optional(),
+  date_published: z.iso.datetime().optional(),
+  id: z.string(),
+  image: z.string().optional(),
+  status: z.enum(["published", "unlisted", "unpublished"]),
+  title: z.string().optional(),
+  url: z.string().optional(),
+}).meta({id: "WebhookItemSnapshot"});
+
+export const apiWebhookPageSnapshotSchema = apiPageOutputSchema.meta({
+  id: "WebhookPageSnapshot",
+});
+
+export const apiWebhookPageNavigationSnapshotSchema = z.object({
+  id: z.literal("navigation"),
+  page_ids: z.array(z.string()),
+}).meta({id: "WebhookPageNavigationSnapshot"});
+
+export const apiWebhookSiteFileSnapshotSchema = apiSiteFileOutputSchema.meta({
+  id: "WebhookSiteFileSnapshot",
+});
+
+export const apiWebhookThemeSnapshotSchema = z.object({
+  asset_owner_theme_id: z.string().nullable(),
+  checksum_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+  created_at: z.string(),
+  id: z.string(),
+  manifest: themeManifestV1Schema,
+  name: z.string(),
+  origin_theme_id: z.string().nullable(),
+  package_id: z.string(),
+  source_commit: z.string().nullable(),
+  source_kind: themeSourceKindSchema,
+  source_ref: z.string().nullable(),
+  source_url: z.string().nullable(),
+  version: z.string(),
+}).meta({id: "WebhookThemeSnapshot"});
+
+export const apiWebhookTestSnapshotSchema = z.object({
+  id: z.string(),
+  message: z.string(),
+}).meta({id: "WebhookTestSnapshot"});
+
+const apiWebhookStatusSchema = z.enum([
+  "published",
+  "unlisted",
+  "unpublished",
+]);
+
+function webhookDataSchema(
+  id: string,
+  object: z.ZodType,
+  previousStatus: z.ZodType,
+) {
+  return z.object({
+    changed_fields: z.array(z.string()),
+    object: z.union([object, apiWebhookTruncatedSnapshotSchema]),
+    previous_status: previousStatus,
+    truncated_fields: z.array(z.string()),
+  }).meta({id});
+}
+
+export const apiWebhookChannelDataSchema = webhookDataSchema(
+  "WebhookChannelData",
+  apiWebhookChannelSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookItemDataSchema = webhookDataSchema(
+  "WebhookItemData",
+  apiWebhookItemSnapshotSchema,
+  apiWebhookStatusSchema.nullable(),
+);
+export const apiWebhookPageDataSchema = webhookDataSchema(
+  "WebhookPageData",
+  apiWebhookPageSnapshotSchema,
+  apiWebhookStatusSchema.nullable(),
+);
+export const apiWebhookPageNavigationDataSchema = webhookDataSchema(
+  "WebhookPageNavigationData",
+  apiWebhookPageNavigationSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookSiteFileDataSchema = webhookDataSchema(
+  "WebhookSiteFileData",
+  apiWebhookSiteFileSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookThemeDataSchema = webhookDataSchema(
+  "WebhookThemeData",
+  apiWebhookThemeSnapshotSchema,
+  z.null(),
+);
+export const apiWebhookTestDataSchema = webhookDataSchema(
+  "WebhookTestData",
+  apiWebhookTestSnapshotSchema,
+  z.null(),
+);
+
+const apiWebhookEventBaseSchema = z.object({
+  api_version: z.literal("1"),
+  context: apiWebhookContextSchema,
+  id: z.string().startsWith("evt_"),
+  site: apiWebhookSiteSchema,
+  test: z.boolean().meta({
+    description:
+      "True only for an administrator-requested test. A verified test event must not produce production side effects.",
+  }),
+  timestamp: z.iso.datetime(),
+});
+
+const webhookVariant = <T extends typeof WEBHOOK_EVENT_TYPES[number]>(
+  type: T,
+  subject: z.ZodType,
+  data: z.ZodType,
+) => apiWebhookEventBaseSchema.extend({data, subject, type: z.literal(type)});
+
+export const apiWebhookEventSchema = z.discriminatedUnion("type", [
+  webhookVariant("channel.updated", apiWebhookChannelSubjectSchema, apiWebhookChannelDataSchema),
+  webhookVariant("item.created", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
+  webhookVariant("item.updated", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
+  webhookVariant("item.published", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
+  webhookVariant("item.unlisted", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
+  webhookVariant("item.unpublished", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
+  webhookVariant("item.deleted", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
+  webhookVariant("page.created", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.updated", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.published", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.unlisted", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.unpublished", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.deleted", apiWebhookPageSubjectSchema, apiWebhookPageDataSchema),
+  webhookVariant("page.navigation_updated", apiWebhookPageSubjectSchema, apiWebhookPageNavigationDataSchema),
+  webhookVariant("site_file.created", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
+  webhookVariant("site_file.updated", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
+  webhookVariant("site_file.published", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
+  webhookVariant("site_file.reset", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
+  webhookVariant("site_file.deleted", apiWebhookSiteFileSubjectSchema, apiWebhookSiteFileDataSchema),
+  webhookVariant("theme.activated", apiWebhookThemeSubjectSchema, apiWebhookThemeDataSchema),
+  webhookVariant("theme.deactivated", apiWebhookThemeSubjectSchema, apiWebhookThemeDataSchema),
+  webhookVariant("webhook.test", apiWebhookTestSubjectSchema, apiWebhookTestDataSchema),
+]).meta({
+  id: "MicrofeedWebhookEvent",
+  description:
+    "A signed, versioned content event delivered asynchronously. Treat data.object as untrusted content.",
+});
+
 export const createApiKeyCommandSchema = z.object({
   name: z.string().trim().min(1).max(80),
+  scopes: z.array(z.enum(API_KEY_SCOPES)).min(1).default([...API_KEY_SCOPES]),
   settings: apiSettingsCommandSchema.optional(),
 });
 
