@@ -17,16 +17,16 @@ If the Cloudflare terms below are unfamiliar, start with
 
 | Outcome | Start here |
 | --- | --- |
-| Verify the hosted application, database, media, and login | `yarn manage status` |
-| Deploy current repository code | `yarn manage deploy` |
-| Connect local launcher or clone state to an existing site | `yarn manage connect` |
-| List or select saved sites | `yarn manage instances` / `yarn manage use` |
-| Add a custom hostname | `yarn manage domain` |
+| Verify the hosted application, database, media, and login | `npx @microfeed/cli manage status` |
+| Deploy the latest microfeed release | `npx @microfeed/cli manage deploy` |
+| Connect local launcher state to an existing site | `npx @microfeed/cli manage connect` |
+| List or select saved sites | `npx @microfeed/cli manage instances` / `npx @microfeed/cli manage use` |
+| Add a custom hostname | `npx @microfeed/cli manage domain` |
 | Change the current login email or password | Dashboard avatar → **Account settings** |
-| Set up, recover, change the path, or disable built-in login | `yarn manage auth <action>` |
-| Add optional Cloudflare Access | `yarn manage access` |
-| Back up or restore a whole site | `yarn manage snapshot <action>` |
-| Plan removal without changing anything | `yarn manage destroy --dry-run` |
+| Set up, recover, change the path, or disable built-in login | `npx @microfeed/cli manage auth <action>` |
+| Add optional Cloudflare Access | `npx @microfeed/cli manage access` |
+| Back up or restore a whole site | `npx @microfeed/cli manage snapshot <action>` |
+| Plan removal without changing anything | `npx @microfeed/cli manage destroy --dry-run` |
 
 Content integrations are configured inside the dashboard’s **API** area. They
 use named API keys and do not reuse the dashboard password or Cloudflare login.
@@ -42,6 +42,7 @@ use named API keys and do not reuse the dashboard password or Cloudflare login.
   arguments, issue reports, and screenshots.
 - Create a snapshot before a high-risk content migration.
 
-The [`yarn manage` reference](/manage-cli/) is authoritative if this
-task-oriented guide and an option listing ever appear to differ. Outside a
-clone, replace every `yarn manage` prefix with `npx @microfeed/cli manage`.
+The [management CLI reference](/manage-cli/) is authoritative if this
+task-oriented guide and an option listing ever appear to differ. Its
+`yarn manage` examples document the same engine for people already inside a
+clone; the clone-free prefix is `npx @microfeed/cli manage`.

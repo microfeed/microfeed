@@ -46,9 +46,9 @@ page.
 ## Upload media
 
 Media uploads require an R2 bucket attached to the instance. If the uploader is
-unavailable, check the R2 state with `yarn manage status`. For a content-only
-instance, run `yarn manage deploy --enable-r2` only after R2 is available in the
-correct Cloudflare account.
+unavailable, check the R2 state with `npx @microfeed/cli manage status`. For a
+content-only instance, run `npx @microfeed/cli manage deploy --enable-r2` only
+after R2 is available in the correct Cloudflare account.
 
 Use meaningful titles and descriptions even when an image, audio file, or video
 carries most of the content. Text improves accessibility, search, and feed-reader

@@ -61,7 +61,7 @@ budget; Explorer previews, copy actions, and loopback terminal prints are free
 and do not create delivery records. Retries do not reserve another delivery,
 but each attempt can increase Queue operations and Worker execution. The Admin
 overview shows used, available, and projected operation counts before a budget
-change. `yarn manage status` verifies the Queue and reports its realtime
+change. `npx @microfeed/cli manage status` verifies the Queue and reports its realtime
 backlog and oldest message; Cloudflare-observed writes, reads, deletes, total
 billable operations, and average retries for both the site Queue and the
 account-wide UTC-day window; microfeed-side delivery accounting; and the
@@ -102,13 +102,13 @@ idempotency key, and destination operation ID. Never log signing secrets, API
 keys, raw authorization headers, or unnecessary private content.
 
 Use **Admin → Webhooks → Deliveries** for event payloads, attempt history,
-response diagnostics, and suppression reasons. Use `yarn manage status` for
+response diagnostics, and suppression reasons. Use `npx @microfeed/cli manage status` for
 Queue bindings, backlog, oldest-message age, and account-wide operation
 telemetry. The Cloudflare Queues dashboard is the final place to inspect Queue
 health and billing-related usage.
 
 The deployment contract owns reconciliation, retention, and Worker binding
-details. See the [`yarn manage deploy` reference](/manage-cli/#yarn-manage-deploy)
+details. See the [management CLI deploy reference](/manage-cli/#yarn-manage-deploy)
 when diagnosing provisioning or maintenance behavior instead of depending on
 those implementation details in a receiver.
 
@@ -128,7 +128,7 @@ the appropriate infrastructure command after reviewing its target:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn manage deploy --disable-webhooks --instance <instance-name>
+npx @microfeed/cli manage deploy --disable-webhooks --instance <instance-name>
 ```
 
 Add `--preview` before `--disable-webhooks` for preview. The command cancels

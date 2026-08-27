@@ -5,20 +5,23 @@ description: Initialize or export a microfeed theme from a saved instance into a
 
 # Initialize or export a microfeed theme
 
-Use the project-owned `yarn manage` CLI from the microfeed repository root.
-Read the theme section of [`docs/manage-cli.md`](../../../docs/manage-cli.md)
-before using an unfamiliar option.
+Prefer the clone-free `npx @microfeed/cli manage` launcher from any working
+directory. A user who is already working inside a trusted microfeed clone may
+use the project-owned `yarn manage` command instead. Use one prefix consistently
+for the whole task. Read the theme section of
+[`docs/manage-cli.md`](../../../docs/manage-cli.md) before using an unfamiliar
+option.
 
 ## Choose the repository identity
 
-1. Run `yarn manage instances --json` and select the exact saved instance the
+1. Run `npx @microfeed/cli manage instances --json` and select the exact saved instance the
    user named. If several instances remain plausible, report their names and
    ask the user to choose.
 2. Use `theme init` when the user wants a new independently versioned theme
    based on the site's effective appearance:
 
    ```console
-   yarn manage theme init <output-directory> --instance <instance-name> --json
+   npx @microfeed/cli manage theme init <output-directory> --instance <instance-name> --json
    ```
 
    Let the CLI choose the initial `local.<directory-name>` package ID unless
@@ -29,7 +32,7 @@ before using an unfamiliar option.
    package identity. Export the active installed version by default:
 
    ```console
-   yarn manage theme export --active --instance <instance-name> --git --json
+   npx @microfeed/cli manage theme export --active --instance <instance-name> --git --json
    ```
 
    When the user names an immutable theme ID, replace `--active` with that ID.

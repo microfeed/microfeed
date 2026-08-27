@@ -23,6 +23,10 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {adminUrl, browserAdminPath} from "@/shared/AdminPath";
 import {
+  MICROFEED_MANAGE_COMMAND,
+  managementCommand,
+} from "@/shared/ManagementCli";
+import {
   WEBHOOK_QUICKSTARTS,
   WEBHOOK_QUICKSTART_ENDPOINT_URL,
   type WebhookQuickstartLanguage,
@@ -75,17 +79,23 @@ export default function WebhookOverviewApp({
   const deploymentLabel = deploymentEnvironment === "preview"
     ? "Preview"
     : "Production";
-  const deploymentCommand = `yarn manage deploy ${
+  const deploymentCommand = managementCommand(`deploy ${
     deploymentEnvironment === "preview" ? "--preview " : ""
-  }--enable-webhooks --instance ${instanceName}`;
-  const disableCommand = `yarn manage deploy ${
+  }--enable-webhooks --instance ${instanceName}`);
+  const disableCommand = managementCommand(`deploy ${
     deploymentEnvironment === "preview" ? "--preview " : ""
-  }--disable-webhooks --instance ${instanceName}`;
+  }--disable-webhooks --instance ${instanceName}`);
   const infrastructureState = overview.infrastructureState ??
     (overview.enabled ? "enabled" : "unprovisioned");
   const localSimulationEnabled = localDevelopment && overview.enabled &&
     infrastructureState === "enabled";
-  const agentDeploymentPrompt = `Enable ${deploymentLabel.toLowerCase()} webhooks for my saved microfeed site "${instanceName}". Follow the deploy-microfeed skill, review the deploy section of docs/manage-cli.md, and run ${deploymentCommand}. Do not change another site or environment. After deployment, run yarn manage status --instance ${instanceName} and report whether the webhook Queue and binding are ready.`;
+  const agentDeploymentPrompt =
+    `Run \`${MICROFEED_MANAGE_COMMAND}\` and follow every instruction it ` +
+    `prints to enable ${deploymentLabel.toLowerCase()} webhooks for my ` +
+    `existing microfeed site "${instanceName}". When instructed, run ` +
+    `\`${deploymentCommand}\`. Do not change another site or environment. ` +
+    `Continue until \`${managementCommand(`status --instance ${instanceName}`)}\` ` +
+    "verifies that the webhook Queue and binding are ready.";
 
   const copy = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value);
@@ -128,8 +138,8 @@ export default function WebhookOverviewApp({
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               {localDevelopment
                 ? localSimulationEnabled
-                  ? "yarn dev uses Wrangler's local Queue simulation. It creates no Cloudflare resources, requests no Queue permissions, and incurs no Cloudflare charge."
-                  : "This yarn dev run omitted the local Queue and Cron simulation. The saved preview and production webhook states were not changed."
+                  ? `${managementCommand("dev")} uses Wrangler's local Queue simulation. It creates no Cloudflare resources, requests no Queue permissions, and incurs no Cloudflare charge.`
+                  : `This ${managementCommand("dev")} run omitted the local Queue and Cron simulation. The saved preview and production webhook states were not changed.`
                 : overview.enabled
                 ? "Deliveries are stored in D1 and dispatched through this deployment's dedicated Cloudflare Queue. Reconciliation runs hourly and cleanup runs once daily while at least one endpoint is configured."
                 : infrastructureState === "disabled"
@@ -863,10 +873,10 @@ function WebhookEnablementDialog({
           <div className="rounded-xl border p-4">
             <p className="font-medium">Local development</p>
             <p className="mt-1 text-muted-foreground">
-              Plain <code>yarn dev</code> runs Wrangler's local Queue simulation
+              Plain <code>{managementCommand("dev")}</code> runs Wrangler's local Queue simulation
               with an isolated D1 database and local secret. It requires no
               Cloudflare permission, resource, deployment, or payment. Use
-              <code> yarn dev --disable-webhooks</code> to omit the Queue and
+              <code> {managementCommand("dev --disable-webhooks")}</code> to omit the Queue and
               Cron simulation for one run without changing a deployed site.
             </p>
           </div>

@@ -92,7 +92,7 @@ describe("Webhook Admin", () => {
     expect(output).toContain("Current content");
     expect(output).toContain("Copy raw JSON");
     expect(output).toContain("Copy formatted JSON");
-    expect(output).toContain("Print in yarn dev");
+    expect(output).toContain("Print in local development");
     expect(output).toContain("Subscription mismatch");
     expect(output).toContain("1,000-delivery daily budget");
     expect(output).toContain('aria-label="Payload JSON"');
@@ -224,7 +224,7 @@ describe("Webhook Admin", () => {
     ));
     expect(disabledOutput).toContain("Ordinary deployments keep webhooks off");
     expect(disabledOutput).toContain(
-      "yarn manage deploy --enable-webhooks --instance personal",
+      "npx @microfeed/cli manage deploy --enable-webhooks --instance personal",
     );
     expect(disabledOutput).toContain("Enable production webhooks");
 
@@ -250,7 +250,7 @@ describe("Webhook Admin", () => {
     expect(retainedOutput).toContain("Queue is paused and detached");
     expect(retainedOutput).toContain("Re-enable production webhooks");
     expect(retainedOutput).toContain(
-      "yarn manage deploy --enable-webhooks --instance personal",
+      "npx @microfeed/cli manage deploy --enable-webhooks --instance personal",
     );
   });
 

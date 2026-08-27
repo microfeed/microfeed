@@ -149,7 +149,7 @@ export default function WebhookEventExplorerApp({
         method: "POST",
       });
       setPreview(result);
-      showToast("Payload printed in the yarn dev terminal.", "success");
+      showToast("Payload printed in the local development terminal.", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), "error");
     } finally {
@@ -274,7 +274,7 @@ export default function WebhookEventExplorerApp({
 
           <div className="flex flex-wrap gap-2">
             <Button disabled={busy || !endpoint || endpoint.status === "disabled" || !preview} onClick={send} type="button">Send test delivery</Button>
-            {localPrintAvailable && <Button disabled={busy || !preview} onClick={print} type="button" variant="outline">Print in yarn dev</Button>}
+            {localPrintAvailable && <Button disabled={busy || !preview} onClick={print} type="button" variant="outline">Print in local development</Button>}
           </div>
           <p className="text-xs text-muted-foreground">Sending reserves 1 delivery from the {dailyLimit.toLocaleString("en-US")}-delivery daily budget and can retry. Previewing, copying, and local printing are free and side-effect-free.</p>
           {deliveryId && <p className="rounded-lg border p-3 text-sm">Delivery <code>{deliveryId}</code> was created. <a className="underline underline-offset-4" href={deliveriesUrl}>Open Delivery details</a>.</p>}

@@ -297,7 +297,7 @@ describe("CLI discovery", () => {
     await expect(discoverInstance("https://feed.example"))
       .rejects.toThrow("Cloudflare Access can protect dashboard routes");
     await expect(discoverInstance("https://feed.example"))
-      .rejects.toThrow("yarn manage auth setup");
+      .rejects.toThrow("npx @microfeed/cli manage auth setup");
     await expect(discoverInstance("https://feed.example"))
       .rejects.toThrow("domains-and-access/#enable-built-in-login");
     expect(fetchMock).toHaveBeenCalledTimes(3);

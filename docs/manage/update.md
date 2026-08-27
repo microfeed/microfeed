@@ -20,8 +20,7 @@ latest release, and continue until `status` verifies the site.
 The launcher obtains the exact release in a private cache. The agent discovers
 saved and compatible existing sites, asks before choosing among candidates,
 connects only if needed, deploys through the same `yarn manage` engine, and
-runs a status check. Complete any Git or Cloudflare browser handoffs it
-requests.
+runs a status check. Complete any Cloudflare browser handoffs it requests.
 
 ## Manual update from a clone
 

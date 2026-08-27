@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {ONBOARDING_TYPES} from "@/shared/Constants";
+import {managementCommand} from "@/shared/ManagementCli";
 import {
   ADMIN_URLS,
   normalizeR2CustomDomainUrl,
@@ -92,8 +93,7 @@ export function AdminProtectionDescription({
         Your dashboard is protected by the built-in email and password login.{" "}
         <CloudflareAccessLink dashboardUrl={dashboardUrl} /> was not detected
         on this request. To add it as an optional second gate, run{" "}
-        <CloudflareValue>yarn manage access</CloudflareValue> from your
-        deployment checkout.
+        <CloudflareValue>{managementCommand("access")}</CloudflareValue>.
       </>
     );
   }
@@ -115,8 +115,9 @@ export function AdminProtectionDescription({
       <CloudflareAccessLink dashboardUrl={dashboardUrl} /> authentication was
       not detected on this request. Anyone who can reach the admin dashboard
       may be able to change your content. Run{" "}
-      <CloudflareValue>yarn manage auth setup</CloudflareValue> to add a login
-      or <CloudflareValue>yarn manage access</CloudflareValue> to configure
+      <CloudflareValue>{managementCommand("auth setup")}</CloudflareValue> to
+      add a login or{" "}
+      <CloudflareValue>{managementCommand("access")}</CloudflareValue> to configure
       Cloudflare Access.
     </>
   );
@@ -158,8 +159,8 @@ export function SiteCustomDomainDescription({
           </>
         )}
       To configure or change it safely, run{" "}
-      <CloudflareValue>yarn manage domain</CloudflareValue> from your deployment
-      checkout. The command updates the Worker configuration, deploys, and
+      <CloudflareValue>{managementCommand("domain")}</CloudflareValue>. The
+      command updates the Worker configuration, deploys, and
       verifies the domain and TLS.
     </>
   );
@@ -306,8 +307,7 @@ export function MediaStorageDescription({
       <>
         Media uploads are disabled for this instance. Text publishing and
         external URLs continue to work. To opt in later, run{" "}
-        <CloudflareValue>yarn manage deploy --enable-r2</CloudflareValue> from
-        the deployment checkout.
+        <CloudflareValue>{managementCommand("deploy --enable-r2")}</CloudflareValue>.
       </>
     );
   }
@@ -328,7 +328,7 @@ export function MediaStorageDescription({
         )
         : "Activate R2 in the Cloudflare dashboard"}
       , complete billing setup if Cloudflare requests it, then run{" "}
-      <CloudflareValue>yarn manage deploy --enable-r2</CloudflareValue>.
+      <CloudflareValue>{managementCommand("deploy --enable-r2")}</CloudflareValue>.
     </>
   );
 }

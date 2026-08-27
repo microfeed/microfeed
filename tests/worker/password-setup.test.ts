@@ -236,7 +236,7 @@ describe("browser-based admin password setup", () => {
       newToken,
     );
     expect(expired.status).toBe(410);
-    expect(await expired.text()).toContain("yarn manage auth setup");
+    expect(await expired.text()).toContain("npx @microfeed/cli manage auth setup");
   });
 
   it("atomically resets the password, revokes sessions, and consumes one concurrent use", async () => {

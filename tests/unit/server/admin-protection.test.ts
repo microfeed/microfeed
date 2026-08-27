@@ -187,7 +187,7 @@ describe("media delivery onboarding", () => {
         state,
       }),
     );
-    expect(output).toContain("yarn manage deploy --enable-r2");
+    expect(output).toContain("npx @microfeed/cli manage deploy --enable-r2");
     expect(output).toContain(
       state === "pending" ? "subscription is pending" : "uploads are disabled",
     );
@@ -322,7 +322,7 @@ describe("Cloudflare onboarding links", () => {
     );
     expect(output).toContain(
       '<code class="font-semibold text-cloudflare-orange">' +
-        "yarn manage domain</code>",
+        "npx @microfeed/cli manage domain</code>",
     );
   });
 });

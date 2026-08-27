@@ -9,8 +9,8 @@ It creates, validates, tests, and previews a theme package on your computer. It
 does not deploy microfeed, install a theme into an instance, or activate a live
 theme.
 
-Use [`yarn manage theme`](/manage-cli/#yarn-manage-theme) from a microfeed
-checkout for instance operations such as export, install, update, activation,
+Use [`npx @microfeed/cli manage theme`](/manage-cli/#yarn-manage-theme) from any
+folder for instance operations such as export, install, update, activation,
 rollback, and deletion. See [Build and release a theme](/themes/) for the
 authoring workflow, [Theme contract and rendering](/themes/contract/) for the
 package contract, and [Bundle CSS, JavaScript, and assets](/themes/assets/) for
@@ -126,7 +126,7 @@ other dependency.
   creating and publishing a standalone repository.
 
 To initialize from a specific microfeed instance's active theme instead, use
-`yarn manage theme init` from a microfeed checkout.
+`npx @microfeed/cli manage theme init` from any folder.
 
 ## `validate`
 
@@ -238,4 +238,5 @@ theme-kit preview . --fixture media
 
 After the local checks pass, increment the theme's semantic version and commit
 both source files and generated runtime files. Installation and activation are
-separate `yarn manage theme` operations performed from a microfeed checkout.
+separate `npx @microfeed/cli manage theme` operations that can run from any
+folder.

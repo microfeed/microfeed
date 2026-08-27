@@ -67,7 +67,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
 * a headless CMS with a GUI dashboard, RSS Feed, JSON Feed, API, Webhooks, and [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Explore the public demo’s [interactive API docs](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
-* a themeable publishing platform with immutable D1-backed versions, isolated Admin drafts and previews, GitHub installation through `yarn manage theme`, and the standalone [`@microfeed/theme-kit`](https://www.npmjs.com/package/@microfeed/theme-kit) authoring CLI.
+* a themeable publishing platform with immutable D1-backed versions, isolated Admin drafts and previews, GitHub installation through `npx @microfeed/cli manage theme`, and the standalone [`@microfeed/theme-kit`](https://www.npmjs.com/package/@microfeed/theme-kit) authoring CLI.
 * standalone public Pages, credential-free typeahead search with Command/Ctrl-K, and editable generated `robots.txt`, `llms.txt`, and `sitemap.xml` files.
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
 * a website for an entire book (e.g., [The Art of War](https://the-art-of-war.microfeed.org/))
@@ -211,7 +211,7 @@ work after an upgrade because their complete manifests and templates are
 already stored with the site.
 
 Themes developed by the community can be installed from public GitHub
-repositories with `yarn manage theme`. Developers and AI coding agents can
+repositories with `npx @microfeed/cli manage theme`. Developers and AI coding agents can
 initialize a standalone theme repository, work with fixtures or a live public
 JSON Feed, use tools such as Tailwind CSS, and validate the package before it
 is installed. See [Build and release a theme](https://docs.microfeed.org/themes/)
@@ -314,7 +314,7 @@ checksums:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn manage snapshot create --instance <instance-name> --output backup.tar.gz
+npx @microfeed/cli manage snapshot create --instance <instance-name> --output backup.tar.gz
 ```
 
 You can also download a Cloudflare site and immediately create a new local copy
@@ -322,13 +322,13 @@ with its real content:
 
 ```console
 # Replace both placeholders with saved or new instance names.
-yarn manage snapshot pull \
+npx @microfeed/cli manage snapshot pull \
   --instance <instance-name> \
   --local-instance <local-instance-name>
 ```
 
-Restore archives only with a checkout whose migration history exactly extends
-the snapshot's recorded history. Local restore requires a new local instance.
+Restore archives only with a microfeed release whose migration history exactly
+extends the snapshot's recorded history. Local restore requires a new local instance.
 Cloudflare restore requires a newly initialized site with nonreused, unchanged
 D1 and R2 resources, a successful dry run, and exact site-name confirmation.
 See the canonical [`snapshot` command reference](docs/manage-cli.md#yarn-manage-snapshot)

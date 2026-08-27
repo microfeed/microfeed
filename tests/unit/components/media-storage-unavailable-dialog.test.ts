@@ -16,7 +16,7 @@ describe("media storage unavailable guidance", () => {
     );
 
     expect(output).toContain("Activate R2 in Cloudflare");
-    expect(output).toContain("yarn manage deploy --enable-r2");
+    expect(output).toContain("npx @microfeed/cli manage deploy --enable-r2");
     expect(output).not.toContain("deploy --local");
   });
 
@@ -28,7 +28,7 @@ describe("media storage unavailable guidance", () => {
     );
 
     expect(output).toContain(
-      "yarn manage deploy --local --enable-r2",
+      "npx @microfeed/cli manage deploy --local --enable-r2",
     );
     expect(output).not.toContain("Activate R2 in Cloudflare");
   });

@@ -197,7 +197,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       "<computer-name> identifies this computer under Account settings → App access, such as Home Mac or Publishing server. It is separate from the local saved-instance name and accepts 1–64 printable characters.",
       "The CLI creates a random connection ID for this saved site. Logging in again reuses that ID, replaces its token family, and avoids adding a duplicate computer connection.",
       "Login verifies the microfeed site, opens administrator sign-in and consent in a browser, and stores only encrypted credentials. The person using the instance must approve the browser step.",
-      "Browser authorization requires the site's built-in login. Cloudflare Access may protect dashboard routes, but it does not create the microfeed application session required for OAuth. When built-in login is disabled, the owner enables it from the connected repository with `yarn manage auth setup`.",
+      "Browser authorization requires the site's built-in login. Cloudflare Access may protect dashboard routes, but it does not create the microfeed application session required for OAuth. When built-in login is disabled, the owner enables it with `npx @microfeed/cli manage auth setup`.",
       "Browser login can be saved while API access is disabled, but content commands return 404 until the site owner enables access.",
       ...apiAccessDetails,
     ],

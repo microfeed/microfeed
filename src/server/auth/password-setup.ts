@@ -5,6 +5,7 @@ import {
   validateAdminSetupCredentials,
 } from "@/shared/AdminCredentials";
 import {adminUrl} from "@/shared/AdminPath";
+import {managementCommand} from "@/shared/ManagementCli";
 
 export const ADMIN_PASSWORD_SETUP_TTL_SECONDS = 30 * 60;
 export const ADMIN_PASSWORD_SETUP_COOKIE =
@@ -51,7 +52,10 @@ function textResponse(body: string, status: number): Response {
 
 function goneResponse(): Response {
   return textResponse(
-    "This password link has expired or was replaced. Run `yarn manage auth setup` for first-time administrator setup, or `yarn manage auth reset-password` for an existing administrator.",
+    "This password link has expired or was replaced. Run " +
+      `\`${managementCommand("auth setup")}\` for first-time administrator ` +
+      `setup, or \`${managementCommand("auth reset-password")}\` for an ` +
+      "existing administrator.",
     410,
   );
 }

@@ -18,7 +18,7 @@ R2 bucket, declared theme assets restore in the same archive.
 ## Create a backup
 
 ```console
-yarn manage snapshot create \
+npx @microfeed/cli manage snapshot create \
   --instance <source-name> \
   --output <new-backup-file>.tar.gz
 ```
@@ -34,7 +34,7 @@ before managing restored content.
 ## Test a production snapshot locally
 
 ```console
-yarn manage snapshot pull \
+npx @microfeed/cli manage snapshot pull \
   --instance <source-name> \
   --local-instance <new-local-name>
 ```
@@ -57,7 +57,7 @@ eligibility checks, resumable maintenance state, and all options.
 [Older microfeed deployments](https://github.com/microfeed/microfeed/tree/microfeed-classic) hosted with Cloudflare Pages use:
 
 ```console
-yarn manage migrate-pages
+npx @microfeed/cli manage migrate-pages
 ```
 
 The command creates a new Worker beside the existing Pages project and connects

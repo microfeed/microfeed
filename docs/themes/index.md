@@ -4,16 +4,16 @@ description: Start a standalone theme repository, develop and preview it safely,
 ---
 
 A theme repository is an independent project containing the templates and
-optional assets that render a microfeed public site. Develop it outside the
-microfeed source checkout, validate it locally, and install each semantic
-version as an inactive release before activation.
+optional assets that render a microfeed public site. Develop it in its own
+folder, validate it locally, and install each semantic version as an inactive
+release before activation.
 
 ## Choose a starting point
 
 | Goal | Command |
 | --- | --- |
-| Fork the selected site's current appearance under a new identity | `yarn manage theme init <directory> --instance <instance-name>` |
-| Export an exact installed immutable version with its existing identity | `yarn manage theme export <theme-id> --instance <instance-name>` |
+| Fork the selected site's current appearance under a new identity | `npx @microfeed/cli manage theme init <directory> --instance <instance-name>` |
+| Export an exact installed immutable version with its existing identity | `npx @microfeed/cli manage theme export <theme-id> --instance <instance-name>` |
 | Start from a generic package without reading an instance | `yarn dlx @microfeed/theme-kit init <directory>` |
 
 Use `theme init` for a new design derived from the site's effective theme. Use
@@ -23,11 +23,10 @@ source files or build tools that were not part of the installed package.
 
 ## Start from the current site
 
-Run this from the connected microfeed clone, using a destination outside that
-checkout:
+Run this from any folder:
 
 ```console
-yarn manage theme init ~/microfeed-themes/my-theme \
+npx @microfeed/cli manage theme init ~/microfeed-themes/my-theme \
   --instance <instance-name>
 cd ~/microfeed-themes/my-theme
 yarn install
@@ -52,9 +51,10 @@ theme, or choose a package ID you control for a distributable theme. Use
 List installed versions, then export the exact one you intend to preserve:
 
 ```console
-yarn manage theme list --instance <instance-name>
-yarn manage theme export <theme-id> \
+npx @microfeed/cli manage theme list --instance <instance-name>
+npx @microfeed/cli manage theme export <theme-id> \
   --instance <instance-name> \
+  --output ~/microfeed-themes/exported-theme \
   --git \
   --json
 ```
@@ -68,10 +68,10 @@ An export preserves the installed package identity for inspection and archival.
 Do not modify and republish an exported `microfeed.*` theme. Run `theme init`
 instead; it forks the same appearance under a new `local.*` identity.
 
-Inside a microfeed clone, the default export destination is the ignored
-`.microfeed/themes/<package-id>-<version>/` workspace. Commit and push the
-standalone repository when you are ready to preserve it independently; cleanup
-of ignored files can otherwise remove it.
+When `--output` is omitted, export writes under
+`.microfeed/themes/<package-id>-<version>/` in the current folder. Prefer a
+visible destination under `~/microfeed-themes/` for standalone development.
+Commit and push the repository when you are ready to preserve it independently.
 
 ## Start from the generic package
 
@@ -147,13 +147,12 @@ For every option and output contract, use the
 
 ## Install and release a version
 
-After validation and review, install the repository from the connected
-microfeed clone:
+After validation and review, install the repository from any folder:
 
 ```console
-yarn manage theme install https://github.com/owner/theme-repository \
+npx @microfeed/cli manage theme install https://github.com/owner/theme-repository \
   --instance <instance-name>
-yarn manage theme list --instance <instance-name>
+npx @microfeed/cli manage theme list --instance <instance-name>
 ```
 
 Installation resolves a Git ref to one exact commit, validates the declared
@@ -162,7 +161,7 @@ needed. It never activates the result. Preview the installed version, then
 activate its exact theme ID separately:
 
 ```console
-yarn manage theme activate <theme-id> --instance <instance-name>
+npx @microfeed/cli manage theme activate <theme-id> --instance <instance-name>
 ```
 
 Use `theme update` to install a newer version from the recorded source and
@@ -170,7 +169,7 @@ Use `theme update` to install a newer version from the recorded source and
 package ID and version for different content. Delete only inactive versions
 that are no longer needed.
 
-See the canonical [`yarn manage theme`
+See the canonical [management CLI theme
 reference](/manage-cli/#yarn-manage-theme) for source selection, local and
 preview environments, update, rollback, export, and deletion behavior.
 

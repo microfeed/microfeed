@@ -21,8 +21,8 @@ Most sites should leave it unchanged. Update it only when you deliberately
 change the bucket’s public address or add a custom media domain, then open an
 existing image to verify the new address.
 
-The deployment’s R2 connection is managed by `yarn manage`; changing this text
-field does not create, attach, or move a bucket or any files.
+The deployment’s R2 connection is managed by `npx @microfeed/cli manage`;
+changing this text field does not create, attach, or move a bucket or any files.
 
 ## Items settings
 

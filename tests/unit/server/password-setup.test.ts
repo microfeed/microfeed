@@ -42,10 +42,10 @@ describe("admin password setup routing", () => {
     const body = await response.text();
     expect(body).toContain("The admin dashboard is locked");
     expect(body).toContain(
-      "<pre><code>yarn manage auth setup --instance " +
+      "<pre><code>npx @microfeed/cli manage auth setup --instance " +
         "production-feed</code></pre>",
     );
-    expect(body).not.toContain("yarn manage auth disable");
+    expect(body).not.toContain("npx @microfeed/cli manage auth disable");
     expect(body).toContain(
       `To learn more about dashboard login: <a href="${ADMIN_DASHBOARD_LOGIN_HELP_URL}">` +
         "Manage the dashboard login</a>",
@@ -65,10 +65,10 @@ describe("admin password setup routing", () => {
     const body = await response.text();
     expect(body).toContain("The admin dashboard is locked");
     expect(body).toContain(
-      "<pre><code>yarn manage auth setup --instance local</code></pre>",
+      "<pre><code>npx @microfeed/cli manage auth setup --instance local</code></pre>",
     );
     expect(body).toContain(
-      "<pre><code>yarn manage auth disable --instance local</code></pre>",
+      "<pre><code>npx @microfeed/cli manage auth disable --instance local</code></pre>",
     );
     expect(body).toContain(ADMIN_DASHBOARD_LOGIN_HELP_URL);
   });
@@ -84,8 +84,8 @@ describe("admin password setup routing", () => {
       "text/plain; charset=utf-8",
     );
     const body = await response.text();
-    expect(body).toContain("yarn manage auth setup --instance local");
-    expect(body).toContain("yarn manage auth disable --instance local");
+    expect(body).toContain("npx @microfeed/cli manage auth setup --instance local");
+    expect(body).toContain("npx @microfeed/cli manage auth disable --instance local");
     expect(body).toContain(ADMIN_DASHBOARD_LOGIN_HELP_URL);
   });
 });

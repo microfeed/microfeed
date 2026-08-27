@@ -10,7 +10,10 @@ const adminPath = normalizeAdminPath(env.MICROFEED_ADMIN_PATH);
 const setup = await currentAdminPasswordSetup(env.FEED_DB, Astro.request);
 if (!setup) {
   return new Response(
-    "This password link has expired or was replaced. Run `yarn manage auth setup` for first-time administrator setup, or `yarn manage auth reset-password` for an existing administrator.",
+    "This password link has expired or was replaced. Run " +
+      "`npx @microfeed/cli manage auth setup` for first-time administrator " +
+      "setup, or `npx @microfeed/cli manage auth reset-password` for an " +
+      "existing administrator.",
     {
       headers: {
         "Cache-Control": "no-store",
