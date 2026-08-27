@@ -1,8 +1,11 @@
 import {spawn, type SpawnOptions} from "node:child_process";
+import {createHash} from "node:crypto";
+import {createRequire} from "node:module";
 import {constants as osConstants, homedir} from "node:os";
 import path from "node:path";
 import {
   chmod,
+  copyFile,
   mkdir,
   readFile,
   readdir,
@@ -11,13 +14,13 @@ import {
   stat,
   writeFile,
 } from "node:fs/promises";
+import {fileURLToPath} from "node:url";
 
 import {CliError} from "./errors.js";
 
-const MICROFEED_REPOSITORY_URL =
-  "https://github.com/microfeed/microfeed.git";
 const MINIMUM_NODE_VERSION = [22, 12, 0] as const;
 const SETUP_LOCK_STALE_MS = 60 * 60 * 1_000;
+const RUNTIME_MARKER = ".microfeed-runtime.json";
 
 type StringEnvironment = Record<string, string | undefined>;
 type CommandStdio = "ignore" | "inherit" | "pipe";
@@ -49,8 +52,24 @@ export interface ManageLauncherOptions {
   output?: (value: string) => void;
   packageVersion?: string;
   platform?: NodeJS.Platform;
+  runtimeDirectory?: string;
+  runtimeManifestPath?: string;
   runner?: ManageCommandRunner;
   stateDirectory?: string;
+  yarnJavaScript?: string;
+}
+
+interface ManageRuntimeFile {
+  path: string;
+  sha256: string;
+  size: number;
+}
+
+export interface ManageRuntimeManifest {
+  files: ManageRuntimeFile[];
+  schemaVersion: 1;
+  sourceCommit: string;
+  version: string;
 }
 
 function signalExitCode(signal: NodeJS.Signals | null): number {
@@ -177,7 +196,7 @@ function requireSupportedNodeVersion(version = process.versions.node): void {
     const part = actual[index] ?? Number.NaN;
     if (!Number.isInteger(part) || part < minimum) {
       throw new CliError(
-        "Node.js 22.12.0 or newer is required for clone-free microfeed " +
+        "Node.js 22.12.0 or newer is required for source-code-free microfeed " +
           "deployment. Install a current Node.js LTS release from " +
           "https://nodejs.org/, then rerun the same command.",
       );
@@ -196,20 +215,6 @@ async function installedPackageVersion(): Promise<string> {
   return metadata.version;
 }
 
-async function requireExecutable(
-  runner: ManageCommandRunner,
-  executable: string,
-  remediation: string,
-): Promise<void> {
-  try {
-    const result = await runner(executable, ["--version"], {stdio: "pipe"});
-    if (result.exitCode === 0) return;
-  } catch {
-    // The actionable error below is the same for a missing or unusable tool.
-  }
-  throw new CliError(remediation);
-}
-
 async function pathExists(filename: string): Promise<boolean> {
   try {
     await stat(filename);
@@ -220,47 +225,125 @@ async function pathExists(filename: string): Promise<boolean> {
   }
 }
 
-async function repositoryMatchesVersion(
+function installedRuntimeDirectory(): string {
+  return fileURLToPath(new URL("./manage-runtime-files/", import.meta.url));
+}
+
+function installedRuntimeManifestPath(): string {
+  return fileURLToPath(
+    new URL("./manage-runtime-manifest.json", import.meta.url),
+  );
+}
+
+function installedYarnJavaScript(): string {
+  const require = createRequire(import.meta.url);
+  return require.resolve("@yarnpkg/cli-dist/bin/yarn.js");
+}
+
+function safeRuntimePath(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 &&
+    !path.posix.isAbsolute(value) && !value.includes("\\") &&
+    value.split("/").every((part) =>
+      part.length > 0 && part !== "." && part !== ".."
+    );
+}
+
+async function readRuntimeManifest(
+  filename: string,
+  expectedVersion: string,
+): Promise<ManageRuntimeManifest> {
+  let value: unknown;
+  try {
+    value = JSON.parse(await readFile(filename, "utf8"));
+  } catch {
+    throw new CliError(
+      "The installed @microfeed/cli deployment runtime is missing or " +
+        "damaged. Reinstall the package and rerun the same command.",
+    );
+  }
+  if (!value || typeof value !== "object") {
+    throw new CliError("The installed deployment runtime manifest is invalid.");
+  }
+  const manifest = value as Partial<ManageRuntimeManifest>;
+  const seen = new Set<string>();
+  if (
+    manifest.schemaVersion !== 1 || manifest.version !== expectedVersion ||
+    typeof manifest.sourceCommit !== "string" ||
+    !/^[0-9a-f]{40}$/u.test(manifest.sourceCommit) ||
+    !Array.isArray(manifest.files) || manifest.files.length === 0 ||
+    manifest.files.some((file) => {
+      if (!file || typeof file !== "object") return true;
+      const entry = file as Partial<ManageRuntimeFile>;
+      if (
+        !safeRuntimePath(entry.path) || seen.has(entry.path) ||
+        typeof entry.sha256 !== "string" ||
+        !/^[0-9a-f]{64}$/u.test(entry.sha256) ||
+        typeof entry.size !== "number" ||
+        !Number.isSafeInteger(entry.size) || entry.size < 0
+      ) return true;
+      seen.add(entry.path);
+      return false;
+    })
+  ) {
+    throw new CliError(
+      "The installed @microfeed/cli deployment runtime does not match this " +
+        "package version. Reinstall the package and rerun the same command.",
+    );
+  }
+  return manifest as ManageRuntimeManifest;
+}
+
+async function sha256File(filename: string): Promise<string> {
+  return createHash("sha256")
+    .update(await readFile(filename))
+    .digest("hex");
+}
+
+function manifestsMatch(
+  left: ManageRuntimeManifest,
+  right: ManageRuntimeManifest,
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+async function cachedRuntimeMatches(
   repositoryDirectory: string,
-  version: string,
-  runner: ManageCommandRunner,
+  manifest: ManageRuntimeManifest,
 ): Promise<boolean> {
   try {
-    const metadata = JSON.parse(
-      await readFile(path.join(repositoryDirectory, "package.json"), "utf8"),
-    ) as {version?: unknown};
-    if (metadata.version !== version) return false;
-    const [head, release, status] = await Promise.all([
-      runner(
-        "git",
-        ["-C", repositoryDirectory, "rev-parse", "--verify", "HEAD"],
-        {stdio: "pipe"},
-      ),
-      runner(
-        "git",
-        [
-          "-C",
-          repositoryDirectory,
-          "rev-parse",
-          `refs/tags/v${version}^{commit}`,
-        ],
-        {stdio: "pipe"},
-      ),
-      runner(
-        "git",
-        [
-          "-C",
-          repositoryDirectory,
-          "status",
-          "--porcelain",
-          "--untracked-files=all",
-        ],
-        {stdio: "pipe"},
-      ),
-    ]);
-    return head.exitCode === 0 && release.exitCode === 0 &&
-      status.exitCode === 0 && status.stdout.trim() === "" &&
-      head.stdout.trim() === release.stdout.trim() && Boolean(head.stdout.trim());
+    const cachedManifest = JSON.parse(await readFile(
+      path.join(repositoryDirectory, RUNTIME_MARKER),
+      "utf8",
+    )) as ManageRuntimeManifest;
+    if (!manifestsMatch(cachedManifest, manifest)) return false;
+    for (const file of manifest.files) {
+      const filename = path.join(repositoryDirectory, file.path);
+      const metadata = await stat(filename);
+      if (
+        !metadata.isFile() || metadata.size !== file.size ||
+        await sha256File(filename) !== file.sha256
+      ) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function packagedRuntimeMatches(
+  runtimeDirectory: string,
+  manifest: ManageRuntimeManifest,
+): Promise<boolean> {
+  try {
+    for (const file of manifest.files) {
+      const filename = path.join(runtimeDirectory, file.sha256);
+      const metadata = await stat(filename);
+      if (
+        !metadata.isFile() || metadata.size !== file.size ||
+        await sha256File(filename) !== file.sha256
+      ) return false;
+    }
+    return true;
   } catch {
     return false;
   }
@@ -269,8 +352,8 @@ async function repositoryMatchesVersion(
 async function replaceRepository(
   cacheDirectory: string,
   repositoryDirectory: string,
-  version: string,
-  runner: ManageCommandRunner,
+  runtimeDirectory: string,
+  manifest: ManageRuntimeManifest,
 ): Promise<void> {
   const candidate = path.join(
     cacheDirectory,
@@ -280,31 +363,27 @@ async function replaceRepository(
   await rm(candidate, {force: true, recursive: true});
   await rm(previous, {force: true, recursive: true});
   try {
-    const clone = await runner(
-      "git",
-      [
-        "clone",
-        "--depth",
-        "1",
-        "--single-branch",
-        "--branch",
-        `v${version}`,
-        MICROFEED_REPOSITORY_URL,
-        candidate,
-      ],
-      {stdio: "inherit"},
-    );
-    if (clone.exitCode !== 0) {
+    if (!await packagedRuntimeMatches(runtimeDirectory, manifest)) {
       throw new CliError(
-        `Could not download microfeed release v${version}. Confirm that the ` +
-          "release tag exists and that GitHub is reachable, then rerun the command.",
-        clone.exitCode,
+        "The source bundled with @microfeed/cli is damaged. Reinstall the " +
+          "package and rerun the same command.",
       );
     }
-    if (!await repositoryMatchesVersion(candidate, version, runner)) {
+    await mkdir(candidate, {recursive: true, mode: 0o700});
+    for (const file of manifest.files) {
+      const destination = path.join(candidate, file.path);
+      await mkdir(path.dirname(destination), {recursive: true});
+      await copyFile(path.join(runtimeDirectory, file.sha256), destination);
+    }
+    await writeFile(
+      path.join(candidate, RUNTIME_MARKER),
+      `${JSON.stringify(manifest, null, 2)}\n`,
+      {mode: 0o600},
+    );
+    if (!await cachedRuntimeMatches(candidate, manifest)) {
       throw new CliError(
-        `The downloaded source did not match @microfeed/cli ${version}. ` +
-          "The deployment workspace was not replaced.",
+        "The packaged microfeed deployment runtime could not be verified. " +
+          "The cached workspace was not replaced.",
       );
     }
 
@@ -403,9 +482,11 @@ async function acquireSetupLock(
 async function prepareWorkspace(input: {
   cacheDirectory: string;
   environment: StringEnvironment;
-  packageVersion: string;
+  manifest: ManageRuntimeManifest;
   platform: NodeJS.Platform;
+  runtimeDirectory: string;
   runner: ManageCommandRunner;
+  yarnJavaScript: string;
 }): Promise<{
   environment: StringEnvironment;
   repositoryDirectory: string;
@@ -416,7 +497,6 @@ async function prepareWorkspace(input: {
     await chmod(input.cacheDirectory, 0o700);
   }
   const repositoryDirectory = path.join(input.cacheDirectory, "repository");
-  const binDirectory = path.join(input.cacheDirectory, "bin");
   const releaseLock = await acquireSetupLock(
     path.join(input.cacheDirectory, ".setup-lock"),
   );
@@ -425,53 +505,27 @@ async function prepareWorkspace(input: {
       input.cacheDirectory,
       repositoryDirectory,
     );
-    if (!await repositoryMatchesVersion(
-      repositoryDirectory,
-      input.packageVersion,
-      input.runner,
-    )) {
+    if (!await cachedRuntimeMatches(repositoryDirectory, input.manifest)) {
       await replaceRepository(
         input.cacheDirectory,
         repositoryDirectory,
-        input.packageVersion,
-        input.runner,
+        input.runtimeDirectory,
+        input.manifest,
       );
     }
 
-    await mkdir(binDirectory, {recursive: true});
     const environment: StringEnvironment = {
       ...input.environment,
-      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0",
-      COREPACK_HOME: path.join(input.cacheDirectory, "corepack"),
-      PATH: [binDirectory, input.environment.PATH].filter(Boolean)
-        .join(path.delimiter),
+      MICROFEED_YARN_JAVASCRIPT: input.yarnJavaScript,
     };
-    const corepack = input.platform === "win32" ? "corepack.cmd" : "corepack";
-    const enable = await input.runner(
-      corepack,
-      ["enable", "--install-directory", binDirectory, "yarn"],
-      {env: environment, stdio: "pipe"},
-    );
-    if (enable.exitCode !== 0) {
-      throw new CliError(
-        "Corepack could not create the private Yarn launcher. " +
-          (enable.stderr.trim() || enable.stdout.trim() ||
-            "Rerun after repairing Corepack."),
-        enable.exitCode,
-      );
-    }
-    const yarn = path.join(
-      binDirectory,
-      input.platform === "win32" ? "yarn.cmd" : "yarn",
-    );
     const install = await input.runner(
-      yarn,
-      ["install", "--immutable"],
+      process.execPath,
+      [input.yarnJavaScript, "install", "--immutable"],
       {cwd: repositoryDirectory, env: environment, stdio: "inherit"},
     );
     if (install.exitCode !== 0) {
       throw new CliError(
-        "The exact microfeed release was downloaded, but its locked " +
+        "The exact microfeed release was unpacked, but its locked " +
           "dependencies could not be installed. Fix the reported Yarn error " +
           "and rerun the same command.",
         install.exitCode,
@@ -546,34 +600,26 @@ export async function runManageLauncher(
     homeDirectory,
   );
   const invocationDirectory = options.invocationDirectory ?? process.cwd();
+  const runtimeDirectory = options.runtimeDirectory ??
+    installedRuntimeDirectory();
+  const runtimeManifestPath = options.runtimeManifestPath ??
+    installedRuntimeManifestPath();
+  const yarnJavaScript = options.yarnJavaScript ?? installedYarnJavaScript();
 
   requireSupportedNodeVersion();
-  await requireExecutable(
-    runner,
-    platform === "win32" ? "npm.cmd" : "npm",
-    "npm is required for clone-free microfeed deployment. Install a current " +
-      "Node.js LTS release, including npm, from https://nodejs.org/, then " +
-      "rerun the same command.",
-  );
-  await requireExecutable(
-    runner,
-    "git",
-    "Git is required for clone-free microfeed deployment. Install Git from " +
-      "https://git-scm.com/downloads, then rerun the same command.",
-  );
-  await requireExecutable(
-    runner,
-    platform === "win32" ? "corepack.cmd" : "corepack",
-    "Corepack is required for clone-free microfeed deployment. Install it " +
-      "with `npm install --global corepack`, then rerun the same command.",
+  const manifest = await readRuntimeManifest(
+    runtimeManifestPath,
+    packageVersion,
   );
 
   const workspace = await prepareWorkspace({
     cacheDirectory,
     environment,
-    packageVersion,
+    manifest,
     platform,
+    runtimeDirectory,
     runner,
+    yarnJavaScript,
   });
   if (args.length === 0) {
     (options.output ?? ((value) => process.stdout.write(value)))(

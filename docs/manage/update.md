@@ -18,7 +18,8 @@ Update the microfeed site <site-url> to the latest release. Start by running
 update, and continue until `status` verifies the site.
 ```
 
-The launcher obtains the exact release in a private cache. The agent discovers
+The launcher verifies and copies its exact bundled release into a private
+cache. The agent discovers
 saved and compatible existing sites, asks before choosing among candidates,
 connects only if needed, deploys through the same management engine, and
 runs a status check. Complete any Cloudflare browser handoffs it requests.

@@ -117,9 +117,10 @@ Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
 then follow its instructions until deployment is verified.
 ```
 
-That's it. The launcher requires Node.js 22.12 or newer with npm, Git, and
-Corepack. It downloads the exact microfeed release and locked dependencies into
-a private cache instead of creating source files in your current folder. The
+That's it. The launcher requires Node.js 22.12 or newer with npm. It carries
+the exact microfeed release and Yarn runtime, verifies and copies that source
+into a private cache, and installs its locked dependencies without requiring
+Git or Corepack. It does not create source files in your current folder. The
 first setup may use about 1.3 GB and take several minutes; later runs reuse it.
 The agent guides the setup, runs the deployment, and verifies the finished
 site. You only step in for Cloudflare browser authorization, choices that

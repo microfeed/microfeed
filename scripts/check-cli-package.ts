@@ -1,5 +1,4 @@
 import {
-  chmod,
   mkdir,
   mkdtemp,
   readFile,
@@ -10,6 +9,7 @@ import {
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
+import {pathToFileURL} from "node:url";
 
 import {x as extractTar} from "tar";
 import {CLI_HELP_TOPICS, renderCliHelp} from "../packages/cli/src/help";
@@ -52,11 +52,21 @@ try {
     archive,
   ]);
   await extractTar({cwd: temporary, file: archive});
+  try {
+    await readFile(path.join(
+      temporary,
+      "package/.microfeed/webhooks/endpoint1/README.md",
+    ));
+    throw new Error("The packed CLI contains a local .microfeed workspace.");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
   const packedPackage = JSON.parse(
     await readFile(path.join(temporary, "package", "package.json"), "utf8"),
   ) as {
     bin?: {microfeed?: string};
     bugs?: {url?: string};
+    dependencies?: Record<string, string>;
     homepage?: string;
     keywords?: string[];
     name?: string;
@@ -66,9 +76,10 @@ try {
   };
   if (packedPackage.name !== "@microfeed/cli" ||
       packedPackage.version !== rootPackage.version ||
-      packedPackage.bin?.microfeed !== "dist/index.js") {
+      packedPackage.bin?.microfeed !== "dist/index.js" ||
+      packedPackage.dependencies?.["@yarnpkg/cli-dist"] !== "4.18.0") {
     throw new Error(
-      "The packed CLI has a stale version or does not expose the microfeed binary.",
+      "The packed CLI has stale release metadata or deployment dependencies.",
     );
   }
   if (packedPackage.homepage !== "https://docs.microfeed.org/microfeed-cli/" ||
@@ -252,7 +263,7 @@ try {
     "--help",
   ], temporary);
   if (!dlxManageHelp.endsWith(expectedManageHelp)) {
-    throw new Error("The packed clone-free management help diverged.");
+    throw new Error("The packed source-code-free management help diverged.");
   }
 
   const npmConsumer = path.join(temporary, "npm-consumer");
@@ -276,57 +287,86 @@ try {
     throw new Error("The npx @microfeed/cli management help diverged.");
   }
 
-  if (process.platform !== "win32") {
-    const cacheRoot = path.join(temporary, "launcher-cache");
-    const manageCache = path.join(cacheRoot, "manage");
-    const repository = path.join(manageCache, "repository");
-    const cacheBin = path.join(manageCache, "bin");
-    const fakeBin = path.join(temporary, "launcher-tools");
-    await Promise.all([
-      mkdir(repository, {recursive: true}),
-      mkdir(cacheBin, {recursive: true}),
-      mkdir(fakeBin, {recursive: true}),
-    ]);
-    await writeFile(
-      path.join(repository, "package.json"),
-      `${JSON.stringify({version: rootPackage.version})}\n`,
-    );
-    const fakeTool = async (name: string, source: string): Promise<void> => {
-      const filename = path.join(fakeBin, name);
-      await writeFile(filename, `#!/usr/bin/env node\n${source}\n`, {
-        mode: 0o755,
-      });
-      await chmod(filename, 0o755);
-    };
-    await Promise.all([
-      fakeTool("npm", "process.stdout.write('10.0.0\\n');"),
-      fakeTool("corepack", "process.stdout.write('0.31.0\\n');"),
-      fakeTool("git", [
-        "const args = process.argv.slice(2);",
-        "if (args[0] === '--version') process.stdout.write('git version 2.50.0\\n');",
-        "else if (args.includes('rev-parse')) process.stdout.write('0123456789abcdef0123456789abcdef01234567\\n');",
-        "else if (!args.includes('status')) process.exitCode = 1;",
-      ].join("\n")),
-    ]);
-    const yarn = path.join(cacheBin, "yarn");
-    await writeFile(yarn, "#!/usr/bin/env node\n", {mode: 0o755});
-    await chmod(yarn, 0o755);
-    const handoff = run("npx", [
-      "--no-install",
-      "microfeed",
-      "manage",
-    ], npmConsumer, {
-      MICROFEED_CACHE_DIR: cacheRoot,
-      MICROFEED_CONFIG_DIR: path.join(temporary, "launcher-config"),
-      PATH: `${fakeBin}${path.delimiter}${process.env.PATH ?? ""}`,
-    });
-    if (!handoff.includes(`microfeed v${rootPackage.version}`) ||
-        !handoff.includes("deploy-microfeed/SKILL.md") ||
-        !handoff.includes("docs/manage-cli.md") ||
-        !handoff.includes("npx @microfeed/cli manage accounts --json") ||
-        !handoff.includes("final status check succeeds")) {
-      throw new Error("The packed npx coding-agent handoff is incomplete.");
+  const runtimeManifest = JSON.parse(await readFile(path.join(
+    temporary,
+    "package/dist/manage-runtime-manifest.json",
+  ), "utf8")) as {
+    files?: Array<{path?: string; sha256?: string; size?: number}>;
+    schemaVersion?: number;
+    sourceCommit?: string;
+    version?: string;
+  };
+  const runtimePaths = new Set(
+    runtimeManifest.files?.map(({path: runtimePath}) => runtimePath) ?? [],
+  );
+  if (runtimeManifest.schemaVersion !== 1 ||
+      runtimeManifest.version !== rootPackage.version ||
+      !/^[0-9a-f]{40}$/u.test(runtimeManifest.sourceCommit ?? "") ||
+      !runtimePaths.has("package.json") ||
+      !runtimePaths.has("manage-cli/index.ts") ||
+      !runtimePaths.has("docs/manage-cli.md") ||
+      !runtimePaths.has(".agents/skills/deploy-microfeed/SKILL.md") ||
+      [...runtimePaths].some((runtimePath) =>
+        runtimePath?.startsWith("docs/") && runtimePath !== "docs/manage-cli.md"
+      )) {
+    throw new Error("The packed deployment runtime is incomplete or oversized.");
+  }
+  for (const file of runtimeManifest.files ?? []) {
+    if (!file.sha256 || !Number.isSafeInteger(file.size)) {
+      throw new Error("The packed deployment runtime manifest is invalid.");
     }
+    const payload = await readFile(path.join(
+      temporary,
+      "package/dist/manage-runtime-files",
+      file.sha256,
+    ));
+    if (payload.byteLength !== file.size) {
+      throw new Error(`The packed deployment source is damaged: ${file.path}`);
+    }
+  }
+  const packageEntry = runtimeManifest.files?.find(({path: runtimePath}) =>
+    runtimePath === "package.json"
+  );
+  if (!packageEntry?.sha256) {
+    throw new Error("The packed deployment source has no package metadata.");
+  }
+  const packedRuntimePackage = JSON.parse(await readFile(path.join(
+    temporary,
+    "package/dist/manage-runtime-files",
+    packageEntry.sha256,
+  ), "utf8")) as {version?: string};
+  if (packedRuntimePackage.version !== rootPackage.version) {
+    throw new Error("The packed deployment source version is stale.");
+  }
+
+  const packedManage = await import(pathToFileURL(path.join(
+    temporary,
+    "package/dist/manage.js",
+  )).href);
+  const handoffOutput: string[] = [];
+  const cacheDirectory = path.join(temporary, "launcher-cache");
+  const handoffExitCode = await packedManage.runManageLauncher([], {
+    cacheDirectory,
+    environment: {PATH: process.env.PATH},
+    output: (value: string) => handoffOutput.push(value),
+    packageVersion: rootPackage.version,
+    runner: async () => ({
+      exitCode: 0,
+      signal: null,
+      stderr: "",
+      stdout: "",
+    }),
+    stateDirectory: path.join(temporary, "launcher-config"),
+    yarnJavaScript: path.join(temporary, "fake-yarn.js"),
+  });
+  const handoff = handoffOutput.join("\n");
+  if (handoffExitCode !== 0 ||
+      !handoff.includes(`microfeed v${rootPackage.version}`) ||
+      !handoff.includes("deploy-microfeed/SKILL.md") ||
+      !handoff.includes("docs/manage-cli.md") ||
+      !handoff.includes("npx @microfeed/cli manage accounts --json") ||
+      !handoff.includes("final status check succeeds")) {
+    throw new Error("The packed coding-agent handoff is incomplete.");
   }
   const dlxScaffold = path.join(temporary, "dlx-scaffold");
   const dlxScaffoldOutput = run("yarn", [

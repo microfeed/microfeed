@@ -14,8 +14,8 @@ You need:
 - A [Cloudflare account](https://dash.cloudflare.com/sign-up). Cloudflare’s
   included usage is enough for many personal and small sites; usage above the
   published limits may require a paid plan.
-- A computer with [Git](https://git-scm.com/downloads),
-  [Node.js 22.12 or newer](https://nodejs.org/), npm, and Corepack installed.
+- A computer with [Node.js 22.12 or newer](https://nodejs.org/) and npm.
+  Ordinary deployment does not require Git or Corepack.
 - A local coding agent such as OpenAI Codex, Claude Code, or Cursor that can run
   terminal commands in a folder on your computer.
 - An email address for the private dashboard login.
@@ -32,9 +32,10 @@ You need:
    then follow its instructions until deployment is verified.
    ```
 
-3. Stay nearby while the agent works. The first command downloads the exact
-   microfeed release and its dependencies into a private cache; it does not
-   create source files in your current folder. Cloudflare opens a browser page
+3. Stay nearby while the agent works. The first command copies the exact
+   release bundled with the CLI into a private cache and installs its
+   dependencies; it does not create source files in your current folder.
+   Cloudflare opens a browser page
    for you to sign in, and the agent may ask you to select an account or
    approve an important choice. Never paste a Cloudflare token or dashboard
    password into the conversation.

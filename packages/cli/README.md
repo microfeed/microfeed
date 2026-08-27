@@ -18,7 +18,8 @@ giving an agent a raw credential.
 ## Requirements
 
 - Node.js 22.12 or newer
-- For clone-free deployment: npm, Git, Corepack, and a Cloudflare account
+- For deployment through `npx`: npm and a Cloudflare account; Git and Corepack
+  are not required for ordinary deployment
 - For content management: a microfeed site with API access enabled and
   built-in administrator login for browser authorization
 
@@ -74,10 +75,11 @@ Run `npx @microfeed/cli manage` and follow every instruction it prints until
 `status` verifies the deployment.
 ```
 
-The launcher requires npm, Git, and Corepack. It downloads the exact tagged
-release matching the CLI into a private persistent cache, installs its locked
-dependencies, and prints the repository-owned deployment skill and reference
-for the agent. The first setup may use about 1.3 GB and take several minutes.
+The launcher carries the exact release matching the CLI and a pinned Yarn
+runtime. It verifies and copies that source into a private persistent cache,
+installs its locked dependencies without Git or Corepack, and prints the
+repository-owned deployment skill and reference for the agent. The first setup
+may use about 1.3 GB and take several minutes.
 Every later management command uses the same prefix, such as
 `npx @microfeed/cli manage status`. The source cache is replaceable; saved
 deployment state is kept separately.

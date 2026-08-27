@@ -58,14 +58,13 @@ afterEach(async () => {
 });
 
 describe("release version synchronization", () => {
-  it("updates published metadata and the bundled theme in one operation", async () => {
+  it("updates published metadata without rewriting the bundled theme", async () => {
     const root = await repositoryFixture();
 
     await expect(setReleaseVersion(root, "2.3.4")).resolves.toEqual([
       "package.json",
       "packages/cli/package.json",
       "packages/theme-kit/package.json",
-      "themes/default/microfeed-theme.json",
       "packages/theme-kit/assets/starter/package.json",
     ]);
 
@@ -73,10 +72,11 @@ describe("release version synchronization", () => {
       "package.json",
       "packages/cli/package.json",
       "packages/theme-kit/package.json",
-      "themes/default/microfeed-theme.json",
     ]) {
       await expect(readJson(root, filename)).resolves.toMatchObject({version: "2.3.4"});
     }
+    await expect(readJson(root, "themes/default/microfeed-theme.json"))
+      .resolves.toMatchObject({version: "1.0.0"});
     await expect(readJson(
       root,
       "packages/theme-kit/assets/starter/package.json",

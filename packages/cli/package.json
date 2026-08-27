@@ -1,6 +1,6 @@
 {
   "name": "@microfeed/cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Deploy microfeed and manage content on its sites",
   "keywords": [
     "microfeed",
@@ -26,9 +26,7 @@
   },
   "files": [
     "dist",
-    "templates",
-    "README.md",
-    "LICENSE"
+    "templates"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -36,7 +34,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "microfeed": "node --import tsx src/index.ts",
-    "prepack": "yarn build && node scripts/copy-agent-skill.mjs"
+    "prepack": "yarn build && node scripts/copy-agent-skill.mjs && node scripts/copy-manage-runtime.mjs"
+  },
+  "dependencies": {
+    "@yarnpkg/cli-dist": "4.18.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
