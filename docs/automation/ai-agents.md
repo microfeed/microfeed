@@ -61,27 +61,29 @@ endpoints](/webhooks/endpoints/) and the `build-microfeed-automation` skill.
 Include the site, the content outcome, and the approval boundary in the prompt:
 
 ```text
-Use @microfeed/cli to create a draft item on https://feed.example.com from
-article.md. Use --json, show me the draft before publishing, and pause if API
-access, browser authorization, or destructive confirmation is required.
+Use `npx @microfeed/cli` to create a draft item on https://feed.example.com
+from article.md. Use `--json`, show me the draft before publishing, and pause
+if API access, browser authorization, or destructive confirmation is required.
 ```
 
-Inside a microfeed clone, the agent should use `yarn microfeed`. The repository
-also provides the canonical `manage-microfeed-content` skill at
+The command works from any folder. If the agent is already working inside a
+Git-cloned microfeed source repository whose dependencies are installed, it
+may use `yarn microfeed` as a shortcut to the local CLI version. That source
+repository also provides the canonical `manage-microfeed-content` skill at
 `.agents/skills/manage-microfeed-content/`, which teaches the agent to select
 commands, preserve credentials, and confirm destructive operations. The
 published `@microfeed/cli` package bundles the same skill for agent hosts that
 distribute skills with npm packages.
 
-Claude Code reads the clone's `CLAUDE.md`, which imports the repository guidance
-and routes content work to that skill. Other compatible coding agents can
-discover the `.agents/skills/` copy directly. You do not need to install or
-paste the skill into the prompt when the agent is already working inside a
-microfeed clone.
+Claude Code reads `CLAUDE.md` in the Git-cloned source repository, which
+imports the repository guidance and routes content work to that skill. Other
+compatible coding agents can discover the `.agents/skills/` copy directly.
+You do not need to install or paste the skill into the prompt when the agent is
+already working inside that source repository.
 
 ## Keep browser authorization human-controlled
 
-An agent may start `yarn microfeed login <site-url>`, but the administrator
+An agent may start `npx @microfeed/cli login <site-url>`, but the administrator
 must sign in and approve or deny permissions in the browser. The agent must not
 click **Allow**, request a password, or inspect the encrypted credential store
 or operating-system keychain.

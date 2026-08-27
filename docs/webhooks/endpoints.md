@@ -10,11 +10,12 @@ slow effects happen after acceptance.
 
 ## Start from a runnable receiver
 
-Inside a microfeed clone, scaffold a local JavaScript inspector under the
-ignored `.microfeed/` workspace:
+From any folder, scaffold a local JavaScript inspector. If you are working in
+a Git-cloned microfeed source repository, its ignored `.microfeed/` workspace
+is a convenient destination:
 
 ```console
-yarn microfeed webhook scaffold .microfeed/webhooks/endpoint1 \
+npx @microfeed/cli webhook scaffold .microfeed/webhooks/endpoint1 \
   --language javascript
 ```
 
@@ -141,7 +142,7 @@ Headers, preview generated or current content, and send a signed test. From a
 terminal, print the same unsigned example with:
 
 ```console
-yarn microfeed webhook sample item.published --json
+npx @microfeed/cli webhook sample item.published --json
 ```
 
 Before creating a receiver project, follow [Test webhooks without code](../testing/)

@@ -14,15 +14,14 @@ For every command, option, JSON field, and edge case, use the exhaustive
 
 | Where you are working | Command |
 | --- | --- |
-| Inside a microfeed clone | `yarn microfeed …` |
-| Inside another Yarn project | Install `@microfeed/cli`, then run `yarn microfeed …` |
-| One command without installation | `yarn dlx @microfeed/cli …` |
+| Recommended from any folder | `npx @microfeed/cli …` |
+| Git-cloned microfeed source repository after `yarn install` | `yarn microfeed …` |
 | Global installation | `microfeed …` |
 
-Inside a microfeed clone, start with:
+Start from any folder with:
 
 ```console
-yarn microfeed --help
+npx @microfeed/cli --help
 ```
 
 ## Enable API access and log in
@@ -32,7 +31,7 @@ Then authorize the CLI:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn microfeed login https://feed.example.com --instance <instance-name>
+npx @microfeed/cli login https://feed.example.com --instance <instance-name>
 ```
 
 The command opens a browser. The administrator signs in, reviews the requested
@@ -44,8 +43,8 @@ Select and inspect saved sites with:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn microfeed instances list
-yarn microfeed instances use <instance-name>
+npx @microfeed/cli instances list
+npx @microfeed/cli instances use <instance-name>
 ```
 
 ## Inspect and change content
@@ -56,13 +55,13 @@ stable idempotency key for every retry of the same logical create:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn microfeed item list --summary --instance <instance-name> --json
-yarn microfeed item get <item-id> --unwrap --instance <instance-name> --json
-yarn microfeed item create --input item.json --validate-only \
+npx @microfeed/cli item list --summary --instance <instance-name> --json
+npx @microfeed/cli item get <item-id> --unwrap --instance <instance-name> --json
+npx @microfeed/cli item create --input item.json --validate-only \
   --instance <instance-name> --json
-yarn microfeed item create --input item.json \
+npx @microfeed/cli item create --input item.json \
   --idempotency-key <uuid> --verify --instance <instance-name> --json
-yarn microfeed item update <item-id> --input item.json \
+npx @microfeed/cli item update <item-id> --input item.json \
   --instance <instance-name> --json
 ```
 
@@ -82,7 +81,7 @@ For an inline image:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn microfeed media upload ./diagram.png --instance <instance-name> --json
+npx @microfeed/cli media upload ./diagram.png --instance <instance-name> --json
 ```
 
 Insert the returned permanent `media_url` into `content_html`, then create or
@@ -97,7 +96,7 @@ explicitly:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-yarn microfeed item delete <item-id> --instance <instance-name> \
+npx @microfeed/cli item delete <item-id> --instance <instance-name> \
   --confirm <item-id> --json
 ```
 
@@ -110,7 +109,7 @@ For unattended CI, store `MICROFEED_API_KEY` in the CI secret manager and set
 `MICROFEED_URL` or select a saved instance:
 
 ```console
-MICROFEED_URL=https://feed.example.com yarn microfeed item list --json
+MICROFEED_URL=https://feed.example.com npx @microfeed/cli item list --json
 ```
 
 Do not place the key in the command, a repository file, logs, or an agent

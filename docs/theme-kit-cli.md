@@ -9,7 +9,7 @@ It creates, validates, tests, and previews a theme package on your computer. It
 does not deploy microfeed, install a theme into an instance, or activate a live
 theme.
 
-Use [`npx @microfeed/cli manage theme`](/manage-cli/#yarn-manage-theme) from any
+Use [`npx @microfeed/cli manage theme`](/manage-cli/#npx-microfeedcli-manage-theme) from any
 folder for instance operations such as export, install, update, activation,
 rollback, and deletion. See [Build and release a theme](/themes/) for the
 authoring workflow, [Theme contract and rendering](/themes/contract/) for the

@@ -108,7 +108,7 @@ telemetry. The Cloudflare Queues dashboard is the final place to inspect Queue
 health and billing-related usage.
 
 The deployment contract owns reconciliation, retention, and Worker binding
-details. See the [management CLI deploy reference](/manage-cli/#yarn-manage-deploy)
+details. See the [management CLI deploy reference](/manage-cli/#npx-microfeedcli-manage-deploy)
 when diagnosing provisioning or maintenance behavior instead of depending on
 those implementation details in a receiver.
 

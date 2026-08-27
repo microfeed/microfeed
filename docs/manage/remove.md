@@ -47,4 +47,4 @@ the same management command so its saved journal can report or resume the
 unfinished steps.
 
 For the complete contract, read
-[the `destroy` reference](/manage-cli/#yarn-manage-destroy).
+[the `destroy` reference](/manage-cli/#npx-microfeedcli-manage-destroy).

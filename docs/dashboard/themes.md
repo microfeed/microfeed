@@ -137,10 +137,12 @@ An environment can keep up to 100 non-deleted Custom versions and 20 drafts.
 Built-in versions do not consume this quota. If a limit is full, delete an
 unused inactive Custom version or draft and retry.
 
-Repository-installed themes are managed from the connected clone with `yarn
-manage theme`. The [Build and release a theme](/themes/) guide covers creating,
-exporting, validating, installing, updating, and rolling back standalone theme
-packages.
+Use `npx @microfeed/cli manage theme` from any folder to install and manage
+repository-hosted themes. If you are already working in a Git-cloned microfeed
+source repository whose dependencies are installed, `yarn manage theme` is a
+shortcut to its local management version. The [Build and release a
+theme](/themes/) guide covers creating, exporting, validating, installing,
+updating, and rolling back standalone theme packages.
 
 ## Pages and Search compatibility
 

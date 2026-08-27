@@ -98,7 +98,9 @@ your site looks. If you've used WordPress before, you'll find it familiar.
 For agentic content management, the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
 AI agent create, update, and delete items; upload media files like images, audios, videos and documents. 
-Inside this repository the same command is available as `yarn microfeed`, without global installation.
+Run it from any folder with `npx @microfeed/cli`. If you have Git-cloned the
+microfeed source repository and installed its dependencies, `yarn microfeed`
+is a shortcut that runs the repository's local CLI version.
 
 [Back to 📚TOC](#-table-of-contents)
 
@@ -111,8 +113,8 @@ OpenAI Codex, Claude Code, Cursor, or another local agent that can run terminal
 commands and open a browser, then give it this prompt:
 
 ```text
-Run `npx @microfeed/cli manage` and follow every instruction it prints until
-`status` verifies the deployment.
+Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
+then follow its instructions until deployment is verified.
 ```
 
 That's it. The launcher requires Node.js 22.12 or newer with npm, Git, and
@@ -132,14 +134,15 @@ https://github.com/user-attachments/assets/96c73a94-2068-4172-9003-8bf3a262121d
 
 ### Details
 
-microfeed has one supported deployment engine: `yarn manage`. A local AI coding
-agent can reach it without a user-managed clone through
-`npx @microfeed/cli manage`, or you can clone the repository and run the same
-guided commands yourself.
+Run `npx @microfeed/cli manage` from any folder to use microfeed's supported
+deployment engine without first Git-cloning the microfeed source repository
+yourself. If you already have a Git-cloned microfeed source repository and have
+run `yarn install`, `yarn manage` is a shortcut that uses its local version of
+the same engine.
 
 * **Recommended:** [deploy with an AI coding agent](https://docs.microfeed.org/start-here/ai-agent/).
-* **Manual:** [deploy with `yarn manage`](https://docs.microfeed.org/start-here/manual/).
-* **Every command and option:** read the [canonical `yarn manage` reference](https://docs.microfeed.org/manage-cli/).
+* **Manual:** [deploy from the terminal](https://docs.microfeed.org/start-here/manual/).
+* **Every command and option:** read the [management CLI reference](https://docs.microfeed.org/manage-cli/).
 
 Both paths pause for Cloudflare browser authorization and choices that require
 your approval. Never paste a Cloudflare token, dashboard password, or private
@@ -159,7 +162,7 @@ The documentation site covers advanced setup and ongoing management:
 * [Check status and troubleshoot problems](https://docs.microfeed.org/manage/troubleshooting/)
 * [Remove a deployment safely](https://docs.microfeed.org/manage/remove/)
 
-For exact CLI behavior and safeguards, use the [canonical `yarn manage`
+For exact CLI behavior and safeguards, use the [management CLI
 reference](https://docs.microfeed.org/manage-cli/).
 
 [Back to 📚TOC](#-table-of-contents)
@@ -185,12 +188,13 @@ Choose the publishing workflow that fits the task:
   same content through browser-authorized access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the
   browser. See the [guided CLI workflow](https://docs.microfeed.org/automation/cli/)
-  or the complete [`yarn microfeed`
+  or the complete [`@microfeed/cli`
   reference](https://docs.microfeed.org/microfeed-cli/).
 
-Inside a microfeed clone, ask your agent to use `yarn microfeed`. For one-off
-use elsewhere, it can run `yarn dlx @microfeed/cli`. Never paste an API key or
-CLI credential into an agent conversation.
+Use `npx @microfeed/cli` from any folder. If the agent is already working in a
+Git-cloned microfeed source repository whose dependencies are installed, it
+can use `yarn microfeed` as a shortcut to the repository's local CLI version.
+Never paste an API key or CLI credential into an agent conversation.
 
 ### Change the public theme
 
@@ -331,7 +335,7 @@ Restore archives only with a microfeed release whose migration history exactly
 extends the snapshot's recorded history. Local restore requires a new local instance.
 Cloudflare restore requires a newly initialized site with nonreused, unchanged
 D1 and R2 resources, a successful dry run, and exact site-name confirmation.
-See the canonical [`snapshot` command reference](docs/manage-cli.md#yarn-manage-snapshot)
+See the canonical [`snapshot` command reference](docs/manage-cli.md#npx-microfeedcli-manage-snapshot)
 for restore examples, migration rules, maintenance mode, and resume behavior.
 
 The archive contains administrator password hashes and possibly private media.

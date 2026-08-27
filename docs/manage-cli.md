@@ -1,5 +1,5 @@
 ---
-title: yarn manage reference
+title: Management CLI reference
 description: Canonical commands, options, side effects, and safety contracts for the microfeed management CLI.
 ---
 
@@ -9,7 +9,8 @@ understand what the CLI can do, what it changes, and which safeguards apply.
 
 For a guided task, start with [Manage your site](/manage/) or the installation
 guides. Use this page when you need the complete command and option contract.
-Run `yarn manage help <command>` for the corresponding terminal reference.
+Run `npx @microfeed/cli manage help <command>` for the corresponding terminal
+reference.
 
 ## Contents
 
@@ -18,22 +19,22 @@ Run `yarn manage help <command>` for the corresponding terminal reference.
 - [Command summary](#command-summary)
 - [Shared conventions](#shared-conventions)
 - [Command reference](#command-reference)
-  - [`accounts`](#yarn-manage-accounts)
-  - [`init`](#yarn-manage-init)
-  - [`connect`](#yarn-manage-connect)
-  - [`deploy`](#yarn-manage-deploy)
+  - [`accounts`](#npx-microfeedcli-manage-accounts)
+  - [`init`](#npx-microfeedcli-manage-init)
+  - [`connect`](#npx-microfeedcli-manage-connect)
+  - [`deploy`](#npx-microfeedcli-manage-deploy)
   - [`dev`](#yarn-manage-dev)
-  - [`theme`](#yarn-manage-theme)
-  - [`snapshot`](#yarn-manage-snapshot)
-  - [`status`](#yarn-manage-status)
-  - [`destroy`](#yarn-manage-destroy)
-  - [`migrate-pages`](#yarn-manage-migrate-pages)
-  - [`domain`](#yarn-manage-domain)
-  - [`access`](#yarn-manage-access)
-  - [`auth`](#yarn-manage-auth)
-  - [`config`](#yarn-manage-config)
-  - [`instances`](#yarn-manage-instances)
-  - [`use`](#yarn-manage-use)
+  - [`theme`](#npx-microfeedcli-manage-theme)
+  - [`snapshot`](#npx-microfeedcli-manage-snapshot)
+  - [`status`](#npx-microfeedcli-manage-status)
+  - [`destroy`](#npx-microfeedcli-manage-destroy)
+  - [`migrate-pages`](#npx-microfeedcli-manage-migrate-pages)
+  - [`domain`](#npx-microfeedcli-manage-domain)
+  - [`access`](#npx-microfeedcli-manage-access)
+  - [`auth`](#npx-microfeedcli-manage-auth)
+  - [`config`](#npx-microfeedcli-manage-config)
+  - [`instances`](#npx-microfeedcli-manage-instances)
+  - [`use`](#npx-microfeedcli-manage-use)
 - [Built-in help](#built-in-help)
 - [Environment variables](#environment-variables)
 - [Maintaining this reference](#maintaining-this-reference)
@@ -43,7 +44,8 @@ Run `yarn manage help <command>` for the corresponding terminal reference.
 The management engine remains part of the microfeed repository. Choose the
 invocation that matches how you are working.
 
-For a local coding agent without a clone, start with:
+The recommended invocation works from any folder and does not require you to
+Git-clone or open the microfeed source repository:
 
 ```console
 npx @microfeed/cli manage
@@ -70,8 +72,8 @@ Linux, or `%APPDATA%\microfeed\manage` on Windows. `MICROFEED_CACHE_DIR` and
 `MICROFEED_CONFIG_DIR` override the respective base directories; the launcher
 still appends its `manage` child directory.
 
-Every command in this reference can then be invoked by replacing `yarn manage`
-with `npx @microfeed/cli manage`. For example:
+Deployment and administration examples in this reference use the published
+launcher:
 
 ```console
 npx @microfeed/cli manage accounts --json
@@ -79,15 +81,14 @@ npx @microfeed/cli manage deploy --instance <instance-name>
 npx @microfeed/cli manage status --instance <instance-name>
 ```
 
-People working from a local clone can continue to run:
+If you already have a Git-cloned microfeed source repository and have run
+`yarn install`, you may replace the `npx @microfeed/cli manage` prefix with
+`yarn manage`. For example, `yarn manage help` uses that source repository's
+local version of the same management engine.
 
-```console
-git clone https://github.com/microfeed/microfeed.git
-cd microfeed
-corepack enable
-yarn install --immutable
-yarn manage help
-```
+The `dev` section instead prioritizes `yarn manage dev` from a Git-cloned
+microfeed source repository because local source development requires that
+repository and its installed dependencies.
 
 Both paths require Node.js 22.12 or newer, Git, Corepack, and an interactive
 local session. Cloudflare operations use Wrangler browser authorization. Credentials are
@@ -100,10 +101,10 @@ repository-owned management engine.
 
 ## Safety model
 
-- The repository-owned `yarn manage` engine is the only supported interface
-  for microfeed Cloudflare mutations. Use it directly from a clone or through
-  `npx @microfeed/cli manage`; do not replace it with improvised Wrangler or
-  REST commands.
+- The repository-owned management engine is the only supported interface for
+  microfeed Cloudflare mutations. Use it through `npx @microfeed/cli manage`,
+  or through `yarn manage` when working in a Git-cloned microfeed source
+  repository; do not replace it with improvised Wrangler or REST commands.
 - Initialization validates the selected account and checks Worker, Pages, D1,
   and, unless `--no-r2` is used, R2 name collisions before creating resources.
 - Existing D1 or R2 resources require explicit reuse approval. Resources
@@ -128,9 +129,9 @@ repository-owned management engine.
 
 | Command | Purpose | External effect |
 | --- | --- | --- |
-| `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local Wrangler login profiles and the repository binding |
+| `accounts` | Authorize and list Cloudflare accounts | Read-only discovery; may update local Wrangler login profiles and the management-workspace binding |
 | `init` | Initialize production, preview, or local installation | Creates or updates Cloudflare resources, or local-only state |
-| `connect` | Save an existing compatible Worker in this clone | Reads Cloudflare; writes local state only |
+| `connect` | Save an existing compatible Worker in local management state | Reads Cloudflare; writes local state only |
 | `deploy` | Check, migrate, deploy, verify, or prepare a local release | Updates Worker code and D1 migrations, or only local state with `--local` |
 | `dev` | Run a selected site locally | Starts a local server and changes local simulation data |
 | `theme` | Initialize, install, and manage immutable theme versions | Creates local authoring repositories, writes theme rows to D1 and optional assets to R2, or changes active state through the Worker |
@@ -151,19 +152,21 @@ repository-owned management engine.
 
 Use `--instance <name>` whenever the target is not already the active saved
 site. `MICROFEED_INSTANCE` supplies the same selection for commands that accept
-an instance. Use `yarn manage instances` to review choices and `yarn manage use
-<name>` to change the default.
+an instance. Use `npx @microfeed/cli manage instances` to review choices and
+`npx @microfeed/cli manage use <name>` to change the default.
 
 ### Selecting a Cloudflare account
 
-Use `yarn manage accounts` first. Commands that operate on a saved deployment
-automatically require its recorded account. Supplying `--account-id <id>` is an
-additional exact-account assertion; it cannot override saved ownership.
+Use `npx @microfeed/cli manage accounts` first. Commands that operate on a
+saved deployment automatically require its recorded account. Supplying
+`--account-id <id>` is an additional exact-account assertion; it cannot
+override saved ownership.
 
 To keep separate Cloudflare logins on the same computer, use
-`yarn manage accounts --profile <name>`. The named Wrangler profile is local to
-your computer and does not need to be globally unique. It is separate from the
-microfeed site/Worker name, which should be globally distinctive.
+`npx @microfeed/cli manage accounts --profile <name>`. The named Wrangler
+profile is local to your computer and does not need to be globally unique. It
+is separate from the microfeed site/Worker name, which should be globally
+distinctive.
 
 ### Production, preview, and local data
 
@@ -187,12 +190,12 @@ keeps the automatic state, and prints the exact `deploy --enable-r2` command.
 
 ## Command reference
 
-## `yarn manage accounts`
+## `npx @microfeed/cli manage accounts`
 
 **Purpose:** Authorize Cloudflare and list available accounts.
 
-**Changes:** Read-only Cloudflare discovery; may update local Wrangler login profiles
-and the repository binding.
+**Changes:** Read-only Cloudflare discovery; may update local Wrangler login
+profiles and their binding to the management workspace.
 
 Authorize Cloudflare and list every account available to the active Wrangler
 login. This command never creates or changes a Worker, D1 database, R2 bucket,
@@ -204,35 +207,36 @@ and other Cloudflare resources. One login profile may have access to one or
 more Cloudflare accounts.
 
 The output lists every locally stored profile, marks the one active for this
-local repository, and prints an exact `yarn manage accounts --profile <name>`
-command for each other named profile. The displayed email and Cloudflare
-accounts belong only to the active profile; inactive profiles remain stored
-but are not queried. Wrangler's `default` profile is a fallback login rather
-than a named profile selected by this option.
+management workspace, and prints an exact
+`npx @microfeed/cli manage accounts --profile <name>` command for each other
+named profile. The displayed email and Cloudflare accounts belong only to the
+active profile; inactive profiles remain stored but are not queried. Wrangler's
+`default` profile is a fallback login rather than a named profile selected by
+this option.
 
 Use `--profile <name>` to create or select a named Wrangler browser login and
-bind it to this local Git copy of the repository. If the profile does not yet
-exist, the command opens Cloudflare authorization to create it. If it already
-exists, the command selects it without changing its credentials. Add
-`--reauthorize` to replace that named profile's authorization deliberately.
+bind it to the local management workspace. If the profile does not yet exist,
+the command opens Cloudflare authorization to create it. If it already exists,
+the command selects it without changing its credentials. Add `--reauthorize`
+to replace that named profile's authorization deliberately.
 Wrangler profile names accept ASCII letters, numbers, hyphens, and underscores;
 `default` and `staging` are reserved. Wrangler currently labels named profiles
 as a beta feature.
 
 ```console
-yarn manage accounts [--json] [--profile <name>] [--reauthorize]
+npx @microfeed/cli manage accounts [--json] [--profile <name>] [--reauthorize]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--json` | Print the login, active profile, all profiles with active markers, and `{name, id}` accounts as JSON. |
-| `--profile <name>` | Create or select a named Wrangler browser login and bind it to this local repository. |
+| `--profile <name>` | Create or select a named Wrangler browser login and bind it to the local management workspace. |
 | `--reauthorize` | Force fresh browser authorization, for example when the desired account is missing. |
 
 Browser authorization rejection, missing permissions, zero accounts, or an unavailable browser
 callback fail before resource creation.
 
-## `yarn manage init`
+## `npx @microfeed/cli manage init`
 
 **Purpose:** Initialize or resume a production, preview, or local installation.
 
@@ -256,7 +260,7 @@ activates only the Default fallback. A resumed run installs any missing
 packages without changing an already selected theme.
 
 ```console
-yarn manage init [--instance <name>] [--preview|--local] [options]
+npx @microfeed/cli manage init [--instance <name>] [--preview|--local] [options]
 ```
 
 | Option | Meaning |
@@ -281,16 +285,16 @@ yarn manage init [--instance <name>] [--preview|--local] [options]
 Examples:
 
 ```console
-yarn manage init
-yarn manage init --preview
-yarn manage init --local
-yarn manage init --no-r2 --r2-name future-media
+npx @microfeed/cli manage init
+npx @microfeed/cli manage init --preview
+npx @microfeed/cli manage init --local
+npx @microfeed/cli manage init --no-r2 --r2-name future-media
 ```
 
 `--no-r2` works for both Cloudflare and local-only initialization. It creates a
 content-only instance where D1 publishing and external URLs continue to work.
 It never detaches an already configured bucket. Enable the saved bucket later
-with `yarn manage deploy --enable-r2`.
+with `npx @microfeed/cli manage deploy --enable-r2`.
 
 Without `--no-r2`, only Cloudflare's documented R2 subscription-required
 response (`10042`, `NotEntitled`) is safely deferrable. The Worker is deployed
@@ -310,8 +314,9 @@ duplicate creation and unrelated-resource overwrite.
 
 On a newly created Cloudflare account, its first Worker deployment may report
 that `workers.dev` is not ready while Cloudflare finishes preparing the
-account. Wait a few minutes, then rerun the same `yarn manage init` command.
-The saved initialization resumes without duplicating completed work.
+account. Wait a few minutes, then rerun the same
+`npx @microfeed/cli manage init` command. The saved initialization resumes
+without duplicating completed work.
 
 microfeed enables the free `workers.dev` address, so Worker names are checked
 against its Cloudflare naming rules: 1–63 ASCII letters, numbers, or hyphens,
@@ -322,10 +327,11 @@ project with the same name. Explicit invalid names are rejected before
 Cloudflare authorization. D1 database and R2 bucket names are validated
 separately before resource creation.
 
-If a same-named Worker exists but this clone has no saved state for it, `init`
-stops without overwriting it. Use the exact `yarn manage connect --worker
-<name> --instance <name>` command printed by the error when that Worker is an
-existing microfeed installation. Otherwise, choose a different project name.
+If a same-named Worker exists but the current local management state has no
+saved connection for it, `init` stops without overwriting it. Use the exact
+`npx @microfeed/cli manage connect --worker <name> --instance <name>` command
+printed by the error when that Worker is an existing microfeed installation.
+Otherwise, choose a different project name.
 
 If resource provisioning or the first-password handoff is incomplete, `init`
 resumes only the unfinished work and preserves every recorded resource. When
@@ -333,22 +339,23 @@ the installation and dashboard login are already ready, it stops without
 changing anything and points to `deploy`, `status`, `domain`, and `auth` for
 later management.
 
-## `yarn manage connect`
+## `npx @microfeed/cli manage connect`
 
-**Purpose:** Connect an existing Cloudflare microfeed to this clone.
+**Purpose:** Connect local management state to an existing Cloudflare
+microfeed.
 
 **Changes:** Reads Cloudflare and writes local connection state; does not change
 Cloudflare.
 
 Discover an existing compatible microfeed Worker, including a content-only
 Worker identified by its D1 binding and saved R2 variables, verify its public
-identity, and save it in this clone. Cloudflare is not changed. Connected D1
+identity, and save it in local management state. Cloudflare is not changed. Connected D1
 and any ready R2 resource are marked reused and preserved by later destruction.
 Use `--preview` only after production is connected; it recovers the preview's
 independent Worker and webhook Queue identity under the same saved instance.
 
 ```console
-yarn manage connect [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
+npx @microfeed/cli manage connect [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
 ```
 
 | Option | Meaning |
@@ -359,7 +366,7 @@ yarn manage connect [--preview] [--account-id <id>] [--worker <name>] [--instanc
 | `--preview` | Connect the preview Worker after its production instance is connected under the same local name. |
 | `--yes` | Run without selection prompts; requires `--worker` when several matches exist. |
 
-## `yarn manage deploy`
+## `npx @microfeed/cli manage deploy`
 
 **Purpose:** Check, migrate, deploy, and verify a saved installation.
 
@@ -394,7 +401,7 @@ local data, performs the same preparation against local D1, and does not deploy
 or start a server.
 
 ```console
-yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]
+npx @microfeed/cli manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]
 ```
 
 | Option | Meaning |
@@ -409,10 +416,11 @@ yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enab
 | `--reuse-r2` | Explicitly approve reuse if the saved bucket name already exists during Cloudflare enablement. `--enable-r2` alone never approves reuse. |
 | `--yes` | Run without optional prompts. Pending R2 remains automatic and content-only unless `--enable-r2` is supplied. |
 
-`deploy` only operates on instances with configuration saved in this clone. If
-the microfeed already exists on Cloudflare, run `yarn manage connect --instance
-<name>` first and select its Worker. If it does not exist yet, run `yarn manage
-init --instance <name>` instead.
+`deploy` only operates on instances with locally saved configuration. If the
+microfeed already exists on Cloudflare, run
+`npx @microfeed/cli manage connect --instance <name>` first and select its
+Worker. If it does not exist yet, run
+`npx @microfeed/cli manage init --instance <name>` instead.
 
 An ordinary deployment does not probe or prompt when media storage is already
 ready or explicitly disabled. For automatic pending setup, `NotEntitled`
@@ -475,8 +483,9 @@ schedules; confirmed destruction removes the exact Queue even when disabled.
 **Changes:** Starts a local server and changes only isolated local D1/R2
 simulation data.
 
-Run the selected site locally after applying local migrations. Even when the
-site is connected to Cloudflare, development uses isolated local D1 and R2
+Run this from a Git-cloned microfeed source repository after `yarn install`.
+The command starts the selected site after applying local migrations. Even when
+the site is connected to Cloudflare, development uses isolated local D1 and R2
 simulations.
 
 ```console
@@ -497,7 +506,7 @@ Cloudflare permission, incurs no Cloudflare Queue or Worker charge, and does
 not change whether preview or production webhooks are enabled. The original
 generated configuration is restored when the development server exits.
 
-## `yarn manage theme`
+## `npx @microfeed/cli manage theme`
 
 **Purpose:** Initialize, install, and manage versioned themes.
 
@@ -509,7 +518,7 @@ Start a new authoring repository from the theme the selected instance is
 actually using:
 
 ```console
-yarn manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
+npx @microfeed/cli manage theme init ~/microfeed-themes/my-theme --instance <instance-name>
 ```
 
 `init` resolves the same effective selection as the live site: a valid active
@@ -536,7 +545,7 @@ version control.
 The generated repository also contains the `develop-microfeed-theme` coding
 agent skill. It exports the rendered theme package, not the build sources of
 the original project. To use microfeed's complete Tailwind/Vite starter, copy
-or clone `themes/default` from the microfeed repository instead.
+`themes/default` from a Git-cloned microfeed source repository instead.
 
 Use `init` to derive a new `local.<name>@0.1.0` identity from the site's
 effective active, imported, or fallback appearance. Use `export` when you want
@@ -544,10 +553,10 @@ an exact installed immutable version and need to preserve its current package
 ID and version:
 
 ```console
-yarn manage theme export --active --instance personal --git --json
+npx @microfeed/cli manage theme export --active --instance personal --git --json
 
 # Or export one explicit immutable version.
-yarn manage theme export <theme-id> --instance personal \
+npx @microfeed/cli manage theme export <theme-id> --instance personal \
   --output .microfeed/themes/example-theme-1.0.0 --git
 ```
 
@@ -600,13 +609,13 @@ current microfeed checkout. The compatibility alias `default` continues to
 resolve to `bundled:default`:
 
 ```console
-yarn manage theme install bundled:default --instance <instance-name>
-yarn manage theme install bundled:podcast --instance <instance-name>
-yarn manage theme install bundled:blog --instance <instance-name>
-yarn manage theme install bundled:photo --instance <instance-name>
-yarn manage theme install bundled:video --instance <instance-name>
-yarn manage theme install bundled:curation --instance <instance-name>
-yarn manage theme install bundled:changelog --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:default --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:podcast --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:blog --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:photo --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:video --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:curation --instance <instance-name>
+npx @microfeed/cli manage theme install bundled:changelog --instance <instance-name>
 ```
 
 The registered keys are `default`, `podcast`, `blog`, `photo`, `video`,
@@ -630,7 +639,7 @@ Worker consumes the grant atomically, updates theme state, and purges the
 `THEME_CURRENT` cache tag. The CLI never needs an Admin password.
 
 ```console
-yarn manage theme <init|install|list|update|activate|deactivate|rollback|export|delete> \
+npx @microfeed/cli manage theme <init|install|list|update|activate|deactivate|rollback|export|delete> \
   [directory|source|theme-id] [options]
 ```
 
@@ -656,40 +665,40 @@ Common examples:
 
 ```console
 # Start a new repository from this instance's effective active theme.
-yarn manage theme init ~/microfeed-themes/my-theme --instance personal
+npx @microfeed/cli manage theme init ~/microfeed-themes/my-theme --instance personal
 
 # Set public package metadata immediately.
-yarn manage theme init ~/microfeed-themes/my-theme --instance personal \
+npx @microfeed/cli manage theme init ~/microfeed-themes/my-theme --instance personal \
   --package-id example.my-theme --name "My theme" --author "Your name"
 
 # Install an inactive GitHub version.
-yarn manage theme install https://github.com/example/microfeed-theme \
+npx @microfeed/cli manage theme install https://github.com/example/microfeed-theme \
   --instance personal
 
 # Reinstall the current Default Built-in release as an inactive version.
-yarn manage theme install bundled:default --instance personal
+npx @microfeed/cli manage theme install bundled:default --instance personal
 
 # Install the current Podcast showcase release as an inactive version.
-yarn manage theme install bundled:podcast --instance personal
+npx @microfeed/cli manage theme install bundled:podcast --instance personal
 
 # Install the Link Digest release, whose search results open original links.
-yarn manage theme install bundled:curation --instance personal
+npx @microfeed/cli manage theme install bundled:curation --instance personal
 
 # Exercise a local checkout without changing the deployed site.
-yarn manage theme install ~/microfeed-themes/my-theme --local --instance personal
+npx @microfeed/cli manage theme install ~/microfeed-themes/my-theme --local --instance personal
 
 # Inspect and activate an installed version.
-yarn manage theme list --instance personal
-yarn manage theme activate <theme-id> --instance personal
+npx @microfeed/cli manage theme list --instance personal
+npx @microfeed/cli manage theme activate <theme-id> --instance personal
 
 # Return to the previous theme, or deactivate to the bundled default fallback.
-yarn manage theme rollback --instance personal
-yarn manage theme deactivate --instance personal
+npx @microfeed/cli manage theme rollback --instance personal
+npx @microfeed/cli manage theme deactivate --instance personal
 
 # Export one exact installed version as a Git-ready standalone repository, or delete it.
-yarn manage theme export --active --instance personal --git --json
-yarn manage theme export <theme-id> --instance personal --git
-yarn manage theme delete <theme-id> --instance personal --confirm <theme-id>
+npx @microfeed/cli manage theme export --active --instance personal --git --json
+npx @microfeed/cli manage theme export <theme-id> --instance personal --git
+npx @microfeed/cli manage theme delete <theme-id> --instance personal --confirm <theme-id>
 ```
 
 The unique key is `(packageId, version)`. Reinstalling the same checksum is a
@@ -716,7 +725,7 @@ Delete an inactive Custom version to free a slot; if Admin installation reaches
 the limit, its draft remains available. `theme list` selects only package and
 source metadata, not the full theme bundles.
 
-## `yarn manage snapshot`
+## `npx @microfeed/cli manage snapshot`
 
 **Purpose:** Create, download, validate, and restore migration-safe portable snapshots.
 
@@ -741,7 +750,7 @@ indicator visible. Its brief status message changes as D1, migrations, R2, and
 verification work advances, then ends with a green success or red failure mark.
 
 ```console
-yarn manage snapshot <create|pull|restore> [options]
+npx @microfeed/cli manage snapshot <create|pull|restore> [options]
 ```
 
 | Option | Meaning |
@@ -760,7 +769,7 @@ yarn manage snapshot <create|pull|restore> [options]
 #### 1. Back up a production instance into one `.tar.gz` file
 
 ```console
-yarn manage snapshot create \
+npx @microfeed/cli manage snapshot create \
   --instance my-podcast-domain-com \
   --output my-podcast-domain-com-backup.tar.gz
 ```
@@ -770,7 +779,7 @@ yarn manage snapshot create \
 ```console
 # No separate .tar.gz download is required first. This command creates a
 # temporary snapshot, restores it into the new local instance, then removes it.
-yarn manage snapshot pull \
+npx @microfeed/cli manage snapshot pull \
   --instance my-podcast-domain-com \
   --local-instance my-podcast-production-copy
 ```
@@ -782,7 +791,7 @@ downloaded snapshot.
 
 ```console
 # The local instance name must be new.
-yarn manage snapshot restore \
+npx @microfeed/cli manage snapshot restore \
   --file my-podcast-domain-com-backup.tar.gz \
   --local \
   --instance my-podcast-archive-copy
@@ -792,7 +801,7 @@ If the snapshot has no administrator account, the completed restore prints the
 exact next step for creating the local dashboard login:
 
 ```console
-yarn manage auth setup \
+npx @microfeed/cli manage auth setup \
   --instance my-podcast-archive-copy
 ```
 
@@ -800,16 +809,16 @@ yarn manage auth setup \
 
 ```console
 # First initialize a fresh remote target with new, nonreused D1 and R2 resources.
-yarn manage init --instance restored-podcast-domain-com
+npx @microfeed/cli manage init --instance restored-podcast-domain-com
 
 # Validate the archive and target without changing Cloudflare data.
-yarn manage snapshot restore \
+npx @microfeed/cli manage snapshot restore \
   --file my-podcast-domain-com-backup.tar.gz \
   --instance restored-podcast-domain-com \
   --dry-run
 
 # Then restore by confirming the exact target instance name.
-yarn manage snapshot restore \
+npx @microfeed/cli manage snapshot restore \
   --file my-podcast-domain-com-backup.tar.gz \
   --instance restored-podcast-domain-com \
   --confirm restored-podcast-domain-com
@@ -819,20 +828,20 @@ yarn manage snapshot restore \
 
 ```console
 # A local .tar.gz handoff is currently required. Download the source first.
-yarn manage snapshot create \
+npx @microfeed/cli manage snapshot create \
   --instance my-podcast-domain-com \
   --output my-podcast-domain-com-backup.tar.gz
 
 # Initialize a fresh target with new, nonreused D1 and R2 resources.
-yarn manage init --instance new-podcast-domain-com
+npx @microfeed/cli manage init --instance new-podcast-domain-com
 
 # Validate the archive and target, then perform the confirmed restore.
-yarn manage snapshot restore \
+npx @microfeed/cli manage snapshot restore \
   --file my-podcast-domain-com-backup.tar.gz \
   --instance new-podcast-domain-com \
   --dry-run
 
-yarn manage snapshot restore \
+npx @microfeed/cli manage snapshot restore \
   --file my-podcast-domain-com-backup.tar.gz \
   --instance new-podcast-domain-com \
   --confirm new-podcast-domain-com
@@ -903,9 +912,9 @@ migration, index, or R2 difference is rejected.
 A successful repair or refresh saves the fingerprint in the local instance
 configuration; the later restore refuses to start if the target changes again.
 It changes no Cloudflare data or D1/R2 ownership flags, and resources already
-marked reused remain protected from `yarn manage destroy`. The dry run never
-imports the snapshot. An incomplete initialization still must be finished
-before restore, while a nonempty or mismatched target is rejected.
+marked reused remain protected from `npx @microfeed/cli manage destroy`. The
+dry run never imports the snapshot. An incomplete initialization still must be
+finished before restore, while a nonempty or mismatched target is rejected.
 
 After an interrupted restore has finished uploading media, rerunning
 `--dry-run` also compares the current R2 inventory with the archive and reports
@@ -931,20 +940,21 @@ normal deployment disables that address again after a successful restore. This
 keeps restore control independent of custom-domain DNS and Access settings.
 
 If the snapshot contains no administrator account, successful local and remote
-restore completion prints the exact `yarn manage auth setup --instance <name>`
-command. Running it asks for the administrator email when needed and creates a
-private one-time browser link for choosing the first password.
+restore completion prints the exact
+`npx @microfeed/cli manage auth setup --instance <name>` command. Running it
+asks for the administrator email when needed and creates a private one-time
+browser link for choosing the first password.
 
 Snapshots include password hashes and possibly private media. They are
 unencrypted and created with owner-only (`0600`) permissions. Store and encrypt
 them according to your backup policy.
 
 Cloudflare snapshot create, pull, and remote restore require a ready production
-R2 bucket and binding. Run `yarn manage deploy --enable-r2` first for a
-content-only installation. Preview initialization is blocked by the same
+R2 bucket and binding. Run `npx @microfeed/cli manage deploy --enable-r2` first
+for a content-only installation. Preview initialization is blocked by the same
 production-R2 requirement.
 
-## `yarn manage status`
+## `npx @microfeed/cli manage status`
 
 **Purpose:** Verify Cloudflare resources, the public site, and dashboard protection.
 
@@ -968,7 +978,7 @@ time. Cloudflare Analytics is operational telemetry rather than a billing
 invoice, so reconcile cost alerts with the account's Queues dashboard.
 
 ```console
-yarn manage status [--instance <name>] [--preview]
+npx @microfeed/cli manage status [--instance <name>] [--preview]
 ```
 
 | Option | Meaning |
@@ -980,7 +990,7 @@ yarn manage status [--instance <name>] [--preview]
 This command is read-only. Missing resources or unsafe protection produce a
 non-zero result with recovery guidance.
 
-## `yarn manage destroy`
+## `npx @microfeed/cli manage destroy`
 
 **Purpose:** Inspect and safely remove a saved Cloudflare deployment.
 
@@ -994,8 +1004,8 @@ address, local folder, actions, and inspection links. If a Queue consumer is
 attached, the plan includes its Worker name and consumer ID.
 
 ```console
-yarn manage destroy --instance <name> --dry-run
-yarn manage destroy --instance <name> --confirm <name>
+npx @microfeed/cli manage destroy --instance <name> --dry-run
+npx @microfeed/cli manage destroy --instance <name> --confirm <name>
 ```
 
 | Option | Meaning |
@@ -1019,7 +1029,7 @@ not the environment-specific Queue. Completed steps are recorded and local
 state is removed last. Rerun the same confirmed command to resume a partial
 removal.
 
-## `yarn manage migrate-pages`
+## `npx @microfeed/cli manage migrate-pages`
 
 **Purpose:** Create a side-by-side Worker migration from Cloudflare Pages.
 
@@ -1031,7 +1041,7 @@ reusing the existing D1 database and R2 bucket. The command does not modify or
 delete Pages; traffic cutover remains manual.
 
 ```console
-yarn manage migrate-pages [--pages-name <name>] [--project-name <name>] [options]
+npx @microfeed/cli manage migrate-pages [--pages-name <name>] [--project-name <name>] [options]
 ```
 
 | Option | Meaning |
@@ -1051,7 +1061,7 @@ yarn manage migrate-pages [--pages-name <name>] [--project-name <name>] [options
 `--preview` is rejected because the new migration Worker is already deployed
 side by side.
 
-## `yarn manage domain`
+## `npx @microfeed/cli manage domain`
 
 **Purpose:** Configure and verify a production custom domain.
 
@@ -1063,7 +1073,7 @@ its workers.dev URL. If the hostname remains attached to a recorded Pages
 project, the command stops and links to the manual Pages detachment screen.
 
 ```console
-yarn manage domain [--instance <name>] [--hostname <hostname>]
+npx @microfeed/cli manage domain [--instance <name>] [--hostname <hostname>]
 ```
 
 | Option | Meaning |
@@ -1075,7 +1085,7 @@ yarn manage domain [--instance <name>] [--hostname <hostname>]
 
 A pending browser password link is replaced with one using the final hostname.
 
-## `yarn manage access`
+## `npx @microfeed/cli manage access`
 
 **Purpose:** Guide and verify optional Cloudflare Access protection.
 
@@ -1088,7 +1098,7 @@ CLI can then verify that the dashboard is intercepted while public routes stay
 available.
 
 ```console
-yarn manage access [--instance <name>] [--preview] [--open]
+npx @microfeed/cli manage access [--instance <name>] [--preview] [--open]
 ```
 
 | Option | Meaning |
@@ -1099,7 +1109,7 @@ yarn manage access [--instance <name>] [--preview] [--open]
 | `--open` | Open the Cloudflare Access application page immediately. |
 | `--yes` | Print instructions without interactive opening or verification prompts. |
 
-## `yarn manage auth`
+## `npx @microfeed/cli manage auth`
 
 **Purpose:** Set up or change the built-in dashboard login and path.
 
@@ -1113,10 +1123,10 @@ When you are already signed in and know the current password, use the
 dashboard's [**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
 for a routine email or password change. Use this command for setup,
 forgotten-password recovery, dashboard-path changes, disabling login, or
-administration from the connected clone.
+administration of the selected saved site.
 
 ```console
-yarn manage auth <setup|reset-password|change-email|change-path|disable> [options]
+npx @microfeed/cli manage auth <setup|reset-password|change-email|change-path|disable> [options]
 ```
 
 | Action | Effect |
@@ -1127,9 +1137,9 @@ yarn manage auth <setup|reset-password|change-email|change-path|disable> [option
 | `change-path` | Redeploy at a new dashboard path; the old path returns 404. |
 | `disable` | Disable built-in protection after a high-visibility warning and immediately revoke the owner's app authorizations and credentials. Locally, the development dashboard opens without login; remotely, the dashboard may become public. |
 
-Without an action, `yarn manage auth` prints its subcommand usage, options, and
-examples. It does not select an instance, inspect authentication state, or
-change anything. Choose `setup`, `reset-password`, `change-email`,
+Without an action, `npx @microfeed/cli manage auth` prints its subcommand usage,
+options, and examples. It does not select an instance, inspect authentication
+state, or change anything. Choose `setup`, `reset-password`, `change-email`,
 `change-path`, or `disable` explicitly.
 
 After an action is selected, the CLI shows a **Dashboard login target** summary
@@ -1174,14 +1184,14 @@ instance whose type cannot be inferred yet.
 Local examples:
 
 ```console
-yarn manage auth change-email \
+npx @microfeed/cli manage auth change-email \
   --instance microfeed-org-local \
   --owner-email new-owner@example.com
 
-yarn manage auth reset-password \
+npx @microfeed/cli manage auth reset-password \
   --instance microfeed-org-local
 
-yarn manage auth disable \
+npx @microfeed/cli manage auth disable \
   --instance microfeed-org-local
 ```
 
@@ -1190,7 +1200,7 @@ Local disable shows a warning unless `--yes` is supplied and does not query or
 modify feed content or R2 data. Both actions revoke app authorizations and credentials in
 the selected D1 database.
 
-## `yarn manage config`
+## `npx @microfeed/cli manage config`
 
 **Purpose:** Validate saved state and generate a local Wrangler configuration.
 
@@ -1202,7 +1212,7 @@ without deployment or a development server. With `--local`, missing local-only
 state and development secrets may be initialized.
 
 ```console
-yarn manage config [--instance <name>] [--preview|--local]
+npx @microfeed/cli manage config [--instance <name>] [--preview|--local]
 ```
 
 | Option | Meaning |
@@ -1211,20 +1221,20 @@ yarn manage config [--instance <name>] [--preview|--local]
 | `--preview` | Generate preview configuration. |
 | `--local` | Generate the local view and ensure local development values exist. |
 
-## `yarn manage instances`
+## `npx @microfeed/cli manage instances`
 
 **Purpose:** List local, managed, and connectable microfeed installations.
 
 **Changes:** Reads local saved state and available Cloudflare Workers; does not
 change Cloudflare.
 
-List local-only sites, Cloudflare sites managed by this clone, and compatible
-Cloudflare Workers available to connect. Output is grouped by account and
+List local-only sites, Cloudflare sites in local management state, and
+compatible Cloudflare Workers available to connect. Output is grouped by account and
 includes each media-storage state and ready-to-run `connect` commands. No
 Cloudflare resources are changed.
 
 ```console
-yarn manage instances [--account-id <id>] [--json]
+npx @microfeed/cli manage instances [--account-id <id>] [--json]
 ```
 
 | Option | Meaning |
@@ -1232,17 +1242,17 @@ yarn manage instances [--account-id <id>] [--json]
 | `--account-id <id>` | Limit Cloudflare discovery to one available account. |
 | `--json` | Print machine-readable `local`, `accounts`, and discovery `messages` groups. |
 
-## `yarn manage use`
+## `npx @microfeed/cli manage use`
 
 **Purpose:** Select the default saved site.
 
-**Changes:** Changes only the active-instance pointer in local repository state.
+**Changes:** Changes only the active-instance pointer in local management state.
 
 Set the active saved site used when later commands omit `--instance`. This
-changes only local repository state.
+changes only local management state.
 
 ```console
-yarn manage use <name>
+npx @microfeed/cli manage use <name>
 ```
 
 | Option | Meaning |
@@ -1252,10 +1262,10 @@ yarn manage use <name>
 ## Built-in help
 
 ```console
-yarn manage
-yarn manage help
-yarn manage help destroy
-yarn manage destroy --help
+npx @microfeed/cli manage
+npx @microfeed/cli manage help
+npx @microfeed/cli manage help destroy
+npx @microfeed/cli manage destroy --help
 ```
 
 Top-level help lists every command. Command help is generated from the same

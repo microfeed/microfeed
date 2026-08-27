@@ -71,7 +71,7 @@ microfeed → Standard Webhooks receiver → durable job → Zapier Catch Hook
 Build the receiver from the maintained local starter:
 
 ```console
-yarn microfeed webhook scaffold .microfeed/webhooks/zapier-gateway \
+npx @microfeed/cli webhook scaffold .microfeed/webhooks/zapier-gateway \
   --language javascript
 ```
 

@@ -9,8 +9,9 @@ dashboard to publish content, while coding agents can use the official
 the public site or subscribe to its feeds.
 
 You do not need to operate these Cloudflare services separately during normal
-use. The clone-free `npx @microfeed/cli manage` launcher creates, connects,
-updates, and checks them as one microfeed site.
+use. Run `npx @microfeed/cli manage` from any folder to create, connect, update,
+and check them as one microfeed site without first Git-cloning microfeed's
+source repository yourself.
 
 ## The important words
 
@@ -34,15 +35,16 @@ for uploaded images, audio, video, documents, and packaged theme assets. It is
 optional: a content-only installation can publish text and link to files hosted
 elsewhere without enabling R2.
 
-**Repository clone** is an optional local copy of microfeed’s source code. It
-includes the project-owned `yarn manage` command for contributors and people
-who prefer the manual deployment workflow. A clone is not required when using
-the published management launcher.
+**Git-cloned microfeed source repository** is an optional local copy created
+with `git clone https://github.com/microfeed/microfeed.git`. After its
+dependencies are installed, it provides `yarn manage` and `yarn microfeed` as
+shortcuts to the repository's local CLI versions. You do not need this source
+repository when using the published `npx` commands.
 
 **Instance** is the short local name that selects one saved microfeed site. The
 name is not a Cloudflare login or website address. The launcher can remember
-several instances without putting state in your current folder; a repository
-clone keeps its own instance state instead.
+several instances without putting state in your current folder; a Git-cloned
+microfeed source repository keeps its own instance state instead.
 
 **Admin dashboard** is the private management area where you create items,
 upload media, and customize the channel. It is separate from the public site.
@@ -83,12 +85,12 @@ API docs are enabled.
 ## What the local management tool changes
 
 `npx @microfeed/cli manage` prepares the matching microfeed release in a private
-cache and runs the same guarded management engine used by `yarn manage` inside
-a clone. It checks for name collisions, applies database migrations, builds the
-application, deploys it, and verifies the result. Launcher connection details
-live in the platform microfeed configuration directory, separate from the
-replaceable source cache.
+cache and runs the same guarded management engine available through `yarn
+manage` inside a Git-cloned microfeed source repository. It checks for name
+collisions, applies database migrations, builds the application, deploys it,
+and verifies the result. Launcher connection details live in the platform
+microfeed configuration directory, separate from the replaceable source cache.
 
 For exact behavior and safety rules, use the
-[management CLI reference](/manage-cli/). Its `yarn manage` examples map to the
-clone-free `npx @microfeed/cli manage` prefix.
+[management CLI reference](/manage-cli/). Its examples use the recommended
+`npx @microfeed/cli manage` prefix.

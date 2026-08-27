@@ -1,29 +1,23 @@
 ---
 title: Deploy manually
-description: Install microfeed by running the guided yarn manage commands yourself.
+description: Install microfeed by running the guided management commands yourself.
 ---
 
 This path uses the terminal directly. The prompts explain the available choices
 and the CLI stops before unsafe collisions or ambiguous account selection.
 You do not need prior Cloudflare command-line experience.
 
-## 1. Install the project
+## 1. Prepare your computer
 
-```console
-git clone https://github.com/microfeed/microfeed.git
-cd microfeed
-corepack enable
-yarn install --immutable
-```
-
-`corepack enable` makes the repository’s declared Yarn version available.
-Expected result: dependency installation completes without changing
-`yarn.lock`.
+Install Node.js 22.12 or newer with npm, plus Git and Corepack. You do not need
+to download or Git-clone the microfeed source repository yourself. The
+published launcher checks these prerequisites and prepares the matching release
+in a private operating-system cache.
 
 ## 2. Discover your Cloudflare account
 
 ```console
-yarn manage accounts
+npx @microfeed/cli manage accounts
 ```
 
 Your browser may open for Cloudflare authorization. If the command lists more
@@ -33,7 +27,7 @@ only on list position.
 ## 3. Initialize the site
 
 ```console
-yarn manage init
+npx @microfeed/cli manage init
 ```
 
 Follow the prompts for the Cloudflare account, distinctive site name,
@@ -52,15 +46,23 @@ shared document.
 ## 5. Check the deployment
 
 ```console
-yarn manage status
+npx @microfeed/cli manage status
 ```
 
 Expected result: a verified hosted application and dashboard status, plus the
 exact D1 and R2 resources attached to the saved instance.
 
 :::tip[Need every option?]
-The [`yarn manage` reference](/manage-cli/) is the canonical contract for all
+The [management CLI reference](/manage-cli/) is the canonical contract for all
 commands, options, side effects, and safeguards.
 :::
+
+## Shortcut from the source repository
+
+If you already have a Git-cloned microfeed source repository and have run
+`yarn install`, you can replace the `npx @microfeed/cli manage` prefix above
+with `yarn manage`. This runs that source repository's local version of the
+same management engine; a Git-cloned microfeed source repository is not
+required for deployment.
 
 Next: [complete the post-deployment checklist](../after-deploy/).

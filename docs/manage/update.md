@@ -3,8 +3,9 @@ title: Update microfeed
 description: Bring a connected production instance to the latest source and verify the deployment.
 ---
 
-Use the clone-free launcher or update from a repository clone connected to the
-intended site.
+Use the published launcher from any folder. If you already have a Git-cloned
+microfeed source repository connected to the intended site, you may instead
+use its local `yarn manage` shortcut.
 
 ## Recommended: ask your coding agent
 
@@ -12,21 +13,21 @@ Open a local coding agent and use a prompt that names the saved site or Worker
 when you know it:
 
 ```text
-Run `npx @microfeed/cli manage` and follow every instruction it prints. Connect
-to the microfeed Worker <worker-name> if it is not already saved, deploy the
-latest release, and continue until `status` verifies the site.
+Update the microfeed site <site-url> to the latest release. Start by running
+`npx @microfeed/cli manage`, connect the existing site if needed, deploy the
+update, and continue until `status` verifies the site.
 ```
 
 The launcher obtains the exact release in a private cache. The agent discovers
 saved and compatible existing sites, asks before choosing among candidates,
-connects only if needed, deploys through the same `yarn manage` engine, and
+connects only if needed, deploys through the same management engine, and
 runs a status check. Complete any Cloudflare browser handoffs it requests.
 
-## Manual update from a clone
+## Update from a Git-cloned source repository
 
 First run `git status` and protect any local work. Then fetch and inspect
-upstream changes using your normal Git workflow. Once the clone contains the
-version you intend to run:
+upstream changes using your normal Git workflow. Once the source repository
+contains the version you intend to run:
 
 ```console
 yarn install --immutable
@@ -39,7 +40,7 @@ yarn manage status
 Worker, tags the deployed version with the source commit, deploys, reconciles
 data written during the version switch, and verifies it.
 
-## If this clone is not connected
+## If the source repository is not connected
 
 Do not initialize over an existing Worker. Connect first:
 
@@ -54,5 +55,5 @@ microfeed Worker and saves local connection state.
 
 If deployment stops, read the final error before retrying. The CLI keeps saved
 state for resumable resource changes. If the site still serves the previous
-version, run `yarn manage status` and resolve the reported account, resource, or
-migration problem before another deploy.
+version, run `npx @microfeed/cli manage status` and resolve the reported
+account, resource, or migration problem before another deploy.

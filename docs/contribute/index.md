@@ -15,7 +15,7 @@ cd microfeed
 corepack enable
 yarn install --immutable
 yarn manage init --local --instance local-development
-yarn dev
+yarn manage dev --instance local-development
 ```
 
 Local development uses isolated simulated D1 and optional R2 data. It does not
@@ -33,7 +33,7 @@ yarn docs:dev
 2. Keep application code under `src/`, management tooling under `manage-cli/`,
    and documentation-site content under `docs/`.
 3. Keep the canonical command references synchronized whenever behavior changes:
-   [`yarn manage`](/manage-cli/), [`@microfeed/cli`](/microfeed-cli/), and
+   [management CLI](/manage-cli/), [`@microfeed/cli`](/microfeed-cli/), and
    [`@microfeed/theme-kit`](/theme-kit-cli/).
 4. Add or update tests for observable behavior.
 5. Run `git diff --check` and `yarn check`.

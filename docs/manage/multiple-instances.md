@@ -1,6 +1,6 @@
 ---
 title: Multiple instances
-description: Manage several production, preview, or local microfeed sites from one clone-free launcher.
+description: Manage several production, preview, or local microfeed sites from one published launcher.
 ---
 
 An instance name is the local label that selects one site’s saved configuration.

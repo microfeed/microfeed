@@ -170,7 +170,7 @@ package ID and version for different content. Delete only inactive versions
 that are no longer needed.
 
 See the canonical [management CLI theme
-reference](/manage-cli/#yarn-manage-theme) for source selection, local and
+reference](/manage-cli/#npx-microfeedcli-manage-theme) for source selection, local and
 preview environments, update, rollback, export, and deletion behavior.
 
 ## Verify the release

@@ -28,8 +28,8 @@ You need:
 2. Ask the agent:
 
    ```text frame="terminal" wrap
-   Run `npx @microfeed/cli manage` and follow every instruction it prints
-   until `status` verifies the deployment.
+   Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
+   then follow its instructions until deployment is verified.
    ```
 
 3. Stay nearby while the agent works. The first command downloads the exact
@@ -66,6 +66,7 @@ For screenshots, browser handoffs, and recovery steps, continue to
 
 ## Prefer to use the terminal yourself?
 
-Follow [Deploy manually](./manual/) to clone the repository and run the same
-guided `yarn manage` workflow without an agent. If Worker, D1, or R2 are unfamiliar terms, read
-[How microfeed works](./concepts/) before installing.
+Follow [Deploy manually](./manual/) to run the same guided
+`npx @microfeed/cli manage` workflow without an agent or a copy of the
+microfeed source code. If Worker, D1, or R2 are unfamiliar terms, read [How
+microfeed works](./concepts/) before installing.
