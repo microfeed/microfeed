@@ -43,7 +43,7 @@ content changes → signed webhook → policy, platform, or remote agent
 
 Use the API by itself for scheduled content imports, exports, synchronization,
 one-time editorial migrations, or other jobs that already know when to run.
-Use [`yarn manage snapshot`](/manage/backups-and-migrations/) for portable whole-site
+Use [`npx @microfeed/cli manage snapshot`](/manage/backups-and-migrations/) for portable whole-site
 backups and restores. Read the [API overview](../api/) and create one named
 credential with only the required read or write permissions.
 

@@ -83,8 +83,9 @@ different website or app presents the content. microfeed can hide its generated
 web pages without deleting the content.
 
 **Git clone**
-A local copy of this repository containing the source code and `yarn manage`
-tool.
+A local copy of this repository containing the source code and project-owned
+`yarn manage` tool. It is optional for people using the clone-free
+`npx @microfeed/cli manage` launcher.
 
 **Instance**
 The locally saved connection to one production, preview, or local microfeed
@@ -159,9 +160,9 @@ the body flag only after signature verification and prevent every test from
 producing production side effects.
 
 **Wrangler**
-Cloudflare’s command-line tool. microfeed invokes it behind the supported
-`yarn manage` interface; people and agents should not replace management
-workflows with improvised Wrangler commands.
+Cloudflare’s command-line tool. microfeed invokes it behind
+`npx @microfeed/cli manage`, or `yarn manage` inside a clone; people and agents
+should not replace management workflows with improvised Wrangler commands.
 
 **workers.dev address**
 The free Cloudflare-provided web address for a Worker. A microfeed site can use

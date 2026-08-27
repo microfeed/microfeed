@@ -1,4 +1,5 @@
 import {escapeHtml} from "@/shared/StringUtils";
+import {managementCommand} from "@/shared/ManagementCli";
 
 export interface AdminOwner {
   email: string;
@@ -25,7 +26,7 @@ function dashboardAuthCommand(
       /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(normalizedInstanceName)
     ? ` --instance ${normalizedInstanceName}`
     : "";
-  return `yarn manage auth ${action}${instanceOption}`;
+  return managementCommand(`auth ${action}${instanceOption}`);
 }
 
 export async function adminOwner(
@@ -63,7 +64,7 @@ export function adminDashboardLockedResponse(
     <main>
       <h1>Admin dashboard locked</h1>
       <p>${ADMIN_DASHBOARD_LOCKED_MESSAGE}</p>
-      <p>Set up the administrator email and password by running this command from your microfeed checkout:</p>
+      <p>Set up the administrator email and password by running this command from any folder:</p>
       <pre><code>${escapeHtml(setupCommand)}</code></pre>
       ${disableCommand
         ? `<p>For this local instance, you can instead disable dashboard authentication:</p>

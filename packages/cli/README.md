@@ -137,7 +137,7 @@ OAuth browser authorization requires the site's built-in login. Cloudflare
 Access can protect routes, but it does not create the microfeed application
 session OAuth needs. If the CLI reports that authorization is unavailable,
 enable built-in login from the connected repository with
-`yarn manage auth setup`, then retry. New sites expose this capability in their
+`npx @microfeed/cli manage auth setup`, then retry. New sites expose this capability in their
 identity document; the CLI gives compatible guidance for older sites too.
 
 CLI credential bundles are encrypted with AES-256-GCM. Only the encryption key is

@@ -6,10 +6,10 @@ description: Diagnose account, deployment, media, login, and public-feed problem
 Start with the read-only status report:
 
 ```console
-yarn manage status
+npx @microfeed/cli manage status
 ```
 
-For a multi-site clone, add the exact `--instance <name>`.
+When several sites are saved, add the exact `--instance <name>`.
 
 Read the final recovery message before trying a different command. The
 management CLI is designed to resume interrupted work; creating or deleting a
@@ -17,7 +17,7 @@ similarly named resource by hand can make recovery harder.
 
 ## The wrong Cloudflare account appears
 
-Run `yarn manage accounts`. If you intentionally need another named Wrangler
+Run `npx @microfeed/cli manage accounts`. If you intentionally need another named Wrangler
 login, select or create it with `--profile <name>`; use `--reauthorize` only
 when you deliberately want fresh browser authorization. If several accounts
 are listed, choose by name and full ID rather than position.
@@ -25,26 +25,26 @@ are listed, choose by name and full ID rather than position.
 ## A Worker already uses the requested name
 
 Initialization will not overwrite an unknown Worker. If it is an existing
-microfeed site, use the printed `yarn manage connect --worker ... --instance ...`
+microfeed site, use the printed `npx @microfeed/cli manage connect --worker ... --instance ...`
 command. Otherwise choose a different, distinctive project name.
 
 ## A new Cloudflare account cannot serve workers.dev yet
 
 Cloudflare may take a few minutes to prepare the first Workers subdomain. Wait,
-then rerun the same `yarn manage init` command. Saved progress resumes the
+then rerun the same `npx @microfeed/cli manage init` command. Saved progress resumes the
 unfinished work.
 
 ## Media upload is unavailable
 
 Check whether the status report says R2 is ready, pending, or deliberately
 disabled. Cloudflare may require R2 activation in the correct account. Once it
-is available, use `yarn manage deploy --enable-r2`; do not create an unrelated
+is available, use `npx @microfeed/cli manage deploy --enable-r2`; do not create an unrelated
 bucket by hand.
 
 ## The dashboard login does not work
 
 Confirm the dashboard path and authentication state in the status report. Use
-`yarn manage auth reset-password` for built-in login. If Cloudflare Access is
+`npx @microfeed/cli manage auth reset-password` for built-in login. If Cloudflare Access is
 also enabled, test each layer and logout flow in a private browser window.
 
 ## The dashboard saves, but public content is missing
@@ -64,14 +64,14 @@ rotated or revoked, update the integration immediately.
 ## Webhook deliveries fail or stop
 
 Open **Admin → Webhooks → Deliveries** to inspect the status, attempts,
-response diagnostics, and suppression reason. Then run `yarn manage status` to
+response diagnostics, and suppression reason. Then run `npx @microfeed/cli manage status` to
 check the saved infrastructure state. Enabled webhooks require the exact Queue,
 producer binding, Worker consumer, resumed delivery, and hourly Cron. Disabled
 webhooks require the retained Queue to be paused and empty with no binding,
 consumer, or Cron. Do not rotate a signing secret or redeliver an event until
 you know which receiver configuration and deployed environment are active.
 
-If disabling or re-enabling was interrupted, rerun the same `yarn manage
+If disabling or re-enabling was interrupted, rerun the same `npx @microfeed/cli manage
 deploy --disable-webhooks` or `--enable-webhooks` command for the exact instance
 and environment. The operation resumes from saved progress. Do not create,
 rename, resume, purge, or delete a similarly named Queue by hand; an unexpected

@@ -96,7 +96,7 @@ try {
     ]);
   if (!packedReadme.includes("Normal development workflow") ||
       !packedReadme.includes("npm install --global @microfeed/theme-kit") ||
-      !packedReadme.includes("yarn manage theme install") ||
+    !packedReadme.includes("npx @microfeed/cli manage theme install") ||
       !packedReadme.includes("immutable D1 theme row") ||
       !packedReadme.includes("immutable R2") ||
       !packedReadme.includes("Vite, Webpack, Tailwind CSS") ||

@@ -18,10 +18,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {OUR_BRAND} from "@/shared/Constants";
+import {
+  MICROFEED_MANAGE_COMMAND,
+  managementCommand,
+} from "@/shared/ManagementCli";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import type {AdminDeploymentSummary} from "./admin-shell-types";
 
-export const ADMIN_UPDATE_PROMPT = "Update this microfeed site to the latest version and deploy it.";
+export const ADMIN_UPDATE_PROMPT =
+  `Run \`${MICROFEED_MANAGE_COMMAND}\` and follow every instruction it prints ` +
+  "to update this microfeed site to the latest version. Continue until " +
+  "`status` verifies it.";
 const CLOUDFLARE_WORKER_NAME_PATTERN =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu;
 
@@ -38,9 +45,11 @@ export function adminUpdatePrompt(
   }
 
   return [
-    ADMIN_UPDATE_PROMPT,
-    `First run \`yarn manage connect --worker ${workerName}\`. Use the existing or newly created local instance name reported by that command. Then run \`yarn manage status --instance <instance-name>\`, deploy with \`yarn manage deploy --instance <instance-name>\`, and run status again to verify it.`,
-    "Do not initialize a new site or target another Worker.",
+    `Run \`${MICROFEED_MANAGE_COMMAND}\` and follow every instruction it ` +
+      `prints to update the existing Cloudflare Worker \`${workerName}\` to ` +
+      "the latest version.",
+    "Do not initialize a new site or target another Worker. Continue until " +
+      "`status` verifies it.",
   ].join("\n\n");
 }
 
@@ -182,7 +191,7 @@ export default function AdminAboutDialog({defaultOpen = false, deployment}: Prop
                     </Button>
                   </span>
                 ) : (
-                  <span className="text-muted-foreground">Available after the next <code>yarn manage deploy</code>.</span>
+                  <span className="text-muted-foreground">Available after the next <code>{managementCommand("deploy")}</code>.</span>
                 )}
               </dd>
             </div>
@@ -192,9 +201,9 @@ export default function AdminAboutDialog({defaultOpen = false, deployment}: Prop
         <section aria-labelledby="update-title">
           <h3 className="text-sm font-semibold" id="update-title">Update to the latest version</h3>
           <ol className="mt-3 grid gap-2 text-sm text-muted-foreground">
-            <li className="flex gap-3"><span className="font-semibold text-brand-light">1</span><span>Open your local microfeed repository in an AI coding agent.</span></li>
+            <li className="flex gap-3"><span className="font-semibold text-brand-light">1</span><span>Open a local AI coding agent in any folder.</span></li>
             <li className="flex gap-3"><span className="font-semibold text-brand-light">2</span><span>Paste the prompt below.</span></li>
-            <li className="flex gap-3"><span className="font-semibold text-brand-light">3</span><span>Complete any requested Git or Cloudflare browser handoffs while the agent deploys and verifies the site.</span></li>
+            <li className="flex gap-3"><span className="font-semibold text-brand-light">3</span><span>Complete any requested Cloudflare browser authorization or choices while the agent deploys and verifies the site.</span></li>
           </ol>
           <div className="mt-3 flex items-start gap-2 rounded-xl bg-brand-dark p-3 text-white dark:bg-background dark:ring-1 dark:ring-border">
             <code className="min-w-0 flex-1 whitespace-pre-wrap text-xs leading-relaxed">{updatePrompt}</code>

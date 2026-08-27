@@ -140,9 +140,9 @@ Browser authorization requires the site's built-in login. Cloudflare Access
 can protect dashboard routes, but it does not create the microfeed application
 session required by OAuth. When the identity document reports that OAuth
 authorization is unavailable, the CLI tells the site owner to enable built-in
-login from the connected repository with `yarn manage auth setup`. Older sites
-without this identity capability receive compatible setup guidance instead of
-an ambiguous discovery error.
+login with `npx @microfeed/cli manage auth setup`. Older sites without this
+identity capability receive compatible setup guidance instead of an ambiguous
+discovery error.
 
 New instances keep API access disabled by default. Browser login can be saved
 while access is off, but content commands return `404` until the site owner
@@ -222,10 +222,10 @@ must complete within five minutes.
 The site must have built-in login enabled for browser authorization. Cloudflare
 Access is compatible as an outer route protection layer, but it is not a
 microfeed login session and cannot complete OAuth by itself. If built-in login
-is disabled, run `yarn manage auth setup` from the repository connected to the
-site, then retry login. The CLI reads `oauthAuthorizationAvailable` from newer
-identity documents and provides the same fallback guidance for older sites
-that do not publish the field.
+is disabled, run `npx @microfeed/cli manage auth setup`, select or connect the
+intended site, then retry login. The CLI reads `oauthAuthorizationAvailable`
+from newer identity documents and provides the same fallback guidance for
+older sites that do not publish the field.
 
 The CLI generates a random, non-secret connection ID for each saved site and
 stores it separately from the encrypted token bundle. Logging the same saved

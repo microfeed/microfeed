@@ -72,8 +72,8 @@ the saved browser login does not need to be recreated.
 Browser OAuth also requires the site's built-in login. Cloudflare Access may
 protect routes, but it does not create the microfeed application session OAuth
 needs. If the CLI reports that OAuth authorization is unavailable, tell the
-owner to run `yarn manage auth setup` from the connected repository, then retry
-login. Newer sites report this capability explicitly; follow the CLI's
+owner to run `npx @microfeed/cli manage auth setup`, then retry login. Newer
+sites report this capability explicitly; follow the CLI's
 compatible setup guidance for older sites that do not.
 
 When authorization is missing, run:

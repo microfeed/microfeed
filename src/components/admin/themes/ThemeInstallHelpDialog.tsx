@@ -2,6 +2,10 @@ import {BookOpenIcon, ExternalLinkIcon} from "lucide-react";
 
 import {Button} from "@/components/ui/button";
 import {
+  MICROFEED_MANAGE_COMMAND,
+  managementCommand,
+} from "@/shared/ManagementCli";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -44,17 +48,23 @@ export default function ThemeInstallHelpDialog({
         </DialogHeader>
 
         <div className="grid gap-6 text-sm leading-relaxed">
+          <p className="rounded-lg border bg-muted/40 p-3 text-muted-foreground">
+            Run these commands from any folder. If this computer has not saved
+            the site yet, first give a local coding agent{" "}
+            <code>{MICROFEED_MANAGE_COMMAND}</code> and ask it to connect to the
+            existing Worker.
+          </p>
           <section className="grid gap-3">
             <div>
               <h3 className="font-semibold">Install a community theme</h3>
               <p className="mt-1 text-muted-foreground">
-                From your microfeed checkout, install a public GitHub repository.
+                Install a public GitHub repository through the management CLI.
                 The new version is inactive, so you can preview it before it
                 changes the public site.
               </p>
             </div>
             <Command>
-              {`yarn manage theme install https://github.com/owner/theme-repository --instance ${instanceName}`}
+              {managementCommand(`theme install https://github.com/owner/theme-repository --instance ${instanceName}`)}
             </Command>
           </section>
 
@@ -63,12 +73,12 @@ export default function ThemeInstallHelpDialog({
               <h3 className="font-semibold">Install a Built-in theme</h3>
               <p className="mt-1 text-muted-foreground">
                 Deployment synchronizes the Built-in catalog automatically.
-                You can also install a specific release from the current
-                microfeed checkout; it remains inactive for preview.
+                You can also install a specific release through the management
+                CLI; it remains inactive for preview.
               </p>
             </div>
             <Command>
-              {`yarn manage theme install bundled:default --instance ${instanceName}`}
+              {managementCommand(`theme install bundled:default --instance ${instanceName}`)}
             </Command>
           </section>
 
@@ -96,7 +106,7 @@ export default function ThemeInstallHelpDialog({
               </p>
             </div>
             <Command>
-              {`yarn manage theme init ~/microfeed-themes/my-theme --instance ${instanceName}`}
+              {managementCommand(`theme init ~/microfeed-themes/my-theme --instance ${instanceName}`)}
             </Command>
           </section>
 

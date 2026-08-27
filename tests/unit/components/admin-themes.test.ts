@@ -89,10 +89,11 @@ describe("Admin versioned themes", () => {
   });
 
   it("separates Built-in groups from quota-scoped Custom versions", async () => {
-    const [themes, installHelp, route] = await Promise.all([
+    const [themes, installHelp, route, managementCli] = await Promise.all([
       source("components/admin/themes/ThemesApp.tsx"),
       source("components/admin/themes/ThemeInstallHelpDialog.tsx"),
       source("pages/[adminPath]/settings/themes/index.astro"),
+      source("shared/ManagementCli.ts"),
     ]);
     expect(themes).toContain("Built-in themes (");
     expect(themes).toContain("Custom themes (");
@@ -140,6 +141,8 @@ describe("Admin versioned themes", () => {
     expect(installHelp).toContain("Install a community theme");
     expect(installHelp).toContain("Install a Built-in theme");
     expect(installHelp).toContain("bundled:default");
+    expect(installHelp).toContain("MICROFEED_MANAGE_COMMAND");
+    expect(managementCli).toContain("npx @microfeed/cli manage");
     expect(installHelp).toContain("Create a new version in Admin");
     expect(installHelp).toContain("https://docs.microfeed.org/dashboard/themes/");
     expect(installHelp).toContain(
@@ -149,13 +152,14 @@ describe("Admin versioned themes", () => {
     expect(themes).not.toContain("Origin theme: ${theme.originThemeId}");
     expect(themes).toContain("!builtIn && (");
     expect(themes).toContain("Update this theme");
+    expect(themes).toContain("MICROFEED_MANAGE_COMMAND");
     expect(themes).toContain("theme install ${builtInSource}");
     expect(themes).toContain("Copy update command");
     expect(themes).toContain("Export this version");
     expect(themes).toContain("Copy export command");
     expect(themes).toContain("for backup or continued development");
     expect(themes).toContain(
-      ".microfeed/themes/${theme.packageId}-${theme.version} --git",
+      "~/microfeed-themes/${theme.packageId}-${theme.version} --git",
     );
   });
 

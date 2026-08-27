@@ -127,7 +127,7 @@ Load them without repeating the `assets/` directory:
 ```
 
 The local preview maps `_theme.asset_base_url` to its `/assets/` handler. On
-installation, `yarn manage theme` validates declared files, uploads them to
+installation, `npx @microfeed/cli manage theme` validates declared files, uploads them to
 immutable R2 keys, verifies the uploads, and stores their paths, checksums,
 sizes, and content types with the installed theme. The live asset base URL uses
 microfeed's public media route; the Worker never contacts GitHub or runs the
@@ -136,7 +136,7 @@ bundler while rendering a page.
 Enable R2 before installing a theme with declared assets:
 
 ```console
-yarn manage deploy --enable-r2 --instance <instance-name>
+npx @microfeed/cli manage deploy --enable-r2 --instance <instance-name>
 ```
 
 Use `--local` for a local-only site's simulated media store. External HTTPS

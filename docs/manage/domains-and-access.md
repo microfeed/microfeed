@@ -9,18 +9,18 @@ can open the Admin dashboard.
 
 | Goal | Use |
 | --- | --- |
-| Give the site your own web address | `yarn manage domain` |
-| Use microfeed’s email-and-password login | `yarn manage auth setup` |
+| Give the site your own web address | `npx @microfeed/cli manage domain` |
+| Use microfeed’s email-and-password login | `npx @microfeed/cli manage auth setup` |
 | Change a known password or sign-in email | **Account settings** in the dashboard |
-| Recover a forgotten password or change the dashboard path | `yarn manage auth <action>` |
-| Add Cloudflare’s identity screen in front of the dashboard | `yarn manage access` |
+| Recover a forgotten password or change the dashboard path | `npx @microfeed/cli manage auth <action>` |
+| Add Cloudflare’s identity screen in front of the dashboard | `npx @microfeed/cli manage access` |
 
 ## Add or inspect a custom domain
 
-From the connected clone, run:
+From any folder, run:
 
 ```console
-yarn manage domain
+npx @microfeed/cli manage domain
 ```
 
 Follow the prompts for the exact saved instance and hostname. A hostname is the
@@ -44,13 +44,13 @@ folder in a terminal. If you do not know the saved name for your site, list the
 available sites first:
 
 ```console
-yarn manage instances
+npx @microfeed/cli manage instances
 ```
 
 Then run this command, replacing `<instance-name>` with the name shown above:
 
 ```console
-yarn manage auth setup --instance <instance-name>
+npx @microfeed/cli manage auth setup --instance <instance-name>
 ```
 
 Check the site and dashboard shown by the command, then follow its prompts. For
@@ -59,11 +59,11 @@ the administrator password.
 
 The setup command automatically redeploys microfeed when enabling built-in
 login requires a configuration change. If built-in login is already enabled,
-it skips the redeploy. You do not need to run `yarn manage deploy` separately.
+it skips the redeploy. You do not need to run `npx @microfeed/cli manage deploy` separately.
 After setup, verify the result:
 
 ```console
-yarn manage status --instance <instance-name>
+npx @microfeed/cli manage status --instance <instance-name>
 ```
 
 You can also ask an AI coding agent that has access to your microfeed project:
@@ -76,18 +76,18 @@ Cloudflare browser authorization and create the password in the private browser
 page yourself. Never paste the password or private page URL into a conversation.
 
 If you are signed in and know the current password, use **Account settings**
-for routine email or password changes. From a connected repository clone, use
-`yarn manage auth` for forgotten-password recovery, dashboard-path changes, or
+for routine email or password changes. Use `npx @microfeed/cli manage auth` for
+forgotten-password recovery, dashboard-path changes, or
 disabling the built-in login. Always include an action:
 
 ```console
-yarn manage auth reset-password
-yarn manage auth change-email
-yarn manage auth change-path
-yarn manage auth disable
+npx @microfeed/cli manage auth reset-password
+npx @microfeed/cli manage auth change-email
+npx @microfeed/cli manage auth change-path
+npx @microfeed/cli manage auth disable
 ```
 
-Running `yarn manage auth` by itself only prints help. Password creation and
+Running `npx @microfeed/cli manage auth` by itself only prints help. Password creation and
 reset use a private browser page; do not paste the password or private URL into
 the terminal or a conversation.
 
@@ -122,10 +122,10 @@ authorized, and a separate Cloudflare Access identity does not change.
 ### Recover a forgotten password
 
 The dashboard dialogs require the current password. If you cannot sign in or
-do not know it, run this from the connected repository clone:
+do not know it, run this from any folder:
 
 ```console
-yarn manage auth reset-password --instance <instance-name>
+npx @microfeed/cli manage auth reset-password --instance <instance-name>
 ```
 
 For a deployed site, the command opens or prints a private, single-use browser
@@ -139,7 +139,7 @@ password change when the current password is available.
 Cloudflare Access can add an outer identity layer in front of the dashboard:
 
 ```console
-yarn manage access
+npx @microfeed/cli manage access
 ```
 
 The dashboard can have built-in login, Access, or both. When both are enabled,
@@ -152,7 +152,7 @@ unless you deliberately accept that anyone who finds its address can manage the
 site.
 :::
 
-Verify with `yarn manage status`, then test sign-in and sign-out in a private
+Verify with `npx @microfeed/cli manage status`, then test sign-in and sign-out in a private
 browser window.
 
 ## Review account security
@@ -171,5 +171,5 @@ page keeps owner-specific security controls separate from site-wide settings:
 
 Account settings are unavailable when the dashboard has no built-in login or
 Cloudflare Access identity. Initial setup and forgotten-password recovery stay
-in `yarn manage auth` so a signed-out owner cannot weaken account security from
+in `npx @microfeed/cli manage auth` so a signed-out owner cannot weaken account security from
 the dashboard.

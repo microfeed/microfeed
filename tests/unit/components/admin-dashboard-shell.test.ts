@@ -147,17 +147,21 @@ describe("admin dashboard shell models", () => {
       "https://github.com/microfeed/microfeed",
     );
     expect(ADMIN_UPDATE_PROMPT).toBe(
-      "Update this microfeed site to the latest version and deploy it.",
+      "Run `npx @microfeed/cli manage` and follow every instruction it prints " +
+        "to update this microfeed site to the latest version. Continue until " +
+        "`status` verifies it.",
     );
     expect(adminUpdatePrompt({
       deployedAt: "2026-08-03T20:00:00.000Z",
       productionWorkerName: "my-microfeed",
       protected: true,
-    })).toBe([
-      ADMIN_UPDATE_PROMPT,
-      "First run `yarn manage connect --worker my-microfeed`. Use the existing or newly created local instance name reported by that command. Then run `yarn manage status --instance <instance-name>`, deploy with `yarn manage deploy --instance <instance-name>`, and run status again to verify it.",
-      "Do not initialize a new site or target another Worker.",
-    ].join("\n\n"));
+    })).toBe(
+      "Run `npx @microfeed/cli manage` and follow every instruction it " +
+        "prints to update the existing Cloudflare Worker `my-microfeed` to " +
+        "the latest version.\n\n" +
+        "Do not initialize a new site or target another Worker. Continue " +
+        "until `status` verifies it.",
+    );
     expect(adminUpdatePrompt({
       deployedAt: "2026-08-03T20:00:00.000Z",
       productionWorkerName: "my-microfeed",

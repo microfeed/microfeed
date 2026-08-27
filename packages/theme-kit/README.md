@@ -17,7 +17,7 @@ microfeed site or change an active theme:
 | Tool | Purpose |
 | --- | --- |
 | `theme-kit` from `@microfeed/theme-kit` | Develop and preview a theme package locally |
-| `yarn manage theme …` from a microfeed checkout | Export an instance theme; install, update, activate, or delete versions |
+| `npx @microfeed/cli manage theme …` | Export an instance theme; install, update, activate, or delete versions |
 | `microfeed` from `@microfeed/cli` | Publish and manage feed content through the public API |
 
 ## Requirements
@@ -29,24 +29,22 @@ microfeed site or change an active theme:
 
 ## Start a standalone theme repository
 
-Keep initialized and generic theme repositories outside the microfeed checkout
-by default so generated files are not accidentally committed to the
-application repository. When an exact installed version should stay in the
-same coding-agent workspace, export it to the ignored
-`.microfeed/themes/<package-id>-<version>/` directory with
-`yarn manage theme export --active ... --git`.
+Keep initialized and generic theme repositories in their own folders by
+default. When an exact installed version should stay in the same coding-agent
+workspace, choose an explicit export directory with
+`npx @microfeed/cli manage theme export --active ... --output <directory> --git`.
 Do not use `dist/themes/`; application builds may replace that disposable
 output.
 
 ### Start from your site’s current theme
 
 This is the recommended path when you already have a microfeed instance. Run
-the command from a microfeed checkout. It exports the effective active theme,
+the command from any folder. It exports the effective active theme,
 declared assets, schemas, fixtures, local scripts, agent skill, and Claude Code
 bridge, then starts an independent Git repository:
 
 ```console
-yarn manage theme init ~/microfeed-themes/my-theme \
+npx @microfeed/cli manage theme init ~/microfeed-themes/my-theme \
   --instance <instance-name>
 cd ~/microfeed-themes/my-theme
 yarn install
@@ -59,11 +57,15 @@ You do not need to create `~/microfeed-themes/` first. The command creates
 missing parents and refuses to overwrite a non-empty destination.
 
 To preserve the active installed package ID and version instead of creating a
-new identity, keep it inside the checkout with:
+new identity, export it to another standalone folder:
 
 ```console
-yarn manage theme export --active --instance <instance-name> --git --json
-cd .microfeed/themes/<package-id>-<version>
+npx @microfeed/cli manage theme export --active \
+  --instance <instance-name> \
+  --output ~/microfeed-themes/exported-theme \
+  --git \
+  --json
+cd ~/microfeed-themes/exported-theme
 yarn install
 yarn validate
 yarn test
@@ -207,10 +209,10 @@ R2. Use declared assets for larger, independently cacheable bundles. See the
    can never identify different content.
 7. Commit the source and generated runtime files, then push the standalone
    repository to GitHub.
-8. From a microfeed checkout, install the exact repository version as inactive:
+8. From any folder, install the exact repository version as inactive:
 
    ```console
-   yarn manage theme install https://github.com/owner/my-theme \
+   npx @microfeed/cli manage theme install https://github.com/owner/my-theme \
      --instance <instance-name>
    ```
 

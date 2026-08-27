@@ -64,8 +64,8 @@ export async function discoverInstance(originInput: string): Promise<{
       "Browser authorization is unavailable because this microfeed site has " +
       "built-in login disabled. Cloudflare Access can protect dashboard " +
       "routes, but it does not create the microfeed application session " +
-      "required for OAuth. The site owner can enable built-in login from the " +
-      "connected repository with `yarn manage auth setup`, then retry. Guide: " +
+      "required for OAuth. The site owner can enable built-in login with " +
+      "`npx @microfeed/cli manage auth setup`, then retry. Guide: " +
       "https://docs.microfeed.org/manage/domains-and-access/#enable-built-in-login",
     );
   }
@@ -81,8 +81,8 @@ export async function discoverInstance(originInput: string): Promise<{
         "The site did not provide OAuth discovery metadata. Built-in login " +
         "may be disabled, or this microfeed version may not support browser " +
         "authorization. Cloudflare Access alone does not create a microfeed " +
-        "application session. The site owner can run `yarn manage auth setup` " +
-        "from the connected repository, then retry. Guide: " +
+        "application session. The site owner can run " +
+        "`npx @microfeed/cli manage auth setup`, then retry. Guide: " +
         "https://docs.microfeed.org/manage/domains-and-access/#enable-built-in-login",
       );
     }

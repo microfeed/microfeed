@@ -7,6 +7,10 @@ import ThemePreviewDialog from "@/components/admin/themes/ThemePreviewDialog";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {ADMIN_URLS} from "@/shared/StringUtils";
+import {
+  MICROFEED_MANAGE_COMMAND,
+  managementCommand,
+} from "@/shared/ManagementCli";
 import type {
   BuiltInThemeGroup,
   ThemeAdminTab,
@@ -114,9 +118,12 @@ function VersionCard({
 }: VersionCardProps) {
   const canUpdate = builtIn || Boolean(theme.sourceUrl || theme.sourcePath);
   const updateCommand = builtIn && builtInSource
-    ? `yarn manage theme install ${builtInSource} --instance ${instanceName}`
-    : `yarn manage theme update ${theme.id} --instance ${instanceName}`;
-  const exportCommand = `yarn manage theme export ${theme.id} --instance ${instanceName} --output .microfeed/themes/${theme.packageId}-${theme.version} --git`;
+    ? managementCommand(`theme install ${builtInSource} --instance ${instanceName}`)
+    : managementCommand(`theme update ${theme.id} --instance ${instanceName}`);
+  const exportCommand = managementCommand(
+    `theme export ${theme.id} --instance ${instanceName} ` +
+      `--output ~/microfeed-themes/${theme.packageId}-${theme.version} --git`,
+  );
   return (
     <article className="rounded-xl border p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -176,7 +183,7 @@ function VersionCard({
 
       {builtIn && (
         <p className="mt-3 rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">
-          This Built-in theme is maintained by your microfeed checkout and
+          This Built-in theme is maintained by the current microfeed release and
           synchronized during deployment. Create a Custom version to change it.
         </p>
       )}
@@ -200,7 +207,7 @@ function VersionCard({
               <p className="mb-2 text-muted-foreground">
                 <strong className="text-foreground">Update this theme:</strong>{" "}
                 {builtIn
-                  ? "Install the current Built-in release from this checkout as an inactive version. Preview it before activating."
+                  ? "Install the current Built-in release as an inactive version. Preview it before activating."
                   : "Check its original source and install a newer SemVer as another inactive version."}
               </p>
               <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
@@ -376,6 +383,12 @@ export default function ThemesApp({
 
   return (
     <div className="grid gap-5">
+      <p className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+        Run copied management commands from any folder. If this computer has
+        not saved the site yet, first give a local coding agent{" "}
+        <code>{MICROFEED_MANAGE_COMMAND}</code> and ask it to connect to the
+        existing Worker.
+      </p>
       <section className="rounded-[14px] border bg-card p-5 shadow-xs">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -424,7 +437,7 @@ export default function ThemesApp({
         {tab === "built-in" && (
           <div aria-labelledby="built-in-theme-tab" className="mt-5 grid gap-3" id="built-in-theme-panel" role="tabpanel">
             <p className="text-sm text-muted-foreground">
-              Built-in themes are synchronized from this microfeed checkout.
+              Built-in themes are synchronized from the current microfeed release.
               Updates are installed inactive and never change the public site
               until you activate them.
             </p>

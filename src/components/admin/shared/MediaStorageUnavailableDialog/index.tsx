@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {cn} from "@/lib/utils";
+import {managementCommand} from "@/shared/ManagementCli";
 
 type MediaStorageState = "disabled" | "pending" | "ready";
 
@@ -30,8 +31,8 @@ export function MediaStorageSetupInstructions({
 }) {
   const local = !dashboardUrl;
   const command = local
-    ? "yarn manage deploy --local --enable-r2"
-    : "yarn manage deploy --enable-r2";
+    ? managementCommand("deploy --local --enable-r2")
+    : managementCommand("deploy --enable-r2");
 
   return (
     <div className="rounded-lg border bg-muted/40 p-3">
@@ -45,7 +46,7 @@ export function MediaStorageSetupInstructions({
           </li>
         )}
         <li>
-          From the microfeed repository checkout, run{" "}
+          From any folder, run{" "}
           <code className="rounded bg-background px-1.5 py-0.5 text-xs text-foreground ring-1 ring-foreground/10">
             {command}
           </code>

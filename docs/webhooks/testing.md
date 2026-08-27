@@ -14,14 +14,14 @@ does not create or edit that endpoint for you.
 
 ## Choose a listener mode
 
-- **Local development:** Run `yarn microfeed webhook listen` and register
+- **Local development:** Run `npx @microfeed/cli webhook listen` and register
   `http://127.0.0.1:8978/webhook`. The endpoint is reachable only from this
   computer.
-- **Deployed preview or production:** Run `yarn microfeed webhook listen
+- **Deployed preview or production:** Run `npx @microfeed/cli webhook listen
   --tunnel` and register the random HTTPS URL printed by the CLI. The endpoint
   is public only while the command runs.
 
-Run either command from the root of a microfeed repository clone. Event
+Run either command from any folder. Event
 Explorer sends are real signed deliveries that use the normal Queue, retry
 policy, delivery history, and daily budget. Previewing an event does not send a
 delivery.
@@ -31,10 +31,10 @@ delivery.
 Plain `webhook listen` starts a loopback-only receiver. It does not expose your
 computer to the internet or require `cloudflared`.
 
-1. From the microfeed repository root, start the listener:
+1. From any folder, start the listener:
 
    ```console
-   yarn microfeed webhook listen
+   npx @microfeed/cli webhook listen
    ```
 
 2. Open the local site's **Admin → Webhooks → Endpoints** page, choose **Add
@@ -54,11 +54,11 @@ you do not want later events to retry while the listener is stopped.
 ## Test a production deployment with a temporary endpoint
 
 You can receive a real signed event from a deployed production site on your
-computer without first deploying a receiver. From a microfeed repository clone,
-start the verified listener with a temporary Cloudflare Quick Tunnel:
+computer without first deploying a receiver. From any folder, start the
+verified listener with a temporary Cloudflare Quick Tunnel:
 
 ```console
-yarn microfeed webhook listen --tunnel
+npx @microfeed/cli webhook listen --tunnel
 ```
 
 Plain `webhook listen` accepts only local traffic. With `--tunnel`, the CLI uses

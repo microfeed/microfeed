@@ -23,17 +23,20 @@
 
 ## Instance management and Cloudflare deployment
 
-- When a user asks a coding agent to operate `yarn manage` against local or
-  Cloudflare state, use the repository's `deploy-microfeed` skill. This covers
+- When a user asks a coding agent to operate `npx @microfeed/cli manage` or
+  `yarn manage` against local or Cloudflare state, use the repository's
+  `deploy-microfeed` skill. This covers
   accounts, initialization, connection, development, deployment, themes,
   snapshots, status, destruction, Pages migration, domains, Access, built-in
   authentication, configuration, and instance selection.
-- Perform every Cloudflare deployment change through `yarn manage`. Do not
-  improvise with raw Wrangler commands, direct Cloudflare API calls, or a
-  separate deployment implementation.
+- Perform every Cloudflare deployment change through the management engine.
+  Prefer `npx @microfeed/cli manage` outside a user-managed clone; use
+  `yarn manage` when already working inside one. When the launcher selected the
+  `npx` prefix, translate every `yarn manage` and `yarn dev` example below to
+  `npx @microfeed/cli manage` and `npx @microfeed/cli manage dev`.
 - Do not use or recommend Cloudflare repository imports, Workers Builds,
-  deploy buttons, GitHub Actions, or API-token deployment. Both people and
-  agents deploy from a local clone through `yarn manage`.
+  deploy buttons, GitHub Actions, or API-token deployment. People and agents
+  can use the clone-free launcher without creating a local source checkout.
 - Treat `docs/manage-cli.md` as the canonical command, option, side-effect, and
   safety reference for both people and agents. Read the relevant command
   section before using an unfamiliar or destructive option. Keep that reference
