@@ -1,10 +1,13 @@
-import axios from 'axios';
+import axios, {type AxiosRequestConfig} from 'axios';
 import {ADMIN_URLS} from "@/shared/StringUtils";
 import type {ImageMetadataTarget} from "@/types";
 
-const axiosPost = (url: any, bodyDict: any) => {
-  return axios.post(url, bodyDict, {
-  });
+const axiosPost = (
+  url: any,
+  bodyDict: any,
+  config: AxiosRequestConfig = {},
+) => {
+  return axios.post(url, bodyDict, config);
 };
 
 const deleteImage = (

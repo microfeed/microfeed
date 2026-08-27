@@ -1,9 +1,10 @@
-import {env} from "cloudflare:workers";
+import {cache, env} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
 import {normalizeAdminItemListLimit} from "@/shared/AdminCollections";
 import {jsonResponse} from "@/server/http";
 import {listAdminItems} from "@/server/items/admin-list";
+import FeedDb from "@/server/feed/FeedDb";
 
 export const listAdminItemSummaries: APIRoute = async ({request}) => {
   const url = new URL(request.url);
@@ -13,4 +14,21 @@ export const listAdminItemSummaries: APIRoute = async ({request}) => {
     }),
     {headers: {"cache-control": "private, no-store"}},
   );
+};
+
+export const getAdminItem: APIRoute = async ({params, request}) => {
+  const item = params.itemId
+    ? await new FeedDb(env, request, cache).getItemById(params.itemId)
+    : null;
+  return item
+    ? jsonResponse({
+        content_html: String(item.description ?? ""),
+        id: String(item.id ?? params.itemId),
+        status: item.status,
+        title: String(item.title ?? ""),
+      }, {headers: {"cache-control": "private, no-store"}})
+    : jsonResponse(
+        {error: "Item not found."},
+        {headers: {"cache-control": "private, no-store"}, status: 404},
+      );
 };

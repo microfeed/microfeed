@@ -6,7 +6,7 @@ import {
 } from "@/shared/Webhooks";
 import {WebhookRequestError, WebhookUnavailableError} from "./validation";
 
-export type WebhookOrigin = "api" | "dashboard" | "system";
+export type WebhookOrigin = "api" | "dashboard" | "system" | "webmcp";
 
 export interface WebhookEventContext {
   causationId?: string;

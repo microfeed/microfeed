@@ -180,7 +180,12 @@ Choose the publishing workflow that fits the task:
   use external URLs in content-only mode; [customize themes and shared website
   code](https://docs.microfeed.org/dashboard/themes/); and choose [Public,
   Headless, or Offline site access](https://docs.microfeed.org/dashboard/customize/).
-* **For AI agents:** use the official
+* **For browser AI agents:** a dashboard protected by built-in login or
+  Cloudflare Access automatically exposes experimental, draft-only
+  [WebMCP](https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts)
+  tools when the browser provides the native API. Unsupported browsers and
+  public pages do not load the implementation.
+* **For local AI agents:** use the official
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through browser-authorized access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the

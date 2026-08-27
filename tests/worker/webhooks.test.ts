@@ -37,6 +37,11 @@ import {
   createApiItem,
   updateApiItem,
 } from "@/server/api/handlers";
+import {updateAdminFeed} from "@/pages/[adminPath]/ajax/feed";
+import {
+  WEBMCP_INTERACTION_SOURCE,
+  WEBMCP_INTERACTION_SOURCE_HEADER,
+} from "@/shared/WebMcp";
 
 const ENCRYPTION_KEY = "worker-test-webhook-encryption-key-32-bytes";
 
@@ -138,7 +143,47 @@ beforeEach(async () => {
       "DELETE FROM settings WHERE category LIKE 'webhook-atomic-%'",
     ),
     env.FEED_DB.prepare("DELETE FROM items WHERE id = 'explorer-item'"),
+    env.FEED_DB.prepare("DELETE FROM items WHERE id = 'webmcp-origin-item'"),
   ]);
+});
+
+describe("WebMCP webhook provenance", () => {
+  it("records agent-created Item drafts with a webmcp origin", async () => {
+    await insertEndpoint("webmcp-origin");
+    await env.FEED_DB.prepare(
+      "INSERT INTO webhook_subscriptions (endpoint_id, event_type) " +
+        "VALUES ('webmcp-origin', 'item.created')",
+    ).run();
+    const queueIds: string[] = [];
+    const response = await updateAdminFeed(
+      new Request("https://feed.example.com/admin/ajax/feed/", {
+        body: JSON.stringify({
+          item: {
+            id: "webmcp-origin-item",
+            pubDateMs: Date.now(),
+            status: 2,
+            title: "Agent-created draft",
+          },
+        }),
+        headers: {
+          "content-type": "application/json",
+          [WEBMCP_INTERACTION_SOURCE_HEADER]: WEBMCP_INTERACTION_SOURCE,
+        },
+        method: "POST",
+      }),
+      runtime(queueIds),
+      () => undefined,
+    );
+    expect(response.status).toBe(200);
+    expect(queueIds).toHaveLength(1);
+
+    const event = await env.FEED_DB.prepare(
+      "SELECT origin, payload_json FROM webhook_events " +
+        "WHERE subject_id = 'webmcp-origin-item' LIMIT 1",
+    ).first<{origin: string; payload_json: string}>();
+    expect(event?.origin).toBe("webmcp");
+    expect(JSON.parse(event!.payload_json).context.origin).toBe("webmcp");
+  });
 });
 
 describe("webhook fanout and accounting", () => {

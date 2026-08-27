@@ -3,6 +3,7 @@ import type {APIContext, APIRoute} from "astro";
 import {beforeEach, describe, expect, it} from "vitest";
 
 import {GET as listAdminItems} from "@/pages/[adminPath]/ajax/items/index";
+import {GET as getAdminItem} from "@/pages/[adminPath]/ajax/items/[itemId]";
 import {GET as listAdminPages} from "@/pages/[adminPath]/ajax/pages/index";
 import {GET as listAdminSiteFiles} from "@/pages/[adminPath]/ajax/site-files/index";
 import FeedDb from "@/server/feed/FeedDb";
@@ -12,11 +13,15 @@ import {STATUSES} from "@/shared/Constants";
 const ORIGIN = "https://feed.example.com";
 const NOW = "2026-08-14T20:00:00.000Z";
 
-async function responseFrom(handler: APIRoute, pathname: string) {
+async function responseFrom(
+  handler: APIRoute,
+  pathname: string,
+  params: Record<string, string> = {},
+) {
   const request = new Request(`${ORIGIN}${pathname}`);
   const response = await handler({
     locals: {},
-    params: {adminPath: "admin"},
+    params: {adminPath: "admin", ...params},
     request,
     url: new URL(request.url),
   } as unknown as APIContext);
@@ -49,6 +54,7 @@ beforeEach(async () => {
       STATUSES.UNLISTED,
       JSON.stringify({
         contentHtml: "<p>This body must not be listed.</p>",
+        description: "<p>Editable Item body.</p>",
         image: "images/summary.png",
         mediaFile: {category: "audio", durationSecond: 42, url: "audio/summary.mp3"},
         title: "Summary item",
@@ -135,6 +141,28 @@ describe("admin collection endpoints", () => {
     });
     expect(item).not.toHaveProperty("contentHtml");
     expect(item).not.toHaveProperty("contentText");
+  });
+
+  it("returns one Item's editable WebMCP fields without caching", async () => {
+    const response = await responseFrom(
+      getAdminItem,
+      "/admin/ajax/items/admin-summary-item/",
+      {itemId: "admin-summary-item"},
+    );
+    await expect(response.json()).resolves.toEqual({
+      content_html: "<p>Editable Item body.</p>",
+      id: "admin-summary-item",
+      status: STATUSES.UNLISTED,
+      title: "Summary item",
+    });
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+
+    const missing = await responseFrom(
+      getAdminItem,
+      "/admin/ajax/items/missing/",
+      {itemId: "missing"},
+    );
+    expect(missing.status).toBe(404);
   });
 
   it("returns Page summaries and theme compatibility together", async () => {
