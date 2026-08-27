@@ -3,6 +3,10 @@ import {describe, expect, it} from "vitest";
 
 import {reorderNavigationPageList} from "@/components/admin/pages/PagesApp";
 import {
+  mergePageWebMcpDraft,
+  pageWebMcpDraftEligible,
+} from "@/client/webmcp/page-editor-state";
+import {
   pageNavigationEnabledForStatus,
   type PageRecord,
 } from "@/shared/Pages";
@@ -13,6 +17,37 @@ const routeSource = (path: string) => readFile(
 );
 
 describe("admin Page editor routes", () => {
+  it("merges WebMCP Page input only into eligible visible drafts", () => {
+    const current = {
+      content_html: "<p>Human body</p>",
+      meta_description: "Human description",
+      navigation_label: "About",
+      show_in_navigation: true,
+      slug: "about",
+      status: "unpublished" as const,
+      title: "Human title",
+    };
+    expect(mergePageWebMcpDraft(current, {title: "Agent title"})).toEqual({
+      ...current,
+      status: "unpublished",
+      title: "Agent title",
+    });
+    expect(pageWebMcpDraftEligible({
+      draftStatus: "unpublished",
+      isNotFoundPage: false,
+      savedStatus: "unpublished",
+    })).toBe(true);
+    expect(pageWebMcpDraftEligible({
+      draftStatus: "unpublished",
+      isNotFoundPage: false,
+      savedStatus: "published",
+    })).toBe(false);
+    expect(pageWebMcpDraftEligible({
+      draftStatus: "unpublished",
+      isNotFoundPage: true,
+    })).toBe(false);
+  });
+
   it("keeps the Quill-based editor out of server rendering", async () => {
     const [newRoute, existingRoute] = await Promise.all([
       routeSource("new"),

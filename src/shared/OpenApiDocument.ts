@@ -87,7 +87,10 @@ export const OPENAPI_DOCUMENT = createDocument({
     version: MICROFEED_VERSION,
     description:
       "Create, read, update, and delete content in this microfeed instance. " +
-      "Send an API key using Bearer authentication.",
+      "Send an API key using Bearer authentication. A protected dashboard " +
+      "can separately expose experimental, draft-only WebMCP site tools to " +
+      "compatible browser agents after the signed-in dashboard is opened; " +
+      "WebMCP is not a remote API or MCP server.",
     license: {
       name: "GNU Affero General Public License v3.0",
       identifier: "AGPL-3.0-only",

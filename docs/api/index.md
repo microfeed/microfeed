@@ -31,6 +31,12 @@ If you want a coding agent to publish content, start with the official
 directly against the REST API when you are integrating another application or
 service.
 
+For interactive draft editing, a compatible browser agent can instead discover
+microfeed's experimental [WebMCP site tools](../automation/ai-agents/#use-webmcp-for-visible-drafts)
+after it opens the signed-in, protected dashboard. WebMCP is separate from this
+remote API: API documentation can tell an agent that the capability exists, but
+the tools themselves are available only from the active dashboard page.
+
 ## What the API can do
 
 The authenticated API covers these capability groups:

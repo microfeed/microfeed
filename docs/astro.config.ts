@@ -144,7 +144,7 @@ export default defineConfig({
           description:
             "microfeed is an open-source CMS that publishes one collection as a website, RSS feed, and JSON Feed from the owner's Cloudflare account.",
           details:
-            "Use the Installation guides for deployment workflows. Use the yarn manage reference for site-management commands and the @microfeed/cli reference for content commands and safety rules.",
+            "Use the Installation guides for deployment workflows. Use the yarn manage reference for site-management commands, the WebMCP guide for browser-based draft editing, and the @microfeed/cli reference for broader content commands and safety rules.",
           promote: ["index", "start-here/**", "manage-cli", "microfeed-cli", "theme-kit-cli"],
           demote: ["contribute/**"],
           customSets: [
@@ -161,9 +161,9 @@ export default defineConfig({
               paths: ["api/index", "api/authentication", "api/build-and-test"],
             },
             {
-              label: "Manage content with @microfeed/cli and AI agents",
+              label: "Manage content with WebMCP, @microfeed/cli, and AI agents",
               description:
-                "The guided CLI workflow, AI-agent conventions, and complete content-management command reference.",
+                "Use draft-only WebMCP site tools in a signed-in dashboard, or follow the guided CLI workflow and complete content-management command reference.",
               paths: ["automation/cli", "automation/ai-agents", "microfeed-cli"],
             },
             {

@@ -51,6 +51,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import {queueReplacedImageUrl} from "@/client/ImageUploadUtils";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
+import {nativeWebMcpAvailable} from "@/client/webmcp/feature-detection";
+import {WEBMCP_INTERACTION_HEADERS} from "@/shared/WebMcp";
+import type {SaveItemDraftInput} from "@/client/webmcp/schemas";
 
 const SUBMIT_STATUS__START = 1;
 
@@ -75,6 +78,7 @@ interface Props {
 interface ItemSnapshot {
   deleteImageUrls: string[];
   item: Record<string, unknown>;
+  webMcpSignal?: AbortSignal;
 }
 
 export default class EditItemApp extends React.Component<Props, any> {
@@ -82,6 +86,9 @@ export default class EditItemApp extends React.Component<Props, any> {
   private cleanupNavigationGuard?: () => void;
   private mounted = false;
   private publishRequested = false;
+  private webMcpController?: AbortController;
+  private webMcpLoadVersion = 0;
+  private webMcpSaveSignal?: AbortSignal;
 
   constructor(props: Props) {
     super(props);
@@ -120,6 +127,9 @@ export default class EditItemApp extends React.Component<Props, any> {
       getSnapshot: () => ({
         deleteImageUrls: [...this.state.replacedImageUrls],
         item: {id: this.state.itemId, ...this.state.item},
+        ...(this.webMcpSaveSignal
+          ? {webMcpSignal: this.webMcpSaveSignal}
+          : {}),
       }),
       onError: (error) => this.showSaveError(error),
       onStateChange: (autosaveState) => {
@@ -154,10 +164,19 @@ export default class EditItemApp extends React.Component<Props, any> {
         this.onUpdateItemMeta(attrDict);
       }
     }
+    this.reconcileWebMcpTool();
+  }
+
+  componentDidUpdate(_previousProps: Props, previousState: any) {
+    if (previousState.item.status !== this.state.item.status) {
+      this.reconcileWebMcpTool();
+    }
   }
 
   componentWillUnmount() {
     this.mounted = false;
+    this.webMcpLoadVersion += 1;
+    this.webMcpController?.abort();
     this.autosave.dispose();
     this.cleanupNavigationGuard?.();
   }
@@ -221,7 +240,21 @@ export default class EditItemApp extends React.Component<Props, any> {
   }
 
   async saveSnapshot(snapshot: ItemSnapshot) {
-    await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), snapshot);
+    const {webMcpSignal, ...body} = snapshot;
+    if (webMcpSignal) {
+      try {
+        await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), body, {
+          headers: WEBMCP_INTERACTION_HEADERS,
+          signal: webMcpSignal,
+        });
+      } finally {
+        if (this.webMcpSaveSignal === webMcpSignal) {
+          this.webMcpSaveSignal = undefined;
+        }
+      }
+    } else {
+      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), body);
+    }
     if (!this.mounted) return;
 
     const created = this.state.action === 'create';
@@ -262,6 +295,74 @@ export default class EditItemApp extends React.Component<Props, any> {
     } else {
       showToast('Couldn’t save. Your changes are still on this page.', 'error');
     }
+  }
+
+  private reconcileWebMcpTool() {
+    this.webMcpLoadVersion += 1;
+    const loadVersion = this.webMcpLoadVersion;
+    this.webMcpController?.abort();
+    this.webMcpController = undefined;
+    if (
+      !this.mounted || this.state.item.status !== STATUSES.UNPUBLISHED ||
+      !nativeWebMcpAvailable()
+    ) {
+      return;
+    }
+    void import("@/client/webmcp/editor-tools").then(
+      ({registerItemDraftTool}) => {
+        if (!this.mounted || loadVersion !== this.webMcpLoadVersion) return;
+        const controller = new AbortController();
+        this.webMcpController = controller;
+        return registerItemDraftTool(
+          controller.signal,
+          (input, signal) => this.saveWebMcpDraft(input, signal),
+        );
+      },
+    ).catch((error) => {
+      if (!this.webMcpController?.signal.aborted) {
+        this.webMcpController?.abort();
+        console.warn(error);
+      }
+    });
+  }
+
+  private async saveWebMcpDraft(
+    input: SaveItemDraftInput,
+    signal: AbortSignal,
+  ) {
+    if (signal.aborted) throw signal.reason;
+    if (this.state.item.status !== STATUSES.UNPUBLISHED) {
+      throw new Error("WebMCP can save only the visible unpublished Item.");
+    }
+    this.webMcpSaveSignal = signal;
+    await new Promise<void>((resolve) => {
+      this.setState((previousState: any) => ({
+        item: {
+          ...previousState.item,
+          ...(input.title !== undefined ? {title: input.title} : {}),
+          ...(input.content_html !== undefined
+            ? {description: input.content_html}
+            : {}),
+          status: STATUSES.UNPUBLISHED,
+        },
+      }), () => {
+        this.autosave.markChanged({immediate: true});
+        resolve();
+      });
+    });
+    if (!await this.autosave.flush()) {
+      throw new Error("The Item draft could not be saved.");
+    }
+    return {
+      content_html: String(this.state.item.description ?? ""),
+      editor_url: new URL(
+        ADMIN_URLS.editItem(this.state.itemId),
+        window.location.origin,
+      ).toString(),
+      id: this.state.itemId,
+      status: "unpublished",
+      title: String(this.state.item.title ?? ""),
+    };
   }
 
   render() {

@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {
   ExternalLinkIcon,
   SaveIcon,
@@ -7,6 +7,13 @@ import {
 
 import {preventCloseWhenChanged} from "@/client/BrowserUtils";
 import {showToast} from "@/client/ToastUtils";
+import {nativeWebMcpAvailable} from "@/client/webmcp/feature-detection";
+import type {SavePageDraftInput} from "@/client/webmcp/schemas";
+import {
+  mergePageWebMcpDraft,
+  pageWebMcpDraftEligible,
+  type PageEditorDraft,
+} from "@/client/webmcp/page-editor-state";
 import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import AdminRichEditor from "@/components/admin/shared/AdminRichEditor";
 import {Button} from "@/components/ui/button";
@@ -29,11 +36,9 @@ import {
   pageNavigationEnabledForStatus,
   type PageRecord,
 } from "@/shared/Pages";
+import {WEBMCP_INTERACTION_HEADERS} from "@/shared/WebMcp";
 
-type Draft = Pick<PageRecord,
-  "content_html" | "meta_description" | "navigation_label" |
-  "show_in_navigation" | "slug" | "status" | "title"
->;
+type Draft = PageEditorDraft;
 
 const EMPTY_PAGE: Draft = {
   content_html: "",
@@ -183,6 +188,8 @@ export default function PageEditorApp({
   const [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null);
   const [savedPage, setSavedPage] = useState<PageRecord | undefined>(page);
   const changedRef = useRef(false);
+  const busyRef = useRef(false);
+  const draftRef = useRef(draft);
   const isNotFoundPage = Boolean(page?.is_not_found_page);
   useEffect(() => preventCloseWhenChanged(() => changedRef.current), []);
   useEffect(() => {
@@ -192,66 +199,152 @@ export default function PageEditorApp({
     window.sessionStorage.removeItem(PAGE_CREATED_TOAST_KEY);
     showToast("Page created.", "success");
   }, [page]);
-  const markChanged = (value: boolean) => {
+  const markChanged = useCallback((value: boolean) => {
     changedRef.current = value;
     setChanged(value);
-  };
+  }, []);
   const update = (value: Partial<Draft>) => {
-    setDraft((current) => ({...current, ...value}));
+    setDraft((current) => {
+      const next = {...current, ...value};
+      draftRef.current = next;
+      return next;
+    });
     markChanged(true);
   };
 
-  const save = async () => {
-    if (!draft.title.trim()) {
-      showToast("Give the Page a title.", "error");
-      return;
+  const persistDraft = useCallback(async (
+    nextDraft: Draft,
+    options: {signal?: AbortSignal; webMcp?: boolean} = {},
+  ): Promise<PageRecord> => {
+    if (busyRef.current) {
+      throw new Error("A Page save is already in progress.");
     }
-    if (!isNotFoundPage && !draft.slug.trim()) {
-      showToast("Enter a URL path, such as about.", "error");
-      return;
+    if (!nextDraft.title.trim()) {
+      throw new Error("Give the Page a title.");
+    }
+    if (!isNotFoundPage && !nextDraft.slug.trim()) {
+      throw new Error("Enter a URL path, such as about.");
     }
     if (
-      !isNotFoundPage && draft.show_in_navigation &&
-      !draft.navigation_label.trim()
+      !isNotFoundPage && nextDraft.show_in_navigation &&
+      !nextDraft.navigation_label.trim()
     ) {
-      showToast(
+      throw new Error(
         "Enter a navigation label, or turn off Show in navigation.",
-        "error",
       );
-      return;
     }
     if (
       !isNotFoundPage && !themeSupportsPages &&
-      draft.status !== "unpublished"
+      nextDraft.status !== "unpublished"
     ) {
-      showToast("Activate a format v2 theme before publishing this Page.", "error");
-      return;
+      throw new Error(
+        "Activate a format v2 theme before publishing this Page.",
+      );
     }
+    busyRef.current = true;
     setBusy(true);
     try {
       const saved = await responseJson(await fetch(
         page ? ADMIN_URLS.ajaxPage(page.id) : ADMIN_URLS.ajaxPages(),
         {
-          body: JSON.stringify(draft),
-          headers: {"content-type": "application/json"},
+          body: JSON.stringify(nextDraft),
+          headers: {
+            "content-type": "application/json",
+            ...(options.webMcp ? WEBMCP_INTERACTION_HEADERS : {}),
+          },
           method: page ? "PUT" : "POST",
+          signal: options.signal,
         },
       )) as PageRecord;
       markChanged(false);
+      draftRef.current = saved;
+      setDraft(saved);
+      setSavedPage(saved);
+      return saved;
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }, [isNotFoundPage, markChanged, page, themeSupportsPages]);
+
+  const save = async () => {
+    try {
+      const saved = await persistDraft(draft);
       if (!page) {
         window.sessionStorage.setItem(PAGE_CREATED_TOAST_KEY, saved.id);
         window.location.assign(ADMIN_URLS.editPage(saved.id));
       } else {
         showToast("Page saved.", "success");
-        setDraft(saved);
-        setSavedPage(saved);
       }
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Page operation failed.", "error");
-    } finally {
-      setBusy(false);
     }
   };
+
+  useEffect(() => {
+    const eligible = pageWebMcpDraftEligible({
+      draftStatus: draft.status,
+      isNotFoundPage,
+      savedStatus: page ? savedPage?.status : undefined,
+    });
+    if (!eligible || !nativeWebMcpAvailable()) return;
+    const controller = new AbortController();
+    void import("@/client/webmcp/editor-tools").then(
+      ({registerPageDraftTool}) => registerPageDraftTool(
+        controller.signal,
+        async (input: SavePageDraftInput, signal) => {
+          const current = draftRef.current;
+          if (
+            current.status !== "unpublished" ||
+            (page && savedPage?.status !== "unpublished")
+          ) {
+            throw new Error(
+              "WebMCP can save only the visible unpublished Page.",
+            );
+          }
+          const next = mergePageWebMcpDraft(current, input);
+          draftRef.current = next;
+          setDraft(next);
+          markChanged(true);
+          const saved = await persistDraft(next, {signal, webMcp: true});
+          const editorUrl = new URL(
+            ADMIN_URLS.editPage(saved.id),
+            window.location.origin,
+          ).toString();
+          if (!page) {
+            window.sessionStorage.setItem(PAGE_CREATED_TOAST_KEY, saved.id);
+            setTimeout(() => window.location.assign(editorUrl), 0);
+          } else {
+            showToast("Page saved.", "success");
+          }
+          return {
+            content_html: saved.content_html,
+            editor_url: editorUrl,
+            id: saved.id,
+            meta_description: saved.meta_description ?? "",
+            navigation_label: saved.navigation_label,
+            show_in_navigation: saved.show_in_navigation,
+            slug: saved.slug,
+            status: "unpublished",
+            title: saved.title,
+          };
+        },
+      ),
+    ).catch((error) => {
+      if (!controller.signal.aborted) {
+        controller.abort();
+        console.warn(error);
+      }
+    });
+    return () => controller.abort();
+  }, [
+    draft.status,
+    isNotFoundPage,
+    markChanged,
+    page,
+    persistDraft,
+    savedPage?.status,
+  ]);
 
   const remove = async () => {
     if (!page || !window.confirm(`Delete “${page.title}”? Its old paths will remain reserved.`)) return;

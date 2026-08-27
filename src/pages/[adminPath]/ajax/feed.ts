@@ -15,6 +15,10 @@ import {
   webhookItemObject,
 } from "@/server/webhooks/emission";
 import {commitMutationWithWebhookEvents} from "@/server/webhooks/events";
+import {
+  isUnpublishedStatus,
+  isWebMcpInteraction,
+} from "@/shared/WebMcp";
 
 export async function updateAdminFeed(
   request: Request,
@@ -22,16 +26,44 @@ export async function updateAdminFeed(
   schedule: (promise: Promise<unknown>) => void,
   publicCachePurger?: PublicCachePurger,
 ): Promise<Response> {
-  const updatedFeed = await request.json() as FeedContent;
+  const updatedFeed = await request.json().catch(() => null) as
+    | FeedContent
+    | null;
+  if (!updatedFeed || typeof updatedFeed !== "object") {
+    return jsonResponse({error: "Send a valid feed update."}, {status: 400});
+  }
+  const webMcpInteraction = isWebMcpInteraction(request);
+  const updatedItemId = updatedFeed.item?.id;
+  if (
+    webMcpInteraction &&
+    (typeof updatedItemId !== "string" || !updatedItemId.trim())
+  ) {
+    return jsonResponse({error: "Choose an Item draft to save."}, {status: 400});
+  }
+  if (webMcpInteraction && (
+    !updatedFeed.item || updatedFeed.channel || updatedFeed.settings ||
+    !isUnpublishedStatus(updatedFeed.item.status)
+  )) {
+    return jsonResponse({
+      error: "WebMCP can save only an unpublished Item draft.",
+    }, {status: 409});
+  }
   const deleteImageUrls = Array.isArray(updatedFeed.deleteImageUrls)
     ? updatedFeed.deleteImageUrls
     : [];
   const database = new FeedDb(runtimeEnv, request, publicCachePurger);
-  const updatedItemId = updatedFeed.item?.id;
   const [beforeItem, beforeChannelContent] = await Promise.all([
     updatedItemId ? database.getItemById(updatedItemId) : null,
     updatedFeed.channel ? database.getContent(null) : null,
   ]);
+  if (
+    webMcpInteraction && beforeItem &&
+    !isUnpublishedStatus(beforeItem.status)
+  ) {
+    return jsonResponse({
+      error: "WebMCP cannot change an Item that is no longer unpublished.",
+    }, {status: 409});
+  }
   await database.putContent(updatedFeed, async (statements) => {
     const events = [];
     if (updatedItemId && updatedFeed.item) {
@@ -78,7 +110,7 @@ export async function updateAdminFeed(
       request,
       statements,
       events,
-      {origin: "dashboard"},
+      {origin: webMcpInteraction ? "webmcp" : "dashboard"},
     );
   });
   scheduleBestEffortMediaDeletion(

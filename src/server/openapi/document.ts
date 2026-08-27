@@ -17,6 +17,11 @@ export const API_LLMS_TEXT = `# microfeed API\n\n` +
   `Full API guide: ${API_BASE_PATH}llms-full.txt\n\n` +
   `Authenticate with an API key or scoped OAuth access token: ` +
   `Authorization: Bearer YOUR_CREDENTIAL\n\n` +
+  `For interactive work in a signed-in dashboard, compatible browser agents ` +
+  `can separately discover experimental, draft-only WebMCP site tools. ` +
+  `WebMCP requires the protected dashboard to be open; this API reference ` +
+  `does not expose a remote MCP server. Guide: ` +
+  `https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts\n\n` +
   API_OPERATION_SUMMARY + "\n";
 
 export const API_LLMS_FULL_TEXT = `# microfeed API\n\n` +
@@ -36,6 +41,12 @@ export const API_LLMS_FULL_TEXT = `# microfeed API\n\n` +
   `use JSON file or standard-input payloads, never request or print a key or ` +
   `token, pause for user-controlled browser consent, and confirm an exact ` +
   `item ID before deletion.\n\n` +
+  `For interactive work in a signed-in dashboard, compatible browser agents ` +
+  `can separately discover experimental, draft-only WebMCP site tools. ` +
+  `Those tools are available only after the agent opens the protected ` +
+  `dashboard; this API reference advertises the capability but is not a ` +
+  `remote MCP endpoint. See ` +
+  `https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts.\n\n` +
   `The API base path is ${API_BASE_PATH}. Operation paths in the contract ` +
   `are relative ` +
   `to that base path.\n\n` +

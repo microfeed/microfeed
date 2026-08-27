@@ -11,6 +11,7 @@ import AdminDatetimePicker from "@/components/admin/shared/AdminDatetimePicker";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {Button} from "@/components/ui/button";
 import {STATUSES} from "@/shared/Constants";
+import {WEBMCP_INTERACTION_HEADERS} from "@/shared/WebMcp";
 
 vi.mock("@/client/ToastUtils", () => ({showToast: vi.fn()}));
 vi.mock("astro:transitions/client", () => ({navigate: vi.fn()}));
@@ -115,7 +116,12 @@ beforeEach(() => {
       windowListeners.set(name, listener);
     }),
     history: {replaceState: vi.fn(), state: null},
-    location: {hostname: "feed.example.com", search: ""},
+    location: {
+      assign: vi.fn(),
+      hostname: "feed.example.com",
+      origin: "https://feed.example.com",
+      search: "",
+    },
     removeEventListener: vi.fn((name: string) => {
       windowListeners.delete(name);
     }),
@@ -142,6 +148,80 @@ afterEach(() => {
 });
 
 describe("admin editor autosave", () => {
+  it("registers an Item save tool only for drafts and awaits persistence", async () => {
+    const registerTool = vi.fn(async (
+      _tool: any,
+      _options: {signal: AbortSignal},
+    ) => undefined);
+    vi.mocked(document.querySelector).mockImplementation((selector: string) =>
+      selector.includes("microfeed-webmcp-enabled")
+        ? {content: "true"} as HTMLMetaElement
+        : {content: "admin"} as HTMLMetaElement
+    );
+    Reflect.set(document, "modelContext", {registerTool});
+    const app = mount(new EditItemApp(props()));
+    await vi.waitFor(() => expect(registerTool).toHaveBeenCalledOnce());
+    const [tool, registration] = registerTool.mock.calls[0]!;
+    expect(tool.name).toBe("microfeed_save_item_draft");
+
+    app.onUpdateItemMeta({link: "https://example.com/human-change"});
+    const pending = deferred<any>();
+    vi.mocked(Requests.axiosPost).mockReturnValueOnce(pending.promise);
+    let settled = false;
+    const execution = tool.execute(
+      {content_html: "<p>Agent body</p>", title: "Agent title"},
+    ).then((value: unknown) => {
+      settled = true;
+      return value;
+    });
+    await vi.waitFor(() => expect(Requests.axiosPost).toHaveBeenCalledOnce());
+    expect(settled).toBe(false);
+    expect(vi.mocked(Requests.axiosPost)).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        item: expect.objectContaining({
+          description: "<p>Agent body</p>",
+          link: "https://example.com/human-change",
+          status: STATUSES.UNPUBLISHED,
+          title: "Agent title",
+        }),
+      }),
+      expect.objectContaining({
+        headers: WEBMCP_INTERACTION_HEADERS,
+        signal: expect.any(AbortSignal),
+      }),
+    );
+    pending.resolve({});
+    await expect(execution).resolves.toMatchObject({
+      content_html: "<p>Agent body</p>",
+      status: "unpublished",
+      title: "Agent title",
+    });
+
+    const previousState = {
+      ...app.state,
+      item: {...app.state.item, status: STATUSES.UNPUBLISHED},
+    };
+    (app.state as any).item = {
+      ...app.state.item,
+      status: STATUSES.PUBLISHED,
+    };
+    app.componentDidUpdate(app.props, previousState);
+    expect(registration.signal.aborted).toBe(true);
+
+    registerTool.mockClear();
+    mount(new EditItemApp({
+      ...props({
+        id: "published-webmcp",
+        status: STATUSES.PUBLISHED,
+        title: "Published",
+      }),
+      itemId: "published-webmcp",
+    }));
+    await Promise.resolve();
+    expect(registerTool).not.toHaveBeenCalled();
+  });
+
   it("reports autosave state and exposes a retry action after failure", () => {
     const clean = renderToStaticMarkup(
       React.createElement(AdminSaveAction, {

@@ -180,7 +180,12 @@ Choose the publishing workflow that fits the task:
   use external URLs in content-only mode; [customize themes and shared website
   code](https://docs.microfeed.org/dashboard/themes/); and choose [Public,
   Headless, or Offline site access](https://docs.microfeed.org/dashboard/customize/).
-* **For AI agents:** use the official
+* **For browser AI agents:** a dashboard protected by built-in login or
+  Cloudflare Access automatically exposes experimental, draft-only
+  [WebMCP](https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts)
+  tools when the browser provides the native API. Unsupported browsers and
+  public pages do not load the implementation.
+* **For local AI agents:** use the official
   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
   same content through browser-authorized access after you enable the API. The
   agent may start login, but you sign in and approve permissions in the
@@ -236,6 +241,7 @@ same published content.
 | Publish many content types | Share articles, podcasts, videos, images, documents, and curated external links from one feed. |
 | Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
 | Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
+| Experimental WebMCP site tools | Let a compatible browser agent automatically discover read and draft-only editing tools after it opens the signed-in dashboard. WebMCP does not expose a remote MCP server or add runtime work to public pages. |
 | Headless CMS and content automation | Read and update content through the API, receive signed change notifications through webhooks, and give local AI agents a friendlier workflow through `@microfeed/cli`. |
 | Versioned themes | Edit safely in Admin or install community themes from GitHub, preview inactive versions, and activate or roll back explicitly. |
 | Your data on your Cloudflare account | Keep content metadata in D1 and optional media and theme assets in R2 under infrastructure you control. |

@@ -25,6 +25,10 @@ import {
   contentMutationWebhookCommit,
   singleWebhookEventCommit,
 } from "@/server/webhooks/emission";
+import {
+  isUnpublishedStatus,
+  isWebMcpInteraction,
+} from "@/shared/WebMcp";
 
 const pageNavigationOrderSchema = z.object({
   page_ids: z.array(z.string().min(1)).max(100),
@@ -74,11 +78,21 @@ export const createAdminPage: APIRoute = async ({request}) => {
       {status: 400},
     );
   }
+  const webMcpInteraction = isWebMcpInteraction(request);
+  if (
+    webMcpInteraction && !isUnpublishedStatus(parsed.data.status)
+  ) {
+    return jsonResponse({
+      error: "WebMCP can create only an unpublished Page draft.",
+    }, {status: 409});
+  }
   try {
     const page = await createPage(database(request), request, parsed.data, {
       adminPath: env.MICROFEED_ADMIN_PATH,
       commit: contentMutationWebhookCommit(env, request, {
-        context: {origin: "dashboard"},
+        context: {
+          origin: webMcpInteraction ? "webmcp" : "dashboard",
+        },
         id: (result) => result.id,
         kind: "page",
         mutation: "created",
@@ -142,12 +156,28 @@ export const updateAdminPage: APIRoute = async ({params, request}) => {
         : "Choose a Page to update.",
     }, {status: 400});
   }
+  const webMcpInteraction = isWebMcpInteraction(request);
+  if (
+    webMcpInteraction && !isUnpublishedStatus(parsed.data.status)
+  ) {
+    return jsonResponse({
+      error: "WebMCP can save only an unpublished Page draft.",
+    }, {status: 409});
+  }
   try {
     const before = await getPageById(
       env.FEED_DB,
       request,
       params.pageId,
     );
+    if (
+      webMcpInteraction && before &&
+      !isUnpublishedStatus(before.status)
+    ) {
+      return jsonResponse({
+        error: "WebMCP cannot change a Page that is no longer unpublished.",
+      }, {status: 409});
+    }
     const page = await updatePage(
       database(request),
       request,
@@ -157,7 +187,9 @@ export const updateAdminPage: APIRoute = async ({params, request}) => {
         adminPath: env.MICROFEED_ADMIN_PATH,
         commit: contentMutationWebhookCommit(env, request, {
           before: before as unknown as Record<string, unknown> | null,
-          context: {origin: "dashboard"},
+          context: {
+            origin: webMcpInteraction ? "webmcp" : "dashboard",
+          },
           id: params.pageId,
           kind: "page",
           mutation: "updated",

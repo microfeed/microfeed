@@ -509,7 +509,7 @@ export const apiWebhookTestSubjectSchema = apiWebhookSubjectSchema.extend({
 export const apiWebhookContextSchema = z.object({
   causation_id: apiAutomationContextIdSchema.nullable(),
   correlation_id: apiAutomationContextIdSchema,
-  origin: z.enum(["dashboard", "api", "system"]),
+  origin: z.enum(["dashboard", "api", "system", "webmcp"]),
   request_id: z.string(),
 }).meta({id: "WebhookContext"});
 

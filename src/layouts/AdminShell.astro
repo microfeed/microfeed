@@ -194,6 +194,10 @@ const webhookSidebar: AdminWebhookSidebarData | undefined = webhookNavigation
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="microfeed-admin-path" content={adminPath} />
+    <meta
+      name="microfeed-webmcp-enabled"
+      content={protectedDashboard ? "true" : "false"}
+    />
     <title>{documentTitle ?? `${pageTitle} | microfeed.org`}</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png" />
@@ -265,6 +269,23 @@ const webhookSidebar: AdminWebhookSidebarData | undefined = webhookNavigation
         browserAdminPath,
         isAdminPathname,
       } from "@/shared/AdminPath";
+      import {nativeWebMcpAvailable} from
+        "@/client/webmcp/feature-detection";
+
+      type WebMcpAdminModule = typeof import("@/client/webmcp/admin-tools");
+
+      let webMcpAdminModule: Promise<WebMcpAdminModule> | undefined;
+
+      const reconcileWebMcp = async () => {
+        if (!nativeWebMcpAvailable()) {
+          if (webMcpAdminModule) {
+            (await webMcpAdminModule).clearAdminWebMcpTools();
+          }
+          return;
+        }
+        webMcpAdminModule ??= import("@/client/webmcp/admin-tools");
+        await (await webMcpAdminModule).reconcileAdminWebMcpTools();
+      };
 
       const staysInProtectedAdmin = (destination: URL) => {
         const configuredAdminPath = browserAdminPath();
@@ -289,6 +310,12 @@ const webhookSidebar: AdminWebhookSidebarData | undefined = webhookNavigation
             event.preventDefault();
           }
         };
+      });
+      document.addEventListener("astro:page-load", () => {
+        void reconcileWebMcp().catch((error) => console.warn(
+          "microfeed could not register WebMCP tools.",
+          error,
+        ));
       });
     </script>
   </body>
