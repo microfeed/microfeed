@@ -241,6 +241,7 @@ same published content.
 | Publish many content types | Share articles, podcasts, videos, images, documents, and curated external links from one feed. |
 | Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
 | Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
+| Experimental WebMCP site tools | Let a compatible browser agent automatically discover read and draft-only editing tools after it opens the signed-in dashboard. WebMCP does not expose a remote MCP server or add runtime work to public pages. |
 | Headless CMS and content automation | Read and update content through the API, receive signed change notifications through webhooks, and give local AI agents a friendlier workflow through `@microfeed/cli`. |
 | Versioned themes | Edit safely in Admin or install community themes from GitHub, preview inactive versions, and activate or roll back explicitly. |
 | Your data on your Cloudflare account | Keep content metadata in D1 and optional media and theme assets in R2 under infrastructure you control. |
