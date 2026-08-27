@@ -94,6 +94,11 @@ interface ResolvedThemeSource {
   source: ThemeSourceMetadata;
 }
 
+interface GithubTreeEntry {
+  mode: string;
+  type: string;
+}
+
 interface Target {
   client: CloudflareClient;
   config: MicrofeedConfig;
@@ -542,20 +547,105 @@ export function parseGithubSource(
   return {owner, path: directory, ref, repo};
 }
 
-async function githubThemeSource(
+function parseGitTree(output: string): Map<string, GithubTreeEntry> {
+  const tree = new Map<string, GithubTreeEntry>();
+  for (const entry of output.split("\0")) {
+    if (!entry) continue;
+    const separator = entry.indexOf("\t");
+    const metadata = separator === -1 ? "" : entry.slice(0, separator);
+    const repositoryPath = separator === -1 ? "" : entry.slice(separator + 1);
+    const match = /^([0-7]{6}) ([a-z]+) [0-9a-f]{40}$/u.exec(metadata);
+    if (!match || !repositoryPath) {
+      throw new Error("Git returned an invalid repository tree.");
+    }
+    tree.set(repositoryPath, {mode: match[1]!, type: match[2]!});
+  }
+  return tree;
+}
+
+export async function resolveGithubGitTree(
+  github: ReturnType<typeof parseGithubSource>,
+  runner: CommandRunner = runCommand,
+): Promise<{commit: string; tree: Map<string, GithubTreeEntry>}> {
+  const temporary = await mkdtemp(path.join(tmpdir(), "microfeed-theme-git-"));
+  const gitEnvironment = {
+    GCM_INTERACTIVE: "Never",
+    GIT_ASKPASS: "",
+    GIT_TERMINAL_PROMPT: "0",
+    SSH_ASKPASS: "",
+  };
+  const remote = `https://github.com/${encodeURIComponent(github.owner)}/${encodeURIComponent(github.repo)}.git`;
+  try {
+    if (github.ref !== "HEAD") {
+      const refCheck = await runner(
+        "git",
+        ["check-ref-format", "--branch", github.ref],
+        {allowFailure: true, cwd: temporary, env: gitEnvironment},
+      );
+      if (refCheck.exitCode !== 0) {
+        throw new Error(
+          `Invalid GitHub theme ref: ${github.ref}. Pass a branch, tag, or commit SHA.`,
+        );
+      }
+    }
+    await runner("git", ["init", "--bare", "."], {
+      cwd: temporary,
+      env: gitEnvironment,
+    });
+    await runner("git", [
+      "-c",
+      "credential.helper=",
+      "-c",
+      "core.askPass=",
+      "-c",
+      "http.extraHeader=",
+      "fetch",
+      "--no-tags",
+      "--depth=1",
+      "--filter=blob:none",
+      "--",
+      remote,
+      github.ref,
+    ], {
+      cwd: temporary,
+      env: gitEnvironment,
+    });
+    const commitResult = await runner(
+      "git",
+      ["rev-parse", "--verify", "FETCH_HEAD^{commit}"],
+      {cwd: temporary, env: gitEnvironment},
+    );
+    const commit = commitResult.stdout.trim().toLowerCase();
+    if (!/^[a-f0-9]{40}$/u.test(commit)) {
+      throw new Error("Git returned an invalid commit for the GitHub theme.");
+    }
+    const treeResult = await runner(
+      "git",
+      ["ls-tree", "-r", "-z", commit],
+      {cwd: temporary, env: gitEnvironment},
+    );
+    return {commit, tree: parseGitTree(treeResult.stdout)};
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new Error(
+        "Git is required to install themes from GitHub. Install Git and retry.",
+        {cause: error},
+      );
+    }
+    throw error;
+  } finally {
+    await rm(temporary, {force: true, recursive: true});
+  }
+}
+
+export async function githubThemeSource(
   sourceUrl: string,
   requestedRef?: string,
   requestedPath?: string,
+  runner: CommandRunner = runCommand,
 ): Promise<ResolvedThemeSource> {
   const github = parseGithubSource(sourceUrl, requestedRef, requestedPath);
-  const commitResponse = await allowedGithubFetch(
-    `https://api.github.com/repos/${encodeURIComponent(github.owner)}/${encodeURIComponent(github.repo)}/commits/${encodeURIComponent(github.ref)}`,
-  );
-  const commitData = await commitResponse.json() as {sha?: unknown};
-  if (typeof commitData.sha !== "string" || !/^[a-f0-9]{40}$/u.test(commitData.sha)) {
-    throw new Error("GitHub returned an invalid commit.");
-  }
-  const commit = commitData.sha;
+  const {commit, tree} = await resolveGithubGitTree(github, runner);
   const rawUrl = (relativePath: string) =>
     `https://raw.githubusercontent.com/${encodeURIComponent(github.owner)}/${encodeURIComponent(github.repo)}/${commit}/` +
     [github.path, relativePath].filter(Boolean).map((part) => part.split("/").map(encodeURIComponent).join("/")).join("/");
@@ -568,19 +658,6 @@ async function githubThemeSource(
     "microfeed-theme.json",
   );
   const manifest = themeManifestV1Schema.parse(JSON.parse(manifestText));
-  const treeResponse = await allowedGithubFetch(
-    `https://api.github.com/repos/${encodeURIComponent(github.owner)}/${encodeURIComponent(github.repo)}/git/trees/${commit}?recursive=1`,
-  );
-  const treeData = await treeResponse.json() as {
-    tree?: Array<{mode?: unknown; path?: unknown; type?: unknown}>;
-    truncated?: unknown;
-  };
-  if (treeData.truncated === true || !Array.isArray(treeData.tree)) {
-    throw new Error("GitHub could not return a complete repository tree for symlink validation.");
-  }
-  const tree = new Map(treeData.tree.flatMap((entry) =>
-    typeof entry.path === "string" ? [[entry.path, entry]] : []
-  ));
   for (const relativePath of [
     "microfeed-theme.json",
     ...Object.values(manifest.files),
@@ -643,6 +720,7 @@ async function githubThemeSource(
 async function resolveThemeSource(
   source: string,
   flags: Flags,
+  runner: CommandRunner = runCommand,
 ): Promise<ResolvedThemeSource> {
   const bundled = bundledThemeCatalogEntryBySource(source);
   if (bundled) {
@@ -663,7 +741,12 @@ async function resolveThemeSource(
     throw new Error(`Unknown Built-in theme source: ${source}`);
   }
   if (/^https?:\/\//iu.test(source)) {
-    return githubThemeSource(source, flagString(flags, "ref"), flagString(flags, "path"));
+    return githubThemeSource(
+      source,
+      flagString(flags, "ref"),
+      flagString(flags, "path"),
+      runner,
+    );
   }
   const directory = path.resolve(source);
   return {
@@ -1417,10 +1500,7 @@ async function managementAction(
     : target.config.deploymentUrl;
   if (!baseUrl) throw new Error("The selected instance has no deployment URL.");
   try {
-    const response = await fetch(new URL("/.well-known/microfeed/theme-management/", baseUrl), {
-      headers: {authorization: `Bearer ${token}`},
-      method: "POST",
-    });
+    const response = await fetch(themeManagementRequest(baseUrl, token));
     const body = await response.json().catch(() => ({})) as Record<string, unknown>;
     if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : `Theme management endpoint failed with HTTP ${response.status}.`);
     return body;
@@ -1431,6 +1511,19 @@ async function managementAction(
       [tokenHash],
     ).catch(() => undefined);
   }
+}
+
+export function themeManagementRequest(baseUrl: string, token: string): Request {
+  return new Request(
+    new URL("/.well-known/microfeed/theme-management/", baseUrl),
+    {
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+      },
+      method: "POST",
+    },
+  );
 }
 
 async function deleteLocalTheme(
@@ -1760,7 +1853,10 @@ export async function themeCommand(
         "theme install requires bundled:<key>, default, a GitHub URL, or a directory.",
       );
     }
-    const theme = await installResolved(target, await resolveThemeSource(source, flags));
+    const theme = await installResolved(
+      target,
+      await resolveThemeSource(source, flags, runner),
+    );
     writeOutput(flags, {theme}, `Installed ${theme.packageId}@${theme.version} as inactive (${theme.id}).`);
     return;
   }
@@ -1798,7 +1894,7 @@ export async function themeCommand(
     const updateFlags = {...flags};
     if (!updateFlags.ref && theme!.sourceRef) updateFlags.ref = theme!.sourceRef;
     if (!updateFlags.path && theme!.sourcePath && theme!.sourceUrl) updateFlags.path = theme!.sourcePath;
-    const resolved = await resolveThemeSource(source, updateFlags);
+    const resolved = await resolveThemeSource(source, updateFlags, runner);
     if (resolved.source.commit && resolved.source.commit === theme!.sourceCommit) {
       writeOutput(flags, {changed: false, theme}, `${theme!.packageId}@${theme!.version} is already at commit ${theme!.sourceCommit}.`);
       return;

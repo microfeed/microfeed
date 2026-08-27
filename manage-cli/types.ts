@@ -58,7 +58,7 @@ export interface CommandResult {
 export interface RunOptions {
   allowFailure?: boolean;
   cwd?: string;
-  env?: NodeJS.ProcessEnv;
+  env?: Partial<NodeJS.ProcessEnv>;
   input?: string;
   interactive?: boolean;
 }
