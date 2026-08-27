@@ -49,16 +49,18 @@ its installed microfeed version and event catalog exactly.
 
 ### Local development
 
-Plain `npx @microfeed/cli manage dev` automatically starts Wrangler's isolated Queue simulation,
-consumer, maintenance trigger, and local signing-secret encryption. It creates
-no Cloudflare resources, requests no Cloudflare permissions, and incurs no
-Cloudflare Queue or Worker charges. `npx @microfeed/cli manage dev --enable-webhooks` is accepted as
-an explicit alias, but the flag is not required and does not change preview or
-production. To omit Queue and Cron simulation for one run, use:
+From a Git-cloned microfeed source repository with dependencies installed,
+plain `yarn manage dev` automatically starts Wrangler's isolated Queue
+simulation, consumer, maintenance trigger, and local signing-secret encryption.
+It creates no Cloudflare resources, requests no Cloudflare permissions, and
+incurs no Cloudflare Queue or Worker charges. The explicit
+`yarn manage dev --enable-webhooks` form is also accepted, but the flag is not
+required and does not change preview or production. To omit Queue and Cron
+simulation for one run, use:
 
 ```console
 # Replace <instance-name> with a saved instance name.
-npx @microfeed/cli manage dev --disable-webhooks --instance <instance-name>
+yarn manage dev --disable-webhooks --instance <instance-name>
 ```
 
 This local-only flag does not change the next local run or either deployed
@@ -91,10 +93,9 @@ saved instance name. Expand only the environment you intend to change.
 <summary>Production coding-agent prompt</summary>
 
 ```text
-Run `npx @microfeed/cli manage` and follow every instruction it prints to
-enable production webhooks for my existing microfeed instance
-"<instance-name>". Confirm the exact instance and production environment, then
-run:
+Enable production webhooks for my existing microfeed instance
+"<instance-name>". Start by running `npx @microfeed/cli manage`, then follow its
+instructions. Confirm the exact instance and production environment, then run:
 
 npx @microfeed/cli manage deploy --enable-webhooks --instance <instance-name>
 
@@ -111,8 +112,8 @@ dashboard password.
 <summary>Preview coding-agent prompt</summary>
 
 ```text
-Run `npx @microfeed/cli manage` and follow every instruction it prints to
-enable preview webhooks for my existing microfeed instance "<instance-name>".
+Enable preview webhooks for my existing microfeed instance "<instance-name>".
+Start by running `npx @microfeed/cli manage`, then follow its instructions.
 Confirm the exact instance and preview environment, then run:
 
 npx @microfeed/cli manage deploy --preview --enable-webhooks --instance <instance-name>
@@ -188,7 +189,8 @@ deletion.
 
 ## Create and test an endpoint
 
-For the shortest local path:
+For the shortest local path, work from a Git-cloned microfeed source repository
+after `yarn install`:
 
 1. Scaffold a JavaScript or Python receiver under the ignored `.microfeed/`
    workspace:
@@ -221,7 +223,7 @@ before deploying real actions.
 To inspect signed deliveries without creating a receiver project, follow [Test
 webhooks without code](./testing/). It covers the loopback-only `webhook listen`
 workflow for a local site and the temporary `--tunnel` workflow for a deployed
-site. Use `yarn microfeed webhook sample <event> --json` to read an unsigned
+site. Use `npx @microfeed/cli webhook sample <event> --json` to read an unsigned
 exact example from the instance's OpenAPI contract.
 
 ## Authentication and limits

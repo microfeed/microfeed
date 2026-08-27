@@ -82,10 +82,12 @@ A publishing mode in which software consumes RSS, JSON Feed, or the API while a
 different website or app presents the content. microfeed can hide its generated
 web pages without deleting the content.
 
-**Git clone**
-A local copy of this repository containing the source code and project-owned
-`yarn manage` tool. It is optional for people using the clone-free
-`npx @microfeed/cli manage` launcher.
+**Git-cloned microfeed source repository**
+An optional local copy of microfeed's source code created with `git clone
+https://github.com/microfeed/microfeed.git`. After dependencies are installed,
+it provides `yarn manage` and `yarn microfeed` as shortcuts to the source
+repository's local CLI versions. The recommended published commands do not
+require this source repository.
 
 **Instance**
 The locally saved connection to one production, preview, or local microfeed
@@ -161,8 +163,9 @@ producing production side effects.
 
 **Wrangler**
 Cloudflare’s command-line tool. microfeed invokes it behind
-`npx @microfeed/cli manage`, or `yarn manage` inside a clone; people and agents
-should not replace management workflows with improvised Wrangler commands.
+`npx @microfeed/cli manage`, or behind `yarn manage` inside a Git-cloned
+microfeed source repository; people and agents should not replace management
+workflows with improvised Wrangler commands.
 
 **workers.dev address**
 The free Cloudflare-provided web address for a Worker. A microfeed site can use

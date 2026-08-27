@@ -155,7 +155,7 @@ than copying fields from this guide.
 If n8n cannot securely load the maintained verifier and endpoint secret, do
 not fall back to trusting the webhook URL. Put a receiver in front:
 
-1. Start from `yarn microfeed webhook scaffold` and its official
+1. Start from `npx @microfeed/cli webhook scaffold` and its official
    `standardwebhooks` verification.
 2. Replace in-memory duplicate tracking with durable acceptance and a queue.
 3. Return `202` to microfeed only after the verified event is saved.

@@ -28,7 +28,7 @@ not overwritten. Store the archive like private site data; it can contain
 unpublished content and media.
 
 App-access connections, temporary CLI credentials, and dashboard sessions are
-intentionally not portable. Run `yarn microfeed login <restored-site-url>`
+intentionally not portable. Run `npx @microfeed/cli login <restored-site-url>`
 before managing restored content.
 
 ## Test a production snapshot locally
@@ -49,7 +49,7 @@ target must be a newly initialized, unchanged deployment. First run the exact
 restore with `--dry-run`, inspect the source and target, then use
 `--confirm <target-instance-name>` only when every identifier matches.
 
-See [the canonical snapshot reference](/manage-cli/#yarn-manage-snapshot) for
+See [the canonical snapshot reference](/manage-cli/#npx-microfeedcli-manage-snapshot) for
 eligibility checks, resumable maintenance state, and all options.
 
 ## Migrate an older Pages installation
@@ -70,4 +70,4 @@ Verify the new Worker at its temporary address before moving the custom domain.
 You can move the domain back to Pages if you need to reverse the traffic
 switch; the shared data remains in D1 and R2.
 
-See [the canonical migrate-pages reference](/manage-cli/#yarn-manage-migrate-pages) for all options.
+See [the canonical migrate-pages reference](/manage-cli/#npx-microfeedcli-manage-migrate-pages) for all options.

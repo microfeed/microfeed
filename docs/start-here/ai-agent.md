@@ -5,8 +5,9 @@ description: The recommended three-step route to a new microfeed site.
 
 Use a local coding agent that can run terminal commands and open browser pages.
 The published launcher prepares an exact microfeed release in a private cache,
-then directs the agent to the same guarded `yarn manage` engine available to
-people. You do not need to clone or open the source repository.
+then directs the agent to the same guarded management engine available in the
+microfeed source repository. You do not need to Git-clone or open that source
+repository yourself.
 
 ## 1. Open a local coding agent
 
@@ -23,8 +24,8 @@ recovery step when one is unavailable.
 Paste this prompt:
 
 ```text
-Run `npx @microfeed/cli manage` and follow every instruction it prints until
-`status` verifies the deployment.
+Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
+then follow its instructions until deployment is verified.
 ```
 
 The first run downloads the exact release matching `@microfeed/cli`, creates a

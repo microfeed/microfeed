@@ -14,16 +14,18 @@ does not create or edit that endpoint for you.
 
 ## Choose a listener mode
 
-- **Local development:** Run `npx @microfeed/cli webhook listen` and register
+- **Local development:** From the Git-cloned microfeed source repository, run
+  `yarn microfeed webhook listen` and register
   `http://127.0.0.1:8978/webhook`. The endpoint is reachable only from this
   computer.
 - **Deployed preview or production:** Run `npx @microfeed/cli webhook listen
   --tunnel` and register the random HTTPS URL printed by the CLI. The endpoint
   is public only while the command runs.
 
-Run either command from any folder. Event
-Explorer sends are real signed deliveries that use the normal Queue, retry
-policy, delivery history, and daily budget. Previewing an event does not send a
+Run the local-development command from the microfeed source repository after
+`yarn install`. The deployed-site command works from any folder. Event Explorer
+sends are real signed deliveries that use the normal Queue, retry policy,
+delivery history, and daily budget. Previewing an event does not send a
 delivery.
 
 ## Test a local development site
@@ -31,10 +33,10 @@ delivery.
 Plain `webhook listen` starts a loopback-only receiver. It does not expose your
 computer to the internet or require `cloudflared`.
 
-1. From any folder, start the listener:
+1. From the Git-cloned microfeed source repository, start the listener:
 
    ```console
-   npx @microfeed/cli webhook listen
+   yarn microfeed webhook listen
    ```
 
 2. Open the local site's **Admin → Webhooks → Endpoints** page, choose **Add
@@ -97,7 +99,7 @@ for the production architecture.
 
 ## Use listener options
 
-The [`webhook listen` CLI reference](/microfeed-cli/#yarn-microfeed-webhook-listen)
+The [`webhook listen` CLI reference](/microfeed-cli/#npx-microfeedcli-webhook-listen)
 documents every option, including `--secret-file`, `--forward-to`, `--json`,
 `--install-cloudflared`, and `--cloudflared-path`. Use those options when you
 need non-interactive secret input, machine-readable output, forwarding to a

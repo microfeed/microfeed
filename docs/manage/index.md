@@ -3,11 +3,12 @@ title: Manage your site
 description: Update, inspect, protect, back up, migrate, and safely remove a microfeed instance.
 ---
 
-Run management commands through `npx @microfeed/cli manage`, or from a local
-microfeed repository clone with `yarn manage`. The launcher keeps its saved
-instance mapping in the platform microfeed configuration directory; a clone
-uses its ignored `.microfeed/` directory. Cloudflare resources and content
-remain in your Cloudflare account.
+Run management commands through `npx @microfeed/cli manage` from any folder.
+If you have a Git-cloned microfeed source repository with dependencies
+installed, `yarn manage` is a shortcut to its local version. The published
+launcher keeps saved instance mappings in the platform microfeed configuration
+directory; the source repository uses its ignored `.microfeed/` directory.
+Cloudflare resources and content remain in your Cloudflare account.
 
 An **instance name** is only the short local label used to select a saved site.
 If the Cloudflare terms below are unfamiliar, start with
@@ -43,6 +44,5 @@ use named API keys and do not reuse the dashboard password or Cloudflare login.
 - Create a snapshot before a high-risk content migration.
 
 The [management CLI reference](/manage-cli/) is authoritative if this
-task-oriented guide and an option listing ever appear to differ. Its
-`yarn manage` examples document the same engine for people already inside a
-clone; the clone-free prefix is `npx @microfeed/cli manage`.
+task-oriented guide and an option listing ever appear to differ. Its examples
+use the recommended `npx @microfeed/cli manage` prefix.

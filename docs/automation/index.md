@@ -144,7 +144,7 @@ both REST operations and webhook envelopes. Enable public API docs, then use
 Every webhook event has an exact named example in that contract. Open **Admin
 → Webhooks → Event explorer** to compare Payload, Schema, and Headers, preview
 generated or current content, and copy the raw JSON. From a terminal, read the
-same per-instance example with `yarn microfeed webhook sample <event> --json`.
+same per-instance example with `npx @microfeed/cli webhook sample <event> --json`.
 
 ## Automation examples
 
@@ -168,7 +168,7 @@ async function dispatch(event: MicrofeedEvent) {
 }
 ```
 
-Use `yarn microfeed webhook sample <event> --json` or Admin Event Explorer to
+Use `npx @microfeed/cli webhook sample <event> --json` or Admin Event Explorer to
 inspect the exact input while building each example. Event Explorer sends count
 toward the daily delivery budget; previews and local terminal prints do not.
 

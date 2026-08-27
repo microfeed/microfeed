@@ -7,9 +7,10 @@ Use this checklist after deployment completes.
 
 ## Confirm the site is healthy
 
-Run `npx @microfeed/cli manage status`, or `yarn manage status` from the same
-repository clone. Confirm the displayed hosted application, database,
-media-storage state, and dashboard protection match what you expected.
+Run `npx @microfeed/cli manage status`. Confirm the displayed hosted
+application, database, media-storage state, and dashboard protection match what
+you expected. If you deployed from a Git-cloned microfeed source repository,
+`yarn manage status` runs its local version of the same check.
 
 Open these public addresses:
 
@@ -35,19 +36,21 @@ and JSON feeds. You can publish it yourself in the Admin dashboard. To publish
 with a coding agent, first [enable API access and connect the
 CLI](/automation/cli/), then ask the agent to use the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside a
-clone, the agent should run `yarn microfeed`; elsewhere it can use the
-published package. You remain responsible for browser authorization and
-approval of destructive actions. Delete or unpublish the test when finished.
+Git-cloned microfeed source repository with installed dependencies, the agent
+may use `yarn microfeed` as a shortcut; otherwise it should run the published
+`npx @microfeed/cli` command. You remain responsible for browser authorization
+and approval of destructive actions. Delete or unpublish the test when finished.
 
 Next: [compare the dashboard and agent publishing workflows](/dashboard/publish/).
 
 ## Save the local connection
 
-The clone-free launcher stores instance connections in the platform microfeed
-configuration directory, separately from its replaceable cache. A repository
-clone instead uses its ignored `.microfeed/` directory. Keep either workspace
-on a trusted computer; the read-only `connect` workflow can reconnect to an
-existing compatible microfeed Worker when local state is unavailable.
+The published launcher stores instance connections in the platform microfeed
+configuration directory, separately from its replaceable source cache. A
+Git-cloned microfeed source repository instead uses its ignored `.microfeed/`
+directory. Keep either workspace on a trusted computer; the read-only
+`connect` workflow can reconnect to an existing compatible microfeed Worker
+when local state is unavailable.
 
 ## Optional next steps
 

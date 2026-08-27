@@ -73,16 +73,17 @@ Give the agent a content goal and the root URL of your microfeed site. Do not
 give it an API key or CLI credential. For example:
 
 ```text
-Use @microfeed/cli to create a published item on https://feed.example.com.
-Use --json for deterministic output, and pause for me if API access must be
-enabled, browser authorization is required, or a destructive action needs
-confirmation.
+Use `npx @microfeed/cli` to create a published item on
+https://feed.example.com. Use `--json` for deterministic output, and pause for
+me if API access must be enabled, browser authorization is required, or a
+destructive action needs confirmation.
 ```
 
-Inside a microfeed clone, the agent should prefer `yarn microfeed`. Elsewhere,
-it can use a project-local installation or `yarn dlx @microfeed/cli`. You sign
-in and approve permissions in the browser; the CLI stores and refreshes the
-credential without printing it. Follow the [guided CLI
+The recommended `npx @microfeed/cli` command works from any folder. Inside a
+Git-cloned microfeed source repository whose dependencies are installed,
+`yarn microfeed` is a shortcut to the local CLI version. You sign in and
+approve permissions in the browser; the CLI stores and refreshes the credential
+without printing it. Follow the [guided CLI
 workflow](/automation/cli/), then see the [agent workflow](/automation/ai-agents/)
 and complete [`@microfeed/cli` reference](/microfeed-cli/) for media vocabulary,
 deterministic input, and deletion safeguards.
