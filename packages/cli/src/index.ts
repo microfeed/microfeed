@@ -12,6 +12,7 @@ import {
 } from "./commands.js";
 import {CliError} from "./errors.js";
 import {renderCliHelp} from "./help.js";
+import {runManageLauncher} from "./manage.js";
 import {webhookCommand} from "./webhooks.js";
 
 export const HELP = renderCliHelp();
@@ -31,6 +32,19 @@ function requestedHelp(args: string[]): readonly string[] | undefined {
 }
 
 export async function run(argv: string[]): Promise<void> {
+  if (argv[0] === "manage") {
+    const manageArguments = argv.slice(1);
+    if (
+      manageArguments.length === 1 &&
+      (manageArguments[0] === "--help" || manageArguments[0] === "-h")
+    ) {
+      process.stdout.write(renderCliHelp(["manage"]));
+      return;
+    }
+    const exitCode = await runManageLauncher(manageArguments);
+    if (exitCode !== 0) process.exitCode = exitCode;
+    return;
+  }
   const {args, options} = globalOptions(argv);
   const [command, ...rest] = args;
   if (!command) {

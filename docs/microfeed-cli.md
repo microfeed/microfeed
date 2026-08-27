@@ -16,6 +16,7 @@ the command you need.
 ## Contents
 
 - [Run the CLI](#run-the-cli)
+- [Deploy or administer a site](#deploy-or-administer-a-site)
 - [Agent skill](#agent-skill)
 - [Authentication and safety](#authentication-and-safety)
 - [Command summary](#command-summary)
@@ -56,6 +57,35 @@ matches where you are working.
 
 The examples below use `yarn microfeed`. Replace that prefix with
 `yarn dlx @microfeed/cli` or `microfeed` when using one of the other modes.
+
+## Deploy or administer a site
+
+Ask a local coding agent to run the clone-free launcher when you do not have a
+microfeed repository open:
+
+```console
+npx @microfeed/cli manage
+```
+
+The launcher also requires Git and Corepack. It downloads the exact tagged
+microfeed release matching the CLI into a persistent private cache, verifies
+the checkout, installs its locked dependencies, and prints the exact
+deployment skill and management-reference paths for the agent. It does not
+write source files into the current project. The initial workspace may use
+about 1.3 GB and take several minutes to prepare; later commands reuse it.
+
+Pass any repository management command and options after `manage`; arguments
+such as `--instance` and `--json` are forwarded unchanged:
+
+```console
+npx @microfeed/cli manage accounts --json
+npx @microfeed/cli manage deploy --instance <instance-name>
+npx @microfeed/cli manage status --instance <instance-name>
+```
+
+Saved deployment state is stored separately from the replaceable source cache.
+The [`yarn manage` reference](/manage-cli/) documents every forwarded command,
+side effect, confirmation, and recovery path.
 
 To install the command globally and confirm it is available:
 
@@ -132,6 +162,7 @@ For every authenticated REST request, the CLI:
 
 | Command | Purpose | Local or remote change |
 | --- | --- | --- |
+| `manage [command]` | Prepare a clone-free deployment workspace, print the coding-agent handoff, or forward a repository management command. | The bare command updates only the private cache. Forwarded commands retain the effects and safeguards documented in the [`yarn manage` reference](/manage-cli/). |
 | `login <site-url>` | Authorize the official public CLI client in a browser and save an instance for this computer connection. | Creates or replaces a local encrypted saved instance after browser consent. |
 | `logout` | Revoke this computer's selected credential family and remove its saved instance locally. | Leaves the server-side connection listed as Inactive until the owner revokes it. |
 | `instances list` | List saved instances and the current selection. | Read-only. |
@@ -1044,7 +1075,8 @@ When refresh fails or no refresh token exists, log in again.
 | `MICROFEED_URL` | Set the target site URL for API-key operations or `webhook sample`. HTTPS is required except for local loopback site URLs. |
 | `MICROFEED_INSTANCE` | Select a saved instance when `--instance` is omitted. |
 | `MICROFEED_WEBHOOK_SECRET` | Supply the signing secret to `webhook listen` without a prompt. Prefer a development secret manager; never commit it. |
-| `MICROFEED_CONFIG_DIR` | Override the instance-store directory. Intended for isolated environments and tests; it does not weaken encryption or replace the OS keychain. |
+| `MICROFEED_CACHE_DIR` | Override the base cache directory. The deployment launcher keeps its replaceable source and dependencies in a `manage/` child directory. |
+| `MICROFEED_CONFIG_DIR` | Override the base configuration directory. Content instances live directly in this directory; deployment state lives in its separate `manage/` child directory. Intended for isolated environments and tests; it does not weaken encryption or replace the OS keychain. |
 
 Never place a credential directly in a command, checked-in file, log,
 generated example, or agent conversation.
@@ -1052,6 +1084,7 @@ generated example, or agent conversation.
 ## Built-in help
 
 ```console
+npx @microfeed/cli manage --help
 yarn microfeed --help
 yarn microfeed help
 yarn microfeed login --help

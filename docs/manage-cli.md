@@ -40,8 +40,46 @@ Run `yarn manage help <command>` for the corresponding terminal reference.
 
 ## Before running commands
 
-Run `yarn manage` from a local clone of microfeed. The command is part of this
-repository and is not installed globally.
+The management engine remains part of the microfeed repository. Choose the
+invocation that matches how you are working.
+
+For a local coding agent without a clone, start with:
+
+```console
+npx @microfeed/cli manage
+```
+
+The launcher downloads the exact tagged release matching the installed CLI
+into a private operating-system cache, verifies that source before every
+forwarded command, installs its locked dependencies with a cache-local Yarn
+shim, and prints the deployment skill and reference paths for the agent. It
+stores saved deployment state separately under the microfeed configuration
+directory. The first setup may use about 1.3 GB and take several minutes;
+later commands reuse it.
+
+Coding agents do not generally discover skills inside npm or cache directories
+automatically. The launcher therefore prints both cached file paths explicitly
+and tells the agent to read them completely. See the official
+[Codex skill discovery behavior](https://learn.chatgpt.com/docs/build-skills).
+
+The replaceable workspace lives under `~/Library/Caches/microfeed/manage` on
+macOS, `${XDG_CACHE_HOME:-~/.cache}/microfeed/manage` on Linux, or
+`%LOCALAPPDATA%\microfeed\manage` on Windows. Saved deployment state instead
+lives under `${XDG_CONFIG_HOME:-~/.config}/microfeed/manage` on macOS and
+Linux, or `%APPDATA%\microfeed\manage` on Windows. `MICROFEED_CACHE_DIR` and
+`MICROFEED_CONFIG_DIR` override the respective base directories; the launcher
+still appends its `manage` child directory.
+
+Every command in this reference can then be invoked by replacing `yarn manage`
+with `npx @microfeed/cli manage`. For example:
+
+```console
+npx @microfeed/cli manage accounts --json
+npx @microfeed/cli manage deploy --instance <instance-name>
+npx @microfeed/cli manage status --instance <instance-name>
+```
+
+People working from a local clone can continue to run:
 
 ```console
 git clone https://github.com/microfeed/microfeed.git
@@ -51,18 +89,21 @@ yarn install --immutable
 yarn manage help
 ```
 
-Cloudflare operations use Wrangler browser authorization. Credentials are
+Both paths require Node.js 22.12 or newer, Git, Corepack, and an interactive
+local session. Cloudflare operations use Wrangler browser authorization. Credentials are
 managed by Wrangler; do not paste Cloudflare tokens into command arguments or
 agent conversations.
 
 Cloudflare repository imports, Workers Builds, deploy buttons, GitHub Actions,
-and API-token deployment are not supported. Both people and local coding agents
-use this `yarn manage` interface.
+and API-token deployment are not supported. Both invocations use the same
+repository-owned management engine.
 
 ## Safety model
 
-- `yarn manage` is the only supported CLI interface for microfeed Cloudflare
-  mutations. Do not replace it with improvised Wrangler or REST commands.
+- The repository-owned `yarn manage` engine is the only supported interface
+  for microfeed Cloudflare mutations. Use it directly from a clone or through
+  `npx @microfeed/cli manage`; do not replace it with improvised Wrangler or
+  REST commands.
 - Initialization validates the selected account and checks Worker, Pages, D1,
   and, unless `--no-r2` is used, R2 name collisions before creating resources.
 - Existing D1 or R2 resources require explicit reuse approval. Resources

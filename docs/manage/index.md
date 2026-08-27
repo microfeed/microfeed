@@ -3,9 +3,11 @@ title: Manage your site
 description: Update, inspect, protect, back up, migrate, and safely remove a microfeed instance.
 ---
 
-Run management commands from the local microfeed repository clone connected to
-the site. The ignored `.microfeed/` directory stores the instance mapping; the
-Cloudflare resources and content remain in your Cloudflare account.
+Run management commands through `npx @microfeed/cli manage`, or from a local
+microfeed repository clone with `yarn manage`. The launcher keeps its saved
+instance mapping in the platform microfeed configuration directory; a clone
+uses its ignored `.microfeed/` directory. Cloudflare resources and content
+remain in your Cloudflare account.
 
 An **instance name** is only the short local label used to select a saved site.
 If the Cloudflare terms below are unfamiliar, start with
@@ -17,7 +19,7 @@ If the Cloudflare terms below are unfamiliar, start with
 | --- | --- |
 | Verify the hosted application, database, media, and login | `yarn manage status` |
 | Deploy current repository code | `yarn manage deploy` |
-| Connect a new clone to an existing site | `yarn manage connect` |
+| Connect local launcher or clone state to an existing site | `yarn manage connect` |
 | List or select saved sites | `yarn manage instances` / `yarn manage use` |
 | Add a custom hostname | `yarn manage domain` |
 | Change the current login email or password | Dashboard avatar → **Account settings** |
@@ -33,7 +35,7 @@ use named API keys and do not reuse the dashboard password or Cloudflare login.
 
 - Discover Cloudflare accounts before creating a new instance. Never guess
   when a login can access more than one account.
-- Use the exact saved instance name for multi-site clones.
+- Use the exact saved instance name when local state contains several sites.
 - Read a dry-run or collision report completely before approving reuse,
   restore, or removal.
 - Keep passwords, private setup links, and tokens out of chat, command
@@ -41,4 +43,5 @@ use named API keys and do not reuse the dashboard password or Cloudflare login.
 - Create a snapshot before a high-risk content migration.
 
 The [`yarn manage` reference](/manage-cli/) is authoritative if this
-task-oriented guide and an option listing ever appear to differ.
+task-oriented guide and an option listing ever appear to differ. Outside a
+clone, replace every `yarn manage` prefix with `npx @microfeed/cli manage`.

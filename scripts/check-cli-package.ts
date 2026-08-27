@@ -1,4 +1,12 @@
-import {mkdir, mkdtemp, readFile, readdir, rm, writeFile} from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
@@ -7,11 +15,20 @@ import {x as extractTar} from "tar";
 import {CLI_HELP_TOPICS, renderCliHelp} from "../packages/cli/src/help";
 import {HELP} from "../packages/cli/src/index";
 
-function run(command: string, args: string[], cwd = process.cwd()): string {
+function run(
+  command: string,
+  args: string[],
+  cwd = process.cwd(),
+  environment: Record<string, string | undefined> = {},
+): string {
   const result = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
-    env: {...process.env, COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"},
+    env: {
+      ...process.env,
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0",
+      ...environment,
+    } as NodeJS.ProcessEnv,
   });
   if (result.status !== 0) {
     throw new Error(
@@ -72,6 +89,7 @@ try {
   );
   if (!packedReadme.includes("yarn microfeed login") ||
       !packedReadme.includes("npm install --global @microfeed/cli") ||
+      !packedReadme.includes("npx @microfeed/cli manage") ||
       !packedReadme.includes("Site URLs and instance names") ||
       !packedReadme.includes("GNU Affero General Public License v3.0")) {
     throw new Error("The packed CLI README is incomplete.");
@@ -224,6 +242,92 @@ try {
   if (!dlxHelp.endsWith(HELP)) {
     throw new Error("The yarn dlx @microfeed/cli behavior diverged.");
   }
+  const expectedManageHelp = renderCliHelp(["manage"]);
+  const dlxManageHelp = run("yarn", [
+    "dlx",
+    "--package",
+    `@microfeed/cli@file:${archive}`,
+    "microfeed",
+    "manage",
+    "--help",
+  ], temporary);
+  if (!dlxManageHelp.endsWith(expectedManageHelp)) {
+    throw new Error("The packed clone-free management help diverged.");
+  }
+
+  const npmConsumer = path.join(temporary, "npm-consumer");
+  await mkdir(npmConsumer);
+  await writeFile(path.join(npmConsumer, "package.json"), JSON.stringify({
+    private: true,
+  }));
+  run("npm", [
+    "install",
+    "--ignore-scripts",
+    "--omit=optional",
+    archive,
+  ], npmConsumer);
+  const npxManageHelp = run("npx", [
+    "--no-install",
+    "microfeed",
+    "manage",
+    "--help",
+  ], npmConsumer);
+  if (npxManageHelp !== expectedManageHelp) {
+    throw new Error("The npx @microfeed/cli management help diverged.");
+  }
+
+  if (process.platform !== "win32") {
+    const cacheRoot = path.join(temporary, "launcher-cache");
+    const manageCache = path.join(cacheRoot, "manage");
+    const repository = path.join(manageCache, "repository");
+    const cacheBin = path.join(manageCache, "bin");
+    const fakeBin = path.join(temporary, "launcher-tools");
+    await Promise.all([
+      mkdir(repository, {recursive: true}),
+      mkdir(cacheBin, {recursive: true}),
+      mkdir(fakeBin, {recursive: true}),
+    ]);
+    await writeFile(
+      path.join(repository, "package.json"),
+      `${JSON.stringify({version: rootPackage.version})}\n`,
+    );
+    const fakeTool = async (name: string, source: string): Promise<void> => {
+      const filename = path.join(fakeBin, name);
+      await writeFile(filename, `#!/usr/bin/env node\n${source}\n`, {
+        mode: 0o755,
+      });
+      await chmod(filename, 0o755);
+    };
+    await Promise.all([
+      fakeTool("npm", "process.stdout.write('10.0.0\\n');"),
+      fakeTool("corepack", "process.stdout.write('0.31.0\\n');"),
+      fakeTool("git", [
+        "const args = process.argv.slice(2);",
+        "if (args[0] === '--version') process.stdout.write('git version 2.50.0\\n');",
+        "else if (args.includes('rev-parse')) process.stdout.write('0123456789abcdef0123456789abcdef01234567\\n');",
+        "else if (!args.includes('status')) process.exitCode = 1;",
+      ].join("\n")),
+    ]);
+    const yarn = path.join(cacheBin, "yarn");
+    await writeFile(yarn, "#!/usr/bin/env node\n", {mode: 0o755});
+    await chmod(yarn, 0o755);
+    const handoff = run("npx", [
+      "--no-install",
+      "microfeed",
+      "manage",
+    ], npmConsumer, {
+      MICROFEED_CACHE_DIR: cacheRoot,
+      MICROFEED_CONFIG_DIR: path.join(temporary, "launcher-config"),
+      PATH: `${fakeBin}${path.delimiter}${process.env.PATH ?? ""}`,
+    });
+    if (!handoff.includes(`microfeed v${rootPackage.version}`) ||
+        !handoff.includes("deploy-microfeed/SKILL.md") ||
+        !handoff.includes("docs/manage-cli.md") ||
+        !handoff.includes("npx @microfeed/cli manage accounts --json") ||
+        !handoff.includes("final status check succeeds")) {
+      throw new Error("The packed npx coding-agent handoff is incomplete.");
+    }
+  }
   const dlxScaffold = path.join(temporary, "dlx-scaffold");
   const dlxScaffoldOutput = run("yarn", [
     "dlx",
@@ -254,7 +358,7 @@ try {
     throw new Error("The packed Python webhook starter file set is incomplete.");
   }
   process.stdout.write(
-    "Workspace, project-local, packed, and yarn dlx @microfeed/cli behavior match.\n",
+    "Workspace, project-local, packed, npx, and yarn dlx @microfeed/cli behavior match.\n",
   );
 } finally {
   await rm(temporary, {force: true, recursive: true});

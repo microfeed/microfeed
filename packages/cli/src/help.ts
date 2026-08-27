@@ -71,6 +71,26 @@ const itemInputOptions = [
 export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   {
     details: [
+      "Downloads the exact tagged microfeed release into a private, persistent cache and runs its repository-owned management CLI. It never checks out source into the current project.",
+      "The launcher requires Git and Corepack in addition to Node.js and npm. Its first run installs the locked application dependencies, and the workspace may consume about 1.3 GB; later runs reuse it.",
+      "A bare manage command prepares the workspace and prints exact instructions for a local coding agent. Pass any management command and options after manage to forward them unchanged, including --instance and --json.",
+      "Deployment state is stored separately from the replaceable source cache. Existing sites that are not yet saved can be discovered and connected through the guarded management workflow.",
+      "Use only from a local interactive session that can complete Cloudflare browser authorization. Never paste a Cloudflare token, dashboard password, or private password-setup link into a command or agent conversation.",
+    ],
+    examples: [
+      "npx @microfeed/cli manage",
+      "npx @microfeed/cli manage accounts --json",
+      "npx @microfeed/cli manage init",
+      "npx @microfeed/cli manage deploy --instance personal",
+      "npx @microfeed/cli manage status --instance personal",
+    ],
+    options: [],
+    path: ["manage"],
+    summary: "Deploy and administer microfeed on Cloudflare without a user-managed clone.",
+    usage: "npx @microfeed/cli manage [command] [arguments] [options]",
+  },
+  {
+    details: [
       "Starts a development-only HTTP listener on 127.0.0.1:8978/webhook. It verifies Standard Webhooks signatures against the exact request bytes before printing or forwarding an event.",
       "Provide the signing secret through the visible interactive prompt, MICROFEED_WEBHOOK_SECRET, or --secret-file. The interactive prompt deliberately shows pasted text so terminal paste problems are easy to diagnose. A plaintext --secret option is intentionally unsupported.",
       "Use --json for one NDJSON object per delivery. Repeated delivery IDs are marked duplicate but are still forwarded so your receiver's deduplication can be tested.",
@@ -607,6 +627,9 @@ function alignedLines(
 }
 
 function referenceUrl(path?: readonly string[]): string {
+  if (path?.length === 1 && path[0] === "manage") {
+    return "https://docs.microfeed.org/microfeed-cli/#deploy-or-administer-a-site";
+  }
   const anchor = path?.length ? `#yarn-microfeed-${path.join("-")}` : "";
   return `https://docs.microfeed.org/microfeed-cli/${anchor}`;
 }
@@ -646,6 +669,7 @@ export function renderCliHelp(path?: readonly string[]): string {
   }
 
   const commands = [
+    {syntax: "manage", description: "Deploy or administer microfeed without cloning it yourself."},
     {syntax: "login <site-url>", description: "Authorize a site and save it as an instance."},
     {syntax: "logout", description: "Revoke this computer's tokens and remove its saved instance."},
     {syntax: "instances", description: "List, select, or locally remove saved instances."},
@@ -654,7 +678,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     {syntax: "api", description: "Call one relative /api/v1/ REST operation."},
   ];
   return [
-    "microfeed — manage content on a microfeed instance",
+    "microfeed — deploy sites and manage their content",
     "",
     "Usage:",
     "  yarn microfeed <command> [arguments] [options]",

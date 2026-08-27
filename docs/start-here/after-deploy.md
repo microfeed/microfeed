@@ -3,13 +3,13 @@ title: After deployment
 description: Verify, secure, customize, and publish from a new microfeed site.
 ---
 
-Use this checklist after `yarn manage init` completes.
+Use this checklist after deployment completes.
 
 ## Confirm the site is healthy
 
-Run `yarn manage status` from the same repository clone. Confirm the displayed
-hosted application, database, media-storage state, and dashboard protection
-match what you expected.
+Run `npx @microfeed/cli manage status`, or `yarn manage status` from the same
+repository clone. Confirm the displayed hosted application, database,
+media-storage state, and dashboard protection match what you expected.
 
 Open these public addresses:
 
@@ -34,19 +34,20 @@ Create a clearly labeled test item, preview its public page, and check the RSS
 and JSON feeds. You can publish it yourself in the Admin dashboard. To publish
 with a coding agent, first [enable API access and connect the
 CLI](/automation/cli/), then ask the agent to use the official
-[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside this
-clone, the agent should run `yarn microfeed`; you remain responsible for
-browser authorization and approval of destructive actions. Delete or unpublish
-the test when finished.
+[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside a
+clone, the agent should run `yarn microfeed`; elsewhere it can use the
+published package. You remain responsible for browser authorization and
+approval of destructive actions. Delete or unpublish the test when finished.
 
 Next: [compare the dashboard and agent publishing workflows](/dashboard/publish/).
 
 ## Save the local connection
 
-The clone’s ignored `.microfeed/` directory remembers the instance connection.
-Keep the clone on a trusted computer. If you use a different clone later, the
-read-only `yarn manage connect` workflow can reconnect to an existing compatible
-microfeed Worker.
+The clone-free launcher stores instance connections in the platform microfeed
+configuration directory, separately from its replaceable cache. A repository
+clone instead uses its ignored `.microfeed/` directory. Keep either workspace
+on a trusted computer; the read-only `connect` workflow can reconnect to an
+existing compatible microfeed Worker when local state is unavailable.
 
 ## Optional next steps
 

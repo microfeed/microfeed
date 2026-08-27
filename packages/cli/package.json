@@ -1,12 +1,13 @@
 {
   "name": "@microfeed/cli",
-  "version": "1.0.5",
-  "description": "Manage content on a microfeed instance",
+  "version": "1.0.6",
+  "description": "Deploy microfeed and manage content on its sites",
   "keywords": [
     "microfeed",
     "headless cms",
     "cms",
     "cli",
+    "deployment",
     "cloudflare"
   ],
   "homepage": "https://docs.microfeed.org/microfeed-cli/",
