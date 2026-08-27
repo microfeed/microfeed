@@ -26,6 +26,7 @@ interface Props {
   initialSort: ThemeListSort;
   initialTab: ThemeAdminTab;
   instanceName: string;
+  siteUrl: string;
 }
 
 interface Preview {
@@ -97,6 +98,7 @@ interface VersionCardProps {
   onCreateVersion: (themeId: string) => void;
   onDelete: (theme: ThemeVersionSummary) => void;
   onPreview: (theme: ThemeVersionSummary) => void;
+  siteUrl: string;
   state: ThemeState;
   theme: ThemeVersionSummary;
 }
@@ -113,6 +115,7 @@ function VersionCard({
   onCreateVersion,
   onDelete,
   onPreview,
+  siteUrl,
   state,
   theme,
 }: VersionCardProps) {
@@ -124,6 +127,11 @@ function VersionCard({
     `theme export ${theme.id} --instance ${instanceName} ` +
       `--output ~/microfeed-themes/${theme.packageId}-${theme.version} --git`,
   );
+  const updatePrompt = builtIn
+    ? `Update the ${theme.packageId} theme on ${siteUrl} to the latest Built-in version. Use ${MICROFEED_MANAGE_COMMAND}, connect the existing site if needed, install the update inactive, ask before activation, then verify the site afterward.`
+    : `Update the theme on ${siteUrl} to the latest version from ${theme.sourceUrl ?? theme.sourcePath}. Use ${MICROFEED_MANAGE_COMMAND}, connect the existing site if needed, install the update inactive, ask before activation, then verify the site afterward.`;
+  const exportPrompt =
+    `Export the exact installed theme ${theme.packageId}@${theme.version} (ID ${theme.id}) from ${siteUrl} into a standalone local theme repository for continued development. Use ${MICROFEED_MANAGE_COMMAND}, connect the existing site if needed, verify the export, and stop before committing or publishing anything.`;
   return (
     <article className="rounded-xl border p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -205,32 +213,50 @@ function VersionCard({
           {canUpdate && (
             <div className="rounded-lg border bg-muted/50 p-3">
               <p className="mb-2 text-muted-foreground">
-                <strong className="text-foreground">Update this theme:</strong>{" "}
+                <strong className="text-foreground">Update with an AI coding agent:</strong>{" "}
                 {builtIn
                   ? "Install the current Built-in release as an inactive version. Preview it before activating."
                   : "Check its original source and install a newer SemVer as another inactive version."}
               </p>
               <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
-                <code className="min-w-0 flex-1 overflow-x-auto">{updateCommand}</code>
-                <Button aria-label="Copy update command" onClick={() => copy(updateCommand)} size="icon-sm" variant="ghost">
+                <p className="min-w-0 flex-1 font-mono text-xs leading-5">{updatePrompt}</p>
+                <Button aria-label="Copy update prompt" onClick={() => copy(updatePrompt)} size="icon-sm" variant="ghost">
                   <CopyIcon />
                 </Button>
               </div>
+              <details className="mt-2">
+                <summary className="cursor-pointer text-muted-foreground">Manual CLI command</summary>
+                <div className="mt-2 flex items-center gap-2 rounded-lg bg-muted p-2">
+                  <code className="min-w-0 flex-1 overflow-x-auto">{updateCommand}</code>
+                  <Button aria-label="Copy update command" onClick={() => copy(updateCommand)} size="icon-sm" variant="ghost">
+                    <CopyIcon />
+                  </Button>
+                </div>
+              </details>
             </div>
           )}
           <div className="rounded-lg border bg-muted/50 p-3">
             <p className="mb-2 text-muted-foreground">
-              <strong className="text-foreground">Export this version:</strong>{" "}
+              <strong className="text-foreground">Export with an AI coding agent:</strong>{" "}
               Write the installed package and inherited assets to a standalone
               directory for backup or continued development. Exporting does not
               change the live site.
             </p>
             <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
-              <code className="min-w-0 flex-1 overflow-x-auto">{exportCommand}</code>
-              <Button aria-label="Copy export command" onClick={() => copy(exportCommand)} size="icon-sm" variant="ghost">
+              <p className="min-w-0 flex-1 font-mono text-xs leading-5">{exportPrompt}</p>
+              <Button aria-label="Copy export prompt" onClick={() => copy(exportPrompt)} size="icon-sm" variant="ghost">
                 <CopyIcon />
               </Button>
             </div>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-muted-foreground">Manual CLI command</summary>
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-muted p-2">
+                <code className="min-w-0 flex-1 overflow-x-auto">{exportCommand}</code>
+                <Button aria-label="Copy export command" onClick={() => copy(exportCommand)} size="icon-sm" variant="ghost">
+                  <CopyIcon />
+                </Button>
+              </div>
+            </details>
           </div>
         </div>
       </details>
@@ -250,6 +276,7 @@ export default function ThemesApp({
   initialSort,
   initialTab,
   instanceName,
+  siteUrl,
 }: Props) {
   const [listing, setListing] = useState(initialListing);
   const [query, setQuery] = useState(initialQuery);
@@ -339,7 +366,7 @@ export default function ThemesApp({
   };
   const copy = async (value: string) => {
     await navigator.clipboard.writeText(value);
-    showToast("Command copied.", "success");
+    showToast("Copied to clipboard.", "success");
   };
   const previewTheme = (theme: ThemeVersionSummary) => setPreview({
     description: theme.manifest.description,
@@ -378,16 +405,16 @@ export default function ThemesApp({
     onCreateVersion: createVersion,
     onDelete: deleteTheme,
     onPreview: previewTheme,
+    siteUrl,
     state: listing.state,
   };
 
   return (
     <div className="grid gap-5">
       <p className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-        Run copied management commands from any folder. If this computer has
-        not saved the site yet, first give a local coding agent{" "}
-        <code>{MICROFEED_MANAGE_COMMAND}</code> and ask it to connect to the
-        existing Worker.
+        For theme updates and exports, copy a prompt below into a local AI
+        coding agent that can run shell commands, such as Codex or Claude Code.
+        Manual CLI commands remain available in each theme&apos;s details.
       </p>
       <section className="rounded-[14px] border bg-card p-5 shadow-xs">
         <div className="flex flex-wrap items-start justify-between gap-3">

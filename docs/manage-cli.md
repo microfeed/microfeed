@@ -590,8 +590,10 @@ for a copy-paste prompt that stops before commit or publication.
 Use this command to install a theme package from a local directory or a public
 GitHub repository, directory, or `microfeed-theme.json` URL. GitHub branches
 and tags are resolved to an exact commit before the manifest and declared files
-are downloaded. V1 does not store GitHub credentials and does not support
-private repositories.
+are downloaded. The CLI uses an anonymous temporary Git fetch for commit and
+tree metadata, then downloads only the declared files; it does not depend on
+GitHub's unauthenticated REST API quota. Git must be available. V1 does not
+store GitHub credentials and does not support private repositories.
 
 Canonical `bundled:<key>` sources install registered rendered packages from the
 current microfeed checkout. The compatibility alias `default` continues to

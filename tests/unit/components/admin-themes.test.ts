@@ -151,16 +151,22 @@ describe("Admin versioned themes", () => {
     expect(themes).toContain("originThemeLabel(theme)");
     expect(themes).not.toContain("Origin theme: ${theme.originThemeId}");
     expect(themes).toContain("!builtIn && (");
-    expect(themes).toContain("Update this theme");
+    expect(themes).toContain("Update with an AI coding agent");
     expect(themes).toContain("MICROFEED_MANAGE_COMMAND");
     expect(themes).toContain("theme install ${builtInSource}");
+    expect(themes).toContain("Copy update prompt");
     expect(themes).toContain("Copy update command");
-    expect(themes).toContain("Export this version");
+    expect(themes).toContain("Export with an AI coding agent");
+    expect(themes).toContain("Copy export prompt");
     expect(themes).toContain("Copy export command");
+    expect(themes).toContain("Manual CLI command");
+    expect(themes).toContain("Codex or Claude Code");
     expect(themes).toContain("for backup or continued development");
     expect(themes).toContain(
       "~/microfeed-themes/${theme.packageId}-${theme.version} --git",
     );
+    expect(route).toContain("new URL(Astro.request.url).origin");
+    expect(route).toContain("{siteUrl}");
   });
 
   it("keeps required draft identity prominent and explains optional metadata", async () => {

@@ -24,6 +24,7 @@ const requestedTab = parseThemeAdminTab(searchParams);
 const listing = await store.listSummaries(options, requestedTab);
 const initialTab = listing.scope;
 const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
+const siteUrl = new URL(Astro.request.url).origin;
 ---
 
 <AdminShell
@@ -47,6 +48,7 @@ const instanceName = env.MICROFEED_INSTANCE_NAME ?? "<name>";
     initialSort={options.sort}
     {initialTab}
     {instanceName}
+    {siteUrl}
   >
     <AdminPageFallback slot="fallback" kind="settings" />
   </ThemesApp>
