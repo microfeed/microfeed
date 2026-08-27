@@ -234,7 +234,7 @@ describe("bundled theme packages", () => {
       expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//u);
       expect(url).not.toContain("example.test");
     }
-    expect(application.version).toBe("1.0.5");
+    expect(application.version).toBe("1.0.6");
   });
 
   it("renders subscription methods without broken or duplicated image text", async () => {

@@ -3,23 +3,27 @@ title: Update microfeed
 description: Bring a connected production instance to the latest source and verify the deployment.
 ---
 
-Update from the repository clone connected to the intended site.
+Use the clone-free launcher or update from a repository clone connected to the
+intended site.
 
 ## Recommended: ask your coding agent
 
-Open the clone in a local coding agent and use a prompt that names the saved
-site or Worker when you know it:
+Open a local coding agent and use a prompt that names the saved site or Worker
+when you know it:
 
 ```text
-Connect this repository to the microfeed Worker <worker-name>, update microfeed to the latest version, deploy it, and verify the site.
+Run `npx @microfeed/cli manage` and follow every instruction it prints. Connect
+to the microfeed Worker <worker-name> if it is not already saved, deploy the
+latest release, and continue until `status` verifies the site.
 ```
 
-The agent should show you any uncommitted local changes before deployment,
-fetch the trusted upstream repository, connect only if needed, deploy through
-`yarn manage`, and run a status check.
-Complete any Git or Cloudflare browser handoffs it requests.
+The launcher obtains the exact release in a private cache. The agent discovers
+saved and compatible existing sites, asks before choosing among candidates,
+connects only if needed, deploys through the same `yarn manage` engine, and
+runs a status check. Complete any Git or Cloudflare browser handoffs it
+requests.
 
-## Manual update
+## Manual update from a clone
 
 First run `git status` and protect any local work. Then fetch and inspect
 upstream changes using your normal Git workflow. Once the clone contains the

@@ -4,11 +4,12 @@
 [Guided workflow](https://docs.microfeed.org/automation/cli/) ·
 [`@microfeed/cli` reference](https://docs.microfeed.org/microfeed-cli/)
 
-The official, agent-friendly command for publishing and managing content on
-one or more [microfeed](https://www.microfeed.org/) sites. Use it directly from
-a terminal or let a local coding agent drive it. The CLI uses browser-based
-authorization for interactive work and accepts an existing API key for
-unattended CI jobs.
+The official, agent-friendly command for deploying
+[microfeed](https://www.microfeed.org/) and publishing content on its sites.
+Use it directly from a terminal or let a local coding agent drive it. Site
+deployment uses Cloudflare browser authorization; content management uses
+browser authorization for interactive work and accepts an existing API key
+for unattended CI jobs.
 
 Create, read, update, and delete items; upload cover art, inline media, and RSS
 enclosures; update a channel; or call any documented REST operation without
@@ -17,8 +18,9 @@ giving an agent a raw credential.
 ## Requirements
 
 - Node.js 22.12 or newer
-- A microfeed site with API access enabled
-- Built-in administrator login for browser authorization
+- For clone-free deployment: npm, Git, Corepack, and a Cloudflare account
+- For content management: a microfeed site with API access enabled and
+  built-in administrator login for browser authorization
 
 Instances without built-in login can continue using an API key.
 
@@ -64,8 +66,24 @@ microfeed --help
 
 ## Ask a coding agent
 
-Give an agent a content goal and the site URL instead of a credential. For
-example:
+To deploy a new site or connect and update an existing site without cloning
+the source repository yourself, give a local coding agent this prompt:
+
+```text
+Run `npx @microfeed/cli manage` and follow every instruction it prints until
+`status` verifies the deployment.
+```
+
+The launcher requires npm, Git, and Corepack. It downloads the exact tagged
+release matching the CLI into a private persistent cache, installs its locked
+dependencies, and prints the repository-owned deployment skill and reference
+for the agent. The first setup may use about 1.3 GB and take several minutes.
+Every later management command uses the same prefix, such as
+`npx @microfeed/cli manage status`. The source cache is replaceable; saved
+deployment state is kept separately.
+
+For content management, give an agent a content goal and the site URL instead
+of a credential. For example:
 
 ```text
 Use @microfeed/cli to create a published item on https://feed.example.com.
