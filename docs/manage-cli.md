@@ -51,13 +51,12 @@ Git-clone or open the microfeed source repository:
 npx @microfeed/cli manage
 ```
 
-The launcher downloads the exact tagged release matching the installed CLI
-into a private operating-system cache, verifies that source before every
-forwarded command, installs its locked dependencies with a cache-local Yarn
-shim, and prints the deployment skill and reference paths for the agent. It
-stores saved deployment state separately under the microfeed configuration
-directory. The first setup may use about 1.3 GB and take several minutes;
-later commands reuse it.
+The launcher carries the exact release matching the installed CLI and a pinned
+Yarn runtime. It verifies and copies that source into a private operating-system
+cache, installs its locked dependencies, and prints the deployment skill and
+reference paths for the agent. It stores saved deployment state separately
+under the microfeed configuration directory. The first setup may use about
+1.3 GB and take several minutes; later commands reuse it.
 
 Coding agents do not generally discover skills inside npm or cache directories
 automatically. The launcher therefore prints both cached file paths explicitly
@@ -90,10 +89,12 @@ The `dev` section instead prioritizes `yarn manage dev` from a Git-cloned
 microfeed source repository because local source development requires that
 repository and its installed dependencies.
 
-Both paths require Node.js 22.12 or newer, Git, Corepack, and an interactive
-local session. Cloudflare operations use Wrangler browser authorization. Credentials are
-managed by Wrangler; do not paste Cloudflare tokens into command arguments or
-agent conversations.
+Both paths require Node.js 22.12 or newer and an interactive local session.
+The published `npx` path also requires npm, but it does not require Git or
+Corepack. A Git-cloned source repository uses its normal Corepack and Yarn
+development setup. Cloudflare operations use Wrangler browser authorization.
+Credentials are managed by Wrangler; do not paste Cloudflare tokens into
+command arguments or agent conversations.
 
 Cloudflare repository imports, Workers Builds, deploy buttons, GitHub Actions,
 and API-token deployment are not supported. Both invocations use the same

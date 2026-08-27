@@ -1,6 +1,6 @@
 ---
 name: deploy-microfeed
-description: Deploy and administer microfeed through the clone-free @microfeed/cli launcher or the project-owned yarn manage CLI. Use when a user asks a coding agent to operate a local or Cloudflare instance, including accounts, initialization, connection, development, deployment, themes, snapshots, status, destruction, Pages migration, domains, Access, built-in authentication, configuration, or instance selection.
+description: Deploy and administer microfeed through the source-code-free @microfeed/cli launcher or the project-owned yarn manage CLI. Use when a user asks a coding agent to operate a local or Cloudflare instance, including accounts, initialization, connection, development, deployment, themes, snapshots, status, destruction, Pages migration, domains, Access, built-in authentication, configuration, or instance selection.
 ---
 
 # Deploy microfeed
@@ -18,7 +18,7 @@ side-effect contract; keep this skill focused on agent sequencing and safety.
 
 microfeed supports one deployment engine. A person may run `yarn manage` from
 a trusted clone, or a local coding agent may use `npx @microfeed/cli manage` to
-download the exact release into a private cache and forward commands to that
+copy the exact bundled release into a private cache and forward commands to that
 engine. Do not offer Cloudflare repository imports, Workers Builds, deploy
 buttons, GitHub Actions, raw Wrangler deploys, or API-token deployment as
 alternatives. If a user asks for a dashboard-only or hosted deployment,
@@ -53,9 +53,10 @@ Choose one command prefix for the session:
 - In a user-managed clone, inspect `git status --short` before deploying. If
   the working tree is dirty, identify that the current files will be built and
   obtain explicit approval to deploy them. Do not modify, discard, or stash
-  the changes. The clone-free launcher instead verifies a clean exact release
-  tag before every forwarded command and recreates only its private source
-  cache when that verification fails; never edit the launcher cache.
+  the changes. The published launcher instead verifies the file manifest for
+  the exact release bundled with `@microfeed/cli` before every forwarded
+  command and recreates only its private source cache when verification fails;
+  never edit the launcher cache.
 - Treat changes to `package.json`, `yarn.lock`, `.yarn/`, `manage-cli/`,
   `wrangler.jsonc`, `wrangler.template.jsonc`, `astro.config.ts`, or this skill
   as security-sensitive because deployment executes or trusts them. Inspect
@@ -205,18 +206,20 @@ never recreate, rename, adopt, purge, resume, or delete the Queue outside
 
 ## Prepared-workspace workflow
 
-1. When the clone-free launcher handed off this skill, use its printed cached
+1. When the published launcher handed off this skill, use its printed cached
    repository and reference paths and keep using the public `npx` command
-   prefix. The launcher has already verified the exact release tag, checked
-   that its source is clean, and run `yarn install --immutable`; do not edit the
+   prefix. The launcher has already verified the bundled release source and run
+   `yarn install --immutable` with its pinned Yarn runtime; do not edit the
    cached source or run a second checkout. In a user-managed clone, confirm the
    repository root contains `package.json`, `yarn.lock`, and
    `manage-cli/index.ts`.
-2. Require Node.js 22.12 or newer with npm, plus Git and Corepack. The
-   clone-free launcher checks these prerequisites itself and creates a private
-   Yarn shim without changing the global installation. In a user-managed clone,
-   check the tools directly and obtain approval before a command writes outside
-   the workspace.
+2. Require Node.js 22.12 or newer with npm for the public `npx` invocation.
+   Ordinary deployment through the published launcher does not require Git or
+   Corepack. Git is command-specific for installing or updating a theme from
+   GitHub, initializing a theme repository unless `--no-git` is passed, and
+   `theme export --git`. In a user-managed clone, check its normal development
+   tools directly and obtain approval before a command writes outside the
+   workspace.
 3. In a user-managed clone, before any command receives OAuth input, obtain
    network approval and run `yarn install --immutable --check-cache`. This must
    revalidate the locked packages and relink local dependencies even when
@@ -339,7 +342,7 @@ never recreate, rename, adopt, purge, resume, or delete the Queue outside
 
 ## Existing installations
 
-With clone-free launcher state, start with `accounts --json`; when several
+With published-launcher state, start with `accounts --json`; when several
 accounts are available, show their names and ID suffixes and ask the user to
 select one. Then run `instances --account-id <account-id> --json`. Use the
 selected saved instance when one exists. Otherwise show every exact compatible

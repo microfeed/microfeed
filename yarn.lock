@@ -2885,6 +2885,7 @@ __metadata:
   dependencies:
     "@napi-rs/keyring": "npm:1.3.0"
     "@types/node": "npm:^24.0.0"
+    "@yarnpkg/cli-dist": "npm:4.18.0"
     tsx: "npm:^4.20.0"
     typescript: "npm:^6.0.3"
   dependenciesMeta:
@@ -5381,6 +5382,16 @@ __metadata:
   peerDependencies:
     vue: ^3.5.0
   checksum: 10/cd7670805a2760b5ccd93855634288dbfdc41014cbeb97f1d47f057301bfa2d056f8eb86eb8b7bbd26c64633d72e4bc8713dec8467a3c21aa31c7eb7a8723440
+  languageName: node
+  linkType: hard
+
+"@yarnpkg/cli-dist@npm:4.18.0":
+  version: 4.18.0
+  resolution: "@yarnpkg/cli-dist@npm:4.18.0"
+  bin:
+    yarn: bin/yarn.js
+    yarnpkg: bin/yarn.js
+  checksum: 10/1f027fd419dc5d436764667a57417891c552886fff9f6342c0466cfb71e82f28e78b99ac7ea94fe698a01bdee3a51ccf66d1a91a47570a347e5048d7a0c240b5
   languageName: node
   linkType: hard
 

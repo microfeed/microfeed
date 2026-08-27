@@ -1,4 +1,5 @@
 import {spawn} from "node:child_process";
+import {readFile} from "node:fs/promises";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 
@@ -83,8 +84,14 @@ export function runYarnScript(
   script: string,
   options: RunOptions = {},
 ): Promise<CommandResult> {
-  const executable = process.platform === "win32" ? "yarn.cmd" : "yarn";
-  return runner(executable, [script], {
+  const yarnJavaScript = (
+    options.env?.MICROFEED_YARN_JAVASCRIPT ??
+    process.env.MICROFEED_YARN_JAVASCRIPT
+  )?.trim();
+  const executable = yarnJavaScript
+    ? process.execPath
+    : process.platform === "win32" ? "yarn.cmd" : "yarn";
+  return runner(executable, yarnJavaScript ? [yarnJavaScript, script] : [script], {
     cwd: repositoryRoot,
     ...options,
   });
@@ -94,11 +101,29 @@ const FULL_GIT_SHA = /^[0-9a-f]{40}$/u;
 
 export async function repositoryCommitSha(
   runner: CommandRunner,
+  sourceRoot = repositoryRoot,
 ): Promise<string> {
+  const markerPath = path.join(sourceRoot, ".microfeed-runtime.json");
+  try {
+    const marker = JSON.parse(await readFile(markerPath, "utf8")) as {
+      sourceCommit?: unknown;
+    };
+    if (
+      typeof marker.sourceCommit !== "string" ||
+      !FULL_GIT_SHA.test(marker.sourceCommit)
+    ) {
+      throw new Error(
+        "The packaged microfeed deployment source commit is invalid.",
+      );
+    }
+    return marker.sourceCommit;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
   const result = await runner(
     "git",
     ["rev-parse", "--verify", "HEAD"],
-    {cwd: repositoryRoot},
+    {cwd: sourceRoot},
   );
   const sha = result.stdout.trim().toLowerCase();
   if (!FULL_GIT_SHA.test(sha)) {

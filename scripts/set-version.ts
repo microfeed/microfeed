@@ -41,13 +41,6 @@ const RELEASE_VERSION_TARGETS: VersionTarget[] = [
     },
   },
   {
-    filename: "themes/default/microfeed-theme.json",
-    identity: {field: "packageId", value: "microfeed.default"},
-    update: (document, version) => {
-      document.version = version;
-    },
-  },
-  {
     filename: "packages/theme-kit/assets/starter/package.json",
     identity: {field: "name", value: "microfeed-theme"},
     update: (document, version) => {

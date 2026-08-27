@@ -69,12 +69,13 @@ not need to Git-clone or open the microfeed source repository:
 npx @microfeed/cli manage
 ```
 
-The launcher also requires Git and Corepack. It downloads the exact tagged
-microfeed release matching the CLI into a persistent private cache, verifies
-the checkout, installs its locked dependencies, and prints the exact
-deployment skill and management-reference paths for the agent. It does not
-write source files into the current project. The initial workspace may use
-about 1.3 GB and take several minutes to prepare; later commands reuse it.
+The launcher carries the exact microfeed release matching the CLI and a pinned
+Yarn runtime. It verifies and copies that source into a persistent private
+cache, installs its locked dependencies without Git or Corepack, and prints
+the exact deployment skill and management-reference paths for the agent. It
+does not write source files into the current project. The initial workspace
+may use about 1.3 GB and take several minutes to prepare; later commands reuse
+it.
 
 Pass any repository management command and options after `manage`; arguments
 such as `--instance` and `--json` are forwarded unchanged:

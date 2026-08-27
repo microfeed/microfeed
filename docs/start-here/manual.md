@@ -9,10 +9,10 @@ You do not need prior Cloudflare command-line experience.
 
 ## 1. Prepare your computer
 
-Install Node.js 22.12 or newer with npm, plus Git and Corepack. You do not need
-to download or Git-clone the microfeed source repository yourself. The
-published launcher checks these prerequisites and prepares the matching release
-in a private operating-system cache.
+Install Node.js 22.12 or newer with npm. You do not need Git, Corepack, or a
+Git-cloned copy of the microfeed source repository. The published launcher
+carries a pinned Yarn runtime and prepares its matching release in a private
+operating-system cache.
 
 ## 2. Discover your Cloudflare account
 

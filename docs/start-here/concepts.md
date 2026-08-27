@@ -84,12 +84,13 @@ API docs are enabled.
 
 ## What the local management tool changes
 
-`npx @microfeed/cli manage` prepares the matching microfeed release in a private
-cache and runs the same guarded management engine available through `yarn
-manage` inside a Git-cloned microfeed source repository. It checks for name
-collisions, applies database migrations, builds the application, deploys it,
-and verifies the result. Launcher connection details live in the platform
-microfeed configuration directory, separate from the replaceable source cache.
+`npx @microfeed/cli manage` verifies and copies its bundled microfeed release
+into a private cache, then runs the same guarded management engine available
+through `yarn manage` inside a Git-cloned microfeed source repository. It
+checks for name collisions, applies database migrations, builds the
+application, deploys it, and verifies the result. Launcher connection details
+live in the platform microfeed configuration directory, separate from the
+replaceable source cache.
 
 For exact behavior and safety rules, use the
 [management CLI reference](/manage-cli/). Its examples use the recommended

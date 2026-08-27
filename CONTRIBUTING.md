@@ -86,19 +86,19 @@ secrets.
 
 ## Prepare release metadata
 
-Set the application, published CLI, theme kit, bundled default theme, and
-compatible starter range with one command:
+Set the application, published CLI, theme kit, and compatible starter range
+with one command:
 
 ```console
 yarn version:set 1.2.3
-yarn theme:release
 ```
 
 Use an exact semantic version. The command verifies every target before it
-writes anything. `yarn theme:release` records the bundled theme's immutable
-canonical checksum and refuses to replace any released version. Private
-workspace metadata, examples, fixtures, tests, and the lockfile do not need
-patch-release edits.
+writes anything. Bundled themes have their own immutable versions; when a
+bundled theme changes, increment that theme's version and run
+`yarn theme:release` to record its canonical checksum. Private workspace
+metadata, examples, fixtures, tests, and the lockfile do not need patch-release
+edits.
 
 ## Open a pull request
 

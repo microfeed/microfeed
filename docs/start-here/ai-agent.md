@@ -15,9 +15,9 @@ Open OpenAI Codex, Claude Code, Cursor, or another coding agent that can run
 terminal commands on your computer and complete a browser handoff. The current
 folder does not need to contain source code.
 
-Your computer needs Node.js 22.12 or newer with npm, plus Git and Corepack. The
-launcher checks these tools before downloading anything and prints a specific
-recovery step when one is unavailable.
+Your computer needs Node.js 22.12 or newer with npm. The published launcher
+includes its own Yarn runtime and deployment source, so ordinary deployment
+does not require Git or Corepack.
 
 ## 2. Give the agent one command
 
@@ -28,10 +28,11 @@ Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
 then follow its instructions until deployment is verified.
 ```
 
-The first run downloads the exact release matching `@microfeed/cli`, creates a
-private Yarn launcher, and installs the locked dependencies in your operating
-system cache. This may use about 1.3 GB and take several minutes, depending on
-your connection and computer. Later commands reuse that workspace, while saved
+The first run verifies and copies the exact release bundled with
+`@microfeed/cli`, then installs the locked dependencies in your operating
+system cache with the included Yarn runtime. This may use about 1.3 GB and take
+several minutes, depending on your connection and computer. Later commands
+reuse that workspace, while saved
 deployment state lives separately so a cache refresh cannot erase your site
 connections.
 

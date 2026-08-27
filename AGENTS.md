@@ -36,7 +36,7 @@
   `npx @microfeed/cli manage` and `npx @microfeed/cli manage dev`.
 - Do not use or recommend Cloudflare repository imports, Workers Builds,
   deploy buttons, GitHub Actions, or API-token deployment. People and agents
-  can use the clone-free launcher without creating a local source checkout.
+  can use the published launcher without creating a local source checkout.
 - Treat `docs/manage-cli.md` as the canonical command, option, side-effect, and
   safety reference for both people and agents. Read the relevant command
   section before using an unfamiliar or destructive option. Keep that reference
