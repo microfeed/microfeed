@@ -3,6 +3,7 @@ import {ADMIN_URLS} from "@/shared/StringUtils";
 import {
   registerWebMcpTools,
   type WebMcpTool,
+  webMcpExecutionSignal,
 } from "./model-context";
 import {
   emptyInputSchema,
@@ -57,7 +58,8 @@ export function dashboardTools(): WebMcpTool[] {
       annotations: readAnnotations,
       description:
         "List compact microfeed Item summaries, optionally filtered by status and continued from a cursor.",
-      async execute(input, {signal}) {
+      async execute(input, options) {
+        const signal = webMcpExecutionSignal(options);
         const parsed = parseInput(listItemsInputSchema, input);
         const url = new URL(ADMIN_URLS.ajaxItems(), window.location.origin);
         if (parsed.status) url.searchParams.set("status", parsed.status);
@@ -81,7 +83,8 @@ export function dashboardTools(): WebMcpTool[] {
     {
       annotations: readAnnotations,
       description: "Get editable fields and status for one microfeed Item.",
-      async execute(input, {signal}) {
+      async execute(input, options) {
+        const signal = webMcpExecutionSignal(options);
         const {item_id: itemId} = parseInput(getItemInputSchema, input);
         const item = await getJson(
           `${ADMIN_URLS.ajaxItems()}${encodeURIComponent(itemId)}/`,
@@ -99,7 +102,8 @@ export function dashboardTools(): WebMcpTool[] {
     {
       annotations: readAnnotations,
       description: "List compact microfeed Page summaries and editor URLs.",
-      async execute(input, {signal}) {
+      async execute(input, options) {
+        const signal = webMcpExecutionSignal(options);
         parseInput(emptyInputSchema, input);
         const result = await getJson(ADMIN_URLS.ajaxPages(), signal);
         return {
@@ -120,7 +124,8 @@ export function dashboardTools(): WebMcpTool[] {
     {
       annotations: readAnnotations,
       description: "Get editable fields and status for one microfeed Page.",
-      async execute(input, {signal}) {
+      async execute(input, options) {
+        const signal = webMcpExecutionSignal(options);
         const {page_id: pageId} = parseInput(getPageInputSchema, input);
         const page = await getJson(ADMIN_URLS.ajaxPage(pageId), signal);
         return {

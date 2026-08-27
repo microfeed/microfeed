@@ -170,7 +170,6 @@ describe("admin editor autosave", () => {
     let settled = false;
     const execution = tool.execute(
       {content_html: "<p>Agent body</p>", title: "Agent title"},
-      {signal: new AbortController().signal},
     ).then((value: unknown) => {
       settled = true;
       return value;
@@ -187,7 +186,10 @@ describe("admin editor autosave", () => {
           title: "Agent title",
         }),
       }),
-      expect.objectContaining({headers: WEBMCP_INTERACTION_HEADERS}),
+      expect.objectContaining({
+        headers: WEBMCP_INTERACTION_HEADERS,
+        signal: expect.any(AbortSignal),
+      }),
     );
     pending.resolve({});
     await expect(execution).resolves.toMatchObject({

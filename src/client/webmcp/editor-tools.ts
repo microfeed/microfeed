@@ -1,6 +1,7 @@
 import {
   registerWebMcpTools,
   type WebMcpTool,
+  webMcpExecutionSignal,
 } from "./model-context";
 import {
   inputJsonSchema,
@@ -23,8 +24,11 @@ export function itemDraftTool(
     annotations: writeAnnotations,
     description:
       "Merge title or body HTML into the visible new or unpublished microfeed Item and save it as an unpublished draft.",
-    execute(input, {signal}) {
-      return save(parseInput(saveItemDraftInputSchema, input), signal);
+    execute(input, options) {
+      return save(
+        parseInput(saveItemDraftInputSchema, input),
+        webMcpExecutionSignal(options),
+      );
     },
     inputSchema: inputJsonSchema(saveItemDraftInputSchema),
     name: "microfeed_save_item_draft",
@@ -38,8 +42,11 @@ export function pageDraftTool(
     annotations: writeAnnotations,
     description:
       "Merge supplied fields into the visible new or unpublished microfeed Page and save it as an unpublished draft.",
-    execute(input, {signal}) {
-      return save(parseInput(savePageDraftInputSchema, input), signal);
+    execute(input, options) {
+      return save(
+        parseInput(savePageDraftInputSchema, input),
+        webMcpExecutionSignal(options),
+      );
     },
     inputSchema: inputJsonSchema(savePageDraftInputSchema),
     name: "microfeed_save_page_draft",

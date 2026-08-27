@@ -145,6 +145,27 @@ describe("WebMCP tool contracts", () => {
     expect(pageSave).not.toHaveBeenCalled();
   });
 
+  it("normalizes missing execution signals from preview clients", async () => {
+    const itemSave = vi.fn(async (
+      _input: unknown,
+      _signal: AbortSignal,
+    ) => ({}));
+    const pageSave = vi.fn(async (
+      _input: unknown,
+      _signal: AbortSignal,
+    ) => ({}));
+
+    await itemDraftTool(itemSave).execute({title: "Draft"});
+    await pageDraftTool(pageSave).execute({title: "Page"}, {});
+
+    const itemSignal = itemSave.mock.calls[0]?.[1];
+    const pageSignal = pageSave.mock.calls[0]?.[1];
+    expect(itemSignal).toBeInstanceOf(AbortSignal);
+    expect(itemSignal?.aborted).toBe(false);
+    expect(pageSignal).toBeInstanceOf(AbortSignal);
+    expect(pageSignal?.aborted).toBe(false);
+  });
+
   it("uses authenticated same-origin fetches for read tools", async () => {
     vi.stubGlobal("document", fakeDocument({adminPath: "admin"}));
     const fetch = vi.fn(async () => new Response(JSON.stringify({
@@ -154,7 +175,6 @@ describe("WebMCP tool contracts", () => {
     vi.stubGlobal("fetch", fetch);
     const result = await dashboardTools()[0]!.execute(
       {limit: 1, status: "unpublished"},
-      {signal: new AbortController().signal},
     ) as Record<string, any>;
 
     expect(fetch).toHaveBeenCalledWith(

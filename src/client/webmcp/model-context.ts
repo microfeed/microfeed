@@ -1,7 +1,7 @@
 import {nativeWebMcpAvailable} from "./feature-detection";
 
 export interface WebMcpExecutionOptions {
-  signal: AbortSignal;
+  signal?: AbortSignal;
 }
 
 export interface WebMcpTool {
@@ -12,7 +12,7 @@ export interface WebMcpTool {
   description: string;
   execute: (
     input: unknown,
-    options: WebMcpExecutionOptions,
+    options?: WebMcpExecutionOptions,
   ) => unknown | Promise<unknown>;
   inputSchema: Record<string, unknown>;
   name: string;
@@ -41,6 +41,12 @@ export function nativeModelContext(
   return nativeWebMcpAvailable(currentDocument)
     ? modelContextFromDocument(currentDocument)
     : undefined;
+}
+
+export function webMcpExecutionSignal(
+  options?: WebMcpExecutionOptions,
+): AbortSignal {
+  return options?.signal ?? new AbortController().signal;
 }
 
 export async function registerWebMcpTools(
