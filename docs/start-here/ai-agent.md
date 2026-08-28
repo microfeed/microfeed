@@ -1,17 +1,17 @@
 ---
-title: Deploy with an AI coding agent
-description: The recommended three-step route to a new microfeed site.
+title: Deploy with a local AI agent
+description: Detailed browser handoffs and recovery steps for an agent-guided deployment.
 ---
 
-Use a local coding agent that can run terminal commands and open browser pages.
+Use a local AI agent that can run terminal commands and open browser pages.
 The published launcher prepares an exact microfeed release in a private cache,
 then directs the agent to the same guarded management engine available in the
 microfeed source repository. You do not need to Git-clone or open that source
 repository yourself.
 
-## 1. Open a local coding agent
+## 1. Open a local AI agent
 
-Open OpenAI Codex, Claude Code, Cursor, or another coding agent that can run
+Open Codex, Claude Code, Cursor, or another capable local AI agent that can run
 terminal commands on your computer and complete a browser handoff. The current
 folder does not need to contain source code.
 
@@ -24,8 +24,9 @@ does not require Git or Corepack.
 Paste this prompt:
 
 ```text
-Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
-then follow its instructions until deployment is verified.
+Deploy microfeed to Cloudflare.
+Start by running `npx @microfeed/cli manage`, then follow its instructions until
+deployment is verified.
 ```
 
 The first run verifies and copies the exact release bundled with

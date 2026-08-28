@@ -86,6 +86,50 @@ html[data-has-hero][data-has-sidebar]:not([data-has-toc]) {
   border-radius: 0.75rem;
 }
 
+.quickstart-agents {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-block: 1.25rem;
+}
+
+.quickstart-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  border: 1px solid #dde2ea;
+  border-radius: 0.8rem;
+  background: #ffffff;
+  padding: 0.55rem 0.85rem;
+  box-shadow: 0 1px 3px rgba(44, 43, 61, 0.08);
+  color: #26251e;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.quickstart-agent:hover {
+  border-color: var(--microfeed-sky);
+  color: #26251e;
+}
+
+.quickstart-agent img {
+  width: 1.6rem;
+  height: 1.6rem;
+  object-fit: contain;
+}
+
+.quickstart-agent img[src$="cursor.svg"] {
+  width: 1.4rem;
+}
+
+.quickstart-agent-more {
+  color: var(--sl-color-gray-3);
+  font-size: 0.9rem;
+}
+
 .hero {
   padding-block: clamp(4rem, 10vw, 8rem);
 }

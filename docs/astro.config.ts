@@ -48,7 +48,10 @@ export default defineConfig({
           items: [
             { label: "Quick start", link: "/start-here/" },
             { label: "How microfeed works", link: "/start-here/concepts/" },
-            { label: "Deploy with an AI agent", link: "/start-here/ai-agent/" },
+            {
+              label: "Deploy with a local AI agent",
+              link: "/start-here/ai-agent/",
+            },
             { label: "Deploy manually", link: "/start-here/manual/" },
             { label: "After deployment", link: "/start-here/after-deploy/" },
           ],
