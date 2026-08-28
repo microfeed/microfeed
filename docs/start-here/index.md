@@ -1,51 +1,65 @@
 ---
 title: Quick start
-description: Deploy your first microfeed site to Cloudflare with a local coding agent.
+description: Paste one prompt into a local AI agent to deploy microfeed to Cloudflare.
 ---
 
-This is the shortest path to a working microfeed site. A local coding agent runs
-the setup commands, explains each choice, and verifies the result. You remain
-in control of Cloudflare sign-in and your private dashboard password.
+Open a local AI agent that can run terminal commands and complete a browser
+handoff, then paste this prompt in any folder on your computer.
 
-## Before you begin
+<div class="quickstart-agents" aria-label="Examples of local AI agents">
+  <a class="quickstart-agent" href="https://openai.com/codex/">
+    <img src="/images/agents/openai.svg" alt="" width="32" height="32">
+    <span>Codex</span>
+  </a>
+  <a class="quickstart-agent" href="https://claude.com/product/claude-code">
+    <img src="/images/agents/claude.svg" alt="" width="32" height="32">
+    <span>Claude Code</span>
+  </a>
+  <a class="quickstart-agent" href="https://cursor.com/">
+    <img src="/images/agents/cursor.svg" alt="" width="32" height="32">
+    <span>Cursor</span>
+  </a>
+  <span class="quickstart-agent-more">or another capable local agent</span>
+</div>
 
-You need:
+```text frame="terminal" wrap
+Deploy microfeed to Cloudflare.
+Start by running `npx @microfeed/cli manage`, then follow its instructions until
+deployment is verified.
+```
 
+That is enough to begin. Stay nearby while the agent works: you sign in to
+Cloudflare in your browser, choose between any ambiguous accounts or existing
+sites, and create your private dashboard password yourself. Never paste a
+Cloudflare token, dashboard password, or private setup link into the
+conversation.
+
+## What you need
+
+- A computer with [Node.js 22.12 or newer](https://nodejs.org/). Its standard
+  installer includes npm and `npx`. If `npx` is unavailable, ask the agent to
+  help you install Node.js first, then use the same prompt again.
 - A [Cloudflare account](https://dash.cloudflare.com/sign-up). Cloudflare’s
-  included usage is enough for many personal and small sites; usage above the
+  included usage is enough for many personal and small sites; usage above its
   published limits may require a paid plan.
-- A computer with [Node.js 22.12 or newer](https://nodejs.org/) and npm.
-  Ordinary deployment does not require Git or Corepack.
-- A local coding agent such as OpenAI Codex, Claude Code, or Cursor that can run
-  terminal commands in a folder on your computer.
 - An email address for the private dashboard login.
 
-## Deploy with an agent
+You do **not** need Git, Corepack, or a Git-cloned copy of microfeed's source
+code. The published CLI contains the matching deployment source and Yarn
+runtime.
 
-1. Open a local coding agent in any folder on your computer. The agent must run
-   locally so Cloudflare can hand browser authorization back to it.
+## What happens next
 
-2. Ask the agent:
-
-   ```text frame="terminal" wrap
-   Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
-   then follow its instructions until deployment is verified.
-   ```
-
-3. Stay nearby while the agent works. The first command copies the exact
-   release bundled with the CLI into a private cache and installs its
-   dependencies; it does not create source files in your current folder.
-   Cloudflare opens a browser page
-   for you to sign in, and the agent may ask you to select an account or
-   approve an important choice. Never paste a Cloudflare token or dashboard
-   password into the conversation.
-
-4. When deployment finishes, open the private one-time setup page and choose
-   your dashboard password. Then open the public site and publish a test item.
-   Use the dashboard yourself, or follow the
-   [post-deployment checklist](./after-deploy/) to enable the official
-   [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) for a coding
-   agent.
+1. The first command prepares the exact microfeed release in a private cache.
+   Initial setup can take several minutes and use about 1.3 GB; it does not put
+   source files in your current folder.
+2. Cloudflare opens a browser page for you to sign in. The agent explains each
+   important choice and asks before reusing an existing site or resource.
+3. After deployment, you open a private one-time setup page and choose the
+   dashboard password yourself.
+4. The agent runs `npx @microfeed/cli manage status` and continues until the
+   hosted application, dashboard protection, database, and media storage are
+   verified.
 
 The result is a microfeed site in your Cloudflare account with a public
 website, RSS feed, JSON Feed, and private Admin dashboard.
@@ -55,19 +69,11 @@ website, RSS feed, JSON Feed, and private Admin dashboard.
   <a href="/images/screenshots/1-deploy-walkthrough.mp4">Watch the microfeed deployment walkthrough.</a>
 </video>
 
-## Confirm the installation
+For detailed browser handoffs, screenshots, and recovery steps, continue to
+[Deploy with a local AI agent](./ai-agent/). To run the same guided commands
+yourself, follow [Deploy manually](./manual/). After installation, use the
+[post-deployment checklist](./after-deploy/) to publish a test item and connect
+the content CLI.
 
-Ask the agent to run `npx @microfeed/cli manage status`. The report should
-confirm the hosted application, dashboard protection, content database, and
-media storage. If setup stopped partway through, ask the agent to continue the
-same microfeed deployment; the installer is designed to resume safely.
-
-For screenshots, browser handoffs, and recovery steps, continue to
-[Deploy with an AI coding agent](./ai-agent/).
-
-## Prefer to use the terminal yourself?
-
-Follow [Deploy manually](./manual/) to run the same guided
-`npx @microfeed/cli manage` workflow without an agent or a copy of the
-microfeed source code. If Worker, D1, or R2 are unfamiliar terms, read [How
-microfeed works](./concepts/) before installing.
+Codex, Claude Code, and Cursor are trademarks of their respective owners and
+are shown only as examples.
