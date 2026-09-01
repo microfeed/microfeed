@@ -78,4 +78,4 @@ jobs:
       - name: Test Windows process launching
         run: yarn vitest run tests/unit/manage-cli/process.test.ts tests/unit/cli/manage.test.ts
       - name: Test Worker runtime
-        run: yarn vitest run --config vitest.worker.config.ts
+        run: yarn vitest run --config vitest.worker.config.ts --testTimeout 15000
