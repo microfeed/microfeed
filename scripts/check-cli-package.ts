@@ -357,6 +357,7 @@ try {
       stdout: "",
     }),
     stateDirectory: path.join(temporary, "launcher-config"),
+    tsxJavaScript: path.join(temporary, "fake-tsx.mjs"),
     yarnJavaScript: path.join(temporary, "fake-yarn.js"),
   });
   const handoff = handoffOutput.join("\n");

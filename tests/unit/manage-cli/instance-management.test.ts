@@ -751,7 +751,9 @@ describe("first-class local instances", () => {
       readFile(config.wranglerConfigPath(enabled!), "utf8"),
     ).resolves.toContain('"binding": "MEDIA_BUCKET"');
     const yarnScripts = runner.mock.calls
-      .filter(([executable]) => /(?:^|\/)yarn(?:\.cmd)?$/u.test(executable))
+      .filter(([executable]) =>
+        /^yarn(?:\.cmd|\.js)?$/u.test(path.basename(executable))
+      )
       .map(([, args]) => args[0]);
     expect(yarnScripts).toEqual([
       "types",
@@ -866,7 +868,9 @@ describe("first-class local instances", () => {
       local: true,
     }, runner)).rejects.toThrow("deployment smoke tests failed");
     const yarnScripts = runner.mock.calls
-      .filter(([executable]) => /(?:^|\/)yarn(?:\.cmd)?$/u.test(executable))
+      .filter(([executable]) =>
+        /^yarn(?:\.cmd|\.js)?$/u.test(path.basename(executable))
+      )
       .map(([, args]) => args[0]);
     expect(yarnScripts).toEqual(["types", "typecheck", "test:deploy"]);
     expect(yarnScripts).not.toContain("build");

@@ -56,6 +56,7 @@ export interface ManageLauncherOptions {
   runtimeManifestPath?: string;
   runner?: ManageCommandRunner;
   stateDirectory?: string;
+  tsxJavaScript?: string;
   yarnJavaScript?: string;
 }
 
@@ -238,6 +239,11 @@ function installedRuntimeManifestPath(): string {
 function installedYarnJavaScript(): string {
   const require = createRequire(import.meta.url);
   return require.resolve("@yarnpkg/cli-dist/bin/yarn.js");
+}
+
+function installedTsxJavaScript(repositoryDirectory: string): string {
+  const require = createRequire(path.join(repositoryDirectory, "package.json"));
+  return require.resolve("tsx/cli");
 }
 
 function safeRuntimePath(value: unknown): value is string {
@@ -483,14 +489,14 @@ async function prepareWorkspace(input: {
   cacheDirectory: string;
   environment: StringEnvironment;
   manifest: ManageRuntimeManifest;
-  platform: NodeJS.Platform;
   runtimeDirectory: string;
   runner: ManageCommandRunner;
+  tsxJavaScript?: string;
   yarnJavaScript: string;
 }): Promise<{
   environment: StringEnvironment;
   repositoryDirectory: string;
-  tsxExecutable: string;
+  tsxJavaScript: string;
 }> {
   await mkdir(input.cacheDirectory, {recursive: true, mode: 0o700});
   if (process.platform !== "win32") {
@@ -534,12 +540,8 @@ async function prepareWorkspace(input: {
     return {
       environment,
       repositoryDirectory,
-      tsxExecutable: path.join(
-        repositoryDirectory,
-        "node_modules",
-        ".bin",
-        input.platform === "win32" ? "tsx.cmd" : "tsx",
-      ),
+      tsxJavaScript: input.tsxJavaScript ??
+        installedTsxJavaScript(repositoryDirectory),
     };
   } finally {
     await releaseLock();
@@ -616,9 +618,9 @@ export async function runManageLauncher(
     cacheDirectory,
     environment,
     manifest,
-    platform,
     runtimeDirectory,
     runner,
+    tsxJavaScript: options.tsxJavaScript,
     yarnJavaScript,
   });
   if (args.length === 0) {
@@ -632,9 +634,11 @@ export async function runManageLauncher(
   if (process.platform !== "win32") {
     await chmod(stateDirectory, 0o700);
   }
+  // Execute the JavaScript entry directly so Windows never needs a .cmd shim.
   const result = await runner(
-    workspace.tsxExecutable,
+    process.execPath,
     [
+      workspace.tsxJavaScript,
       "--tsconfig",
       path.join(workspace.repositoryDirectory, "tsconfig.json"),
       path.join(workspace.repositoryDirectory, "manage-cli", "index.ts"),

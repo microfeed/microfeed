@@ -1,5 +1,6 @@
 import {spawn} from "node:child_process";
 import {readFile} from "node:fs/promises";
+import {createRequire} from "node:module";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 
@@ -13,18 +14,47 @@ export const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../..",
 );
+const require = createRequire(import.meta.url);
+
+interface PackageBinaryMetadata {
+  bin?: string | Record<string, string>;
+}
+
+function packageBinaryJavaScript(
+  packageName: string,
+  binaryName: string,
+): string {
+  const metadataPath = require.resolve(`${packageName}/package.json`);
+  const metadata = require(metadataPath) as PackageBinaryMetadata;
+  const binary = typeof metadata.bin === "string"
+    ? metadata.bin
+    : metadata.bin?.[binaryName];
+  if (!binary) {
+    throw new Error(
+      `The installed ${packageName} package does not provide ${binaryName}.`,
+    );
+  }
+  return path.resolve(path.dirname(metadataPath), binary);
+}
 
 export const runCommand: CommandRunner = (
   executable,
   args,
   options: RunOptions = {},
 ) => new Promise((resolve, reject) => {
-  const child = spawn(executable, [...args], {
-    cwd: options.cwd ?? repositoryRoot,
-    env: {...process.env, ...options.env},
-    shell: false,
-    stdio: options.interactive ? "inherit" : ["pipe", "pipe", "pipe"],
-  });
+  const runsWithNode = [".cjs", ".js", ".mjs"].includes(
+    path.extname(executable).toLowerCase(),
+  );
+  const child = spawn(
+    runsWithNode ? process.execPath : executable,
+    runsWithNode ? [executable, ...args] : [...args],
+    {
+      cwd: options.cwd ?? repositoryRoot,
+      env: {...process.env, ...options.env},
+      shell: false,
+      stdio: options.interactive ? "inherit" : ["pipe", "pipe", "pipe"],
+    },
+  );
   let stdout = "";
   let stderr = "";
 
@@ -63,17 +93,14 @@ export const runCommand: CommandRunner = (
   });
 });
 
-function localBinary(name: string): string {
-  const suffix = process.platform === "win32" ? ".cmd" : "";
-  return path.join(repositoryRoot, "node_modules", ".bin", `${name}${suffix}`);
-}
-
 export function runWrangler(
   runner: CommandRunner,
   args: readonly string[],
   options: RunOptions = {},
 ): Promise<CommandResult> {
-  return runner(localBinary("wrangler"), args, {
+  // JavaScript entry points are executed directly with Node by runCommand, so
+  // Windows never needs a command shim or shell parsing.
+  return runner(packageBinaryJavaScript("wrangler", "wrangler"), args, {
     cwd: repositoryRoot,
     ...options,
   });
@@ -87,11 +114,8 @@ export function runYarnScript(
   const yarnJavaScript = (
     options.env?.MICROFEED_YARN_JAVASCRIPT ??
     process.env.MICROFEED_YARN_JAVASCRIPT
-  )?.trim();
-  const executable = yarnJavaScript
-    ? process.execPath
-    : process.platform === "win32" ? "yarn.cmd" : "yarn";
-  return runner(executable, yarnJavaScript ? [yarnJavaScript, script] : [script], {
+  )?.trim() || packageBinaryJavaScript("@yarnpkg/cli-dist", "yarn");
+  return runner(yarnJavaScript, [script], {
     cwd: repositoryRoot,
     ...options,
   });

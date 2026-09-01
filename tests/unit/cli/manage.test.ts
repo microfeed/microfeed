@@ -57,6 +57,7 @@ interface RecordedCommand {
 interface RuntimeFixture {
   runtimeDirectory: string;
   runtimeManifestPath: string;
+  tsxJavaScript: string;
   yarnJavaScript: string;
 }
 
@@ -66,6 +67,7 @@ async function runtimeFixture(
 ): Promise<RuntimeFixture> {
   const runtimeDirectory = path.join(root, "packaged-runtime");
   const runtimeManifestPath = path.join(root, "runtime-manifest.json");
+  const tsxJavaScript = path.join(root, "tsx.mjs");
   const yarnJavaScript = path.join(root, "yarn.js");
   const files = new Map<string, string>([
     [".agents/skills/deploy-microfeed/SKILL.md", "# Deploy microfeed\n"],
@@ -95,8 +97,14 @@ async function runtimeFixture(
     runtimeManifestPath,
     `${JSON.stringify(manifest, null, 2)}\n`,
   );
+  await writeFile(tsxJavaScript, "// pinned tsx CLI\n");
   await writeFile(yarnJavaScript, "// pinned Yarn CLI\n");
-  return {runtimeDirectory, runtimeManifestPath, yarnJavaScript};
+  return {
+    runtimeDirectory,
+    runtimeManifestPath,
+    tsxJavaScript,
+    yarnJavaScript,
+  };
 }
 
 function workspaceRunner(
@@ -105,7 +113,9 @@ function workspaceRunner(
 ): ManageCommandRunner {
   return async (executable, args, options = {}) => {
     commands.push({args: [...args], executable, options});
-    if (executable.endsWith(`${path.sep}tsx`)) return finalResult;
+    if (args.some((argument) =>
+      argument.endsWith(path.join("manage-cli", "index.ts"))
+    )) return finalResult;
     return commandResult();
   };
 }
@@ -229,9 +239,13 @@ describe("source-code-free management launcher", () => {
       path.join(cacheDirectory, "repository", "untracked-sentinel"),
       "utf8",
     )).resolves.toBe("preserved");
-    const forwarded = commands.find(({executable}) =>
-      executable.endsWith(`${path.sep}tsx`)
+    const forwarded = commands.find(({args}) =>
+      args.some((argument) =>
+        argument.endsWith(path.join("manage-cli", "index.ts"))
+      )
     );
+    expect(forwarded?.executable).toBe(process.execPath);
+    expect(forwarded?.args[0]).toBe(fixture.tsxJavaScript);
     expect(forwarded?.options.cwd).toBe(invocationDirectory);
     expect(forwarded?.options.env?.MICROFEED_STATE_DIRECTORY)
       .toBe(stateDirectory);
@@ -250,6 +264,31 @@ describe("source-code-free management launcher", () => {
       expect((await stat(cacheDirectory)).mode & 0o777).toBe(0o700);
       expect((await stat(stateDirectory)).mode & 0o777).toBe(0o700);
     }
+  });
+
+  it("does not invoke a Windows command shim", async () => {
+    const root = await temporaryDirectory("microfeed-manage-windows-");
+    const fixture = await runtimeFixture(root);
+    const commands: RecordedCommand[] = [];
+
+    await runManageLauncher(["accounts", "--json"], {
+      cacheDirectory: path.join(root, "cache"),
+      environment: {PATH: "C:\\Program Files\\nodejs"},
+      invocationDirectory: path.join(root, "caller"),
+      packageVersion: "1.2.3",
+      platform: "win32",
+      runner: workspaceRunner(commands),
+      stateDirectory: path.join(root, "state"),
+      ...fixture,
+    });
+
+    const forwarded = commands.find(({args}) =>
+      args.includes(path.join(root, "tsx.mjs"))
+    );
+    expect(forwarded?.executable).toBe(process.execPath);
+    expect(forwarded?.args.slice(-2)).toEqual(["accounts", "--json"]);
+    expect(commands.some(({executable}) => executable.endsWith(".cmd")))
+      .toBe(false);
   });
 
   it("replaces only stale cached source and preserves deployment state", async () => {
