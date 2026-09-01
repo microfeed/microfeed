@@ -168,7 +168,7 @@ describe("source-code-free management launcher", () => {
       {LOCALAPPDATA: "C:\\Users\\person\\AppData\\Local"},
       "win32",
       "C:\\Users\\person",
-    )).toContain(path.join("microfeed", "manage"));
+    )).toContain(path.win32.join("microfeed", "manage"));
 
     expect(manageStateDirectory(
       {MICROFEED_CONFIG_DIR: "/custom/config"},
@@ -183,7 +183,7 @@ describe("source-code-free management launcher", () => {
     expect(manageStateDirectory({}, "darwin", "/Users/person"))
       .toBe("/Users/person/.config/microfeed/manage");
     expect(manageStateDirectory({}, "win32", "C:\\Users\\person"))
-      .toContain(path.join("AppData", "Roaming", "microfeed", "manage"));
+      .toContain(path.win32.join("AppData", "Roaming", "microfeed", "manage"));
   });
 
   it("copies the exact bundled release and prints a complete agent handoff", async () => {

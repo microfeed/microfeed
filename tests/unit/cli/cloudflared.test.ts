@@ -57,7 +57,7 @@ describe("cloudflared helper resolution", () => {
       {LOCALAPPDATA: "C:\\Users\\person\\AppData\\Local"},
       "win32",
       "C:\\Users\\person",
-    )).toContain(path.join("microfeed", "cloudflared"));
+    )).toContain(path.win32.join("microfeed", "cloudflared"));
   });
 
   it("maps supported assets and rejects unsupported platforms", () => {
