@@ -89,21 +89,22 @@ export function cloudflaredCacheDirectory(
   platform: NodeJS.Platform = process.platform,
   homeDirectory: string = homedir(),
 ): string {
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
   if (environment.MICROFEED_CACHE_DIR?.trim()) {
-    return path.resolve(environment.MICROFEED_CACHE_DIR.trim(), "cloudflared");
+    return platformPath.resolve(environment.MICROFEED_CACHE_DIR.trim(), "cloudflared");
   }
   if (platform === "win32") {
-    return path.join(
-      environment.LOCALAPPDATA?.trim() || path.join(homeDirectory, "AppData", "Local"),
+    return platformPath.join(
+      environment.LOCALAPPDATA?.trim() || platformPath.join(homeDirectory, "AppData", "Local"),
       "microfeed",
       "cloudflared",
     );
   }
   if (platform === "darwin") {
-    return path.join(homeDirectory, "Library", "Caches", "microfeed", "cloudflared");
+    return platformPath.join(homeDirectory, "Library", "Caches", "microfeed", "cloudflared");
   }
-  return path.join(
-    environment.XDG_CACHE_HOME?.trim() || path.join(homeDirectory, ".cache"),
+  return platformPath.join(
+    environment.XDG_CACHE_HOME?.trim() || platformPath.join(homeDirectory, ".cache"),
     "microfeed",
     "cloudflared",
   );
@@ -396,15 +397,23 @@ export async function startCloudflaredQuickTunnel(input: {
   spawnProcess?: typeof spawn;
   startupTimeoutMs?: number;
 }): Promise<CloudflaredQuickTunnel> {
-  const child = (input.spawnProcess ?? spawn)(input.executablePath, [
+  const runsWithNode = [".cjs", ".js", ".mjs"].includes(
+    path.extname(input.executablePath).toLowerCase(),
+  );
+  const args = [
     "tunnel",
     "--url",
     `http://127.0.0.1:${input.port}`,
     "--no-autoupdate",
-  ], {
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  ];
+  const child = (input.spawnProcess ?? spawn)(
+    runsWithNode ? process.execPath : input.executablePath,
+    runsWithNode ? [input.executablePath, ...args] : args,
+    {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
   let recentOutput = "";
   let resolveStarted!: (url: string) => void;
   let rejectStarted!: (error: Error) => void;

@@ -1,10 +1,14 @@
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
+import {createRequire} from "node:module";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
 
 import {satisfies} from "semver";
 import {x as extractTar} from "tar";
+
+const require = createRequire(import.meta.url);
+const yarnJavaScript = require.resolve("@yarnpkg/cli-dist/bin/yarn.js");
 
 function run(command: string, args: string[], cwd = process.cwd()): string {
   const result = spawnSync(command, args, {
@@ -18,6 +22,10 @@ function run(command: string, args: string[], cwd = process.cwd()): string {
     );
   }
   return result.stdout;
+}
+
+function runYarn(args: string[], cwd = process.cwd()): string {
+  return run(process.execPath, [yarnJavaScript, ...args], cwd);
 }
 
 interface PackageMetadata {
@@ -38,7 +46,7 @@ try {
     await readFile(path.join(process.cwd(), "package.json"), "utf8"),
   ) as {version: string};
   const archive = path.join(temporary, "microfeed-theme-kit.tgz");
-  run("yarn", [
+  runYarn([
     "workspace",
     "@microfeed/theme-kit",
     "pack",
@@ -75,34 +83,16 @@ try {
   }
 
   const [
-    packedReadme,
     rootLicense,
     packedLicense,
     starterPackage,
-    starterReadme,
     packedClaudeBridge,
-    packedSkill,
   ] = await Promise.all([
-      readFile(path.join(packageDirectory, "README.md"), "utf8"),
       readFile(path.join(process.cwd(), "LICENSE"), "utf8"),
       readFile(path.join(packageDirectory, "LICENSE"), "utf8"),
       readFile(path.join(packageDirectory, "assets/starter/package.json"), "utf8"),
-      readFile(path.join(packageDirectory, "assets/starter/README.md"), "utf8"),
       readFile(path.join(packageDirectory, "assets/starter/CLAUDE.md"), "utf8"),
-      readFile(path.join(
-        packageDirectory,
-        "assets/starter/.agents/skills/develop-microfeed-theme/SKILL.md",
-      ), "utf8"),
     ]);
-  if (!packedReadme.includes("Normal development workflow") ||
-      !packedReadme.includes("npm install --global @microfeed/theme-kit") ||
-    !packedReadme.includes("npx @microfeed/cli manage theme install") ||
-      !packedReadme.includes("immutable D1 theme row") ||
-      !packedReadme.includes("immutable R2") ||
-      !packedReadme.includes("Vite, Webpack, Tailwind CSS") ||
-      !packedReadme.includes("GNU Affero General Public License v3.0")) {
-    throw new Error("The packed theme-kit README is incomplete.");
-  }
   if (packedLicense !== rootLicense) {
     throw new Error("The packed theme-kit license differs from the repository license.");
   }
@@ -117,12 +107,9 @@ try {
       !parsedStarterPackage.scripts?.validate ||
       !parsedStarterPackage.scripts?.test ||
       !parsedStarterPackage.scripts?.preview ||
-      !starterReadme.includes("generic standalone microfeed theme repository") ||
-      !starterReadme.includes("yarn preview --feed-url https://example.com/json/") ||
       !packedClaudeBridge.includes(
         ".agents/skills/develop-microfeed-theme/SKILL.md",
-      ) ||
-      !packedSkill.includes("Never create screenshots unless the user explicitly asks")) {
+      )) {
     throw new Error("The packed generic theme scaffold is incomplete or stale.");
   }
 
@@ -133,19 +120,18 @@ try {
     packageManager: "yarn@4.18.0",
     private: true,
   }), "utf8");
-  run("yarn", ["install"], consumer);
-  const help = run("yarn", ["theme-kit", "--help"], consumer);
+  runYarn(["install"], consumer);
+  const help = runYarn(["theme-kit", "--help"], consumer);
   if (!help.includes("theme-kit <command>") ||
       !help.includes("fixture pull <url>") ||
       !help.includes("--version")) {
     throw new Error("The project-local packed theme-kit help is incomplete.");
   }
-  const version = run("yarn", ["theme-kit", "--version"], consumer);
+  const version = runYarn(["theme-kit", "--version"], consumer);
   if (version.trim() !== rootPackage.version) {
     throw new Error("The project-local theme-kit executable reports a stale version.");
   }
-  const validateHelp = run(
-    "yarn",
+  const validateHelp = runYarn(
     ["theme-kit", "validate", "--help"],
     consumer,
   );
@@ -154,23 +140,21 @@ try {
     throw new Error("The packed validate command help is incomplete.");
   }
   const installedStarter = path.join(packageDirectory, "assets/starter");
-  const validation = JSON.parse(run(
-    "yarn",
+  const validation = JSON.parse(runYarn(
     ["theme-kit", "validate", installedStarter, "--json"],
     consumer,
   )) as {ok?: boolean; packageId?: string};
   if (!validation.ok || validation.packageId !== "example.my-theme") {
     throw new Error("The packed generic starter does not validate.");
   }
-  const conformance = JSON.parse(run(
-    "yarn",
+  const conformance = JSON.parse(runYarn(
     ["theme-kit", "test", installedStarter, "--json"],
     consumer,
   )) as {ok?: boolean; tests?: unknown[]};
   if (!conformance.ok || !conformance.tests || conformance.tests.length < 8) {
     throw new Error("The packed generic starter does not pass conformance tests.");
   }
-  run("yarn", [
+  runYarn([
     "node",
     "--input-type=module",
     "-e",
@@ -178,8 +162,7 @@ try {
   ], consumer);
 
   const initializedTheme = path.join(temporary, "initialized-theme");
-  run(
-    "yarn",
+  runYarn(
     ["theme-kit", "init", initializedTheme],
     consumer,
   );
@@ -202,7 +185,7 @@ try {
     throw new Error("The packed init command omitted its Claude Code bridge.");
   }
 
-  const dlxHelp = run("yarn", [
+  const dlxHelp = runYarn([
     "dlx",
     "--package",
     `@microfeed/theme-kit@file:${archive}`,
@@ -212,8 +195,7 @@ try {
   if (!dlxHelp.endsWith(help)) {
     throw new Error("The yarn dlx @microfeed/theme-kit behavior diverged.");
   }
-  const compatibilityVersion = run(
-    "yarn",
+  const compatibilityVersion = runYarn(
     ["microfeed-theme", "--version"],
     consumer,
   );

@@ -117,10 +117,14 @@ Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
 then follow its instructions until deployment is verified.
 ```
 
-That's it. The launcher requires Node.js 22.12 or newer with npm. It carries
-the exact microfeed release and Yarn runtime, verifies and copies that source
-into a private cache, and installs its locked dependencies without requiring
-Git or Corepack. It does not create source files in your current folder. The
+That's it. The launcher requires Node.js 22.12 or newer with npm. Windows ARM
+computers are supported through Windows' x64 application emulation: install
+the x64 build of Node.js, then run `node -p "process.arch"` and confirm that it
+prints `x64`. Native Windows ARM64 Node.js is not supported because Cloudflare's
+local runtime does not provide a matching executable. The launcher carries the
+exact microfeed release and Yarn runtime, verifies and copies that source into
+a private cache, and installs its locked dependencies without requiring Git or
+Corepack. It does not create source files in your current folder. The
 first setup may use about 1.3 GB and take several minutes; later runs reuse it.
 The agent guides the setup, runs the deployment, and verifies the finished
 site. You only step in for Cloudflare browser authorization, choices that

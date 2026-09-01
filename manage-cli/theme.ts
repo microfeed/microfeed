@@ -1637,10 +1637,11 @@ async function writeThemePackage(
     ) {
       throw new Error(`Unsafe export path ${relativePath}.`);
     }
-    if (writtenPaths.has(resolvedRelative)) {
+    const packagePath = resolvedRelative.split(path.sep).join("/");
+    if (writtenPaths.has(packagePath)) {
       throw new Error(`Theme package paths conflict at ${relativePath}.`);
     }
-    writtenPaths.add(resolvedRelative);
+    writtenPaths.add(packagePath);
     await mkdir(path.dirname(filename), {recursive: true});
     await writeFile(filename, value);
   };

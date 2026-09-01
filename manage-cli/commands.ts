@@ -602,7 +602,10 @@ async function runChecks(
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     MICROFEED_INSTANCE: config.instanceName,
-    MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
+    MICROFEED_WRANGLER_CONFIG: path.relative(
+      repositoryRoot,
+      wranglerConfigPath(config),
+    ),
   };
   const execute = async (currentActivity: WaitActivity): Promise<void> => {
     currentActivity.update("Generating Worker binding types");
@@ -5904,9 +5907,19 @@ export async function devCommand(
     await runYarnScript(runner, "dev:astro", {
       env: {
         ...process.env,
+        // Astro automatically backgrounds dev servers when it detects an AI
+        // agent. The management command owns this child process and must keep
+        // it attached so readiness, output, and shutdown remain coordinated.
+        ASTRO_DEV_BACKGROUND: "1",
         MICROFEED_INSTANCE: config.instanceName,
         MICROFEED_LOCAL_STATE: localPersistencePath(config),
-        MICROFEED_WRANGLER_CONFIG: wranglerConfigPath(config),
+        // The Astro Cloudflare adapter resolves this value as a URL before it
+        // hands the filesystem path to Wrangler. A Windows drive-letter path
+        // is parsed as a non-file URL, so keep it relative to the project.
+        MICROFEED_WRANGLER_CONFIG: path.relative(
+          repositoryRoot,
+          wranglerConfigPath(config),
+        ),
       },
       interactive: true,
     });

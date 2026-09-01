@@ -885,11 +885,11 @@ describe("CloudflareClient", () => {
     const deployArgs = runner.mock.calls[1]?.[1] ?? [];
     expect(migrationArgs).toContain("--config");
     expect(migrationArgs.join(" ")).toContain(
-      ".microfeed/instances/art-of-war/wrangler.jsonc",
+      nodePath.join(".microfeed", "instances", "art-of-war", "wrangler.jsonc"),
     );
     expect(deployArgs).toContain("--config");
     expect(deployArgs.join(" ")).toContain(
-      "dist/server/wrangler.json",
+      nodePath.join("dist", "server", "wrangler.json"),
     );
     expect(deployArgs).toContain("--tag");
     expect(deployArgs).toContain(sourceCommit);

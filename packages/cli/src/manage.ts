@@ -45,6 +45,7 @@ export type ManageCommandRunner = (
 ) => Promise<ManageCommandResult>;
 
 export interface ManageLauncherOptions {
+  architecture?: NodeJS.Architecture;
   cacheDirectory?: string;
   environment?: StringEnvironment;
   homeDirectory?: string;
@@ -146,22 +147,23 @@ export function manageCacheDirectory(
   platform: NodeJS.Platform = process.platform,
   homeDirectory: string = homedir(),
 ): string {
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
   if (environment.MICROFEED_CACHE_DIR?.trim()) {
-    return path.resolve(environment.MICROFEED_CACHE_DIR.trim(), "manage");
+    return platformPath.resolve(environment.MICROFEED_CACHE_DIR.trim(), "manage");
   }
   if (platform === "win32") {
-    return path.join(
+    return platformPath.join(
       environment.LOCALAPPDATA?.trim() ||
-        path.join(homeDirectory, "AppData", "Local"),
+        platformPath.join(homeDirectory, "AppData", "Local"),
       "microfeed",
       "manage",
     );
   }
   if (platform === "darwin") {
-    return path.join(homeDirectory, "Library", "Caches", "microfeed", "manage");
+    return platformPath.join(homeDirectory, "Library", "Caches", "microfeed", "manage");
   }
-  return path.join(
-    environment.XDG_CACHE_HOME?.trim() || path.join(homeDirectory, ".cache"),
+  return platformPath.join(
+    environment.XDG_CACHE_HOME?.trim() || platformPath.join(homeDirectory, ".cache"),
     "microfeed",
     "manage",
   );
@@ -172,23 +174,24 @@ export function manageStateDirectory(
   platform: NodeJS.Platform = process.platform,
   homeDirectory: string = homedir(),
 ): string {
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
   if (environment.MICROFEED_CONFIG_DIR?.trim()) {
-    return path.join(
-      path.resolve(environment.MICROFEED_CONFIG_DIR.trim()),
+    return platformPath.join(
+      platformPath.resolve(environment.MICROFEED_CONFIG_DIR.trim()),
       "manage",
     );
   }
   const root = platform === "win32"
-    ? path.join(
+    ? platformPath.join(
       environment.APPDATA?.trim() ||
-        path.join(homeDirectory, "AppData", "Roaming"),
+        platformPath.join(homeDirectory, "AppData", "Roaming"),
       "microfeed",
     )
-    : path.join(
-      environment.XDG_CONFIG_HOME?.trim() || path.join(homeDirectory, ".config"),
+    : platformPath.join(
+      environment.XDG_CONFIG_HOME?.trim() || platformPath.join(homeDirectory, ".config"),
       "microfeed",
     );
-  return path.join(root, "manage");
+  return platformPath.join(root, "manage");
 }
 
 function requireSupportedNodeVersion(version = process.versions.node): void {
@@ -204,6 +207,20 @@ function requireSupportedNodeVersion(version = process.versions.node): void {
     }
     if (part > minimum) return;
   }
+}
+
+export function requireSupportedManageArchitecture(
+  platform: NodeJS.Platform = process.platform,
+  architecture: NodeJS.Architecture = process.arch,
+): void {
+  if (platform !== "win32" || architecture === "x64") return;
+  throw new CliError(
+    "microfeed management on Windows requires the x64 build of Node.js " +
+      "because Cloudflare's local runtime does not provide a native Windows " +
+      `${architecture} executable. Install x64 Node.js from ` +
+      "https://nodejs.org/, verify `node -p \"process.arch\"` prints `x64`, " +
+      "then rerun the same command.",
+  );
 }
 
 async function installedPackageVersion(): Promise<string> {
@@ -588,6 +605,9 @@ export async function runManageLauncher(
 ): Promise<number> {
   const environment = options.environment ?? process.env;
   const platform = options.platform ?? process.platform;
+  const architecture = options.architecture ?? process.arch;
+  requireSupportedNodeVersion();
+  requireSupportedManageArchitecture(platform, architecture);
   const homeDirectory = options.homeDirectory ?? homedir();
   const runner = options.runner ?? runManageProcess;
   const packageVersion = options.packageVersion ?? await installedPackageVersion();
@@ -608,7 +628,6 @@ export async function runManageLauncher(
     installedRuntimeManifestPath();
   const yarnJavaScript = options.yarnJavaScript ?? installedYarnJavaScript();
 
-  requireSupportedNodeVersion();
   const manifest = await readRuntimeManifest(
     runtimeManifestPath,
     packageVersion,

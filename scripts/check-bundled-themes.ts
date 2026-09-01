@@ -1,5 +1,6 @@
 import {spawn} from "node:child_process";
 import {readFile} from "node:fs/promises";
+import {createRequire} from "node:module";
 import path from "node:path";
 import {fileURLToPath, pathToFileURL} from "node:url";
 
@@ -8,6 +9,8 @@ import {BUNDLED_THEME_CATALOG} from "../src/shared/themes/BundledThemeCatalog";
 const repositoryRoot = path.resolve(
   fileURLToPath(new URL("..", import.meta.url)),
 );
+const require = createRequire(import.meta.url);
+const yarnJavaScript = require.resolve("@yarnpkg/cli-dist/bin/yarn.js");
 
 async function run(
   executable: string,
@@ -54,12 +57,11 @@ export async function checkBundledThemes(
   build: boolean,
   test: boolean,
 ): Promise<void> {
-  const corepack = process.platform === "win32" ? "corepack.cmd" : "corepack";
   for (const entry of BUNDLED_THEME_CATALOG) {
     const directory = path.join("themes", entry.directory);
     if (build) {
-      await run(corepack, [
-        "yarn",
+      await run(process.execPath, [
+        yarnJavaScript,
         "workspace",
         await packageWorkspace(entry.directory),
         "check",

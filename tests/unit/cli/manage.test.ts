@@ -23,6 +23,7 @@ import {
   type ManageCommandRunner,
   type ManageRuntimeManifest,
   manageStateDirectory,
+  requireSupportedManageArchitecture,
   runManageLauncher,
   runManageProcess,
 } from "../../../packages/cli/src/manage";
@@ -127,12 +128,38 @@ afterEach(async () => {
 });
 
 describe("source-code-free management launcher", () => {
+  it("requires x64 Node.js for Windows management", () => {
+    expect(() => requireSupportedManageArchitecture("win32", "arm64"))
+      .toThrow(/requires the x64 build of Node\.js/u);
+    expect(() => requireSupportedManageArchitecture("win32", "x64"))
+      .not.toThrow();
+    expect(() => requireSupportedManageArchitecture("darwin", "arm64"))
+      .not.toThrow();
+  });
+
+  it("rejects unsupported Windows Node.js before preparing a workspace", async () => {
+    const root = await temporaryDirectory("microfeed-manage-architecture-");
+    const cacheDirectory = path.join(root, "cache");
+    const commands: RecordedCommand[] = [];
+
+    await expect(runManageLauncher([], {
+      architecture: "arm64",
+      cacheDirectory,
+      packageVersion: "1.2.3",
+      platform: "win32",
+      runner: workspaceRunner(commands),
+    })).rejects.toThrow(/process\.arch.*x64/u);
+
+    expect(commands).toEqual([]);
+    await expect(stat(cacheDirectory)).rejects.toMatchObject({code: "ENOENT"});
+  });
+
   it("uses platform cache and persistent state directories", () => {
     expect(manageCacheDirectory(
       {MICROFEED_CACHE_DIR: "/custom/cache"},
       "linux",
       "/home/person",
-    )).toBe(path.resolve("/custom/cache", "manage"));
+    )).toBe("/custom/cache/manage");
     expect(manageCacheDirectory({}, "darwin", "/Users/person"))
       .toBe("/Users/person/Library/Caches/microfeed/manage");
     expect(manageCacheDirectory({}, "linux", "/home/person"))
@@ -147,7 +174,7 @@ describe("source-code-free management launcher", () => {
       {MICROFEED_CONFIG_DIR: "/custom/config"},
       "linux",
       "/home/person",
-    )).toBe(path.resolve("/custom/config", "manage"));
+    )).toBe("/custom/config/manage");
     expect(manageStateDirectory(
       {XDG_CONFIG_HOME: "/xdg/config"},
       "linux",
@@ -197,7 +224,7 @@ describe("source-code-free management launcher", () => {
       .toBe(fixture.yarnJavaScript);
     expect(output.join("\n")).toContain("microfeed v1.2.3");
     expect(output.join("\n")).toContain("deploy-microfeed");
-    expect(output.join("\n")).toContain("docs/manage-cli.md");
+    expect(output.join("\n")).toContain(path.join("docs", "manage-cli.md"));
     expect(output.join("\n")).toContain(
       "npx @microfeed/cli manage accounts --json",
     );
@@ -465,9 +492,10 @@ describe("source-code-free management launcher", () => {
   });
 
   it("renders absolute handoff paths and the public command translation", () => {
-    const output = manageAgentHandoff("/private/cache/microfeed", "2.0.0");
+    const repository = path.resolve("private", "cache", "microfeed");
+    const output = manageAgentHandoff(repository, "2.0.0");
     expect(output).toContain(
-      "`/private/cache/microfeed/.agents/skills/deploy-microfeed/SKILL.md`",
+      `\`${path.join(repository, ".agents", "skills", "deploy-microfeed", "SKILL.md")}\``,
     );
     expect(output).toContain("`npx @microfeed/cli manage …`");
     expect(output).toContain("final status check succeeds");

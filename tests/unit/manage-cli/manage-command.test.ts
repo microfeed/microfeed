@@ -24,7 +24,8 @@ describe("repository management command", () => {
       cloudflare?: unknown;
     };
 
-    expect(packageJson.scripts.manage).toBe("tsx manage-cli/index.ts");
+    expect(packageJson.scripts.manage).toContain("manage-cli/index.ts");
+    expect(packageJson.scripts.manage).not.toContain("@microfeed/cli");
     expect(packageJson.scripts.admin).toBeUndefined();
     expect(packageJson.scripts.microfeed)
       .toBe("yarn workspace @microfeed/cli microfeed");

@@ -15,6 +15,7 @@ const TEMPLATE_FILENAMES = [
   "web-body-end.mustache",
   "rss-stylesheet.xsl",
 ];
+const normalizeNewlines = (value) => value.replaceAll(/\r\n?/gu, "\n");
 
 export function themeRoot(importMetaUrl) {
   return path.resolve(path.dirname(fileURLToPath(importMetaUrl)), "..");
@@ -64,7 +65,9 @@ export async function buildInlineTheme({
   const sources = new Map(await Promise.all(TEMPLATE_FILENAMES.map(
     async (filename) => [
       filename,
-      await readFile(path.join(sourceDirectory, filename), "utf8"),
+      normalizeNewlines(
+        await readFile(path.join(sourceDirectory, filename), "utf8"),
+      ),
     ],
   )));
   const rssMarker = "/* microfeed:compiled-theme */";
@@ -101,7 +104,10 @@ export async function buildInlineTheme({
   for (const [filename, contents] of files) {
     const output = path.join(root, filename);
     if (checking) {
-      if (await readFile(output, "utf8").catch(() => "") !== contents) {
+      if (
+        normalizeNewlines(await readFile(output, "utf8").catch(() => "")) !==
+          contents
+      ) {
         stale.push(filename);
       }
     } else {
