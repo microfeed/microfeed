@@ -7,7 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
+  linux:
+    name: Linux (ubuntu-latest, x64 Node)
     runs-on: ubuntu-latest
 
     steps:

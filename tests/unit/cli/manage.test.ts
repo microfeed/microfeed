@@ -303,6 +303,7 @@ describe("source-code-free management launcher", () => {
       environment: {PATH: "C:\\Program Files\\nodejs"},
       invocationDirectory: path.join(root, "caller"),
       packageVersion: "1.2.3",
+      architecture: "x64",
       platform: "win32",
       runner: workspaceRunner(commands),
       stateDirectory: path.join(root, "state"),
