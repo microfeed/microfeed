@@ -16,7 +16,11 @@ why the change is useful, and leave the project easier to maintain.
 ## Set up local development
 
 Use Node.js 24 and Corepack. The package supports Node.js `>=22.12.0`, but
-development and CI use Node.js 24 without pinning a patch release.
+development and CI use Node.js 24 without pinning a patch release. Windows ARM
+computers are supported through Windows' x64 application emulation: install
+the x64 build of Node.js because Cloudflare's local runtime does not provide a
+native Windows ARM64 executable. Confirm the active build with
+`node -p "process.arch"`; it must print `x64`.
 
 ```console
 corepack enable

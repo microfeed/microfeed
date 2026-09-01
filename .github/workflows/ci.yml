@@ -7,7 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
+  linux:
+    name: Linux (ubuntu-latest, x64 Node)
     runs-on: ubuntu-latest
 
     steps:
@@ -41,3 +42,40 @@ jobs:
         run: yarn wrangler deploy --dry-run --strict --config dist/server/wrangler.json
       - name: Check documentation
         run: yarn docs:check
+
+  windows:
+    name: Windows (${{ matrix.runner }}, x64 Node)
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - windows-latest
+          - windows-11-arm
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use x64 Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          architecture: x64
+      - name: Verify Node architecture
+        run: node -e "if (process.arch !== 'x64') throw new Error('Expected x64 Node, received ' + process.arch)"
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Cache Yarn packages
+        uses: actions/cache@v5
+        with:
+          path: .yarn/cache
+          key: ${{ runner.os }}-${{ runner.arch }}-x64-node-yarn-${{ hashFiles('package.json', 'yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-x64-node-yarn-
+      - name: Verify Yarn version
+        run: yarn --version
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Test Windows process launching
+        run: yarn vitest run tests/unit/manage-cli/process.test.ts tests/unit/cli/manage.test.ts
+      - name: Test Worker runtime
+        run: yarn vitest run --config vitest.worker.config.ts --testTimeout 15000

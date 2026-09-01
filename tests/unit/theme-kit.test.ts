@@ -273,13 +273,17 @@ describe("@microfeed/theme-kit package loading", () => {
       await readFile(path.join(repositoryRoot, "package.json"), "utf8"),
     ) as {packageManager?: string};
     expect(packageJson.packageManager).toBe(rootPackageJson.packageManager);
-    await expect(readFile(path.join(output, ".yarnrc.yml"), "utf8"))
+    await expect(readFile(path.join(output, ".yarnrc.yml"), "utf8").then(
+      (value) => value.replaceAll(/\r\n?/gu, "\n"),
+    ))
       .resolves.toBe(
         "nodeLinker: node-modules\n" +
           "npmPreapprovedPackages:\n" +
           "  - \"@microfeed/theme-kit\"\n",
       );
-    await expect(readFile(path.join(output, ".gitignore"), "utf8"))
+    await expect(readFile(path.join(output, ".gitignore"), "utf8").then(
+      (value) => value.replaceAll(/\r\n?/gu, "\n"),
+    ))
       .resolves.toBe(".yarn/\nnode_modules/\n");
     await expect(readFile(path.join(output, "CLAUDE.md"), "utf8"))
       .resolves.toContain(
@@ -366,7 +370,7 @@ describe("@microfeed/theme-kit package loading", () => {
     expect(html).toContain("prefers-color-scheme: dark");
   });
 
-  it("rejects symlinked declared files", async () => {
+  it.skipIf(process.platform === "win32")("rejects symlinked declared files", async () => {
     const directory = await themeDirectory();
     await symlink(
       path.join(directory, "web-feed.mustache"),

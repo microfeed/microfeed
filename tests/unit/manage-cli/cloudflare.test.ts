@@ -272,7 +272,7 @@ describe("CloudflareClient", () => {
 
     expect(OAUTH_SCOPES).toContain("workers_scripts:write");
     expect(runner).toHaveBeenCalledWith(
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       ["login", "--use-keyring", "--scopes", ...OAUTH_SCOPES],
       expect.objectContaining({interactive: true}),
     );
@@ -292,7 +292,7 @@ describe("CloudflareClient", () => {
     await new CloudflareClient(runner, ["queues:write"]).login();
 
     expect(runner).toHaveBeenCalledWith(
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       [
         "auth",
         "create",
@@ -304,7 +304,7 @@ describe("CloudflareClient", () => {
       expect.objectContaining({interactive: true}),
     );
     expect(runner).toHaveBeenCalledWith(
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       ["auth", "activate", "company", repositoryRoot],
       expect.objectContaining({cwd: repositoryRoot}),
     );
@@ -331,7 +331,7 @@ describe("CloudflareClient", () => {
 
     expect(runner).toHaveBeenNthCalledWith(
       1,
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       ["auth", "create", "company", "--scopes", ...OAUTH_SCOPES],
       expect.objectContaining({
         env: expect.objectContaining({
@@ -342,7 +342,7 @@ describe("CloudflareClient", () => {
     );
     expect(runner).toHaveBeenNthCalledWith(
       2,
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       ["auth", "activate", "company", repositoryRoot],
       expect.objectContaining({cwd: repositoryRoot}),
     );
@@ -821,7 +821,7 @@ describe("CloudflareClient", () => {
     ).resolves.toBe(false);
     expect(runner).toHaveBeenNthCalledWith(
       1,
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       [
         "versions",
         "list",
@@ -885,11 +885,11 @@ describe("CloudflareClient", () => {
     const deployArgs = runner.mock.calls[1]?.[1] ?? [];
     expect(migrationArgs).toContain("--config");
     expect(migrationArgs.join(" ")).toContain(
-      ".microfeed/instances/art-of-war/wrangler.jsonc",
+      nodePath.join(".microfeed", "instances", "art-of-war", "wrangler.jsonc"),
     );
     expect(deployArgs).toContain("--config");
     expect(deployArgs.join(" ")).toContain(
-      "dist/server/wrangler.json",
+      nodePath.join("dist", "server", "wrangler.json"),
     );
     expect(deployArgs).toContain("--tag");
     expect(deployArgs).toContain(sourceCommit);
@@ -912,7 +912,7 @@ describe("CloudflareClient", () => {
       new Set(["BETTER_AUTH_SECRET", "UPLOAD_SIGNING_KEY"]),
     );
     expect(runner).toHaveBeenCalledWith(
-      expect.stringMatching(/wrangler(?:\.cmd)?$/u),
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
       [
         "secret",
         "list",

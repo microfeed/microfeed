@@ -48,7 +48,7 @@ describe("cloudflared helper resolution", () => {
       {MICROFEED_CACHE_DIR: "/custom/cache"},
       "linux",
       "/home/person",
-    )).toBe(path.resolve("/custom/cache", "cloudflared"));
+    )).toBe("/custom/cache/cloudflared");
     expect(cloudflaredCacheDirectory({}, "darwin", "/Users/person"))
       .toBe("/Users/person/Library/Caches/microfeed/cloudflared");
     expect(cloudflaredCacheDirectory({}, "linux", "/home/person"))
@@ -57,7 +57,7 @@ describe("cloudflared helper resolution", () => {
       {LOCALAPPDATA: "C:\\Users\\person\\AppData\\Local"},
       "win32",
       "C:\\Users\\person",
-    )).toContain(path.join("microfeed", "cloudflared"));
+    )).toContain(path.win32.join("microfeed", "cloudflared"));
   });
 
   it("maps supported assets and rejects unsupported platforms", () => {
@@ -177,9 +177,8 @@ describe("cloudflared Quick Tunnel lifecycle", () => {
 
   it("starts a helper, returns /webhook, and stops the child", async () => {
     const directory = await temporaryDirectory("microfeed-cloudflared-process-");
-    const helper = path.join(directory, "fake-cloudflared");
+    const helper = path.join(directory, "fake-cloudflared.mjs");
     await writeFile(helper, [
-      "#!/usr/bin/env node",
       "const expected = ['tunnel', '--url', 'http://127.0.0.1:8978', '--no-autoupdate'];",
       "if (JSON.stringify(process.argv.slice(2)) !== JSON.stringify(expected)) process.exit(2);",
       "process.stderr.write('Quick Tunnel: https://unit-test.trycloudflare.com\\n');",
@@ -200,9 +199,8 @@ describe("cloudflared Quick Tunnel lifecycle", () => {
 
   it("terminates a helper that never produces a tunnel URL", async () => {
     const directory = await temporaryDirectory("microfeed-cloudflared-timeout-");
-    const helper = path.join(directory, "silent-cloudflared");
+    const helper = path.join(directory, "silent-cloudflared.mjs");
     await writeFile(helper, [
-      "#!/usr/bin/env node",
       "setInterval(() => undefined, 1000);",
       "",
     ].join("\n"), {mode: 0o700});

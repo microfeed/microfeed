@@ -70,7 +70,8 @@ async function safeFile(
 async function readTextFile(filename: string, displayPath: string): Promise<string> {
   const bytes = await readFile(filename);
   try {
-    return new TextDecoder("utf-8", {fatal: true}).decode(bytes);
+    return new TextDecoder("utf-8", {fatal: true}).decode(bytes)
+      .replaceAll(/\r\n?/gu, "\n");
   } catch {
     throw new Error(`Theme text file is not valid UTF-8: ${displayPath}`);
   }

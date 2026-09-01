@@ -7,6 +7,10 @@ import {build} from "vite";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const checking = process.argv.includes("--check");
+const normalizeNewlines = (value) => value.replaceAll(/\r\n?/gu, "\n");
+const readText = async (filename) => normalizeNewlines(
+  await readFile(filename, "utf8"),
+);
 const generated = await build({
   build: {
     cssCodeSplit: false,
@@ -56,7 +60,7 @@ const tokenBlock = `<style id="microfeed-design-tokens">
 ${designTokenCss}</style>`;
 
 const sourceDirectory = path.join(root, "src/templates");
-const rssTemplate = await readFile(path.join(sourceDirectory, "rss-stylesheet.xsl"), "utf8");
+const rssTemplate = await readText(path.join(sourceDirectory, "rss-stylesheet.xsl"));
 const rssStylesMarker = "/* microfeed:compiled-tailwind */";
 if (!rssTemplate.includes(rssStylesMarker)) {
   throw new Error("The RSS stylesheet is missing its compiled Tailwind marker.");
@@ -65,21 +69,21 @@ const rssStyles = `${designTokenCss}\n${css.source}`
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;");
 const files = new Map([
-  ["web-feed.mustache", await readFile(path.join(sourceDirectory, "web-feed.mustache"), "utf8")],
-  ["web-item.mustache", await readFile(path.join(sourceDirectory, "web-item.mustache"), "utf8")],
-  ["web-page.mustache", await readFile(path.join(sourceDirectory, "web-page.mustache"), "utf8")],
-  ["web-search.mustache", await readFile(path.join(sourceDirectory, "web-search.mustache"), "utf8")],
-  ["web-body-start.mustache", await readFile(path.join(sourceDirectory, "web-body-start.mustache"), "utf8")],
+  ["web-feed.mustache", await readText(path.join(sourceDirectory, "web-feed.mustache"))],
+  ["web-item.mustache", await readText(path.join(sourceDirectory, "web-item.mustache"))],
+  ["web-page.mustache", await readText(path.join(sourceDirectory, "web-page.mustache"))],
+  ["web-search.mustache", await readText(path.join(sourceDirectory, "web-search.mustache"))],
+  ["web-body-start.mustache", await readText(path.join(sourceDirectory, "web-body-start.mustache"))],
   ["rss-stylesheet.xsl", rssTemplate.replace(rssStylesMarker, rssStyles)],
-  ["web-header.mustache", `${tokenBlock}\n<style id="microfeed-compiled-styles">${css.source}</style>\n${await readFile(path.join(sourceDirectory, "web-header.mustache"), "utf8")}`],
-  ["web-body-end.mustache", `${await readFile(path.join(sourceDirectory, "web-body-end.mustache"), "utf8")}\n<script>${javascript.code.replaceAll("</script", "<\\/script")}</script>\n`],
+  ["web-header.mustache", `${tokenBlock}\n<style id="microfeed-compiled-styles">${css.source}</style>\n${await readText(path.join(sourceDirectory, "web-header.mustache"))}`],
+  ["web-body-end.mustache", `${await readText(path.join(sourceDirectory, "web-body-end.mustache"))}\n<script>${javascript.code.replaceAll("</script", "<\\/script")}</script>\n`],
 ]);
 
 const stale = [];
 for (const [filename, contents] of files) {
   const output = path.join(root, filename);
   if (checking) {
-    if (await readFile(output, "utf8").catch(() => "") !== contents) stale.push(filename);
+    if (normalizeNewlines(await readFile(output, "utf8").catch(() => "")) !== contents) stale.push(filename);
   } else {
     await writeFile(output, contents);
   }

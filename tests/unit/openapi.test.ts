@@ -123,7 +123,7 @@ describe("generated API reference", () => {
     }
   });
 
-  it("keeps Admin and OpenAPI receiver code byte-identical to scaffold templates", async () => {
+  it("keeps Admin and OpenAPI receiver code synchronized with scaffold templates", async () => {
     const [javascript, python] = await Promise.all([
       readFile(path.join(
         repositoryRoot,
@@ -134,8 +134,10 @@ describe("generated API reference", () => {
         "packages/cli/templates/webhook/python/server.py",
       ), "utf8"),
     ]);
-    expect(javascript).toBe(JAVASCRIPT_WEBHOOK_RECEIVER);
-    expect(python).toBe(PYTHON_WEBHOOK_RECEIVER);
+    expect(javascript.replaceAll(/\r\n?/gu, "\n"))
+      .toBe(JAVASCRIPT_WEBHOOK_RECEIVER.replaceAll(/\r\n?/gu, "\n"));
+    expect(python.replaceAll(/\r\n?/gu, "\n"))
+      .toBe(PYTHON_WEBHOOK_RECEIVER.replaceAll(/\r\n?/gu, "\n"));
   });
 
   it("makes the full LLM reference self-contained", () => {

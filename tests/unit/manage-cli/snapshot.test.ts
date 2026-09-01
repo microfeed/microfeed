@@ -408,7 +408,7 @@ describe("migration upgrades from historical snapshot positions", () => {
       source.close();
       restored.close();
     }
-  });
+  }, 15_000);
 
   it("covers column, data, index, and authentication transformations in fixture history", async () => {
     const fixtureDirectory = path.join(

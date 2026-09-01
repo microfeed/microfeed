@@ -412,10 +412,10 @@ describe("first-class local instances", () => {
       .map(([, args]) => args.join(" "))
       .filter((command) => command.includes("--persist-to"));
     expect(persistPaths.some((command) =>
-      command.includes("instances/personal/local-state")
+      command.includes(path.join("instances", "personal", "local-state"))
     )).toBe(true);
     expect(persistPaths.some((command) =>
-      command.includes("instances/company/local-state")
+      command.includes(path.join("instances", "company", "local-state"))
     )).toBe(true);
     expect(persistPaths.every((command) => !command.includes("--remote")))
       .toBe(true);
@@ -455,6 +455,19 @@ describe("first-class local instances", () => {
       "Production D1 and R2 data will not be accessed or changed.",
     );
     expect(text).toContain("Instance type: Local only");
+    const devCall = (runner as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([, args]) => args[0] === "dev:astro",
+    );
+    expect(devCall?.[2]).toMatchObject({
+      env: expect.objectContaining({
+        ASTRO_DEV_BACKGROUND: "1",
+        MICROFEED_WRANGLER_CONFIG: expect.any(String),
+      }),
+      interactive: true,
+    });
+    expect(path.isAbsolute(
+      devCall?.[2]?.env?.MICROFEED_WRANGLER_CONFIG ?? "",
+    )).toBe(false);
   });
 
   it("changes the local login email and resets its password safely", async () => {
@@ -488,7 +501,7 @@ describe("first-class local instances", () => {
       .filter((command) => command.includes("--file"));
     expect(fileCommands).toHaveLength(2);
     expect(fileCommands.every((command) =>
-      command.includes("instances/restored-local/local-state") &&
+      command.includes(path.join("instances", "restored-local", "local-state")) &&
       command.includes("--local") &&
       !command.includes("--remote")
     )).toBe(true);
@@ -751,7 +764,9 @@ describe("first-class local instances", () => {
       readFile(config.wranglerConfigPath(enabled!), "utf8"),
     ).resolves.toContain('"binding": "MEDIA_BUCKET"');
     const yarnScripts = runner.mock.calls
-      .filter(([executable]) => /(?:^|\/)yarn(?:\.cmd)?$/u.test(executable))
+      .filter(([executable]) =>
+        /^yarn(?:\.cmd|\.js)?$/u.test(path.basename(executable))
+      )
       .map(([, args]) => args[0]);
     expect(yarnScripts).toEqual([
       "types",
@@ -866,7 +881,9 @@ describe("first-class local instances", () => {
       local: true,
     }, runner)).rejects.toThrow("deployment smoke tests failed");
     const yarnScripts = runner.mock.calls
-      .filter(([executable]) => /(?:^|\/)yarn(?:\.cmd)?$/u.test(executable))
+      .filter(([executable]) =>
+        /^yarn(?:\.cmd|\.js)?$/u.test(path.basename(executable))
+      )
       .map(([, args]) => args[0]);
     expect(yarnScripts).toEqual(["types", "typecheck", "test:deploy"]);
     expect(yarnScripts).not.toContain("build");
@@ -1264,7 +1281,7 @@ describe("initialization lifecycle", () => {
     }, runner);
 
     const text = output.mock.calls.map(([value]) => String(value)).join("")
-      .replaceAll(/[\s│]+/gu, "");
+      .replaceAll(/[\s│|]+/gu, "");
     expect(text).toMatch(
       /https:\/\/feed\.example\.workers\.dev\/admin\/login\/[a-f0-9]{64}\/set_password\//u,
     );

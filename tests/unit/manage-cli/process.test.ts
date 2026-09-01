@@ -7,6 +7,8 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {
   repositoryCommitSha,
   repositoryRoot,
+  runCommand,
+  runWrangler,
   runYarnScript,
 } from "../../../manage-cli/lib/process";
 import type {CommandRunner} from "../../../manage-cli/types";
@@ -63,6 +65,22 @@ describe("deployment source commit", () => {
 });
 
 describe("Yarn command execution", () => {
+  it("uses the installed Yarn JavaScript instead of a command shim", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue({
+      exitCode: 0,
+      stderr: "",
+      stdout: "",
+    });
+    await runYarnScript(runner, "build");
+
+    const [executable, args, options] = runner.mock.calls[0]!;
+    expect(executable).toContain(
+      path.join("@yarnpkg", "cli-dist", "bin", "yarn.js"),
+    );
+    expect(args).toEqual(["build"]);
+    expect(options).toEqual({cwd: repositoryRoot});
+  });
+
   it("uses the Yarn bundled by the published launcher", async () => {
     const runner = vi.fn<CommandRunner>().mockResolvedValue({
       exitCode: 0,
@@ -73,12 +91,46 @@ describe("Yarn command execution", () => {
       env: {MICROFEED_YARN_JAVASCRIPT: "/private/yarn.js"},
     });
     expect(runner).toHaveBeenCalledWith(
-      process.execPath,
-      ["/private/yarn.js", "build"],
+      "/private/yarn.js",
+      ["build"],
       {
         cwd: repositoryRoot,
         env: {MICROFEED_YARN_JAVASCRIPT: "/private/yarn.js"},
       },
     );
+  });
+});
+
+describe("Wrangler command execution", () => {
+  it("uses the installed Wrangler JavaScript instead of a command shim", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue({
+      exitCode: 0,
+      stderr: "",
+      stdout: "",
+    });
+    await runWrangler(runner, ["d1", "list", "--json"]);
+
+    const [executable, args, options] = runner.mock.calls[0]!;
+    expect(executable).toContain(path.join("wrangler", "bin", "wrangler.js"));
+    expect(args).toEqual(["d1", "list", "--json"]);
+    expect(options).toEqual({cwd: repositoryRoot});
+  });
+});
+
+describe("JavaScript command execution", () => {
+  it("runs a JavaScript entry point with Node without executable permissions", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "microfeed-node-command-"));
+    temporaryDirectories.push(root);
+    const entry = path.join(root, "command.mjs");
+    await writeFile(
+      entry,
+      "process.stdout.write(process.argv.slice(2).join('|'));\n",
+      {mode: 0o600},
+    );
+
+    await expect(runCommand(entry, ["one", "two"])).resolves.toMatchObject({
+      exitCode: 0,
+      stdout: "one|two",
+    });
   });
 });

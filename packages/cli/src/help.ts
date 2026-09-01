@@ -73,6 +73,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "Copies the exact microfeed release bundled with @microfeed/cli into a private, persistent cache and runs its repository-owned management CLI. It never checks out source into the current project.",
       "The published launcher includes its own Yarn runtime, so ordinary deployment requires Node.js and npm but not Git or Corepack. Its first run installs the locked application dependencies, and the workspace may consume about 1.3 GB; later runs reuse it.",
+      "Windows requires the x64 build of Node.js. Windows ARM computers run it through x64 application emulation because Cloudflare's local runtime does not provide a native Windows ARM64 executable.",
       "A bare manage command prepares the workspace and prints exact instructions for a local coding agent. Pass any management command and options after manage to forward them unchanged, including --instance and --json.",
       "Deployment state is stored separately from the replaceable source cache. Existing sites that are not yet saved can be discovered and connected through the guarded management workflow.",
       "Use only from a local interactive session that can complete Cloudflare browser authorization. Never paste a Cloudflare token, dashboard password, or private password-setup link into a command or agent conversation.",

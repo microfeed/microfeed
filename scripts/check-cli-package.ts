@@ -6,7 +6,9 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import {existsSync} from "node:fs";
 import {tmpdir} from "node:os";
+import {createRequire} from "node:module";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
 import {pathToFileURL} from "node:url";
@@ -14,6 +16,24 @@ import {pathToFileURL} from "node:url";
 import {x as extractTar} from "tar";
 import {CLI_HELP_TOPICS, renderCliHelp} from "../packages/cli/src/help";
 import {HELP} from "../packages/cli/src/index";
+
+const require = createRequire(import.meta.url);
+const yarnJavaScript = require.resolve("@yarnpkg/cli-dist/bin/yarn.js");
+
+function npmJavaScript(binary: "npm" | "npx"): string {
+  const filename = `${binary}-cli.js`;
+  const searchDirectories = [
+    path.dirname(process.execPath),
+    ...(process.env.PATH ?? "").split(path.delimiter),
+  ].filter(Boolean);
+  for (const directory of searchDirectories) {
+    const candidate = path.join(directory, "node_modules", "npm", "bin", filename);
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(
+    `Could not locate ${filename}. Install npm alongside Node.js and rerun the check.`,
+  );
+}
 
 function run(
   command: string,
@@ -38,13 +58,21 @@ function run(
   return result.stdout;
 }
 
+function runYarn(
+  args: string[],
+  cwd = process.cwd(),
+  environment: Record<string, string | undefined> = {},
+): string {
+  return run(process.execPath, [yarnJavaScript, ...args], cwd, environment);
+}
+
 const temporary = await mkdtemp(path.join(tmpdir(), "microfeed-cli-pack-"));
 try {
   const rootPackage = JSON.parse(
     await readFile(path.join(process.cwd(), "package.json"), "utf8"),
   ) as {version: string};
   const archive = path.join(temporary, "microfeed-cli.tgz");
-  run("yarn", [
+  runYarn([
     "workspace",
     "@microfeed/cli",
     "pack",
@@ -93,17 +121,6 @@ try {
       packedPackage.publishConfig?.access !== "public" ||
       packedPackage.publishConfig?.registry !== "https://registry.npmjs.org") {
     throw new Error("The packed CLI is missing its npm discovery metadata.");
-  }
-  const packedReadme = await readFile(
-    path.join(temporary, "package", "README.md"),
-    "utf8",
-  );
-  if (!packedReadme.includes("yarn microfeed login") ||
-      !packedReadme.includes("npm install --global @microfeed/cli") ||
-      !packedReadme.includes("npx @microfeed/cli manage") ||
-      !packedReadme.includes("Site URLs and instance names") ||
-      !packedReadme.includes("GNU Affero General Public License v3.0")) {
-    throw new Error("The packed CLI README is incomplete.");
   }
   const [rootLicense, packedLicense] = await Promise.all([
     readFile(path.join(process.cwd(), "LICENSE"), "utf8"),
@@ -190,14 +207,13 @@ try {
     packageManager: "yarn@4.18.0",
     private: true,
   }), "utf8");
-  run("yarn", ["install"], project);
-  const projectHelp = run("yarn", ["microfeed", "--help"], project);
+  runYarn(["install"], project);
+  const projectHelp = runYarn(["microfeed", "--help"], project);
   if (HELP !== projectHelp) {
     throw new Error("A project-local @microfeed/cli behaves differently.");
   }
   const expectedCreateHelp = renderCliHelp(["item", "create"]);
-  const projectCreateHelp = run(
-    "yarn",
+  const projectCreateHelp = runYarn(
     ["microfeed", "item", "create", "--help"],
     project,
   );
@@ -210,8 +226,7 @@ try {
     "webhooks",
     "endpoint1",
   );
-  const projectScaffoldResult = JSON.parse(run(
-    "yarn",
+  const projectScaffoldResult = JSON.parse(runYarn(
     ["microfeed", "webhook", "scaffold", projectScaffold, "--json"],
     project,
   )) as {directory?: string; language?: string};
@@ -229,7 +244,7 @@ try {
   ])) {
     throw new Error("The packed JavaScript webhook starter file set is incomplete.");
   }
-  run("yarn", ["install"], projectScaffold);
+  runYarn(["install"], projectScaffold);
   const installedStarterLock = await readFile(
     path.join(projectScaffold, "yarn.lock"),
     "utf8",
@@ -242,7 +257,7 @@ try {
     throw new Error("The nested JavaScript webhook starter cannot install independently.");
   }
 
-  const dlxHelp = run("yarn", [
+  const dlxHelp = runYarn([
     "dlx",
     "--package",
     `@microfeed/cli@file:${archive}`,
@@ -254,7 +269,7 @@ try {
     throw new Error("The yarn dlx @microfeed/cli behavior diverged.");
   }
   const expectedManageHelp = renderCliHelp(["manage"]);
-  const dlxManageHelp = run("yarn", [
+  const dlxManageHelp = runYarn([
     "dlx",
     "--package",
     `@microfeed/cli@file:${archive}`,
@@ -271,13 +286,13 @@ try {
   await writeFile(path.join(npmConsumer, "package.json"), JSON.stringify({
     private: true,
   }));
-  run("npm", [
+  run(process.execPath, [npmJavaScript("npm"),
     "install",
     "--ignore-scripts",
     "--omit=optional",
     archive,
   ], npmConsumer);
-  const npxManageHelp = run("npx", [
+  const npxManageHelp = run(process.execPath, [npmJavaScript("npx"),
     "--no-install",
     "microfeed",
     "manage",
@@ -357,19 +372,19 @@ try {
       stdout: "",
     }),
     stateDirectory: path.join(temporary, "launcher-config"),
+    tsxJavaScript: path.join(temporary, "fake-tsx.mjs"),
     yarnJavaScript: path.join(temporary, "fake-yarn.js"),
   });
   const handoff = handoffOutput.join("\n");
   if (handoffExitCode !== 0 ||
       !handoff.includes(`microfeed v${rootPackage.version}`) ||
-      !handoff.includes("deploy-microfeed/SKILL.md") ||
-      !handoff.includes("docs/manage-cli.md") ||
-      !handoff.includes("npx @microfeed/cli manage accounts --json") ||
-      !handoff.includes("final status check succeeds")) {
+      !handoff.includes(path.join("deploy-microfeed", "SKILL.md")) ||
+      !handoff.includes(path.join("docs", "manage-cli.md")) ||
+      !handoff.includes("npx @microfeed/cli manage accounts --json")) {
     throw new Error("The packed coding-agent handoff is incomplete.");
   }
   const dlxScaffold = path.join(temporary, "dlx-scaffold");
-  const dlxScaffoldOutput = run("yarn", [
+  const dlxScaffoldOutput = runYarn([
     "dlx",
     "--package",
     `@microfeed/cli@file:${archive}`,

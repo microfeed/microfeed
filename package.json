@@ -17,7 +17,7 @@
     "theme:release": "node --import tsx scripts/check-bundled-themes.ts --build && node --import tsx scripts/check-bundled-theme-release.ts --record",
     "theme:release-check": "node --import tsx scripts/check-bundled-theme-release.ts",
     "microfeed": "yarn workspace @microfeed/cli microfeed",
-    "manage": "tsx manage-cli/index.ts",
+    "manage": "node scripts/check-windows-node-architecture.mjs && tsx manage-cli/index.ts",
     "theme-kit": "node --import tsx packages/theme-kit/src/cli.ts",
     "theme-kit:build": "tsx packages/theme-kit/scripts/build.ts",
     "theme-kit:test": "yarn theme-kit:build && node --import tsx scripts/check-bundled-themes.ts --build --test && yarn theme:release-check && node packages/theme-kit/dist/cli.js test packages/theme-kit/assets/starter --json",

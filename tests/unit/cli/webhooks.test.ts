@@ -262,7 +262,7 @@ describe("microfeed webhook samples", () => {
 
 describe("microfeed webhook scaffold", () => {
   it("resolves relative output from the Yarn project root, not the CLI workspace", () => {
-    const projectRoot = path.join(path.sep, "review", "microfeed");
+    const projectRoot = path.resolve("review", "microfeed");
     const cliWorkspace = path.join(projectRoot, "packages", "cli");
     expect(resolveWebhookScaffoldDirectory(
       ".microfeed/webhooks/endpoint1",
@@ -296,9 +296,7 @@ describe("microfeed webhook scaffold", () => {
       language: "javascript",
       localEndpointUrl: "http://127.0.0.1:3000/webhook",
     });
-    expect(result.nextStepCommands[0]?.replaceAll(path.sep, "/")).toContain(
-      ".microfeed/webhooks/endpoint1",
-    );
+    expect(result.nextStepCommands[0]).toBe(`cd ${JSON.stringify(destination)}`);
     expect((await readdir(destination)).sort()).toEqual([
       ".env.example",
       ".gitignore",
@@ -339,8 +337,9 @@ describe("microfeed webhook scaffold", () => {
       "requirements.txt",
       "server.py",
     ]);
-    expect(await readFile(path.join(destination, "requirements.txt"), "utf8"))
-      .toBe("Flask==3.1.3\nstandardwebhooks==1.0.1\n");
+    expect((await readFile(path.join(destination, "requirements.txt"), "utf8"))
+      .split(/\r?\n/u).filter(Boolean))
+      .toEqual(["Flask==3.1.3", "standardwebhooks==1.0.1"]);
     const source = await readFile(path.join(destination, "server.py"), "utf8");
     expect(source).toContain("request.get_data");
     expect(source).toContain('app.run(host="127.0.0.1", port=3000)');

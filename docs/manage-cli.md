@@ -90,6 +90,10 @@ microfeed source repository because local source development requires that
 repository and its installed dependencies.
 
 Both paths require Node.js 22.12 or newer and an interactive local session.
+Windows ARM computers are supported through Windows' x64 application
+emulation: install the x64 build of Node.js because Cloudflare's local runtime
+does not provide a native Windows ARM64 executable. Run
+`node -p "process.arch"` and confirm that it prints `x64` before continuing.
 The published `npx` path also requires npm, but it does not require Git or
 Corepack. A Git-cloned source repository uses its normal Corepack and Yarn
 development setup. Cloudflare operations use Wrangler browser authorization.
