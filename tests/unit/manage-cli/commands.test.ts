@@ -7,6 +7,7 @@ import {
   adminAuthDisableNotice,
   adminProtectionNotice,
   anonymousAdminProtection,
+  connectCommand,
   DEPLOYMENT_VERIFICATION_RETRY_DELAYS_MS,
   deploymentOutcomeMessage,
   deploymentVerificationUrl,
@@ -61,6 +62,17 @@ describe("Cloudflare Worker name validation", () => {
     const runner = vi.fn<CommandRunner>();
 
     await expect(initCommand({"project-name": "personal_feed"}, runner))
+      .rejects.toThrow(
+        "Invalid Worker name `personal_feed`. Use only ASCII letters, " +
+          "numbers, and hyphens",
+      );
+    expect(runner).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid connect target before Cloudflare authorization", async () => {
+    const runner = vi.fn<CommandRunner>();
+
+    await expect(connectCommand({worker: "personal_feed"}, runner))
       .rejects.toThrow(
         "Invalid Worker name `personal_feed`. Use only ASCII letters, " +
           "numbers, and hyphens",
@@ -296,6 +308,56 @@ describe("read-only Cloudflare account discovery", () => {
     )).toBe(true);
   });
 
+  it("uses device authorization when requested", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "auth list") {
+        return {exitCode: 0, stderr: "", stdout: ""};
+      }
+      if (
+        command.startsWith(
+          "login --device --browser=false --no-use-keyring --scopes ",
+        )
+      ) {
+        return {exitCode: 0, stderr: "", stdout: "Authorized"};
+      }
+      if (command === "whoami --json") {
+        return {
+          exitCode: 0,
+          stderr: "",
+          stdout: JSON.stringify({
+            accounts: [{id: "account-a", name: "Personal"}],
+            authType: "OAuth Token",
+            email: "cloudflare@example.com",
+            tokenPermissions: [
+              "account:read",
+              "user:read",
+              "workers:write",
+              "workers_scripts:write",
+              "d1:write",
+              "pages:write",
+              "zone:read",
+            ],
+          }),
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+
+    await accountsCommand({
+      device: true,
+      json: true,
+      reauthorize: true,
+    }, runner);
+
+    expect(runner.mock.calls.some(([, args]) =>
+      args[0] === "login" && args.includes("--device") &&
+      args.includes("--no-use-keyring")
+    )).toBe(true);
+  });
+
   it("creates and activates a separately named Cloudflare login", async () => {
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -414,6 +476,15 @@ describe("read-only Cloudflare account discovery", () => {
       );
       expect(runner).not.toHaveBeenCalled();
     }
+  });
+
+  it("rejects device authorization with a named profile", async () => {
+    const runner = vi.fn<CommandRunner>();
+
+    await expect(
+      accountsCommand({device: true, profile: "company"}, runner),
+    ).rejects.toThrow("`--device` cannot be combined with `--profile`");
+    expect(runner).not.toHaveBeenCalled();
   });
 });
 

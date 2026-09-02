@@ -423,9 +423,17 @@ export class CloudflareClient {
     return [...new Set([...OAUTH_SCOPES, ...this.additionalScopes])];
   }
 
-  async login(): Promise<void> {
+  async login(options: {device?: boolean} = {}): Promise<void> {
     const {profile} = await this.profileState();
     if (profile && profile !== "default") {
+      if (options.device) {
+        throw new Error(
+          "Cloudflare device authorization cannot replace an active named " +
+            `Wrangler profile (\`${profile}\`). No Cloudflare resources were ` +
+            "changed. Use a clean Wrangler configuration directory or run " +
+            "without `--device`.",
+        );
+      }
       await this.authorizeProfile(profile);
       await this.activateProfile(profile);
       return;
@@ -433,16 +441,30 @@ export class CloudflareClient {
     try {
       await runWrangler(
         this.runner,
-        ["login", "--use-keyring", "--scopes", ...this.scopes()],
+        options.device
+          ? [
+            "login",
+            "--device",
+            "--browser=false",
+            "--no-use-keyring",
+            "--scopes",
+            ...this.scopes(),
+          ]
+          : ["login", "--use-keyring", "--scopes", ...this.scopes()],
         {interactive: true},
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       throw new Error(
-        "Cloudflare browser authorization did not complete. No Cloudflare " +
-          "resources were changed. Approve the requested permissions and " +
-          "keep this command open until the browser callback finishes, then " +
-          `retry. ${detail}`,
+        `Cloudflare ${options.device ? "device" : "browser"} authorization ` +
+          "did not complete. No Cloudflare resources were changed. " +
+          (options.device
+            ? "Open the URL printed above, enter the displayed code, " +
+              "approve the requested permissions, and keep this command " +
+              "open until authorization finishes, then retry. "
+            : "Approve the requested permissions and keep this command " +
+              "open until the browser callback finishes, then retry. ") +
+          detail,
       );
     }
     this.credentialsPromise = undefined;

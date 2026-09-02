@@ -278,6 +278,46 @@ describe("CloudflareClient", () => {
     );
   });
 
+  it("uses device authorization without browser or keyring in headless environments", async () => {
+    const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult());
+
+    await new CloudflareClient(runner, ["queues:write"]).login({
+      device: true,
+    });
+
+    expect(runner).toHaveBeenCalledWith(
+      expect.stringMatching(/wrangler(?:\.cmd|\.js)?$/u),
+      [
+        "login",
+        "--device",
+        "--browser=false",
+        "--no-use-keyring",
+        "--scopes",
+        ...OAUTH_SCOPES,
+        "queues:write",
+      ],
+      expect.objectContaining({interactive: true}),
+    );
+  });
+
+  it("does not replace an active named profile with device authorization", async () => {
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      if (args.join(" ") === "auth list") {
+        return commandResult([
+          "│ Profile │ Bound Directories │",
+          `│ company │ ${repositoryRoot} │`,
+        ].join("\n"));
+      }
+      throw new Error(`Unexpected command: ${args.join(" ")}`);
+    });
+
+    await expect(
+      new CloudflareClient(runner).login({device: true}),
+    ).rejects.toThrow("cannot replace an active named Wrangler profile");
+    expect(runner.mock.calls.some(([, args]) => args[0] === "login"))
+      .toBe(false);
+  });
+
   it("reauthorizes the active named profile when adding OAuth scopes", async () => {
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       if (args.join(" ") === "auth list") {
@@ -319,6 +359,19 @@ describe("CloudflareClient", () => {
 
     await expect(new CloudflareClient(runner).login()).rejects.toThrow(
       "No Cloudflare resources were changed",
+    );
+  });
+
+  it("turns device authorization rejection into a non-destructive error", async () => {
+    const runner = vi.fn<CommandRunner>().mockRejectedValue(
+      new Error("device code expired"),
+    );
+
+    await expect(
+      new CloudflareClient(runner).login({device: true}),
+    ).rejects.toThrow(
+      "Cloudflare device authorization did not complete. No Cloudflare " +
+        "resources were changed.",
     );
   });
 

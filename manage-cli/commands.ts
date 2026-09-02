@@ -372,7 +372,9 @@ async function authenticate(
       "or destroys provisioned webhook infrastructure.",
       "Cloudflare authorization",
     );
-    await context.cloudflare.login();
+    await context.cloudflare.login({
+      device: flagBoolean(context.flags, "device"),
+    });
     accounts = await context.cloudflare.accounts();
   }
   if (accounts.length === 0) {
@@ -439,6 +441,7 @@ export async function accountsCommand(
     runner,
   };
   const json = flagBoolean(flags, "json");
+  const device = flagBoolean(flags, "device");
   if (flags.profile === true) {
     throw new Error(
       "`--profile` requires a name, for example `--profile company`. " +
@@ -446,6 +449,13 @@ export async function accountsCommand(
     );
   }
   const requestedProfile = flagString(flags, "profile");
+  if (device && requestedProfile) {
+    throw new Error(
+      "`--device` cannot be combined with `--profile`. Device authorization " +
+        "uses the active default Wrangler login and does not create or " +
+        "replace named profiles. No Cloudflare resources were changed.",
+    );
+  }
   if (requestedProfile) {
     const profileError = validateWranglerProfileName(requestedProfile);
     if (profileError) {
@@ -457,7 +467,7 @@ export async function accountsCommand(
   }
   const reauthorizeCommand = requestedProfile
     ? `yarn manage accounts --profile ${requestedProfile} --reauthorize`
-    : "yarn manage accounts --reauthorize";
+    : `yarn manage accounts${device ? " --device" : ""} --reauthorize`;
   const explainAuthorization = () => {
     if (json) {
       process.stderr.write(`\nCloudflare authorization\n${
@@ -509,13 +519,13 @@ export async function accountsCommand(
     }
   } else if (flagBoolean(flags, "reauthorize")) {
     explainAuthorization();
-    await context.cloudflare.login();
+    await context.cloudflare.login({device});
     ({identity, scopesGranted} = await readIdentity());
   } else {
     ({identity, scopesGranted} = await readIdentity());
     if (identity.accounts.length === 0 || !scopesGranted) {
       explainAuthorization();
-      await context.cloudflare.login();
+      await context.cloudflare.login({device});
       ({identity, scopesGranted} = await readIdentity());
     }
   }
@@ -5648,6 +5658,15 @@ export async function connectCommand(
   prompts.intro(
     `Connect an existing Cloudflare microfeed${preview ? " preview" : ""}`,
   );
+  const requestedWorkerName = flagString(flags, "worker");
+  if (requestedWorkerName) {
+    const workerNameError = validateWorkerName(requestedWorkerName);
+    if (workerNameError) {
+      throw new Error(
+        `Invalid Worker name \`${requestedWorkerName}\`. ${workerNameError}`,
+      );
+    }
+  }
   const account = await authenticate(context);
   const workers = (await context.cloudflare.discoverMicrofeedWorkers(account))
     .filter(({deploymentEnvironment}) =>
@@ -5659,7 +5678,6 @@ export async function connectCommand(
         "Workers were found in this Cloudflare account.",
     );
   }
-  const requestedWorkerName = flagString(flags, "worker");
   let selectedWorker: DiscoveredMicrofeedWorker;
   if (requestedWorkerName) {
     const match = workers.find(
