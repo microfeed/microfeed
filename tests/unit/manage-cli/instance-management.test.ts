@@ -465,8 +465,11 @@ describe("first-class local instances", () => {
       }),
       interactive: true,
     });
+    expect(path.isAbsolute(
+      devCall?.[2]?.env?.MICROFEED_WRANGLER_CONFIG ?? "",
+    )).toBe(false);
     expect(devCall?.[2]?.env?.MICROFEED_WRANGLER_CONFIG)
-      .toMatch(/^file:\/\//u);
+      .not.toMatch(/^file:/u);
   });
 
   it("changes the local login email and resets its password safely", async () => {
@@ -779,7 +782,8 @@ describe("first-class local instances", () => {
         /^yarn(?:\.cmd|\.js)?$/u.test(path.basename(executable))
       )
       .every(([, , options]) =>
-        options?.env?.MICROFEED_WRANGLER_CONFIG?.startsWith("file://")
+        !path.isAbsolute(options?.env?.MICROFEED_WRANGLER_CONFIG ?? "") &&
+        !options?.env?.MICROFEED_WRANGLER_CONFIG?.startsWith("file:")
       )).toBe(true);
   });
 

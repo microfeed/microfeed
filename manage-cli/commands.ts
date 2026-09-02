@@ -2,6 +2,7 @@ import {createReadStream, createWriteStream} from "node:fs";
 import {createHash, randomBytes, randomUUID} from "node:crypto";
 import {
   appendFile,
+  copyFile,
   mkdir,
   mkdtemp,
   readFile,
@@ -94,8 +95,8 @@ import {
   validateWranglerProfileName,
 } from "./lib/cloudflare";
 import {
-  filesystemPathToUrl,
   openUrl,
+  relativePathFromDirectory,
   repositoryCommitSha,
   repositoryRoot,
   runCommand,
@@ -600,31 +601,66 @@ async function runChecks(
   runner: CommandRunner,
   config: MicrofeedConfig,
 ): Promise<void> {
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    MICROFEED_INSTANCE: config.instanceName,
-    MICROFEED_WRANGLER_CONFIG: filesystemPathToUrl(
-      wranglerConfigPath(config),
-    ),
-  };
-  const execute = async (currentActivity: WaitActivity): Promise<void> => {
-    currentActivity.update("Generating Worker binding types");
-    await runYarnScript(runner, "types", {env});
-    currentActivity.update("Checking TypeScript and Astro");
-    await runYarnScript(runner, "typecheck", {env});
-    currentActivity.update("Running deployment smoke tests");
-    await runYarnScript(runner, "test:deploy", {env});
-    currentActivity.update("Building the Worker");
-    await runYarnScript(runner, "build", {env});
-  };
-  await withSpinner(
-    {
-      error: "Checks or build failed",
-      start: "Preparing checks and build",
-      success: "Checks and build passed",
-    },
-    execute,
+  await withFrameworkWranglerConfig(config, async (configPath) => {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      MICROFEED_INSTANCE: config.instanceName,
+      MICROFEED_WRANGLER_CONFIG: configPath,
+    };
+    const execute = async (currentActivity: WaitActivity): Promise<void> => {
+      currentActivity.update("Generating Worker binding types");
+      await runYarnScript(runner, "types", {env});
+      currentActivity.update("Checking TypeScript and Astro");
+      await runYarnScript(runner, "typecheck", {env});
+      currentActivity.update("Running deployment smoke tests");
+      await runYarnScript(runner, "test:deploy", {env});
+      currentActivity.update("Building the Worker");
+      await runYarnScript(runner, "build", {env});
+    };
+    await withSpinner(
+      {
+        error: "Checks or build failed",
+        start: "Preparing checks and build",
+        success: "Checks and build passed",
+      },
+      execute,
+    );
+  });
+}
+
+async function withFrameworkWranglerConfig<T>(
+  config: MicrofeedConfig,
+  callback: (configPath: string) => Promise<T>,
+): Promise<T> {
+  const sourcePath = wranglerConfigPath(config);
+  const relativePath = relativePathFromDirectory(repositoryRoot, sourcePath);
+  if (relativePath !== undefined) return await callback(relativePath);
+
+  // Astro resolves configPath as a URL, while Cloudflare's Vite plugin resolves
+  // it as a filesystem path. A repository-relative path satisfies both. When
+  // Windows stores the generated config on another drive, stage a disposable
+  // copy beside the repository because no relative path spans drive letters.
+  const stagingRoot = path.join(
+    repositoryRoot,
+    ".microfeed",
+    "framework-configs",
   );
+  await mkdir(stagingRoot, {recursive: true});
+  const stagingDirectory = await mkdtemp(path.join(stagingRoot, "wrangler-"));
+  try {
+    const stagedPath = path.join(stagingDirectory, "wrangler.jsonc");
+    await copyFile(sourcePath, stagedPath);
+    const stagedRelativePath = relativePathFromDirectory(
+      repositoryRoot,
+      stagedPath,
+    );
+    if (stagedRelativePath === undefined) {
+      throw new Error("Could not prepare a repository-relative Wrangler config.");
+    }
+    return await callback(stagedRelativePath);
+  } finally {
+    await rm(stagingDirectory, {force: true, recursive: true});
+  }
 }
 
 async function withEphemeralSecretFile<T>(
@@ -5904,23 +5940,20 @@ export async function devCommand(
       local: true,
       persistTo: localPersistencePath(config),
     });
-    await runYarnScript(runner, "dev:astro", {
-      env: {
-        ...process.env,
-        // Astro automatically backgrounds dev servers when it detects an AI
-        // agent. The management command owns this child process and must keep
-        // it attached so readiness, output, and shutdown remain coordinated.
-        ASTRO_DEV_BACKGROUND: "1",
-        MICROFEED_INSTANCE: config.instanceName,
-        MICROFEED_LOCAL_STATE: localPersistencePath(config),
-        // Astro resolves this value as a URL. A file URL preserves Windows
-        // drive letters, spaces, and non-ASCII characters even when the saved
-        // configuration and prepared repository are on different volumes.
-        MICROFEED_WRANGLER_CONFIG: filesystemPathToUrl(
-          wranglerConfigPath(config),
-        ),
-      },
-      interactive: true,
+    await withFrameworkWranglerConfig(config, async (configPath) => {
+      await runYarnScript(runner, "dev:astro", {
+        env: {
+          ...process.env,
+          // Astro automatically backgrounds dev servers when it detects an AI
+          // agent. The management command owns this child process and must keep
+          // it attached so readiness, output, and shutdown remain coordinated.
+          ASTRO_DEV_BACKGROUND: "1",
+          MICROFEED_INSTANCE: config.instanceName,
+          MICROFEED_LOCAL_STATE: localPersistencePath(config),
+          MICROFEED_WRANGLER_CONFIG: configPath,
+        },
+        interactive: true,
+      });
     });
   } finally {
     await generateWranglerConfig(config);
