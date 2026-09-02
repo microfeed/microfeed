@@ -42,10 +42,15 @@ describe("manual GitHub Actions deployment", () => {
     );
     const parsed = parse(workflow) as {
       jobs?: {deploy?: {env?: Record<string, unknown>}};
-      on?: Record<string, unknown>;
+      on?: {
+        workflow_dispatch?: {inputs?: Record<string, unknown>};
+      };
     };
 
     expect(Object.keys(parsed.on ?? {})).toEqual(["workflow_dispatch"]);
+    expect(parsed.on?.workflow_dispatch?.inputs).not.toHaveProperty(
+      "cloudflare_account_id",
+    );
     expect(JSON.stringify(parsed.jobs?.deploy?.env ?? {})).not.toContain(
       "runner.",
     );
@@ -54,9 +59,31 @@ describe("manual GitHub Actions deployment", () => {
     expect(workflow).toContain(
       "inputs.worker_name || vars.MICROFEED_WORKER_NAME",
     );
+    expect(workflow).toContain("secrets.CLOUDFLARE_ACCOUNT_ID");
+    expect(workflow).not.toContain("inputs.cloudflare_account_id");
+    expect(workflow).not.toContain("vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID");
     expect(workflow).toContain(
-      "inputs.cloudflare_account_id || " +
-        "vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID",
+      'if [[ -z "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]',
+    );
+    expect(workflow.match(/--account-id/g)).toHaveLength(4);
+    expect(workflow).not.toContain(
+      'if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]',
+    );
+    const authorizationWarningIndex = workflow.indexOf(
+      "::warning title=Public Cloudflare verification code::",
+    );
+    expect(authorizationWarningIndex).toBeGreaterThanOrEqual(0);
+    expect(workflow).toContain(
+      "Someone else could use the code first, which would cause this run to fail.",
+    );
+    expect(workflow).toContain(
+      "authorization for a different account is rejected before any Cloudflare resources are changed",
+    );
+    expect(authorizationWarningIndex).toBeLessThan(
+      workflow.indexOf("yarn manage init"),
+    );
+    expect(authorizationWarningIndex).toBeLessThan(
+      workflow.indexOf("yarn manage connect"),
     );
     expect(workflow).toContain(
       "MICROFEED_STATE_DIRECTORY=$state_directory",
@@ -79,7 +106,6 @@ describe("manual GitHub Actions deployment", () => {
     expect(workflow).toContain("yarn wrangler logout");
     expect(workflow).not.toContain("CLOUDFLARE_API_TOKEN");
     expect(workflow).not.toContain("CLOUDFLARE_API_KEY");
-    expect(workflow).not.toMatch(/secrets\.CLOUDFLARE_/u);
 
     const cacheBlock = workflow.slice(
       workflow.indexOf("- name: Cache Yarn packages"),

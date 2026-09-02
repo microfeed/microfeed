@@ -51,7 +51,6 @@ function accountEnvironment(accountId: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
     CLOUDFLARE_ACCOUNT_ID: accountId,
-    CLOUDFLARE_AUTH_USE_KEYRING: "true",
   };
 }
 

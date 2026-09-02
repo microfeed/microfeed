@@ -17,10 +17,6 @@ on:
         description: microfeed Worker name (overrides the repository variable)
         required: false
         type: string
-      cloudflare_account_id:
-        description: Cloudflare account ID, required only when your login has multiple accounts
-        required: false
-        type: string
       administrator_email:
         description: New instance only; defaults to your Cloudflare login email
         required: false
@@ -40,7 +36,7 @@ jobs:
     timeout-minutes: 60
     env:
       MICROFEED_WORKER_NAME: ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME }}
-      MICROFEED_CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id || vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID }}
+      MICROFEED_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       MICROFEED_ADMINISTRATOR_EMAIL: ${{ inputs.administrator_email }}
       WRANGLER_SEND_METRICS: "false"
 
@@ -88,12 +84,24 @@ jobs:
             echo "::error::Enter the Worker name or set the MICROFEED_WORKER_NAME repository variable."
             exit 1
           fi
+          if [[ -z "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Create the CLOUDFLARE_ACCOUNT_ID Actions secret before deploying. It pins this workflow to one Cloudflare account."
+            exit 1
+          fi
           if [[ ! "$MICROFEED_WORKER_NAME" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
             echo "::error::Worker names must contain 1–63 ASCII letters, numbers, or hyphens, without a leading or trailing hyphen."
             exit 1
           fi
           echo "Using the selected ref $GITHUB_REF at commit $GITHUB_SHA."
           echo "Only authorize this run when you trust that ref and commit."
+
+      - name: Explain the device authorization risk
+        shell: bash
+        run: |
+          warning="The Cloudflare verification URL and one-time code will be visible in this workflow log while they are valid. "
+          warning+="Someone else could use the code first, which would cause this run to fail. "
+          warning+="The CLOUDFLARE_ACCOUNT_ID secret pins the destination: authorization for a different account is rejected before any Cloudflare resources are changed, so this workflow cannot deploy to that other account."
+          echo "::warning title=Public Cloudflare verification code::$warning"
 
       - name: Authorize Cloudflare and create a new instance
         if: ${{ inputs.operation == 'create' }}
@@ -108,6 +116,7 @@ jobs:
           resource_prefix="${MICROFEED_WORKER_NAME,,}"
           args=(
             --device
+            --account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID"
             --project-name "$MICROFEED_WORKER_NAME"
             --d1-name "${resource_prefix}-db"
             --r2-name "${resource_prefix}-media"
@@ -116,9 +125,6 @@ jobs:
             --no-open
             --admin-password "$MICROFEED_ADMIN_PASSWORD"
           )
-          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
-            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
-          fi
           if [[ -n "$MICROFEED_ADMINISTRATOR_EMAIL" ]]; then
             args+=(--owner-email "$MICROFEED_ADMINISTRATOR_EMAIL")
           fi
@@ -128,29 +134,20 @@ jobs:
         if: ${{ inputs.operation == 'update' }}
         shell: bash
         run: |
-          args=(--device --worker "$MICROFEED_WORKER_NAME" --yes)
-          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
-            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
-          fi
+          args=(--device --account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" --worker "$MICROFEED_WORKER_NAME" --yes)
           yarn manage connect "${args[@]}"
 
       - name: Deploy
         if: ${{ inputs.operation == 'update' }}
         shell: bash
         run: |
-          args=(--device --yes)
-          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
-            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
-          fi
+          args=(--device --account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" --yes)
           yarn manage deploy "${args[@]}"
 
       - name: Verify the deployment
         shell: bash
         run: |
-          args=(--device)
-          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
-            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
-          fi
+          args=(--device --account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
           yarn manage status "${args[@]}"
 
       - name: Revoke the temporary Cloudflare authorization

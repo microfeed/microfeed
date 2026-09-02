@@ -888,9 +888,11 @@ describe("CloudflareClient", () => {
         allowFailure: true,
         env: expect.objectContaining({
           CLOUDFLARE_ACCOUNT_ID: "account-id",
-          CLOUDFLARE_AUTH_USE_KEYRING: "true",
         }),
       }),
+    );
+    expect(runner.mock.calls[0]?.[2]?.env).not.toHaveProperty(
+      "CLOUDFLARE_AUTH_USE_KEYRING",
     );
   });
 
