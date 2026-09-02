@@ -59,7 +59,7 @@ Choose one command prefix for the session:
   command and recreates only its private source cache when verification fails;
   never edit the launcher cache.
 - Treat changes to `package.json`, `yarn.lock`, `.yarn/`, `manage-cli/`,
-  `.github/workflows/deploy.yml`, `wrangler.jsonc`,
+  `.github/workflows/update-existing-microfeed.yml`, `wrangler.jsonc`,
   `wrangler.template.jsonc`, `astro.config.ts`, or this skill as
   security-sensitive because deployment executes or trusts them. Inspect their
   diffs and any untracked files, name them to the user, and recommend a clean

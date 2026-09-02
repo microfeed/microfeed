@@ -34,7 +34,7 @@ your browser without creating or pasting an API token.
 The workflow file must exist on the repository's default branch before GitHub
 shows its **Run workflow** control. Once it is available:
 
-1. Open the repository's **Actions** tab and select **Deploy an existing
+1. Open the repository's **Actions** tab and select **Update an existing
    microfeed**.
 2. Choose the trusted branch you want to deploy.
 3. Enter the existing Worker name. If your Cloudflare login can access more

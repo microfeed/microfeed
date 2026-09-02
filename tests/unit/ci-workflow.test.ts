@@ -1,6 +1,7 @@
 import {readFile} from "node:fs/promises";
 import path from "node:path";
 import {describe, expect, it} from "vitest";
+import {parse} from "yaml";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 
@@ -33,13 +34,15 @@ describe("CI package manager setup", () => {
 describe("manual GitHub Actions deployment", () => {
   it("uses ephemeral device authorization without repository credentials", async () => {
     const workflow = await readFile(
-      path.join(repositoryRoot, ".github/workflows/deploy.yml"),
+      path.join(
+        repositoryRoot,
+        ".github/workflows/update-existing-microfeed.yml",
+      ),
       "utf8",
     );
+    const parsed = parse(workflow) as {on?: Record<string, unknown>};
 
-    expect(workflow).toContain("workflow_dispatch:");
-    expect(workflow).not.toMatch(/^\s+push:/mu);
-    expect(workflow).not.toMatch(/^\s+pull_request:/mu);
+    expect(Object.keys(parsed.on ?? {})).toEqual(["workflow_dispatch"]);
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("persist-credentials: false");
     expect(workflow).toContain(

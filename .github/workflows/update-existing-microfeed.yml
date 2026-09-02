@@ -1,6 +1,7 @@
-name: Deploy an existing microfeed
-run-name: Deploy ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME || 'microfeed' }} from ${{ github.ref_name }}
+name: Update an existing microfeed
+run-name: Update ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME || 'microfeed' }} from ${{ github.ref_name }}
 
+# This workflow intentionally has no push, pull-request, or scheduled trigger.
 on:
   workflow_dispatch:
     inputs:
