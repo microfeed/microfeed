@@ -21,6 +21,13 @@ import {CliError} from "./errors.js";
 const MINIMUM_NODE_VERSION = [22, 12, 0] as const;
 const SETUP_LOCK_STALE_MS = 60 * 60 * 1_000;
 const RUNTIME_MARKER = ".microfeed-runtime.json";
+const REQUIRED_WORKSPACE_BINARIES = [
+  {binaryName: "tsx", packageName: "tsx"},
+  {binaryName: "wrangler", packageName: "wrangler"},
+  {binaryName: "astro", packageName: "astro"},
+  {binaryName: "tsc", packageName: "typescript"},
+  {binaryName: "vitest", packageName: "vitest"},
+] as const;
 
 type StringEnvironment = Record<string, string | undefined>;
 type CommandStdio = "ignore" | "inherit" | "pipe";
@@ -65,6 +72,10 @@ interface ManageRuntimeFile {
   path: string;
   sha256: string;
   size: number;
+}
+
+interface PackageBinaryMetadata {
+  bin?: string | Record<string, string>;
 }
 
 export interface ManageRuntimeManifest {
@@ -258,17 +269,87 @@ function installedYarnJavaScript(): string {
   return require.resolve("@yarnpkg/cli-dist/bin/yarn.js");
 }
 
-function installedTsxJavaScript(repositoryDirectory: string): string {
-  const require = createRequire(path.join(repositoryDirectory, "package.json"));
-  return require.resolve("tsx/cli");
-}
-
 function safeRuntimePath(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 &&
     !path.posix.isAbsolute(value) && !value.includes("\\") &&
     value.split("/").every((part) =>
       part.length > 0 && part !== "." && part !== ".."
     );
+}
+
+async function workspacePackageBinaryJavaScript(
+  repositoryDirectory: string,
+  packageName: string,
+  binaryName: string,
+): Promise<string> {
+  const require = createRequire(path.join(repositoryDirectory, "package.json"));
+  const metadataPath = require.resolve(`${packageName}/package.json`);
+  const metadata = JSON.parse(
+    await readFile(metadataPath, "utf8"),
+  ) as PackageBinaryMetadata;
+  const binary = typeof metadata.bin === "string"
+    ? metadata.bin
+    : metadata.bin?.[binaryName];
+  if (!binary) {
+    throw new Error(
+      `${packageName} does not provide its ${binaryName} JavaScript entry point.`,
+    );
+  }
+  const filename = path.resolve(path.dirname(metadataPath), binary);
+  const file = await stat(filename);
+  if (!file.isFile()) {
+    throw new Error(
+      `${packageName} ${binaryName} entry point is not a regular file: ${filename}`,
+    );
+  }
+  return filename;
+}
+
+async function verifyWorkspaceDependencies(
+  repositoryDirectory: string,
+): Promise<string> {
+  let tsxJavaScript: string | undefined;
+  for (const {binaryName, packageName} of REQUIRED_WORKSPACE_BINARIES) {
+    let filename: string;
+    try {
+      filename = await workspacePackageBinaryJavaScript(
+        repositoryDirectory,
+        packageName,
+        binaryName,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`${packageName}/${binaryName}: ${detail}`);
+    }
+    if (packageName === "tsx") tsxJavaScript = filename;
+  }
+  if (!tsxJavaScript) {
+    throw new Error("tsx/tsx: the required JavaScript entry point is missing.");
+  }
+  return tsxJavaScript;
+}
+
+async function installWorkspaceDependencies(input: {
+  checkCache?: boolean;
+  environment: StringEnvironment;
+  repositoryDirectory: string;
+  runner: ManageCommandRunner;
+  yarnJavaScript: string;
+}): Promise<ManageCommandResult> {
+  return await input.runner(
+    process.execPath,
+    [
+      input.yarnJavaScript,
+      "install",
+      "--immutable",
+      ...(input.checkCache ? ["--check-cache"] : []),
+    ],
+    {
+      cwd: input.repositoryDirectory,
+      env: input.environment,
+      stdio: "inherit",
+    },
+  );
 }
 
 async function readRuntimeManifest(
@@ -541,11 +622,12 @@ async function prepareWorkspace(input: {
       ...input.environment,
       MICROFEED_YARN_JAVASCRIPT: input.yarnJavaScript,
     };
-    const install = await input.runner(
-      process.execPath,
-      [input.yarnJavaScript, "install", "--immutable"],
-      {cwd: repositoryDirectory, env: environment, stdio: "inherit"},
-    );
+    const install = await installWorkspaceDependencies({
+      environment,
+      repositoryDirectory,
+      runner: input.runner,
+      yarnJavaScript: input.yarnJavaScript,
+    });
     if (install.exitCode !== 0) {
       throw new CliError(
         "The exact microfeed release was unpacked, but its locked " +
@@ -554,11 +636,50 @@ async function prepareWorkspace(input: {
         install.exitCode,
       );
     }
+    let tsxJavaScript = input.tsxJavaScript;
+    if (!tsxJavaScript) {
+      try {
+        tsxJavaScript = await verifyWorkspaceDependencies(repositoryDirectory);
+      } catch {
+        await rm(path.join(repositoryDirectory, "node_modules"), {
+          force: true,
+          recursive: true,
+        });
+        await rm(path.join(repositoryDirectory, ".yarn", "install-state.gz"), {
+          force: true,
+        });
+        const repair = await installWorkspaceDependencies({
+          checkCache: true,
+          environment,
+          repositoryDirectory,
+          runner: input.runner,
+          yarnJavaScript: input.yarnJavaScript,
+        });
+        if (repair.exitCode !== 0) {
+          throw new CliError(
+            "The private microfeed deployment workspace dependencies were " +
+              "incomplete and could not be repaired. Fix the reported Yarn " +
+              "error and rerun the same command.",
+            repair.exitCode,
+          );
+        }
+        try {
+          tsxJavaScript = await verifyWorkspaceDependencies(repositoryDirectory);
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error);
+          throw new CliError(
+            "The private microfeed deployment workspace remains incomplete " +
+              `after a clean reinstall (${detail}). Check whether Windows ` +
+              "Security or antivirus software quarantined that file, then " +
+              "rerun the same command.",
+          );
+        }
+      }
+    }
     return {
       environment,
       repositoryDirectory,
-      tsxJavaScript: input.tsxJavaScript ??
-        installedTsxJavaScript(repositoryDirectory),
+      tsxJavaScript,
     };
   } finally {
     await releaseLock();

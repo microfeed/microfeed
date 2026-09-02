@@ -5,6 +5,7 @@ import path from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {
+  relativePathFromDirectory,
   repositoryCommitSha,
   repositoryRoot,
   runCommand,
@@ -61,6 +62,29 @@ describe("deployment source commit", () => {
 
     await expect(repositoryCommitSha(runner, sourceRoot)).resolves.toBe(COMMIT);
     expect(runner).not.toHaveBeenCalled();
+  });
+});
+
+describe("framework-compatible filesystem paths", () => {
+  it("preserves spaces and non-ASCII segments on one Windows drive", () => {
+    expect(relativePathFromDirectory(
+      "C:\\microfeed\\repository",
+      "C:\\Users\\系統預設\\AppData\\Roaming\\microfeed config\\wrangler.jsonc",
+      "win32",
+    )).toBe("../../Users/系統預設/AppData/Roaming/microfeed config/wrangler.jsonc");
+  });
+
+  it("identifies a Windows path that requires repository-local staging", () => {
+    const repository = "E:\\microfeed-cli-cache\\manage\\repository";
+    const configuration =
+      "C:\\Users\\person\\AppData\\Roaming\\microfeed\\manage\\wrangler.jsonc";
+
+    expect(path.win32.isAbsolute(path.win32.relative(
+      repository,
+      configuration,
+    ))).toBe(true);
+    expect(relativePathFromDirectory(repository, configuration, "win32"))
+      .toBeUndefined();
   });
 });
 

@@ -16,6 +16,17 @@ export const repositoryRoot = path.resolve(
 );
 const require = createRequire(import.meta.url);
 
+export function relativePathFromDirectory(
+  directory: string,
+  filename: string,
+  platform: NodeJS.Platform = process.platform,
+): string | undefined {
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
+  const relative = platformPath.relative(directory, filename);
+  if (platformPath.isAbsolute(relative)) return undefined;
+  return relative.replaceAll(platformPath.sep, "/") || ".";
+}
+
 interface PackageBinaryMetadata {
   bin?: string | Record<string, string>;
 }

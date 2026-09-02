@@ -468,6 +468,8 @@ describe("first-class local instances", () => {
     expect(path.isAbsolute(
       devCall?.[2]?.env?.MICROFEED_WRANGLER_CONFIG ?? "",
     )).toBe(false);
+    expect(devCall?.[2]?.env?.MICROFEED_WRANGLER_CONFIG)
+      .not.toMatch(/^file:/u);
   });
 
   it("changes the local login email and resets its password safely", async () => {
@@ -775,6 +777,14 @@ describe("first-class local instances", () => {
       "build",
     ]);
     expect(yarnScripts).not.toContain("test");
+    expect(runner.mock.calls
+      .filter(([executable]) =>
+        /^yarn(?:\.cmd|\.js)?$/u.test(path.basename(executable))
+      )
+      .every(([, , options]) =>
+        !path.isAbsolute(options?.env?.MICROFEED_WRANGLER_CONFIG ?? "") &&
+        !options?.env?.MICROFEED_WRANGLER_CONFIG?.startsWith("file:")
+      )).toBe(true);
   });
 
   it("simulates webhooks automatically in dev without changing deployment opt-in", async () => {
