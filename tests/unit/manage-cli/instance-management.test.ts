@@ -695,6 +695,80 @@ describe("first-class local instances", () => {
     expect(runner).not.toHaveBeenCalled();
   });
 
+  it("resumes an incomplete first deployment with its upload-signing secret", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig({
+      ...completedRemoteConfig(),
+      adminAuthMode: "none",
+      completedSteps: ["d1-ready", "r2-ready"],
+      deploymentUrl: null,
+    });
+    let deployedSecrets: Record<string, string> | undefined;
+    const runner = vi.fn<CommandRunner>(async (_executable, args) => {
+      const command = args.join(" ");
+      if (command === "whoami --json") {
+        return commandResult(JSON.stringify({
+          accounts: [{id: "account-id", name: "Personal"}],
+          authType: "OAuth Token",
+          email: "cloudflare@example.com",
+          tokenPermissions: requiredScopes,
+        }));
+      }
+      if (command === "pages project list --json") {
+        return commandResult("[]");
+      }
+      if (command === "rev-parse --verify HEAD") {
+        return commandResult("a".repeat(40));
+      }
+      if (command.startsWith("d1 migrations apply feed-db --remote ")) {
+        return commandResult("Migrations applied");
+      }
+      if (command.startsWith("d1 execute feed-db --remote --file ")) {
+        return commandResult("Executed");
+      }
+      if (command.startsWith("d1 execute feed-db --remote --command ")) {
+        const sql = args[args.indexOf("--command") + 1] ?? "";
+        const results = sql.includes("sqlite_schema")
+          ? [{name: "site_search_exact"}, {name: "site_search_title_trigram"}]
+          : sql.includes("COUNT(*)") ? [{count: 0}] : [];
+        return commandResult(JSON.stringify([{results}]));
+      }
+      if (["types", "typecheck", "test:deploy", "build"].includes(args[0]!)) {
+        return commandResult();
+      }
+      if (args[0] === "deploy") {
+        const secretIndex = args.indexOf("--secrets-file");
+        expect(secretIndex).toBeGreaterThan(-1);
+        deployedSecrets = JSON.parse(
+          await readFile(args[secretIndex + 1]!, "utf8"),
+        ) as Record<string, string>;
+        return commandResult("https://feed.example.workers.dev");
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      instanceId: "installation-id",
+      product: "microfeed",
+    })));
+
+    await commands.deployCommand({instance: "feed"}, runner);
+
+    expect(deployedSecrets).toEqual({
+      UPLOAD_SIGNING_KEY: expect.any(String),
+    });
+    expect(deployedSecrets?.UPLOAD_SIGNING_KEY).toHaveLength(43);
+    await expect(config.readConfig(false, "feed")).resolves.toEqual(
+      expect.objectContaining({
+        completedSteps: expect.arrayContaining([
+          "upload-signing-secret-created",
+          "worker-deployed",
+          "deployment-verified",
+        ]),
+        deploymentUrl: "https://feed.example.workers.dev",
+      }),
+    );
+  });
+
   it("creates a content-only local instance and enables simulated R2 later", async () => {
     const {commands, config, theme} = await freshModules();
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {

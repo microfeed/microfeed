@@ -424,8 +424,11 @@ npx @microfeed/cli manage deploy [--instance <name>] [--preview|--local] [--enab
 `deploy` only operates on instances with locally saved configuration. If the
 microfeed already exists on Cloudflare, run
 `npx @microfeed/cli manage connect --instance <name>` first and select its
-Worker. If it does not exist yet, run
-`npx @microfeed/cli manage init --instance <name>` instead.
+Worker. For a new installation with no saved configuration, run
+`npx @microfeed/cli manage init --instance <name>` instead. When initialization
+has saved the instance but its first Worker deployment is not yet complete,
+`deploy` resumes that deployment and supplies the missing initial
+upload-signing secret automatically.
 
 An ordinary deployment does not probe or prompt when media storage is already
 ready or explicitly disabled. For automatic pending setup, `NotEntitled`
