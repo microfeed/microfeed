@@ -3316,8 +3316,10 @@ export async function deployCommand(
     );
     const r2EnablePending = enabledR2Now ||
       config.completedSteps.includes("r2-enable-pending");
+    const resumeFirstDeployment =
+      !config.completedSteps.includes("worker-deployed");
     try {
-      await deployConfiguredProject(context, config, false);
+      await deployConfiguredProject(context, config, resumeFirstDeployment);
     } catch (error) {
       if (finishWebhookDisable && isCloudflareAuthenticationError(error)) {
         throw webhookAuthenticationError(error, config, "disable", true);
