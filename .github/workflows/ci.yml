@@ -77,7 +77,8 @@ jobs:
         run: yarn install --immutable
       - name: Test Windows process launching
         run: yarn vitest run tests/unit/manage-cli/process.test.ts tests/unit/cli/manage.test.ts
-      - name: Test cross-drive management checks
+      - name: Test cross-drive local deployment
+        if: matrix.runner == 'windows-latest'
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
