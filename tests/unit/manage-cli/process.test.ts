@@ -1,10 +1,12 @@
 import {mkdtemp, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
+import {fileURLToPath} from "node:url";
 
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {
+  filesystemPathToUrl,
   repositoryCommitSha,
   repositoryRoot,
   runCommand,
@@ -61,6 +63,38 @@ describe("deployment source commit", () => {
 
     await expect(repositoryCommitSha(runner, sourceRoot)).resolves.toBe(COMMIT);
     expect(runner).not.toHaveBeenCalled();
+  });
+});
+
+describe("filesystem URL conversion", () => {
+  it("preserves Windows drive letters, spaces, and non-ASCII paths", () => {
+    expect(filesystemPathToUrl(
+      "C:\\Users\\系統預設\\AppData\\Roaming\\microfeed config\\wrangler.jsonc",
+      "win32",
+    )).toBe(
+      "file:///C:/Users/%E7%B3%BB%E7%B5%B1%E9%A0%90%E8%A8%AD/AppData/" +
+        "Roaming/microfeed%20config/wrangler.jsonc",
+    );
+  });
+
+  it("keeps a cross-drive Wrangler configuration independent of the repository", () => {
+    const repository = "E:\\microfeed-cli-cache\\manage\\repository";
+    const configuration =
+      "C:\\Users\\person\\AppData\\Roaming\\microfeed\\manage\\wrangler.jsonc";
+
+    expect(path.win32.isAbsolute(path.win32.relative(
+      repository,
+      configuration,
+    ))).toBe(true);
+    expect(filesystemPathToUrl(configuration, "win32"))
+      .toBe("file:///C:/Users/person/AppData/Roaming/microfeed/manage/wrangler.jsonc");
+    expect(fileURLToPath(
+      new URL(
+        filesystemPathToUrl(configuration, "win32"),
+        "file:///E:/microfeed-cli-cache/manage/repository/",
+      ),
+      {windows: true},
+    )).toBe(configuration);
   });
 });
 

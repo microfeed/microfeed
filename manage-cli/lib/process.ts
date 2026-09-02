@@ -2,7 +2,7 @@ import {spawn} from "node:child_process";
 import {readFile} from "node:fs/promises";
 import {createRequire} from "node:module";
 import path from "node:path";
-import {fileURLToPath} from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 
 import type {
   CommandResult,
@@ -15,6 +15,13 @@ export const repositoryRoot = path.resolve(
   "../..",
 );
 const require = createRequire(import.meta.url);
+
+export function filesystemPathToUrl(
+  filename: string,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  return pathToFileURL(filename, {windows: platform === "win32"}).href;
+}
 
 interface PackageBinaryMetadata {
   bin?: string | Record<string, string>;

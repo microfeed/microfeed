@@ -77,5 +77,31 @@ jobs:
         run: yarn install --immutable
       - name: Test Windows process launching
         run: yarn vitest run tests/unit/manage-cli/process.test.ts tests/unit/cli/manage.test.ts
+      - name: Test cross-drive management checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $mappedRoot = Join-Path $env:RUNNER_TEMP "microfeed 狀態"
+          New-Item -ItemType Directory -Force -Path $mappedRoot | Out-Null
+          if (Test-Path "M:\") {
+            throw "The M: drive required by this regression test is already in use."
+          }
+          subst M: $mappedRoot
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not create the M: drive used by this regression test."
+          }
+          try {
+            $env:MICROFEED_STATE_DIRECTORY = "M:\microfeed state"
+            yarn manage init --local --instance windows-cross-drive --admin-auth none --no-r2 --yes
+            if ($LASTEXITCODE -ne 0) {
+              throw "Local microfeed initialization failed."
+            }
+            yarn manage deploy --local --instance windows-cross-drive
+            if ($LASTEXITCODE -ne 0) {
+              throw "Cross-drive microfeed checks failed."
+            }
+          } finally {
+            subst M: /d
+          }
       - name: Test Worker runtime
         run: yarn vitest run --config vitest.worker.config.ts --testTimeout 15000

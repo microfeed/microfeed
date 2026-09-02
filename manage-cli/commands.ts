@@ -94,6 +94,7 @@ import {
   validateWranglerProfileName,
 } from "./lib/cloudflare";
 import {
+  filesystemPathToUrl,
   openUrl,
   repositoryCommitSha,
   repositoryRoot,
@@ -602,8 +603,7 @@ async function runChecks(
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     MICROFEED_INSTANCE: config.instanceName,
-    MICROFEED_WRANGLER_CONFIG: path.relative(
-      repositoryRoot,
+    MICROFEED_WRANGLER_CONFIG: filesystemPathToUrl(
       wranglerConfigPath(config),
     ),
   };
@@ -5913,11 +5913,10 @@ export async function devCommand(
         ASTRO_DEV_BACKGROUND: "1",
         MICROFEED_INSTANCE: config.instanceName,
         MICROFEED_LOCAL_STATE: localPersistencePath(config),
-        // The Astro Cloudflare adapter resolves this value as a URL before it
-        // hands the filesystem path to Wrangler. A Windows drive-letter path
-        // is parsed as a non-file URL, so keep it relative to the project.
-        MICROFEED_WRANGLER_CONFIG: path.relative(
-          repositoryRoot,
+        // Astro resolves this value as a URL. A file URL preserves Windows
+        // drive letters, spaces, and non-ASCII characters even when the saved
+        // configuration and prepared repository are on different volumes.
+        MICROFEED_WRANGLER_CONFIG: filesystemPathToUrl(
           wranglerConfigPath(config),
         ),
       },

@@ -108,6 +108,40 @@ async function runtimeFixture(
   };
 }
 
+async function installWorkspaceBinaryFixtures(
+  repositoryDirectory: string,
+  omittedPackage?: string,
+): Promise<void> {
+  const binaries = [
+    {binaryName: "tsx", packageName: "tsx"},
+    {binaryName: "wrangler", packageName: "wrangler"},
+    {binaryName: "astro", packageName: "astro"},
+    {binaryName: "tsc", packageName: "typescript"},
+    {binaryName: "vitest", packageName: "vitest"},
+  ];
+  for (const {binaryName, packageName} of binaries) {
+    if (packageName === omittedPackage) continue;
+    const packageDirectory = path.join(
+      repositoryDirectory,
+      "node_modules",
+      ...packageName.split("/"),
+    );
+    const binary = `./bin/${binaryName}.js`;
+    await mkdir(path.join(packageDirectory, "bin"), {recursive: true});
+    await writeFile(
+      path.join(packageDirectory, "package.json"),
+      `${JSON.stringify({
+        bin: packageName === "tsx" ? binary : {[binaryName]: binary},
+        name: packageName,
+      })}\n`,
+    );
+    await writeFile(
+      path.join(packageDirectory, "bin", `${binaryName}.js`),
+      "// package binary fixture\n",
+    );
+  }
+}
+
 function workspaceRunner(
   commands: RecordedCommand[],
   finalResult: ManageCommandResult = commandResult(),
@@ -230,6 +264,88 @@ describe("source-code-free management launcher", () => {
     );
     expect(output.join("\n")).toContain("Do not stop");
     await expect(readdir(invocationDirectory)).resolves.toEqual([]);
+  });
+
+  it("repairs an incomplete private dependency tree without touching saved state", async () => {
+    const root = await temporaryDirectory("microfeed-manage-dependency-repair-");
+    const fixture = await runtimeFixture(root);
+    const cacheDirectory = path.join(root, "cache");
+    const stateDirectory = path.join(root, "state");
+    const commands: RecordedCommand[] = [];
+    let installCount = 0;
+    await mkdir(stateDirectory, {recursive: true});
+    await writeFile(path.join(stateDirectory, "saved-instance"), "preserved");
+    const runner: ManageCommandRunner = async (executable, args, options = {}) => {
+      commands.push({args: [...args], executable, options});
+      if (args[0] === fixture.yarnJavaScript && args[1] === "install") {
+        installCount += 1;
+        await installWorkspaceBinaryFixtures(
+          options.cwd!,
+          installCount === 1 ? "wrangler" : undefined,
+        );
+      }
+      return commandResult();
+    };
+
+    await expect(runManageLauncher([], {
+      cacheDirectory,
+      environment: {PATH: "/usr/bin"},
+      output: () => undefined,
+      packageVersion: "1.2.3",
+      platform: "linux",
+      runner,
+      stateDirectory,
+      runtimeDirectory: fixture.runtimeDirectory,
+      runtimeManifestPath: fixture.runtimeManifestPath,
+      yarnJavaScript: fixture.yarnJavaScript,
+    })).resolves.toBe(0);
+
+    const installs = commands.filter(({args}) =>
+      args[0] === fixture.yarnJavaScript && args[1] === "install"
+    );
+    expect(installs.map(({args}) => args)).toEqual([
+      [fixture.yarnJavaScript, "install", "--immutable"],
+      [fixture.yarnJavaScript, "install", "--immutable", "--check-cache"],
+    ]);
+    expect((await stat(path.join(
+      cacheDirectory,
+      "repository",
+      "node_modules",
+      "wrangler",
+      "bin",
+      "wrangler.js",
+    ))).isFile()).toBe(true);
+    await expect(readFile(path.join(stateDirectory, "saved-instance"), "utf8"))
+      .resolves.toBe("preserved");
+  });
+
+  it("reports a dependency file that remains missing after one clean repair", async () => {
+    const root = await temporaryDirectory("microfeed-manage-dependency-damaged-");
+    const fixture = await runtimeFixture(root);
+    const commands: RecordedCommand[] = [];
+    const runner: ManageCommandRunner = async (executable, args, options = {}) => {
+      commands.push({args: [...args], executable, options});
+      if (args[0] === fixture.yarnJavaScript && args[1] === "install") {
+        await installWorkspaceBinaryFixtures(options.cwd!, "wrangler");
+      }
+      return commandResult();
+    };
+
+    await expect(runManageLauncher([], {
+      cacheDirectory: path.join(root, "cache"),
+      environment: {PATH: "/usr/bin"},
+      output: () => undefined,
+      packageVersion: "1.2.3",
+      platform: "linux",
+      runner,
+      stateDirectory: path.join(root, "state"),
+      runtimeDirectory: fixture.runtimeDirectory,
+      runtimeManifestPath: fixture.runtimeManifestPath,
+      yarnJavaScript: fixture.yarnJavaScript,
+    })).rejects.toThrow(
+      /remains incomplete[\s\S]*wrangler\/wrangler[\s\S]*Windows Security/u,
+    );
+    expect(commands.filter(({args}) => args[1] === "install")).toHaveLength(2);
   });
 
   it("reuses verified source and forwards every argument from the caller", async () => {
