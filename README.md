@@ -130,6 +130,11 @@ The agent guides the setup, runs the deployment, and verifies the finished
 site. You only step in for Cloudflare browser authorization, choices that
 require your approval, and creating your private dashboard password.
 
+If local Node.js compatibility is a problem, use the repository's manual
+**Create or update microfeed** GitHub Actions workflow instead. It runs on a
+GitHub-hosted Ubuntu runner and uses Cloudflare device authorization rather
+than an API token. [Read the setup and security requirements](https://docs.microfeed.org/manage/update/#create-or-update-with-github-actions).
+
 
 https://github.com/user-attachments/assets/96c73a94-2068-4172-9003-8bf3a262121d
 
@@ -147,9 +152,10 @@ the same engine.
 
 * **Recommended:** [deploy with an AI coding agent](https://docs.microfeed.org/start-here/ai-agent/).
 * **Manual:** [deploy from the terminal](https://docs.microfeed.org/start-here/manual/).
+* **GitHub Actions:** [create or update from a hosted Ubuntu runner](https://docs.microfeed.org/manage/update/#create-or-update-with-github-actions).
 * **Every command and option:** read the [management CLI reference](https://docs.microfeed.org/manage-cli/).
 
-Both paths pause for Cloudflare browser authorization and choices that require
+These paths pause for Cloudflare browser authorization and choices that require
 your approval. Never paste a Cloudflare token, dashboard password, or private
 password-setup link into an agent conversation or command.
 

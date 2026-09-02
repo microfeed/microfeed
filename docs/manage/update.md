@@ -24,31 +24,43 @@ saved and compatible existing sites, asks before choosing among candidates,
 connects only if needed, deploys through the same management engine, and
 runs a status check. Complete any Cloudflare browser handoffs it requests.
 
-## Update with GitHub Actions
+## Create or update with GitHub Actions
 
-The repository includes an experimental manual workflow for updating an
-existing microfeed from GitHub's consistent Ubuntu environment. It uses
+The repository includes an experimental manual workflow for creating or
+updating microfeed from GitHub's consistent Ubuntu environment. It uses
 Cloudflare's device authorization flow, so you approve the requested access in
 your browser without creating or pasting an API token.
 
 The workflow file must exist on the repository's default branch before GitHub
 shows its **Run workflow** control. Once it is available:
 
-1. Open the repository's **Actions** tab and select **Update an existing
+1. For a new instance, first create a `MICROFEED_ADMIN_PASSWORD` repository
+   secret under **Settings → Secrets and variables → Actions**. This is the
+   password you will use for the microfeed dashboard, not a Cloudflare token.
+   Use 12–128 characters. Existing-instance updates do not use this secret.
+2. Open the repository's **Actions** tab and select **Create or update
    microfeed**.
-2. Choose the trusted branch you want to deploy.
-3. Enter the existing Worker name. If your Cloudflare login can access more
+3. Choose the trusted branch you want to deploy and select **create** or
+   **update**.
+4. Enter the Worker name. If your Cloudflare login can access more
    than one account, also enter its full account ID.
-4. Start the workflow, open the **Authorize Cloudflare and connect the existing
-   site** step, and follow the displayed URL and one-time code. Keep the run
-   open until authorization finishes.
-5. The workflow connects the existing site, deploys the selected source,
-   verifies its status, and logs out of Cloudflare.
+5. For a new instance, the dashboard email defaults to the authenticated
+   Cloudflare login email. Enter a different administrator email only when you
+   want the two identities to differ.
+6. Start the workflow, open the active **Authorize Cloudflare** step, and follow
+   the displayed URL and one-time code. Keep the run open until authorization
+   finishes.
+7. The workflow collision-checks and creates a new site, or connects and
+   updates an existing site. It then verifies status and logs out of Cloudflare.
+
+For a new instance, the D1 database and R2 bucket names are derived from the
+lowercase Worker name. Initialization stops instead of reusing or overwriting
+same-named resources.
 
 To avoid retyping non-secret target information, add either of these in
 **Settings → Secrets and variables → Actions → Variables**:
 
-- `MICROFEED_WORKER_NAME` for the existing Worker's name.
+- `MICROFEED_WORKER_NAME` for the Worker's name.
 - `MICROFEED_CLOUDFLARE_ACCOUNT_ID` for the full account ID when the login can
   access multiple accounts.
 
@@ -64,11 +76,16 @@ and runs `wrangler logout` even after a later step fails. Future deployments
 therefore require another browser approval, while the Worker name and optional
 account ID can remain as repository variables.
 
+The dashboard password secret is available only to the new-instance step and
+GitHub masks it in logs. It is still sensitive: the selected branch executes
+while the secret is available, so do not authorize or initialize from
+unreviewed code.
+
 Only authorize a ref whose code and workflow you trust: the selected source is
-what receives the temporary Cloudflare permissions and is deployed. This flow
-updates an existing compatible microfeed only. Fresh installation remains a
-local CLI or coding-agent task because it includes private first-password setup
-and additional interactive choices.
+what receives the temporary Cloudflare permissions and is deployed. New-site
+mode creates a Worker, D1 database, R2 bucket when available, Worker secrets,
+and the first dashboard login. Remove `MICROFEED_ADMIN_PASSWORD` from the
+repository after initialization succeeds; future updates do not use it.
 
 ## Update from a Git-cloned source repository
 

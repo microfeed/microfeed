@@ -243,6 +243,7 @@ function completedRemoteConfig(): MicrofeedConfig {
 function completedRemoteRunner(input: {
   ownerExists: boolean;
   pendingEmail?: string;
+  sqlStatements?: string[];
 }): CommandRunner {
   return vi.fn<CommandRunner>(async (_executable, args) => {
     const command = args.join(" ");
@@ -283,6 +284,10 @@ function completedRemoteRunner(input: {
     if (
       command.includes("d1 execute feed-db --remote --file")
     ) {
+      const fileIndex = args.indexOf("--file");
+      if (input.sqlStatements && fileIndex >= 0) {
+        input.sqlStatements.push(await readFile(args[fileIndex + 1]!, "utf8"));
+      }
       return commandResult("Executed");
     }
     if (command.startsWith("d1 migrations apply feed-db --remote ")) {
@@ -1377,6 +1382,25 @@ describe("initialization lifecycle", () => {
     expect(commandsRun.some((command) =>
       /(?:deploy|d1 create|r2 bucket create)/u.test(command)
     )).toBe(false);
+  });
+
+  it("uses the Cloudflare login email for non-interactive admin setup", async () => {
+    const {commands, config} = await freshModules();
+    await config.writeConfig(completedRemoteConfig());
+    const sqlStatements: string[] = [];
+    const runner = completedRemoteRunner({
+      ownerExists: false,
+      sqlStatements,
+    });
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await commands.initCommand({
+      instance: "feed",
+      "no-open": true,
+      yes: true,
+    }, runner);
+
+    expect(sqlStatements.join("\n")).toContain("cloudflare@example.com");
   });
 
   it("prints auth subcommand usage without selecting or changing an instance", async () => {

@@ -60,6 +60,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "A newly created Cloudflare account may need a few minutes to prepare workers.dev before its first Worker deploy; rerun the same init command to resume safely.",
       "Fresh initialization installs every current Built-in theme and activates only the Default fallback.",
       "Built-in authentication normally prints a private browser link for setting the first password.",
+      "With --yes, the Cloudflare login email becomes the default administrator email when no --owner-email is supplied.",
       "A completed installation stops with guidance to use deploy, status, domain, or auth instead.",
     ],
     examples: [
@@ -72,6 +73,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     options: [
       option("--instance <name>", "Select the saved site name."),
       option("--account-id <id>", "Use one exact Cloudflare account."),
+      option("--device", "Use Cloudflare device authorization for a headless interactive environment."),
       option(
         "--project-name <name>",
         "Set the Worker name: 1–63 ASCII letters, numbers, or hyphens; no edge hyphen.",
@@ -80,7 +82,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--r2-name <name>", "Set the production R2 bucket name; preview always reuses production storage."),
       option("--admin-path <path>", "Set the Cloudflare dashboard path, defaulting to admin."),
       option("--admin-auth <built-in|none>", "Enable the built-in login or deliberately leave the dashboard unprotected."),
-      option("--owner-email <email>", "Set the first administrator sign-in email."),
+      option("--owner-email <email>", "Set the first administrator sign-in email; --yes defaults to the Cloudflare login email when available."),
       option("--admin-password <value>", "Unsafe remote-only automation option; exposes the password through process arguments."),
       option("--no-open", "Print a browser password link without opening it automatically."),
       option("--reuse-d1", "Explicitly approve reuse of a same-named existing D1 database."),
@@ -91,7 +93,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--yes", "Accept non-secret remote defaults; local first-password setup remains interactive."),
     ],
     summary: "Initialize or resume a production, preview, or local installation.",
-    usage: "yarn manage init [--instance <name>] [--preview|--local] [options]",
+    usage: "yarn manage init [--device] [--instance <name>] [--preview|--local] [options]",
   },
   {
     changes: "Reads Cloudflare and writes local connection state; does not change Cloudflare.",

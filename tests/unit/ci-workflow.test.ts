@@ -32,17 +32,23 @@ describe("CI package manager setup", () => {
 });
 
 describe("manual GitHub Actions deployment", () => {
-  it("uses ephemeral device authorization without repository credentials", async () => {
+  it("creates or updates with ephemeral Cloudflare authorization", async () => {
     const workflow = await readFile(
       path.join(
         repositoryRoot,
-        ".github/workflows/update-existing-microfeed.yml",
+        ".github/workflows/create-or-update-microfeed.yml",
       ),
       "utf8",
     );
-    const parsed = parse(workflow) as {on?: Record<string, unknown>};
+    const parsed = parse(workflow) as {
+      jobs?: {deploy?: {env?: Record<string, unknown>}};
+      on?: Record<string, unknown>;
+    };
 
     expect(Object.keys(parsed.on ?? {})).toEqual(["workflow_dispatch"]);
+    expect(JSON.stringify(parsed.jobs?.deploy?.env ?? {})).not.toContain(
+      "runner.",
+    );
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("persist-credentials: false");
     expect(workflow).toContain(
@@ -53,19 +59,27 @@ describe("manual GitHub Actions deployment", () => {
         "vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID",
     );
     expect(workflow).toContain(
-      "MICROFEED_STATE_DIRECTORY: ${{ runner.temp }}/microfeed-state",
+      "MICROFEED_STATE_DIRECTORY=$state_directory",
     );
     expect(workflow).toContain(
-      "XDG_CONFIG_HOME: ${{ runner.temp }}/wrangler-config",
+      "XDG_CONFIG_HOME=$wrangler_directory",
     );
-    expect(workflow.match(/args=\(--device/g)).toHaveLength(3);
+    expect(workflow).not.toContain("${{ runner.temp }}");
+    expect(workflow).toContain("type: choice");
+    expect(workflow).toContain("- create");
+    expect(workflow).toContain("- update");
+    expect(workflow).toContain("inputs.operation == 'create'");
+    expect(workflow).toContain("inputs.operation == 'update'");
+    expect(workflow).toContain("secrets.MICROFEED_ADMIN_PASSWORD");
+    expect(workflow).toContain("yarn manage init");
     expect(workflow).toContain("yarn manage connect");
     expect(workflow).toContain("yarn manage deploy");
     expect(workflow).toContain("yarn manage status");
     expect(workflow).toContain("always() && steps.install.outcome == 'success'");
     expect(workflow).toContain("yarn wrangler logout");
     expect(workflow).not.toContain("CLOUDFLARE_API_TOKEN");
-    expect(workflow).not.toContain("secrets.");
+    expect(workflow).not.toContain("CLOUDFLARE_API_KEY");
+    expect(workflow).not.toMatch(/secrets\.CLOUDFLARE_/u);
 
     const cacheBlock = workflow.slice(
       workflow.indexOf("- name: Cache Yarn packages"),

@@ -20,7 +20,7 @@ microfeed supports one deployment engine. A person may run `yarn manage` from
 a trusted clone, a local coding agent may use `npx @microfeed/cli manage` to
 copy the exact bundled release into a private cache and forward commands to
 that engine, or a person may use the repository-owned manual GitHub Actions
-workflow to update an existing site with fresh device authorization. Do not
+workflow to create or update a site with fresh device authorization. Do not
 offer Cloudflare repository imports, Workers Builds, deploy buttons, raw
 Wrangler deploys, API-token deployment, or another Actions workflow as
 alternatives. Never request a Cloudflare email, password, private
@@ -39,8 +39,8 @@ Choose one command prefix for the session:
 
 - Use management commands from a local interactive session that can complete
   Wrangler's localhost browser callback. The only supported headless exception
-  is the repository-owned manual Actions workflow for an existing site; its
-  `--device` flow requires a person to approve every run.
+  is the repository-owned manual Actions workflow for creating or updating a
+  site; its `--device` flow requires a person to approve every run.
 - Never request a password or Cloudflare token in chat. Never use
   `--admin-password`; that deliberately unsafe option exists only for
   unattended automation whose operator accepts shell-history, process-list,
@@ -59,18 +59,22 @@ Choose one command prefix for the session:
   command and recreates only its private source cache when verification fails;
   never edit the launcher cache.
 - Treat changes to `package.json`, `yarn.lock`, `.yarn/`, `manage-cli/`,
-  `.github/workflows/update-existing-microfeed.yml`, `wrangler.jsonc`,
+  `.github/workflows/create-or-update-microfeed.yml`, `wrangler.jsonc`,
   `wrangler.template.jsonc`, `astro.config.ts`, or this skill as
   security-sensitive because deployment executes or trusts them. Inspect their
   diffs and any untracked files, name them to the user, and recommend a clean
   trusted checkout. Continue only when the user explicitly trusts those exact
   changes; a generic approval of a dirty tree is insufficient.
-- For the manual Actions workflow, deploy only an existing compatible site,
-  require a trusted selected ref and a fresh `--device` authorization, keep
+- For the manual Actions workflow, create a collision-checked new site or
+  update an existing compatible site. Require a trusted selected ref and a
+  fresh `--device` authorization, keep
   `XDG_CONFIG_HOME` and `MICROFEED_STATE_DIRECTORY` under the hosted runner's
   temporary directory, exclude both from caches, and run `wrangler logout` in
   an always-run cleanup step. Never add a Cloudflare credential to repository
-  secrets or expose it in workflow output.
+  secrets or expose it in workflow output. New-site mode may use the
+  operator-created `MICROFEED_ADMIN_PASSWORD` Actions secret for unattended
+  built-in login setup; it is not a Cloudflare credential and should be removed
+  after initialization succeeds.
 - Explain the external changes before starting: fresh initialization can
   create a Worker, D1 database, R2 bucket, Worker secrets, and, only when
   selected, a Worker Custom Domain with Cloudflare-managed DNS and

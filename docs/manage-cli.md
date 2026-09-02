@@ -102,10 +102,10 @@ command arguments or agent conversations.
 
 Cloudflare repository imports, Workers Builds, deploy buttons, and API-token
 deployment are not supported. The repository's manual GitHub Actions workflow
-is a narrow exception for updating an existing site: it runs `yarn manage` in
-an ephemeral Ubuntu runner and requires fresh Cloudflare device authorization
-for every run. It does not initialize new sites or save a Cloudflare credential
-in GitHub. See [Update microfeed](/manage/update/#update-with-github-actions).
+is a narrow exception for creating or updating a site: it runs `yarn manage`
+in an ephemeral Ubuntu runner and requires fresh Cloudflare device
+authorization for every run. It does not save a Cloudflare credential in
+GitHub. See [Update microfeed](/manage/update/#create-or-update-with-github-actions).
 
 ## Safety model
 
@@ -122,7 +122,9 @@ in GitHub. See [Update microfeed](/manage/update/#update-with-github-actions).
 - Built-in login passwords should be created through the private browser link.
   `--admin-password` is an intentionally unsafe automation escape hatch because
   process arguments may appear in shell history, process lists, transcripts,
-  and logs.
+  and logs. The manual GitHub Actions workflow uses it only with GitHub's
+  masking and an operator-created Actions secret; the selected ref must be
+  trusted because its code executes while that secret is available.
 - `destroy` requires a read-only plan and an exact site-name confirmation. It
   rejects `--yes`, verifies resource identity, and records progress so the same
   command can resume safely.
@@ -201,7 +203,7 @@ keeps the automatic state, and prints the exact `deploy --enable-r2` command.
 Cloudflare authorization normally opens a browser and waits for a localhost
 callback. `--device` instead prints a URL and one-time code, so an interactive
 person can authorize a command running in a headless environment. It is
-supported by `accounts`, `connect`, `deploy`, and `status`; it cannot be
+supported by `accounts`, `init`, `connect`, `deploy`, and `status`; it cannot be
 combined with a named `--profile`.
 
 Device authorization does not create an API token. In this mode, Wrangler saves
@@ -284,19 +286,20 @@ activates only the Default fallback. A resumed run installs any missing
 packages without changing an already selected theme.
 
 ```console
-npx @microfeed/cli manage init [--instance <name>] [--preview|--local] [options]
+npx @microfeed/cli manage init [--device] [--instance <name>] [--preview|--local] [options]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the saved site name. |
 | `--account-id <id>` | Use one exact Cloudflare account. |
+| `--device` | Use a URL and one-time code instead of a localhost browser callback. |
 | `--project-name <name>` | Set the production or preview Worker name: 1–63 ASCII letters, numbers, or hyphens; no leading or trailing hyphen. |
 | `--d1-name <name>` | Set the production or preview D1 name. |
 | `--r2-name <name>` | Set the production R2 name; preview always shares production media. |
 | `--admin-path <path>` | Set the remote dashboard path, defaulting to `admin`. |
 | `--admin-auth <built-in\|none>` | Enable built-in protection or deliberately skip it. |
-| `--owner-email <email>` | Set the administrator sign-in email. |
+| `--owner-email <email>` | Set the administrator sign-in email. With `--yes`, the authenticated Cloudflare login email is used when available. |
 | `--admin-password <value>` | Unsafe remote-only automation password. Never use from an agent. |
 | `--no-open` | Print the private password page without opening a browser. |
 | `--reuse-d1` | Explicitly reuse a same-named existing D1 database. |

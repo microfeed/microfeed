@@ -168,6 +168,7 @@ export function workersDevInitializationError(
 
 interface CommandContext {
   cloudflare: CloudflareClient;
+  cloudflareLoginEmail?: string;
   flags: Flags;
   instanceName?: string;
   pendingAdminEmail?: string;
@@ -385,6 +386,7 @@ async function authenticate(
       "Wrangler login did not grant all required microfeed OAuth scopes.",
     );
   }
+  context.cloudflareLoginEmail = context.cloudflare.loginEmail() ?? undefined;
   const flaggedAccountId = flagString(context.flags, "account-id");
   if (
     requiredAccountId &&
@@ -826,13 +828,21 @@ async function adminEmailInput(
     "Dashboard sign-in email",
   );
   const fromFlag = flagString(context.flags, "owner-email");
-  if (!fromFlag && flagBoolean(context.flags, "yes")) {
+  const nonInteractiveDefault = flagBoolean(context.flags, "yes")
+    ? defaultValue
+    : undefined;
+  if (
+    !fromFlag &&
+    !nonInteractiveDefault &&
+    flagBoolean(context.flags, "yes")
+  ) {
     throw new Error(
       "Pass `--owner-email <email>` when using `--yes`. This is the email " +
-        "used to sign in to the microfeed dashboard.",
+        "used to sign in to the microfeed dashboard. An authenticated " +
+        "Cloudflare login email is used automatically when available.",
     );
   }
-  const emailInput = fromFlag ??
+  const emailInput = fromFlag ?? nonInteractiveDefault ??
     await askText("Dashboard sign-in email", defaultValue);
   const emailError = validateOwnerEmail(emailInput);
   if (emailError) {
@@ -887,7 +897,10 @@ async function collectInitialAdminSetupEmail(
   }
   const owner = await context.cloudflare.authOwner(config);
   if (!owner) {
-    context.pendingAdminEmail ??= await adminEmailInput(context);
+    context.pendingAdminEmail ??= await adminEmailInput(
+      context,
+      context.cloudflareLoginEmail,
+    );
   }
 }
 
@@ -960,7 +973,7 @@ async function finishInitialAdminSetup(
   }
   const pending = await context.cloudflare.authPasswordSetup(config);
   const email = context.pendingAdminEmail ?? pending?.email ??
-    await adminEmailInput(context);
+    await adminEmailInput(context, context.cloudflareLoginEmail);
   await issuePasswordSetupLink(context, config, {
     email,
     purpose: "initial",

@@ -418,6 +418,7 @@ describe("CloudflareClient", () => {
           {id: "account-a", name: "Personal"},
           {id: "account-b", name: "Team"},
         ],
+        email: "admin@example.com",
         tokenPermissions: [...OAUTH_SCOPES, "offline_access"],
       }),
     ));
@@ -428,6 +429,7 @@ describe("CloudflareClient", () => {
       {id: "account-b", name: "Team"},
     ]);
     await expect(cloudflare.hasRequiredScopes()).resolves.toBe(true);
+    expect(cloudflare.loginEmail()).toBe("admin@example.com");
   });
 
   it("reports Queue and account-wide Cloudflare operation analytics", async () => {

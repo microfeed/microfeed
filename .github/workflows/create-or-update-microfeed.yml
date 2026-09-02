@@ -1,0 +1,158 @@
+name: Create or update microfeed
+run-name: ${{ inputs.operation == 'create' && 'Create' || 'Update' }} ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME || 'microfeed' }} from ${{ github.ref_name }}
+
+# This workflow intentionally has no push, pull-request, or scheduled trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Create a new instance or update an existing one
+        required: true
+        default: update
+        type: choice
+        options:
+          - update
+          - create
+      worker_name:
+        description: microfeed Worker name (overrides the repository variable)
+        required: false
+        type: string
+      cloudflare_account_id:
+        description: Cloudflare account ID, required only when your login has multiple accounts
+        required: false
+        type: string
+      administrator_email:
+        description: New instance only; defaults to your Cloudflare login email
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: microfeed-${{ github.repository }}-${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME || 'microfeed' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Authorize and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      MICROFEED_WORKER_NAME: ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME }}
+      MICROFEED_CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id || vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID }}
+      MICROFEED_ADMINISTRATOR_EMAIL: ${{ inputs.administrator_email }}
+      WRANGLER_SEND_METRICS: "false"
+
+    steps:
+      - name: Check out the selected branch
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Cache Yarn packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            .yarn/cache
+            ~/.cache/node/corepack
+          key: ${{ runner.os }}-${{ runner.arch }}-microfeed-yarn-${{ hashFiles('package.json', 'yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-microfeed-yarn-
+
+      - name: Install dependencies
+        id: install
+        run: yarn install --immutable
+
+      - name: Prepare ephemeral state directories
+        shell: bash
+        run: |
+          state_directory="$RUNNER_TEMP/microfeed-state"
+          wrangler_directory="$RUNNER_TEMP/wrangler-config"
+          install -d -m 700 "$state_directory" "$wrangler_directory"
+          echo "MICROFEED_STATE_DIRECTORY=$state_directory" >> "$GITHUB_ENV"
+          echo "XDG_CONFIG_HOME=$wrangler_directory" >> "$GITHUB_ENV"
+
+      - name: Validate the target
+        shell: bash
+        run: |
+          if [[ -z "$MICROFEED_WORKER_NAME" ]]; then
+            echo "::error::Enter the Worker name or set the MICROFEED_WORKER_NAME repository variable."
+            exit 1
+          fi
+          if [[ ! "$MICROFEED_WORKER_NAME" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
+            echo "::error::Worker names must contain 1–63 ASCII letters, numbers, or hyphens, without a leading or trailing hyphen."
+            exit 1
+          fi
+          echo "Using the selected ref $GITHUB_REF at commit $GITHUB_SHA."
+          echo "Only authorize this run when you trust that ref and commit."
+
+      - name: Authorize Cloudflare and create a new instance
+        if: ${{ inputs.operation == 'create' }}
+        env:
+          MICROFEED_ADMIN_PASSWORD: ${{ secrets.MICROFEED_ADMIN_PASSWORD }}
+        shell: bash
+        run: |
+          if [[ -z "$MICROFEED_ADMIN_PASSWORD" ]]; then
+            echo "::error::Create the MICROFEED_ADMIN_PASSWORD Actions secret before creating a new instance. It is the password for the microfeed dashboard, not a Cloudflare credential."
+            exit 1
+          fi
+          resource_prefix="${MICROFEED_WORKER_NAME,,}"
+          args=(
+            --device
+            --project-name "$MICROFEED_WORKER_NAME"
+            --d1-name "${resource_prefix}-db"
+            --r2-name "${resource_prefix}-media"
+            --admin-path admin
+            --yes
+            --no-open
+            --admin-password "$MICROFEED_ADMIN_PASSWORD"
+          )
+          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
+            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
+          fi
+          if [[ -n "$MICROFEED_ADMINISTRATOR_EMAIL" ]]; then
+            args+=(--owner-email "$MICROFEED_ADMINISTRATOR_EMAIL")
+          fi
+          yarn manage init "${args[@]}"
+
+      - name: Authorize Cloudflare and connect the existing site
+        if: ${{ inputs.operation == 'update' }}
+        shell: bash
+        run: |
+          args=(--device --worker "$MICROFEED_WORKER_NAME" --yes)
+          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
+            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
+          fi
+          yarn manage connect "${args[@]}"
+
+      - name: Deploy
+        if: ${{ inputs.operation == 'update' }}
+        shell: bash
+        run: |
+          args=(--device --yes)
+          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
+            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
+          fi
+          yarn manage deploy "${args[@]}"
+
+      - name: Verify the deployment
+        shell: bash
+        run: |
+          args=(--device)
+          if [[ -n "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
+            args+=(--account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
+          fi
+          yarn manage status "${args[@]}"
+
+      - name: Revoke the temporary Cloudflare authorization
+        if: ${{ always() && steps.install.outcome == 'success' }}
+        run: yarn wrangler logout

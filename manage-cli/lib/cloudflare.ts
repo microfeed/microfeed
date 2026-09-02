@@ -413,6 +413,7 @@ function parsePagesProjects(output: string): PagesProject[] {
 
 export class CloudflareClient {
   private credentialsPromise?: Promise<CloudflareCredentials>;
+  private currentLoginEmail: string | null = null;
 
   constructor(
     private readonly runner: CommandRunner,
@@ -532,10 +533,18 @@ export class CloudflareClient {
       {allowFailure: true},
     );
     if (result.exitCode !== 0) {
+      this.currentLoginEmail = null;
       return [];
     }
     const data = parseJsonOutput<Record<string, unknown>>(result.stdout);
+    this.currentLoginEmail = typeof data.email === "string" && data.email
+      ? data.email
+      : null;
     return accountsFromWhoami(data);
+  }
+
+  loginEmail(): string | null {
+    return this.currentLoginEmail;
   }
 
   private async profileState(): Promise<{
