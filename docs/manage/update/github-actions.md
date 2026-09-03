@@ -42,6 +42,8 @@ this fork will only update the existing site.
 Open the running job and expand **Authorize Cloudflare**. Visit the displayed
 Cloudflare verification page and enter its one-time code before it expires.
 
+<img width="1284" height="874" alt="Screenshot 2026-09-03 at 9 44 49 AM" src="https://github.com/user-attachments/assets/374b16df-14e2-4569-a4ba-4a199e7d2070" />
+
 The verification URL and code are visible to anyone who can read the workflow
 log while the code is active. If someone else uses the code first, the run
 fails. The `CLOUDFLARE_ACCOUNT_ID` secret pins deployment to the intended
