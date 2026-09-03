@@ -1,4 +1,4 @@
-import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, readFile, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {createRequire} from "node:module";
 import path from "node:path";
@@ -120,7 +120,31 @@ try {
     packageManager: "yarn@4.18.0",
     private: true,
   }), "utf8");
+  await writeFile(
+    path.join(consumer, ".yarnrc.yml"),
+    "nodeLinker: node-modules\n",
+    "utf8",
+  );
   runYarn(["install"], consumer);
+  if (process.platform !== "win32") {
+    const npmBinDirectory = path.join(temporary, "npm-bin");
+    const npmBin = path.join(npmBinDirectory, "microfeed-theme");
+    await mkdir(npmBinDirectory);
+    await symlink(
+      path.relative(
+        npmBinDirectory,
+        path.join(
+          consumer,
+          "node_modules/@microfeed/theme-kit/dist/cli.js",
+        ),
+      ),
+      npmBin,
+    );
+    const npmBinVersion = run(npmBin, ["--version"], temporary);
+    if (npmBinVersion.trim() !== rootPackage.version) {
+      throw new Error("The npm-style theme-kit executable reports a stale version.");
+    }
+  }
   const help = runYarn(["theme-kit", "--help"], consumer);
   if (!help.includes("theme-kit <command>") ||
       !help.includes("fixture pull <url>") ||
@@ -203,7 +227,7 @@ try {
     throw new Error("The compatibility theme-kit executable reports a stale version.");
   }
   process.stdout.write(
-    "Workspace, packed, project-local, library, scaffold, and yarn dlx theme-kit behavior match.\n",
+    "Workspace, packed, npm-style, project-local, library, scaffold, and yarn dlx theme-kit behavior match.\n",
   );
 } finally {
   await rm(temporary, {force: true, recursive: true});

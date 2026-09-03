@@ -14,7 +14,11 @@ import {spawnSync} from "node:child_process";
 import {pathToFileURL} from "node:url";
 
 import {x as extractTar} from "tar";
-import {CLI_HELP_TOPICS, renderCliHelp} from "../packages/cli/src/help";
+import {
+  CLI_HELP_TOPICS,
+  NPX_CLI_INVOCATION,
+  renderCliHelp,
+} from "../packages/cli/src/help";
 import {HELP} from "../packages/cli/src/index";
 
 const require = createRequire(import.meta.url);
@@ -298,8 +302,22 @@ try {
     "manage",
     "--help",
   ], npmConsumer);
-  if (npxManageHelp !== expectedManageHelp) {
+  const expectedNpxManageHelp = renderCliHelp(
+    ["manage"],
+    NPX_CLI_INVOCATION,
+  );
+  if (npxManageHelp !== expectedNpxManageHelp) {
     throw new Error("The npx @microfeed/cli management help diverged.");
+  }
+
+  const npxHelp = run(process.execPath, [npmJavaScript("npx"),
+    "--no-install",
+    "microfeed",
+    "--help",
+  ], npmConsumer);
+  const expectedNpxHelp = renderCliHelp(undefined, NPX_CLI_INVOCATION);
+  if (npxHelp !== expectedNpxHelp) {
+    throw new Error("The npx @microfeed/cli help uses the wrong launcher.");
   }
 
   const runtimeManifest = JSON.parse(await readFile(path.join(
