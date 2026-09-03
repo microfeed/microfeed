@@ -24,9 +24,6 @@ not run workflows in a new fork until Actions is enabled, and the manual
 workflow must exist on the fork's default branch before the **Run workflow**
 button appears.
 
-<img width="1656" height="646" alt="Screenshot 2026-09-03 at 9 36 38 AM" src="https://github.com/user-attachments/assets/41593e4e-2920-473c-a0c9-61c8d796dec7" />
-
-
 ## Step 2. Add four repository secrets
 
 In your fork, open **Settings → Secrets and variables → Actions**. Add these
@@ -44,9 +41,13 @@ workflow logs. The account ID and Worker name are identifiers rather than
 passwords, but store them as secrets here so all four values are added and
 managed in the same place.
 
+<img width="1464" height="846" alt="Screenshot 2026-09-03 at 9 41 20 AM" src="https://github.com/user-attachments/assets/1611b946-4fb8-4b4f-bd36-1f535c8144ff" />
+
+
 The workflow never asks you to create or paste a Cloudflare API token. It uses
 a temporary Cloudflare browser authorization and deletes the local credential
 from the hosted runner when the job finishes.
+
 
 ## Step 3. Run the workflow
 
@@ -57,6 +58,8 @@ from the hosted runner when the job finishes.
    **update** for the existing Worker named by the `MICROFEED_WORKER_NAME`
    secret.
 5. Select **Run workflow**.
+
+<img width="1656" height="646" alt="Screenshot 2026-09-03 at 9 36 38 AM" src="https://github.com/user-attachments/assets/41593e4e-2920-473c-a0c9-61c8d796dec7" />
 
 Only deploy a branch whose code and workflow you trust. The selected branch is
 allowed to use the configured secrets and receives temporary Cloudflare
@@ -73,6 +76,9 @@ log while the code is active. If someone else uses the code first, this run
 fails. The `CLOUDFLARE_ACCOUNT_ID` secret is checked before Cloudflare
 resources are changed, so authorization from a different account cannot cause
 the site to deploy there.
+
+<img width="1284" height="874" alt="Screenshot 2026-09-03 at 9 44 49 AM" src="https://github.com/user-attachments/assets/374b16df-14e2-4569-a4ba-4a199e7d2070" />
+
 
 ## Step 5. Open the deployed site
 
