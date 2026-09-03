@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import {realpathSync} from "node:fs";
 import {cp, mkdir, readFile, readdir, writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import path from "node:path";
@@ -528,7 +529,17 @@ async function main(): Promise<void> {
   throw new Error(`Unknown command: ${command}\n\n${renderThemeKitHelp()}`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+function isDirectInvocation(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) ===
+      realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+  }
+}
+
+if (isDirectInvocation()) {
   main().catch((error: unknown) => {
     const diagnostics = error instanceof ThemeValidationError ? error.diagnostics : [error instanceof Error ? error.message : String(error)];
     const json = process.argv.includes("--json");

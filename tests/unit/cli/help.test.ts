@@ -4,7 +4,10 @@ import {globalOptions} from "../../../packages/cli/src/arguments";
 import {loginCommand} from "../../../packages/cli/src/commands";
 import {
   CLI_HELP_TOPICS,
+  detectCliInvocation,
+  NPX_CLI_INVOCATION,
   renderCliHelp,
+  YARN_CLI_INVOCATION,
 } from "../../../packages/cli/src/help";
 import {HELP, run} from "../../../packages/cli/src/index";
 
@@ -31,6 +34,31 @@ describe("microfeed CLI help", () => {
     expect(HELP).toContain("https://docs.microfeed.org/microfeed-cli/");
     expect(HELP).not.toContain("<origin>");
     expect(HELP).not.toContain("<profile>");
+  });
+
+  it("renders copyable commands for the active package launcher", () => {
+    expect(detectCliInvocation({
+      npm_command: "exec",
+      npm_execpath: "/usr/local/lib/node_modules/npm/bin/npm-cli.js",
+    })).toBe(NPX_CLI_INVOCATION);
+    expect(detectCliInvocation({
+      npm_execpath: "/tmp/yarn",
+    })).toBe(YARN_CLI_INVOCATION);
+
+    const npxHelp = renderCliHelp(undefined, NPX_CLI_INVOCATION);
+    expect(npxHelp).toContain("npx @microfeed/cli login --help");
+    expect(npxHelp).toContain("npx @microfeed/cli item create --help");
+    expect(npxHelp).not.toContain(YARN_CLI_INVOCATION);
+
+    const yarnManageHelp = renderCliHelp(["manage"], YARN_CLI_INVOCATION);
+    expect(yarnManageHelp).toContain("yarn microfeed manage init");
+    expect(yarnManageHelp).not.toContain(NPX_CLI_INVOCATION);
+
+    for (const topic of CLI_HELP_TOPICS) {
+      const topicHelp = renderCliHelp(topic.path, NPX_CLI_INVOCATION);
+      expect(topicHelp).toContain(NPX_CLI_INVOCATION);
+      expect(topicHelp).not.toContain(YARN_CLI_INVOCATION);
+    }
   });
 
   it("distinguishes media attachments from item cover images", () => {
@@ -127,13 +155,19 @@ describe("microfeed CLI help", () => {
   it("renders comprehensive help for every command and subcommand", () => {
     for (const topic of CLI_HELP_TOPICS) {
       const help = renderCliHelp(topic.path);
-      expect(help).toContain(topic.usage);
+      expect(help).toContain(
+        topic.usage.replaceAll(NPX_CLI_INVOCATION, YARN_CLI_INVOCATION),
+      );
       expect(help).toContain(topic.summary);
       expect(help).toContain("-h, --help");
       expect(help).toContain("Examples:");
       expect(help).toContain("https://docs.microfeed.org/microfeed-cli/");
       for (const {syntax} of topic.options) expect(help).toContain(syntax);
-      for (const example of topic.examples) expect(help).toContain(example);
+      for (const example of topic.examples) {
+        expect(help).toContain(
+          example.replaceAll(NPX_CLI_INVOCATION, YARN_CLI_INVOCATION),
+        );
+      }
     }
   });
 

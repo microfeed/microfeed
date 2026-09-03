@@ -1,5 +1,26 @@
 import {CliError} from "./errors.js";
 
+export const NPX_CLI_INVOCATION = "npx @microfeed/cli";
+export const YARN_CLI_INVOCATION = "yarn microfeed";
+
+export type CliInvocation =
+  | typeof NPX_CLI_INVOCATION
+  | typeof YARN_CLI_INVOCATION;
+
+type CliInvocationEnvironment = Readonly<Record<string, string | undefined>>;
+
+export function detectCliInvocation(
+  environment: CliInvocationEnvironment = process.env,
+): CliInvocation {
+  const npmExecutable = environment.npm_execpath ?? "";
+  if (environment.npm_lifecycle_event === "npx" ||
+      (environment.npm_command === "exec" &&
+        /(?:^|[/\\])(?:npm|npx)-cli\.js$/u.test(npmExecutable))) {
+    return NPX_CLI_INVOCATION;
+  }
+  return YARN_CLI_INVOCATION;
+}
+
 export interface CliHelpOption {
   description: string;
   syntax: string;
@@ -635,19 +656,34 @@ function referenceUrl(path?: readonly string[]): string {
   return `https://docs.microfeed.org/microfeed-cli/${anchor}`;
 }
 
-export function renderCliHelp(path?: readonly string[]): string {
+function renderInvocation(
+  lines: string[],
+  invocation: CliInvocation,
+): string {
+  return lines.map((line) =>
+    line.replace(
+      /yarn microfeed|npx @microfeed\/cli/gu,
+      invocation,
+    )
+  ).join("\n");
+}
+
+export function renderCliHelp(
+  path?: readonly string[],
+  invocation = detectCliInvocation(),
+): string {
   if (path?.length) {
     const topic = helpTopic(path);
     if (!topic) {
       throw new CliError(
-        `Unknown help topic: ${topicKey(path)}. Run \`yarn microfeed help\` to list commands.`,
+        `Unknown help topic: ${topicKey(path)}. Run \`${invocation} help\` to list commands.`,
       );
     }
     const subcommands = topic.subcommands?.map(({description, name}) => ({
       description,
       syntax: name,
     })) ?? [];
-    return [
+    return renderInvocation([
       topic.usage,
       "",
       topic.summary,
@@ -666,7 +702,7 @@ export function renderCliHelp(path?: readonly string[]): string {
       "",
       `Complete reference: ${referenceUrl(topic.path)}`,
       "",
-    ].join("\n");
+    ], invocation);
   }
 
   const commands = [
@@ -678,7 +714,7 @@ export function renderCliHelp(path?: readonly string[]): string {
     {syntax: "media", description: "Upload standalone media for rich content or later API use."},
     {syntax: "api", description: "Call one relative /api/v1/ REST operation."},
   ];
-  return [
+  return renderInvocation([
     "microfeed — deploy sites and manage their content",
     "",
     "Usage:",
@@ -731,5 +767,5 @@ export function renderCliHelp(path?: readonly string[]): string {
     "",
     `Complete reference: ${referenceUrl()}`,
     "",
-  ].join("\n");
+  ], invocation);
 }
