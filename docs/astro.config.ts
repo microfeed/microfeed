@@ -49,10 +49,26 @@ export default defineConfig({
             { label: "Quick start", link: "/start-here/" },
             { label: "How microfeed works", link: "/start-here/concepts/" },
             {
-              label: "Deploy with a local AI agent",
-              link: "/start-here/ai-agent/",
+              label: "Different ways to install",
+              items: [
+                {
+                  label: "Overview",
+                  link: "/start-here/install/",
+                },
+                {
+                  label: "1. Use a local AI agent",
+                  link: "/start-here/ai-agent/",
+                },
+                {
+                  label: "2. Use GitHub Actions",
+                  link: "/start-here/github-actions/",
+                },
+                {
+                  label: "3. Use @microfeed/cli manually",
+                  link: "/start-here/manual/",
+                },
+              ],
             },
-            { label: "Deploy manually", link: "/start-here/manual/" },
             { label: "After deployment", link: "/start-here/after-deploy/" },
           ],
         },
@@ -80,7 +96,24 @@ export default defineConfig({
           label: "Manage your site",
           items: [
             { label: "Overview", link: "/manage/" },
-            { label: "Update microfeed", link: "/manage/update/" },
+            {
+              label: "Update microfeed",
+              items: [
+                { label: "Overview", link: "/manage/update/" },
+                {
+                  label: "1. Use a local AI agent",
+                  link: "/manage/update/ai-agent/",
+                },
+                {
+                  label: "2. Use GitHub Actions",
+                  link: "/manage/update/github-actions/",
+                },
+                {
+                  label: "3. Use @microfeed/cli manually",
+                  link: "/manage/update/manual/",
+                },
+              ],
+            },
             { label: "Domains and authentication", link: "/manage/domains-and-access/" },
             { label: "Multiple instances", link: "/manage/multiple-instances/" },
             { label: "Snapshots and migrations", link: "/manage/backups-and-migrations/" },

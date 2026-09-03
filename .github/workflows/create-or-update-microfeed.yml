@@ -18,7 +18,7 @@ on:
         required: false
         type: string
       administrator_email:
-        description: New instance only; defaults to your Cloudflare login email
+        description: New instance only; overrides the repository variable or Cloudflare login email
         required: false
         type: string
 
@@ -37,7 +37,7 @@ jobs:
     env:
       MICROFEED_WORKER_NAME: ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME }}
       MICROFEED_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      MICROFEED_ADMINISTRATOR_EMAIL: ${{ inputs.administrator_email }}
+      MICROFEED_ADMINISTRATOR_EMAIL: ${{ inputs.administrator_email || vars.MICROFEED_ADMINISTRATOR_EMAIL }}
       WRANGLER_SEND_METRICS: "false"
 
     steps:
@@ -144,11 +144,52 @@ jobs:
           args=(--device --account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" --yes)
           yarn manage deploy "${args[@]}"
 
-      - name: Verify the deployment
+      - name: Verify the deployment and publish links
         shell: bash
         run: |
           args=(--device --account-id "$MICROFEED_CLOUDFLARE_ACCOUNT_ID")
-          yarn manage status "${args[@]}"
+          status_log="$RUNNER_TEMP/microfeed-status.log"
+          yarn manage status "${args[@]}" 2>&1 | tee "$status_log"
+
+          STATUS_LOG="$status_log" node --input-type=module <<'NODE'
+          import {appendFileSync, readFileSync} from "node:fs";
+
+          const output = readFileSync(process.env.STATUS_LOG, "utf8").replace(
+            /\u001B\[[0-?]*[ -/]*[@-~]/gu,
+            "",
+          );
+          const publicUrlMatch = output.match(
+            /(?:Custom domain|Deployment) verified:\s+(https:\/\/\S+)/u,
+          );
+          const adminPathMatch = output.match(
+            /(?:^|\n)[^\n]*(\/[^\s*]+\/)\*:\s+/u,
+          );
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+
+          if (!publicUrlMatch || !summaryPath) {
+            console.log(
+              "::warning title=Deployment links unavailable::The deployment was verified, but its links could not be added to the job summary. Open this step to view the status output.",
+            );
+            process.exit(0);
+          }
+
+          const siteUrl = new URL(publicUrlMatch[1]);
+          const summary = [
+            "## microfeed deployment verified",
+            "",
+            `- **Site:** [${siteUrl.href}](${siteUrl.href})`,
+          ];
+
+          if (adminPathMatch) {
+            const dashboardUrl = new URL(adminPathMatch[1], siteUrl);
+            summary.push(
+              `- **Admin dashboard:** [${dashboardUrl.href}](${dashboardUrl.href})`,
+            );
+          }
+
+          summary.push("");
+          appendFileSync(summaryPath, summary.join("\n"));
+          NODE
 
       - name: Revoke the temporary Cloudflare authorization
         if: ${{ always() && steps.install.outcome == 'success' }}

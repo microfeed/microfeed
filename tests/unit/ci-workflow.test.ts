@@ -59,6 +59,9 @@ describe("manual GitHub Actions deployment", () => {
     expect(workflow).toContain(
       "inputs.worker_name || vars.MICROFEED_WORKER_NAME",
     );
+    expect(workflow).toContain(
+      "inputs.administrator_email || vars.MICROFEED_ADMINISTRATOR_EMAIL",
+    );
     expect(workflow).toContain("secrets.CLOUDFLARE_ACCOUNT_ID");
     expect(workflow).not.toContain("inputs.cloudflare_account_id");
     expect(workflow).not.toContain("vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID");
@@ -102,6 +105,10 @@ describe("manual GitHub Actions deployment", () => {
     expect(workflow).toContain("yarn manage connect");
     expect(workflow).toContain("yarn manage deploy");
     expect(workflow).toContain("yarn manage status");
+    expect(workflow).toContain("GITHUB_STEP_SUMMARY");
+    expect(workflow).toContain("microfeed deployment verified");
+    expect(workflow).toContain("**Site:**");
+    expect(workflow).toContain("**Admin dashboard:**");
     expect(workflow).toContain("always() && steps.install.outcome == 'success'");
     expect(workflow).toContain("yarn wrangler logout");
     expect(workflow).not.toContain("CLOUDFLARE_API_TOKEN");

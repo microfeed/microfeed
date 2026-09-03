@@ -1,5 +1,5 @@
 ---
-title: Deploy with a local AI agent
+title: 1. Use a local AI agent
 description: Detailed browser handoffs and recovery steps for an agent-guided deployment.
 ---
 

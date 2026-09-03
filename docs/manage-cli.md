@@ -105,7 +105,7 @@ deployment are not supported. The repository's manual GitHub Actions workflow
 is a narrow exception for creating or updating a site: it runs `yarn manage`
 in an ephemeral Ubuntu runner and requires fresh Cloudflare device
 authorization for every run. It does not save a Cloudflare credential in
-GitHub. See [Update microfeed](/manage/update/#create-or-update-with-github-actions).
+GitHub. See [Update with GitHub Actions](/manage/update/github-actions/).
 
 ## Safety model
 
