@@ -16,6 +16,7 @@ import {pathToFileURL} from "node:url";
 import {x as extractTar} from "tar";
 import {
   CLI_HELP_TOPICS,
+  GLOBAL_CLI_INVOCATION,
   NPX_CLI_INVOCATION,
   renderCliHelp,
 } from "../packages/cli/src/help";
@@ -28,6 +29,7 @@ function npmJavaScript(binary: "npm" | "npx"): string {
   const filename = `${binary}-cli.js`;
   const searchDirectories = [
     path.dirname(process.execPath),
+    path.resolve(path.dirname(process.execPath), "..", "lib"),
     ...(process.env.PATH ?? "").split(path.delimiter),
   ].filter(Boolean);
   for (const directory of searchDirectories) {
@@ -320,6 +322,20 @@ try {
     throw new Error("The npx @microfeed/cli help uses the wrong launcher.");
   }
 
+  const globalHelp = run(process.execPath, [
+    path.join(temporary, "package", "dist", "index.js"),
+    "--help",
+  ], temporary, {
+    npm_command: "",
+    npm_execpath: "",
+    npm_lifecycle_event: "",
+    npm_config_user_agent: "",
+  });
+  const expectedGlobalHelp = renderCliHelp(undefined, GLOBAL_CLI_INVOCATION);
+  if (globalHelp !== expectedGlobalHelp) {
+    throw new Error("The globally installed microfeed help uses the wrong launcher.");
+  }
+
   const runtimeManifest = JSON.parse(await readFile(path.join(
     temporary,
     "package/dist/manage-runtime-manifest.json",
@@ -431,7 +447,7 @@ try {
     throw new Error("The packed Python webhook starter file set is incomplete.");
   }
   process.stdout.write(
-    "Workspace, project-local, packed, npx, and yarn dlx @microfeed/cli behavior match.\n",
+    "Workspace, project-local, packed, global, npx, and yarn dlx @microfeed/cli behavior match.\n",
   );
 } finally {
   await rm(temporary, {force: true, recursive: true});

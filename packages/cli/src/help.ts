@@ -1,9 +1,11 @@
 import {CliError} from "./errors.js";
 
+export const GLOBAL_CLI_INVOCATION = "microfeed";
 export const NPX_CLI_INVOCATION = "npx @microfeed/cli";
 export const YARN_CLI_INVOCATION = "yarn microfeed";
 
 export type CliInvocation =
+  | typeof GLOBAL_CLI_INVOCATION
   | typeof NPX_CLI_INVOCATION
   | typeof YARN_CLI_INVOCATION;
 
@@ -18,7 +20,12 @@ export function detectCliInvocation(
         /(?:^|[/\\])(?:npm|npx)-cli\.js$/u.test(npmExecutable))) {
     return NPX_CLI_INVOCATION;
   }
-  return YARN_CLI_INVOCATION;
+  const packageManager = environment.npm_config_user_agent ?? "";
+  if (/^yarn\//u.test(packageManager) ||
+      /(?:^|[/\\])yarn(?:-[^/\\]+)?(?:\.c?js)?$/u.test(npmExecutable)) {
+    return YARN_CLI_INVOCATION;
+  }
+  return GLOBAL_CLI_INVOCATION;
 }
 
 export interface CliHelpOption {

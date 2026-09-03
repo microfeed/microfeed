@@ -5,6 +5,7 @@ import {loginCommand} from "../../../packages/cli/src/commands";
 import {
   CLI_HELP_TOPICS,
   detectCliInvocation,
+  GLOBAL_CLI_INVOCATION,
   NPX_CLI_INVOCATION,
   renderCliHelp,
   YARN_CLI_INVOCATION,
@@ -44,11 +45,21 @@ describe("microfeed CLI help", () => {
     expect(detectCliInvocation({
       npm_execpath: "/tmp/yarn",
     })).toBe(YARN_CLI_INVOCATION);
+    expect(detectCliInvocation({
+      npm_config_user_agent: "yarn/4.18.0 npm/? node/v24.20.0 darwin arm64",
+    })).toBe(YARN_CLI_INVOCATION);
+    expect(detectCliInvocation({})).toBe(GLOBAL_CLI_INVOCATION);
 
     const npxHelp = renderCliHelp(undefined, NPX_CLI_INVOCATION);
     expect(npxHelp).toContain("npx @microfeed/cli login --help");
     expect(npxHelp).toContain("npx @microfeed/cli item create --help");
     expect(npxHelp).not.toContain(YARN_CLI_INVOCATION);
+
+    const globalHelp = renderCliHelp(undefined, GLOBAL_CLI_INVOCATION);
+    expect(globalHelp).toContain("microfeed login --help");
+    expect(globalHelp).toContain("microfeed item create --help");
+    expect(globalHelp).not.toContain(NPX_CLI_INVOCATION);
+    expect(globalHelp).not.toContain(YARN_CLI_INVOCATION);
 
     const yarnManageHelp = renderCliHelp(["manage"], YARN_CLI_INVOCATION);
     expect(yarnManageHelp).toContain("yarn microfeed manage init");
