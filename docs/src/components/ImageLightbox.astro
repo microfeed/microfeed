@@ -1,0 +1,116 @@
+<dialog
+  aria-label="Image preview"
+  class="docs-image-lightbox"
+  data-docs-image-lightbox
+  data-pagefind-ignore
+  id="docs-image-lightbox"
+>
+  <div class="docs-image-lightbox-panel">
+    <button
+      aria-label="Close image preview"
+      class="docs-image-lightbox-close"
+      data-docs-image-lightbox-close
+      type="button"
+    >
+      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-linecap="round" stroke-width="2" />
+      </svg>
+    </button>
+    <img alt="" data-docs-image-lightbox-preview />
+    <p class="docs-image-lightbox-caption" data-docs-image-lightbox-caption hidden></p>
+  </div>
+</dialog>
+
+<script>
+  const initializeImageLightbox = () => {
+    const dialog = document.querySelector<HTMLDialogElement>(
+      "[data-docs-image-lightbox]",
+    );
+    const preview = dialog?.querySelector<HTMLImageElement>(
+      "[data-docs-image-lightbox-preview]",
+    );
+    const caption = dialog?.querySelector<HTMLElement>(
+      "[data-docs-image-lightbox-caption]",
+    );
+    const closeButton = dialog?.querySelector<HTMLButtonElement>(
+      "[data-docs-image-lightbox-close]",
+    );
+    if (!dialog || !preview || !caption || !closeButton) return;
+
+    let activeTrigger: HTMLElement | null = null;
+
+    if (dialog.dataset.docsImageLightboxReady !== "true") {
+      dialog.dataset.docsImageLightboxReady = "true";
+      closeButton.addEventListener("click", () => dialog.close());
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+      dialog.addEventListener("close", () => {
+        document.documentElement.classList.remove("docs-image-lightbox-open");
+        preview.removeAttribute("src");
+        activeTrigger?.focus();
+        activeTrigger = null;
+      });
+    }
+
+    for (const image of document.querySelectorAll<HTMLImageElement>(
+      ".sl-markdown-content img:not([data-docs-image-lightbox-ignore])",
+    )) {
+      if (image.closest("[data-docs-image-lightbox-trigger]")) continue;
+
+      const visual = image.closest("picture") ?? image;
+      const existingTrigger = visual.closest<HTMLAnchorElement | HTMLButtonElement>(
+        "a, button",
+      );
+      const trigger = existingTrigger ?? document.createElement("button");
+      if (!existingTrigger) {
+        trigger.setAttribute("type", "button");
+        visual.replaceWith(trigger);
+        trigger.append(visual);
+      }
+
+      const description = image.alt.trim();
+      trigger.classList.add("docs-image-lightbox-trigger");
+      trigger.dataset.docsImageLightboxTrigger = "true";
+      trigger.setAttribute("aria-controls", dialog.id);
+      trigger.setAttribute("aria-haspopup", "dialog");
+      trigger.setAttribute(
+        "aria-label",
+        description
+          ? `Open full-screen preview: ${description}`
+          : "Open full-screen image preview",
+      );
+
+      const openPreview = () => {
+        activeTrigger = trigger;
+        preview.src = image.currentSrc || image.src;
+        preview.alt = description;
+        const figureCaption = image.closest("figure")
+          ?.querySelector("figcaption")
+          ?.textContent
+          ?.trim();
+        const captionText = figureCaption || description;
+        caption.textContent = captionText;
+        caption.hidden = !captionText;
+        document.documentElement.classList.add("docs-image-lightbox-open");
+        dialog.showModal();
+        closeButton.focus();
+      };
+
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        openPreview();
+      });
+      if (trigger instanceof HTMLAnchorElement) {
+        trigger.addEventListener("keydown", (event) => {
+          if (event.key !== " ") return;
+          event.preventDefault();
+          openPreview();
+        });
+      }
+    }
+  };
+
+  initializeImageLightbox();
+  document.addEventListener("astro:page-load", initializeImageLightbox);
+</script>

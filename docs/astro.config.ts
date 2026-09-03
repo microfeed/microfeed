@@ -30,6 +30,7 @@ export default defineConfig({
         },
       ],
       components: {
+        Footer: "./src/components/Footer.astro",
         PageTitle: "./src/components/PageTitle.astro",
         SocialIcons: "./src/components/GitHubRepoButtons.astro",
       },
