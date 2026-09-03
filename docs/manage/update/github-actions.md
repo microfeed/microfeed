@@ -7,8 +7,9 @@ Use the manual **Create or update microfeed** workflow when you want the update
 to run in GitHub's consistent Ubuntu environment. It uses temporary Cloudflare
 browser authorization rather than a Cloudflare API token.
 
-Before continuing, configure your fork, Cloudflare account ID, and Worker name
-using the [GitHub Actions installation guide](/start-here/github-actions/).
+Before continuing, configure your fork, `CLOUDFLARE_ACCOUNT_ID` secret, and
+`MICROFEED_WORKER_NAME` repository variable using the
+[GitHub Actions installation guide](/start-here/github-actions/).
 
 ## 1. Sync and review your fork
 
@@ -22,10 +23,9 @@ trust.
 1. Open the fork's **Actions** tab.
 2. Select **Create or update microfeed**.
 3. Select **Run workflow** and choose the trusted branch to deploy.
-4. Choose **update**.
-5. Leave the Worker name blank to use `MICROFEED_WORKER_NAME`, or enter the
-   exact existing Worker name as an override.
-6. Select **Run workflow**.
+4. Change the operation from the default **create** to **update**.
+5. Select **Run workflow**. The workflow updates the existing Worker named by
+   the `MICROFEED_WORKER_NAME` repository variable.
 
 The administrator email and `MICROFEED_ADMIN_PASSWORD` are not used for an
 update. Remove the password secret after the first successful installation if

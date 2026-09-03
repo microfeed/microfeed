@@ -51,17 +51,22 @@ describe("manual GitHub Actions deployment", () => {
     expect(parsed.on?.workflow_dispatch?.inputs).not.toHaveProperty(
       "cloudflare_account_id",
     );
+    expect(Object.keys(parsed.on?.workflow_dispatch?.inputs ?? {})).toEqual([
+      "operation",
+    ]);
+    expect(parsed.on?.workflow_dispatch?.inputs?.operation).toMatchObject({
+      default: "create",
+      options: ["create", "update"],
+    });
     expect(JSON.stringify(parsed.jobs?.deploy?.env ?? {})).not.toContain(
       "runner.",
     );
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("persist-credentials: false");
-    expect(workflow).toContain(
-      "inputs.worker_name || vars.MICROFEED_WORKER_NAME",
-    );
-    expect(workflow).toContain(
-      "inputs.administrator_email || vars.MICROFEED_ADMINISTRATOR_EMAIL",
-    );
+    expect(workflow).toContain("vars.MICROFEED_WORKER_NAME");
+    expect(workflow).toContain("vars.MICROFEED_ADMINISTRATOR_EMAIL");
+    expect(workflow).not.toContain("inputs.worker_name");
+    expect(workflow).not.toContain("inputs.administrator_email");
     expect(workflow).toContain("secrets.CLOUDFLARE_ACCOUNT_ID");
     expect(workflow).not.toContain("inputs.cloudflare_account_id");
     expect(workflow).not.toContain("vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID");
@@ -101,6 +106,12 @@ describe("manual GitHub Actions deployment", () => {
     expect(workflow).toContain("inputs.operation == 'create'");
     expect(workflow).toContain("inputs.operation == 'update'");
     expect(workflow).toContain("secrets.MICROFEED_ADMIN_PASSWORD");
+    expect(workflow).toContain(
+      'if [[ -z "$MICROFEED_ADMINISTRATOR_EMAIL" ]]',
+    );
+    expect(workflow).toContain(
+      '--owner-email "$MICROFEED_ADMINISTRATOR_EMAIL"',
+    );
     expect(workflow).toContain("yarn manage init");
     expect(workflow).toContain("yarn manage connect");
     expect(workflow).toContain("yarn manage deploy");

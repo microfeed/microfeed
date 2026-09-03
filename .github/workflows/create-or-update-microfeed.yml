@@ -1,5 +1,5 @@
 name: Create or update microfeed
-run-name: ${{ inputs.operation == 'create' && 'Create' || 'Update' }} ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME || 'microfeed' }} from ${{ github.ref_name }}
+run-name: ${{ inputs.operation == 'create' && 'Create' || 'Update' }} ${{ vars.MICROFEED_WORKER_NAME || 'microfeed' }} from ${{ github.ref_name }}
 
 # This workflow intentionally has no push, pull-request, or scheduled trigger.
 on:
@@ -8,25 +8,17 @@ on:
       operation:
         description: Create a new instance or update an existing one
         required: true
-        default: update
+        default: create
         type: choice
         options:
-          - update
           - create
-      worker_name:
-        description: microfeed Worker name (overrides the repository variable)
-        required: false
-        type: string
-      administrator_email:
-        description: New instance only; overrides the repository variable or Cloudflare login email
-        required: false
-        type: string
+          - update
 
 permissions:
   contents: read
 
 concurrency:
-  group: microfeed-${{ github.repository }}-${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME || 'microfeed' }}
+  group: microfeed-${{ github.repository }}-${{ vars.MICROFEED_WORKER_NAME || 'microfeed' }}
   cancel-in-progress: false
 
 jobs:
@@ -35,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      MICROFEED_WORKER_NAME: ${{ inputs.worker_name || vars.MICROFEED_WORKER_NAME }}
+      MICROFEED_WORKER_NAME: ${{ vars.MICROFEED_WORKER_NAME }}
       MICROFEED_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      MICROFEED_ADMINISTRATOR_EMAIL: ${{ inputs.administrator_email || vars.MICROFEED_ADMINISTRATOR_EMAIL }}
+      MICROFEED_ADMINISTRATOR_EMAIL: ${{ vars.MICROFEED_ADMINISTRATOR_EMAIL }}
       WRANGLER_SEND_METRICS: "false"
 
     steps:
@@ -81,7 +73,7 @@ jobs:
         shell: bash
         run: |
           if [[ -z "$MICROFEED_WORKER_NAME" ]]; then
-            echo "::error::Enter the Worker name or set the MICROFEED_WORKER_NAME repository variable."
+            echo "::error::Set the MICROFEED_WORKER_NAME repository variable before deploying."
             exit 1
           fi
           if [[ -z "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
@@ -113,6 +105,10 @@ jobs:
             echo "::error::Create the MICROFEED_ADMIN_PASSWORD Actions secret before creating a new instance. It is the password for the microfeed dashboard, not a Cloudflare credential."
             exit 1
           fi
+          if [[ -z "$MICROFEED_ADMINISTRATOR_EMAIL" ]]; then
+            echo "::error::Set the MICROFEED_ADMINISTRATOR_EMAIL repository variable before creating a new instance."
+            exit 1
+          fi
           resource_prefix="${MICROFEED_WORKER_NAME,,}"
           args=(
             --device
@@ -121,13 +117,11 @@ jobs:
             --d1-name "${resource_prefix}-db"
             --r2-name "${resource_prefix}-media"
             --admin-path admin
+            --owner-email "$MICROFEED_ADMINISTRATOR_EMAIL"
             --yes
             --no-open
             --admin-password "$MICROFEED_ADMIN_PASSWORD"
           )
-          if [[ -n "$MICROFEED_ADMINISTRATOR_EMAIL" ]]; then
-            args+=(--owner-email "$MICROFEED_ADMINISTRATOR_EMAIL")
-          fi
           yarn manage init "${args[@]}"
 
       - name: Authorize Cloudflare and connect the existing site

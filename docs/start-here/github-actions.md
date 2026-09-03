@@ -33,13 +33,12 @@ four values:
 | --- | --- | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Repository secret | Every deployment | The full ID of the Cloudflare account that will own the site. [Find and copy the account ID in Cloudflare](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/). This is not an API token; it pins the workflow to the intended account. |
 | `MICROFEED_ADMIN_PASSWORD` | Repository secret | Creating a new instance only | A 12–128 character password for the microfeed Admin dashboard. This is not your Cloudflare password. |
-| `MICROFEED_WORKER_NAME` | Repository variable | Every deployment, unless entered when starting the workflow | A unique name containing 1–63 letters, numbers, or hyphens, with no leading or trailing hyphen. This becomes the Cloudflare Worker name. |
-| `MICROFEED_ADMINISTRATOR_EMAIL` | Repository variable | Creating a new instance | The email address that will sign in to the microfeed Admin dashboard. If omitted, the workflow uses the authenticated Cloudflare login email. |
+| `MICROFEED_WORKER_NAME` | Repository variable | Every deployment | A unique name containing 1–63 letters, numbers, or hyphens, with no leading or trailing hyphen. This becomes the Cloudflare Worker name. |
+| `MICROFEED_ADMINISTRATOR_EMAIL` | Repository variable | Creating a new instance | The email address that will sign in to the microfeed Admin dashboard. |
 
 GitHub secrets are for the values that should be masked from workflow logs.
 The Worker name and administrator email are ordinary configuration, so put
-them on the **Variables** tab. You can override either variable in the Run
-workflow form without changing the saved value.
+them on the **Variables** tab.
 
 The workflow never asks you to create or paste a Cloudflare API token. It uses
 a temporary Cloudflare browser authorization and deletes the local credential
@@ -50,10 +49,9 @@ from the hosted runner when the job finishes.
 1. Open the fork's **Actions** tab.
 2. Select **Create or update microfeed**.
 3. Select **Run workflow** and choose the trusted branch to deploy.
-4. Choose **create** for a new instance or **update** for an existing Worker.
-5. Leave the Worker name and administrator email blank to use the repository
-   variables, or enter temporary overrides.
-6. Select **Run workflow**.
+4. Keep the default **create** selection for a new instance, or choose
+   **update** for the existing Worker configured by `MICROFEED_WORKER_NAME`.
+5. Select **Run workflow**.
 
 Only deploy a branch whose code and workflow you trust. The selected branch is
 allowed to use the configured secrets and receives temporary Cloudflare
