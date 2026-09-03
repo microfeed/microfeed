@@ -8,15 +8,15 @@ handoff, then paste this prompt in any folder on your computer.
 
 <div class="quickstart-agents" aria-label="Examples of local AI agents">
   <a class="quickstart-agent" href="https://openai.com/codex/">
-    <img src="/images/agents/openai.svg" alt="" width="32" height="32">
+    <img src="/images/agents/openai.svg" alt="" width="32" height="32" data-docs-image-lightbox-ignore>
     <span>Codex</span>
   </a>
   <a class="quickstart-agent" href="https://claude.com/product/claude-code">
-    <img src="/images/agents/claude.svg" alt="" width="32" height="32">
+    <img src="/images/agents/claude.svg" alt="" width="32" height="32" data-docs-image-lightbox-ignore>
     <span>Claude Code</span>
   </a>
   <a class="quickstart-agent" href="https://cursor.com/">
-    <img src="/images/agents/cursor.svg" alt="" width="32" height="32">
+    <img src="/images/agents/cursor.svg" alt="" width="32" height="32" data-docs-image-lightbox-ignore>
     <span>Cursor</span>
   </a>
   <span class="quickstart-agent-more">or another capable local agent</span>
