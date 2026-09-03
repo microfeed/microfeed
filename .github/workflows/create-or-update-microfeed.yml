@@ -1,5 +1,5 @@
 name: Create or update microfeed
-run-name: ${{ inputs.operation == 'create' && 'Create' || 'Update' }} ${{ vars.MICROFEED_WORKER_NAME || 'microfeed' }} from ${{ github.ref_name }}
+run-name: ${{ inputs.operation == 'create' && 'Create microfeed' || 'Update microfeed' }} from ${{ github.ref_name }}
 
 # This workflow intentionally has no push, pull-request, or scheduled trigger.
 on:
@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: microfeed-${{ github.repository }}-${{ vars.MICROFEED_WORKER_NAME || 'microfeed' }}
+  group: microfeed-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -27,9 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      MICROFEED_WORKER_NAME: ${{ vars.MICROFEED_WORKER_NAME }}
+      MICROFEED_WORKER_NAME: ${{ secrets.MICROFEED_WORKER_NAME }}
       MICROFEED_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      MICROFEED_ADMINISTRATOR_EMAIL: ${{ vars.MICROFEED_ADMINISTRATOR_EMAIL }}
       WRANGLER_SEND_METRICS: "false"
 
     steps:
@@ -73,7 +72,7 @@ jobs:
         shell: bash
         run: |
           if [[ -z "$MICROFEED_WORKER_NAME" ]]; then
-            echo "::error::Set the MICROFEED_WORKER_NAME repository variable before deploying."
+            echo "::error::Create the MICROFEED_WORKER_NAME Actions secret before deploying."
             exit 1
           fi
           if [[ -z "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]; then
@@ -99,6 +98,7 @@ jobs:
         if: ${{ inputs.operation == 'create' }}
         env:
           MICROFEED_ADMIN_PASSWORD: ${{ secrets.MICROFEED_ADMIN_PASSWORD }}
+          MICROFEED_ADMINISTRATOR_EMAIL: ${{ secrets.MICROFEED_ADMINISTRATOR_EMAIL }}
         shell: bash
         run: |
           if [[ -z "$MICROFEED_ADMIN_PASSWORD" ]]; then
@@ -106,7 +106,7 @@ jobs:
             exit 1
           fi
           if [[ -z "$MICROFEED_ADMINISTRATOR_EMAIL" ]]; then
-            echo "::error::Set the MICROFEED_ADMINISTRATOR_EMAIL repository variable before creating a new instance."
+            echo "::error::Create the MICROFEED_ADMINISTRATOR_EMAIL Actions secret before creating a new instance."
             exit 1
           fi
           resource_prefix="${MICROFEED_WORKER_NAME,,}"

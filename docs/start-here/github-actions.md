@@ -24,21 +24,22 @@ not run workflows in a new fork until Actions is enabled, and the manual
 workflow must exist on the fork's default branch before the **Run workflow**
 button appears.
 
-## Step 2. Add the deployment settings
+## Step 2. Add four repository secrets
 
 In your fork, open **Settings → Secrets and variables → Actions**. Add these
-four values:
+four repository secrets on the **Secrets** tab:
 
-| Name | GitHub setting | When it is needed | What to enter |
-| --- | --- | --- | --- |
-| `CLOUDFLARE_ACCOUNT_ID` | Repository secret | Every deployment | The full ID of the Cloudflare account that will own the site. [Find and copy the account ID in Cloudflare](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/). This is not an API token; it pins the workflow to the intended account. |
-| `MICROFEED_ADMIN_PASSWORD` | Repository secret | Creating a new instance only | A 12–128 character password for the microfeed Admin dashboard. This is not your Cloudflare password. |
-| `MICROFEED_WORKER_NAME` | Repository variable | Every deployment | A unique name containing 1–63 letters, numbers, or hyphens, with no leading or trailing hyphen. This becomes the Cloudflare Worker name. |
-| `MICROFEED_ADMINISTRATOR_EMAIL` | Repository variable | Creating a new instance | The email address that will sign in to the microfeed Admin dashboard. |
+| Secret name | When it is needed | What to enter |
+| --- | --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` | Every deployment | The full ID of the Cloudflare account that will own the site. [Find and copy the account ID in Cloudflare](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/). This is not an API token; it pins the workflow to the intended account. |
+| `MICROFEED_WORKER_NAME` | Every deployment | A unique name containing 1–63 letters, numbers, or hyphens, with no leading or trailing hyphen. This becomes the Cloudflare Worker name. |
+| `MICROFEED_ADMINISTRATOR_EMAIL` | Creating a new instance | The email address that will sign in to the microfeed Admin dashboard. |
+| `MICROFEED_ADMIN_PASSWORD` | Creating a new instance | A 12–128 character password for the microfeed Admin dashboard. This is not your Cloudflare password. |
 
-GitHub secrets are for the values that should be masked from workflow logs.
-The Worker name and administrator email are ordinary configuration, so put
-them on the **Variables** tab.
+Using one GitHub setting type keeps setup simple. GitHub masks these values in
+workflow logs. The account ID and Worker name are identifiers rather than
+passwords, but store them as secrets here so all four values are added and
+managed in the same place.
 
 The workflow never asks you to create or paste a Cloudflare API token. It uses
 a temporary Cloudflare browser authorization and deletes the local credential
@@ -50,7 +51,8 @@ from the hosted runner when the job finishes.
 2. Select **Create or update microfeed**.
 3. Select **Run workflow** and choose the trusted branch to deploy.
 4. Keep the default **create** selection for a new instance, or choose
-   **update** for the existing Worker configured by `MICROFEED_WORKER_NAME`.
+   **update** for the existing Worker named by the `MICROFEED_WORKER_NAME`
+   secret.
 5. Select **Run workflow**.
 
 Only deploy a branch whose code and workflow you trust. The selected branch is
@@ -75,8 +77,10 @@ After the status checks pass, the workflow run summary shows direct links to
 the public site and Admin dashboard. Sign in with the administrator email and
 password configured above.
 
-Remove the `MICROFEED_ADMIN_PASSWORD` repository secret after the first
-successful creation. Updates do not use it.
+After the first successful creation, remove the `MICROFEED_ADMIN_PASSWORD` and
+`MICROFEED_ADMINISTRATOR_EMAIL` secrets if this fork will only update the
+existing site. Updates use only `CLOUDFLARE_ACCOUNT_ID` and
+`MICROFEED_WORKER_NAME`.
 
 ## Update microfeed later
 

@@ -15,7 +15,7 @@ It changes the application version running on the selected Worker.
 | Method | Best for | Advantages | Tradeoffs |
 | --- | --- | --- | --- |
 | [1. Use a local AI agent](/manage/update/ai-agent/) | The simplest guided update | Start with one prompt; the agent finds or connects the site, deploys, handles recoverable steps, and verifies the result. | Requires a compatible local Node.js environment and an agent that can use the terminal. |
-| [2. Use GitHub Actions](/manage/update/github-actions/) | A consistent hosted environment and a versioned fork | Runs on GitHub's Ubuntu runner without local tools. You explicitly choose the branch and Worker for every update. | Requires a configured fork, review of upstream changes, and a new Cloudflare browser authorization for each run. |
+| [2. Use GitHub Actions](/manage/update/github-actions/) | A consistent hosted environment and a versioned fork | Runs on GitHub's Ubuntu runner without local tools. You explicitly choose the branch, while repository secrets identify the account and Worker. | Requires a configured fork, review of upstream changes, and a new Cloudflare browser authorization for each run. |
 | [3. Use @microfeed/cli manually](/manage/update/manual/) | Direct control over the command and source code | Deploy the official release with `npx @microfeed/cli manage`, or deploy an official, forked, or locally modified checkout with `yarn manage`. | Requires a compatible local Node.js environment, and you select and troubleshoot the deployment yourself. |
 
 ## Official release or your own source code

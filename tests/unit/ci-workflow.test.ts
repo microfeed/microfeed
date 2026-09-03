@@ -63,13 +63,27 @@ describe("manual GitHub Actions deployment", () => {
     );
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("persist-credentials: false");
-    expect(workflow).toContain("vars.MICROFEED_WORKER_NAME");
-    expect(workflow).toContain("vars.MICROFEED_ADMINISTRATOR_EMAIL");
+    expect(workflow).toContain("secrets.MICROFEED_WORKER_NAME");
+    expect(workflow).toContain("secrets.MICROFEED_ADMINISTRATOR_EMAIL");
+    expect(parsed.jobs?.deploy?.env).not.toHaveProperty(
+      "MICROFEED_ADMINISTRATOR_EMAIL",
+    );
+    expect(workflow).not.toContain("vars.MICROFEED_WORKER_NAME");
+    expect(workflow).not.toContain("vars.MICROFEED_ADMINISTRATOR_EMAIL");
     expect(workflow).not.toContain("inputs.worker_name");
     expect(workflow).not.toContain("inputs.administrator_email");
     expect(workflow).toContain("secrets.CLOUDFLARE_ACCOUNT_ID");
     expect(workflow).not.toContain("inputs.cloudflare_account_id");
     expect(workflow).not.toContain("vars.MICROFEED_CLOUDFLARE_ACCOUNT_ID");
+    const configuredSecrets = [
+      ...workflow.matchAll(/\$\{\{\s*secrets\.([A-Z0-9_]+)\s*\}\}/gu),
+    ].map((match) => match[1]);
+    expect([...new Set(configuredSecrets)].sort()).toEqual([
+      "CLOUDFLARE_ACCOUNT_ID",
+      "MICROFEED_ADMINISTRATOR_EMAIL",
+      "MICROFEED_ADMIN_PASSWORD",
+      "MICROFEED_WORKER_NAME",
+    ]);
     expect(workflow).toContain(
       'if [[ -z "$MICROFEED_CLOUDFLARE_ACCOUNT_ID" ]]',
     );
@@ -106,6 +120,8 @@ describe("manual GitHub Actions deployment", () => {
     expect(workflow).toContain("inputs.operation == 'create'");
     expect(workflow).toContain("inputs.operation == 'update'");
     expect(workflow).toContain("secrets.MICROFEED_ADMIN_PASSWORD");
+    expect(workflow).not.toMatch(/^run-name:.*(?:secrets|MICROFEED_WORKER_NAME)/mu);
+    expect(workflow).toContain("group: microfeed-${{ github.repository }}");
     expect(workflow).toContain(
       'if [[ -z "$MICROFEED_ADMINISTRATOR_EMAIL" ]]',
     );
