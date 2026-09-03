@@ -168,6 +168,7 @@ export function workersDevInitializationError(
 
 interface CommandContext {
   cloudflare: CloudflareClient;
+  cloudflareLoginEmail?: string;
   flags: Flags;
   instanceName?: string;
   pendingAdminEmail?: string;
@@ -372,7 +373,9 @@ async function authenticate(
       "or destroys provisioned webhook infrastructure.",
       "Cloudflare authorization",
     );
-    await context.cloudflare.login();
+    await context.cloudflare.login({
+      device: flagBoolean(context.flags, "device"),
+    });
     accounts = await context.cloudflare.accounts();
   }
   if (accounts.length === 0) {
@@ -383,6 +386,7 @@ async function authenticate(
       "Wrangler login did not grant all required microfeed OAuth scopes.",
     );
   }
+  context.cloudflareLoginEmail = context.cloudflare.loginEmail() ?? undefined;
   const flaggedAccountId = flagString(context.flags, "account-id");
   if (
     requiredAccountId &&
@@ -439,6 +443,7 @@ export async function accountsCommand(
     runner,
   };
   const json = flagBoolean(flags, "json");
+  const device = flagBoolean(flags, "device");
   if (flags.profile === true) {
     throw new Error(
       "`--profile` requires a name, for example `--profile company`. " +
@@ -446,6 +451,13 @@ export async function accountsCommand(
     );
   }
   const requestedProfile = flagString(flags, "profile");
+  if (device && requestedProfile) {
+    throw new Error(
+      "`--device` cannot be combined with `--profile`. Device authorization " +
+        "uses the active default Wrangler login and does not create or " +
+        "replace named profiles. No Cloudflare resources were changed.",
+    );
+  }
   if (requestedProfile) {
     const profileError = validateWranglerProfileName(requestedProfile);
     if (profileError) {
@@ -457,7 +469,7 @@ export async function accountsCommand(
   }
   const reauthorizeCommand = requestedProfile
     ? `yarn manage accounts --profile ${requestedProfile} --reauthorize`
-    : "yarn manage accounts --reauthorize";
+    : `yarn manage accounts${device ? " --device" : ""} --reauthorize`;
   const explainAuthorization = () => {
     if (json) {
       process.stderr.write(`\nCloudflare authorization\n${
@@ -509,13 +521,13 @@ export async function accountsCommand(
     }
   } else if (flagBoolean(flags, "reauthorize")) {
     explainAuthorization();
-    await context.cloudflare.login();
+    await context.cloudflare.login({device});
     ({identity, scopesGranted} = await readIdentity());
   } else {
     ({identity, scopesGranted} = await readIdentity());
     if (identity.accounts.length === 0 || !scopesGranted) {
       explainAuthorization();
-      await context.cloudflare.login();
+      await context.cloudflare.login({device});
       ({identity, scopesGranted} = await readIdentity());
     }
   }
@@ -816,13 +828,21 @@ async function adminEmailInput(
     "Dashboard sign-in email",
   );
   const fromFlag = flagString(context.flags, "owner-email");
-  if (!fromFlag && flagBoolean(context.flags, "yes")) {
+  const nonInteractiveDefault = flagBoolean(context.flags, "yes")
+    ? defaultValue
+    : undefined;
+  if (
+    !fromFlag &&
+    !nonInteractiveDefault &&
+    flagBoolean(context.flags, "yes")
+  ) {
     throw new Error(
       "Pass `--owner-email <email>` when using `--yes`. This is the email " +
-        "used to sign in to the microfeed dashboard.",
+        "used to sign in to the microfeed dashboard. An authenticated " +
+        "Cloudflare login email is used automatically when available.",
     );
   }
-  const emailInput = fromFlag ??
+  const emailInput = fromFlag ?? nonInteractiveDefault ??
     await askText("Dashboard sign-in email", defaultValue);
   const emailError = validateOwnerEmail(emailInput);
   if (emailError) {
@@ -877,7 +897,10 @@ async function collectInitialAdminSetupEmail(
   }
   const owner = await context.cloudflare.authOwner(config);
   if (!owner) {
-    context.pendingAdminEmail ??= await adminEmailInput(context);
+    context.pendingAdminEmail ??= await adminEmailInput(
+      context,
+      context.cloudflareLoginEmail,
+    );
   }
 }
 
@@ -950,7 +973,7 @@ async function finishInitialAdminSetup(
   }
   const pending = await context.cloudflare.authPasswordSetup(config);
   const email = context.pendingAdminEmail ?? pending?.email ??
-    await adminEmailInput(context);
+    await adminEmailInput(context, context.cloudflareLoginEmail);
   await issuePasswordSetupLink(context, config, {
     email,
     purpose: "initial",
@@ -5648,6 +5671,15 @@ export async function connectCommand(
   prompts.intro(
     `Connect an existing Cloudflare microfeed${preview ? " preview" : ""}`,
   );
+  const requestedWorkerName = flagString(flags, "worker");
+  if (requestedWorkerName) {
+    const workerNameError = validateWorkerName(requestedWorkerName);
+    if (workerNameError) {
+      throw new Error(
+        `Invalid Worker name \`${requestedWorkerName}\`. ${workerNameError}`,
+      );
+    }
+  }
   const account = await authenticate(context);
   const workers = (await context.cloudflare.discoverMicrofeedWorkers(account))
     .filter(({deploymentEnvironment}) =>
@@ -5659,7 +5691,6 @@ export async function connectCommand(
         "Workers were found in this Cloudflare account.",
     );
   }
-  const requestedWorkerName = flagString(flags, "worker");
   let selectedWorker: DiscoveredMicrofeedWorker;
   if (requestedWorkerName) {
     const match = workers.find(

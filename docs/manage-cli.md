@@ -89,7 +89,7 @@ The `dev` section instead prioritizes `yarn manage dev` from a Git-cloned
 microfeed source repository because local source development requires that
 repository and its installed dependencies.
 
-Both paths require Node.js 22.12 or newer and an interactive local session.
+Both local paths require Node.js 22.12 or newer and an interactive session.
 Windows ARM computers are supported through Windows' x64 application
 emulation: install the x64 build of Node.js because Cloudflare's local runtime
 does not provide a native Windows ARM64 executable. Run
@@ -100,9 +100,12 @@ development setup. Cloudflare operations use Wrangler browser authorization.
 Credentials are managed by Wrangler; do not paste Cloudflare tokens into
 command arguments or agent conversations.
 
-Cloudflare repository imports, Workers Builds, deploy buttons, GitHub Actions,
-and API-token deployment are not supported. Both invocations use the same
-repository-owned management engine.
+Cloudflare repository imports, Workers Builds, deploy buttons, and API-token
+deployment are not supported. The repository's manual GitHub Actions workflow
+is a narrow exception for creating or updating a site: it runs `yarn manage`
+in an ephemeral Ubuntu runner and requires fresh Cloudflare device
+authorization for every run. It does not save a Cloudflare credential in
+GitHub. See [Update with GitHub Actions](/manage/update/github-actions/).
 
 ## Safety model
 
@@ -119,7 +122,9 @@ repository-owned management engine.
 - Built-in login passwords should be created through the private browser link.
   `--admin-password` is an intentionally unsafe automation escape hatch because
   process arguments may appear in shell history, process lists, transcripts,
-  and logs.
+  and logs. The manual GitHub Actions workflow uses it only with GitHub's
+  masking and an operator-created Actions secret; the selected ref must be
+  trusted because its code executes while that secret is available.
 - `destroy` requires a read-only plan and an exact site-name confirmation. It
   rejects `--yes`, verifies resource identity, and records progress so the same
   command can resume safely.
@@ -193,6 +198,21 @@ When R2 becomes available for an automatic pending installation, interactive
 durable disabled choice. A non-interactive terminal continues content-only,
 keeps the automatic state, and prints the exact `deploy --enable-r2` command.
 
+### Browser and device authorization
+
+Cloudflare authorization normally opens a browser and waits for a localhost
+callback. `--device` instead prints a URL and one-time code, so an interactive
+person can authorize a command running in a headless environment. It is
+supported by `accounts`, `init`, `connect`, `deploy`, and `status`; it cannot be
+combined with a named `--profile`.
+
+Device authorization does not create an API token. In this mode, Wrangler saves
+its OAuth credential in configuration storage without using an operating-system
+keyring; it remains there until `wrangler logout` removes it. The repository
+GitHub Actions workflow places that storage in the hosted runner's temporary
+directory, isolates it from caches, and logs out afterward to revoke the refresh
+token and remove the local credential.
+
 ## Command reference
 
 ## `npx @microfeed/cli manage accounts`
@@ -229,17 +249,18 @@ Wrangler profile names accept ASCII letters, numbers, hyphens, and underscores;
 as a beta feature.
 
 ```console
-npx @microfeed/cli manage accounts [--json] [--profile <name>] [--reauthorize]
+npx @microfeed/cli manage accounts [--json] [--device] [--profile <name>] [--reauthorize]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--json` | Print the login, active profile, all profiles with active markers, and `{name, id}` accounts as JSON. |
+| `--device` | Use a URL and one-time code instead of a localhost browser callback. Cannot be combined with `--profile`. |
 | `--profile <name>` | Create or select a named Wrangler browser login and bind it to the local management workspace. |
 | `--reauthorize` | Force fresh browser authorization, for example when the desired account is missing. |
 
-Browser authorization rejection, missing permissions, zero accounts, or an unavailable browser
-callback fail before resource creation.
+Browser or device authorization rejection, missing permissions, zero accounts,
+or an unavailable callback fail before resource creation.
 
 ## `npx @microfeed/cli manage init`
 
@@ -265,19 +286,20 @@ activates only the Default fallback. A resumed run installs any missing
 packages without changing an already selected theme.
 
 ```console
-npx @microfeed/cli manage init [--instance <name>] [--preview|--local] [options]
+npx @microfeed/cli manage init [--device] [--instance <name>] [--preview|--local] [options]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the saved site name. |
 | `--account-id <id>` | Use one exact Cloudflare account. |
+| `--device` | Use a URL and one-time code instead of a localhost browser callback. |
 | `--project-name <name>` | Set the production or preview Worker name: 1–63 ASCII letters, numbers, or hyphens; no leading or trailing hyphen. |
 | `--d1-name <name>` | Set the production or preview D1 name. |
 | `--r2-name <name>` | Set the production R2 name; preview always shares production media. |
 | `--admin-path <path>` | Set the remote dashboard path, defaulting to `admin`. |
 | `--admin-auth <built-in\|none>` | Enable built-in protection or deliberately skip it. |
-| `--owner-email <email>` | Set the administrator sign-in email. |
+| `--owner-email <email>` | Set the administrator sign-in email. With `--yes`, the authenticated Cloudflare login email is used when available. |
 | `--admin-password <value>` | Unsafe remote-only automation password. Never use from an agent. |
 | `--no-open` | Print the private password page without opening a browser. |
 | `--reuse-d1` | Explicitly reuse a same-named existing D1 database. |
@@ -360,12 +382,13 @@ Use `--preview` only after production is connected; it recovers the preview's
 independent Worker and webhook Queue identity under the same saved instance.
 
 ```console
-npx @microfeed/cli manage connect [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
+npx @microfeed/cli manage connect [--device] [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--account-id <id>` | Search one exact account. |
+| `--device` | Use a URL and one-time code instead of a localhost browser callback. |
 | `--worker <name>` | Select an exact compatible Worker. |
 | `--instance <name>` | Choose the local saved name. |
 | `--preview` | Connect the preview Worker after its production instance is connected under the same local name. |
@@ -406,13 +429,14 @@ local data, performs the same preparation against local D1, and does not deploy
 or start a server.
 
 ```console
-npx @microfeed/cli manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]
+npx @microfeed/cli manage deploy [--device] [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the saved site. |
 | `--account-id <id>` | Confirm the exact saved account. |
+| `--device` | Use a URL and one-time code instead of a localhost browser callback. |
 | `--preview` | Deploy preview instead of production. |
 | `--local` | Prepare an instance created with `init --local`; cannot target a Cloudflare-managed instance or be combined with `--preview`. |
 | `--enable-r2` | Require R2 entitlement and permanently prepare/bind the saved bucket, or add the simulated binding with `--local`. Idempotent when already ready. |
@@ -986,13 +1010,14 @@ time. Cloudflare Analytics is operational telemetry rather than a billing
 invoice, so reconcile cost alerts with the account's Queues dashboard.
 
 ```console
-npx @microfeed/cli manage status [--instance <name>] [--preview]
+npx @microfeed/cli manage status [--device] [--instance <name>] [--preview]
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `--instance <name>` | Select the saved site. |
 | `--account-id <id>` | Confirm the exact saved account. |
+| `--device` | Use a URL and one-time code instead of a localhost browser callback. |
 | `--preview` | Check preview instead of production. |
 
 This command is read-only. Missing resources or unsafe protection produce a

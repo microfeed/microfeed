@@ -1,60 +1,49 @@
 ---
 title: Update microfeed
-description: Bring a connected production instance to the latest source and verify the deployment.
+description: Compare three supported ways to update an existing microfeed deployment.
 ---
 
-Use the published launcher from any folder. If you already have a Git-cloned
-microfeed source repository connected to the intended site, you may instead
-use its local `yarn manage` shortcut.
+Choose one of the three supported methods below. Each uses the same deployment
+engine to apply required migrations, build and deploy the Worker, reconcile
+data written during the version switch, and verify the finished site.
 
-## Recommended: ask your coding agent
+An update preserves your existing microfeed content and Cloudflare resources.
+It changes the application version running on the selected Worker.
 
-Open a local coding agent and use a prompt that names the saved site or Worker
-when you know it:
+## Compare the update methods
 
-```text
-Update the microfeed site <site-url> to the latest release. Start by running
-`npx @microfeed/cli manage`, connect the existing site if needed, deploy the
-update, and continue until `status` verifies the site.
-```
+| Method | Best for | Advantages | Tradeoffs |
+| --- | --- | --- | --- |
+| [1. Use a local AI agent](/manage/update/ai-agent/) | The simplest guided update | Start with one prompt; the agent finds or connects the site, deploys, handles recoverable steps, and verifies the result. | Requires a compatible local Node.js environment and an agent that can use the terminal. |
+| [2. Use GitHub Actions](/manage/update/github-actions/) | A consistent hosted environment and a versioned fork | Runs on GitHub's Ubuntu runner without local tools. You explicitly choose the branch, while repository secrets identify the account and Worker. | Requires a configured fork, review of upstream changes, and a new Cloudflare browser authorization for each run. |
+| [3. Use @microfeed/cli manually](/manage/update/manual/) | Direct control over the command and source code | Deploy the official release with `npx @microfeed/cli manage`, or deploy an official, forked, or locally modified checkout with `yarn manage`. | Requires a compatible local Node.js environment, and you select and troubleshoot the deployment yourself. |
 
-The launcher verifies and copies its exact bundled release into a private
-cache. The agent discovers
-saved and compatible existing sites, asks before choosing among candidates,
-connects only if needed, deploys through the same management engine, and
-runs a status check. Complete any Cloudflare browser handoffs it requests.
+## Official release or your own source code
 
-## Update from a Git-cloned source repository
+`npx @microfeed/cli manage` updates the site to the official microfeed release
+bundled with the published CLI. It works from any folder and does not build
+code from the current directory.
 
-First run `git status` and protect any local work. Then fetch and inspect
-upstream changes using your normal Git workflow. Once the source repository
-contains the version you intend to run:
+`yarn manage` builds and deploys the current Git-cloned source directory. Use
+it when the intended version is an official microfeed checkout, your own fork,
+or a custom repository that retains microfeed's management tooling. Review the
+branch and working tree carefully because that local source—not the published
+CLI's official release—is what will run on Cloudflare.
 
-```console
-yarn install --immutable
-yarn manage deploy
-yarn manage status
-```
+GitHub Actions also checks out the branch you select and runs `yarn manage`, so
+it deploys the code from that branch in your fork.
 
-`deploy` applies database migrations, completes required data normalization
-(including stored plain text for item search), runs project checks, builds the
-Worker, tags the deployed version with the source commit, deploys, reconciles
-data written during the version switch, and verifies it.
+## Before updating
 
-## If the source repository is not connected
+Identify the exact microfeed site or Worker you intend to update. If you are
+using a Git-cloned source repository, protect any local work and make sure the
+checkout contains the version you intend to deploy. If you use GitHub Actions,
+review the upstream changes before syncing them into your fork.
 
-Do not initialize over an existing Worker. Connect first:
+## If an update stops
 
-```console
-yarn manage connect --worker <worker-name> --instance <local-name>
-```
-
-The connect operation is read-only in Cloudflare: it verifies a compatible
-microfeed Worker and saves local connection state.
-
-## Recovery
-
-If deployment stops, read the final error before retrying. The CLI keeps saved
-state for resumable resource changes. If the site still serves the previous
-version, run `npx @microfeed/cli manage status` and resolve the reported
-account, resource, or migration problem before another deploy.
+Read the final error before retrying. The management CLI keeps saved state for
+resumable resource changes, and the previous Worker version often remains live
+when deployment stops before the version switch. Run a status check through
+the same method, resolve the reported account, resource, or migration problem,
+then retry the update.

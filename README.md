@@ -45,7 +45,7 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
 * [⭐️ How it works](#%EF%B8%8F-how-it-works)
 * [🚀 Installation](#-installation)
   * [Quickstarts](#quickstarts)
-  * [Details](#details)
+  * [Different ways to deploy](#different-ways-to-deploy)
   * [Advanced](#advanced)
 * [✍️ Start publishing](#%EF%B8%8F-start-publishing)
 * [✨ Features](#-features)
@@ -108,50 +108,36 @@ is a shortcut that runs the repository's local CLI version.
 
 ### Quickstarts
 
-The simplest way to install microfeed is with a local AI coding agent. Open
-OpenAI Codex, Claude Code, Cursor, or another local agent that can run terminal
-commands and open a browser, then give it this prompt:
+Open a local AI coding agent such as Codex, Claude Code, or Cursor, then paste
+this prompt:
 
 ```text
 Deploy microfeed to Cloudflare. Start by running `npx @microfeed/cli manage`,
 then follow its instructions until deployment is verified.
 ```
 
-That's it. The launcher requires Node.js 22.12 or newer with npm. Windows ARM
-computers are supported through Windows' x64 application emulation: install
-the x64 build of Node.js, then run `node -p "process.arch"` and confirm that it
-prints `x64`. Native Windows ARM64 Node.js is not supported because Cloudflare's
-local runtime does not provide a matching executable. The launcher carries the
-exact microfeed release and Yarn runtime, verifies and copies that source into
-a private cache, and installs its locked dependencies without requiring Git or
-Corepack. It does not create source files in your current folder. The
-first setup may use about 1.3 GB and take several minutes; later runs reuse it.
-The agent guides the setup, runs the deployment, and verifies the finished
-site. You only step in for Cloudflare browser authorization, choices that
-require your approval, and creating your private dashboard password.
-
-
 https://github.com/user-attachments/assets/96c73a94-2068-4172-9003-8bf3a262121d
 
+The agent guides the Cloudflare authorization, deployment, and verification.
+[Read the complete AI-agent guide](https://docs.microfeed.org/start-here/ai-agent/).
 
+[Back to 📚TOC](#-table-of-contents)
 
+### Different ways to deploy
 
+* **[Use a local AI agent](https://docs.microfeed.org/start-here/ai-agent/):**
+  the simplest option—start with one prompt and let the agent deploy and verify
+  the site.
+* **[Use GitHub Actions](https://docs.microfeed.org/start-here/github-actions/):**
+  deploy from a consistent hosted Ubuntu runner after configuring your fork.
+* **[Use the management CLI manually](https://docs.microfeed.org/start-here/manual/):**
+  run `npx @microfeed/cli manage` to deploy an official microfeed release, or
+  run `yarn manage` inside a Git-cloned source directory to deploy that
+  checkout—including a fork or your own modifications.
 
-### Details
-
-Run `npx @microfeed/cli manage` from any folder to use microfeed's supported
-deployment engine without first Git-cloning the microfeed source repository
-yourself. If you already have a Git-cloned microfeed source repository and have
-run `yarn install`, `yarn manage` is a shortcut that uses its local version of
-the same engine.
-
-* **Recommended:** [deploy with an AI coding agent](https://docs.microfeed.org/start-here/ai-agent/).
-* **Manual:** [deploy from the terminal](https://docs.microfeed.org/start-here/manual/).
-* **Every command and option:** read the [management CLI reference](https://docs.microfeed.org/manage-cli/).
-
-Both paths pause for Cloudflare browser authorization and choices that require
-your approval. Never paste a Cloudflare token, dashboard password, or private
-password-setup link into an agent conversation or command.
+[Compare the benefits and tradeoffs](https://docs.microfeed.org/start-here/install/)
+of all three methods. Each uses Cloudflare browser authorization and the same
+guarded deployment engine.
 
 [Back to 📚TOC](#-table-of-contents)
 

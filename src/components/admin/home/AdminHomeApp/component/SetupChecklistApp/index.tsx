@@ -128,6 +128,9 @@ interface SiteCustomDomainDescriptionProps {
   workerName?: string;
 }
 
+const CUSTOM_DOMAIN_DOCUMENTATION_URL =
+  "https://docs.microfeed.org/manage/domains-and-access/";
+
 export function SiteCustomDomainDescription({
   dashboardUrl,
   workerName,
@@ -149,19 +152,26 @@ export function SiteCustomDomainDescription({
                 : "Worker"}{" "}
               domain settings
             </a>{" "}
-            in Cloudflare to review the hostname for this site.{" "}
+            in Cloudflare to add a custom hostname.{" "}
           </>
         )
         : (
           <>
             Open this installation&apos;s Worker in Cloudflare and go to its
-            domain settings to review the hostname for this site.{" "}
+            domain settings to add a custom hostname.{" "}
           </>
         )}
-      To configure or change it safely, run{" "}
-      <CloudflareValue>{managementCommand("domain")}</CloudflareValue>. The
-      command updates the Worker configuration, deploys, and
-      verifies the domain and TLS.
+      We recommend starting in the Cloudflare dashboard. You can also update
+      the custom domain with{" "}
+      <CloudflareValue>{managementCommand("domain")}</CloudflareValue>.{" "}
+      <a
+        className="font-medium underline"
+        href={CUSTOM_DOMAIN_DOCUMENTATION_URL}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Learn more about custom domains.
+      </a>
     </>
   );
 }

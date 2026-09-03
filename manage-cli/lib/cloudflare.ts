@@ -51,7 +51,6 @@ function accountEnvironment(accountId: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
     CLOUDFLARE_ACCOUNT_ID: accountId,
-    CLOUDFLARE_AUTH_USE_KEYRING: "true",
   };
 }
 
@@ -413,6 +412,7 @@ function parsePagesProjects(output: string): PagesProject[] {
 
 export class CloudflareClient {
   private credentialsPromise?: Promise<CloudflareCredentials>;
+  private currentLoginEmail: string | null = null;
 
   constructor(
     private readonly runner: CommandRunner,
@@ -423,9 +423,17 @@ export class CloudflareClient {
     return [...new Set([...OAUTH_SCOPES, ...this.additionalScopes])];
   }
 
-  async login(): Promise<void> {
+  async login(options: {device?: boolean} = {}): Promise<void> {
     const {profile} = await this.profileState();
     if (profile && profile !== "default") {
+      if (options.device) {
+        throw new Error(
+          "Cloudflare device authorization cannot replace an active named " +
+            `Wrangler profile (\`${profile}\`). No Cloudflare resources were ` +
+            "changed. Use a clean Wrangler configuration directory or run " +
+            "without `--device`.",
+        );
+      }
       await this.authorizeProfile(profile);
       await this.activateProfile(profile);
       return;
@@ -433,16 +441,30 @@ export class CloudflareClient {
     try {
       await runWrangler(
         this.runner,
-        ["login", "--use-keyring", "--scopes", ...this.scopes()],
+        options.device
+          ? [
+            "login",
+            "--device",
+            "--browser=false",
+            "--no-use-keyring",
+            "--scopes",
+            ...this.scopes(),
+          ]
+          : ["login", "--use-keyring", "--scopes", ...this.scopes()],
         {interactive: true},
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       throw new Error(
-        "Cloudflare browser authorization did not complete. No Cloudflare " +
-          "resources were changed. Approve the requested permissions and " +
-          "keep this command open until the browser callback finishes, then " +
-          `retry. ${detail}`,
+        `Cloudflare ${options.device ? "device" : "browser"} authorization ` +
+          "did not complete. No Cloudflare resources were changed. " +
+          (options.device
+            ? "Open the URL printed above, enter the displayed code, " +
+              "approve the requested permissions, and keep this command " +
+              "open until authorization finishes, then retry. "
+            : "Approve the requested permissions and keep this command " +
+              "open until the browser callback finishes, then retry. ") +
+          detail,
       );
     }
     this.credentialsPromise = undefined;
@@ -510,10 +532,18 @@ export class CloudflareClient {
       {allowFailure: true},
     );
     if (result.exitCode !== 0) {
+      this.currentLoginEmail = null;
       return [];
     }
     const data = parseJsonOutput<Record<string, unknown>>(result.stdout);
+    this.currentLoginEmail = typeof data.email === "string" && data.email
+      ? data.email
+      : null;
     return accountsFromWhoami(data);
+  }
+
+  loginEmail(): string | null {
+    return this.currentLoginEmail;
   }
 
   private async profileState(): Promise<{

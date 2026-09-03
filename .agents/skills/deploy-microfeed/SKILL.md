@@ -17,13 +17,13 @@ command or option. Treat that document as the complete capability and
 side-effect contract; keep this skill focused on agent sequencing and safety.
 
 microfeed supports one deployment engine. A person may run `yarn manage` from
-a trusted clone, or a local coding agent may use `npx @microfeed/cli manage` to
-copy the exact bundled release into a private cache and forward commands to that
-engine. Do not offer Cloudflare repository imports, Workers Builds, deploy
-buttons, GitHub Actions, raw Wrangler deploys, or API-token deployment as
-alternatives. If a user asks for a dashboard-only or hosted deployment,
-explain that it is not supported and guide them to the local launcher or clone
-workflow. Never request their Cloudflare email, password, private
+a trusted clone, a local coding agent may use `npx @microfeed/cli manage` to
+copy the exact bundled release into a private cache and forward commands to
+that engine, or a person may use the repository-owned manual GitHub Actions
+workflow to create or update a site with fresh device authorization. Do not
+offer Cloudflare repository imports, Workers Builds, deploy buttons, raw
+Wrangler deploys, API-token deployment, or another Actions workflow as
+alternatives. Never request a Cloudflare email, password, private
 password-setup link, or token in chat.
 
 Choose one command prefix for the session:
@@ -37,9 +37,10 @@ Choose one command prefix for the session:
 
 ## Guardrails
 
-- Use this workflow only from a local interactive coding-agent session whose
-  environment can complete Wrangler's localhost browser OAuth callback. Do not
-  attempt it from a hosted or headless agent session.
+- Use management commands from a local interactive session that can complete
+  Wrangler's localhost browser callback. The only supported headless exception
+  is the repository-owned manual Actions workflow for creating or updating a
+  site; its `--device` flow requires a person to approve every run.
 - Never request a password or Cloudflare token in chat. Never use
   `--admin-password`; that deliberately unsafe option exists only for
   unattended automation whose operator accepts shell-history, process-list,
@@ -48,8 +49,8 @@ Choose one command prefix for the session:
   so the user can open it. Treat it as private: never ask the user to paste it
   back, write it to a file, reuse it in another command, or expose it after it
   has served its handoff.
-- Stop before deployment when the Wrangler browser OAuth callback is
-  unavailable.
+- Stop before deployment when neither the Wrangler browser callback nor the
+  documented manual Actions device flow is available.
 - In a user-managed clone, inspect `git status --short` before deploying. If
   the working tree is dirty, identify that the current files will be built and
   obtain explicit approval to deploy them. Do not modify, discard, or stash
@@ -58,11 +59,22 @@ Choose one command prefix for the session:
   command and recreates only its private source cache when verification fails;
   never edit the launcher cache.
 - Treat changes to `package.json`, `yarn.lock`, `.yarn/`, `manage-cli/`,
-  `wrangler.jsonc`, `wrangler.template.jsonc`, `astro.config.ts`, or this skill
-  as security-sensitive because deployment executes or trusts them. Inspect
-  their diffs and any untracked files, name them to the user, and recommend a
-  clean trusted checkout. Continue only when the user explicitly trusts those
-  exact changes; a generic approval of a dirty tree is insufficient.
+  `.github/workflows/create-or-update-microfeed.yml`, `wrangler.jsonc`,
+  `wrangler.template.jsonc`, `astro.config.ts`, or this skill as
+  security-sensitive because deployment executes or trusts them. Inspect their
+  diffs and any untracked files, name them to the user, and recommend a clean
+  trusted checkout. Continue only when the user explicitly trusts those exact
+  changes; a generic approval of a dirty tree is insufficient.
+- For the manual Actions workflow, create a collision-checked new site or
+  update an existing compatible site. Require a trusted selected ref and a
+  fresh `--device` authorization, keep
+  `XDG_CONFIG_HOME` and `MICROFEED_STATE_DIRECTORY` under the hosted runner's
+  temporary directory, exclude both from caches, and run `wrangler logout` in
+  an always-run cleanup step. Never add a Cloudflare credential to repository
+  secrets or expose it in workflow output. New-site mode may use the
+  operator-created `MICROFEED_ADMIN_PASSWORD` Actions secret for unattended
+  built-in login setup; it is not a Cloudflare credential and should be removed
+  after initialization succeeds.
 - Explain the external changes before starting: fresh initialization can
   create a Worker, D1 database, R2 bucket, Worker secrets, and, only when
   selected, a Worker Custom Domain with Cloudflare-managed DNS and

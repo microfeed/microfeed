@@ -35,8 +35,11 @@
   `npx` prefix, translate every `yarn manage` and `yarn dev` example below to
   `npx @microfeed/cli manage` and `npx @microfeed/cli manage dev`.
 - Do not use or recommend Cloudflare repository imports, Workers Builds,
-  deploy buttons, GitHub Actions, or API-token deployment. People and agents
-  can use the published launcher without creating a local source checkout.
+  deploy buttons, or API-token deployment. The repository-owned manual GitHub
+  Actions workflow may create a collision-checked site or update an existing
+  site from a trusted ref with fresh device authorization on every run. It must
+  call `yarn manage`, keep Wrangler and microfeed state ephemeral, and log out
+  after the run.
 - Treat `docs/manage-cli.md` as the canonical command, option, side-effect, and
   safety reference for both people and agents. Read the relevant command
   section before using an unfamiliar or destructive option. Keep that reference

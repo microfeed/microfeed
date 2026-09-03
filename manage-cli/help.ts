@@ -23,6 +23,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     changes: "Read-only Cloudflare discovery; may update local Wrangler login profiles and the repository binding.",
     details: [
       "Checks the current Wrangler login and required permissions, opening browser authorization when needed.",
+      "Use --device in a headless interactive environment to print a URL and one-time code instead of waiting for a localhost browser callback.",
       "With --profile, creates or selects a named Wrangler login and binds it to this local repository without changing Cloudflare resources.",
       "A profile is a Cloudflare login saved on this computer; an account is a Cloudflare workspace that owns sites and data.",
       "Lists every stored profile, marks the active one, shows only that login's accounts, and prints commands for switching to other named profiles.",
@@ -30,6 +31,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     examples: [
       "yarn manage accounts",
       "yarn manage accounts --json",
+      "yarn manage accounts --device --reauthorize",
       "yarn manage accounts --profile company",
       "yarn manage accounts --profile company --reauthorize",
       "yarn manage accounts --reauthorize",
@@ -37,11 +39,12 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     name: "accounts",
     options: [
       option("--json", "Print machine-readable identity and account data."),
+      option("--device", "Use Cloudflare device authorization for a headless interactive environment."),
       option("--profile <name>", "Create or select a named Wrangler login for this repository."),
       option("--reauthorize", "Force a fresh browser authorization."),
     ],
     summary: "Authorize Cloudflare and list available accounts.",
-    usage: "yarn manage accounts [--json] [--profile <name>] [--reauthorize]",
+    usage: "yarn manage accounts [--json] [--device] [--profile <name>] [--reauthorize]",
   },
   {
     changes: "Creates or updates Cloudflare resources, or creates an isolated local sandbox with --local.",
@@ -57,6 +60,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "A newly created Cloudflare account may need a few minutes to prepare workers.dev before its first Worker deploy; rerun the same init command to resume safely.",
       "Fresh initialization installs every current Built-in theme and activates only the Default fallback.",
       "Built-in authentication normally prints a private browser link for setting the first password.",
+      "With --yes, the Cloudflare login email becomes the default administrator email when no --owner-email is supplied.",
       "A completed installation stops with guidance to use deploy, status, domain, or auth instead.",
     ],
     examples: [
@@ -69,6 +73,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     options: [
       option("--instance <name>", "Select the saved site name."),
       option("--account-id <id>", "Use one exact Cloudflare account."),
+      option("--device", "Use Cloudflare device authorization for a headless interactive environment."),
       option(
         "--project-name <name>",
         "Set the Worker name: 1–63 ASCII letters, numbers, or hyphens; no edge hyphen.",
@@ -77,7 +82,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--r2-name <name>", "Set the production R2 bucket name; preview always reuses production storage."),
       option("--admin-path <path>", "Set the Cloudflare dashboard path, defaulting to admin."),
       option("--admin-auth <built-in|none>", "Enable the built-in login or deliberately leave the dashboard unprotected."),
-      option("--owner-email <email>", "Set the first administrator sign-in email."),
+      option("--owner-email <email>", "Set the first administrator sign-in email; --yes defaults to the Cloudflare login email when available."),
       option("--admin-password <value>", "Unsafe remote-only automation option; exposes the password through process arguments."),
       option("--no-open", "Print a browser password link without opening it automatically."),
       option("--reuse-d1", "Explicitly approve reuse of a same-named existing D1 database."),
@@ -88,29 +93,32 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--yes", "Accept non-secret remote defaults; local first-password setup remains interactive."),
     ],
     summary: "Initialize or resume a production, preview, or local installation.",
-    usage: "yarn manage init [--instance <name>] [--preview|--local] [options]",
+    usage: "yarn manage init [--device] [--instance <name>] [--preview|--local] [options]",
   },
   {
     changes: "Reads Cloudflare and writes local connection state; does not change Cloudflare.",
     details: [
       "Discovers compatible existing microfeed Workers, including content-only Workers identified by D1 and saved R2 variables, verifies public installation identity, and saves the selected deployment in this clone.",
       "Connected D1 and any ready R2 resource are recorded as reused so later destruction will preserve them.",
+      "Use --device in a headless interactive environment to authorize through a URL and one-time code.",
     ],
     examples: [
       "yarn manage connect",
+      "yarn manage connect --device --worker existing-feed --yes",
       "yarn manage connect --account-id <id> --worker existing-feed --instance personal",
       "yarn manage connect --preview --account-id <id> --worker existing-feed-preview --instance personal",
     ],
     name: "connect",
     options: [
       option("--account-id <id>", "Search one exact Cloudflare account."),
+      option("--device", "Use Cloudflare device authorization for a headless interactive environment."),
       option("--worker <name>", "Select an exact compatible Worker."),
       option("--instance <name>", "Choose the local saved name for the connection."),
       option("--preview", "Connect the preview Worker for an already connected production instance."),
       option("--yes", "Run non-interactively; requires --worker when several matches exist."),
     ],
     summary: "Connect an existing Cloudflare microfeed to this clone.",
-    usage: "yarn manage connect [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]",
+    usage: "yarn manage connect [--device] [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]",
   },
   {
     changes: "Updates a selected Cloudflare Worker, or prepares a local-only release with --local.",
@@ -144,6 +152,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     options: [
       option("--instance <name>", "Select the saved site."),
       option("--account-id <id>", "Confirm the exact saved Cloudflare account."),
+      option("--device", "Use Cloudflare device authorization for a headless interactive environment."),
       option("--preview", "Deploy the saved preview environment."),
       option("--local", "Prepare an init --local instance without starting its server."),
       option("--enable-r2", "Permanently enable the saved Cloudflare or simulated local R2 binding."),
@@ -153,7 +162,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       option("--yes", "Run non-interactively; pending R2 remains content-only unless --enable-r2 is passed."),
     ],
     summary: "Check, migrate, deploy, and verify a saved installation.",
-    usage: "yarn manage deploy [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]",
+    usage: "yarn manage deploy [--device] [--instance <name>] [--preview|--local] [--enable-r2] [--enable-webhooks|--disable-webhooks]",
   },
   {
     changes: "Starts a local server and changes only isolated local D1/R2 simulation data.",
@@ -285,10 +294,11 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     options: [
       option("--instance <name>", "Select the saved site."),
       option("--account-id <id>", "Confirm the exact saved Cloudflare account."),
+      option("--device", "Use Cloudflare device authorization for a headless interactive environment."),
       option("--preview", "Check the preview environment."),
     ],
     summary: "Verify Cloudflare resources, the public site, and dashboard protection.",
-    usage: "yarn manage status [--instance <name>] [--preview]",
+    usage: "yarn manage status [--device] [--instance <name>] [--preview]",
   },
   {
     changes: "Permanently deletes owned Cloudflare resources and local instance data unless explicitly preserved.",
