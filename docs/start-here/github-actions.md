@@ -24,6 +24,9 @@ not run workflows in a new fork until Actions is enabled, and the manual
 workflow must exist on the fork's default branch before the **Run workflow**
 button appears.
 
+<img width="1656" height="646" alt="Screenshot 2026-09-03 at 9 36 38 AM" src="https://github.com/user-attachments/assets/41593e4e-2920-473c-a0c9-61c8d796dec7" />
+
+
 ## Step 2. Add four repository secrets
 
 In your fork, open **Settings → Secrets and variables → Actions**. Add these
