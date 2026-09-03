@@ -18,6 +18,9 @@ The branch selected in the workflow receives access to the configured secrets
 and temporary Cloudflare permissions, so deploy only code and workflows you
 trust.
 
+<img width="961" height="451" alt="Screenshot 2026-09-03 at 9 48 58 AM" src="https://github.com/user-attachments/assets/a2f79c51-527d-4e79-a447-242e95c5260e" />
+
+
 ## 2. Run the update
 
 1. Open the fork's **Actions** tab.
@@ -26,6 +29,9 @@ trust.
 4. Change the operation from the default **create** to **update**.
 5. Select **Run workflow**. The workflow updates the existing Worker named by
    the `MICROFEED_WORKER_NAME` repository secret.
+
+<img width="1647" height="568" alt="Screenshot 2026-09-03 at 9 52 08 AM" src="https://github.com/user-attachments/assets/bdfc2f64-61d2-4f52-8ea7-1d49580497e4" />
+
 
 The `MICROFEED_ADMINISTRATOR_EMAIL` and `MICROFEED_ADMIN_PASSWORD` secrets are
 not used for an update. Remove them after the first successful installation if
