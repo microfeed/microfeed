@@ -1,6 +1,7 @@
 import {readFile} from "node:fs/promises";
 import path from "node:path";
 import {describe, expect, it} from "vitest";
+import {MICROFEED_VERSION} from "@/shared/Version";
 
 const root = path.resolve(import.meta.dirname, "../..");
 
@@ -234,7 +235,7 @@ describe("bundled theme packages", () => {
       expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//u);
       expect(url).not.toContain("example.test");
     }
-    expect(application.version).toBe("1.0.11");
+    expect(application.version).toBe(MICROFEED_VERSION);
   });
 
   it("renders subscription methods without broken or duplicated image text", async () => {
