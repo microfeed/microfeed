@@ -406,9 +406,12 @@ deployment smoke tests, and build. The smoke tests cover migration compatibility
 core item and feed operations, installation identity, and administrator setup.
 When a release introduces or repairs search, deployment strips saved item HTML
 into D1's stored plain-text column in resumable batches and validates the
-unified item-and-Page search index before it becomes available. A second pass
-after the Worker switch
-captures any item write completed by the previous Worker version. An incomplete
+unified item-and-Page search index before it becomes available. This includes
+rebuilding multilingual character indexes from saved titles and plain text.
+A second pass after the Worker switch captures item and Page edits completed
+by the previous Worker version. Backfills detect concurrent edits and retry
+the changed content. Snapshots omit these derived indexes and rebuild them
+after restoration. An incomplete
 pass stops deployment instead of serving partially normalized search data.
 Every deployment synchronizes the registered Built-in catalog from the current
 checkout. Missing and newer Built-in releases are installed inactive, and the

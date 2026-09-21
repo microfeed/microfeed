@@ -126,7 +126,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "Deploy requires saved local instance configuration. Use connect for an existing Cloudflare microfeed or init for a new installation.",
       "When saved initialization state has not completed its first Worker deployment, deploy resumes it and supplies the missing initial upload-signing secret.",
       "Runs type checks, focused deployment smoke tests, and a build before deploying, then verifies the public site and protected admin route. The complete repository test suite remains part of yarn check and continuous integration.",
-      "Normalizes stored item plain text before deployment and reconciles it after the Worker switch; search remains unavailable if either validation pass is incomplete.",
+      "Normalizes stored item plain text and rebuilds multilingual item and Page search before deployment, then reconciles after the Worker switch; search remains unavailable if either validation pass is incomplete.",
       "Synchronizes every current Built-in theme release as inactive without changing the active or previous selection, then safely soft-deletes superseded Built-in releases unless they are active, previous, or remain referenced.",
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",

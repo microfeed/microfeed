@@ -54,6 +54,7 @@ describe("item search migration and normalization", () => {
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
     database.exec(await migration("0014_default_not_found_page.sql"));
+    database.exec(await migration("0023_multilingual_search.sql"));
     expect(database.prepare(
       "SELECT ready FROM site_search_metadata WHERE id = 1",
     ).get()).toEqual({ready: 0});
@@ -94,6 +95,7 @@ describe("item search migration and normalization", () => {
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
     database.exec(await migration("0014_default_not_found_page.sql"));
+    database.exec(await migration("0023_multilingual_search.sql"));
     const cloudflare = testCloudflare(database);
     await normalizeItemSearchContent(cloudflare, config);
 
@@ -126,6 +128,7 @@ describe("item search migration and normalization", () => {
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
     database.exec(await migration("0014_default_not_found_page.sql"));
+    database.exec(await migration("0023_multilingual_search.sql"));
     const cloudflare = testCloudflare(database);
     const result = await withItemSearchIndexesSuspended(
       cloudflare,
@@ -135,7 +138,7 @@ describe("item search migration and normalization", () => {
           "WHERE name LIKE 'site_search_%' AND type = 'table'",
       ).get() as {count: number},
     );
-    expect(result).toEqual({count: 2});
+    expect(result).toEqual({count: 4});
     expect(database.prepare(
       "SELECT COUNT(*) AS count FROM sqlite_schema " +
         "WHERE name IN ('site_search_exact', 'site_search_title_trigram')",
@@ -151,6 +154,7 @@ describe("item search migration and normalization", () => {
     database.exec(await migration("0009_item_search.sql"));
     database.exec(await migration("0013_pages_search_site_files.sql"));
     database.exec(await migration("0014_default_not_found_page.sql"));
+    database.exec(await migration("0023_multilingual_search.sql"));
 
     expect(database.prepare(
       "SELECT id, slug, title, status, show_in_navigation " +
@@ -192,6 +196,7 @@ describe("item search migration and normalization", () => {
     ).run();
 
     database.exec(await migration("0014_default_not_found_page.sql"));
+    database.exec(await migration("0023_multilingual_search.sql"));
 
     expect(database.prepare(
       "SELECT id, title, status, show_in_navigation " +

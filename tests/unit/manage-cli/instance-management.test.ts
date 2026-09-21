@@ -126,7 +126,7 @@ function itemSearchCommandResult(args: readonly string[]) {
     return undefined;
   }
   const results = sql.includes("sqlite_schema")
-    ? [{name: "site_search_exact"}, {name: "site_search_title_trigram"}]
+    ? [{name: "site_search_exact"}, {name: "site_search_title_trigram"}, {name: "site_search_bigram"}]
     : sql.includes("COUNT(*)")
     ? [{count: 0}]
     : [];
@@ -734,7 +734,7 @@ describe("first-class local instances", () => {
       if (command.startsWith("d1 execute feed-db --remote --command ")) {
         const sql = args[args.indexOf("--command") + 1] ?? "";
         const results = sql.includes("sqlite_schema")
-          ? [{name: "site_search_exact"}, {name: "site_search_title_trigram"}]
+          ? [{name: "site_search_exact"}, {name: "site_search_title_trigram"}, {name: "site_search_bigram"}]
           : sql.includes("COUNT(*)") ? [{count: 0}] : [];
         return commandResult(JSON.stringify([{results}]));
       }

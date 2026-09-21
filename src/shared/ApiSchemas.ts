@@ -329,7 +329,7 @@ export const apiSearchQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   next_cursor: z.string().min(1).max(2048).optional(),
   q: z.string().trim().min(1).max(200).meta({
-    description: "Terms are ANDed. Use single or double quotes for an exact phrase.",
+    description: "Terms are ANDed. Use single or double quotes for an exact phrase. Clauses of at least two Unicode code points containing Chinese, Japanese, Korean, Thai, Lao, Khmer, or Myanmar characters match literal substrings. One-character queries retain word/prefix matching.",
     example: 'launch "season finale"',
   }),
   status: z.string().regex(

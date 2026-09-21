@@ -398,6 +398,35 @@ describe("public Pages", () => {
       .toBe(true);
   });
 
+  it("returns multilingual published items and Pages without exposing drafts", async () => {
+    await activateV2();
+    const db = await database();
+    const request = new Request(`${ORIGIN}/search.json?q=中文`);
+    for (const [id, status] of [
+      ["search-destination-chinese", STATUSES.PUBLISHED],
+      ["search-destination-private", STATUSES.UNPUBLISHED],
+    ] as const) {
+      await db.putContent({item: {
+        id, status, title: "学习中文", description: "正文",
+        pubDateMs: Date.parse("2026-08-18T10:00:00.000Z"),
+      }});
+    }
+    const page = await createPage(db, request, {
+      slug: "chinese-page", title: "中文页面", status: "published",
+      show_in_navigation: false,
+    });
+    const response = await apiContext(searchJson, db, request);
+    expect(response.status).toBe(200);
+    const data = await response.json() as {items: Array<{
+      id: string; highlights: {title: Array<{matched: boolean; text: string}>};
+    }>};
+    expect(data.items.map((item) => item.id).sort())
+      .toEqual([page.id, "search-destination-chinese"].sort());
+    expect(data.items.every((item) => item.highlights.title.some(
+      (segment) => segment.matched && segment.text === "中文",
+    ))).toBe(true);
+  });
+
   it("uses the active v2 theme destination for public item search links", async () => {
     const request = new Request(`${ORIGIN}/search-destination-page/`);
     const db = await database("/search-destination-page/");

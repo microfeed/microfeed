@@ -44,6 +44,8 @@ export const SNAPSHOT_TABLES = {
     "item_search_metadata",
     "site_search_documents",
     "site_search_metadata",
+    "site_search_character_state",
+    "site_search_character_chunks",
     "oauth_access_token",
     "oauth_refresh_token",
     "oauth_consent",

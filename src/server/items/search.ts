@@ -5,8 +5,11 @@ import {
   normalizedSearchTokens,
   parseItemSearchQuery,
   type ItemSearchField,
+  type ItemSearchClause,
   type ItemSearchStatus,
 } from "@/shared/ItemSearch";
+import {CHARACTER_SEARCH_REVISION, characterSearchPhrase, characterSearchTokens, usesCharacterSearch} from "@/shared/CharacterSearch";
+import {characterHighlights} from "./character-highlights";
 import {
   ITEM_STATUSES_DICT,
   ITEM_STATUSES_STRINGS_DICT,
@@ -102,7 +105,7 @@ interface SearchCursor {
   rank: number;
   sortAt: string;
   type: SearchContentType;
-  version: 2;
+  version: 3;
 }
 
 interface SearchRow extends Record<string, unknown> {
@@ -186,7 +189,7 @@ function decodeSearchCursor(
   try {
     const cursor = JSON.parse(decoded) as Partial<SearchCursor>;
     if (
-      cursor.version !== 2 || cursor.fingerprint !== fingerprint ||
+      cursor.version !== 3 || cursor.fingerprint !== fingerprint ||
       (cursor.phase !== "exact" && cursor.phase !== "fuzzy") ||
       (cursor.type !== "item" && cursor.type !== "page") ||
       typeof cursor.rank !== "number" || !Number.isFinite(cursor.rank) ||
@@ -443,7 +446,7 @@ function cursorForRow(
     rank: row.search_rank,
     sortAt: row.sort_at,
     type: row.content_type,
-    version: 2,
+    version: 3,
   };
 }
 
@@ -549,11 +552,98 @@ async function fuzzyRows(
   return parsedRows(response.results);
 }
 
+async function characterRows(
+  database: D1Database,
+  options: ItemSearchOptions,
+  clauses: ItemSearchClause[],
+  cursor: SearchCursor | undefined,
+): Promise<SearchRow[]> {
+  const pending = await database.prepare(
+    "SELECT 1 FROM site_search_character_state WHERE revision != ? LIMIT 1",
+  ).bind(CHARACTER_SEARCH_REVISION).first();
+  if (pending) throw new ItemSearchUnavailableError(
+    "Search is being prepared. Retry after deployment finishes.",
+  );
+  const literals = clauses.filter(usesCharacterSearch);
+  const words = clauses.filter((clause) => !usesCharacterSearch(clause));
+  const column = options.fields.length === 1
+    ? options.fields[0] === "title" ? "title:" : "content_text:"
+    : "";
+  const bindings: unknown[] = [];
+  // Each clause can match a different field or chunk. Materialize scores
+  // before grouping: FTS auxiliary functions cannot run in aggregate context.
+  const ctes = literals.map((clause, index) => {
+    bindings.push(column + characterSearchPhrase(clause));
+    // Encoded tokens contain only [g0-9a-f ] (never SQL punctuation). Applying
+    // the field boost outside BM25 prevents term-frequency saturation in a
+    // repetitive body from cancelling the title preference.
+    const boost = options.fields.includes("title")
+      ? `CASE WHEN instr(c.title, '${characterSearchTokens(clause.text)}') > 0 THEN 5.0 ELSE 1.0 END`
+      : "1.0";
+    return `raw${index} AS MATERIALIZED (
+      SELECT c.content_type, c.content_id,
+        bm25(site_search_bigram, 1.0, 1.0) * (${boost}) AS score
+      FROM site_search_bigram
+      JOIN site_search_character_chunks c ON c.id = site_search_bigram.rowid
+      WHERE site_search_bigram MATCH ?
+    ), matches${index} AS (
+      SELECT content_type, content_id, MIN(score) AS score FROM raw${index}
+      GROUP BY content_type, content_id
+    )`;
+  });
+  // Batch unions to stay within D1's compound SELECT limit, and group rather
+  // than joining once per clause to avoid SQLite's 64-table join limit.
+  let batches = literals.map((_, index) => `matches${index}`);
+  let batchNumber = 0;
+  while (batches.length > 5) {
+    const next: string[] = [];
+    for (let start = 0; start < batches.length; start += 5) {
+      const name = `batch${batchNumber++}`;
+      next.push(name);
+      ctes.push(`${name} AS MATERIALIZED (
+        ${batches.slice(start, start + 5).map((batch) =>
+          `SELECT * FROM ${batch}`).join(" UNION ALL ")}
+      )`);
+    }
+    batches = next;
+  }
+  ctes.push(`matches AS (
+    SELECT content_type, content_id, SUM(score) AS score FROM (
+      ${batches.map((name) => `SELECT * FROM ${name}`).join(" UNION ALL ")}
+    ) GROUP BY content_type, content_id HAVING COUNT(*) = ${literals.length}
+  )`);
+  const rank = "matches.score";
+  const filters = contentFilters(options);
+  const after = cursorFilter(cursor, `(${rank})`);
+  const wordQuery = words.length ? itemSearchFtsQuery(words, options.fields) : "";
+  if (wordQuery) bindings.push(wordQuery);
+  const sql = `WITH ${ctes.join(",\n")}
+    SELECT ${SEARCH_SELECT}, (${rank}) AS search_rank,
+      ${wordQuery ? "highlight(site_search_exact, 2, char(1), char(2))" : "d.title"} AS highlighted_title,
+      ${wordQuery ? "highlight(site_search_exact, 3, char(1), char(2))" : "d.content_text"} AS highlighted_content
+    FROM site_search_documents d
+    JOIN matches ON matches.content_type = d.content_type
+      AND matches.content_id = d.content_id
+    ${wordQuery ? "JOIN site_search_exact ON site_search_exact.rowid = d.id" : ""}
+    LEFT JOIN items i ON d.content_type = 'item' AND i.id = d.content_id
+    LEFT JOIN pages p ON d.content_type = 'page' AND p.id = d.content_id
+    WHERE ${wordQuery ? "site_search_exact MATCH ? AND " : ""}${filters.sql}${after.sql}
+    ORDER BY search_rank ASC, sort_at DESC, d.content_type ASC, d.content_id ASC
+    LIMIT ?`;
+  const response = await database.prepare(sql).bind(
+    ...bindings, ...filters.bindings, ...after.bindings, options.limit + 1,
+  ).all();
+  return parsedRows(response.results);
+}
+
 export async function searchContent(
   database: D1Database,
   request: Request,
   options: ItemSearchOptions,
 ): Promise<ContentSearchResponse> {
+  if (options.query.length > 200) {
+    throw new ItemSearchRequestError("Use a search query of at most 200 characters.");
+  }
   if (!await searchReady(database)) {
     throw new ItemSearchUnavailableError(
       "Search is being prepared. Retry after deployment finishes.",
@@ -571,6 +661,29 @@ export async function searchContent(
   const clauses = parseItemSearchQuery(options.query);
   if (clauses.length === 0) {
     throw new ItemSearchRequestError("Search query has no searchable terms.");
+  }
+  if (clauses.some(usesCharacterSearch)) {
+    const fingerprint = await searchFingerprint(options);
+    const cursor = decodeSearchCursor(options.nextCursor, fingerprint);
+    if (cursor?.phase === "fuzzy") throw new ItemSearchRequestError("Invalid next_cursor.");
+    const rows = await characterRows(database, options, clauses, cursor);
+    const page = rows.slice(0, options.limit);
+    const terms = clauses.filter(usesCharacterSearch).map((clause) => clause.text);
+    return {
+      items: page.map((row) => {
+        const result = resultFromRow(row, request, options.publicBucketUrl, "exact");
+        result.highlights = {
+          title: characterHighlights(row.highlighted_title,
+            options.fields.includes("title") ? terms : []),
+          content_text: characterHighlights(row.highlighted_content,
+            options.fields.includes("content") ? terms : [], true),
+        };
+        return result;
+      }),
+      ...(rows.length > options.limit ? {next_cursor: encodeSearchCursor(
+        cursorForRow(page.at(-1)!, fingerprint, "exact"),
+      )} : {}),
+    };
   }
   const exactQuery = itemSearchFtsQuery(clauses, options.fields);
   const trigramQuery = options.fields.includes("title")

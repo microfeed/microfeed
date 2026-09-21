@@ -18,6 +18,7 @@ import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
 import {storedThemeFromRow} from "@/shared/themes/ThemeRows";
 import type FeedDb from "@/server/feed/FeedDb";
 import {PUBLIC_CACHE_TAGS} from "@/server/cache/public-cache";
+import {characterIndexStatements} from "@/server/items/character-index";
 import {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
 import {
   commitDatabaseMutation,
@@ -409,6 +410,7 @@ export async function createPage(
       database.FEED_DB.prepare(
         "INSERT INTO page_paths (slug, page_id, is_current, created_at) VALUES (?, ?, 1, ?)",
       ).bind(slug, id, now),
+      ...characterIndexStatements(database.FEED_DB, "page", id, title, page.content_text),
     ], page, options.commit);
   } catch (error) {
     if (String(error).toLocaleLowerCase().includes("unique")) {
@@ -562,7 +564,9 @@ export async function updatePage(
   try {
     await commitDatabaseMutation(
       database.FEED_DB,
-      statements,
+      [...statements, ...characterIndexStatements(
+        database.FEED_DB, "page", id, title, page.content_text,
+      )],
       page,
       options.commit,
     );

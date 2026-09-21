@@ -299,6 +299,9 @@ function snapshotSql(
     !name.startsWith("items_site_search_") &&
     !name.startsWith("pages_site_search_") &&
     !name.startsWith("site_search_documents_after_") &&
+    !name.startsWith("items_character_search_") &&
+    !name.startsWith("pages_character_search_") &&
+    !name.startsWith("character_chunks_") &&
     !ITEM_SEARCH_VIRTUAL_TABLE_PREFIXES.some((prefix) =>
       name === prefix || name.startsWith(`${prefix}_`)
     )

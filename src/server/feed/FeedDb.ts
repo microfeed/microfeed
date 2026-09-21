@@ -1,4 +1,5 @@
 import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
+import {characterIndexStatements} from "@/server/items/character-index";
 import {ITEM_CONTENT_TEXT_REVISION} from "@/shared/ItemSearch";
 import {
   STATUSES, PREDEFINED_SUBSCRIBE_METHODS,
@@ -606,7 +607,12 @@ export default class FeedDb {
       }
 
       if (item) {
+        if (!item.id) throw new Error("An item ID is required.");
         statements.push(this._putItemToContentStatement(item));
+        statements.push(...characterIndexStatements(
+          this.FEED_DB, "item", item.id, String(item.title ?? ""),
+          String(item.contentText ?? ""),
+        ));
       }
       if (statements.length > 0) {
         if (commit) await commit(statements);

@@ -25,7 +25,7 @@ describe("admin item search", () => {
     expect(search).toContain('event.key.toLowerCase() === "k"');
     expect(search).toContain("AbortController");
     expect(search).toContain("requestRef.current = null");
-    expect(search).toContain("trimmed.length >= 2 ? 200 : 0");
+    expect(search).toContain("searchCharacterCount(trimmed) >= 2 ? 200 : 0");
     expect(search).toContain('role="combobox"');
     expect(search).toContain('role="listbox"');
     expect(search).toContain('role="option"');

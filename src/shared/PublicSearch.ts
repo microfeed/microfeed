@@ -235,6 +235,7 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
   }
   let controller;
+  const composingInputs = new WeakSet();
   let lockedScrollPosition;
   let previousScrollStyles;
   let suppressTriggerFocus = false;
@@ -412,11 +413,12 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
   }
 
   async function search(input) {
+    if (composingInputs.has(input)) return;
     const container = resultContainer(input);
     if (!container) return;
     const query = input.value.trim();
     if (previewResults !== null) {
-      if (query.length === 1) {
+      if (Array.from(query).length === 1) {
         message(container, "Type one more character to search.");
         return;
       }
@@ -431,24 +433,28 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
       showResults(container, filtered.slice(0, 12));
       return;
     }
-    if (query.length < 2) {
+    controller?.abort();
+    controller = undefined;
+    if (Array.from(query).length < 2) {
       message(container, query ? "Type one more character to search." : "Start typing to search.");
       return;
     }
-    controller?.abort();
     controller = new AbortController();
+    const currentController = controller;
     message(container, "Searching…");
     try {
       const url = new URL(endpoint, window.location.origin);
       url.searchParams.set("q", query);
       const response = await fetch(url, {
         headers: {accept: "application/json"},
-        signal: controller.signal,
+        signal: currentController.signal,
       });
       if (!response.ok) throw new Error("Search failed");
       const data = await response.json();
+      if (controller !== currentController || currentController.signal.aborted) return;
       showResults(container, data.items ?? []);
     } catch (error) {
+      if (controller !== currentController || currentController.signal.aborted) return;
       if (!(error instanceof Error) || error.name !== "AbortError") {
         message(container, "Search is temporarily unavailable.");
       }
@@ -459,9 +465,31 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     "[data-microfeed-search-input]",
   )) {
     let timer;
-    input.addEventListener("input", () => {
+    const schedule = () => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => void search(input), 150);
+      controller?.abort();
+      controller = undefined;
+      if (!composingInputs.has(input)) {
+        timer = window.setTimeout(() => void search(input), 150);
+      }
+    };
+    input.addEventListener("input", schedule);
+    input.addEventListener("compositionstart", () => {
+      composingInputs.add(input);
+      schedule();
+    });
+    input.addEventListener("compositionend", () => {
+      composingInputs.delete(input);
+      schedule();
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (composingInputs.has(input) ||
+          event.isComposing || event.keyCode === 229)) {
+        event.preventDefault();
+      }
+    });
+    input.form?.addEventListener("submit", (event) => {
+      if (composingInputs.has(input)) event.preventDefault();
     });
     if (
       input.value.trim() ||
@@ -519,11 +547,13 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
   dialog?.addEventListener("close", unlockBackgroundScroll);
   dialog?.querySelector("[data-microfeed-search-input]")
     ?.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" || event.isComposing) return;
+      if (event.key !== "Enter" || event.isComposing || event.keyCode === 229 ||
+          composingInputs.has(event.currentTarget)) return;
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
     });
   document.addEventListener("keydown", (event) => {
+    if (event.isComposing || event.keyCode === 229 || composingInputs.has(event.target)) return;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
       openSearch();
