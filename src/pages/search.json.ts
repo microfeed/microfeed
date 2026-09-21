@@ -14,11 +14,12 @@ import {
 } from "@/server/themes/Theme";
 import {buildAudioUrlWithTracking} from "@/shared/StringUtils";
 import {resolveThemeSearchItemUrl} from "@/shared/themes/ThemeSearch";
+import {searchCharacterCount} from "@/shared/CharacterSearch";
 
 export const GET: APIRoute = async ({request}) => {
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim() ?? "";
-  if (query.length < 2 || query.length > 200) {
+  if (searchCharacterCount(query) < 2 || query.length > 200) {
     return jsonResponse({error: "Use a search query between 2 and 200 characters."}, {
       headers: {"cache-control": "private, no-store"},
       status: 400,

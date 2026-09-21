@@ -524,7 +524,13 @@ export const OPENAPI_DOCUMENT = createDocument({
           "Searches D1 for non-deleted items and Pages. The types query defaults " +
           "to items for backward compatibility. Unquoted terms use AND semantics; " +
           "single- and double-quoted clauses require an exact phrase. Exact " +
-          "matches rank before typo-tolerant title matches. Each result is an " +
+          "matches rank before typo-tolerant title matches for word-only queries. " +
+          "Clauses with at least two Unicode code points containing Han, Hiragana, " +
+          "Katakana, Hangul, Thai, Lao, Khmer, or Myanmar characters use literal " +
+          "substring matching with NFC normalization and locale-independent lowercase. " +
+          "Queries containing these clauses do not use typo tolerance. " +
+          "Single-character API queries retain legacy word/prefix matching. " +
+          "Each result is a " +
           "content record with safe title and content highlight segments.",
         tags: ["Search"],
         requestParams: {query: apiSearchQuerySchema},

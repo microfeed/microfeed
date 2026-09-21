@@ -3,6 +3,7 @@ import type {APIRoute} from "astro";
 
 import {adminUrl} from "@/shared/AdminPath";
 import type {ItemSearchStatus} from "@/shared/ItemSearch";
+import {searchCharacterCount} from "@/shared/CharacterSearch";
 import FeedDb from "@/server/feed/FeedDb";
 import {
   ItemSearchRequestError,
@@ -26,7 +27,7 @@ export async function getAdminItemSearch(
   const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
   const database = new FeedDb(runtimeEnv, request);
   try {
-    const items = query.length >= 2
+    const items = searchCharacterCount(query) >= 2
       ? (await searchItems(database.FEED_DB, request, {
           fields: ["title"],
           limit: 5,

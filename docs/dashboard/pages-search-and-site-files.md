@@ -61,6 +61,15 @@ drafts, Unlisted and Draft Pages, and the protected 404 Page. The typeahead
 route returns safe highlighted segments and is never cached. Submitting the
 search form opens `/search/?q=...` for complete results.
 
+Enter at least two characters. Chinese, Japanese, Korean, Thai, Lao, Khmer,
+and Myanmar text can match inside a longer sentence without spaces. For
+example, `中文` finds `我喜欢学习中文`. Separate terms with spaces to require
+all of them, and use quotes for a phrase. These searches match literal text;
+they do not translate, convert simplified and traditional Chinese, or search
+by pinyin. Queries using this matching do not add typo-tolerant results.
+Word searches in other scripts keep their existing prefix and title-typo
+matching. Search waits until Chinese or Japanese input composition finishes.
+
 microfeed supplies the search dialog, keyboard behavior, request cancellation,
 and safe result rendering. The active theme supplies a button that opens the
 dialog and the surrounding Search page layout. Theme authors can follow the

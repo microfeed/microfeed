@@ -1,4 +1,7 @@
+import {CREATE_CHARACTER_SEARCH_SQL, DROP_CHARACTER_SEARCH_SQL} from "./CharacterSearchSql";
+
 export const SITE_SEARCH_VIRTUAL_TABLE_PREFIXES = [
+  "site_search_bigram",
   "site_search_exact",
   "site_search_title_trigram",
 ] as const;
@@ -15,6 +18,7 @@ export const DROP_SITE_SEARCH_INDEX_SQL = `
 UPDATE site_search_metadata
 SET ready = 0, normalized_at = NULL
 WHERE id = 1;
+${DROP_CHARACTER_SEARCH_SQL}
 DROP TRIGGER IF EXISTS items_site_search_after_insert;
 DROP TRIGGER IF EXISTS items_site_search_after_update;
 DROP TRIGGER IF EXISTS items_site_search_after_delete;
@@ -30,6 +34,7 @@ DELETE FROM site_search_documents;
 `;
 
 export const CREATE_SITE_SEARCH_INDEX_SQL = `
+${CREATE_CHARACTER_SEARCH_SQL}
 CREATE VIRTUAL TABLE IF NOT EXISTS site_search_exact USING fts5(
   content_type UNINDEXED,
   content_id UNINDEXED,

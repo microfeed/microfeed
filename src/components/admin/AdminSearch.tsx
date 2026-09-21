@@ -17,6 +17,7 @@ import {
 import {Input} from "@/components/ui/input";
 import {adminUrl} from "@/shared/AdminPath";
 import {cn} from "@/lib/utils";
+import {searchCharacterCount} from "@/shared/CharacterSearch";
 
 interface HighlightSegment {
   matched: boolean;
@@ -79,10 +80,13 @@ export default function AdminSearch({adminPath}: Props) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [composing, setComposing] = useState(false);
+  const compositionRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const load = useCallback(async (searchQuery: string) => {
+    if (compositionRef.current) return;
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -95,6 +99,7 @@ export default function AdminSearch({adminPath}: Props) {
         headers: {accept: "application/json"},
         signal: controller.signal,
       });
+      if (requestRef.current !== controller || controller.signal.aborted) return;
       if (response.status === 401) {
         setResults([]);
         setMessage("Your admin session expired. Sign in again, then reopen search.");
@@ -104,12 +109,14 @@ export default function AdminSearch({adminPath}: Props) {
         error?: string;
         items?: AdminSearchResult[];
       } | null;
+      if (requestRef.current !== controller || controller.signal.aborted) return;
       if (!response.ok) {
         throw new Error(data?.error || "Search is temporarily unavailable.");
       }
       setResults(data?.items ?? []);
       setActiveIndex(0);
     } catch (error) {
+      if (requestRef.current !== controller || controller.signal.aborted) return;
       if (error instanceof DOMException && error.name === "AbortError") return;
       setResults([]);
       setMessage(error instanceof Error
@@ -132,7 +139,7 @@ export default function AdminSearch({adminPath}: Props) {
   }, []);
 
   useEffect(() => {
-    if (!open) {
+    if (!open || composing) {
       requestRef.current?.abort();
       requestRef.current = null;
       return;
@@ -140,16 +147,16 @@ export default function AdminSearch({adminPath}: Props) {
     const trimmed = query.trim();
     requestRef.current?.abort();
     requestRef.current = null;
-    if (trimmed.length === 1) {
+    if (searchCharacterCount(trimmed) === 1) {
       setLoading(false);
       setResults([]);
       setMessage("Type at least two characters to search.");
       return;
     }
-    const delay = trimmed.length >= 2 ? 200 : 0;
+    const delay = searchCharacterCount(trimmed) >= 2 ? 200 : 0;
     const timeout = window.setTimeout(() => void load(trimmed), delay);
     return () => window.clearTimeout(timeout);
-  }, [load, open, query]);
+  }, [load, open, query, composing]);
 
   useEffect(() => {
     if (open) window.setTimeout(() => inputRef.current?.focus(), 0);
@@ -164,6 +171,8 @@ export default function AdminSearch({adminPath}: Props) {
     <Dialog open={open} onOpenChange={(nextOpen) => {
       setOpen(nextOpen);
       if (!nextOpen) {
+        compositionRef.current = false;
+        setComposing(false);
         setQuery("");
         setMessage(null);
         setResults([]);
@@ -202,7 +211,25 @@ export default function AdminSearch({adminPath}: Props) {
             aria-label="Search item titles"
             className="h-14 border-0 px-0 text-base shadow-none focus-visible:ring-0"
             onChange={(event) => setQuery(event.target.value)}
+            onCompositionStart={() => {
+              compositionRef.current = true;
+              setComposing(true);
+              requestRef.current?.abort();
+              requestRef.current = null;
+              setLoading(false);
+            }}
+            onCompositionEnd={(event) => {
+              compositionRef.current = false;
+              setComposing(false);
+              setQuery(event.currentTarget.value);
+            }}
             onKeyDown={(event) => {
+              if (compositionRef.current || event.nativeEvent.isComposing ||
+                event.nativeEvent.keyCode === 229) {
+                event.stopPropagation();
+                if (event.key === "Enter") event.preventDefault();
+                return;
+              }
               if (event.key === "ArrowDown") {
                 event.preventDefault();
                 setActiveIndex((index) => Math.min(index + 1, results.length - 1));
@@ -223,7 +250,7 @@ export default function AdminSearch({adminPath}: Props) {
         </div>
         <div className="max-h-[min(55vh,28rem)] overflow-y-auto p-2">
           <p className="px-2 pb-1 pt-1 text-xs font-medium text-muted-foreground">
-            {query.trim().length >= 2 ? "Search results" : "Recently updated"}
+            {searchCharacterCount(query.trim()) >= 2 ? "Search results" : "Recently updated"}
           </p>
           {loading && (
             <div className="px-3 py-8 text-center text-sm text-muted-foreground" role="status">
@@ -237,7 +264,7 @@ export default function AdminSearch({adminPath}: Props) {
           )}
           {!loading && !message && results.length === 0 && (
             <div className="px-3 py-8 text-center text-sm text-muted-foreground" role="status">
-              {query.trim().length >= 2 ? "No matching items." : "No items yet."}
+              {searchCharacterCount(query.trim()) >= 2 ? "No matching items." : "No items yet."}
             </div>
           )}
           {!loading && results.length > 0 && (
