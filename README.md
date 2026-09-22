@@ -230,6 +230,8 @@ same published content.
 | --- | --- |
 | Publish many content types | Share articles, podcasts, videos, images, documents, and curated external links from one feed. |
 | Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
+| [Podcast-specific fields](https://docs.microfeed.org/dashboard/media-and-feeds/#podcast-fields-in-feeds) | Add transcripts, chapters with JSON import, hosts and guests, support links, content licenses, and advisory feed import locks, with Podcasting 2.0 RSS tags and JSON Feed fields. |
+| [SEO / GEO](https://docs.microfeed.org/dashboard/publish/#customize-metadata-and-the-item-url) | Customize search titles, descriptions, social images, publisher and author identities, and stable item URLs, with search and social previews and structured data. |
 | Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
 | Experimental WebMCP site tools | Let a compatible browser agent automatically discover read and draft-only editing tools after it opens the signed-in dashboard. WebMCP does not expose a remote MCP server or add runtime work to public pages. |
 | Headless CMS and content automation | Read and update content through the API, receive signed change notifications through webhooks, and give local AI agents a friendlier workflow through `@microfeed/cli`. |
