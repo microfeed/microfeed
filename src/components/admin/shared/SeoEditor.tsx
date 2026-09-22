@@ -91,7 +91,7 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
           <h3 id={`${id}-search-heading`} className="text-base font-semibold">Search appearance</h3>
           <p className="text-sm text-muted-foreground">Leave overrides blank to use the title and description.</p>
         </div>
-        <div className="grid min-w-0 items-start gap-6 @[52rem]/seo:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid min-w-0 items-start gap-6 @[52rem]/seo:grid-cols-[minmax(0,1fr)_28rem]">
           <div className="min-w-0 space-y-5">
             {field("title", <Input id={`${id}-title`} value={seo.title ?? ""}
               aria-describedby={`${id}-title-hint`}
@@ -133,7 +133,7 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
                 inheritedLanguage={channel?.language || "en"} onChange={(language) => onChange({language: language || null})} />
             </div>}
           </div>
-          <figure className="min-w-0 w-full max-w-80 space-y-2">
+          <figure className="min-w-0 w-full max-w-md space-y-2">
             <figcaption className="text-sm font-medium text-muted-foreground">Search preview</figcaption>
             <div className="space-y-2 rounded-lg border border-[#dadce0] bg-white p-4 font-[Arial,sans-serif] text-[#202124] dark:border-[#3c4043] dark:bg-[#202124] dark:text-[#dadce0]">
               <div className="mb-3 flex min-w-0 items-center gap-3">
@@ -149,7 +149,7 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
                 </div>
                 <EllipsisVerticalIcon aria-hidden="true" className="size-4 shrink-0 text-[#70757a] dark:text-[#9aa0a6]" />
               </div>
-              <p className="line-clamp-2 break-words text-[22px] leading-7 font-normal text-[#1a0dab] dark:text-[#8ab4f8]">{title}</p>
+              <p className="line-clamp-2 break-words text-xl leading-[26px] font-normal text-[#1a0dab] dark:text-[#8ab4f8]">{title}</p>
               <p className="line-clamp-3 break-words text-sm leading-5 text-[#4d5156] dark:text-[#bdc1c6]">{description}</p>
             </div>
           </figure>
