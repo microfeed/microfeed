@@ -1,6 +1,7 @@
 import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
 import {prepareItemUrl, itemUrlWriteError} from "@/server/items/urls";
 import {validateCustomization} from "@/shared/Seo";
+import {validatePodcast} from "@/shared/Podcast";
 import {characterIndexStatements} from "@/server/items/character-index";
 import {ITEM_CONTENT_TEXT_REVISION} from "@/shared/ItemSearch";
 import {
@@ -609,6 +610,7 @@ export default class FeedDb {
     const statements: D1PreparedStatement[] = [];
     try {
       if (channel) {
+        validatePodcast(channel, false);
         validateCustomization(channel, false);
         statements.push(this._putChannelToContentStatement(channel));
       }
@@ -618,6 +620,7 @@ export default class FeedDb {
       }
 
       if (item) {
+        validatePodcast(item, true);
         if (!item.id) throw new Error("An item ID is required.");
         validateCustomization(item, true);
         const route = await prepareItemUrl(this.FEED_DB, item);

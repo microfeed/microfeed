@@ -155,3 +155,63 @@ from the generated sitemap. Use Link for the preferred version of the content;
 put related links and source citations in the body. Search engines may select a
 different canonical. Unlisted items remain accessible directly with `noindex`,
 and drafts remain private.
+
+## Add podcast transcripts and chapters
+
+Open **Podcast-specific fields** on an item to add:
+
+- **Transcripts:** upload a timed VTT or SRT file up to 10 MB, or enter an
+  existing HTTPS URL and choose its format and language. Multiple languages
+  and formats are supported. With no language override, podcast apps use the
+  channel language. Apple Podcasts may also require selecting publisher-provided
+  transcripts in Podcasts Connect.
+- **Chapters:** enter a start time and title, with an optional image and link.
+  Times accept `HH:MM:SS`, `MM:SS`, or seconds, including fractional seconds.
+  Or select **Upload chapter JSON** to import the whole list. Entries are sorted
+  by time, and duplicate start times are rejected.
+- **Hosts, guests, and credits:** add episode participants, or copy the channel
+  participants before adding a guest. An episode list replaces the complete
+  channel list; clear it to inherit again.
+- **Content license:** override the channel license for this episode. Remove
+  the override to inherit the channel license.
+
+Save an entry in its dialog to apply it to the item and start the usual
+five-second autosave. Cancelling a dialog leaves the item's metadata unchanged.
+Media uploads finish before the entry can be saved; uploaded files remain in media
+storage even if you cancel. Photos and chapter images accept JPEG or PNG files
+up to 8 MB. Existing URLs work without connected media storage.
+
+For chapter imports, choose a `.json` file up to 1 MB containing a chapter array
+or an object like this:
+
+```json
+{
+  "version": "1.2.0",
+  "chapters": [
+    {"startTime": 0, "title": "Introduction"},
+    {"startTime": 90.5, "title": "Interview", "url": "https://example.com/notes/"}
+  ]
+}
+```
+
+Each chapter needs a numeric `startTime` in seconds and a `title`. Optional
+`img` and `url` values must be HTTPS links. Other chapter fields are rejected;
+episode-level document metadata is not imported. The existing limit of 100
+chapters and 64 KiB of total podcast metadata still applies.
+
+Review the preview, then select **Import chapters** or **Replace chapters**.
+Replacing applies to the complete existing list. Invalid files and Cancel
+leave your chapters unchanged. The file is read in your browser, so this works
+without media storage; only the validated entries enter the normal item
+autosave. You can edit imported chapters individually afterward.
+
+microfeed generates a chapter JSON file at `/i/<item-id>/chapters.json` and adds
+its address to RSS. The address stays the same when the item's title or URL
+changes. The file is available for Published and Unlisted items while the feed
+and RSS are enabled; it is unavailable for drafts, deleted items, or offline
+feeds. Changing chapters does not modify the audio file. Linked and uploaded
+media have their own public URLs, independent of the item's visibility.
+
+After saving, inspect the item's RSS and JSON links in **Public access**.
+Playback features depend on the listener's podcast app. The field headings
+explain the exported tags and JSON fields.

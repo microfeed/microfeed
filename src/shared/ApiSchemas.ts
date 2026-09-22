@@ -1,4 +1,5 @@
 import * as z from "zod";
+import {channelPodcastSchema, itemPodcastSchema, podcastChapterDocumentSchema} from "./Podcast";
 import "zod-openapi";
 
 import {authorIdentitiesSchema, identitySchema, languageOverrideSchema, publisherIdentitySchema, seoSchema, socialImageSchema} from "./Seo";
@@ -20,6 +21,8 @@ export const apiItemIdSchema = z.string().min(1).meta({
   description: "The microfeed item ID or an item-page slug ending in that ID.",
   example: "0HGJLSML3P1",
 });
+
+export const apiPodcastChaptersSchema = podcastChapterDocumentSchema.meta({id: "PodcastChapters"});
 
 export const apiStatusSchema = z.union([
   z.enum(["published", "unlisted", "unpublished"]),
@@ -65,6 +68,9 @@ export const apiAttachmentOutputSchema = apiAttachmentSchema.extend({
 }).meta({id: "AttachmentOutput"});
 
 export const apiItemMicrofeedSchema = z.object({
+  podcast: itemPodcastSchema.nullable().optional().meta({
+    description: "Podcast episode fields: transcripts, ordered chapters, people, and license. Omitted properties are preserved on update; null clears a property. Empty people and a cleared license inherit channel defaults. Chapters are also served as application/json+chapters at /i/{id}/chapters.json for published or unlisted items.",
+  }),
   seo: seoSchema.nullable().optional(),
   authors: authorIdentitiesSchema.nullable().optional(),
   slug: z.string().refine((value) => {
@@ -367,6 +373,7 @@ export const apiSearchQuerySchema = z.object({
 });
 
 export const apiFeedMicrofeedSchema = z.object({
+  podcast: channelPodcastSchema.nullable().optional(),
   seo: seoSchema.nullable().optional(),
   publisher: publisherIdentitySchema.nullable().optional(),
   authors: authorIdentitiesSchema.nullable().optional(),
@@ -392,6 +399,9 @@ export const apiFeedSchema = z.object({
 }).loose().meta({id: "Feed"});
 
 export const apiChannelMicrofeedInputSchema = z.object({
+  podcast: channelPodcastSchema.nullable().optional().meta({
+    description: "Podcast show fields: regular people, support links (funding), content license, and advisory import lock (locked). Omitted properties are preserved; null clears an override. Podcast people are separate from SEO authors and the publisher.",
+  }),
   seo: seoSchema.nullable().optional(),
   publisher: publisherIdentitySchema.nullable().optional(),
   authors: authorIdentitiesSchema.nullable().optional(),

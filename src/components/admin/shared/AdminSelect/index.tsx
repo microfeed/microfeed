@@ -1,4 +1,5 @@
 import {useRef, useState, type ReactNode} from "react";
+import {cn} from "@/lib/utils";
 
 import {
   Combobox,
@@ -24,6 +25,7 @@ export interface AdminSelectOption {
 
 interface CommonProps<Option extends AdminSelectOption> {
   ariaLabel?: string;
+  id?: string;
   disabled?: boolean;
   emptyText?: string;
   isOptionDisabled?: (option: Option) => boolean;
@@ -35,6 +37,7 @@ interface CommonProps<Option extends AdminSelectOption> {
 }
 
 interface SingleProps<Option extends AdminSelectOption> extends CommonProps<Option> {
+  compact?: boolean;
   multiple?: false;
   onChange: (option: Option) => void;
   value?: Option | null;
@@ -143,6 +146,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
                       </ComboboxChip>
                     ))}
                     <ComboboxInput
+                      id={props.id}
                       aria-label={accessibleLabel}
                       placeholder={selectedOptions.length > 0 ? "" : placeholder}
                       disabled={disabled}
@@ -199,7 +203,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
             }
           }}
         >
-          <ComboboxInputGroup ref={anchorRef} className={ADMIN_SELECT_CONTROL_CLASS}>
+          <ComboboxInputGroup ref={anchorRef} className={cn(ADMIN_SELECT_CONTROL_CLASS, props.compact && "h-10")}>
             <div
               data-slot="admin-select-input-container"
               className="group/admin-select-input relative flex min-h-9 min-w-0 flex-1 items-stretch"
@@ -220,6 +224,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
                 </ComboboxValue>
               )}
               <ComboboxInput
+                id={props.id}
                 aria-label={accessibleLabel}
                 className={props.value
                   ? `absolute inset-0 h-full w-full px-2.5 py-1 text-sm ${ADMIN_SINGLE_SELECT_INPUT_CLASS} ${singleInputValue === "" ? "caret-transparent text-transparent focus:caret-foreground" : "text-foreground"}`
@@ -232,7 +237,7 @@ export default function AdminSelect<Option extends AdminSelectOption>(
                 disabled={disabled}
               />
             </div>
-            <div className={ADMIN_SELECT_INDICATORS_CLASS}>
+            <div className={cn(ADMIN_SELECT_INDICATORS_CLASS, props.compact && "my-0")}>
               <ComboboxTrigger
                 aria-label={`Open ${accessibleLabel}`}
                 className={ADMIN_SELECT_TRIGGER_CLASS}

@@ -12,6 +12,7 @@ const languageOptions = LANGUAGE_CODES_LIST.map(({name, code}) => ({
 }));
 
 interface Props {
+  id?: string;
   value?: string | null;
   inheritedLanguage?: string;
   label?: string;
@@ -20,7 +21,7 @@ interface Props {
   onChange: (language: string) => void;
 }
 
-export default function AdminLanguageSelect({value, inheritedLanguage, label, labelComponent, ariaLabel = "Language", onChange}: Props) {
+export default function AdminLanguageSelect({id, value, inheritedLanguage, label, labelComponent, ariaLabel = "Language", onChange}: Props) {
   const inheritedName = LANGUAGE_CODES_LIST.find(({code}) => code.toLowerCase() === inheritedLanguage?.toLowerCase())?.name;
   const inheritOption = {
     value: "",
@@ -36,6 +37,7 @@ export default function AdminLanguageSelect({value, inheritedLanguage, label, la
     ...(customOption ? [customOption] : []),
   ];
   return <AdminSelect
+    id={id}
     ariaLabel={ariaLabel} label={label} labelComponent={labelComponent}
     options={options} value={selected ?? customOption ?? (inheritedLanguage ? inheritOption : undefined)}
     searchPlaceholder="Search languages…" onChange={(option) => onChange(option.value)}

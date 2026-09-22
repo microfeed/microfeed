@@ -83,3 +83,25 @@ Select **Save changes**, then inspect the approximate previews and the public
 page. Search and social platforms can choose different snippets. These ordinary
 metadata and identity fields also help systems that summarize web content;
 there are no special AI ranking fields or promises of inclusion.
+
+## Podcast participants, support, and licensing
+
+Open **Podcast-specific fields** to add regular hosts and contributors under
+**Hosts, guests, and credits**. Each person has a name, role, and optional
+profile URL and photo. These credits are separate from the Publisher and SEO
+authors. Episodes inherit the channel participants unless they supply their own
+complete list.
+
+**Support the show** accepts multiple labeled donation or membership links.
+**Content license** offers common Creative Commons licenses and All rights
+reserved, or a custom identifier with a URL to the full terms. Episodes can
+override the channel license.
+
+**Feed import lock** asks other hosting platforms to reject imports of your
+feed. It is advisory and does not make the feed private. Choose Unlocked before
+moving to another host; Unspecified omits the signal.
+
+Save each entry in its dialog, then select **Save changes** on the channel.
+The field headings open explanations with RSS and JSON examples. See
+[Podcast fields in feeds](/dashboard/media-and-feeds/#podcast-fields-in-feeds)
+for interoperability details.

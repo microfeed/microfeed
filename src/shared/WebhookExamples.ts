@@ -185,6 +185,7 @@ export function webhookChannelSnapshot(
     ["_microfeed", definedEntries([
       ["copyright", microfeed?.copyright ?? channel.copyright],
       ["seo", microfeed?.seo ?? channel.seo],
+      ["podcast", microfeed?.podcast ?? channel.podcast],
       ["publisher", microfeed?.publisher ?? (channel.publisher || channel.publisherIdentity
         ? {...(channel.publisherIdentity as object), name: channel.publisher} : undefined)],
       ["authors", microfeed?.authors ?? channel.authorIdentities],
@@ -220,6 +221,7 @@ export function webhookItemSnapshot(
   return definedEntries([
     ["_microfeed", item._microfeed ?? definedEntries([
       ["seo", item.seo],
+      ["podcast", item.podcast],
       ["authors", item.authorIdentities],
       ["slug", item.urlMode !== "legacy" && typeof item.publicPath === "string" ? item.publicPath.slice(3, -1) : undefined],
     ])],

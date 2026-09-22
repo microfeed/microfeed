@@ -1,6 +1,7 @@
 import {encodeSocialCrop} from "@/client/SocialImageCrop";
 import React from 'react';
 import clsx from 'clsx';
+import {cn} from "@/lib/utils";
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.min.css';
 import Requests from '@/client/requests';
@@ -43,16 +44,16 @@ import AdminImagePreviewDialog from "../AdminImagePreviewDialog";
 
 const UPLOAD_STATUS__START = 1;
 
-function EmptyImage({fileTypes}: any) {
-  return (<div className="text-brand-light text-sm flex flex-col justify-center items-center h-full">
+function EmptyImage({fileTypes, socialImage}: any) {
+  return (<div className={cn("text-brand-light text-sm flex flex-col justify-center items-center h-full", socialImage && "px-3 text-center")}>
     <div className="mb-2">
       <CloudUploadIcon className="w-8" />
     </div>
     <div className="font-semibold">
-      Click or drag here to upload image
+      {socialImage ? "Upload social image" : "Click or drag here to upload image"}
     </div>
     <div className="mt-2">
-      {fileTypes.join(',')}
+      {socialImage ? `Click or drag · ${fileTypes.join(', ')}` : fileTypes.join(',')}
     </div>
   </div>);
 }
@@ -319,12 +320,13 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     const uploading = uploadStatus === UPLOAD_STATUS__START;
     const mediaStorageReady = this.props.mediaStorageReady !== false;
     const {imageSizeNotOkayFunc, imageSizeNotOkayMsgFunc} = this.props;
+    const imageSizeClass = this.props.socialImage ? "aspect-[1200/630] w-full" : "lh-upload-image-size";
     const imageSizeNotOkay = imageSizeNotOkayFunc ? imageSizeNotOkayFunc(imageWidth, imageHeight) :
       imageWidth < 1400 || imageHeight < 1400;
     const imageSizeNotOkayMsg = imageSizeNotOkayMsgFunc ? imageSizeNotOkayMsgFunc(imageWidth, imageHeight) :
       `Image too small: ${parseInt(imageWidth)} x ${parseInt(imageHeight)} pixels. ` +
       "If it's for a podcast image, Apple Podcasts requires the image to have 1400 x 1400 to 3000 x 3000 pixels.";
-    return (<div className="lh-upload-wrapper">
+    return (<div className={cn("lh-upload-wrapper", this.props.socialImage && "is-social-image")}>
       {absoluteImageUrl ? <>
         <input
           accept=".png,.jpg,.jpeg"
@@ -347,7 +349,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
             render={(
               <button
                 aria-label="Manage uploaded image"
-                className="lh-upload-image-size relative overflow-hidden rounded-md border-2 border-dashed border-brand-light outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2"
+                className={cn(imageSizeClass, "relative overflow-hidden rounded-md border-2 border-dashed border-brand-light outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2")}
                 disabled={uploading || deleting}
                 type="button"
               />
@@ -419,8 +421,8 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           : undefined}
         classes="lh-upload-fileinput lh-upload-fileinput-image"
       >
-        <div className="lh-upload-image-size lh-upload-box">
-          <EmptyImage fileTypes={fileTypes} />
+        <div className={cn(imageSizeClass, "lh-upload-box")}>
+          <EmptyImage fileTypes={fileTypes} socialImage={this.props.socialImage} />
         </div>
       </FileUploader>}
       <MediaStorageUnavailableDialog

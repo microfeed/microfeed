@@ -14,6 +14,31 @@ import {
 } from "./feed";
 import {jsonResponse} from "@/server/http";
 import {publicSiteFileResponse} from "@/server/site-files/public";
+import {chapterDocument, CHAPTERS_CONTENT_TYPE, type ItemPodcast} from "@/shared/Podcast";
+
+export async function podcastChaptersResponse(request: Request, itemSlug: string): Promise<Response> {
+  const itemId = await resolveItemRoute(env.FEED_DB, itemSlug);
+  if (!itemId) return new Response(null, {status: 404});
+  const loaded = await loadPublishedFeed(env, request, {
+    limit: 1, queryKwargs: {id: itemId, "status__in": [STATUSES.PUBLISHED, STATUSES.UNLISTED]},
+  });
+  const unavailable = feedUnavailable(loaded.content);
+  if (unavailable) return new Response(null, {status: unavailable.status});
+  const redirect = onboardingRedirect(request, loaded.onboarding.requiredOk);
+  if (redirect) return redirect;
+  const podcast = loaded.content.items?.[0]?.podcast as ItemPodcast | undefined;
+  if (!podcast?.chapters?.length || subscriptionDisabled(loaded.content, "rss")) {
+    return new Response(null, {status: 404});
+  }
+  return new Response(request.method === "HEAD" ? null : JSON.stringify(chapterDocument(podcast.chapters)), {
+    headers: {
+      "content-type": `${CHAPTERS_CONTENT_TYPE}; charset=utf-8`,
+      "access-control-allow-origin": "*",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
 
 function feedUnavailable(content: FeedContent): Response | null {
   if (isPublicFeedOffline(content)) {

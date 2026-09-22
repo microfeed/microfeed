@@ -25,6 +25,7 @@ export default function AdminCopyableUrl({label, url}: Props) {
         aria-label={`${label} address`}
         className="rounded-r-none font-mono text-xs disabled:text-foreground disabled:opacity-100"
         disabled
+        type="url"
         value={url}
       />
       <Button

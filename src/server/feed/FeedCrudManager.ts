@@ -28,6 +28,7 @@ export default class FeedCrudManager {
   _customizationPatch(extension: any): Record<string, any> {
     const patch: Record<string, any> = {};
     if (!extension) return patch;
+    if (Object.hasOwn(extension, "podcast")) patch.podcast = extension.podcast;
     if (Object.hasOwn(extension, "seo")) {
       patch.seo = extension.seo === null ? null : {...extension.seo};
       if (patch.seo?.social_image) patch.seo.social_image = {
@@ -227,7 +228,7 @@ export default class FeedCrudManager {
     commit?: DatabaseMutationCommit<Record<string, unknown>>,
   ) {
     const patch = this._publicToInternalSchemaForChannel(channel);
-    for (const key of ["seo", "publisherIdentity"]) {
+    for (const key of ["seo", "publisherIdentity", "podcast"]) {
       if (Object.hasOwn(patch, key)) patch[key] = mergeOverrides(this.feedContent.channel[key], patch[key]);
     }
     this.feedContent.channel = {...this.feedContent.channel, ...patch};

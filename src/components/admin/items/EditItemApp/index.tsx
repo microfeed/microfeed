@@ -1,4 +1,6 @@
 import SeoEditor from "@/components/admin/shared/SeoEditor";
+import PodcastEditor from "@/components/admin/shared/PodcastEditor";
+import {scrollExpandedAdminSectionIntoView} from "@/client/AdminSectionScroll";
 import {automaticItemSlug, itemUrl} from "@/shared/ItemUrls";
 import {mergeOverrides} from "@/shared/Seo";
 import React from 'react';
@@ -265,6 +267,7 @@ export default class EditItemApp extends React.Component<Props, any> {
       this.setState((previousState: any) => ({
         action: created ? 'edit' : previousState.action,
         seoError: undefined,
+        podcastError: undefined,
         item: {...previousState.item, ...response?.data?.itemUrl,
           ...(previousState.item.applySlug === snapshot.item.applySlug ? {applySlug: undefined} : {}),
         },
@@ -295,7 +298,9 @@ export default class EditItemApp extends React.Component<Props, any> {
   }
 
   showSaveError(error: any) {
-    if (error?.response?.data?.error) this.setState({seoError: error.response.data.error});
+    if (error?.response?.data?.error) this.setState({
+      [String(error.response.data.error).startsWith("podcast.") ? "podcastError" : "seoError"]: error.response.data.error,
+    });
     if (!error?.response) {
       showToast('Network error. Your changes are still on this page.', 'error');
     } else {
@@ -349,6 +354,8 @@ export default class EditItemApp extends React.Component<Props, any> {
             ? {seo: mergeOverrides(previousState.item.seo, input._microfeed.seo ?? null)} : {}),
           ...(input._microfeed && Object.hasOwn(input._microfeed, "authors")
             ? {authorIdentities: input._microfeed.authors} : {}),
+          ...(input._microfeed && Object.hasOwn(input._microfeed, "podcast")
+            ? {podcast: mergeOverrides(previousState.item.podcast, input._microfeed.podcast ?? null)} : {}),
           ...(input._microfeed?.slug !== undefined ? {applySlug: input._microfeed.slug} : {}),
           ...(input.url !== undefined ? {link: input.url || undefined} : {}),
           ...(input.language !== undefined ? {language: input.language} : {}),
@@ -523,7 +530,7 @@ export default class EditItemApp extends React.Component<Props, any> {
             </div>
           </div>
           <div className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
-            <details>
+            <details onToggle={scrollExpandedAdminSectionIntoView}>
               <summary className="m-page-summary">Podcast-specific fields</summary>
               <div className="grid grid-cols-1 gap-8">
                 <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -600,6 +607,10 @@ export default class EditItemApp extends React.Component<Props, any> {
                   />
                 </div>
               </div>
+              <PodcastEditor value={item.podcast} channel={feed.channel?.podcast} itemId={itemId}
+                language={feed.channel?.language} publicBucketUrl={publicBucketUrl}
+                mediaStorageReady={mediaStorageReady} error={this.state.podcastError}
+                onChange={(podcast) => this.onUpdateItemMeta({podcast})} />
             </details>
           </div>
           <SeoEditor value={item} channel={feed.channel} itemId={itemId} feed={feed}

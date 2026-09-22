@@ -134,6 +134,7 @@ export default class FeedPublicJsonBuilder {
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra: Record<string, any> = {
       seo: this._publicSeo(channel.seo),
+      podcast: channel.podcast ?? undefined,
       publisher: { ...channel.publisherIdentity, name: channel.publisher || undefined },
       authors: channel.authorIdentities?.length ? channel.authorIdentities : undefined,
       microfeed_version: MICROFEED_VERSION,
@@ -257,6 +258,7 @@ export default class FeedPublicJsonBuilder {
     };
     const attachment = {};
     const _microfeed = {
+      podcast: item.podcast ?? undefined,
       seo: this._publicSeo(item.seo),
       slug: item.urlMode !== "legacy" && item.publicPath ? item.publicPath.slice(3, -1) : undefined,
       authors: item.authorIdentities?.length ? item.authorIdentities : undefined,

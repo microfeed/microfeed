@@ -15,6 +15,7 @@ import {
   apiPageListResponseSchema,
   apiPageOutputSchema,
   apiPaginationQuerySchema,
+  apiPodcastChaptersSchema,
   apiSearchQuerySchema,
   apiSearchResponseSchema,
   apiSiteFileCreateResponseSchema,
@@ -143,6 +144,35 @@ export const OPENAPI_DOCUMENT = createDocument({
     {name: "Media", description: "Prepare same-origin media uploads."},
   ],
   paths: {
+    "/i/{slug}/chapters.json": {
+      servers: [{url: "/", description: "Public site"}],
+      get: {
+        security: [],
+        operationId: "getPodcastChapters",
+        summary: "Get an episode's chapter file",
+        description: "Generated from the saved chapter list. Accepts an item ID, current slug, or historical alias. Published and unlisted items are available; unpublished/deleted items, empty chapter lists, offline sites, and disabled RSS return 404. Headless sites remain available. No API key is required.",
+        tags: ["Feed"],
+        requestParams: {path: z.object({slug: z.string().min(1)})},
+        responses: {
+          "200": {description: "Podcasting 2.0 JSON chapters, version 1.2.0.", content: {"application/json+chapters": {schema: apiPodcastChaptersSchema}}},
+          "302": {description: "Site setup must be completed."},
+          "404": {description: "Episode chapters are not publicly available."},
+        },
+      },
+      head: {
+        security: [],
+        operationId: "headPodcastChapters",
+        summary: "Check episode chapter availability",
+        description: "Uses the same publication, RSS, and site access rules as GET, without returning a response body.",
+        tags: ["Feed"],
+        requestParams: {path: z.object({slug: z.string().min(1)})},
+        responses: {
+          "200": {description: "Episode chapters are available."},
+          "302": {description: "Site setup must be completed."},
+          "404": {description: "Episode chapters are not publicly available."},
+        },
+      },
+    },
     "/feed/": {
       get: {
         security: readSecurity,
@@ -164,7 +194,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         description:
           "Creates an item. The optional image field is cover art; the optional " +
           "attachments array holds at most one main media attachment, which is " +
-          "published as JSON Feed attachments[0] and the RSS enclosure. Optional _microfeed.seo, _microfeed.authors, _microfeed.slug, and language configure search/social metadata, authors, and a Unicode item URL. The url field sets the feed Link and HTTP(S) canonical URL. RSS podcast fields are unchanged.",
+          "published as JSON Feed attachments[0] and the RSS enclosure. Optional _microfeed.seo, _microfeed.authors, _microfeed.slug, and language configure search/social metadata, authors, and a Unicode item URL. The url field sets the feed Link and HTTP(S) canonical URL. Use _microfeed.podcast for transcripts, chapter entries, podcast participants, and content license. These are exported using the Podcasting 2.0 RSS namespace.",
         tags: ["Items"],
         requestParams: {header: itemCreateHeaders},
         requestBody: {
@@ -227,7 +257,7 @@ export const OPENAPI_DOCUMENT = createDocument({
           "and other fields are preserved. Supplying attachments replaces the one " +
           "main media attachment/RSS enclosure. The image field remains separate " +
           "cover art. The url field sets the feed Link and HTTP(S) canonical URL; null or an empty string restores the local item URL. In _microfeed.seo, omitted properties are preserved and null properties restore defaults. " +
-          "Set seo or authors to null to clear all overrides. Supplying _microfeed.slug explicitly applies and freezes a Unicode URL; old public HTML URLs redirect with 301. IDs and ID-based API/feed endpoints remain stable.",
+          "Set seo or authors to null to clear all overrides. In _microfeed.podcast, omitted properties are preserved, null clears a property, and supplied lists replace the entire list; null clears the whole podcast object. Empty people and a cleared license inherit channel defaults. Supplying _microfeed.slug explicitly applies and freezes a Unicode URL; old public HTML URLs redirect with 301. IDs and ID-based API/feed endpoints remain stable.",
         tags: ["Items"],
         requestParams: {
           header: apiWebhookContextHeadersSchema,
@@ -550,7 +580,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         security: writeSecurity,
         operationId: "updatePrimaryChannel",
         summary: "Update the primary channel",
-        description: "Optional _microfeed.seo configures homepage metadata; _microfeed.publisher enriches the existing publisher identity; _microfeed.authors supplies default item authors. Omitted properties are preserved; null clears an override. Legacy authors[0].name input still sets the podcast publisher. Use _microfeed.authors for attribution without changing itunes:author.",
+        description: "Optional _microfeed.seo configures homepage metadata; _microfeed.publisher enriches the existing publisher identity; _microfeed.authors supplies default item authors. Omitted properties are preserved; null clears an override. Legacy authors[0].name input still sets the podcast publisher. Use _microfeed.authors for attribution without changing itunes:author. Use _microfeed.podcast for regular participants, funding links, content license, and an advisory feed import lock. Supplied lists replace the entire list; null clears a property or the whole podcast object.",
         tags: ["Channel"],
         requestParams: {
           header: apiWebhookContextHeadersSchema,

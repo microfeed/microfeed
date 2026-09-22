@@ -70,7 +70,7 @@ export default function AuthorEditor({authors, onChange}: Props) {
 
   return <>
     {authors.map((author, index) => <div key={index} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-64">
         <p className="break-words font-medium">{author.name || "Unnamed author"}</p>
         {author.type && <p className="text-sm text-muted-foreground">{author.type}</p>}
         {author.url && <p className="break-all text-sm text-muted-foreground">{author.url}</p>}

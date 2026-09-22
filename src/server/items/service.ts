@@ -59,6 +59,7 @@ export async function updateItem(
   const normalized = normalizedInput(input, existing.status);
   const patch = feedCrud._publicToInternalSchemaForItem(normalized);
   if (Object.hasOwn(patch, "seo")) patch.seo = mergeOverrides(existing.seo, patch.seo);
+  if (Object.hasOwn(patch, "podcast")) patch.podcast = mergeOverrides(existing.podcast, patch.podcast);
   const finalizesDraftPublicationDate =
     input.date_published !== undefined ||
     input.date_published_ms !== undefined ||
