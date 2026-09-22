@@ -1,4 +1,4 @@
-import type {ReactNode} from "react";
+import type {ComponentProps, ReactNode} from "react";
 
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 interface AdminDialogProps {
   children: ReactNode;
   closeDisabled?: boolean;
+  finalFocus?: ComponentProps<typeof DialogContent>["finalFocus"];
   onOpenChange: (open: boolean) => void;
   open: boolean;
   title: ReactNode;
@@ -18,6 +19,7 @@ interface AdminDialogProps {
 export default function AdminDialog({
   children,
   closeDisabled = false,
+  finalFocus,
   onOpenChange,
   open,
   title,
@@ -34,6 +36,7 @@ export default function AdminDialog({
       }}
     >
       <DialogContent
+        finalFocus={finalFocus}
         className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-lg lg:max-w-xl"
         showCloseButton={!closeDisabled}
       >

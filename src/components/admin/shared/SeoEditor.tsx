@@ -2,6 +2,7 @@ import React, {useEffect, useId, useRef, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
+import AuthorEditor from "./AuthorEditor";
 import AdminLanguageSelect from "./AdminLanguageSelect";
 import AdminSelect from "./AdminSelect";
 import AdminImageUploaderApp from "./AdminImageUploaderApp";
@@ -127,16 +128,7 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
         <p className="text-sm text-muted-foreground">{isItem
           ? `Replaces default authors when configured. Inherited: ${inheritedAuthors.map((author) => author.name).join(", ") || "none"}.`
           : "Optional attribution for items. This does not change the podcast publisher."}</p>
-        {authors.map((author, index) => <div key={index} className="grid gap-3 rounded-lg border p-3 md:grid-cols-2">
-          {field("Author name", `author-${index}`, <Input id={`${id}-author-${index}`} value={author.name} required
-            onChange={(event) => onChange({authorIdentities: authors.map((entry, n) => n === index ? {...entry, name: event.target.value} : entry)})} />)}
-          <AdminSelect ariaLabel={`Author ${index + 1} type`} value={TYPES.find((type) => type.value === (author.type || ""))}
-            options={TYPES} onChange={(option: any) => onChange({authorIdentities: authors.map((entry, n) => n === index ? {...entry, type: option.value || undefined} : entry)})} />
-          {field("Author profile URL", `author-url-${index}`, <Input id={`${id}-author-url-${index}`} type="url" value={author.url ?? ""}
-            onChange={(event) => onChange({authorIdentities: authors.map((entry, n) => n === index ? {...entry, url: event.target.value || null} : entry)})} />)}
-          <Button type="button" variant="outline" onClick={() => onChange({authorIdentities: authors.filter((_, n) => n !== index)})}>Remove author</Button>
-        </div>)}
-        <Button type="button" variant="outline" disabled={authors.length >= 50} onClick={() => onChange({authorIdentities: [...authors, {name: ""}]})}>Add author</Button>
+        <AuthorEditor authors={authors} onChange={(authorIdentities) => onChange({authorIdentities})} />
       </div>
       <div className="grid min-w-0 gap-4 md:grid-cols-2">
         <div className="min-w-0 space-y-2 rounded-lg border p-4">

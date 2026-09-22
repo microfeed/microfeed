@@ -125,6 +125,12 @@ same browser crop and limits as [channel social images](/dashboard/edit-channel/
 Removing an override restores inheritance. Files referenced elsewhere are
 retained when replacing or removing an image.
 
+Use **Add author** to open the author dialog, or **Edit** beside an existing
+author. Name, type, and profile URL stay in the dialog until **Save author**
+validates and applies them. Cancel, Escape, and the close button discard the
+dialog's changes. Item edits then use normal autosave; channel edits use the
+channel's **Save** button.
+
 Item authors replace channel default authors when configured. Clearing them
 restores channel defaults. Choose **Item language** from the same searchable
 language selector used by the channel editor, or select **Inherit from channel**
