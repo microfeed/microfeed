@@ -19,7 +19,8 @@ and selection changes. If a save fails, your edits remain in the form and the
 action changes to **Retry save**. Keep the page open until the latest changes
 are saved.
 
-![Editing a microfeed channel image, title, publisher, website, categories, language, and description](https://media-cdn.microfeed.org/production/themes/0caa54c6-a365-4d18-94fb-d2b317b966c2/assets/admin-edit-channel.png)
+<img width="1603" height="1080" alt="Screenshot 2026-09-22 at 1 20 53 PM" src="https://github.com/user-attachments/assets/61353048-8505-4406-b7a9-5571b6a729d2" />
+
 
 ## Keep the copyright year current
 
@@ -72,6 +73,9 @@ browser; only the crop is uploaded. Opaque images become JPEG, and transparent
 images stay PNG. The result must be smaller than 5 MB. A warning appears when a
 small crop needs enlargement. Optional alt text describes the social image.
 Without this override, the homepage uses channel cover art.
+
+<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 21 48 PM" src="https://github.com/user-attachments/assets/622549d4-e835-406b-9d76-55706cef6929" />
+
 
 Publisher identity reuses the **Publisher** name above. Choose Person or
 Organization only when appropriate, and optionally add a profile URL and
