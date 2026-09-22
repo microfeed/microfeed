@@ -126,13 +126,26 @@ Removing an override restores inheritance. Files referenced elsewhere are
 retained when replacing or removing an image.
 
 Item authors replace channel default authors when configured. Clearing them
-restores channel defaults. An optional item language overrides the channel
-language. The new bundled Default theme and generic starter display author
+restores channel defaults. Choose **Item language** from the same searchable
+language selector used by the channel editor, or select **Inherit from channel**
+to use the channel language. The new bundled Default theme and generic starter display author
 attribution; installed theme versions are not changed or activated automatically.
 
-For republished work, set **Original-source canonical URL** to the original
-article's absolute HTTP or HTTPS URL. The local page remains accessible. Its
-canonical tag, Open Graph URL, and generated structured data use this value,
-and the item is excluded from the generated sitemap when it points elsewhere.
-This does not replace an explicit feed item link. Unlisted items remain
-accessible directly with `noindex`, and drafts remain private.
+Automatic SEO descriptions use the first 160 Unicode characters of plain-text
+content, including an ellipsis when truncated. The editor shows this same fallback
+in its placeholder, character count, and preview. Custom descriptions are kept
+as entered; the 160-character guidance is not a hard limit.
+
+The **Link** field above the item body controls both the address in RSS/JSON Feed
+and the page's canonical URL—the preferred version suggested to search engines.
+Leave it blank to use the local item URL. When republishing the same article,
+set Link to the original article's HTTP or HTTPS URL. Feed readers open that
+address, and the canonical tag, Open Graph URL, and generated structured data
+use it. URL fragments are omitted from canonical metadata.
+
+The local page remains accessible without redirecting. Change **Item URL** to
+edit its local address. An item pointing to a different canonical URL is excluded
+from the generated sitemap. Use Link for the preferred version of the content;
+put related links and source citations in the body. Search engines may select a
+different canonical. Unlisted items remain accessible directly with `noindex`,
+and drafts remain private.

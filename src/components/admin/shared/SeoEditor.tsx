@@ -2,11 +2,13 @@ import React, {useEffect, useId, useRef, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
+import AdminLanguageSelect from "./AdminLanguageSelect";
 import AdminSelect from "./AdminSelect";
 import AdminImageUploaderApp from "./AdminImageUploaderApp";
 import {htmlToPlainText, urlJoinWithRelative} from "@/shared/StringUtils";
 import {automaticItemSlug, itemUrl, normalizeItemSlug} from "@/shared/ItemUrls";
 import {showToast} from "@/client/ToastUtils";
+import {canonicalItemLink, defaultSeoDescription} from "@/shared/Seo";
 import type {Identity} from "@/shared/Seo";
 
 interface Props {
@@ -42,7 +44,8 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
   const savedUrl = isItem ? itemUrl({...value, id: itemId,
     publicPath: value.publicPath || `/i/${currentSlug}/`}, window.location.origin) : `${window.location.origin}/`;
   const title = seo.title || value.title || "Untitled";
-  const description = seo.description || htmlToPlainText(value.description || "");
+  const fallbackDescription = defaultSeoDescription(htmlToPlainText(value.description || ""));
+  const description = seo.description || fallbackDescription;
   const image = seo.social_image?.url || value.image || channel?.seo?.social_image?.url || channel?.image;
   const imageUrl = image ? urlJoinWithRelative(publicBucketUrl, image, window.location.origin) : undefined;
   const authors: Identity[] = value.authorIdentities ?? [];
@@ -64,8 +67,8 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
         placeholder={value.title || "Untitled"} onChange={(event) => setSeo("title", event.target.value)} />,
       `${Array.from(seo.title || value.title || "").length} characters. Around 60 is a useful guide; display length varies.`)}
       {field("SEO description", "description", <Textarea id={`${id}-description`} value={seo.description ?? ""}
-        placeholder={htmlToPlainText(value.description || "")} onChange={(event) => setSeo("description", event.target.value)} />,
-      `${Array.from(seo.description || htmlToPlainText(value.description || "")).length} characters. Around 160 is a useful guide, not a limit.`)}
+        placeholder={fallbackDescription} onChange={(event) => setSeo("description", event.target.value)} />,
+      `${Array.from(description).length} characters. Around 160 is a useful guide, not a limit.`)}
       {isItem && <div className="space-y-3">
         {field("Item URL", "slug", <div className="flex flex-wrap gap-2">
           <span className="self-center text-muted-foreground">/i/</span>
@@ -89,12 +92,8 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
             void navigator.clipboard.writeText(savedUrl).then(() => showToast("Link copied.", "success"), () => showToast("Could not copy. Select the URL to copy it.", "error"));
           }}>Copy link</Button>
         </div>
-        {field("Original-source canonical URL", "canonical", <Input id={`${id}-canonical`} type="url"
-          value={seo.canonical_url ?? ""} placeholder={savedUrl} onChange={(event) => setSeo("canonical_url", event.target.value)} />,
-        "Optional: identify the original article when republishing. The local item stays accessible; a different canonical URL removes it from the generated sitemap.")}
-        {field("Item language", "language", <Input id={`${id}-language`} value={value.language ?? ""}
-          placeholder={channel?.language || "en"} onChange={(event) => onChange({language: event.target.value || null})} />,
-        `Inherited language: ${channel?.language || "en"}. Use a language code such as zh-Hans or ja.`)}
+        <AdminLanguageSelect label="Item language" ariaLabel="Item language" value={value.language}
+          inheritedLanguage={channel?.language || "en"} onChange={(language) => onChange({language: language || null})} />
       </div>}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">Social image</h3>
@@ -142,7 +141,7 @@ export default function SeoEditor({value, channel, itemId, feed, publicBucketUrl
       <div className="grid min-w-0 gap-4 md:grid-cols-2">
         <div className="min-w-0 space-y-2 rounded-lg border p-4">
           <h3 className="text-sm font-medium">Approximate search preview</h3>
-          <p className="truncate text-xs text-muted-foreground">{seo.canonical_url || savedUrl}</p>
+          <p className="truncate text-xs text-muted-foreground">{(isItem && canonicalItemLink(value.link, savedUrl)) || savedUrl}</p>
           <p className="line-clamp-2 break-words text-xl">{title}</p>
           <p className="line-clamp-3 break-words text-sm text-muted-foreground">{description}</p>
         </div>

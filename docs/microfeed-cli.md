@@ -487,8 +487,7 @@ Use JSON input for SEO and identity overrides. For example, save this as
     "slug": "学习中文",
     "seo": {
       "title": "学习中文 · Example",
-      "description": "A short description for search and social previews.",
-      "canonical_url": null
+      "description": "A short description for search and social previews."
     },
     "authors": [{"name": "Example Writer", "type": "Person", "url": "https://example.com/about/"}]
   }
@@ -499,6 +498,13 @@ Omitted fields stay unchanged. A `null` SEO property restores its fallback;
 `"seo": null` clears all SEO overrides and `"authors": null` restores default
 authors. Supplying `slug` explicitly applies a new URL; conflicts return HTTP
 409. Keep using item IDs for authenticated API and CLI operations.
+
+The standard `url` field (or `--url`) sets the item Link in RSS/JSON Feed and
+the HTTP(S) canonical URL in page metadata. Use the original article URL when
+republishing. To restore the local item URL, send `"url": null` or `"url": ""`
+in JSON input. Omission preserves the saved Link. Changing Link leaves the local
+page accessible without redirecting; a different canonical excludes it from the
+generated sitemap.
 
 Upload an already cropped 1200 × 630 JPEG or PNG with `media upload`, then place
 its permanent `media_url` in `_microfeed.seo.social_image.url`, alongside

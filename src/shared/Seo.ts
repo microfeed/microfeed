@@ -1,5 +1,14 @@
 import * as z from "zod";
 
+export const DEFAULT_SEO_DESCRIPTION_LENGTH = 160;
+
+/** Compact plain-text fallback shared by the editor and public metadata. */
+export function defaultSeoDescription(text: string): string {
+  const characters = Array.from(text.replace(/\s+/gu, " ").trim());
+  if (characters.length <= DEFAULT_SEO_DESCRIPTION_LENGTH) return characters.join("");
+  return `${characters.slice(0, DEFAULT_SEO_DESCRIPTION_LENGTH - 1).join("").trimEnd()}…`;
+}
+
 export const socialImageSchema = z.object({
   url: z.url().refine((value) => /^https?:\/\//iu.test(value), "Use an HTTP or HTTPS image URL."),
   width: z.literal(1200),
@@ -24,23 +33,13 @@ export const seoSchema = z.object({
   social_image: socialImageSchema.nullable().optional(),
 });
 
-export const itemSeoSchema = seoSchema.extend({
-  canonical_url: z.url().refine((value) => {
-    try {
-      const url = new URL(value);
-      return ["http:", "https:"].includes(url.protocol) && !url.hash &&
-        !url.username && !url.password;
-    } catch { return false; }
-  }, "Use an absolute HTTP or HTTPS URL without a fragment or credentials.").nullable().optional(),
-});
-
 export const authorIdentitiesSchema = z.array(identitySchema).max(50);
 export const languageOverrideSchema = z.string().max(100).refine((value) => {
   if (!value) return true;
   try { return Intl.getCanonicalLocales(value).length === 1; } catch { return false; }
 }, "Use a language code such as en, zh-Hans, or ja.");
 
-export type Seo = z.infer<typeof itemSeoSchema>;
+export type Seo = z.infer<typeof seoSchema>;
 export type Identity = z.infer<typeof identitySchema>;
 export type PublisherIdentity = z.infer<typeof publisherIdentitySchema>;
 export type SocialImage = z.infer<typeof socialImageSchema>;
@@ -67,7 +66,7 @@ export function jsonFeedAuthors(authors: Identity[] | null | undefined) {
 
 export function validateCustomization(value: Record<string, any>, isItem: boolean) {
   const schema = z.object({
-    seo: (isItem ? itemSeoSchema : seoSchema).nullable().optional(),
+    seo: seoSchema.nullable().optional(),
     authorIdentities: authorIdentitiesSchema.nullable().optional(),
     ...(isItem ? {language: languageOverrideSchema.nullable().optional()} : {
       publisherIdentity: publisherIdentitySchema.nullable().optional(),
@@ -84,4 +83,15 @@ export function validateCustomization(value: Record<string, any>, isItem: boolea
     const issue = result.error.issues[0]!;
     throw new ContentCustomizationError(`${issue.path.join(".")}: ${issue.message}`);
   }
+}
+
+/** Feed links may predate URL validation. Only safe web URLs become canonicals. */
+export function canonicalItemLink(link: unknown, localUrl: string): string | undefined {
+  if (typeof link !== "string" || !/^(?:https?:\/\/|\/)/iu.test(link.trim())) return undefined;
+  try {
+    const url = new URL(link, localUrl);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return undefined;
+    url.hash = "";
+    return url.href;
+  } catch { return undefined; }
 }

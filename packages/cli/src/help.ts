@@ -89,7 +89,7 @@ const itemInputOptions = [
     "--status <status>",
     "Set published, unlisted, or unpublished.",
   ),
-  option("--url <url>", "Set the canonical absolute item URL."),
+  option("--url <url>", "Set the feed Link and canonical item URL."),
   option(
     "--input <file|->",
     "Read the complete JSON object from a UTF-8 file, or from stdin with -. Do not combine with item flags.",

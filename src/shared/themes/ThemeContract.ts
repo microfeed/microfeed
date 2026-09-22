@@ -1,4 +1,4 @@
-import {authorIdentitiesSchema, identitySchema, itemSeoSchema, publisherIdentitySchema, seoSchema} from "../Seo";
+import {authorIdentitiesSchema, identitySchema, publisherIdentitySchema, seoSchema} from "../Seo";
 import * as z from "zod";
 
 export const THEME_FORMAT_VERSION_V1 = 1 as const;
@@ -204,7 +204,7 @@ const themeAttachmentSchema = z.object({
 }).loose();
 
 const themeItemExtraSchema = z.object({
-  seo: itemSeoSchema.optional(),
+  seo: seoSchema.optional(),
   authors: authorIdentitiesSchema.optional(),
   slug: z.string().optional(),
   date_published_ms: z.number().optional(),

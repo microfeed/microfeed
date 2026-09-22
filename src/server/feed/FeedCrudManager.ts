@@ -82,8 +82,8 @@ export default class FeedCrudManager {
       (internalSchema as any).mediaFile = mediaFile;
     }
 
-    if (item.url) {
-      (internalSchema as any).link = item.url;
+    if (Object.hasOwn(item, "url")) {
+      (internalSchema as any).link = item.url || undefined;
     }
 
     if (Object.hasOwn(item, "content_html")) {

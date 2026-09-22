@@ -5,7 +5,7 @@ import FeedCrudManager from "@/server/feed/FeedCrudManager";
 import FeedPublicRssBuilder from "@/server/feed/FeedPublicRssBuilder";
 import {createItem, deleteItem, updateItem} from "@/server/items/service";
 import {resolveItemRoute} from "@/server/items/urls";
-import {effectiveSocialImage, resolveMetadata} from "@/server/seo/metadata";
+import {effectiveSocialImage, hasOtherCanonical, resolveMetadata} from "@/server/seo/metadata";
 import {apiFeedSchema} from "@/shared/ApiSchemas";
 import {legacyItemPath} from "@/shared/ItemUrls";
 import {jsonFeedResponse, rssFeedResponse} from "@/server/feed/responses";
@@ -102,7 +102,7 @@ describe("SEO feed contracts", () => {
     const response = await call(createApiItem, {title: "API article", _microfeed: {slug: "api-中文", seo: {title: "API SEO"}}});
     expect(response.status).toBe(201);
     const {id} = await response.json() as {id: string};
-    expect((await call(updateApiItem, {_microfeed: {seo: {canonical_url: "not-a-url"}}}, id)).status).toBe(400);
+    expect((await call(updateApiItem, {url: "not-a-url"}, id)).status).toBe(400);
     expect((await call(createApiItem, {_microfeed: {slug: "api-中文"}})).status).toBe(409);
     const other = await createItem(crud, {title: "Other"});
     expect((await call(updateApiItem, {_microfeed: {slug: "api-中文"}}, other)).status).toBe(409);
@@ -117,7 +117,7 @@ describe("SEO feed contracts", () => {
     const id = await createItem(crud, {title: "Feed route", status: "unpublished", url: "https://link.example/", _microfeed: {slug: "中文"}});
     await db._updateOrAddSetting({access: {currentPolicy: "public"}}, "access");
     expect((await jsonFeedResponse(new Request(`${origin}/i/中文/json/`), false, "中文")).status).toBe(404);
-    await updateItem(db, crud, id, {status: "unlisted", _microfeed: {seo: {canonical_url: "https://source.example/"}}});
+    await updateItem(db, crud, id, {status: "unlisted"});
     expect((await jsonFeedResponse(new Request(`${origin}/i/中文/json/`), false, "中文")).status).toBe(200);
     expect((await jsonFeedResponse(new Request(`${origin}/i/${id}/json/`), false, id)).status).toBe(200);
     const rss = await rssFeedResponse(new Request(`${origin}/i/中文/rss/`), "中文");
@@ -126,7 +126,7 @@ describe("SEO feed contracts", () => {
   });
 
   it("excludes other canonical URLs only from the generated sitemap context", async () => {
-    const id = await createItem(crud, {title: "External canonical", _microfeed: {seo: {canonical_url: "https://source.example/"}}});
+    const id = await createItem(crud, {title: "External canonical", url: "https://source.example/"});
     const publicFeed = await publicItem(id);
     const loaded = {feedContent: crud.feedContent, publicFeed};
     const options = {contentType: "application/xml" as const, filename: "sitemap.xml", template: defaultSiteFileTemplate("sitemap")!};
@@ -134,6 +134,40 @@ describe("SEO feed contracts", () => {
     expect(generated.content).not.toContain("external-canonical");
     const override = await renderSiteFileForRequest(db, request, options, loaded);
     expect(override.content.replaceAll("&#x2F;", "/")).toContain(publicFeed.items[0]._microfeed.web_url);
+  });
+
+  it("uses Link for feed and canonical URLs and restores the local URL when cleared", async () => {
+    const id = await createItem(crud, {title: "One Link", url: "https://source.example/article/?a=1&b=2"});
+    const verify = async (expected: string | undefined) => {
+      const feed = await publicItem(id);
+      const item = feed.items[0];
+      const url = expected ?? item._microfeed.web_url;
+      expect(item.url).toBe(url);
+      expect(hasOtherCanonical(item)).toBe(Boolean(expected));
+      expect(new FeedPublicRssBuilder(feed, origin).getRssData()).toContain(url.replaceAll("&", "&amp;"));
+      const {headHtml} = await resolveMetadata({feed, item, origin,
+        headHtml: '<link rel="canonical" href="https://theme.example/"><meta property="og:url" content="https://theme.example/">'});
+      expect(headHtml).toContain(`rel="canonical" href="${url.replaceAll("&", "&amp;")}"`);
+      expect(headHtml).toContain(`property="og:url" content="${url.replaceAll("&", "&amp;")}"`);
+      expect(headHtml.match(/rel="canonical"/gu)).toHaveLength(1);
+      const graph = JSON.parse(headHtml.match(/<script type="application\/ld\+json">(.*?)<\/script>/su)![1]!)["@graph"];
+      expect(graph.every((node: any) => node.url === url)).toBe(true);
+      expect(headHtml).not.toContain("theme.example");
+    };
+    await verify("https://source.example/article/?a=1&b=2");
+    await updateItem(db, crud, id, {title: "Renamed title"});
+    await verify("https://source.example/article/?a=1&b=2");
+    for (const clear of [null, ""]) {
+      const response = await updateApiItem({
+        locals: {feedDb: db, feedCrud: crud}, params: {itemId: id},
+        request: new Request(`${origin}/api/v1/items/${id}/`, {method: "PUT", headers: {"content-type": "application/json"}, body: JSON.stringify({url: clear})}),
+      } as unknown as APIContext);
+      expect(response.status).toBe(200);
+      await verify(undefined);
+      await updateItem(db, crud, id, {_microfeed: {slug: "new-local-address"}});
+      await verify(undefined);
+      await updateItem(db, crud, id, {url: "https://source.example/article/"});
+    }
   });
 
   it("retains a shared social image while removing an unreferenced replacement", async () => {
@@ -162,7 +196,7 @@ describe("SEO feed contracts", () => {
       seo: {title: "Search homepage", description: "Homepage summary"},
     }});
     await updateItem(db, crud, id, {language: "zh-Hans", _microfeed: {
-      seo: {title: "Search title", description: "Search summary", canonical_url: "https://original.example/story/",
+      seo: {title: "Search title", description: "Search summary",
         social_image: {url: `${origin}/social.jpg`, width: 1200, height: 630, mime_type: "image/jpeg", alt: "Example"}},
       authors: [{name: "Item writer", type: "Person"}],
     }});
@@ -202,6 +236,21 @@ describe("server metadata", () => {
     expect(homepage.headHtml).not.toContain('"author":');
   });
 
+  it("uses a compact default description for every preview tag and preserves custom descriptions", async () => {
+    const text = "😀中文".repeat(1000);
+    const feed = {title: "Channel", _microfeed: {description_text: text}};
+    const item = {title: "Article", content_text: text, _microfeed: {web_url: `${origin}/i/article/`}};
+    for (const content of [undefined, item]) {
+      const {headHtml} = await resolveMetadata({feed, item: content, origin, headHtml: ""});
+      for (const tag of ['name="description"', 'property="og:description"', 'name="twitter:description"']) {
+        expect(headHtml).toContain(`${tag} content="${"😀中文".repeat(53)}…"`);
+      }
+      expect(headHtml).not.toContain(text);
+    }
+    const {headHtml} = await resolveMetadata({feed, item: {...item, _microfeed: {...item._microfeed, seo: {description: text}}}, origin, headHtml: ""});
+    expect(headHtml).toContain(`name="description" content="${text}"`);
+  });
+
   it("deduplicates managed tags, preserves unrelated head and custom JSON-LD, and escapes overrides", async () => {
     const feed = {title: "Visible", _microfeed: {seo: {title: '<script>bad</script>', description: 'quote " & <tag>'}}};
     const result = await resolveMetadata({feed, origin, headHtml: '<title>Custom</title><title>Duplicate</title><meta name="description" content="custom"><style>.a{color:red}</style><script type="application/ld+json">{"custom":true}</script>'});
@@ -213,7 +262,7 @@ describe("server metadata", () => {
   });
 
   it("inherits images and accurate identities, applies canonical URLs, and forces unlisted noindex", async () => {
-    const id = await createItem(crud, {title: "Article", status: "unlisted", _microfeed: {seo: {canonical_url: "https://original.example/article/"}}});
+    const id = await createItem(crud, {title: "Article", status: "unlisted", url: "https://original.example/article/"});
     const feed = await publicItem(id);
     feed.icon = `${origin}/cover.png`;
     feed._microfeed.authors = [{name: "A writer"}];

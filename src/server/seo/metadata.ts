@@ -1,11 +1,11 @@
 import {htmlToPlainText} from "@/shared/StringUtils";
+import {canonicalItemLink, defaultSeoDescription} from "@/shared/Seo";
 import type {Identity, PublisherIdentity, Seo, SocialImage} from "@/shared/Seo";
 
 type Content = Record<string, any>;
 
 const escapeAttribute = (text: string) => text.replace(/[&<>"']/gu, (character) =>
   ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[character]!);
-const summary = (text: string) => Array.from(htmlToPlainText(text)).slice(0, 320).join("");
 
 export function effectiveSocialImage(feed: Content, item?: Content): Partial<SocialImage> | undefined {
   return item?._microfeed?.seo?.social_image || (item?.image ? {url: item.image} : undefined) ||
@@ -13,7 +13,7 @@ export function effectiveSocialImage(feed: Content, item?: Content): Partial<Soc
 }
 
 export function hasOtherCanonical(item: Content): boolean {
-  const canonical = item._microfeed?.seo?.canonical_url;
+  const canonical = canonicalItemLink(item.url, item._microfeed?.web_url);
   if (!canonical) return false;
   try { return new URL(canonical).href !== new URL(item._microfeed.web_url).href; } catch { return false; }
 }
@@ -38,9 +38,12 @@ export interface MetadataInput {
 export async function resolveMetadata({feed, item, origin, headHtml}: MetadataInput) {
   const seo: Seo = (item ?? feed)._microfeed?.seo ?? {};
   const localUrl = item?._microfeed?.web_url ?? new URL("/", origin).href;
-  let canonical = seo.canonical_url || localUrl;
+  const configuredCanonical = item ? canonicalItemLink(item.url, localUrl) : undefined;
+  let canonical = configuredCanonical || localUrl;
   const title = seo.title || item?.title || feed.title || "Untitled";
-  const description = seo.description || summary(item?.content_text ?? feed._microfeed?.description_text ?? feed.description ?? "");
+  const description = seo.description || defaultSeoDescription(item
+    ? item.content_text ?? htmlToPlainText(item.content_html ?? "")
+    : feed._microfeed?.description_text ?? htmlToPlainText(feed.description ?? ""));
   const language = item?.language || feed.language || "en";
   const inheritedImage = effectiveSocialImage(feed, item);
   const image = inheritedImage?.url ? {...inheritedImage, url: new URL(inheritedImage.url, origin).href} : undefined;
@@ -62,7 +65,7 @@ export async function resolveMetadata({feed, item, origin, headHtml}: MetadataIn
   const explicit = new Set<string>();
   if (seo.title) ["title", "og:title", "twitter:title"].forEach((key) => explicit.add(key));
   if (seo.description) ["description", "og:description", "twitter:description"].forEach((key) => explicit.add(key));
-  if (seo.canonical_url) ["canonical", "og:url"].forEach((key) => explicit.add(key));
+  if (item) ["canonical", "og:url"].forEach((key) => explicit.add(key));
   if (seo.social_image || (!item?.image && feed._microfeed?.seo?.social_image)) {
     ["og:image", "og:image:width", "og:image:height", "og:image:type", "og:image:alt", "twitter:image", "twitter:image:alt", "twitter:card"]
       .forEach((key) => explicit.add(key));

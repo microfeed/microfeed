@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {apiItemMicrofeedSchema} from "@/shared/ApiSchemas";
+import {apiItemLinkSchema, apiItemMicrofeedSchema} from "@/shared/ApiSchemas";
 import {languageOverrideSchema} from "@/shared/Seo";
 
 const MAX_ITEMS_PER_PAGE = 300;
@@ -18,6 +18,7 @@ interface ListItemsInput {
 }
 
 export interface SaveItemDraftInput {
+  url?: string | null;
   _microfeed?: z.infer<typeof apiItemMicrofeedSchema>;
   language?: string | null;
   content_html?: string;
@@ -181,6 +182,7 @@ export const startDraftInputSchema: InputContract<{kind: "item" | "page"}> = {
 };
 
 const draftItemSchema = z.object({
+  url: apiItemLinkSchema,
   content_html: z.string().optional(),
   title: z.string().optional(),
   language: languageOverrideSchema.nullable().optional(),

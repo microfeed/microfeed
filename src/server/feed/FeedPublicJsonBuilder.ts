@@ -291,9 +291,7 @@ export default class FeedPublicJsonBuilder {
         (newItem as any)['attachments'] = [attachment];
       }
     }
-    if (item.link) {
-      (newItem as any)['url'] = item.link;
-    }
+    (newItem as any)['url'] = item.link || item.webUrl;
     if (mediaFile.isExternalUrl && mediaFile.url) {
       (newItem as any)['external_url'] = mediaFile.url;
     }

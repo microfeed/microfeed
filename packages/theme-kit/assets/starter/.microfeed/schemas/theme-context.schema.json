@@ -483,17 +483,6 @@
                       "type": "null"
                     }
                   ]
-                },
-                "canonical_url": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "format": "uri"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
                 }
               },
               "additionalProperties": false
@@ -784,17 +773,6 @@
                           "mime_type"
                         ],
                         "additionalProperties": false
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "canonical_url": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "format": "uri"
                       },
                       {
                         "type": "null"

@@ -1,5 +1,5 @@
 import SeoEditor from "@/components/admin/shared/SeoEditor";
-import {itemUrl} from "@/shared/ItemUrls";
+import {automaticItemSlug, itemUrl} from "@/shared/ItemUrls";
 import {mergeOverrides} from "@/shared/Seo";
 import React from 'react';
 import {Trash2Icon} from "lucide-react";
@@ -350,6 +350,7 @@ export default class EditItemApp extends React.Component<Props, any> {
           ...(input._microfeed && Object.hasOwn(input._microfeed, "authors")
             ? {authorIdentities: input._microfeed.authors} : {}),
           ...(input._microfeed?.slug !== undefined ? {applySlug: input._microfeed.slug} : {}),
+          ...(input.url !== undefined ? {link: input.url || undefined} : {}),
           ...(input.language !== undefined ? {language: input.language} : {}),
           ...(input.title !== undefined ? {title: input.title} : {}),
           ...(input.content_html !== undefined
@@ -476,7 +477,10 @@ export default class EditItemApp extends React.Component<Props, any> {
                   />
                   <AdminInput
                     labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[ITEM_CONTROLS.LINK]}/>}
-                    value={item.link}
+                    value={item.link || ""}
+                    placeholder={itemUrl({...item, id: itemId,
+                      ...(action === "create" ? {publicPath: `/i/${automaticItemSlug(item.title || "")}/`} : {}),
+                    }, window.location.origin)}
                     onChange={(e: any) => this.onUpdateItemMeta({'link': e.target.value}, {userChangedLink: true})}
                   />
                 </div>

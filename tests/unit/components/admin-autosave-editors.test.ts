@@ -149,6 +149,16 @@ afterEach(() => {
 });
 
 describe("admin editor autosave", () => {
+  it("autosaves and clears Link through WebMCP draft editing", async () => {
+    const app = mount(new EditItemApp({...props({title: "Draft", status: STATUSES.UNPUBLISHED}), itemId: "draftlink01"}));
+    const signal = new AbortController().signal;
+    await (app as any).saveWebMcpDraft({url: "https://original.example/article/"}, signal);
+    expect(vi.mocked(Requests.axiosPost).mock.calls.at(-1)?.[1]).toMatchObject({item: {link: "https://original.example/article/"}});
+    await (app as any).saveWebMcpDraft({url: null}, signal);
+    expect(app.state.item.link).toBeUndefined();
+    expect(vi.mocked(Requests.axiosPost).mock.calls.at(-1)?.[1]).toMatchObject({item: {link: undefined}});
+  });
+
   it("serializes Apply URL after pending content and preserves edits made while saving", async () => {
     const app = mount(new EditItemApp(props()));
     const first = deferred<any>();

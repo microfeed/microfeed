@@ -1,3 +1,4 @@
+import AdminLanguageSelect from "@/components/admin/shared/AdminLanguageSelect";
 import SeoEditor from "@/components/admin/shared/SeoEditor";
 import React from 'react';
 import Requests from '@/client/requests';
@@ -15,7 +16,6 @@ import AdminRichEditor from "@/components/admin/shared/AdminRichEditor";
 import AdminSelect from "@/components/admin/shared/AdminSelect";
 import {
   ITUNES_CATEGORIES_DICT,
-  LANGUAGE_CODES_LIST,
   ONBOARDING_TYPES,
 } from "@/shared/Constants";
 import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
@@ -34,21 +34,6 @@ interface ChannelSnapshot {
   channel: Record<string, unknown>;
   deleteImageUrls: string[];
 }
-
-const LANGUAGE_CODES_DICT = {};
-const LANGUAGE_CODES_SELECT_OPTIONS: any[] = [];
-LANGUAGE_CODES_LIST.forEach((lc: any) => {
-  (LANGUAGE_CODES_DICT as any)[lc.code] = {
-    code: lc.code,
-    value: `${lc.name} ${lc.code}`,
-    textValue: `${lc.name} ${lc.code}`,
-    label: <div>
-      <div>{lc.name}</div>
-      <div className="text-muted-color text-sm">{lc.code}</div>
-    </div>,
-  };
-  LANGUAGE_CODES_SELECT_OPTIONS.push((LANGUAGE_CODES_DICT as any)[lc.code]);
-});
 
 const CATEGORIES_SELECT_OPTIONS: any[] = [];
 const CATEGORIES_DICT = {};
@@ -249,13 +234,12 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     multiple
                     isOptionDisabled={() => categories.length >= 3}
                   />
-                  <AdminSelect
-                    value={(LANGUAGE_CODES_DICT as any)[channel.language]}
+                  <AdminLanguageSelect
+                    value={channel.language}
                     ariaLabel="Language"
                     labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.LANGUAGE]}/>}
-                    options={LANGUAGE_CODES_SELECT_OPTIONS}
-                    onChange={(selected: any) => {
-                      this.onUpdateChannelMeta('language', selected.code);
+                    onChange={(language) => {
+                      this.onUpdateChannelMeta('language', language);
                     }}
                   />
                 </div>

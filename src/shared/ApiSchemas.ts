@@ -1,7 +1,7 @@
 import * as z from "zod";
 import "zod-openapi";
 
-import {authorIdentitiesSchema, identitySchema, itemSeoSchema, languageOverrideSchema, publisherIdentitySchema, seoSchema, socialImageSchema} from "./Seo";
+import {authorIdentitiesSchema, identitySchema, languageOverrideSchema, publisherIdentitySchema, seoSchema, socialImageSchema} from "./Seo";
 import {normalizeItemSlug} from "./ItemUrls";
 
 import {API_KEY_SCOPES} from "./Api";
@@ -65,7 +65,7 @@ export const apiAttachmentOutputSchema = apiAttachmentSchema.extend({
 }).meta({id: "AttachmentOutput"});
 
 export const apiItemMicrofeedSchema = z.object({
-  seo: itemSeoSchema.nullable().optional(),
+  seo: seoSchema.nullable().optional(),
   authors: authorIdentitiesSchema.nullable().optional(),
   slug: z.string().refine((value) => {
     try { normalizeItemSlug(value); return true; } catch { return false; }
@@ -73,6 +73,10 @@ export const apiItemMicrofeedSchema = z.object({
     description: "Apply a clean /i/{slug}/ URL. NFC-normalized and lowercased; a conflict returns 409. Omit to keep the URL unchanged.",
   }),
 }).loose().meta({id: "ItemMicrofeed"});
+
+export const apiItemLinkSchema = z.union([z.url(), z.literal("")]).nullable().optional().meta({
+  description: "Item Link: the RSS/JSON Feed destination and, for HTTP(S) links, the canonical, Open Graph, and structured-data URL. Null or an empty string restores the local item URL; omission preserves the saved Link. A different canonical excludes the local item from the generated sitemap without redirecting it. URL fragments are omitted from canonical metadata.",
+});
 
 export const apiItemInputSchema = z.object({
   _microfeed: apiItemMicrofeedSchema.optional(),
@@ -94,7 +98,7 @@ export const apiItemInputSchema = z.object({
   language: languageOverrideSchema.nullable().optional(),
   status: apiStatusSchema.optional(),
   title: z.string().optional(),
-  url: z.url().optional(),
+  url: apiItemLinkSchema,
 }).loose().meta({id: "ItemInput"});
 
 export const apiIdempotencyKeySchema = z.string().min(1).max(128).regex(
@@ -547,7 +551,6 @@ const webhookSocialImageSchema = socialImageSchema.extend({
   url: z.string().min(1).meta({description: "An absolute image URL or a managed media key relative to the site's media address."}),
 });
 const webhookSeoSchema = seoSchema.extend({social_image: webhookSocialImageSchema.nullable().optional()});
-const webhookItemSeoSchema = itemSeoSchema.extend({social_image: webhookSocialImageSchema.nullable().optional()});
 
 export const apiWebhookChannelSnapshotSchema = z.object({
   _microfeed: apiChannelMicrofeedInputSchema.extend({seo: webhookSeoSchema.nullable().optional()}).meta({id: "WebhookChannelMicrofeed"}).optional(),
@@ -562,7 +565,7 @@ export const apiWebhookChannelSnapshotSchema = z.object({
 }).meta({id: "WebhookChannelSnapshot"});
 
 export const apiWebhookItemSnapshotSchema = z.object({
-  _microfeed: apiItemMicrofeedSchema.extend({seo: webhookItemSeoSchema.nullable().optional()}).meta({id: "WebhookItemMicrofeed"}).optional(),
+  _microfeed: apiItemMicrofeedSchema.extend({seo: webhookSeoSchema.nullable().optional()}).meta({id: "WebhookItemMicrofeed"}).optional(),
   language: languageOverrideSchema.nullable().optional(),
   authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
   attachments: z.array(apiAttachmentOutputSchema).max(1).optional(),

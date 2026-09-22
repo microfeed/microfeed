@@ -164,7 +164,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         description:
           "Creates an item. The optional image field is cover art; the optional " +
           "attachments array holds at most one main media attachment, which is " +
-          "published as JSON Feed attachments[0] and the RSS enclosure. Optional _microfeed.seo, _microfeed.authors, _microfeed.slug, and language configure search/social metadata, authors, and a Unicode item URL. RSS podcast fields are unchanged.",
+          "published as JSON Feed attachments[0] and the RSS enclosure. Optional _microfeed.seo, _microfeed.authors, _microfeed.slug, and language configure search/social metadata, authors, and a Unicode item URL. The url field sets the feed Link and HTTP(S) canonical URL. RSS podcast fields are unchanged.",
         tags: ["Items"],
         requestParams: {header: itemCreateHeaders},
         requestBody: {
@@ -226,7 +226,7 @@ export const OPENAPI_DOCUMENT = createDocument({
           "Only provided fields are changed; omitted attachments, GUIDs, dates, " +
           "and other fields are preserved. Supplying attachments replaces the one " +
           "main media attachment/RSS enclosure. The image field remains separate " +
-          "cover art. In _microfeed.seo, omitted properties are preserved and null properties restore defaults. " +
+          "cover art. The url field sets the feed Link and HTTP(S) canonical URL; null or an empty string restores the local item URL. In _microfeed.seo, omitted properties are preserved and null properties restore defaults. " +
           "Set seo or authors to null to clear all overrides. Supplying _microfeed.slug explicitly applies and freezes a Unicode URL; old public HTML URLs redirect with 301. IDs and ID-based API/feed endpoints remain stable.",
         tags: ["Items"],
         requestParams: {
