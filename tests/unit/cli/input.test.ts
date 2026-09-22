@@ -42,6 +42,12 @@ describe("microfeed CLI framed JSON input", () => {
     await expect(readJsonObjectInput("-", splitUtf8())).resolves.toBe(input);
   });
 
+  it("preserves SEO clearing and Unicode slug fields in JSON input", async () => {
+    const value = {_microfeed: {slug: "学习中文", seo: {title: null, description: "Summary"}, authors: null}, language: "zh-Hans"};
+    const parsed = JSON.parse(await readJsonObjectInput("-", chunks(JSON.stringify(value))));
+    expect(parsed).toEqual(value);
+  });
+
   it("rejects non-objects, mismatched delimiters, trailing data, and incomplete input", async () => {
     await expect(readJsonObjectInput("-", chunks("[]")))
       .rejects.toThrow("JSON object");

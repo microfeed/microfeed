@@ -2,6 +2,7 @@ import {
   mediaReferenceForStorage,
   randomShortUUID,
 } from "@/shared/StringUtils";
+import {mergeOverrides} from "@/shared/Seo";
 import {ENCLOSURE_CATEGORIES, ENCLOSURE_CATEGORIES_DICT, LANGUAGE_CODES_LIST} from "@/shared/Constants";
 import type {DatabaseMutationCommit} from "@/server/mutation";
 
@@ -24,9 +25,27 @@ export default class FeedCrudManager {
     );
   }
 
+  _customizationPatch(extension: any): Record<string, any> {
+    const patch: Record<string, any> = {};
+    if (!extension) return patch;
+    if (Object.hasOwn(extension, "seo")) {
+      patch.seo = extension.seo === null ? null : {...extension.seo};
+      if (patch.seo?.social_image) patch.seo.social_image = {
+        ...patch.seo.social_image,
+        url: this._mediaReferenceForStorage(patch.seo.social_image.url),
+      };
+    }
+    if (Object.hasOwn(extension, "authors")) patch.authorIdentities = extension.authors?.length ? extension.authors : null;
+    return patch;
+  }
+
   _publicToInternalSchemaForItem(item: any): Record<string, any> {
     const internalSchema: Record<string, any> = {};
     const attachment = item.attachment ?? item.attachments?.[0];
+
+    if (Object.hasOwn(item, "language")) internalSchema.language = item.language || undefined;
+    if (item._microfeed && Object.hasOwn(item._microfeed, "slug")) internalSchema.applySlug = item._microfeed.slug;
+    Object.assign(internalSchema, this._customizationPatch(item._microfeed));
 
     if (item.title) {
       (internalSchema as any).title = item.title;
@@ -112,7 +131,12 @@ export default class FeedCrudManager {
   }
 
   _publicToInternalSchemaForChannel(channel: any): Record<string, any> {
-    const internalSchema: Record<string, any> = {};
+    const internalSchema: Record<string, any> = this._customizationPatch(channel._microfeed);
+    if (channel._microfeed && Object.hasOwn(channel._microfeed, "publisher")) {
+      const identity = channel._microfeed.publisher;
+      internalSchema.publisherIdentity = identity;
+      if (identity?.name) internalSchema.publisher = identity.name;
+    }
     if (channel.title) {
       (internalSchema as any).title = channel.title;
     }
@@ -125,7 +149,7 @@ export default class FeedCrudManager {
     if (channel.icon) {
       (internalSchema as any).image = this._mediaReferenceForStorage(channel.icon);
     }
-    if (channel.authors && channel.authors.length > 0 && channel.authors[0].name) {
+    if (!Object.hasOwn(channel._microfeed ?? {}, "publisher") && channel.authors && channel.authors.length > 0 && channel.authors[0].name) {
       (internalSchema as any).publisher = channel.authors[0].name;
     }
     if (LANGUAGE_CODES.includes(channel.language)) {
@@ -202,10 +226,11 @@ export default class FeedCrudManager {
     channel: any,
     commit?: DatabaseMutationCommit<Record<string, unknown>>,
   ) {
-    this.feedContent.channel = {
-      ...this.feedContent.channel,
-      ...this._publicToInternalSchemaForChannel(channel),
-    };
+    const patch = this._publicToInternalSchemaForChannel(channel);
+    for (const key of ["seo", "publisherIdentity"]) {
+      if (Object.hasOwn(patch, key)) patch[key] = mergeOverrides(this.feedContent.channel[key], patch[key]);
+    }
+    this.feedContent.channel = {...this.feedContent.channel, ...patch};
     await this.feedDb.putContent(
       {channel: this.feedContent.channel},
       commit

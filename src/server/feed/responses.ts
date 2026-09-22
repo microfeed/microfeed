@@ -1,3 +1,4 @@
+import {resolveItemRoute} from "@/server/items/urls";
 import {env} from "cloudflare:workers";
 
 import {adminBasePath} from "@/shared/AdminPath";
@@ -51,7 +52,7 @@ export async function jsonFeedResponse(
   itemStatuses: number[] = [STATUSES.PUBLISHED, STATUSES.UNLISTED],
   checkAccessPolicy = true,
 ): Promise<Response> {
-  const itemId = itemSlug ? getIdFromSlug(itemSlug) : undefined;
+  const itemId = itemSlug ? (checkAccessPolicy ? await resolveItemRoute(env.FEED_DB, itemSlug) : getIdFromSlug(itemSlug)) : undefined;
   if (itemSlug && !itemId) {
     return new Response("Not Found", {status: 404});
   }
@@ -90,7 +91,7 @@ export async function rssFeedResponse(
   request: Request,
   itemSlug?: string,
 ): Promise<Response> {
-  const itemId = itemSlug ? getIdFromSlug(itemSlug) : undefined;
+  const itemId = itemSlug ? await resolveItemRoute(env.FEED_DB, itemSlug) : undefined;
   if (itemSlug && !itemId) {
     return new Response("Not Found", {status: 404});
   }

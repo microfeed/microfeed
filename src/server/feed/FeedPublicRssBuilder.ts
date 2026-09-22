@@ -155,8 +155,10 @@ export default class FeedPublicRssBuilder {
         '@cdata': this.jsonData.description,
       };
     }
-    if (this.jsonData.authors && this.jsonData.authors.length > 0 && this.jsonData.authors[0].name) {
-      (channelRss as any)['itunes:author'] = this.jsonData.authors[0].name;
+    const publisher = this.jsonData._microfeed?.publisher
+      ? this.jsonData._microfeed.publisher.name : this.jsonData.authors?.[0]?.name;
+    if (publisher) {
+      (channelRss as any)['itunes:author'] = publisher;
     }
     if (this.jsonData.icon) {
       (channelRss as any)['itunes:image'] = {

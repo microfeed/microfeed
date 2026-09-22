@@ -1,3 +1,4 @@
+import {ContentCustomizationError} from "@/shared/Seo";
 import {cache, env, waitUntil} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
@@ -64,61 +65,67 @@ export async function updateAdminFeed(
       error: "WebMCP cannot change an Item that is no longer unpublished.",
     }, {status: 409});
   }
-  await database.putContent(updatedFeed, async (statements) => {
-    const events = [];
-    if (updatedItemId && updatedFeed.item) {
-      const after = webhookItemObject(
-        updatedFeed.item as unknown as Record<string, unknown>,
-      );
-      const mutation = !beforeItem
-        ? "created"
-        : updatedFeed.item.status === STATUSES.DELETED
-        ? "deleted"
-        : "updated";
-      events.push(...contentMutationWebhookInputs({
-        ...(mutation === "deleted"
-          ? {before: webhookItemObject(beforeItem ?? after)}
-          : {
-              after,
-              ...(beforeItem ? {before: webhookItemObject(beforeItem)} : {}),
-            }),
-        id: updatedItemId,
-        kind: "item",
-        mutation,
-      }));
-    }
-    if (updatedFeed.channel) {
-      const before = webhookChannelSnapshot(
-        (beforeChannelContent?.channel ?? {}) as Record<string, unknown>,
-      );
-      const after = webhookChannelSnapshot(
-        updatedFeed.channel as Record<string, unknown>,
-      );
-      const changedFields = changedWebhookFields(before, after);
-      if (changedFields.length > 0) {
-        events.push({
-          changedFields,
-          object: after,
-          subjectId: "primary",
-          subjectType: "channel" as const,
-          type: "channel.updated" as const,
-        });
+  try {
+    await database.putContent(updatedFeed, async (statements) => {
+      const events = [];
+      if (updatedItemId && updatedFeed.item) {
+        const after = webhookItemObject(
+          updatedFeed.item as unknown as Record<string, unknown>,
+        );
+        const mutation = !beforeItem
+          ? "created"
+          : updatedFeed.item.status === STATUSES.DELETED
+          ? "deleted"
+          : "updated";
+        events.push(...contentMutationWebhookInputs({
+          ...(mutation === "deleted"
+            ? {before: webhookItemObject(beforeItem ?? after)}
+            : {
+                after,
+                ...(beforeItem ? {before: webhookItemObject(beforeItem)} : {}),
+              }),
+          id: updatedItemId,
+          kind: "item",
+          mutation,
+        }));
       }
-    }
-    await commitMutationWithWebhookEvents(
-      runtimeEnv,
-      request,
-      statements,
-      events,
-      {origin: webMcpInteraction ? "webmcp" : "dashboard"},
-    );
-  });
+      if (updatedFeed.channel) {
+        const before = webhookChannelSnapshot(
+          (beforeChannelContent?.channel ?? {}) as Record<string, unknown>,
+        );
+        const after = webhookChannelSnapshot(
+          updatedFeed.channel as Record<string, unknown>,
+        );
+        const changedFields = changedWebhookFields(before, after);
+        if (changedFields.length > 0) {
+          events.push({
+            changedFields,
+            object: after,
+            subjectId: "primary",
+            subjectType: "channel" as const,
+            type: "channel.updated" as const,
+          });
+        }
+      }
+      await commitMutationWithWebhookEvents(
+        runtimeEnv,
+        request,
+        statements,
+        events,
+        {origin: webMcpInteraction ? "webmcp" : "dashboard"},
+      );
+    });
+  } catch (error) {
+    if (error instanceof ContentCustomizationError) return jsonResponse({error: error.message}, {status: error.status});
+    throw error;
+  }
   scheduleBestEffortMediaDeletion(
     mediaBucket(runtimeEnv),
     deleteImageUrls,
     schedule,
+    runtimeEnv.FEED_DB,
   );
-  return jsonResponse({});
+  return jsonResponse(updatedFeed.item ? {itemUrl: {publicPath: updatedFeed.item.publicPath, urlMode: updatedFeed.item.urlMode, urlFrozen: updatedFeed.item.urlFrozen}} : {});
 }
 
 export const POST: APIRoute = async ({request}) =>

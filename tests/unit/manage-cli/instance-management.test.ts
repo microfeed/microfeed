@@ -122,7 +122,7 @@ function itemSearchCommandResult(args: readonly string[]) {
   }
   const commandIndex = args.indexOf("--command");
   const sql = args[commandIndex + 1] ?? "";
-  if (!sql.includes("site_search") && !sql.includes("content_text_updated_at")) {
+  if (!sql.includes("site_search") && !sql.includes("content_text_updated_at") && !sql.includes("public_path IS NULL")) {
     return undefined;
   }
   const results = sql.includes("sqlite_schema")

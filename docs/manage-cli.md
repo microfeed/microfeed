@@ -898,6 +898,11 @@ list must be an exact filename-and-hash prefix of the current checkout:
 - A snapshot at the current head needs no forward migrations.
 - Derived unified-search virtual tables are recreated and repopulated after the
   durable item and Page data is imported.
+- Item URL paths and redirect history are durable, including reservations for
+  deleted items. Restore imports those rows before enabling database triggers.
+  Older snapshots receive legacy URL preparation after migration. Deployment
+  prepares missing legacy paths before and after the Worker update; interrupted
+  preparation can be resumed by retrying the command.
 - A newer, missing, reordered, edited, or divergent migration history is
   rejected before mutation.
 

@@ -1,3 +1,4 @@
+import {jsonFeedAuthors} from "./Seo";
 import {ITEM_STATUSES_DICT} from "./Constants";
 import {
   WEBHOOK_EVENT_TYPES,
@@ -181,10 +182,14 @@ export function webhookChannelSnapshot(
 ): Record<string, unknown> {
   const microfeed = channel._microfeed as Record<string, unknown> | undefined;
   return definedEntries([
-    ["_microfeed", typeof microfeed?.copyright === "string"
-      ? {copyright: microfeed.copyright}
-      : undefined],
-    ["authors", channel.authors],
+    ["_microfeed", definedEntries([
+      ["copyright", microfeed?.copyright ?? channel.copyright],
+      ["seo", microfeed?.seo ?? channel.seo],
+      ["publisher", microfeed?.publisher ?? (channel.publisher || channel.publisherIdentity
+        ? {...(channel.publisherIdentity as object), name: channel.publisher} : undefined)],
+      ["authors", microfeed?.authors ?? channel.authorIdentities],
+    ])],
+    ["authors", channel.authors ?? jsonFeedAuthors(channel.authorIdentities as any)],
     ["description", channel.description],
     ["expired", channel.expired],
     ["homepage_url", channel.homepage_url ?? channel.home_page_url],
@@ -213,6 +218,13 @@ export function webhookItemSnapshot(
       }]
     : undefined);
   return definedEntries([
+    ["_microfeed", item._microfeed ?? definedEntries([
+      ["seo", item.seo],
+      ["authors", item.authorIdentities],
+      ["slug", item.urlMode !== "legacy" && typeof item.publicPath === "string" ? item.publicPath.slice(3, -1) : undefined],
+    ])],
+    ["language", item.language],
+    ["authors", item.authors ?? jsonFeedAuthors(item.authorIdentities as any)],
     ["attachments", attachments],
     ["content_html", item.content_html ?? item.description],
     ["content_text", item.content_text ?? item.contentText],

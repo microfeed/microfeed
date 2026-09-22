@@ -38,3 +38,17 @@ Without a separate favicon, public pages use the channel image. Upload, replace,
 or delete the favicon from its settings section; the action saves immediately.
 Browsers cache favicons aggressively, so a replacement may need a hard refresh
 or a new private window before it appears.
+
+## SEO fields in feeds
+
+JSON Feed exposes SEO overrides and rich identities under `_microfeed` at
+channel and item level. Standard titles, descriptions, content, artwork, and
+attachments retain their content meaning. Standard `authors` projects the
+configured author names and profile URLs.
+
+RSS retains its existing metadata and has no new SEO/GEO namespace. SEO
+summaries and social images do not replace RSS descriptions or podcast artwork;
+`itunes:author` continues to use the existing Publisher field. An explicit
+item link stays unchanged. When no link is configured, RSS uses the current
+local item URL, including a clean slug. Canonical overrides never replace RSS
+links.

@@ -164,7 +164,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         description:
           "Creates an item. The optional image field is cover art; the optional " +
           "attachments array holds at most one main media attachment, which is " +
-          "published as JSON Feed attachments[0] and the RSS enclosure.",
+          "published as JSON Feed attachments[0] and the RSS enclosure. Optional _microfeed.seo, _microfeed.authors, _microfeed.slug, and language configure search/social metadata, authors, and a Unicode item URL. RSS podcast fields are unchanged.",
         tags: ["Items"],
         requestParams: {header: itemCreateHeaders},
         requestBody: {
@@ -183,7 +183,7 @@ export const OPENAPI_DOCUMENT = createDocument({
           },
           "400": error("The request body is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
-          "409": error("The Idempotency-Key was already used with a different item payload."),
+          "409": error("The item URL is reserved, or the Idempotency-Key was already used with a different item payload."),
         },
       },
     },
@@ -226,7 +226,8 @@ export const OPENAPI_DOCUMENT = createDocument({
           "Only provided fields are changed; omitted attachments, GUIDs, dates, " +
           "and other fields are preserved. Supplying attachments replaces the one " +
           "main media attachment/RSS enclosure. The image field remains separate " +
-          "cover art.",
+          "cover art. In _microfeed.seo, omitted properties are preserved and null properties restore defaults. " +
+          "Set seo or authors to null to clear all overrides. Supplying _microfeed.slug explicitly applies and freezes a Unicode URL; old public HTML URLs redirect with 301. IDs and ID-based API/feed endpoints remain stable.",
         tags: ["Items"],
         requestParams: {
           header: apiWebhookContextHeadersSchema,
@@ -237,6 +238,7 @@ export const OPENAPI_DOCUMENT = createDocument({
           content: {"application/json": {schema: apiItemInputSchema}},
         },
         responses: {
+          "409": error("The item URL is reserved or changed concurrently."),
           "200": success(apiItemOutputSchema),
           "400": error("The request body or item ID is invalid."),
           "401": error("The Bearer credential is missing or invalid."),
@@ -548,6 +550,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         security: writeSecurity,
         operationId: "updatePrimaryChannel",
         summary: "Update the primary channel",
+        description: "Optional _microfeed.seo configures homepage metadata; _microfeed.publisher enriches the existing publisher identity; _microfeed.authors supplies default item authors. Omitted properties are preserved; null clears an override. Legacy authors[0].name input still sets the podcast publisher. Use _microfeed.authors for attribution without changing itunes:author.",
         tags: ["Channel"],
         requestParams: {
           header: apiWebhookContextHeadersSchema,

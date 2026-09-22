@@ -127,6 +127,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
       "When saved initialization state has not completed its first Worker deployment, deploy resumes it and supplies the missing initial upload-signing secret.",
       "Runs type checks, focused deployment smoke tests, and a build before deploying, then verifies the public site and protected admin route. The complete repository test suite remains part of yarn check and continuous integration.",
       "Normalizes stored item plain text and rebuilds multilingual item and Page search before deployment, then reconciles after the Worker switch; search remains unavailable if either validation pass is incomplete.",
+      "Preserves legacy item URLs before and after the Worker switch. Interrupted URL preparation resumes when deployment is retried.",
       "Synchronizes every current Built-in theme release as inactive without changing the active or previous selection, then safely soft-deletes superseded Built-in releases unless they are active, previous, or remain referenced.",
       "Records the current Git commit on the deployed Worker version so the protected dashboard can identify its source release.",
       "A content-only installation deploys normally. Automatic pending setup prompts once when R2 becomes available; a decline is remembered, while non-interactive runs print the deterministic enable command.",
@@ -243,6 +244,7 @@ export const CLI_COMMANDS: readonly CliCommandMetadata[] = [
     changes: "Creates an export, restores a new local instance, or replaces the data in one explicitly confirmed fresh Cloudflare target.",
     details: [
       "Actions: create packages D1 schema/data and the whole R2 bucket; pull creates that package and restores a new local instance; restore validates and imports one package. Cloudflare snapshot operations require ready R2 media storage.",
+      "Item URLs and redirect reservations, including deleted-item history, are preserved. Restore imports durable rows before enabling database triggers.",
       "Every archive records the exact applied migration filenames and SHA-256 hashes. Restore recreates that historical schema and ledger, then applies this checkout's newer migrations.",
       "D1 FTS virtual tables are rebuildable rather than archived. Creation briefly removes them for export and always recreates them; restore rebuilds them from durable item data.",
       "Long-running create and restore phases show an animated elapsed-time indicator with brief D1, migration, R2, and verification updates.",

@@ -1,3 +1,4 @@
+import {ContentCustomizationError} from "@/shared/Seo";
 import {env} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
@@ -582,7 +583,7 @@ export const publishApiSiteFile: APIRoute = (context) =>
 export const resetApiSiteFile: APIRoute = (context) =>
   mutateApiSiteFile(context, resetSiteFile);
 
-export const createApiItem: APIRoute = async ({locals, request}) => {
+const createApiItemUnchecked: APIRoute = async ({locals, request}) => {
   if (!locals.feedCrud || !locals.feedDb) {
     return new Response("Feed context unavailable", {status: 500});
   }
@@ -703,7 +704,7 @@ export const deleteApiItem: APIRoute = async ({locals, params, request}) => {
   return jsonResponse({});
 };
 
-export const updateApiItem: APIRoute = async ({locals, params, request}) => {
+const updateApiItemUnchecked: APIRoute = async ({locals, params, request}) => {
   const itemId = getIdFromSlug(params.itemId ?? "");
   if (!itemId) {
     return jsonResponse({error: "Invalid item id"}, {status: 400});
@@ -743,7 +744,7 @@ export const updateApiItem: APIRoute = async ({locals, params, request}) => {
   return jsonResponse(object);
 };
 
-export const updateApiPrimaryChannel: APIRoute = async ({
+const updateApiPrimaryChannelUnchecked: APIRoute = async ({
   locals,
   params,
   request,
@@ -838,3 +839,15 @@ export const prepareApiMediaUpload: APIRoute = async ({locals, request}) => {
     presigned_url: signed.presignedUrl,
   }, {status: 201});
 };
+
+function customizationErrors(handler: APIRoute): APIRoute {
+  return async (context) => {
+    try { return await handler(context); } catch (error) {
+      if (error instanceof ContentCustomizationError) return jsonResponse({error: error.message}, {status: error.status});
+      throw error;
+    }
+  };
+}
+export const createApiItem = customizationErrors(createApiItemUnchecked);
+export const updateApiItem = customizationErrors(updateApiItemUnchecked);
+export const updateApiPrimaryChannel = customizationErrors(updateApiPrimaryChannelUnchecked);

@@ -476,6 +476,40 @@ Do not combine the two input forms.
 JSON input may use the complete item schema documented by the target
 instance, including fields not represented by the common flags.
 
+Use JSON input for SEO and identity overrides. For example, save this as
+`item-seo.json`, then run
+`npx @microfeed/cli item update <item-id> --input item-seo.json --json`:
+
+```json
+{
+  "language": "zh-Hans",
+  "_microfeed": {
+    "slug": "学习中文",
+    "seo": {
+      "title": "学习中文 · Example",
+      "description": "A short description for search and social previews.",
+      "canonical_url": null
+    },
+    "authors": [{"name": "Example Writer", "type": "Person", "url": "https://example.com/about/"}]
+  }
+}
+```
+
+Omitted fields stay unchanged. A `null` SEO property restores its fallback;
+`"seo": null` clears all SEO overrides and `"authors": null` restores default
+authors. Supplying `slug` explicitly applies a new URL; conflicts return HTTP
+409. Keep using item IDs for authenticated API and CLI operations.
+
+Upload an already cropped 1200 × 630 JPEG or PNG with `media upload`, then place
+its permanent `media_url` in `_microfeed.seo.social_image.url`, alongside
+`width: 1200`, `height: 630`, `mime_type`, and optional `alt`. The CLI does not
+crop images. `--image-file` continues to set cover art.
+
+Use `api PUT /api/v1/channels/primary/ --input channel-seo.json --json` for
+channel `_microfeed.seo`, `_microfeed.publisher`, and default
+`_microfeed.authors`. Legacy channel `authors[0].name` input still changes the
+podcast publisher; use `_microfeed.authors` for separate attribution.
+
 With `--input -`, the CLI completes as soon as it receives one balanced root
 JSON object. Strings, escapes, nested objects, arrays, chunk boundaries, and
 trailing whitespace are handled without waiting for an interactive input

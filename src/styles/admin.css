@@ -175,7 +175,7 @@ a {
 }
 
 .lh-upload-fileinput > input[type="file"] {
-  @apply absolute block opacity-0 pointer-events-none;
+  @apply absolute block h-px w-px overflow-hidden opacity-0 pointer-events-none;
 }
 
 .lh-upload-wrapper .lh-upload-fileinput.is-disabled {

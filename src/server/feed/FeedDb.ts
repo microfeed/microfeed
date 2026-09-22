@@ -1,4 +1,6 @@
 import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
+import {prepareItemUrl, itemUrlWriteError} from "@/server/items/urls";
+import {validateCustomization} from "@/shared/Seo";
 import {characterIndexStatements} from "@/server/items/character-index";
 import {ITEM_CONTENT_TEXT_REVISION} from "@/shared/ItemSearch";
 import {
@@ -77,6 +79,9 @@ function getItemJson(itemObj: any) {
     updatedAtMs: rfc3399ToMs(itemObj.updated_at),
     ...JSON.parse(itemObj.data),
     contentText: String(itemObj.content_text ?? ""),
+    publicPath: itemObj.public_path ?? undefined,
+    urlMode: itemObj.url_mode ?? "legacy",
+    urlFrozen: Boolean(itemObj.url_frozen ?? true),
   };
 }
 
@@ -558,6 +563,10 @@ export default class FeedDb {
 
   _putItemToContentStatement(item: any) {
     const {
+      applySlug: _applySlug,
+      publicPath: _publicPath,
+      urlMode: _urlMode,
+      urlFrozen: _urlFrozen,
       contentText: _contentText,
       createdAtMs: _createdAtMs,
       id,
@@ -593,12 +602,14 @@ export default class FeedDb {
   async putContent(
     feed: FeedContent,
     commit?: (statements: D1PreparedStatement[]) => Promise<void>,
-  ) {
+    attempt = 0,
+  ): Promise<void> {
     const {channel, settings, item} = feed;
     const cacheTags = publicCacheTagsForFeedUpdate(feed);
     const statements: D1PreparedStatement[] = [];
     try {
       if (channel) {
+        validateCustomization(channel, false);
         statements.push(this._putChannelToContentStatement(channel));
       }
 
@@ -608,7 +619,11 @@ export default class FeedDb {
 
       if (item) {
         if (!item.id) throw new Error("An item ID is required.");
+        validateCustomization(item, true);
+        const route = await prepareItemUrl(this.FEED_DB, item);
+        if (route.exists && route.statement) statements.push(route.statement);
         statements.push(this._putItemToContentStatement(item));
+        if (!route.exists && route.statement) statements.push(route.statement);
         statements.push(...characterIndexStatements(
           this.FEED_DB, "item", item.id, String(item.title ?? ""),
           String(item.contentText ?? ""),
@@ -620,7 +635,11 @@ export default class FeedDb {
       }
     } catch (error) {
       await this._purgePublicCacheTags(cacheTags);
-      throw error;
+      const conflict = itemUrlWriteError(error);
+      if (conflict && item && item.applySlug === undefined && attempt < 5) {
+        return this.putContent(feed, commit, attempt + 1);
+      }
+      throw conflict ?? error;
     }
     await this._purgePublicCacheTags(cacheTags);
   }

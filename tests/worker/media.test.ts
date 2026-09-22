@@ -463,7 +463,7 @@ describe("R2 media responses", () => {
       };
       const item = json.items.find(({id}) => id === itemId);
       expect(json.home_page_url).toBe(origin);
-      expect(item?._microfeed?.web_url).toContain(`/i/headless-item-${itemId}/`);
+      expect(item?._microfeed?.web_url).toBe(`${origin}/i/headless-item/`);
 
       const rssResponse = await rssFeedResponse(
         new Request(`${origin}/rss/`),
@@ -471,7 +471,7 @@ describe("R2 media responses", () => {
       expect(rssResponse.status).toBe(200);
       const rss = await rssResponse.text();
       expect(rss).toContain(`${origin}/`);
-      expect(rss).toContain(`/i/headless-item-${itemId}/`);
+      expect(rss).toContain("/i/headless-item/");
 
       const itemJsonResponse = await jsonFeedResponse(
         new Request(`${origin}/i/${itemId}/json/`),

@@ -56,6 +56,7 @@ export async function deleteAdminImage(
       mediaBucket(runtimeEnv),
       [input.imageUrl, storedImageUrl],
       schedule,
+      runtimeEnv.FEED_DB,
     );
     return jsonResponse({deletedKeys: keys.length});
   } catch (error) {

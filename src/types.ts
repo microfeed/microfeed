@@ -32,6 +32,12 @@ export interface FeedSettings {
 }
 
 export interface FeedItem extends JsonObject {
+  seo?: import("./shared/Seo").Seo | null;
+  authorIdentities?: import("./shared/Seo").Identity[] | null;
+  publicPath?: string;
+  urlMode?: "legacy" | "auto" | "custom";
+  urlFrozen?: boolean;
+  applySlug?: string;
   contentText?: string;
   createdAtMs?: number;
   id?: string;

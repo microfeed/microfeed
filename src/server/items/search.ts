@@ -1,3 +1,4 @@
+import {itemUrl as resolvedItemUrl} from "@/shared/ItemUrls";
 import {
   fuzzyTitleMatches,
   itemSearchFtsQuery,
@@ -18,7 +19,6 @@ import {
 import {API_BASE_PATH} from "@/shared/ApiVersion";
 import {DEFAULT_NOT_FOUND_PAGE_SLUG, publicPageUrl} from "@/shared/Pages";
 import {
-  PUBLIC_URLS,
   urlJoin,
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
@@ -298,7 +298,7 @@ function resultFromRow(
     title: row.title,
     type: row.content_type,
     web_url: row.content_type === "item"
-      ? PUBLIC_URLS.webItem(row.id, row.title, baseUrl)
+      ? resolvedItemUrl({id: row.id, title: row.title, publicPath: row.public_path as string | undefined}, baseUrl)
       : publicPageUrl(row.slug, baseUrl),
   };
   if (row.content_type === "page") {
@@ -458,6 +458,7 @@ async function searchReady(database: D1Database): Promise<boolean> {
 }
 
 const SEARCH_SELECT = `
+  i.public_path,
   d.content_id AS id,
   d.content_type,
   d.status,
@@ -798,6 +799,7 @@ export async function latestItems(
   const response = await database.prepare(`
     SELECT
       id,
+      public_path,
       'item' AS content_type,
       status,
       COALESCE(json_extract(data, '$.title'), '') AS title,

@@ -1,3 +1,7 @@
+import * as z from "zod";
+import {apiItemMicrofeedSchema} from "@/shared/ApiSchemas";
+import {languageOverrideSchema} from "@/shared/Seo";
+
 const MAX_ITEMS_PER_PAGE = 300;
 const PAGE_META_DESCRIPTION_MAX_LENGTH = 155;
 const PAGE_SLUG_MAX_LENGTH = 100;
@@ -14,6 +18,8 @@ interface ListItemsInput {
 }
 
 export interface SaveItemDraftInput {
+  _microfeed?: z.infer<typeof apiItemMicrofeedSchema>;
+  language?: string | null;
   content_html?: string;
   title?: string;
 }
@@ -174,27 +180,16 @@ export const startDraftInputSchema: InputContract<{kind: "item" | "page"}> = {
   },
 };
 
+const draftItemSchema = z.object({
+  content_html: z.string().optional(),
+  title: z.string().optional(),
+  language: languageOverrideSchema.nullable().optional(),
+  _microfeed: apiItemMicrofeedSchema.optional(),
+}).strict().refine((value) => Object.keys(value).length > 0, "Supply at least one item field to save.");
+
 export const saveItemDraftInputSchema: InputContract<SaveItemDraftInput> = {
-  jsonSchema: objectSchema({
-    content_html: {
-      description: "Rich-text HTML for the item body.",
-      type: "string",
-    },
-    title: {type: "string"},
-  }, {minProperties: 1}),
-  parse(input) {
-    const value = objectInput(input);
-    rejectUnknownKeys(value, ["content_html", "title"]);
-    const contentHtml = optionalString(value, "content_html");
-    const title = optionalString(value, "title");
-    if (contentHtml === undefined && title === undefined) {
-      throw new TypeError("Supply at least one item field to save.");
-    }
-    return {
-      ...(contentHtml === undefined ? {} : {content_html: contentHtml}),
-      ...(title === undefined ? {} : {title}),
-    };
-  },
+  jsonSchema: z.toJSONSchema(draftItemSchema),
+  parse: (input) => draftItemSchema.parse(input),
 };
 
 export const savePageDraftInputSchema: InputContract<SavePageDraftInput> = {

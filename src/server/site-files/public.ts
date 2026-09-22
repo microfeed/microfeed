@@ -1,3 +1,4 @@
+import {hasOtherCanonical} from "@/server/seo/metadata";
 import {escapeHtml} from "@/shared/StringUtils";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {listPages} from "@/server/pages/service";
@@ -84,7 +85,7 @@ async function sitemapContent(
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
     'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" ' +
     'xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">';
-  xml += `<url><loc>${escapeHtml(String(feed.home_page_url ?? new URL("/", request.url)))}</loc>`;
+  xml += `<url><loc>${escapeHtml(String(new URL("/", request.url)))}</loc>`;
   if (feed.icon) {
     xml += `<image:image><image:loc>${escapeHtml(feed.icon)}</image:loc></image:image>`;
   }
@@ -93,7 +94,7 @@ async function sitemapContent(
     xml += `<url><loc>${escapeHtml(page.url)}</loc>`;
     xml += `<lastmod>${escapeHtml(page.date_modified)}</lastmod></url>`;
   }
-  for (const item of feed.items.slice(0, SITE_FILE_TEMPLATE_COLLECTION_LIMIT)) {
+  for (const item of feed.items.filter((item) => !hasOtherCanonical(item)).slice(0, SITE_FILE_TEMPLATE_COLLECTION_LIMIT)) {
     const extra = item._microfeed ?? {};
     xml += `<url><loc>${escapeHtml(String(extra.web_url ?? ""))}</loc>`;
     if (item.date_published) {

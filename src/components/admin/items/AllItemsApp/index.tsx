@@ -1,3 +1,4 @@
+import {itemUrl} from "@/shared/ItemUrls";
 import {
   createColumnHelper,
   flexRender,
@@ -49,7 +50,6 @@ import {
 import {isValidMediaFile} from "@/shared/MediaFileUtils";
 import {
   ADMIN_URLS,
-  PUBLIC_URLS,
   secondsToHHMMSS,
   urlJoinWithRelative,
 } from "@/shared/StringUtils";
@@ -389,7 +389,7 @@ export function ItemListTable({
                 </span>
                 <a
                   className="inline-flex min-w-0 items-center gap-1 !text-muted-foreground hover:!text-brand-light"
-                  href={PUBLIC_URLS.webItem(item.id, item.title)}
+                  href={itemUrl(item)}
                   rel="noopener noreferrer"
                   target="_blank"
                 >

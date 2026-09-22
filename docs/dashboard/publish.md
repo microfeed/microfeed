@@ -98,3 +98,41 @@ After publishing, check:
 
 If the dashboard saves successfully but the public page is unavailable, review
 the channel’s access-control setting and item visibility first.
+
+## Customize metadata and the item URL
+
+Open **SEO / GEO** below **Podcast-specific fields**. Metadata overrides use the
+same autosave as other item fields. SEO title and description affect the page's
+head metadata; the visible title and article body stay unchanged. Clearing an
+override restores its fallback.
+
+New items use `/i/{slug}/`. Automatic slugs follow draft titles and freeze when
+the item first becomes Published or Unlisted. To choose an address yourself,
+edit **Item URL** and select **Apply URL**. Typing alone does not change the URL.
+Unicode letters, combining marks, numbers, and hyphens are supported; slugs are
+normalized to NFC and lowercase. Duplicate automatic slugs receive numeric
+suffixes. A conflicting custom slug must be changed before it can be saved.
+
+Existing items keep their earlier title-and-ID URLs until you explicitly apply
+a new URL. Previous public HTML paths redirect directly to the current local
+URL with HTTP 301. Deleted items keep their old paths reserved. Item IDs, RSS
+GUIDs, and ID-based API, JSON, and RSS addresses do not change. Public JSON and
+RSS also accept clean slugs.
+
+An item social image overrides its cover; otherwise microfeed tries the item
+cover, channel social image, and channel cover, in that order. Uploads use the
+same browser crop and limits as [channel social images](/dashboard/edit-channel/#customize-search-and-social-previews).
+Removing an override restores inheritance. Files referenced elsewhere are
+retained when replacing or removing an image.
+
+Item authors replace channel default authors when configured. Clearing them
+restores channel defaults. An optional item language overrides the channel
+language. The new bundled Default theme and generic starter display author
+attribution; installed theme versions are not changed or activated automatically.
+
+For republished work, set **Original-source canonical URL** to the original
+article's absolute HTTP or HTTPS URL. The local page remains accessible. Its
+canonical tag, Open Graph URL, and generated structured data use this value,
+and the item is excluded from the generated sitemap when it points elsewhere.
+This does not replace an explicit feed item link. Unlisted items remain
+accessible directly with `noindex`, and drafts remain private.

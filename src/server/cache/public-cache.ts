@@ -176,7 +176,7 @@ export function publicCacheTagsForPath(pathname: string): string[] {
   }
   if (
     pathname === "/" || pathname === "/json/" || pathname === "/rss/" ||
-    pathname === "/sitemap.xml" || pathname === "/llms.txt" || siteFilePath
+    pathname === "/sitemap.xml" || pathname === "/llms.txt" || siteFilePath || isItemPath(pathname)
   ) {
     tags.add(PUBLIC_CACHE_TAGS.ITEMS);
   }

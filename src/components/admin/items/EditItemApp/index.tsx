@@ -1,3 +1,6 @@
+import SeoEditor from "@/components/admin/shared/SeoEditor";
+import {itemUrl} from "@/shared/ItemUrls";
+import {mergeOverrides} from "@/shared/Seo";
 import React from 'react';
 import {Trash2Icon} from "lucide-react";
 import {navigate} from 'astro:transitions/client';
@@ -13,7 +16,6 @@ import {
 import AdminImageUploaderApp from "@/components/admin/shared/AdminImageUploaderApp";
 import AdminDatetimePicker from '@/components/admin/shared/AdminDatetimePicker';
 import {datetimeLocalStringToMs, datetimeLocalToMs} from "@/shared/TimeUtils";
-import {getPublicBaseUrl} from "@/client/ClientUrlUtils";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import {showToast} from "@/client/ToastUtils";
 import MediaManager from "./components/MediaManager";
@@ -117,8 +119,6 @@ export default class EditItemApp extends React.Component<Props, any> {
       itemId,
       action,
 
-      autoUpdateLink: action === 'create',
-      userChangedLink: false,
       autosaveState: {dirty: false, phase: "idle"} satisfies AutosaveState,
       replacedImageUrls: [],
     };
@@ -241,9 +241,10 @@ export default class EditItemApp extends React.Component<Props, any> {
 
   async saveSnapshot(snapshot: ItemSnapshot) {
     const {webMcpSignal, ...body} = snapshot;
+    let response;
     if (webMcpSignal) {
       try {
-        await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), body, {
+        response = await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), body, {
           headers: WEBMCP_INTERACTION_HEADERS,
           signal: webMcpSignal,
         });
@@ -253,7 +254,7 @@ export default class EditItemApp extends React.Component<Props, any> {
         }
       }
     } else {
-      await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), body);
+      response = await Requests.axiosPost(ADMIN_URLS.ajaxFeed(), body);
     }
     if (!this.mounted) return;
 
@@ -263,6 +264,10 @@ export default class EditItemApp extends React.Component<Props, any> {
     await new Promise<void>((resolve) => {
       this.setState((previousState: any) => ({
         action: created ? 'edit' : previousState.action,
+        seoError: undefined,
+        item: {...previousState.item, ...response?.data?.itemUrl,
+          ...(previousState.item.applySlug === snapshot.item.applySlug ? {applySlug: undefined} : {}),
+        },
         feed: {
           ...previousState.feed,
           item: snapshot.item,
@@ -290,6 +295,7 @@ export default class EditItemApp extends React.Component<Props, any> {
   }
 
   showSaveError(error: any) {
+    if (error?.response?.data?.error) this.setState({seoError: error.response.data.error});
     if (!error?.response) {
       showToast('Network error. Your changes are still on this page.', 'error');
     } else {
@@ -339,6 +345,12 @@ export default class EditItemApp extends React.Component<Props, any> {
       this.setState((previousState: any) => ({
         item: {
           ...previousState.item,
+          ...(input._microfeed && Object.hasOwn(input._microfeed, "seo")
+            ? {seo: mergeOverrides(previousState.item.seo, input._microfeed.seo ?? null)} : {}),
+          ...(input._microfeed && Object.hasOwn(input._microfeed, "authors")
+            ? {authorIdentities: input._microfeed.authors} : {}),
+          ...(input._microfeed?.slug !== undefined ? {applySlug: input._microfeed.slug} : {}),
+          ...(input.language !== undefined ? {language: input.language} : {}),
           ...(input.title !== undefined ? {title: input.title} : {}),
           ...(input.content_html !== undefined
             ? {description: input.content_html}
@@ -448,13 +460,6 @@ export default class EditItemApp extends React.Component<Props, any> {
                   onChange={(e: any) => {
                     const nextTitle = e.target.value;
                     const attrDict = {'title': nextTitle};
-                    if (this.state.autoUpdateLink && !this.state.userChangedLink) {
-                      (attrDict as any).link = PUBLIC_URLS.webItem(
-                        itemId,
-                        nextTitle,
-                        getPublicBaseUrl(),
-                      );
-                    }
                     this.onUpdateItemMeta(attrDict);
                   }}
                 />
@@ -593,6 +598,18 @@ export default class EditItemApp extends React.Component<Props, any> {
               </div>
             </details>
           </div>
+          <SeoEditor value={item} channel={feed.channel} itemId={itemId} feed={feed}
+            publicBucketUrl={publicBucketUrl} mediaStorage={mediaStorage} error={this.state.seoError}
+            onChange={(patch, previousImage) => this.onUpdateItemMeta(patch, {
+              replacedImageUrls: queueReplacedImageUrl(this.state.replacedImageUrls, previousImage),
+            })}
+            onApplySlug={async (slug) => {
+              if (!await this.autosave.flush()) return false;
+              await new Promise<void>((resolve) => this.setState((previous: any) => ({
+                item: {...previous.item, applySlug: slug},
+              }), () => { this.autosave.markChanged({immediate: true}); resolve(); }));
+              return this.autosave.flush();
+            }} />
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">
@@ -626,7 +643,7 @@ export default class EditItemApp extends React.Component<Props, any> {
             {action === 'edit' && <div>
               <AdminSideQuickLinks
                 AdditionalLinksDiv={<div className="flex flex-wrap">
-                  <SideQuickLink url={PUBLIC_URLS.webItem(itemId, item.title)} text="web item"/>
+                  <SideQuickLink url={itemUrl({...item, id: itemId})} text="web item"/>
                   <SideQuickLink url={PUBLIC_URLS.jsonItem(itemId)} text="json item"/>
                 </div>}
               />

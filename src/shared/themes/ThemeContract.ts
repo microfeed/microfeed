@@ -1,3 +1,4 @@
+import {authorIdentitiesSchema, identitySchema, itemSeoSchema, publisherIdentitySchema, seoSchema} from "../Seo";
 import * as z from "zod";
 
 export const THEME_FORMAT_VERSION_V1 = 1 as const;
@@ -203,6 +204,9 @@ const themeAttachmentSchema = z.object({
 }).loose();
 
 const themeItemExtraSchema = z.object({
+  seo: itemSeoSchema.optional(),
+  authors: authorIdentitiesSchema.optional(),
+  slug: z.string().optional(),
   date_published_ms: z.number().optional(),
   date_published_short: z.string().optional(),
   duration_hhmmss: z.string().optional(),
@@ -227,7 +231,7 @@ const themeItemExtraSchema = z.object({
 export const themeItemSchema = z.object({
   _microfeed: themeItemExtraSchema.optional(),
   attachments: z.array(themeAttachmentSchema).optional(),
-  authors: z.array(z.object({name: z.string()}).loose()).optional(),
+  authors: z.array(identitySchema.pick({name: true, url: true}).loose()).optional(),
   banner_image: z.string().optional(),
   content_html: z.string().optional(),
   content_text: z.string().optional(),
@@ -257,6 +261,9 @@ const themeSubscribeMethodSchema = z.object({
 }).loose();
 
 const themeFeedExtraSchema = z.object({
+  seo: seoSchema.optional(),
+  publisher: publisherIdentitySchema.optional(),
+  authors: authorIdentitiesSchema.optional(),
   base_url: z.string(),
   categories: z.array(z.object({
     categories: z.array(z.object({name: z.string()})).optional(),
@@ -335,7 +342,7 @@ const themeSearchResultSchema = z.object({
 export const themeContextSchema = z.object({
   _microfeed: themeFeedExtraSchema.optional(),
   _theme: themeRuntimeMetadataSchema,
-  authors: z.array(z.object({name: z.string()}).loose()).optional(),
+  authors: z.array(identitySchema.pick({name: true, url: true}).loose()).optional(),
   current_year: z.number().int(),
   description: z.string().optional(),
   expired: z.boolean().optional(),

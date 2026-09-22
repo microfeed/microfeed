@@ -1,3 +1,4 @@
+import SeoEditor from "@/components/admin/shared/SeoEditor";
 import React from 'react';
 import Requests from '@/client/requests';
 import AdminPageApp from '@/components/admin/shared/AdminPageApp';
@@ -152,10 +153,12 @@ export default class EditChannelApp extends React.Component<Props, any> {
         ),
       }), resolve);
     });
+    this.setState({seoError: undefined});
     showToast('Channel saved.', 'success');
   }
 
   showSaveError(error: any) {
+    if (error?.response?.data?.error) this.setState({seoError: error.response.data.error});
     if (!error?.response) {
       showToast('Network error. Your changes are still on this page.', 'error');
     } else {
@@ -360,6 +363,12 @@ export default class EditChannelApp extends React.Component<Props, any> {
               </div>
             </div>
           </details>
+          <SeoEditor value={channel} feed={feed} publicBucketUrl={publicBucketUrl} mediaStorage={mediaStorage}
+            error={this.state.seoError}
+            onChange={(patch, previousImage) => this.setState((previous: any) => ({
+              channel: {...previous.channel, ...patch},
+              replacedImageUrls: queueReplacedImageUrl(previous.replacedImageUrls, previousImage),
+            }), () => this.autosave.markChanged())} />
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">

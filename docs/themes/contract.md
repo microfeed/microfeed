@@ -200,3 +200,34 @@ are trusted code, so they do not sanitize intentional HTML or JavaScript.
 
 Continue with [Bundle CSS, JavaScript, and assets](/themes/assets/) or return to
 [Build and release a theme](/themes/).
+
+## SEO metadata and attribution
+
+Channel and item `_microfeed.seo` contain configured title, description, and
+`social_image` overrides; items may also have `canonical_url`. Social image
+metadata includes `url`, `width`, `height`, `mime_type`, and optional `alt`.
+`_microfeed.slug` is present for clean item URLs. Always link to
+`items[]._microfeed.web_url` rather than rebuilding a URL from the title or ID.
+
+Channel `_microfeed.publisher` contains the existing publisher name and optional
+`type` (`Person` or `Organization`), `url`, and `same_as` profile links.
+Channel `_microfeed.authors` contains defaults; an item's extension contains
+only its own author override. Standard item `authors` supplies effective names
+and profile URLs, suitable for visible attribution:
+
+```html
+{{#items.0.authors}}
+  {{#url}}<a href="{{url}}" rel="author">{{name}}</a>{{/url}}
+  {{^url}}<span>{{name}}</span>{{/url}}
+{{/items.0.authors}}
+```
+
+The platform generates title, description, canonical, Open Graph, Twitter card,
+and JSON-LD metadata for the homepage and item pages. Explicit SEO settings
+override matching custom head tags. Otherwise custom/theme tags take precedence
+over generated defaults. Managed tags are deduplicated; unrelated markup and
+custom structured data remain. Do not infer authorship from a publisher name.
+
+New immutable Default theme versions include visible attribution. Existing
+installed versions and custom themes remain unchanged; installing and activating
+a new version is a separate choice.

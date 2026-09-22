@@ -466,7 +466,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
   {
     details: [
       "Creates an item with POST /api/v1/items/ on the selected instance.",
-      "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for fields not represented by common flags.",
+      "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for _microfeed.seo, _microfeed.authors, _microfeed.slug, and language. Omitted fields stay unchanged; null clears metadata overrides. Slug conflicts return 409.",
       "Use --attachment-file for the one main media attachment exported as JSON Feed attachments[0] and the RSS enclosure. Supported files: mp3, m4b, flac, mp4, pdf, doc, docx, xlsx, ppt, pptx, txt, avif, gif, heic, jpeg, jpg, png, webp, and cr2.",
       "A new item must exist before its media attachment can be prepared. The CLI creates the item, uploads the file, then updates the item. If either later step fails, it reports the created item ID so the partial result can be recovered.",
       "Use --image-file only for item cover art or a thumbnail. It does not create a JSON Feed attachment or RSS enclosure.",
@@ -513,7 +513,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
     details: [
       "Updates PUT /api/v1/items/{item-id}/ on the selected instance.",
       "<item-id> is the exact stable ID returned by `item list` or `item get`, for example 0HGJLSML3P1.",
-      "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for fields not represented by common flags.",
+      "Choose exactly one input form: common item flags, or --input with a JSON object. Use JSON input for _microfeed.seo, _microfeed.authors, _microfeed.slug, and language. Omitted fields stay unchanged; null clears metadata overrides. Slug conflicts return 409.",
       "Use --attachment-file for a local main media attachment. The CLI infers audio, video, document, or image category and MIME type from the extension, records the file size, and replaces any existing attachment.",
       "Use --image-file for local cover art or a thumbnail, and --image only for cover art already hosted at an absolute URL. Neither option changes the media attachment or RSS enclosure.",
       ...apiAccessDetails,

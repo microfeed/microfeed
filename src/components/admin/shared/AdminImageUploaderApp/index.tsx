@@ -1,3 +1,4 @@
+import {encodeSocialCrop} from "@/client/SocialImageCrop";
 import React from 'react';
 import clsx from 'clsx';
 import Cropper from 'cropperjs';
@@ -179,7 +180,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     }
     this.setState({deleting: true});
     try {
-      await Requests.deleteImage(
+      if (!this.props.deferredRemoval) await Requests.deleteImage(
         currentImageUrl,
         this.props.imageMetadataTarget as ImageMetadataTarget | undefined,
       );
@@ -235,7 +236,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
     })
   }
 
-  onFileUploadToR2() {
+  async onFileUploadToR2() {
     if (this.props.mediaStorageReady === false) {
       this.showMediaStorageUnavailable();
       return;
@@ -245,15 +246,21 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
       return;
     }
     this.setState({ uploadStatus: UPLOAD_STATUS__START });
-    cropper.getCroppedCanvas().toBlob((blob: Blob | null) => {
+    try {
+      const canvas = cropper.getCroppedCanvas(this.props.socialImage
+        ? {width: 1200, height: 630, imageSmoothingQuality: "high"} : undefined);
+      const blob = this.props.socialImage ? await encodeSocialCrop(canvas)
+        : await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) {
         showToast('Failed to prepare this image. Please try another file.', 'error');
-        this.setState({...this.initState});
+        this.setState({uploadStatus: null});
         return;
       }
       cropper.disable();
 
-      Requests.upload(blob, cdnFilename, (percentage: any) => {
+      const filename = this.props.socialImage
+        ? cdnFilename.replace(/\.[^.]+$/u, blob.type === "image/png" ? ".png" : ".jpg") : cdnFilename;
+      Requests.upload(blob, filename, (percentage: any) => {
         this.setState({
           progressText: `${Number(percentage * 100.0).toFixed(2)}%`,
         });
@@ -278,9 +285,11 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
         });
       }, () => {
         showToast('Failed to upload. Please refresh this page and try again.', 'error', 2000);
-        this.setState({...this.initState});
+        cropper.enable();
+        this.setState({uploadStatus: null});
       }, (error: any) => {
-        this.setState({...this.initState}, () => {
+        cropper.enable();
+        this.setState({uploadStatus: null}, () => {
           if (!error.response) {
             showToast('Network error. Please refresh the page and try again.', 'error');
           } else {
@@ -288,7 +297,11 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
           }
         });
       });
-    }, 'image/png');
+    } catch (error) {
+      cropper.enable();
+      this.setState({uploadStatus: null});
+      showToast(error instanceof Error ? error.message : "Could not prepare this image.", "error");
+    }
   }
 
   showMediaStorageUnavailable() {
@@ -379,8 +392,8 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this image?</AlertDialogTitle>
               <AlertDialogDescription>
-                This removes the image from this page and requests permanent
-                deletion of its uploaded file. This action cannot be undone.
+                {this.props.deferredRemoval ? "Remove this social image override and restore the inherited image when saved."
+                  : "This removes the image from this page. Uploaded files still referenced elsewhere are retained."}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -432,7 +445,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
               const {clientWidth, clientHeight} = e.target;
               const size = Math.min(clientWidth, clientHeight);
               const options: any = {
-                aspectRatio: 1.0,
+                aspectRatio: this.props.socialImage ? 1200 / 630 : 1.0,
                 viewMode: 3,
                 cropBoxResizable: true,
                 crop: (event: any) => {
@@ -440,7 +453,7 @@ export default class AdminImageUploaderApp extends React.Component<any, any> {
                   this.setState({imageWidth: width, imageHeight: height});
                 },
                 ready: () => {
-                  cropper.setCropBoxData({width: size, height: size});
+                  cropper.setCropBoxData({width: size, height: this.props.socialImage ? size * 630 / 1200 : size});
                 }
               };
               // if (clientWidth === clientHeight) {
