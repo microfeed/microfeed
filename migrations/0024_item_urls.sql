@@ -19,26 +19,27 @@ CREATE INDEX item_paths_owner ON item_paths(item_id);
 INSERT INTO item_paths(path, item_id, was_public)
 SELECT '/i/' || id || '/', id, 1 FROM items;
 
+-- Avoid CASE ... END inside triggers: D1 and Wrangler split these differently.
 CREATE TRIGGER items_reserve_id AFTER INSERT ON items BEGIN
-  SELECT CASE WHEN EXISTS (
+  SELECT RAISE(ABORT, 'item_path_conflict') WHERE EXISTS (
     SELECT 1 FROM item_paths WHERE path = '/i/' || NEW.id || '/' AND item_id != NEW.id
-  ) THEN RAISE(ABORT, 'item_path_conflict') END;
+  );
   INSERT OR IGNORE INTO item_paths(path, item_id, was_public)
   VALUES ('/i/' || NEW.id || '/', NEW.id, 1);
 END;
 
 CREATE TRIGGER items_reserve_path AFTER UPDATE OF public_path, status ON items
 WHEN NEW.public_path IS NOT NULL BEGIN
-  SELECT CASE WHEN EXISTS (
+  SELECT RAISE(ABORT, 'item_path_conflict') WHERE EXISTS (
     SELECT 1 FROM item_paths WHERE path = NEW.public_path AND item_id != NEW.id
   ) OR (
     (length(NEW.public_path) = 15 OR substr(NEW.public_path, -13, 1) = '-') AND EXISTS (
       SELECT 1 FROM item_paths
       WHERE path = '/i/' || substr(NEW.public_path, -12, 11) || '/' AND item_id != NEW.id
     )
-  ) THEN RAISE(ABORT, 'item_path_conflict') END;
+  );
   INSERT INTO item_paths(path, item_id, was_public)
-  VALUES (NEW.public_path, NEW.id, CASE WHEN NEW.status IN (1, 4) THEN 1 ELSE 0 END)
+  VALUES (NEW.public_path, NEW.id, coalesce(NEW.status IN (1, 4), 0))
   ON CONFLICT(path) DO UPDATE SET was_public = max(was_public, excluded.was_public);
   -- Unpublished automatic title edits need no redirect history.
   DELETE FROM item_paths WHERE path = OLD.public_path AND path != NEW.public_path
@@ -52,16 +53,16 @@ END;
 
 CREATE TRIGGER items_reserve_inserted_path AFTER INSERT ON items
 WHEN NEW.public_path IS NOT NULL BEGIN
-  SELECT CASE WHEN EXISTS (
+  SELECT RAISE(ABORT, 'item_path_conflict') WHERE EXISTS (
     SELECT 1 FROM item_paths WHERE path = NEW.public_path AND item_id != NEW.id
   ) OR (
     (length(NEW.public_path) = 15 OR substr(NEW.public_path, -13, 1) = '-') AND EXISTS (
       SELECT 1 FROM item_paths
       WHERE path = '/i/' || substr(NEW.public_path, -12, 11) || '/' AND item_id != NEW.id
     )
-  ) THEN RAISE(ABORT, 'item_path_conflict') END;
+  );
   INSERT INTO item_paths(path, item_id, was_public)
-  VALUES (NEW.public_path, NEW.id, CASE WHEN NEW.status IN (1, 4) THEN 1 ELSE 0 END)
+  VALUES (NEW.public_path, NEW.id, coalesce(NEW.status IN (1, 4), 0))
   ON CONFLICT(path) DO UPDATE SET was_public = max(was_public, excluded.was_public);
 END;
 

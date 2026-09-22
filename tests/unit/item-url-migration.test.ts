@@ -1,6 +1,7 @@
 import {DatabaseSync} from "node:sqlite";
 import {readFile} from "node:fs/promises";
 import {describe, expect, it} from "vitest";
+import {unstable_splitSqlQuery} from "wrangler";
 import {prepareItemUrls} from "../../manage-cli/lib/item-urls";
 import type {CloudflareClient} from "../../manage-cli/lib/cloudflare";
 import type {MicrofeedConfig} from "../../manage-cli/types";
@@ -11,7 +12,10 @@ const config = {} as MicrofeedConfig;
 async function fixture() {
   const db = new DatabaseSync(":memory:");
   for (const name of ["0001_initial", "0024_item_urls"]) {
-    db.exec(await readFile(new URL(`../../migrations/${name}.sql`, import.meta.url), "utf8"));
+    const sql = await readFile(new URL(`../../migrations/${name}.sql`, import.meta.url), "utf8");
+    // Exercise the individual statements Wrangler sends to local D1. exec()
+    // accepts multiple statements and would hide incorrectly combined triggers.
+    for (const statement of unstable_splitSqlQuery(sql)) db.prepare(statement).run();
   }
   db.prepare("INSERT INTO items(id,status,data) VALUES(?,1,?)").run("migration01", JSON.stringify({title: "Original 中文"}));
   const client = {async queryD1(_config: MicrofeedConfig, sql: string) { return db.prepare(sql).all(); }} as CloudflareClient;
@@ -19,6 +23,25 @@ async function fixture() {
 }
 
 describe("durable item URL preparation", () => {
+  it("reserves inserted URLs and freezes them on publication after Wrangler splits the migration", async () => {
+    const {db} = await fixture();
+    try {
+      db.exec("INSERT INTO items(id,status,data,public_path,url_mode,url_frozen) VALUES('draftitem01',2,'{}','/i/draft/','auto',0)");
+      expect(db.prepare("SELECT was_public FROM item_paths WHERE path='/i/draft/'").get()).toEqual({was_public: 0});
+      db.exec("UPDATE items SET status=1 WHERE id='draftitem01'");
+      expect(db.prepare("SELECT url_frozen,url_revision FROM items WHERE id='draftitem01'").get()).toEqual({url_frozen: 1, url_revision: 1});
+      expect(db.prepare("SELECT was_public FROM item_paths WHERE path='/i/draft/'").get()).toEqual({was_public: 1});
+
+      db.exec("INSERT INTO items(id,status,data,public_path) VALUES('nullstate01',NULL,'{}','/i/null-status/')");
+      expect(db.prepare("SELECT was_public FROM item_paths WHERE path='/i/null-status/'").get()).toEqual({was_public: 0});
+      db.exec("DELETE FROM items WHERE id='draftitem01'");
+      expect(() => db.exec("INSERT INTO items(id,status,data,public_path) VALUES('conflict001',1,'{}','/i/draft/')"))
+        .toThrow("item_path_conflict");
+    } finally {
+      db.close();
+    }
+  });
+
   it("retries safely when an old writer edits between selection and update", async () => {
     const {db, client} = await fixture();
     const query = client.queryD1.bind(client);
