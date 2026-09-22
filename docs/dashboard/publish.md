@@ -41,7 +41,6 @@ the dashboard updates it to the publication time. A date you chose yourself is
 preserved. If public visibility is enabled, use the external link to inspect the
 page.
 
-<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 25 33 PM" src="https://github.com/user-attachments/assets/39321203-cbdd-4e6f-8028-26ea62bf25a4" />
 <img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 24 26 PM" src="https://github.com/user-attachments/assets/b088d2f7-c360-4776-a9a5-6787dfc5e281" />
 
 
