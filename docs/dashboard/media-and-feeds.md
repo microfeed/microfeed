@@ -69,6 +69,9 @@ only configured fields:
 | Content license | Channel and item | `podcast:license` |
 | Feed import lock | Channel | `podcast:locked` |
 
+<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 23 29 PM" src="https://github.com/user-attachments/assets/c6abc778-97f9-4160-9a92-72a5ec58e166" />
+
+
 JSON Feed and the authenticated API expose these values under
 `_microfeed.podcast`, using `transcripts`, `chapters`, `people`, `funding`,
 `license`, and `locked`. The [API Explorer](/api/) supplies their current request
