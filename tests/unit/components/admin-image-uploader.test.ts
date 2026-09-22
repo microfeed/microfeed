@@ -143,7 +143,7 @@ describe("admin image uploader", () => {
     expect(textContent(confirmation)).toContain("Delete image");
   });
 
-  it("reports the replaced image after a successful upload", () => {
+  it("reports the replaced image after a successful upload", async () => {
     const props = uploaderProps();
     const component = new AdminImageUploaderApp(props);
     useSynchronousState(component);
@@ -166,12 +166,50 @@ describe("admin image uploader", () => {
       onUploaded,
     ) => onUploaded("production/images/replacement.png"));
 
-    component.onFileUploadToR2();
+    await component.onFileUploadToR2();
 
     expect(props.onImageUploaded).toHaveBeenCalledWith(
       "production/images/replacement.png",
       "image/png",
       "production/images/channel.png",
     );
+  });
+
+  it("uploads only the social crop and retains the previous image after an upload failure", async () => {
+    const props = uploaderProps({socialImage: true});
+    const component = new AdminImageUploaderApp(props);
+    useSynchronousState(component);
+    const crop = new Blob(["cropped photograph"], {type: "image/jpeg"});
+    const cropper = {
+      destroy: vi.fn(), disable: vi.fn(), enable: vi.fn(),
+      getCroppedCanvas: vi.fn(() => ({
+        width: 1200, height: 630,
+        getContext: () => ({getImageData: () => ({data: new Uint8ClampedArray([0, 0, 0, 255])})}),
+        toBlob: (callback: (blob: Blob) => void) => callback(crop),
+      })),
+    };
+    component.state = {...component.state, cropper, cdnFilename: "images/social.png"};
+    const upload = vi.spyOn(Requests, "upload").mockImplementation((_file, _name, _progress, _success, failure) => failure());
+    await component.onFileUploadToR2();
+    expect(cropper.getCroppedCanvas).toHaveBeenCalledWith({width: 1200, height: 630, imageSmoothingQuality: "high"});
+    expect(upload).toHaveBeenCalledWith(crop, "images/social.jpg", expect.any(Function), expect.any(Function), expect.any(Function), expect.any(Function));
+    expect(props.onImageUploaded).not.toHaveBeenCalled();
+    expect(component.state.currentImageUrl).toBe(props.currentImageUrl);
+    expect(component.state.uploadStatus).toBeNull();
+    expect(cropper.enable).toHaveBeenCalledOnce();
+    expect(cropper.destroy).not.toHaveBeenCalled();
+  });
+
+  it("defers social-image deletion to the content save and keeps metadata after a failed removal", async () => {
+    const props = uploaderProps({deferredRemoval: true});
+    const component = new AdminImageUploaderApp(props);
+    useSynchronousState(component);
+    const deleteImage = vi.spyOn(Requests, "deleteImage");
+    props.onImageDeleted.mockRejectedValueOnce(new Error("save failed"));
+    await component.onDeleteImage();
+    expect(component.state.currentImageUrl).toBe(props.currentImageUrl);
+    await component.onDeleteImage();
+    expect(deleteImage).not.toHaveBeenCalled();
+    expect(component.state.currentImageUrl).toBeNull();
   });
 });

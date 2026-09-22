@@ -9,6 +9,7 @@ import PublicSearch from "@/components/public/PublicSearch.astro";
 import "../styles/interactive.css";
 
 interface Props {
+  metadataHtml?: string;
   bodyEnd: string;
   bodyHtml: string;
   bodyStart: string;
@@ -30,6 +31,7 @@ interface Props {
 }
 
 const {
+  metadataHtml,
   bodyEnd,
   bodyHtml,
   bodyStart,
@@ -65,12 +67,14 @@ const faviconUrl = effectiveFavicon?.url
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    {description && <meta name="description" content={htmlMetaDescription(description, false)} />}
-    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {metadataHtml === undefined && <title>{title}</title>}
+    {metadataHtml === undefined && description && <meta name="description" content={htmlMetaDescription(description, false)} />}
+    {metadataHtml === undefined && canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
     {faviconUrl && <link rel="icon" type={effectiveFavicon?.contentType} href={faviconUrl} />}
-    <Fragment set:html={sharedHeadHtml} />
-    <Fragment set:html={headHtml} />
+    {metadataHtml !== undefined ? <Fragment set:html={metadataHtml} /> : <>
+      <Fragment set:html={sharedHeadHtml} />
+      <Fragment set:html={headHtml} />
+    </>}
   </head>
   <body>
     <Fragment set:html={sharedBodyStart} />

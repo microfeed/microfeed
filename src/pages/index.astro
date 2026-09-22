@@ -1,4 +1,5 @@
 ---
+import {resolveMetadata} from "@/server/seo/metadata";
 import {env} from "cloudflare:workers";
 
 import {CODE_TYPES} from "@/shared/Constants";
@@ -47,12 +48,15 @@ const sharedTheme = new Theme(
   assetBaseUrl,
   extraContext,
 );
+const metadata = await resolveMetadata({feed: loaded.publicFeed, origin: Astro.url.origin,
+  headHtml: sharedTheme.getWebHeader().html + theme.getWebHeader().html});
 ---
 
 {unavailable ? (
   <h1>Not Found</h1>
 ) : (
   <PublicLayout
+    metadataHtml={metadata.headHtml}
     title={loaded.publicFeed.title}
     description={String(loaded.publicFeed._microfeed?.description_text ?? "")}
     language={loaded.publicFeed.language}

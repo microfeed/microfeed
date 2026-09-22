@@ -278,13 +278,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "bundled:default",
-      version: "1.1.15",
+      version: "1.1.16",
     });
     expect(stored.get("microfeed.default")).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "bundled:default",
-      version: "1.1.15",
+      version: "1.1.16",
     });
     expect([...stored.keys()]).toEqual(BUNDLED_THEME_CATALOG.map(
       ({packageId}) => packageId,
@@ -427,7 +427,7 @@ describe("theme repository initialization", () => {
       expect(stored.get("microfeed.default")).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.15",
+        version: "1.1.16",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(BUNDLED_THEME_CATALOG.length);
@@ -1237,7 +1237,7 @@ describe("theme repository initialization", () => {
           manifest_json: JSON.stringify({
             ...manifest,
             packageId: "microfeed.default",
-            version: "1.1.15",
+            version: "1.1.16",
           }),
           name: "microfeed default",
           origin_theme_id: null,
@@ -1248,7 +1248,7 @@ describe("theme repository initialization", () => {
           source_path: "bundled:default",
           source_ref: null,
           source_url: null,
-          version: "1.1.15",
+          version: "1.1.16",
         }]);
       }
       throw new Error(`Unexpected D1 query: ${request.sql}`);

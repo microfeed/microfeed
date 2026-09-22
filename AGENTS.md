@@ -14,6 +14,9 @@
   continued when they already contain the task's work.
 - Preserve unrelated changes. Never stash, reset, discard, or stage them to
   make a task branch clean; use an isolated worktree when necessary.
+- Refrain from adding trivial unit tests or tests that merely mirror the
+  implementation. Focus new tests on meaningful behavior, regressions, and
+  public contracts; do not add tests solely for coverage counts.
 - Before publishing, run `git diff --check` and `yarn check`, commit only the
   scoped files with a concise imperative title, and open a draft pull request
   against `microfeed/microfeed` when GitHub authentication is available.

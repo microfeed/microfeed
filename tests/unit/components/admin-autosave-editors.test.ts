@@ -9,6 +9,7 @@ import EditItemApp from "@/components/admin/items/EditItemApp";
 import AdminSaveAction from "@/components/admin/shared/AdminSaveAction";
 import AdminDatetimePicker from "@/components/admin/shared/AdminDatetimePicker";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
+import SeoEditor from "@/components/admin/shared/SeoEditor";
 import {Button} from "@/components/ui/button";
 import {STATUSES} from "@/shared/Constants";
 import {WEBMCP_INTERACTION_HEADERS} from "@/shared/WebMcp";
@@ -148,6 +149,49 @@ afterEach(() => {
 });
 
 describe("admin editor autosave", () => {
+  it("autosaves and clears Link through WebMCP draft editing", async () => {
+    const app = mount(new EditItemApp({...props({title: "Draft", status: STATUSES.UNPUBLISHED}), itemId: "draftlink01"}));
+    const signal = new AbortController().signal;
+    await (app as any).saveWebMcpDraft({url: "https://original.example/article/"}, signal);
+    expect(vi.mocked(Requests.axiosPost).mock.calls.at(-1)?.[1]).toMatchObject({item: {link: "https://original.example/article/"}});
+    await (app as any).saveWebMcpDraft({url: null}, signal);
+    expect(app.state.item.link).toBeUndefined();
+    expect(vi.mocked(Requests.axiosPost).mock.calls.at(-1)?.[1]).toMatchObject({item: {link: undefined}});
+  });
+
+  it("serializes Apply URL after pending content and preserves edits made while saving", async () => {
+    const app = mount(new EditItemApp(props()));
+    const first = deferred<any>();
+    const second = deferred<any>();
+    const post = vi.mocked(Requests.axiosPost)
+      .mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    app.onUpdateItemMeta({title: "Before URL change", seo: {title: "Metadata"}});
+    const editor = findElement(app.render(), (element) => element.type === SeoEditor)!;
+    const applied = editor.props.onApplySlug("自定义地址");
+    await vi.waitFor(() => expect(post).toHaveBeenCalledOnce());
+    expect((post.mock.calls[0]![1] as any).item.applySlug).toBeUndefined();
+    first.resolve({data: {itemUrl: {publicPath: "/i/before/", urlMode: "auto", urlFrozen: false}}});
+    await vi.waitFor(() => expect(post).toHaveBeenCalledTimes(2));
+    expect((post.mock.calls[1]![1] as any).item).toMatchObject({applySlug: "自定义地址", seo: {title: "Metadata"}});
+    app.onUpdateItemMeta({title: "Edited during save"});
+    second.resolve({data: {itemUrl: {publicPath: "/i/自定义地址/", urlMode: "custom", urlFrozen: true}}});
+    await expect(applied).resolves.toBe(true);
+    expect(app.state.item).toMatchObject({title: "Edited during save", publicPath: "/i/自定义地址/"});
+    expect(app.state.item.applySlug).toBeUndefined();
+    await (app as any).autosave.flush();
+    expect((post.mock.calls.at(-1)![1] as any).item.title).toBe("Edited during save");
+  });
+
+  it("reports a URL conflict to the SEO section without discarding edits", async () => {
+    const app = mount(new EditItemApp(props()));
+    vi.mocked(Requests.axiosPost).mockRejectedValueOnce({response: {status: 409, data: {error: "URL already reserved"}}});
+    const editor = findElement(app.render(), (element) => element.type === SeoEditor)!;
+    await expect(editor.props.onApplySlug("reserved")).resolves.toBe(false);
+    expect(app.state.item.applySlug).toBe("reserved");
+    expect(findElement(app.render(), (element) => element.type === SeoEditor)?.props.error).toBe("URL already reserved");
+    expect(app.state.autosaveState.phase).toBe("error");
+  });
+
   it("registers an Item save tool only for drafts and awaits persistence", async () => {
     const registerTool = vi.fn(async (
       _tool: any,

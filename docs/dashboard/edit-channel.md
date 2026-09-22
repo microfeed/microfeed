@@ -58,3 +58,50 @@ the microfeed instance is deployed. To attach or change a custom domain, see
 The channel image is also the fallback favicon. If you upload a separate
 favicon under **Settings**, public pages use that image instead. See
 [Media and feeds: Favicon](/dashboard/media-and-feeds/#favicon).
+
+## Customize search and social previews
+
+Open **SEO / GEO** below **Podcast-specific fields**. The section starts
+collapsed. Set an SEO title and description for the homepage, or clear them to
+use the channel title and description. These settings do not change visible
+content or podcast metadata. The character counts are guides, not ranking rules
+or guaranteed display lengths.
+
+Upload a social image and crop it to **1200 × 630**. Cropping happens in your
+browser; only the crop is uploaded. Opaque images become JPEG, and transparent
+images stay PNG. The result must be smaller than 5 MB. A warning appears when a
+small crop needs enlargement. Optional alt text describes the social image.
+Without this override, the homepage uses channel cover art.
+
+Publisher identity reuses the **Publisher** name above. Choose Person or
+Organization only when appropriate, and optionally add a profile URL and
+official profile links. Default authors are separate: their names and profile
+URLs provide item attribution without changing `itunes:author`. Leave unknown
+identity information unset.
+
+Select **Save changes**, then inspect the approximate previews and the public
+page. Search and social platforms can choose different snippets. These ordinary
+metadata and identity fields also help systems that summarize web content;
+there are no special AI ranking fields or promises of inclusion.
+
+## Podcast participants, support, and licensing
+
+Open **Podcast-specific fields** to add regular hosts and contributors under
+**Hosts, guests, and credits**. Each person has a name, role, and optional
+profile URL and photo. These credits are separate from the Publisher and SEO
+authors. Episodes inherit the channel participants unless they supply their own
+complete list.
+
+**Support the show** accepts multiple labeled donation or membership links.
+**Content license** offers common Creative Commons licenses and All rights
+reserved, or a custom identifier with a URL to the full terms. Episodes can
+override the channel license.
+
+**Feed import lock** asks other hosting platforms to reject imports of your
+feed. It is advisory and does not make the feed private. Choose Unlocked before
+moving to another host; Unspecified omits the signal.
+
+Save each entry in its dialog, then select **Save changes** on the channel.
+The field headings open explanations with RSS and JSON examples. See
+[Podcast fields in feeds](/dashboard/media-and-feeds/#podcast-fields-in-feeds)
+for interoperability details.

@@ -166,6 +166,14 @@ a {
   @apply inline-flex max-w-full flex-col;
 }
 
+.lh-upload-wrapper.is-social-image {
+  @apply w-full max-w-80;
+}
+
+.lh-upload-wrapper.is-social-image .lh-upload-fileinput-image {
+  @apply w-full;
+}
+
 .lh-upload-fileinput:focus-visible {
   @apply outline-none;
 }
@@ -175,7 +183,7 @@ a {
 }
 
 .lh-upload-fileinput > input[type="file"] {
-  @apply absolute block opacity-0 pointer-events-none;
+  @apply absolute block h-px w-px overflow-hidden opacity-0 pointer-events-none;
 }
 
 .lh-upload-wrapper .lh-upload-fileinput.is-disabled {

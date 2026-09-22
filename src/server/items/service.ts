@@ -1,3 +1,4 @@
+import {mergeOverrides} from "@/shared/Seo";
 import {ITEM_STATUSES_STRINGS_DICT, STATUSES} from "@/shared/Constants";
 import type FeedCrudManager from "@/server/feed/FeedCrudManager";
 import type FeedDb from "@/server/feed/FeedDb";
@@ -57,6 +58,8 @@ export async function updateItem(
   if (!existing) return null;
   const normalized = normalizedInput(input, existing.status);
   const patch = feedCrud._publicToInternalSchemaForItem(normalized);
+  if (Object.hasOwn(patch, "seo")) patch.seo = mergeOverrides(existing.seo, patch.seo);
+  if (Object.hasOwn(patch, "podcast")) patch.podcast = mergeOverrides(existing.podcast, patch.podcast);
   const finalizesDraftPublicationDate =
     input.date_published !== undefined ||
     input.date_published_ms !== undefined ||

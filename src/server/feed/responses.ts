@@ -1,3 +1,4 @@
+import {resolveItemRoute} from "@/server/items/urls";
 import {env} from "cloudflare:workers";
 
 import {adminBasePath} from "@/shared/AdminPath";
@@ -13,6 +14,31 @@ import {
 } from "./feed";
 import {jsonResponse} from "@/server/http";
 import {publicSiteFileResponse} from "@/server/site-files/public";
+import {chapterDocument, CHAPTERS_CONTENT_TYPE, type ItemPodcast} from "@/shared/Podcast";
+
+export async function podcastChaptersResponse(request: Request, itemSlug: string): Promise<Response> {
+  const itemId = await resolveItemRoute(env.FEED_DB, itemSlug);
+  if (!itemId) return new Response(null, {status: 404});
+  const loaded = await loadPublishedFeed(env, request, {
+    limit: 1, queryKwargs: {id: itemId, "status__in": [STATUSES.PUBLISHED, STATUSES.UNLISTED]},
+  });
+  const unavailable = feedUnavailable(loaded.content);
+  if (unavailable) return new Response(null, {status: unavailable.status});
+  const redirect = onboardingRedirect(request, loaded.onboarding.requiredOk);
+  if (redirect) return redirect;
+  const podcast = loaded.content.items?.[0]?.podcast as ItemPodcast | undefined;
+  if (!podcast?.chapters?.length || subscriptionDisabled(loaded.content, "rss")) {
+    return new Response(null, {status: 404});
+  }
+  return new Response(request.method === "HEAD" ? null : JSON.stringify(chapterDocument(podcast.chapters)), {
+    headers: {
+      "content-type": `${CHAPTERS_CONTENT_TYPE}; charset=utf-8`,
+      "access-control-allow-origin": "*",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
 
 function feedUnavailable(content: FeedContent): Response | null {
   if (isPublicFeedOffline(content)) {
@@ -51,7 +77,7 @@ export async function jsonFeedResponse(
   itemStatuses: number[] = [STATUSES.PUBLISHED, STATUSES.UNLISTED],
   checkAccessPolicy = true,
 ): Promise<Response> {
-  const itemId = itemSlug ? getIdFromSlug(itemSlug) : undefined;
+  const itemId = itemSlug ? (checkAccessPolicy ? await resolveItemRoute(env.FEED_DB, itemSlug) : getIdFromSlug(itemSlug)) : undefined;
   if (itemSlug && !itemId) {
     return new Response("Not Found", {status: 404});
   }
@@ -90,7 +116,7 @@ export async function rssFeedResponse(
   request: Request,
   itemSlug?: string,
 ): Promise<Response> {
-  const itemId = itemSlug ? getIdFromSlug(itemSlug) : undefined;
+  const itemId = itemSlug ? await resolveItemRoute(env.FEED_DB, itemSlug) : undefined;
   if (itemSlug && !itemId) {
     return new Response("Not Found", {status: 404});
   }

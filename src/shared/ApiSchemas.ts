@@ -1,5 +1,9 @@
 import * as z from "zod";
+import {channelPodcastSchema, itemPodcastSchema, podcastChapterDocumentSchema} from "./Podcast";
 import "zod-openapi";
+
+import {authorIdentitiesSchema, identitySchema, languageOverrideSchema, publisherIdentitySchema, seoSchema, socialImageSchema} from "./Seo";
+import {normalizeItemSlug} from "./ItemUrls";
 
 import {API_KEY_SCOPES} from "./Api";
 import {STATUSES} from "./Constants";
@@ -17,6 +21,8 @@ export const apiItemIdSchema = z.string().min(1).meta({
   description: "The microfeed item ID or an item-page slug ending in that ID.",
   example: "0HGJLSML3P1",
 });
+
+export const apiPodcastChaptersSchema = podcastChapterDocumentSchema.meta({id: "PodcastChapters"});
 
 export const apiStatusSchema = z.union([
   z.enum(["published", "unlisted", "unpublished"]),
@@ -61,8 +67,25 @@ export const apiAttachmentOutputSchema = apiAttachmentSchema.extend({
   url: z.string().min(1),
 }).meta({id: "AttachmentOutput"});
 
+export const apiItemMicrofeedSchema = z.object({
+  podcast: itemPodcastSchema.nullable().optional().meta({
+    description: "Podcast episode fields: transcripts, ordered chapters, people, and license. Omitted properties are preserved on update; null clears a property. Empty people and a cleared license inherit channel defaults. Chapters are also served as application/json+chapters at /i/{id}/chapters.json for published or unlisted items.",
+  }),
+  seo: seoSchema.nullable().optional(),
+  authors: authorIdentitiesSchema.nullable().optional(),
+  slug: z.string().refine((value) => {
+    try { normalizeItemSlug(value); return true; } catch { return false; }
+  }, "Use a Unicode URL slug containing letters, marks, numbers, and hyphens.").optional().meta({
+    description: "Apply a clean /i/{slug}/ URL. NFC-normalized and lowercased; a conflict returns 409. Omit to keep the URL unchanged.",
+  }),
+}).loose().meta({id: "ItemMicrofeed"});
+
+export const apiItemLinkSchema = z.union([z.url(), z.literal("")]).nullable().optional().meta({
+  description: "Item Link: the RSS/JSON Feed destination and, for HTTP(S) links, the canonical, Open Graph, and structured-data URL. Null or an empty string restores the local item URL; omission preserves the saved Link. A different canonical excludes the local item from the generated sitemap without redirecting it. URL fragments are omitted from canonical metadata.",
+});
+
 export const apiItemInputSchema = z.object({
-  _microfeed: z.record(z.string(), z.unknown()).optional(),
+  _microfeed: apiItemMicrofeedSchema.optional(),
   attachment: apiAttachmentSchema.optional().meta({
     description: "Compatibility input alias for attachments[0]. Prefer attachments.",
   }),
@@ -78,9 +101,10 @@ export const apiItemInputSchema = z.object({
     description: "Item-specific cover art or thumbnail. This is not the main media attachment or RSS enclosure.",
     example: "https://feed.example.com/media/production/images/item.png",
   }),
+  language: languageOverrideSchema.nullable().optional(),
   status: apiStatusSchema.optional(),
   title: z.string().optional(),
-  url: z.url().optional(),
+  url: apiItemLinkSchema,
 }).loose().meta({id: "ItemInput"});
 
 export const apiIdempotencyKeySchema = z.string().min(1).max(128).regex(
@@ -100,6 +124,7 @@ export const apiItemValidationResponseSchema = z.object({
 }).meta({id: "ItemValidationResponse"});
 
 export const apiItemOutputSchema = apiItemInputSchema.extend({
+  authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
   attachments: z.array(apiAttachmentOutputSchema).optional(),
   content_text: z.string(),
   date_modified: z.iso.datetime().optional(),
@@ -348,6 +373,10 @@ export const apiSearchQuerySchema = z.object({
 });
 
 export const apiFeedMicrofeedSchema = z.object({
+  podcast: channelPodcastSchema.nullable().optional(),
+  seo: seoSchema.nullable().optional(),
+  publisher: publisherIdentitySchema.nullable().optional(),
+  authors: authorIdentitiesSchema.nullable().optional(),
   copyright: z.string().optional().meta({
     description: "Rendered channel copyright. A supported {{current_year}} variable in the saved channel has already been replaced with the current UTC year.",
     example: "© 2026 Example Publisher",
@@ -355,6 +384,7 @@ export const apiFeedMicrofeedSchema = z.object({
 }).loose().meta({id: "FeedMicrofeed"});
 
 export const apiFeedSchema = z.object({
+  authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
   _microfeed: apiFeedMicrofeedSchema.optional(),
   description: z.string().optional(),
   favicon: z.string().optional(),
@@ -369,6 +399,12 @@ export const apiFeedSchema = z.object({
 }).loose().meta({id: "Feed"});
 
 export const apiChannelMicrofeedInputSchema = z.object({
+  podcast: channelPodcastSchema.nullable().optional().meta({
+    description: "Podcast show fields: regular people, support links (funding), content license, and advisory import lock (locked). Omitted properties are preserved; null clears an override. Podcast people are separate from SEO authors and the publisher.",
+  }),
+  seo: seoSchema.nullable().optional(),
+  publisher: publisherIdentitySchema.nullable().optional(),
+  authors: authorIdentitiesSchema.nullable().optional(),
   copyright: z.string().optional().meta({
     description: "Channel copyright text. Use the allowlisted {{current_year}} variable to publish the current UTC year automatically; the expression is saved literally and resolved in public output.",
     example: "© {{current_year}} Example Publisher",
@@ -521,9 +557,14 @@ export const apiWebhookTruncatedSnapshotSchema = z.object({
     "The stable subject identifier retained when larger snapshot fields are removed to fit the webhook payload limit.",
 });
 
+const webhookSocialImageSchema = socialImageSchema.extend({
+  url: z.string().min(1).meta({description: "An absolute image URL or a managed media key relative to the site's media address."}),
+});
+const webhookSeoSchema = seoSchema.extend({social_image: webhookSocialImageSchema.nullable().optional()});
+
 export const apiWebhookChannelSnapshotSchema = z.object({
-  _microfeed: z.object({copyright: z.string().optional()}).optional(),
-  authors: z.array(z.object({name: z.string()})).optional(),
+  _microfeed: apiChannelMicrofeedInputSchema.extend({seo: webhookSeoSchema.nullable().optional()}).meta({id: "WebhookChannelMicrofeed"}).optional(),
+  authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
   description: z.string().optional(),
   expired: z.boolean().optional(),
   homepage_url: z.url().optional(),
@@ -534,6 +575,9 @@ export const apiWebhookChannelSnapshotSchema = z.object({
 }).meta({id: "WebhookChannelSnapshot"});
 
 export const apiWebhookItemSnapshotSchema = z.object({
+  _microfeed: apiItemMicrofeedSchema.extend({seo: webhookSeoSchema.nullable().optional()}).meta({id: "WebhookItemMicrofeed"}).optional(),
+  language: languageOverrideSchema.nullable().optional(),
+  authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
   attachments: z.array(apiAttachmentOutputSchema).max(1).optional(),
   content_html: z.string().optional(),
   content_text: z.string(),

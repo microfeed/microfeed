@@ -61,7 +61,14 @@ export const CONTROLS_TEXTS_DICT = {
   [ITEM_CONTROLS.LINK]: {
     linkName: 'Link',
     modalTitle: 'Item / Link',
-    text: "An item's web link. By default, it's a web page on your microfeed. But you can set it to fit your use case.",
+    text: "The Link is the item's address in RSS and JSON Feed. It also sets the page's canonical URL: " +
+      "the preferred address you suggest search engines use for this content.<br><br>" +
+      "Leave it blank to use this item's page on your microfeed. When republishing the same article from another website, " +
+      "enter the original article's HTTP or HTTPS URL here. Feed readers will open that address, and the page's search and social metadata will point to it.<br><br>" +
+      "Your local item page stays accessible; changing Link does not redirect visitors or change its address. " +
+      "To change the local address, use Item URL in SEO / GEO. An item with a Link pointing elsewhere is omitted from the generated sitemap.<br><br>" +
+      "Use this for the preferred version of this content, not a related page or source citation. " +
+      "Search engines may choose a different canonical URL. URL fragments are omitted from canonical metadata.",
     rss: '<channel><item><link>https://example.com/page1.html</link></item></channel>',
     json: '{ "items": [{"url": "https://example.com/page1.html"}] }',
   },

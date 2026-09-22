@@ -12,6 +12,8 @@ import {htmlToPlainText} from "@/shared/StringUtils";
 import type {MicrofeedConfig} from "../types";
 import type {CloudflareClient} from "./cloudflare";
 
+import {prepareItemUrls} from "./item-urls";
+
 const NORMALIZATION_BATCH_SIZE = 50;
 const MAX_NORMALIZATION_BATCHES = 10_000;
 
@@ -305,6 +307,7 @@ export async function prepareItemSearch(
   options: ItemSearchOptions = {},
   markReady = true,
 ): Promise<number> {
+  await prepareItemUrls(cloudflare, config, options);
   await ensureItemSearchIndexes(cloudflare, config, options);
   return normalizeItemSearchContent(cloudflare, config, options, markReady);
 }

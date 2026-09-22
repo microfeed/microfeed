@@ -1,7 +1,7 @@
 # My microfeed theme
 
 This is a generic standalone microfeed theme repository with the initial
-identity `example.my-theme@0.1.0`.
+identity `example.my-theme@0.1.1`.
 
 This repository contains the rendered files installed by microfeed. It does not
 recreate private build tools or source files used by the original theme author.

@@ -7,6 +7,11 @@
 
   <section>
     <h1>{{items.0.title}}</h1>
+    {{#items.0.authors.length}}
+    <div class="mb-4 text-sm" aria-label="Authors">
+      By {{#items.0.authors}}<span class="mr-2">{{#url}}<a href="{{url}}" rel="author">{{name}}</a>{{/url}}{{^url}}{{name}}{{/url}}</span>{{/items.0.authors}}
+    </div>
+    {{/items.0.authors.length}}
     <div class="mb-4 text-sm">
       <time>{{items.0._microfeed.date_published_short}}</time>
       &middot;

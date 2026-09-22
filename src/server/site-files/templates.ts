@@ -1,3 +1,4 @@
+import {hasOtherCanonical} from "@/server/seo/metadata";
 import {SyntaxValidator} from "fast-xml-validator";
 
 import {resolveApiAccessSettings} from "@/shared/Api";
@@ -149,7 +150,7 @@ export async function renderSiteFileForRequest(
     ...page,
     _loop: loopMetadata(index, publicPages.length),
   }));
-  const feedItems = (publicFeed.items ?? []).slice(
+  const feedItems = (publicFeed.items ?? []).filter((item) => !input.allowLargeGeneratedSitemap || !hasOtherCanonical(item)).slice(
     0,
     SITE_FILE_TEMPLATE_COLLECTION_LIMIT,
   );
@@ -158,7 +159,7 @@ export async function renderSiteFileForRequest(
     itemTemplateContext(item, index, feedItems.length)
   );
   const origin = new URL(request.url).origin;
-  const homePageUrl = publicFeed.home_page_url ?? new URL("/", origin).toString();
+  const homePageUrl = input.allowLargeGeneratedSitemap ? new URL("/", origin).toString() : publicFeed.home_page_url ?? new URL("/", origin).toString();
   const apiLlmsFullUrl = siteFileApiLlmsFullUrl(feedContent, request);
   const context: Record<string, unknown> = {
     ...limitedPublicFeed,

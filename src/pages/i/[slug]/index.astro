@@ -2,7 +2,8 @@
 import {env} from "cloudflare:workers";
 
 import {CODE_TYPES, STATUSES} from "@/shared/Constants";
-import {getIdFromSlug, PUBLIC_URLS} from "@/shared/StringUtils";
+import {resolveMetadata} from "@/server/seo/metadata";
+import {resolveItemRoute} from "@/server/items/urls";
 import Theme from "@/server/themes/Theme";
 import PublicLayout from "../../../layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
@@ -10,7 +11,7 @@ import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
 import {navigationPages} from "@/server/pages/service";
 import {loadPublicNotFoundPageRoute} from "@/server/pages/public";
 
-const itemId = getIdFromSlug(Astro.params.slug ?? "");
+const itemId = await resolveItemRoute(env.FEED_DB, Astro.params.slug ?? "");
 const loaded = await loadPublishedFeed(env, Astro.request, {
   includeActiveTheme: true,
   limit: 1,
@@ -60,9 +61,12 @@ const sharedTheme = new Theme(
   assetBaseUrl,
   extraContext,
 );
-const canonicalUrl = itemId && item
-  ? PUBLIC_URLS.webItem(itemId, String(item.title ?? ""), Astro.url.origin)
-  : undefined;
+const canonicalUrl = item?._microfeed?.web_url as string | undefined;
+if (!unavailable && canonicalUrl && new URL(canonicalUrl).pathname !== Astro.url.pathname) {
+  return Astro.redirect(canonicalUrl + Astro.url.search, 301);
+}
+const metadata = await resolveMetadata({feed: loaded.publicFeed, item, origin: Astro.url.origin,
+  headHtml: sharedTheme.getWebHeader().html + theme.getWebHeader().html});
 ---
 
 {notFoundPage?.kind === "page" ? (
@@ -71,9 +75,10 @@ const canonicalUrl = itemId && item
   <h1>Not Found</h1>
 ) : (
   <PublicLayout
+    metadataHtml={metadata.headHtml}
     title={String(item.title ?? "Untitled")}
     description={String(item.content_text ?? "")}
-    language={loaded.publicFeed.language}
+    language={metadata.language}
     canonicalUrl={canonicalUrl}
     channelImage={String(loaded.content.channel?.image ?? "")}
     favicon={webSettings.favicon}

@@ -79,6 +79,7 @@ export function scheduleBestEffortMediaDeletion(
   bucket: Pick<R2Bucket, "delete"> | null,
   imageUrls: unknown[],
   schedule: (promise: Promise<unknown>) => void,
+  database?: D1Database,
 ): string[] {
   if (!bucket) {
     return [];
@@ -93,7 +94,24 @@ export function scheduleBestEffortMediaDeletion(
   }
 
   schedule(
-    bucket.delete(keys).catch((error: unknown) => {
+    (async () => {
+      const unused: string[] = [];
+      for (const key of keys) {
+        // Conservative matching also retains references in bodies and settings.
+        // False positives cost storage; a false negative could break published media.
+        const referenced = database ? await database.prepare(
+          "SELECT 1 WHERE EXISTS(SELECT 1 FROM channels WHERE instr(data, ?1) > 0) OR " +
+          "EXISTS(SELECT 1 FROM items WHERE instr(data, ?1) > 0) OR " +
+          "EXISTS(SELECT 1 FROM settings WHERE instr(data, ?1) > 0) OR " +
+          "EXISTS(SELECT 1 FROM pages WHERE instr(content_html, ?1) > 0) OR " +
+          "EXISTS(SELECT 1 FROM site_files WHERE instr(draft_content, ?1) > 0 OR instr(published_content, ?1) > 0) OR " +
+          "EXISTS(SELECT 1 FROM themes WHERE instr(bundle_json, ?1) > 0) OR " +
+          "EXISTS(SELECT 1 FROM theme_drafts WHERE instr(bundle_json, ?1) > 0)",
+        ).bind(key).first() : null;
+        if (!referenced) unused.push(key);
+      }
+      if (unused.length) await bucket.delete(unused);
+    })().catch((error: unknown) => {
       console.error(JSON.stringify({
         error: error instanceof Error ? error.message : String(error),
         keyCount: keys.length,

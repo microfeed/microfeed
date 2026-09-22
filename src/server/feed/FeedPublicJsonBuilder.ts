@@ -1,3 +1,5 @@
+import {itemUrl} from "@/shared/ItemUrls";
+import {jsonFeedAuthors} from "@/shared/Seo";
 import {
   urlJoinWithRelative,
   buildAudioUrlWithTracking,
@@ -31,7 +33,7 @@ export default class FeedPublicJsonBuilder {
   }
 
   _decorateForItem(item: any, baseUrl: any) {
-    item.webUrl = PUBLIC_URLS.webItem(item.id, item.title, baseUrl);
+    item.webUrl = itemUrl(item, baseUrl);
     item.jsonUrl = PUBLIC_URLS.jsonItem(item.id, null, baseUrl);
     item.rssUrl = PUBLIC_URLS.rssItem(item.id, null, baseUrl);
 
@@ -58,6 +60,14 @@ export default class FeedPublicJsonBuilder {
         item.mediaFile.url = urlJoinWithRelative(this.publicBucketUrl, item.mediaFile.url);
       }
     }
+  }
+
+  _publicSeo(seo: any) {
+    if (!seo) return undefined;
+    return {...seo, ...(seo.social_image ? {social_image: {
+      ...seo.social_image,
+      url: new URL(urlJoinWithRelative(this.publicBucketUrl, seo.social_image.url, this.baseUrl), this.baseUrl).href,
+    }} : {})};
   }
 
   _buildPublicContentChannel() {
@@ -107,6 +117,8 @@ export default class FeedPublicJsonBuilder {
       }];
     }
 
+    if (channel.authorIdentities?.length) (publicContent as any).authors = jsonFeedAuthors(channel.authorIdentities);
+
     if (channel.language) {
       (publicContent as any)['language'] = channel.language;
     }
@@ -121,6 +133,10 @@ export default class FeedPublicJsonBuilder {
     const channel = this.content.channel || {};
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra: Record<string, any> = {
+      seo: this._publicSeo(channel.seo),
+      podcast: channel.podcast ?? undefined,
+      publisher: { ...channel.publisherIdentity, name: channel.publisher || undefined },
+      authors: channel.authorIdentities?.length ? channel.authorIdentities : undefined,
       microfeed_version: MICROFEED_VERSION,
       base_url: this.baseUrl,
       categories: [],
@@ -242,6 +258,10 @@ export default class FeedPublicJsonBuilder {
     };
     const attachment = {};
     const _microfeed = {
+      podcast: item.podcast ?? undefined,
+      seo: this._publicSeo(item.seo),
+      slug: item.urlMode !== "legacy" && item.publicPath ? item.publicPath.slice(3, -1) : undefined,
+      authors: item.authorIdentities?.length ? item.authorIdentities : undefined,
       is_audio: mediaFile.isAudio,
       is_document: mediaFile.isDocument,
       is_external_url: mediaFile.isExternalUrl,
@@ -273,12 +293,13 @@ export default class FeedPublicJsonBuilder {
         (newItem as any)['attachments'] = [attachment];
       }
     }
-    if (item.link) {
-      (newItem as any)['url'] = item.link;
-    }
+    (newItem as any)['url'] = item.link || item.webUrl;
     if (mediaFile.isExternalUrl && mediaFile.url) {
       (newItem as any)['external_url'] = mediaFile.url;
     }
+
+    const authors = jsonFeedAuthors(item.authorIdentities?.length ? item.authorIdentities : this.content.channel?.authorIdentities);
+    if (authors) (newItem as any).authors = authors;
 
     (newItem as any)['content_html'] = item.description || '';
     (newItem as any)['content_text'] = item.descriptionText || '';

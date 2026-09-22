@@ -65,13 +65,14 @@ describe("Workers Caching response policy", () => {
       ]);
   });
 
-  it("tags item representations independently from aggregate pages", () => {
+  it("tags item representations so renames invalidate every historical alias", () => {
     const tags = policy(`/i/a-title-${ITEM_ID}/json/`)
       .headers.get("cache-tag")?.split(",");
 
     expect(tags).toEqual([
       PUBLIC_CACHE_TAGS.PUBLIC,
       PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY,
+      PUBLIC_CACHE_TAGS.ITEMS,
       PUBLIC_CACHE_TAGS.item(ITEM_ID),
     ]);
   });

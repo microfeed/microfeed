@@ -1,3 +1,7 @@
+import AdminLanguageSelect from "@/components/admin/shared/AdminLanguageSelect";
+import SeoEditor from "@/components/admin/shared/SeoEditor";
+import PodcastEditor from "@/components/admin/shared/PodcastEditor";
+import {scrollExpandedAdminSectionIntoView} from "@/client/AdminSectionScroll";
 import React from 'react';
 import Requests from '@/client/requests';
 import AdminPageApp from '@/components/admin/shared/AdminPageApp';
@@ -14,7 +18,6 @@ import AdminRichEditor from "@/components/admin/shared/AdminRichEditor";
 import AdminSelect from "@/components/admin/shared/AdminSelect";
 import {
   ITUNES_CATEGORIES_DICT,
-  LANGUAGE_CODES_LIST,
   ONBOARDING_TYPES,
 } from "@/shared/Constants";
 import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
@@ -33,21 +36,6 @@ interface ChannelSnapshot {
   channel: Record<string, unknown>;
   deleteImageUrls: string[];
 }
-
-const LANGUAGE_CODES_DICT = {};
-const LANGUAGE_CODES_SELECT_OPTIONS: any[] = [];
-LANGUAGE_CODES_LIST.forEach((lc: any) => {
-  (LANGUAGE_CODES_DICT as any)[lc.code] = {
-    code: lc.code,
-    value: `${lc.name} ${lc.code}`,
-    textValue: `${lc.name} ${lc.code}`,
-    label: <div>
-      <div>{lc.name}</div>
-      <div className="text-muted-color text-sm">{lc.code}</div>
-    </div>,
-  };
-  LANGUAGE_CODES_SELECT_OPTIONS.push((LANGUAGE_CODES_DICT as any)[lc.code]);
-});
 
 const CATEGORIES_SELECT_OPTIONS: any[] = [];
 const CATEGORIES_DICT = {};
@@ -152,10 +140,14 @@ export default class EditChannelApp extends React.Component<Props, any> {
         ),
       }), resolve);
     });
+    this.setState({seoError: undefined, podcastError: undefined});
     showToast('Channel saved.', 'success');
   }
 
   showSaveError(error: any) {
+    if (error?.response?.data?.error) this.setState({
+      [String(error.response.data.error).startsWith("podcast.") ? "podcastError" : "seoError"]: error.response.data.error,
+    });
     if (!error?.response) {
       showToast('Network error. Your changes are still on this page.', 'error');
     } else {
@@ -227,6 +219,7 @@ export default class EditChannelApp extends React.Component<Props, any> {
                   />
                   <AdminInput
                     labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.WEBSITE]}/>}
+                    extraParams={{inputMode: "url"}}
                     value={channel.link}
                     onChange={(e: any) => this.onUpdateChannelMeta('link', e.target.value)}
                   />
@@ -246,13 +239,12 @@ export default class EditChannelApp extends React.Component<Props, any> {
                     multiple
                     isOptionDisabled={() => categories.length >= 3}
                   />
-                  <AdminSelect
-                    value={(LANGUAGE_CODES_DICT as any)[channel.language]}
+                  <AdminLanguageSelect
+                    value={channel.language}
                     ariaLabel="Language"
                     labelComponent={<AdminHelpLabel help={CONTROLS_TEXTS_DICT[CHANNEL_CONTROLS.LANGUAGE]}/>}
-                    options={LANGUAGE_CODES_SELECT_OPTIONS}
-                    onChange={(selected: any) => {
-                      this.onUpdateChannelMeta('language', selected.code);
+                    onChange={(language) => {
+                      this.onUpdateChannelMeta('language', language);
                     }}
                   />
                 </div>
@@ -273,7 +265,8 @@ export default class EditChannelApp extends React.Component<Props, any> {
               />
             </div>
           </div>
-          <details className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs">
+          <details className="rounded-[14px] border bg-card p-5 text-card-foreground shadow-xs"
+            onToggle={scrollExpandedAdminSectionIntoView}>
             <summary className="m-page-summary">
               Podcast-specific fields
             </summary>
@@ -359,7 +352,16 @@ export default class EditChannelApp extends React.Component<Props, any> {
                 />
               </div>
             </div>
+            <PodcastEditor value={channel.podcast} language={channel.language} publicBucketUrl={publicBucketUrl}
+              mediaStorageReady={mediaStorageReady} error={this.state.podcastError}
+              onChange={(podcast) => this.onUpdateChannelMeta("podcast", podcast)} />
           </details>
+          <SeoEditor value={channel} feed={feed} publicBucketUrl={publicBucketUrl} mediaStorage={mediaStorage}
+            error={this.state.seoError}
+            onChange={(patch, previousImage) => this.setState((previous: any) => ({
+              channel: {...previous.channel, ...patch},
+              replacedImageUrls: queueReplacedImageUrl(previous.replacedImageUrls, previousImage),
+            }), () => this.autosave.markChanged())} />
         </div>
         <div className="xl:col-span-3">
           <div className="grid gap-4 xl:sticky xl:top-4">

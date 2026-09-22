@@ -153,6 +153,7 @@ function MethodRow({
           <div className="flex-1 flex items-center">
             <AdminInput
               value={url}
+              extraParams={{inputMode: "url"}}
               disabled={!editable || !enabled}
               onChange={(e: any) => updateMethodByAttr(id, 'url', e.target.value, false)}
               customClass="text-xs p-1"
