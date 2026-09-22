@@ -41,7 +41,9 @@ the dashboard updates it to the publication time. A date you chose yourself is
 preserved. If public visibility is enabled, use the external link to inspect the
 page.
 
-![Creating a new microfeed item with media type, upload, image, title, publication, visibility, and description controls](https://media-cdn.microfeed.org/production/media/rich-editor/items/sJQ1j_8by7r/image-a60d5e0fcf04fa16e342cc7a4522f1bf.png)
+<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 25 33 PM" src="https://github.com/user-attachments/assets/39321203-cbdd-4e6f-8028-26ea62bf25a4" />
+<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 24 26 PM" src="https://github.com/user-attachments/assets/b088d2f7-c360-4776-a9a5-6787dfc5e281" />
+
 
 ## Upload media
 
@@ -105,6 +107,9 @@ Open **SEO / GEO** below **Podcast-specific fields**. Metadata overrides use the
 same autosave as other item fields. SEO title and description affect the page's
 head metadata; the visible title and article body stay unchanged. Clearing an
 override restores its fallback.
+
+<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 25 33 PM" src="https://github.com/user-attachments/assets/7e53c776-f5e2-46f2-a10a-47628515c94f" />
+
 
 New items use `/i/{slug}/`. Automatic slugs follow draft titles and freeze when
 the item first becomes Published or Unlisted. To choose an address yourself,
