@@ -131,6 +131,7 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
   }
   .mf-public-search__input-row {
     display: grid;
+    flex-shrink: 0;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: stretch;
     border: 1px solid var(--mf-border, #8c959f);
