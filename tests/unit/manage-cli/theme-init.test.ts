@@ -14,6 +14,7 @@ import type {
 } from "@/shared/themes/ThemeContract";
 import {BUNDLED_THEME_CATALOG} from "@/shared/themes/BundledThemeCatalog";
 import {themeKitCompatibilityRange} from "@/shared/ThemeKitVersion";
+import {BUILT_IN_FIXTURES} from "../../../packages/theme-kit/src/fixtures";
 import {
   MICROFEED_PACKAGE_MANAGER,
   MICROFEED_VERSION,
@@ -176,6 +177,8 @@ describe("theme repository initialization", () => {
         ...source.bundle,
         webPage: "<main>{{page.title}}</main>",
         webSearch: "<main>{{#search.results}}{{title}}{{/search.results}}</main>",
+        webTag: "custom archive",
+        webTags: "custom directory",
       },
       manifest: {
         ...source.manifest,
@@ -183,6 +186,8 @@ describe("theme repository initialization", () => {
           ...source.manifest.files,
           webPage: "source/page.mustache",
           webSearch: "source/search.mustache",
+          webTag: "source/archive.mustache",
+          webTags: "source/directory.mustache",
         },
         formatVersion: 2,
         searchItemDestination: "attachment",
@@ -192,6 +197,7 @@ describe("theme repository initialization", () => {
       throw new Error("Expected initialized format-v2 manifest.");
     }
     expect(initializedV2.searchItemDestination).toBe("attachment");
+    expect(initializedV2.files).toMatchObject({webTag: "web-tag.mustache", webTags: "web-tags.mustache"});
 
     await expect(theme.themeCommand({
       action: "install",
@@ -278,13 +284,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "bundled:default",
-      version: "1.1.16",
+      version: "1.1.17",
     });
     expect(stored.get("microfeed.default")).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "bundled:default",
-      version: "1.1.16",
+      version: "1.1.17",
     });
     expect([...stored.keys()]).toEqual(BUNDLED_THEME_CATALOG.map(
       ({packageId}) => packageId,
@@ -427,7 +433,7 @@ describe("theme repository initialization", () => {
       expect(stored.get("microfeed.default")).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.16",
+        version: "1.1.17",
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(BUNDLED_THEME_CATALOG.length);
@@ -922,7 +928,7 @@ describe("theme repository initialization", () => {
       {cwd: repositoryRoot},
     )).stdout) as {ok: boolean; tests: Array<{fixture: string; ok: boolean}>};
     expect(conformance.ok).toBe(true);
-    expect(conformance.tests).toHaveLength(9);
+    expect(conformance.tests).toHaveLength(Object.keys(BUILT_IN_FIXTURES).length + 1);
     expect(conformance.tests).toContainEqual({fixture: "package:custom.json", ok: true});
     expect(conformance.tests.every(({ok}) => ok)).toBe(true);
     expect(runner).not.toHaveBeenCalledWith(

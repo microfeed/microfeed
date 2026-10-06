@@ -3,6 +3,6 @@
   {{#description}}<p>{{description}}</p>{{/description}}
   {{^items}}<p>No posts yet.</p>{{/items}}
   {{#items}}
-    <article><h2><a href="{{_microfeed.web_url}}">{{title}}</a></h2>{{{content_html}}}</article>
+    <article><h2><a href="{{_microfeed.web_url}}">{{title}}</a></h2>{{#_microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#_microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/_microfeed.tags}}</ul>{{/_microfeed.tags.length}}{{{content_html}}}</article>
   {{/items}}
 </main>

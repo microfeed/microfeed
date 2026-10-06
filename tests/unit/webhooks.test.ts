@@ -39,7 +39,7 @@ const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 describe("webhook contract", () => {
   it("contains the complete stable event inventory", () => {
-    expect(WEBHOOK_EVENT_TYPES).toHaveLength(22);
+    expect(WEBHOOK_EVENT_TYPES).toHaveLength(25);
     expect(WEBHOOK_EVENT_TYPES).toEqual(expect.arrayContaining([
       "channel.updated",
       "item.created",

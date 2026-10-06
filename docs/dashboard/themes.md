@@ -7,7 +7,7 @@ Open **Settings → Website appearance & code** to choose between two ways to
 customize the public site:
 
 - **Manage versioned themes** controls the structure and design of feed, item,
-  Page, Search, and RSS views.
+  Page, Search, tag archive, tag directory, and RSS views.
 - **Edit shared HTML code across web pages** adds the same HTML, CSS, or
   JavaScript around whichever theme is active.
 
@@ -35,7 +35,7 @@ The shared code editor has three insertion points:
 Shared code is not part of a theme version and has no isolated preview or
 automatic version history. Save the current code elsewhere before a large
 edit, change one concern at a time, select **Update**, and use **View live
-page** to check feed, item, Page, and Search views at mobile and desktop widths.
+page** to check feed, item, Page, Search, and tag views at mobile and desktop widths.
 
 Anything placed in shared code is sent to public browsers. Never include API
 keys, Cloudflare tokens, dashboard credentials, private setup links, or other
@@ -84,8 +84,8 @@ Open **Settings → Themes** and select **Create new version** on the theme you
 want to change:
 
 1. Edit any of the theme slots and save the draft repeatedly.
-2. Open the isolated preview for feed, item, Page, Search, RSS, mobile, and
-   desktop views.
+2. Open the isolated preview for feed, item, Page, Search, tag archive, tag
+   directory, and RSS at mobile and desktop widths.
 3. Choose a new semantic version, such as `1.2.1`.
 4. Select **Install** to create an immutable, inactive version.
 5. Preview the installed version and activate it only after approval.
@@ -112,6 +112,13 @@ Admin intentionally exposes only supported theme metadata, behavior settings,
 and text slots—not raw manifest JSON or packaged file, asset, and package
 identity fields.
 
+**Tag archive** and **Tags directory** are optional slots in both format v1
+and v2 themes. Select **Create custom template** to start from the current
+fallback, then edit and preview it. **Use fallback template** removes that
+draft override: archives reuse the theme's own Feed template, while the
+directory uses microfeed's markup inside the theme shell. These actions affect
+only the draft; save, install, and activate a new version separately.
+
 The bundled Default theme exposes a readable `microfeed-design-tokens` block
 near the top of **Web header**. Change its accent, background, surface, text,
 muted, and border values for a focused color update without editing compiled
@@ -128,10 +135,12 @@ protected from manual deletion.
 When a theme packages its own preview fixture, each newly opened preview starts
 with **Demo content** so the theme can demonstrate its supported content and
 layout. Switch to **Current site** to render the instance's published feed.
-That choice applies to Feed, Item, Search, and RSS and stays selected while you
-change views, viewport size, or open the preview in a new tab. Page and
-navigation examples remain synthetic. Themes without a fixture use Current
-site data.
+That choice applies to Feed, Item, Search, tag views, and RSS and stays
+selected while you change views, viewport size, or open the preview in a new
+tab. Page and navigation examples remain synthetic. Tag views use tag context
+from the fixture when present, otherwise a representative tag around the
+selected items; they do not query or modify the site's tags. Themes without a
+fixture use Current site data.
 
 An environment can keep up to 100 non-deleted Custom versions and 20 drafts.
 Built-in versions do not consume this quota. If a limit is full, delete an

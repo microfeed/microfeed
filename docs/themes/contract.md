@@ -1,6 +1,6 @@
 ---
 title: Theme contract and rendering
-description: Understand the manifest, eight render slots, Mustache context, Pages, navigation, search hooks, schemas, fixtures, and package limits.
+description: Understand the manifest, required and optional render slots, Mustache context, Pages, tags, navigation, search hooks, schemas, fixtures, and package limits.
 ---
 
 The generated schemas in each theme repository are the exact contract for its
@@ -9,8 +9,9 @@ theme code.
 
 ## Format versions and slots
 
-Format v1 themes have six slots and remain compatible with feed and item
-pages. Format v2 adds standalone Pages and public Search, for eight slots total:
+Format v1 themes have six required slots and remain compatible with feed and item
+pages. Format v2 adds standalone Pages and public Search, for eight required slots.
+Both formats support two additional optional tag slots:
 
 | Slot | Purpose |
 | --- | --- |
@@ -18,6 +19,8 @@ pages. Format v2 adds standalone Pages and public Search, for eight slots total:
 | `webItem` | Render one item page. |
 | `webPage` | Render a standalone Page, including the editable default 404 Page. |
 | `webSearch` | Render the complete `/search/` results page. |
+| `webTag` (optional) | Render one tag archive; otherwise use this theme's `webFeed`. |
+| `webTags` (optional) | Render the tag directory; otherwise use microfeed's directory markup. |
 | `webHeader` | Insert markup before `</head>`. |
 | `webBodyStart` | Insert markup immediately after `<body>`. |
 | `webBodyEnd` | Insert markup immediately before `</body>`. |
@@ -96,6 +99,90 @@ Render the same navigation in feed, item, Page, and Search templates:
 The `webPage` slot also renders the protected default 404 Page. Check
 `page.is_not_found_page` only when the theme needs distinct 404 styling; the
 ordinary Page structure should otherwise work unchanged.
+
+## Render tags
+
+Add either optional slot to `files` in `microfeed-theme.json` when you want
+independent control over tag pages:
+
+```json
+{
+  "webTag": "web-tag.mustache",
+  "webTags": "web-tags.mustache"
+}
+```
+
+`webTag` renders `/tags/<slug>/`. Its context includes published `items`,
+tag-specific `title`, description, feed URLs, subscription links, and item
+pagination in `_microfeed.next_url` and `_microfeed.prev_url`. The current tag
+in `_microfeed.tag` provides `id`, `name`, `slug`, plain-text `description`,
+`published_item_count`, `url`, `rss_url`, and `json_url`.
+
+If `webTag` is omitted, microfeed uses **this theme's `webFeed`**, not the
+bundled default theme's feed template. If `webTags` is omitted, it renders the
+platform directory inside the existing theme shell. Both are optional in
+formats v1 and v2; older packages need no changes. An explicitly empty
+template is respected rather than falling back. Declare the path and supply
+the file together; optional templates have the same syntax and size limits
+and participate in the immutable package checksum.
+
+`webTags` renders `/tags/` and receives a `tags` object:
+
+| Field | Meaning |
+| --- | --- |
+| `tags.title`, `tags.url` | Directory heading and canonical directory address. |
+| `tags.items` | The current page of alphabetically sorted tag records, including empty tags. Records have the same fields as `_microfeed.tag`. |
+| `tags.next_url` | The next directory page, if present. Use this supplied URL. |
+| `tags.rss_enabled`, `tags.json_enabled` | Whether the site's corresponding feeds are enabled. |
+
+The platform computes published-item counts, pagination, routing, redirects,
+and metadata. Themes control presentation. Shared header and footer slots
+retain the site's identity; directory and current-tag context are also
+available to the shared shell.
+
+For example, a custom directory template can use:
+
+```html
+<main>
+  {{#tags}}
+  <h1>{{title}}</h1>
+  {{#items}}
+  <article>
+    <h2><a href="{{url}}" rel="tag">{{name}}</a></h2>
+    <p>{{description}}</p>
+    <p>{{published_item_count}} published items</p>
+    {{#rss_enabled}}<a href="{{rss_url}}">RSS</a>{{/rss_enabled}}
+    {{#json_enabled}}<a href="{{json_url}}">JSON Feed</a>{{/json_enabled}}
+  </article>
+  {{/items}}
+  {{^items}}<p>No tags yet.</p>{{/items}}
+  {{#next_url}}<a href="{{next_url}}">Next tags</a>{{/next_url}}
+  {{/tags}}
+</main>
+```
+
+Names and descriptions are plain text. Always render them with escaped
+Mustache, not triple braces. In Admin drafts, choose **Tag archive** or
+**Tags directory**, then **Create custom template**; **Use fallback template**
+removes that override from the draft. The isolated Admin and theme-kit previews
+include both tag views and use representative tags when fixture data supplies none.
+
+Each item has JSON Feed `tags` names and structured `_microfeed.tags` references
+with `id`, `name`, `slug`, `url`, `rss_url`, and `json_url`. Render linked tags
+outside the item link to avoid nested anchors:
+
+```html
+{{#_microfeed.tags.length}}
+<ul aria-label="Tags">
+  {{#_microfeed.tags}}<li><a href="{{url}}" rel="tag">{{name}}</a></li>{{/_microfeed.tags}}
+</ul>
+{{/_microfeed.tags.length}}
+```
+
+On item pages, use `items.0._microfeed.tags`. Add a `/tags/` link alongside
+`navigation_pages`. The optional `tags_active` flag identifies directory and
+archive views. Search results may have `type: "tag"`; their URL always opens
+the local tag archive, independently of `searchItemDestination`.
 
 ## Connect public search
 
@@ -180,8 +267,8 @@ available inside the isolated preview.
 
 A generated repository includes JSON Schemas under `.microfeed/schemas/`, a
 representative package fixture, and built-in test fixtures for empty, minimal,
-rich, paginated, media-heavy, missing-optional, multi-author, and hostile-rich-
-HTML content.
+rich, paginated, media-heavy, missing-optional, multi-author, hostile-rich-
+HTML, and tag content, including empty and paginated tag directories.
 
 Package limits are:
 

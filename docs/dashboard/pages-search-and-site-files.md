@@ -56,7 +56,9 @@ complete results page at `/search/`. Visitors can also press
 <kbd>Command</kbd>+<kbd>K</kbd> on macOS or <kbd>Ctrl</kbd>+<kbd>K</kbd>
 elsewhere to open microfeed's accessible search dialog.
 
-Public search includes Published items and Published Pages. It excludes item
+Public search includes Published items, Published Pages, and public tag names
+and descriptions as separate results. Tag names do not make their assigned
+items match. It excludes item
 drafts, Unlisted and Draft Pages, and the protected 404 Page. The typeahead
 route returns safe highlighted segments and is never cached. Submitting the
 search form opens `/search/?q=...` for complete results.
@@ -110,11 +112,14 @@ YAML, CSS, and CSV templates use syntax highlighting; plain text uses a normal
 text area. Preview renders the current unsaved source with live public data and
 shows the exact response bytes instead of interpreting HTML or Markdown.
 
-Templates receive JSON Feed fields at the top level, plus `pages`, `items`, and
+Templates receive JSON Feed fields at the top level, plus `pages`, `items`, `tags`, and
 `_site`. For example, use `{{title}}`, loop through
 `{{#pages}}...{{/pages}}`, or reference `_site.json_feed_url`. Every Site File
 receives up to 100 newest Published items and up to 100 most recently
-updated Published Pages. The special 404 Page is excluded before the Page limit
+updated Published Pages, plus up to 100 public tags in alphabetical order.
+Tag records include names, descriptions, archive/feed URLs, and published-item
+counts; `_site.tags_url` links to the full paginated directory.
+The special 404 Page is excluded before the Page limit
 is applied. Mustache escapes values by default; triple braces opt into unescaped
 output.
 
@@ -125,7 +130,8 @@ microfeed creates three generated defaults:
 - `llms.txt` identifies microfeed and its documentation, summarizes the site,
   Published Pages, and recent Published items, and links to the instance API
   guide when API access and public API docs are enabled.
-- `sitemap.xml` contains the home page, Published Pages, Published items, and
+- `sitemap.xml` contains the home page, Published Pages, Published items, the
+  tag directory and tag archives, and
   supported image/video metadata.
 
 Saving a generated file with Published visibility switches it to an override.

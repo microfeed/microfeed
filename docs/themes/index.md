@@ -86,7 +86,8 @@ yarn test
 yarn preview
 ```
 
-The generated project includes a manifest, eight format-v2 theme files,
+The generated project includes a manifest, eight required format-v2 theme
+files, optional tag archive and directory templates,
 fixtures, schemas, package scripts, an empty lockfile, and the theme-development
 agent skill. It also includes `CLAUDE.md`, which directs Claude Code to that
 same canonical skill; other compatible coding agents can discover the
@@ -102,7 +103,7 @@ prompt is:
 Build a responsive editorial theme from this package. Read THEME.md,
 microfeed-theme.json, and the generated schemas before editing. Keep every
 declared theme file valid, use the provided fixtures, run validation and tests,
-then preview feed, item, Page, Search, and RSS views at desktop and mobile
+then preview feed, item, Page, Search, tag archive, tag directory, and RSS views at desktop and mobile
 sizes. Do not install or activate the theme.
 ```
 
@@ -175,7 +176,7 @@ preview environments, update, rollback, export, and deletion behavior.
 
 ## Verify the release
 
-Open feed, item, Page, Search, and RSS views after activation. Check mobile and
+Open feed, item, Page, Search, tag archive, tag directory, and RSS views after activation. Check mobile and
 desktop layouts, navigation, keyboard search, rich content, missing optional
 fields, and media. If the live result is wrong, roll back to the previous
 installed version and fix the standalone repository under a new semantic

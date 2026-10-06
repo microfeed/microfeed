@@ -1,9 +1,34 @@
 export const BUILT_IN_FIXTURES: Record<string, Record<string, unknown>> = {
+  public_tags: {
+    version: "https://jsonfeed.org/version/1.1",
+    title: "Public tag archive",
+    home_page_url: "https://example.test/tags/世界/",
+    feed_url: "https://example.test/tags/世界/json/",
+    items: [{id: "tagged", title: "A tagged item", tags: ["世界 🌍"], _microfeed: {
+      web_url: "https://example.test/i/tagged/",
+      tags: [{id: "tag-one", name: "世界 🌍", slug: "世界", url: "https://example.test/tags/世界/", rss_url: "https://example.test/tags/世界/rss/", json_url: "https://example.test/tags/世界/json/"}],
+    }}],
+    _microfeed: {base_url: "https://example.test", categories: [], microfeed_version: "preview", subscribe_methods: [],
+      tag: {id: "tag-one", name: "世界 🌍", slug: "世界", description: "A public topic", published_item_count: 1, url: "https://example.test/tags/世界/", rss_url: "https://example.test/tags/世界/rss/", json_url: "https://example.test/tags/世界/json/"}},
+    search: {query: "世界", results: [{id: "tag-one", title: "世界 🌍", type: "tag", url: "https://example.test/tags/世界/"}]},
+  },
   empty: {
     version: "https://jsonfeed.org/version/1.1",
     title: "Empty feed",
     home_page_url: "https://example.test/",
     items: [],
+  },
+  tags_empty: {
+    version: "https://jsonfeed.org/version/1.1", title: "Empty tag directory", home_page_url: "https://example.test/", items: [],
+    tags: {title: "Tags", url: "https://example.test/tags/", items: [], rss_enabled: true, json_enabled: true},
+  },
+  tags_directory: {
+    version: "https://jsonfeed.org/version/1.1", title: "Tag directory site", home_page_url: "https://example.test/", items: [],
+    tags: {title: "Tags", url: "https://example.test/tags/", rss_enabled: false, json_enabled: true,
+      next_url: "https://example.test/tags/?next_cursor=next",
+      items: [{id: "directory-tag", name: "世界 <b> 🌍", slug: "世界", description: "<script>Plain-text description</script>", published_item_count: 0,
+        url: "https://example.test/tags/%E4%B8%96%E7%95%8C/", rss_url: "https://example.test/tags/%E4%B8%96%E7%95%8C/rss/", json_url: "https://example.test/tags/%E4%B8%96%E7%95%8C/json/"}],
+    },
   },
   minimal: {
     version: "https://jsonfeed.org/version/1.1",

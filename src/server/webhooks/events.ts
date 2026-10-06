@@ -52,6 +52,7 @@ function apiPath(
   if (subjectType === "item") {
     return `/api/v1/items/${encodeURIComponent(subjectId)}/`;
   }
+  if (subjectType === "tag") return `/api/v1/tags/by-id/${encodeURIComponent(subjectId)}/`;
   if (subjectType === "page" && eventType !== "page.navigation_updated") {
     return `/api/v1/pages/${encodeURIComponent(subjectId)}/`;
   }

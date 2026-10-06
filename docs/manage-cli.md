@@ -381,6 +381,10 @@ and any ready R2 resource are marked reused and preserved by later destruction.
 Use `--preview` only after production is connected; it recovers the preview's
 independent Worker and webhook Queue identity under the same saved instance.
 
+If the existing dashboard uses `/tags/`, connection stops with a route-collision
+error. Choose another dashboard path before connecting or upgrading; the CLI
+does not silently fall back to `/admin/` or change the existing Worker.
+
 ```console
 npx @microfeed/cli manage connect [--device] [--preview] [--account-id <id>] [--worker <name>] [--instance <name>]
 ```
@@ -456,6 +460,11 @@ Worker. For a new installation with no saved configuration, run
 has saved the instance but its first Worker deployment is not yet complete,
 `deploy` resumes that deployment and supplies the missing initial
 upload-signing secret automatically.
+
+Before applying migrations, the manager checks for an existing Page, historical
+Page alias, or dashboard path using the reserved `/tags/` route. It reports the
+conflicting records and stops; resolve that conflict explicitly before retrying.
+Existing routes are never silently renamed or shadowed.
 
 An ordinary deployment does not probe or prompt when media storage is already
 ready or explicitly disabled. For automatic pending setup, `NotEntitled`
@@ -775,10 +784,10 @@ counts, and the exact ordered D1 migration filenames and hashes.
 D1 cannot export FTS5 virtual tables. Snapshot creation therefore removes only
 the rebuildable unified-search indexes and triggers while the D1 schema and data
 are exported, then recreates and validates them in a `finally` recovery step.
-Item and Page content remains durable and unchanged; search can briefly return an
+Item, Page, and tag content remains durable and unchanged; search can briefly return an
 unavailable response during that D1 export window. Restores likewise recreate
-the derived indexes from the restored `items` table rather than archiving FTS
-shadow data.
+the derived indexes from the restored items, Pages, and tags rather than archiving
+FTS shadow data.
 
 Long-running snapshot creation and restore steps keep an animated elapsed-time
 indicator visible. Its brief status message changes as D1, migrations, R2, and
@@ -897,7 +906,10 @@ list must be an exact filename-and-hash prefix of the current checkout:
   its `d1_migrations` ledger, and then applies only newer migrations.
 - A snapshot at the current head needs no forward migrations.
 - Derived unified-search virtual tables are recreated and repopulated after the
-  durable item and Page data is imported.
+  durable item, Page, and tag data is imported.
+- Tags, item-tag memberships, and historical tag slug aliases are durable.
+  Older snapshots restore without tags. Upgrading stops if a Page, historical
+  Page alias, or dashboard path already occupies the reserved `/tags/` route.
 - Item URL paths and redirect history are durable, including reservations for
   deleted items. Restore imports those rows before enabling database triggers.
   Older snapshots receive legacy URL preparation after migration. Deployment
@@ -906,7 +918,7 @@ list must be an exact filename-and-hash prefix of the current checkout:
 - A newer, missing, reordered, edited, or divergent migration history is
   rejected before mutation.
 
-Durable tables currently include channels, items, Pages, Site Files, settings,
+Durable tables currently include channels, items, Pages, tags and memberships, Site Files, settings,
 users, and login accounts. Sessions, verification records, rate-limit state, and password
 setup/reset records are recreated empty. The target installation identity is
 rewritten, while the administrator email and password hash are preserved.

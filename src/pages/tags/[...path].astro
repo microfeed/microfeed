@@ -1,0 +1,7 @@
+---
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import {publicTagPage} from "@/server/tags/pages";
+const page = await publicTagPage(Astro.request, Astro.params.path ?? "");
+if (page instanceof Response) return page;
+---
+<PublicLayout {...page} />

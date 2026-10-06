@@ -205,7 +205,7 @@ describe("bundled theme packages", () => {
       formatVersion: 2,
       packageId: "microfeed.default",
       previewFixture: "fixtures/editorial.json",
-      version: "1.1.16",
+      version: "1.1.17",
     });
     expect(fixture.items[0]).toMatchObject({
       _microfeed: {is_audio: true},

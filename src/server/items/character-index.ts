@@ -2,7 +2,7 @@ import {characterSearchStatements} from "@/shared/CharacterSearch";
 
 export function characterIndexStatements(
   database: D1Database,
-  type: "item" | "page",
+  type: "item" | "page" | "tag",
   id: string,
   title: string,
   contentText: string,

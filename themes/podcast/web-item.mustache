@@ -7,7 +7,7 @@
     </div>
     <div class="pod-item-intro">
       <p class="pod-kicker">Episode</p>
-      <h1>{{items.0.title}}</h1>
+      <h1>{{items.0.title}}</h1>{{#items.0._microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#items.0._microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/items.0._microfeed.tags}}</ul>{{/items.0._microfeed.tags.length}}
       <div class="pod-episode-meta">
         <time>{{items.0._microfeed.date_published_short}}</time>
         {{#items.0._microfeed.duration_hhmmss}}<span>{{items.0._microfeed.duration_hhmmss}}</span>{{/items.0._microfeed.duration_hhmmss}}

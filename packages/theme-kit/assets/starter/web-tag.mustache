@@ -1,0 +1,20 @@
+<main class="mf-feed mf-tag-archive">
+  {{#_microfeed.tag}}
+  <h1>{{name}}</h1>
+  {{#description}}<p>{{description}}</p>{{/description}}
+  <p>{{published_item_count}} published items</p>
+  {{/_microfeed.tag}}
+  {{^items}}<p>No posts yet.</p>{{/items}}
+  {{#items}}
+  <article>
+    <h2><a href="{{_microfeed.web_url}}">{{title}}</a></h2>
+    {{#_microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#_microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/_microfeed.tags}}</ul>{{/_microfeed.tags.length}}
+    {{{content_html}}}
+  </article>
+  {{/items}}
+  {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+  <nav aria-label="Item pagination">
+    {{#_microfeed.prev_url}}<a href="{{_microfeed.prev_url}}">Previous</a>{{/_microfeed.prev_url}}
+    {{#_microfeed.next_url}}<a href="{{_microfeed.next_url}}">Next</a>{{/_microfeed.next_url}}
+  </nav>
+</main>

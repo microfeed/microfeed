@@ -28,6 +28,7 @@ import {
 } from "./store.js";
 
 const ITEM_VALUE_FLAGS = new Set([
+  "tag", "tag-id",
   "attachment-file",
   "content-html",
   "date-published",
@@ -44,6 +45,7 @@ const ITEM_CREATE_VALUE_FLAGS = new Set([
 ]);
 
 const ITEM_OUTPUT_FIELDS = new Set([
+  "tags",
   "attachments",
   "content_html",
   "content_text",
@@ -221,6 +223,9 @@ export async function instancesCommand(args: string[], globals: GlobalOptions): 
 
 function itemPayload(parsed: ReturnType<typeof parseOptions>): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
+  if (parsed.flags.tag && parsed.flags["tag-id"]) throw new CliError("Use --tag or --tag-id, not both.");
+  if (parsed.flags.tag) payload.tag_slugs = parsed.flags.tag;
+  if (parsed.flags["tag-id"]) payload.tag_ids = parsed.flags["tag-id"];
   const mapping: Record<string, string> = {
     "content-html": "content_html",
     "date-published": "date_published",
@@ -247,7 +252,7 @@ async function itemBody(
   const imageFile = stringFlag(parsed, "image-file");
   const hasFlags = ["attachment-file", "content-html", "date-published", "image", "image-file", "status", "title", "url"]
     .some((name) => stringFlag(parsed, name) !== undefined);
-  if (input && hasFlags) {
+  if (input && (hasFlags || parsed.flags.tag || parsed.flags["tag-id"])) {
     throw new CliError("Use either --input or item flags, not both.");
   }
   if (imageFile && stringFlag(parsed, "image")) {
@@ -412,16 +417,49 @@ async function verifyCreatedItem(
   }
 }
 
-async function confirmDelete(itemId: string, confirmation?: string): Promise<void> {
+async function confirmDelete(itemId: string, confirmation?: string, kind = "item"): Promise<void> {
   if (confirmation === itemId) return;
   if (confirmation !== undefined) throw new CliError(`--confirm must exactly match ${itemId}.`);
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     throw new CliError(`Deletion requires --confirm ${itemId} in non-interactive use.`);
   }
   const prompt = createInterface({input: process.stdin, output: process.stdout});
-  const answer = await prompt.question(`Delete item ${itemId}? Type the item ID to confirm: `);
+  const answer = await prompt.question(`Delete ${kind} ${itemId}? Type the ${kind} ID to confirm: `);
   prompt.close();
-  if (answer.trim() !== itemId) throw new CliError("Item deletion cancelled.");
+  if (answer.trim() !== itemId) throw new CliError(`${kind === "tag" ? "Tag" : "Item"} deletion cancelled.`);
+}
+
+export async function tagCommand(args: string[], globals: GlobalOptions): Promise<void> {
+  const [action, ...rest] = args;
+  const flags = action === "list" ? ["limit", "next-cursor"] : action === "get" ? ["id"] : action === "delete" ? ["id", "confirm"] : ["id", "name", "slug", "description", "input"];
+  const parsed = parseOptions(rest, new Set(flags));
+  if (action === "list") {
+    if (parsed.positionals.length) throw new CliError("tag list does not accept positional arguments.");
+    const query = new URLSearchParams();
+    for (const name of flags) {const value = stringFlag(parsed, name); if (value) query.set(name.replaceAll("-", "_"), value);}
+    writeApiResponse(await apiRequest("GET", `/api/v1/tags/${query.size ? `?${query}` : ""}`, globals), globals.json); return;
+  }
+  if (!["get", "create", "update", "delete"].includes(action ?? "")) throw new CliError("Usage: yarn microfeed tag list|get|create|update|delete");
+  const id = stringFlag(parsed, "id"); const slug = parsed.positionals[0];
+  if (action === "create" ? parsed.positionals.length > 0 || Boolean(id) : parsed.positionals.length > 1 || Boolean(id) === Boolean(slug))
+    throw new CliError("Use a tag slug or --id <tag-id>, not both. Create takes --name, not a positional slug.");
+  const path = action === "create" ? "/api/v1/tags/" : id ? `/api/v1/tags/by-id/${encodeURIComponent(id)}/` : `/api/v1/tags/${encodeURIComponent(slug!)}/`;
+  if (action === "get") {writeApiResponse(await apiRequest("GET", path, globals), globals.json); return;}
+  if (action === "delete") {
+    const response = await apiRequest("GET", path, globals);
+    if (!response.ok) {writeApiResponse(response, globals.json); return;}
+    const target = record(response.body);
+    if (typeof target?.id !== "string") throw new CliError("The instance returned an invalid tag.");
+    await confirmDelete(target.id, stringFlag(parsed, "confirm"), "tag");
+    writeApiResponse(await apiRequest("DELETE", `/api/v1/tags/by-id/${encodeURIComponent(target.id)}/`, globals), globals.json); return;
+  }
+  const input = stringFlag(parsed, "input");
+  if (input && ["name", "slug", "description"].some(name => parsed.flags[name] !== undefined)) throw new CliError("Use --input or tag fields, not both.");
+  const payload = Object.fromEntries(["name", "slug", "description"].flatMap(name => {
+    const value = stringFlag(parsed, name); return value === undefined ? [] : [[name, value]];
+  }));
+  const body = input ? await readJsonObjectInput(input) : JSON.stringify(payload);
+  writeApiResponse(await apiRequest(action === "create" ? "POST" : "PUT", path, globals, {body}), globals.json);
 }
 
 export async function itemCommand(args: string[], globals: GlobalOptions): Promise<void> {
@@ -494,6 +532,7 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
       rest,
       ITEM_CREATE_VALUE_FLAGS,
       new Set(["validate-only", "verify"]),
+      new Set(["tag", "tag-id"]),
     );
     if (parsed.positionals.length) throw new CliError("item create does not accept positional arguments.");
     const attachmentFile = stringFlag(parsed, "attachment-file");
@@ -571,7 +610,7 @@ export async function itemCommand(args: string[], globals: GlobalOptions): Promi
     return;
   }
   if (action === "update") {
-    const parsed = parseOptions(rest, ITEM_VALUE_FLAGS);
+    const parsed = parseOptions(rest, ITEM_VALUE_FLAGS, new Set(), new Set(["tag", "tag-id"]));
     if (parsed.positionals.length !== 1) throw new CliError("Usage: yarn microfeed item update <item-id> [flags]");
     const itemId = parsed.positionals[0]!;
     writeApiResponse(await apiRequest("PUT", `/api/v1/items/${encodeURIComponent(itemId)}/`, globals, {body: await itemBody(parsed, globals, itemId)}), globals.json);

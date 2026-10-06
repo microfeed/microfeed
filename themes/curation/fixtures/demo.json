@@ -5,7 +5,11 @@
   "feed_url": "https://example.test/json/",
   "description": "A weekly digest of useful links about design, cities, independent publishing, and slower technology.",
   "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notebook-front-front.png/960px-Notebook-front-front.png",
-  "authors": [{"name": "Ada Mensah"}],
+  "authors": [
+    {
+      "name": "Ada Mensah"
+    }
+  ],
   "language": "en-US",
   "items": [
     {
@@ -17,9 +21,47 @@
       "content_text": "A visual reference for thinking about thresholds, scale, and why generous spaces make arrival feel legible.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
       "date_published": "2026-08-20T15:00:00Z",
-      "authors": [{"name": "Wikimedia Commons"}],
-      "attachments": [{"url":"https://commons.wikimedia.org/wiki/File:Architecture_photography.jpg","mime_type":"text/html"}],
-      "_microfeed": {"date_published_short":"Aug 20, 2026","is_external_url":true,"json_url":"https://example.test/json/items/patient-public-rooms/","rss_url":"https://example.test/rss/items/patient-public-rooms/","status":"published","web_url":"https://example.test/i/patient-public-rooms/"}
+      "authors": [
+        {
+          "name": "Wikimedia Commons"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://commons.wikimedia.org/wiki/File:Architecture_photography.jpg",
+          "mime_type": "text/html"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 20, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/patient-public-rooms/",
+        "rss_url": "https://example.test/rss/items/patient-public-rooms/",
+        "status": "published",
+        "web_url": "https://example.test/i/patient-public-rooms/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          },
+          {
+            "id": "preview-unicode",
+            "name": "世界 🌍",
+            "slug": "世界",
+            "url": "https://example.test/tags/%E4%B8%96%E7%95%8C/",
+            "rss_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/rss/",
+            "json_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes",
+        "世界 🌍"
+      ]
     },
     {
       "id": "cities-after-dark",
@@ -30,9 +72,38 @@
       "content_text": "A public-domain night photograph worth studying for its layers of light, movement, and negative space.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
       "date_published": "2026-08-18T14:00:00Z",
-      "authors": [{"name": "Wikimedia Commons"}],
-      "attachments": [{"url":"https://commons.wikimedia.org/wiki/File:City_at_Night_(Unsplash).jpg","mime_type":"text/html"}],
-      "_microfeed": {"date_published_short":"Aug 18, 2026","is_external_url":true,"json_url":"https://example.test/json/items/cities-after-dark/","rss_url":"https://example.test/rss/items/cities-after-dark/","status":"published","web_url":"https://example.test/i/cities-after-dark/"}
+      "authors": [
+        {
+          "name": "Wikimedia Commons"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://commons.wikimedia.org/wiki/File:City_at_Night_(Unsplash).jpg",
+          "mime_type": "text/html"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 18, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/cities-after-dark/",
+        "rss_url": "https://example.test/rss/items/cities-after-dark/",
+        "status": "published",
+        "web_url": "https://example.test/i/cities-after-dark/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "mountain-wayfinding",
@@ -43,9 +114,38 @@
       "content_text": "A landscape reference for designers interested in landmarks, orientation, and paths that explain themselves.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/9/94/Mountain_and_Landscape.jpg",
       "date_published": "2026-08-14T13:00:00Z",
-      "authors": [{"name": "Wikimedia Commons"}],
-      "attachments": [{"url":"https://commons.wikimedia.org/wiki/File:Mountain_and_Landscape.jpg","mime_type":"text/html"}],
-      "_microfeed": {"date_published_short":"Aug 14, 2026","is_external_url":true,"json_url":"https://example.test/json/items/mountain-wayfinding/","rss_url":"https://example.test/rss/items/mountain-wayfinding/","status":"published","web_url":"https://example.test/i/mountain-wayfinding/"}
+      "authors": [
+        {
+          "name": "Wikimedia Commons"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://commons.wikimedia.org/wiki/File:Mountain_and_Landscape.jpg",
+          "mime_type": "text/html"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 14, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/mountain-wayfinding/",
+        "rss_url": "https://example.test/rss/items/mountain-wayfinding/",
+        "status": "published",
+        "web_url": "https://example.test/i/mountain-wayfinding/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "notebook-interface",
@@ -56,9 +156,38 @@
       "content_text": "A simple object that still gets capture, retrieval, portability, and ownership right.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notebook-front-front.png/960px-Notebook-front-front.png",
       "date_published": "2026-08-09T12:00:00Z",
-      "authors": [{"name": "Wikimedia Commons"}],
-      "attachments": [{"url":"https://commons.wikimedia.org/wiki/File:Notebook-front-front.png","mime_type":"text/html"}],
-      "_microfeed": {"date_published_short":"Aug 9, 2026","is_external_url":true,"json_url":"https://example.test/json/items/notebook-interface/","rss_url":"https://example.test/rss/items/notebook-interface/","status":"published","web_url":"https://example.test/i/notebook-interface/"}
+      "authors": [
+        {
+          "name": "Wikimedia Commons"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://commons.wikimedia.org/wiki/File:Notebook-front-front.png",
+          "mime_type": "text/html"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 9, 2026",
+        "is_external_url": true,
+        "json_url": "https://example.test/json/items/notebook-interface/",
+        "rss_url": "https://example.test/rss/items/notebook-interface/",
+        "status": "published",
+        "web_url": "https://example.test/i/notebook-interface/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "sound-reference",
@@ -67,8 +196,36 @@
       "content_html": "<p>A short field recording for anyone designing sound that should feel present without demanding attention.</p>",
       "content_text": "A short field recording for anyone designing sound that should feel present without demanding attention.",
       "date_published": "2026-08-05T11:00:00Z",
-      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg","mime_type":"audio/ogg","size_in_bytes":1092440,"duration_in_seconds":31}],
-      "_microfeed": {"date_published_short":"Aug 5, 2026","duration_hhmmss":"00:31","is_audio":true,"json_url":"https://example.test/json/items/sound-reference/","rss_url":"https://example.test/rss/items/sound-reference/","status":"published","web_url":"https://example.test/i/sound-reference/"}
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg",
+          "mime_type": "audio/ogg",
+          "size_in_bytes": 1092440,
+          "duration_in_seconds": 31
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 5, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "json_url": "https://example.test/json/items/sound-reference/",
+        "rss_url": "https://example.test/rss/items/sound-reference/",
+        "status": "published",
+        "web_url": "https://example.test/i/sound-reference/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "motion-reference",
@@ -78,8 +235,36 @@
       "content_text": "A tiny loop that makes a useful reference for transitions with rhythm but no unnecessary flourish.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
       "date_published": "2026-08-01T10:00:00Z",
-      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm","mime_type":"video/webm","size_in_bytes":1915000,"duration_in_seconds":3}],
-      "_microfeed": {"date_published_short":"Aug 1, 2026","duration_hhmmss":"00:03","is_video":true,"json_url":"https://example.test/json/items/motion-reference/","rss_url":"https://example.test/rss/items/motion-reference/","status":"published","web_url":"https://example.test/i/motion-reference/"}
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm",
+          "mime_type": "video/webm",
+          "size_in_bytes": 1915000,
+          "duration_in_seconds": 3
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 1, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/motion-reference/",
+        "rss_url": "https://example.test/rss/items/motion-reference/",
+        "status": "published",
+        "web_url": "https://example.test/i/motion-reference/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "reading-pack",
@@ -88,17 +273,135 @@
       "content_html": "<p>The month’s links, annotations, and discussion prompts in one printable document.</p>",
       "content_text": "The month’s links, annotations, and discussion prompts in one printable document.",
       "date_published": "2026-07-28T09:00:00Z",
-      "attachments": [{"url":"https://example.test/media/margin-notes-august.pdf","mime_type":"application/pdf"}],
-      "_microfeed": {"date_published_short":"Jul 28, 2026","is_document":true,"json_url":"https://example.test/json/items/reading-pack/","rss_url":"https://example.test/rss/items/reading-pack/","status":"published","web_url":"https://example.test/i/reading-pack/"}
+      "attachments": [
+        {
+          "url": "https://example.test/media/margin-notes-august.pdf",
+          "mime_type": "application/pdf"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Jul 28, 2026",
+        "is_document": true,
+        "json_url": "https://example.test/json/items/reading-pack/",
+        "rss_url": "https://example.test/rss/items/reading-pack/",
+        "status": "published",
+        "web_url": "https://example.test/i/reading-pack/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     }
   ],
   "navigation_pages": [
-    {"id":"page-about","navigation_label":"About","navigation_order":1,"slug":"about","title":"About Margin Notes","url":"https://example.test/about/"},
-    {"id":"page-topics","navigation_label":"Topics","navigation_order":2,"slug":"topics","title":"Topics","url":"https://example.test/topics/"},
-    {"id":"page-submit","navigation_label":"Submit","navigation_order":3,"slug":"submit","title":"Suggest a link","url":"https://example.test/submit/"}
+    {
+      "id": "page-about",
+      "navigation_label": "About",
+      "navigation_order": 1,
+      "slug": "about",
+      "title": "About Margin Notes",
+      "url": "https://example.test/about/"
+    },
+    {
+      "id": "page-topics",
+      "navigation_label": "Topics",
+      "navigation_order": 2,
+      "slug": "topics",
+      "title": "Topics",
+      "url": "https://example.test/topics/"
+    },
+    {
+      "id": "page-submit",
+      "navigation_label": "Submit",
+      "navigation_order": 3,
+      "slug": "submit",
+      "title": "Suggest a link",
+      "url": "https://example.test/submit/"
+    }
   ],
-  "page": {"id":"page-about","title":"About Margin Notes","slug":"about","content_html":"<p>Margin Notes is a small, annotated reading list for people building more thoughtful products and places.</p><h2>Why annotations?</h2><p>A good link becomes more useful when someone explains why it deserves your time.</p>","content_text":"Margin Notes is a small, annotated reading list for people building more thoughtful products and places.","date_created":"2026-01-01T00:00:00Z","date_modified":"2026-08-01T00:00:00Z","date_published":"2026-08-01T00:00:00Z","is_not_found_page":false,"meta_description":"About Margin Notes","navigation_label":"About","navigation_order":1,"show_in_navigation":true,"status":"published","url":"https://example.test/about/"},
-  "search": {"query":"architecture","results":[{"id":"patient-public-rooms","title":"The patient architecture of public rooms","type":"item","url":"https://commons.wikimedia.org/wiki/File:Architecture_photography.jpg","date_published":"2026-08-20T15:00:00Z","content_text":"A visual reference for thinking about thresholds, scale, and why generous spaces make arrival feel legible."},{"id":"page-about","title":"About Margin Notes","type":"page","url":"https://example.test/about/","content_text":"Margin Notes is a small, annotated reading list."}]},
-  "_microfeed": {"base_url":"https://example.test/","categories":[{"name":"Design"},{"name":"Cities"},{"name":"Publishing"}],"copyright":"© 2026 Margin Notes","description_text":"A weekly digest of useful links about design, cities, independent publishing, and slower technology.","items_next_cursor":"older-links","items_order":"desc","items_sort":"published_at","items_sort_order":"Newest first","microfeed_version":"1.0.5","next_url":"https://example.test/?next_cursor=older-links","subscribe_methods":[{"enabled":true,"id":"rss","name":"RSS","type":"rss","url":"https://example.test/rss/"},{"enabled":true,"id":"json","name":"JSON Feed","type":"json","url":"https://example.test/json/"}]},
+  "page": {
+    "id": "page-about",
+    "title": "About Margin Notes",
+    "slug": "about",
+    "content_html": "<p>Margin Notes is a small, annotated reading list for people building more thoughtful products and places.</p><h2>Why annotations?</h2><p>A good link becomes more useful when someone explains why it deserves your time.</p>",
+    "content_text": "Margin Notes is a small, annotated reading list for people building more thoughtful products and places.",
+    "date_created": "2026-01-01T00:00:00Z",
+    "date_modified": "2026-08-01T00:00:00Z",
+    "date_published": "2026-08-01T00:00:00Z",
+    "is_not_found_page": false,
+    "meta_description": "About Margin Notes",
+    "navigation_label": "About",
+    "navigation_order": 1,
+    "show_in_navigation": true,
+    "status": "published",
+    "url": "https://example.test/about/"
+  },
+  "search": {
+    "query": "architecture",
+    "results": [
+      {
+        "id": "patient-public-rooms",
+        "title": "The patient architecture of public rooms",
+        "type": "item",
+        "url": "https://commons.wikimedia.org/wiki/File:Architecture_photography.jpg",
+        "date_published": "2026-08-20T15:00:00Z",
+        "content_text": "A visual reference for thinking about thresholds, scale, and why generous spaces make arrival feel legible."
+      },
+      {
+        "id": "page-about",
+        "title": "About Margin Notes",
+        "type": "page",
+        "url": "https://example.test/about/",
+        "content_text": "Margin Notes is a small, annotated reading list."
+      }
+    ]
+  },
+  "_microfeed": {
+    "base_url": "https://example.test/",
+    "categories": [
+      {
+        "name": "Design"
+      },
+      {
+        "name": "Cities"
+      },
+      {
+        "name": "Publishing"
+      }
+    ],
+    "copyright": "© 2026 Margin Notes",
+    "description_text": "A weekly digest of useful links about design, cities, independent publishing, and slower technology.",
+    "items_next_cursor": "older-links",
+    "items_order": "desc",
+    "items_sort": "published_at",
+    "items_sort_order": "Newest first",
+    "microfeed_version": "1.0.5",
+    "next_url": "https://example.test/?next_cursor=older-links",
+    "subscribe_methods": [
+      {
+        "enabled": true,
+        "id": "rss",
+        "name": "RSS",
+        "type": "rss",
+        "url": "https://example.test/rss/"
+      },
+      {
+        "enabled": true,
+        "id": "json",
+        "name": "JSON Feed",
+        "type": "json",
+        "url": "https://example.test/json/"
+      }
+    ]
+  },
   "current_year": 2026
 }

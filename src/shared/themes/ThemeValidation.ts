@@ -2,8 +2,9 @@ import semver from "semver";
 import {SyntaxValidator} from "fast-xml-validator";
 
 import {
-  THEME_FILE_KEYS,
+  THEME_FILE_KEYS_V2,
   THEME_FILE_KEYS_V1,
+  THEME_OPTIONAL_FILE_KEYS,
   THEME_MAX_ASSET_BYTES,
   THEME_MAX_ASSETS,
   THEME_MAX_TEMPLATE_BYTES,
@@ -92,7 +93,7 @@ function validateThemePackageWithSchema(
   const {data: manifest} = manifestResult;
   const {data: bundle} = bundleResult;
   const fileKeys = manifest.formatVersion === 2
-    ? THEME_FILE_KEYS
+    ? THEME_FILE_KEYS_V2
     : THEME_FILE_KEYS_V1;
   if (!semver.valid(manifest.version)) {
     diagnostics.push("manifest.version: Use a valid semantic version.");
@@ -111,10 +112,16 @@ function validateThemePackageWithSchema(
   }
 
   let totalTemplateBytes = 0;
-  for (const key of fileKeys) {
+  for (const key of [...fileKeys, ...THEME_OPTIONAL_FILE_KEYS]) {
     const template = bundle[key];
+    const optional = THEME_OPTIONAL_FILE_KEYS.some((optionalKey) => optionalKey === key);
+    if (optional) {
+      const declared = manifest.files[key as typeof THEME_OPTIONAL_FILE_KEYS[number]] !== undefined;
+      if (!declared && template === undefined) continue;
+      if (!declared) diagnostics.push(`manifest.files.${key}: Declare the optional template path when providing its content.`);
+    }
     if (typeof template !== "string") {
-      diagnostics.push(`bundle.${key}: A format v2 theme must provide this template.`);
+      diagnostics.push(`bundle.${key}: A declared template must provide its content.`);
       continue;
     }
     const size = byteLength(template);
@@ -143,7 +150,7 @@ function validateThemePackageWithSchema(
     diagnostics.push("bundle.assets: Asset paths must be unique.");
   }
   const templatePaths = new Set(Object.values(manifest.files));
-  const templateCount = fileKeys.length === 6 ? "six" : "eight";
+  const templateCount = Object.keys(manifest.files).length === 6 ? "six" : Object.keys(manifest.files).length === 8 ? "eight" : "declared";
   for (const path of manifestAssets) {
     if (templatePaths.has(path)) {
       diagnostics.push(

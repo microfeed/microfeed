@@ -1,6 +1,6 @@
 import XMLBuilder from "fast-xml-builder";
 import {podcastRssNodes} from "./podcast";
-import {PUBLIC_URLS, secondsToHHMMSS} from "@/shared/StringUtils";
+import {escapeHtml, PUBLIC_URLS, secondsToHHMMSS} from "@/shared/StringUtils";
 import {msToUtcString} from "@/shared/TimeUtils";
 import {OUR_BRAND} from "@/shared/Constants";
 import {buildItemPaginationUrl} from "@/shared/ItemPagination";
@@ -30,6 +30,7 @@ export default class FeedPublicRssBuilder {
        ...podcastRssNodes(_microfeed.podcast, item.id, this.baseUrl),
        'title': item.title || 'untitled',
        'guid': item.id,
+       'category': item.tags ?? [],
        'pubDate': msToUtcString(item._microfeed.date_published_ms),
        'itunes:explicit': _microfeed['itunes:explicit'] ? 'true' : 'false',
      };
@@ -109,7 +110,7 @@ export default class FeedPublicRssBuilder {
     };
     (channelRss as any)['atom:link'] = {
       '@_rel': 'self',
-      '@_href': PUBLIC_URLS.rssFeed(this.baseUrl),
+      '@_href': _microfeed.tag?.rss_url ?? PUBLIC_URLS.rssFeed(this.baseUrl),
       '@_type': 'application/rss+xml',
     };
     const linksTags = [];
@@ -125,7 +126,7 @@ export default class FeedPublicRssBuilder {
       } = _microfeed;
       linksTags.push({
         '@_rel': 'next',
-        '@_href': buildItemPaginationUrl(PUBLIC_URLS.rssFeed(this.baseUrl), {
+        '@_href': buildItemPaginationUrl(_microfeed.tag?.rss_url ?? PUBLIC_URLS.rssFeed(this.baseUrl), {
           legacySort: items_sort_order,
           nextCursor: items_next_cursor,
           order: items_order,
@@ -143,7 +144,7 @@ export default class FeedPublicRssBuilder {
       } = _microfeed;
       linksTags.push({
         '@_rel': 'prev',
-        '@_href': buildItemPaginationUrl(PUBLIC_URLS.rssFeed(this.baseUrl), {
+        '@_href': buildItemPaginationUrl(_microfeed.tag?.rss_url ?? PUBLIC_URLS.rssFeed(this.baseUrl), {
           legacySort: items_sort_order,
           order: items_order,
           prevCursor: items_prev_cursor,
@@ -155,7 +156,7 @@ export default class FeedPublicRssBuilder {
     (channelRss as any)['link'] = linksTags;
     if (this.jsonData.description) {
       (channelRss as any)['description'] = {
-        '@cdata': this.jsonData.description,
+        '@cdata': _microfeed.tag ? escapeHtml(this.jsonData.description) : this.jsonData.description,
       };
     }
     const publisher = this.jsonData._microfeed?.publisher

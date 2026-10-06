@@ -5,6 +5,7 @@ import {globalOptions} from "./arguments.js";
 import {
   instancesCommand,
   itemCommand,
+  tagCommand,
   loginCommand,
   logoutCommand,
   mediaCommand,
@@ -23,7 +24,7 @@ function requestedHelp(args: string[]): readonly string[] | undefined {
   }
   const [command, subcommand] = args;
   if (!command || command === "--help" || command === "-h") return [];
-  if (command === "instances" || command === "item" || command === "media" || command === "webhook") {
+  if (command === "instances" || command === "item" || command === "tag" || command === "media" || command === "webhook") {
     if (subcommand && subcommand !== "--help" && subcommand !== "-h") {
       return [command, subcommand];
     }
@@ -70,6 +71,7 @@ export async function run(argv: string[]): Promise<void> {
   if (command === "logout") return await logoutCommand(options);
   if (command === "instances") return await instancesCommand(rest, options);
   if (command === "item") return await itemCommand(rest, options);
+  if (command === "tag") return await tagCommand(rest, options);
   if (command === "media") return await mediaCommand(rest, options);
   if (command === "api") return await rawApiCommand(rest, options);
   if (command === "webhook") return await webhookCommand(rest, options);

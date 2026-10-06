@@ -1,4 +1,5 @@
 <main class="pod-main">
+  {{#_microfeed.tag}}<p><a href="/tags/">← All tags</a></p>{{/_microfeed.tag}}
   <section class="pod-hero">
     <div class="pod-cover-wrap">
       {{#icon}}<img class="pod-cover" src="{{icon}}" alt="{{title}} cover art" loading="eager" />{{/icon}}
@@ -38,7 +39,7 @@
             {{#_microfeed.duration_hhmmss}}<span>{{_microfeed.duration_hhmmss}}</span>{{/_microfeed.duration_hhmmss}}
             {{#_microfeed.itunes:season}}<span>Season {{_microfeed.itunes:season}}</span>{{/_microfeed.itunes:season}}
           </div>
-          <h3><a href="{{_microfeed.web_url}}">{{title}}</a></h3>
+          <h3><a href="{{_microfeed.web_url}}">{{title}}</a></h3>{{#_microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#_microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/_microfeed.tags}}</ul>{{/_microfeed.tags.length}}
           {{#content_text}}<p class="pod-episode-summary">{{content_text}}</p>{{/content_text}}
           {{#_microfeed.is_audio}}
           {{#attachments}}<audio controls preload="metadata" src="{{url}}">Your browser does not support audio.</audio>{{/attachments}}

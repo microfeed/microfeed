@@ -79,7 +79,7 @@ export default function WebhookEventExplorerApp({
   const [deliveryId, setDeliveryId] = useState<string>();
   const definition = WEBHOOK_EVENT_DEFINITIONS.find((event) => event.type === eventType)!;
   const endpoint = endpoints.find((entry) => entry.id === endpointId);
-  const needsSubject = ["item", "page", "site_file", "theme"].includes(
+  const needsSubject = ["item", "page", "tag", "site_file", "theme"].includes(
     definition.sourceKind,
   );
   const subscriptionMismatch = Boolean(

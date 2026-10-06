@@ -1,6 +1,7 @@
 <header class="photo-shell">
   <a class="photo-brand" href="/" aria-label="{{title}} home"><span aria-hidden="true">□</span>{{title}}</a>
-  <nav class="photo-nav" aria-label="Site navigation">{{#navigation_pages}}<a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>{{/navigation_pages}}</nav>
+  <nav class="photo-nav" aria-label="Site navigation"><a href="/tags/" data-microfeed-nav-item{{#tags_active}} aria-current="page"{{/tags_active}}>Tags</a>
+    {{#navigation_pages}}<a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>{{/navigation_pages}}</nav>
   <button type="button" class="photo-search-open" aria-label="Search this site" aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open>⌕</button>
   <details class="photo-theme-menu" data-theme-menu>
     <summary aria-label="Choose color theme">◑</summary>

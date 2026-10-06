@@ -258,6 +258,9 @@ function validateConfig(
       `Invalid ${source}. Run \`yarn manage init\` to repair it.`,
     );
   }
+  if (typeof value.adminPath === "string" && value.adminPath.trim().replace(/^\/+|\/+$/gu, "") === "tags") {
+    throw new Error("The saved admin path /tags/ conflicts with public tags. Choose a different adminPath before upgrading; it will not be changed automatically.");
+  }
   return {
     accountId: accountId as string | null,
     adminAuthMode: value.adminAuthMode as AdminAuthMode | undefined,

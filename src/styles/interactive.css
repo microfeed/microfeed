@@ -15,6 +15,15 @@ label:has(input[type="radio"]:not(:disabled)) {
   cursor: pointer;
 }
 
+.mf-tags-page h1 { overflow-wrap: anywhere; }
+.mf-tags-directory { max-width: 70rem; margin: auto; padding: 2rem 1rem; color: var(--mf-text, inherit); }
+.mf-tags-directory > ul { list-style: none; padding: 0; }
+.mf-tags-directory > ul > li { padding: 1rem 0; border-bottom: 1px solid var(--mf-border, currentColor); }
+.mf-tags-directory h1 { font-size: 2rem; margin-bottom: 1rem; }
+.mf-tags-directory h2 { font-size: 1.15rem; font-weight: 600; }
+.mf-tags-directory a { color: var(--mf-accent, inherit); overflow-wrap: anywhere; }
+.mf-tags-directory p { margin: 0.5rem 0; }
+
 a[href][aria-disabled="true"],
 button:disabled,
 input[type="button"]:disabled,

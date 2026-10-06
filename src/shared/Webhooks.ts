@@ -1,5 +1,8 @@
 export const WEBHOOK_EVENT_TYPES = [
   "channel.updated",
+  "tag.created",
+  "tag.updated",
+  "tag.deleted",
   "item.created",
   "item.updated",
   "item.published",
@@ -27,6 +30,7 @@ export type WebhookEventType = typeof WEBHOOK_EVENT_TYPES[number];
 
 export type WebhookSubjectType =
   | "channel"
+  | "tag"
   | "item"
   | "page"
   | "site_file"
@@ -165,7 +169,7 @@ export function webhookSubjectType(
 ): WebhookSubjectType {
   const prefix = eventType.split(".", 1)[0];
   return prefix === "channel" || prefix === "item" || prefix === "page" ||
-      prefix === "site_file" || prefix === "theme"
+      prefix === "site_file" || prefix === "theme" || prefix === "tag"
     ? prefix
     : "webhook";
 }

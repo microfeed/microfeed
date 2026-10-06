@@ -1,4 +1,5 @@
 <main class="photo-main">
+  {{#_microfeed.tag}}<p><a href="/tags/">← All tags</a></p>{{/_microfeed.tag}}
   <section class="photo-intro">
     <div>
       <p class="photo-kicker">Visual journal</p>
@@ -16,7 +17,7 @@
     {{^items.length}}<div class="photo-empty"><span aria-hidden="true">▧</span><h3>The contact sheet is empty.</h3><p>New photographs will appear here when published.</p></div>{{/items.length}}
     <div class="photo-grid">
       {{#items}}
-      <article class="photo-tile{{^image}} photo-tile-text{{/image}}">
+      <article class="photo-tile{{#_microfeed.tags.length}} photo-tile-tagged{{/_microfeed.tags.length}}{{^image}} photo-tile-text{{/image}}">
         <a href="{{_microfeed.web_url}}" aria-label="View {{title}}">
           {{#image}}<img src="{{image}}" alt="" loading="lazy" />{{/image}}
           {{^image}}<span class="photo-tile-symbol" aria-hidden="true">{{#_microfeed.is_audio}}∿{{/_microfeed.is_audio}}{{#_microfeed.is_video}}▶{{/_microfeed.is_video}}{{#_microfeed.is_document}}↧{{/_microfeed.is_document}}{{#_microfeed.is_external_url}}↗{{/_microfeed.is_external_url}}{{^_microfeed.is_audio}}{{^_microfeed.is_video}}{{^_microfeed.is_document}}{{^_microfeed.is_external_url}}¶{{/_microfeed.is_external_url}}{{/_microfeed.is_document}}{{/_microfeed.is_video}}{{/_microfeed.is_audio}}</span>{{/image}}
@@ -25,6 +26,7 @@
             <span>{{_microfeed.date_published_short}}{{#_microfeed.duration_hhmmss}} · {{_microfeed.duration_hhmmss}}{{/_microfeed.duration_hhmmss}}</span>
           </span>
         </a>
+        {{#_microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#_microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/_microfeed.tags}}</ul>{{/_microfeed.tags.length}}
       </article>
       {{/items}}
     </div>

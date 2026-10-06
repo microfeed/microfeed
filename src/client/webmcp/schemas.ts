@@ -18,6 +18,8 @@ interface ListItemsInput {
 }
 
 export interface SaveItemDraftInput {
+  tag_ids?: string[];
+  tag_slugs?: string[];
   url?: string | null;
   _microfeed?: z.infer<typeof apiItemMicrofeedSchema>;
   language?: string | null;
@@ -182,12 +184,15 @@ export const startDraftInputSchema: InputContract<{kind: "item" | "page"}> = {
 };
 
 const draftItemSchema = z.object({
+  tag_ids: z.array(z.string().min(1)).optional(),
+  tag_slugs: z.array(z.string().min(1)).optional(),
   url: apiItemLinkSchema,
   content_html: z.string().optional(),
   title: z.string().optional(),
   language: languageOverrideSchema.nullable().optional(),
   _microfeed: apiItemMicrofeedSchema.optional(),
-}).strict().refine((value) => Object.keys(value).length > 0, "Supply at least one item field to save.");
+}).strict().refine((value) => Object.keys(value).length > 0, "Supply at least one item field to save.")
+  .refine(value => value.tag_ids === undefined || value.tag_slugs === undefined, "Use tag_slugs or tag_ids, not both.");
 
 export const saveItemDraftInputSchema: InputContract<SaveItemDraftInput> = {
   jsonSchema: z.toJSONSchema(draftItemSchema),

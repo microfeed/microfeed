@@ -7,6 +7,8 @@ import type {
   ThemeDraft,
 } from "@/shared/themes/ThemeContract";
 import {themeRssPreviewDocument} from "@/shared/themes/RssPreview";
+import {themeContext} from "@/shared/themes/ThemeRenderer";
+import {tagPreviewContexts} from "@/shared/themes/ThemeTags";
 import {
   publicSearchHtml,
   type PublicSearchResult,
@@ -75,7 +77,7 @@ export async function themePreviewResponse(
   const view = requestUrl.searchParams.get("view") ?? "feed";
   const supportsPagesAndSearch = previewTheme.manifest.formatVersion === 2;
   if (
-    !["feed", "item", "rss", "rss-stylesheet", "page", "search"].includes(view) ||
+    !["feed", "item", "rss", "rss-stylesheet", "page", "search", "tag", "tags"].includes(view) ||
     (!supportsPagesAndSearch && (view === "page" || view === "search"))
   ) {
     return new Response("Unknown preview view.", {status: 400});
@@ -149,7 +151,15 @@ export async function themePreviewResponse(
       url: new URL("/projects/", request.url).toString(),
     },
   ];
-  const extraContext = {navigation_pages: navigationPages};
+  const {tagContext, tagsContext} = tagPreviewContexts(themeContext(publicFeed, {
+    assetBaseUrl, packageId: storedTheme.packageId, version: storedTheme.version,
+  }));
+  const extraContext = {navigation_pages: navigationPages,
+    ...(view === "tag" ? {tags_active: true} : {}),
+    ...(view === "tags" ? {tags_active: true, tags: tagsContext.tags} : {})};
+  const shellFeed = view === "tag"
+    ? {...publicFeed, _microfeed: tagContext._microfeed}
+    : view === "tags" ? {...publicFeed, _microfeed: tagsContext._microfeed} : publicFeed;
   const searchItemDestination = manifestSearchItemDestination(
     storedTheme.manifest,
   );
@@ -208,7 +218,7 @@ export async function themePreviewResponse(
     });
   }
   const theme = new Theme(
-    publicFeed,
+    shellFeed,
     loaded.content.settings,
     null,
     storedTheme,
@@ -238,7 +248,7 @@ export async function themePreviewResponse(
   }
 
   const shared = new Theme(
-    publicFeed,
+    shellFeed,
     loaded.content.settings,
     "shared",
     storedTheme,
@@ -252,6 +262,10 @@ export async function themePreviewResponse(
     ? theme.getWebPage(page, navigationPages).html
     : view === "search"
     ? theme.getWebSearch("", previewSearchResults).html
+    : view === "tag"
+    ? new Theme(tagContext, loaded.content.settings, null, storedTheme, assetBaseUrl, extraContext).getWebTag().html
+    : view === "tags"
+    ? theme.getWebTags().html
     : theme.getWebFeed().html;
   const publicSearch = supportsPagesAndSearch
     ? publicSearchHtml({previewResults: previewSearchResults})

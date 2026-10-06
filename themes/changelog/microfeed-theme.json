@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "microfeed.changelog",
   "name": "Product Changelog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "microfeed",
   "license": "AGPL-3.0",
   "description": "A chronological product timeline for launches, improvements, fixes, supporting media, and release details.",

@@ -27,6 +27,8 @@ import {
   THEME_LIST_PAGE_SIZE,
   THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_DRAFTS,
+  THEME_OPTIONAL_FILE_KEYS,
+  THEME_OPTIONAL_FILE_PATHS,
   themePreviewFixtureSchema,
 } from "@/shared/themes/ThemeContract";
 import {
@@ -688,9 +690,22 @@ export default class ThemeStore {
     if (validated.manifest.packageId !== existing.packageId) {
       throw new Error("A draft's package ID cannot be changed.");
     }
+    const inheritedFiles = (files: ThemeManifestV1["files"]) => Object.fromEntries(
+      Object.entries(files).filter(([key]) => !THEME_OPTIONAL_FILE_KEYS.some(optional => optional === key)),
+    );
+    for (const key of THEME_OPTIONAL_FILE_KEYS) {
+      const before = existing.manifest.files[key];
+      const after = validated.manifest.files[key];
+      if (after !== undefined && after !== before && (
+        before !== undefined || after !== THEME_OPTIONAL_FILE_PATHS[key] ||
+        Object.values(existing.manifest.files).includes(after)
+      )) {
+        throw new Error("Admin drafts may add optional tag templates only at their standard paths; inherited template paths cannot be changed.");
+      }
+    }
     if (
-      JSON.stringify(validated.manifest.files) !==
-        JSON.stringify(existing.manifest.files) ||
+      JSON.stringify(inheritedFiles(validated.manifest.files)) !==
+        JSON.stringify(inheritedFiles(existing.manifest.files)) ||
       JSON.stringify(validated.manifest.assets) !==
         JSON.stringify(existing.manifest.assets) ||
       validated.manifest.previewFixture !==

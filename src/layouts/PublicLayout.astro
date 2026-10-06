@@ -9,6 +9,7 @@ import PublicSearch from "@/components/public/PublicSearch.astro";
 import "../styles/interactive.css";
 
 interface Props {
+  tagPage?: boolean;
   metadataHtml?: string;
   bodyEnd: string;
   bodyHtml: string;
@@ -31,6 +32,7 @@ interface Props {
 }
 
 const {
+  tagPage = false,
   metadataHtml,
   bodyEnd,
   bodyHtml,
@@ -76,7 +78,7 @@ const faviconUrl = effectiveFavicon?.url
       <Fragment set:html={headHtml} />
     </>}
   </head>
-  <body>
+  <body class:list={{"mf-tags-page": tagPage}}>
     <Fragment set:html={sharedBodyStart} />
     <Fragment set:html={bodyStart} />
     <Fragment set:html={bodyHtml} />

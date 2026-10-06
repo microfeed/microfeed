@@ -5721,6 +5721,9 @@ export async function connectCommand(
     )!;
   }
 
+  if (selectedWorker.adminPath === "tags") {
+    throw new Error("This Worker's dashboard uses /tags/, which conflicts with public tags. Choose another dashboard path before connecting or upgrading; no routes or resources were changed.");
+  }
   const existingManaged = preview
     ? null
     : (await instanceSummaries()).find(

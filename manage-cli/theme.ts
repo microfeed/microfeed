@@ -407,8 +407,12 @@ export function initializedThemeManifest(
     author: overrides.author ?? "Site owner",
     description,
     files: source.manifest.formatVersion === 2
-      ? CANONICAL_THEME_FILES_V2
-      : CANONICAL_THEME_FILES_V1,
+      ? {...CANONICAL_THEME_FILES_V2,
+          ...(source.manifest.files.webTag ? {webTag: "web-tag.mustache"} : {}),
+          ...(source.manifest.files.webTags ? {webTags: "web-tags.mustache"} : {})}
+      : {...CANONICAL_THEME_FILES_V1,
+          ...(source.manifest.files.webTag ? {webTag: "web-tag.mustache"} : {}),
+          ...(source.manifest.files.webTags ? {webTags: "web-tags.mustache"} : {})},
     formatVersion: source.manifest.formatVersion,
     license: source.manifest.license,
     microfeed: source.manifest.microfeed,
@@ -1648,9 +1652,12 @@ async function writeThemePackage(
   try {
     await writeRelative("microfeed-theme.json", `${JSON.stringify(theme.manifest, null, 2)}\n`);
     for (const [key, relativePath] of Object.entries(theme.manifest.files)) {
+      if (relativePath === undefined) continue;
+      const template = theme.bundle[key as keyof typeof theme.manifest.files];
+      if (typeof template !== "string") throw new Error(`Declared template ${key} is missing.`);
       await writeRelative(
         relativePath,
-        withFinalNewline(theme.bundle[key as keyof typeof theme.manifest.files]),
+        withFinalNewline(template),
       );
     }
     if (theme.manifest.previewFixture) {

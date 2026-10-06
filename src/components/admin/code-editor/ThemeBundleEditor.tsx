@@ -3,9 +3,11 @@ import {useState} from "react";
 import AdminCodeEditor from "@/components/admin/shared/AdminCodeEditor";
 import {Button} from "@/components/ui/button";
 import {
+  THEME_OPTIONAL_FILE_KEYS,
   type ThemeBundleV1,
   type ThemeFileKey,
 } from "@/shared/themes/ThemeContract";
+import {DEFAULT_WEB_TAGS_TEMPLATE} from "@/shared/themes/ThemeTags";
 
 const FILE_LABELS: Record<ThemeFileKey, string> = {
   rssStylesheet: "RSS stylesheet",
@@ -16,6 +18,8 @@ const FILE_LABELS: Record<ThemeFileKey, string> = {
   webItem: "Item",
   webPage: "Page",
   webSearch: "Search",
+  webTag: "Tag archive",
+  webTags: "Tags directory",
 };
 
 export const THEME_EDITOR_FILE_KEYS: readonly ThemeFileKey[] = [
@@ -23,6 +27,8 @@ export const THEME_EDITOR_FILE_KEYS: readonly ThemeFileKey[] = [
   "webItem",
   "webPage",
   "webSearch",
+  "webTag",
+  "webTags",
   "webHeader",
   "webBodyStart",
   "webBodyEnd",
@@ -36,6 +42,7 @@ export interface ThemeEditorLinks {
   webItemUrl?: string;
   webPageUrl?: string;
   webSearchUrl?: string;
+  webTagsUrl?: string;
 }
 
 interface ThemeFileHelp {
@@ -85,6 +92,16 @@ export const THEME_FILE_HELP: Record<ThemeFileKey, ThemeFileHelp> = {
     exampleLabel: "Open search page",
     exampleUrlKey: "webSearchUrl",
   },
+  webTag: {
+    description: "Edits one public tag archive. It receives the current tag in _microfeed.tag and the published items assigned to it. Without this optional template, the theme's Feed template is used.",
+    exampleLabel: "Open tags directory",
+    exampleUrlKey: "webTagsUrl",
+  },
+  webTags: {
+    description: "Edits the public tags directory. It receives tags.items, tags.next_url, and feed availability flags. Without this optional template, microfeed renders its default directory.",
+    exampleLabel: "Open tags directory",
+    exampleUrlKey: "webTagsUrl",
+  },
 };
 
 interface Props {
@@ -95,7 +112,7 @@ interface Props {
 
 export default function ThemeBundleEditor({bundle, links, onChange}: Props) {
   const fileKeys = THEME_EDITOR_FILE_KEYS.filter((key) =>
-    typeof bundle[key] === "string"
+    typeof bundle[key] === "string" || THEME_OPTIONAL_FILE_KEYS.some(optional => optional === key)
   );
   const hash = typeof window === "undefined" ? "" : window.location.hash.slice(1);
   const initial = fileKeys.includes(hash as ThemeFileKey)
@@ -104,6 +121,8 @@ export default function ThemeBundleEditor({bundle, links, onChange}: Props) {
   const [file, setFile] = useState<ThemeFileKey>(initial);
   const help = THEME_FILE_HELP[file];
   const exampleUrl = links[help.exampleUrlKey];
+  const optional = THEME_OPTIONAL_FILE_KEYS.some(key => key === file);
+  const usingFallback = optional && bundle[file] === undefined;
   return (
     <div className="grid min-w-0 gap-4 md:grid-cols-[12rem_minmax(0,1fr)] md:items-start">
       <nav
@@ -168,7 +187,18 @@ export default function ThemeBundleEditor({bundle, links, onChange}: Props) {
             Quick color changes are at the top of <strong className="text-foreground">Web header</strong>. Edit only the values in the clearly labeled design-token block.
           </p>
         )}
-        <AdminCodeEditor
+        {optional && <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {usingFallback ? "Using the fallback template." : "Using a custom optional template."}
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={() => {
+            if (usingFallback) onChange({...bundle, [file]: file === "webTag" ? bundle.webFeed : DEFAULT_WEB_TAGS_TEMPLATE});
+            else if (window.confirm("Remove this draft's custom template and use the fallback?")) onChange({...bundle, [file]: undefined});
+          }}>
+            {usingFallback ? "Create custom template" : "Use fallback template"}
+          </Button>
+        </div>}
+        {!usingFallback && <AdminCodeEditor
           ariaLabel={`${FILE_LABELS[file]} editor`}
           code={bundle[file] ?? ""}
           language={file === "rssStylesheet" ? "xml" : "html"}
@@ -177,7 +207,7 @@ export default function ThemeBundleEditor({bundle, links, onChange}: Props) {
           placeholder={file === "rssStylesheet"
             ? "Please enter code here, including xsl and css"
             : "Please enter code here, including html, javascript, and css"}
-        />
+        />}
       </div>
     </div>
   );

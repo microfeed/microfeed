@@ -16,6 +16,7 @@ import {
   THEME_MAX_CUSTOM_INSTALLED_VERSIONS,
   THEME_MAX_DRAFTS,
 } from "@/shared/themes/ThemeContract";
+import {manifestWithTagTemplates} from "@/shared/themes/ThemeTags";
 
 function packageData(packageId: string, version = "1.0.0"):
   {bundle: ThemeBundleV1; manifest: ThemeManifestV1} {
@@ -71,6 +72,37 @@ describe("versioned theme storage", () => {
         "DELETE FROM items WHERE id = 'theme-preview-search-destination'",
       ),
     ]);
+  });
+
+  it("saves optional Admin tag templates, previews them, and restores fallbacks without activation", async () => {
+    const store = new ThemeStore(env.FEED_DB);
+    const source = packageData(`worker.tag-draft.${crypto.randomUUID()}`);
+    const draft = await store.createDraft({...source, originKind: "theme"});
+    const bundle = {...draft.bundle, webTag: "<main>custom archive {{_microfeed.tag.name}}</main>", webTags: "<main>custom directory {{#tags.items}}{{name}}{{/tags.items}}</main>"};
+    const manifest = manifestWithTagTemplates(draft.manifest, bundle);
+    const saved = await store.saveDraft(draft.id, {bundle, manifest});
+    expect(saved.manifest.files).toMatchObject({webTag: "web-tag.mustache", webTags: "web-tags.mustache"});
+    const invalid = {...manifest};
+    invalid.files = {...manifest.files};
+    invalid.files.webTag = "other.mustache";
+    await expect(store.saveDraft(draft.id, {bundle, manifest: invalid})).rejects.toThrow("inherited template paths");
+    for (const view of ["tag", "tags"]) {
+      const response = await themePreviewResponse(env, new Request(`https://example.test/admin/preview/?view=${view}`), saved);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-security-policy")).toContain("sandbox allow-scripts");
+      const html = await response.text();
+      expect(html).toContain(view === "tag" ? "custom archive Featured" : "custom directory Featured");
+    }
+    const fallbackBundle = {...saved.bundle, webTag: undefined, webTags: undefined};
+    const fallback = await store.saveDraft(draft.id, {bundle: fallbackBundle, manifest: manifestWithTagTemplates(saved.manifest, fallbackBundle)});
+    expect(fallback.bundle).not.toHaveProperty("webTag");
+    expect(fallback.manifest.files).not.toHaveProperty("webTags");
+    for (const view of ["tag", "tags"]) {
+      const html = await (await themePreviewResponse(env, new Request(`https://example.test/admin/preview/?view=${view}`), fallback)).text();
+      expect(html).toContain(view === "tag" ? "<main>Featured</main>" : 'class="mf-tags-directory"');
+    }
+    expect((await store.getState()).activeThemeId).toBeNull();
+    await store.discardDraft(draft.id);
   });
 
   it("migrates the selected legacy theme once without changing rollback data", async () => {
@@ -141,7 +173,7 @@ describe("versioned theme storage", () => {
       id: "bundled-default-v2",
       packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.1.16",
+      version: "1.1.17",
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });
@@ -379,7 +411,7 @@ describe("versioned theme storage", () => {
     });
     expect(searched.builtInGroups[0]).toMatchObject({
       catalogKey: "default",
-      currentVersion: "1.1.16",
+      currentVersion: "1.1.17",
       packageId: "microfeed.default",
       source: "bundled:default",
     });

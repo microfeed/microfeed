@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "microfeed.photo",
   "name": "Photo Grid",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "microfeed",
   "license": "AGPL-3.0",
   "description": "A responsive visual journal with an immersive photo grid, large image views, captions, and keyboard-friendly gallery links.",

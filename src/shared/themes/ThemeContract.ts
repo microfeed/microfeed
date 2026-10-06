@@ -66,11 +66,18 @@ export const THEME_FILE_KEYS_V1 = [
   "rssStylesheet",
 ] as const;
 
-export const THEME_FILE_KEYS = [
+export const THEME_FILE_KEYS_V2 = [
   ...THEME_FILE_KEYS_V1,
   "webPage",
   "webSearch",
 ] as const;
+
+export const THEME_OPTIONAL_FILE_KEYS = ["webTag", "webTags"] as const;
+export const THEME_OPTIONAL_FILE_PATHS = {
+  webTag: "web-tag.mustache",
+  webTags: "web-tags.mustache",
+} as const;
+export const THEME_FILE_KEYS = [...THEME_FILE_KEYS_V2, ...THEME_OPTIONAL_FILE_KEYS] as const;
 
 export type ThemeFileKey = typeof THEME_FILE_KEYS[number];
 
@@ -123,6 +130,8 @@ const themeManifestFilesV1Schema = z.object({
   webFeed: themePathSchema,
   webHeader: themePathSchema,
   webItem: themePathSchema,
+  webTag: themePathSchema.optional(),
+  webTags: themePathSchema.optional(),
 });
 
 export const themeManifestFormatV1Schema = themeManifestBaseSchema.extend({
@@ -187,6 +196,8 @@ export const themeBundleV1Schema = z.object({
   webItem: z.string(),
   webPage: z.string().optional(),
   webSearch: z.string().optional(),
+  webTag: z.string().optional(),
+  webTags: z.string().optional(),
 });
 
 export const themeRuntimeMetadataSchema = z.object({
@@ -203,7 +214,29 @@ const themeAttachmentSchema = z.object({
   url: z.string(),
 }).loose();
 
+const themeTagSchema = z.object({
+  id: z.string(), name: z.string(), slug: z.string(), url: z.string(),
+  rss_url: z.string(), json_url: z.string(),
+}).loose();
+
+export const themePublicTagSchema = themeTagSchema.extend({
+  description: z.string(),
+  published_item_count: z.number().int().nonnegative(),
+});
+
+export const themeTagDirectorySchema = z.object({
+  items: z.array(themePublicTagSchema),
+  title: z.string(),
+  url: z.string(),
+  next_url: z.string().optional(),
+  rss_enabled: z.boolean(),
+  json_enabled: z.boolean(),
+}).meta({
+  description: "Public tag directory state. items is the current alphabetically sorted page, including empty tags; counts include only published items. Descriptions are plain text: render them with escaped Mustache. next_url is the next directory page, when present. Feed flags respect the site's RSS and JSON Feed settings.",
+});
+
 const themeItemExtraSchema = z.object({
+  tags: z.array(themeTagSchema).optional(),
   seo: seoSchema.optional(),
   authors: authorIdentitiesSchema.optional(),
   slug: z.string().optional(),
@@ -242,6 +275,7 @@ export const themeItemSchema = z.object({
   image: z.string().optional(),
   language: z.string().optional(),
   title: z.string(),
+  tags: z.array(z.string()).optional(),
   url: z.string().optional(),
 }).loose();
 
@@ -261,6 +295,7 @@ const themeSubscribeMethodSchema = z.object({
 }).loose();
 
 const themeFeedExtraSchema = z.object({
+  tag: themePublicTagSchema.optional(),
   seo: seoSchema.optional(),
   publisher: publisherIdentitySchema.optional(),
   authors: authorIdentitiesSchema.optional(),
@@ -335,11 +370,13 @@ const themeSearchResultSchema = z.object({
   }).optional(),
   id: z.string().optional(),
   title: z.string(),
-  type: z.enum(["item", "page"]),
+  type: z.enum(["item", "page", "tag"]),
   url: z.string(),
 }).loose();
 
 export const themeContextSchema = z.object({
+  tags_active: z.boolean().optional(),
+  tags: themeTagDirectorySchema.optional(),
   _microfeed: themeFeedExtraSchema.optional(),
   _theme: themeRuntimeMetadataSchema,
   authors: z.array(identitySchema.pick({name: true, url: true}).loose()).optional(),
@@ -421,6 +458,7 @@ export type ThemeSearchItemDestination =
   typeof THEME_SEARCH_ITEM_DESTINATIONS[number];
 export type ThemeBundleV1 = z.infer<typeof themeBundleV1Schema>;
 export type ThemeContext = z.infer<typeof themeContextSchema>;
+export type ThemeTagDirectory = z.infer<typeof themeTagDirectorySchema>;
 export type ThemeDraft = z.infer<typeof themeDraftSchema>;
 export type StoredThemeVersion = z.infer<typeof storedThemeVersionSchema>;
 export type ThemeSourceKind = z.infer<typeof themeSourceKindSchema>;

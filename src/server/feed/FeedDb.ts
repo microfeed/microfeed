@@ -1,4 +1,6 @@
 import {htmlToPlainText, randomShortUUID} from "@/shared/StringUtils";
+import {itemTagMap, prepareItemTags} from "@/server/tags/service";
+import {TagRequestError} from "@/shared/Tags";
 import {prepareItemUrl, itemUrlWriteError} from "@/server/items/urls";
 import {validateCustomization} from "@/shared/Seo";
 import {validatePodcast} from "@/shared/Podcast";
@@ -274,6 +276,11 @@ export default class FeedDb {
         Object.keys(thing.queryKwargs).forEach((kwargKey: any) => {
           const kwargKeyComponents = kwargKey.split('__');
           let key = kwargKeyComponents[0];
+          if (key === "tag_id") {
+            whereList.push("EXISTS (SELECT 1 FROM item_tags WHERE item_tags.item_id = items.id AND item_tags.tag_id = ?)");
+            bindList.push(thing.queryKwargs[kwargKey]);
+            return;
+          }
           let op = '==';
           if (kwargKeyComponents.length > 0 &&
             ['!=', '>', '<', '>=', '<=', '==', 'in'].includes(kwargKeyComponents[1])) {
@@ -334,6 +341,8 @@ export default class FeedDb {
           ? response.results.slice(0, thing.pageLimit)
           : response.results;
         (contentJson as any)['items'] = pageResults.map((result: any) => getItemJson(result));
+        const memberships = await itemTagMap(this.FEED_DB, this.baseUrl, pageResults.map((result: any) => result.id));
+        for (const item of (contentJson as any).items) item.tags = memberships.get(item.id) ?? [];
         if (pagination?.prevCursor !== undefined) {
           (contentJson as any)['items'].reverse();
         }
@@ -524,7 +533,10 @@ export default class FeedDb {
     const row = await this.FEED_DB.prepare(
       `SELECT * FROM items WHERE id = ? AND status IN (${placeholders}) LIMIT 1`,
     ).bind(id, ...statuses).first();
-    return row ? getItemJson(row) : null;
+    if (!row) return null;
+    const item = getItemJson(row);
+    item.tags = (await itemTagMap(this.FEED_DB, this.baseUrl, [id])).get(id) ?? [];
+    return item;
   }
 
   _putChannelToContentStatement(channel: any) {
@@ -564,6 +576,9 @@ export default class FeedDb {
 
   _putItemToContentStatement(item: any) {
     const {
+      tags: _tags,
+      tag_ids: _tagIds,
+      tag_slugs: _tagSlugs,
       applySlug: _applySlug,
       publicPath: _publicPath,
       urlMode: _urlMode,
@@ -623,9 +638,11 @@ export default class FeedDb {
         validatePodcast(item, true);
         if (!item.id) throw new Error("An item ID is required.");
         validateCustomization(item, true);
+        const tagStatements = await prepareItemTags(this.FEED_DB, this.baseUrl, item);
         const route = await prepareItemUrl(this.FEED_DB, item);
         if (route.exists && route.statement) statements.push(route.statement);
         statements.push(this._putItemToContentStatement(item));
+        statements.push(...tagStatements);
         if (!route.exists && route.statement) statements.push(route.statement);
         statements.push(...characterIndexStatements(
           this.FEED_DB, "item", item.id, String(item.title ?? ""),
@@ -638,6 +655,9 @@ export default class FeedDb {
       }
     } catch (error) {
       await this._purgePublicCacheTags(cacheTags);
+      if (error instanceof Error && error.message.includes("tag_reference_conflict")) {
+        throw new TagRequestError("One or more tags no longer exist.");
+      }
       const conflict = itemUrlWriteError(error);
       if (conflict && item && item.applySlug === undefined && attempt < 5) {
         return this.putContent(feed, commit, attempt + 1);
