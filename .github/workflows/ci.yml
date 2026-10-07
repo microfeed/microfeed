@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: ["main"]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux:
     name: Linux (ubuntu-latest, x64 Node)
@@ -104,5 +108,9 @@ jobs:
           } finally {
             subst M: /d
           }
-      - name: Test Worker runtime
-        run: yarn vitest run --config vitest.worker.config.ts --testTimeout 15000
+      # Linux runs every Worker test. x64 Windows already runs these smoke
+      # tests through the real cross-drive deployment above; ARM must also
+      # exercise workerd and D1, but need not repeat the full content suite.
+      - name: Test Worker runtime smoke tests
+        if: matrix.runner == 'windows-11-arm'
+        run: yarn test:deploy:worker

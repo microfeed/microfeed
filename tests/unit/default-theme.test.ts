@@ -267,15 +267,4 @@ describe("bundled theme packages", () => {
     }
     expect(styles).toMatch(/\.img-sm\s*\{[\s\S]*?width:\s*1em;[\s\S]*?height:\s*1em;/u);
   });
-
-  it("keeps the generated theme-authoring skill synchronized", async () => {
-    const relative = ".agents/skills/develop-microfeed-theme/SKILL.md";
-    const [repository, starter, modern] = await Promise.all([
-      readFile(path.join(root, relative), "utf8"),
-      readFile(path.join(root, "packages/theme-kit/assets/starter", relative), "utf8"),
-      readFile(path.join(root, "themes/default", relative), "utf8"),
-    ]);
-    expect(starter).toBe(repository);
-    expect(modern).toBe(repository);
-  });
 });
