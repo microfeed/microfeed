@@ -161,6 +161,9 @@ describe("generated API reference", () => {
   it("documents only current routes and Bearer authentication", () => {
     const specification = JSON.stringify(OPENAPI_DOCUMENT);
     expect(Object.keys(OPENAPI_DOCUMENT.paths ?? {})).toEqual([
+      "/tags/",
+      "/tags/{slug}/",
+      "/tags/by-id/{tagId}/",
       "/i/{slug}/chapters.json",
       "/feed/",
       "/items/",
@@ -186,8 +189,8 @@ describe("generated API reference", () => {
     expect(API_LLMS_FULL_TEXT).not.toContain("/api/feed/");
     expect(specification).toContain("bearerAuth");
     expect(specification).not.toContain("oauth2");
-    expect(specification).not.toContain("content:read");
-    expect(specification).not.toContain("content:write");
+    expect(OPENAPI_DOCUMENT.paths?.["/tags/"]?.get?.security).toEqual([{bearerAuth: []}]);
+    expect(OPENAPI_DOCUMENT.paths?.["/tags/"]?.post?.security).toEqual([{bearerAuth: []}]);
     expect(specification).not.toContain("legacyApiKey");
     expect(specification).not.toContain("X-MicrofeedAPI-Key");
     expect(API_LLMS_FULL_TEXT).not.toContain("legacyApiKey");

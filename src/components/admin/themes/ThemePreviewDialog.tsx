@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type PreviewView = "feed" | "item" | "page" | "search" | "rss";
+type PreviewView = "feed" | "item" | "page" | "search" | "tag" | "tags" | "rss";
 type PreviewViewport = "mobile" | "desktop";
 type PreviewDataSource = "fixture" | "site";
 
@@ -20,6 +20,8 @@ const VIEW_LABELS: Record<PreviewView, string> = {
   page: "Page",
   search: "Search",
   rss: "RSS",
+  tag: "Tag archive",
+  tags: "Tags directory",
 };
 
 const VIEWPORT_LABELS: Record<PreviewViewport, string> = {
@@ -97,7 +99,7 @@ export default function ThemePreviewDialog({
             )}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {(["feed", "item", ...(supportsPagesAndSearch ? ["page", "search"] as const : []), "rss"] as PreviewView[]).map((candidate) => (
+            {(["feed", "item", ...(supportsPagesAndSearch ? ["page", "search"] as const : []), "tag", "tags", "rss"] as PreviewView[]).map((candidate) => (
               <Button
                 key={candidate}
                 onClick={() => setView(candidate)}

@@ -4,6 +4,10 @@
     {
       "checksumSha256": "0c1f8f3fa76edbdecab4a7e60567ffb8253ba0d4c00e525d969a94aec38b6651",
       "version": "1.0.0"
+    },
+    {
+      "checksumSha256": "19421e8f0736ea0edff5ae6aa18be17027dabe05bf16e1dc39b534ff75c99618",
+      "version": "1.0.1"
     }
   ]
 }

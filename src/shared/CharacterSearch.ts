@@ -92,7 +92,7 @@ function bulkTokensSql(column: number): string {
 /** Append after the source write in the same D1 batch. The generation guard
  * also permits retryable backfills without overwriting a concurrent writer. */
 export function characterSearchStatements(
-  type: "item" | "page",
+  type: "item" | "page" | "tag",
   id: string,
   title: string,
   contentText: string,

@@ -230,6 +230,12 @@ function insertRepresentativeData(database: DatabaseSync, position: number): voi
     INSERT INTO settings (category, data)
       VALUES ('webGlobalSettings', '{"publicBucketUrl":"https://old.example/media/"}');
   `);
+  if (position >= 25) database.exec(`
+    INSERT INTO tags (id, name, name_key, slug, description, created_at, updated_at)
+    VALUES ('saved-tag', '世界', '世界', 'current', 'Saved description', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    INSERT INTO tag_paths (slug, tag_id) VALUES ('current', 'saved-tag'), ('old', 'saved-tag');
+    INSERT INTO item_tags (item_id, tag_id) VALUES ('item0000001', 'saved-tag');
+  `);
   if (position < 6) {
     database.exec(`
       INSERT INTO settings (category, data)
@@ -346,10 +352,9 @@ describe("migration upgrades from historical snapshot positions", () => {
       insertRepresentativeData(source, position);
       const exported = snapshotSql(source, false);
       const restored = new DatabaseSync(":memory:");
-      restored.exec(exported.schema);
-      restored.exec(
-        `PRAGMA defer_foreign_keys=ON; BEGIN TRANSACTION;\n${exported.data}\nCOMMIT;`,
-      );
+      restored.exec("BEGIN TRANSACTION;\n" + buildRestoreSql({currentApplicationTables: [],
+        snapshotApplicationTables: applicationTablesFromSqlite((source.prepare("SELECT name FROM sqlite_schema WHERE type='table'").all() as Array<{name: string}>).map(row => row.name)),
+        schemaSql: exported.schema, dataSql: exported.data}) + "\nCOMMIT;");
       const repairedIndexes = new Map<string, string>();
       for (const migration of migrations.slice(0, position)) {
         for (const definition of migrationIndexDefinitions(await readFile(
@@ -370,6 +375,9 @@ describe("migration upgrades from historical snapshot positions", () => {
           migrations.map(({filename}) => filename),
         );
         expect(database.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+        expect(database.prepare("SELECT name, slug FROM tags").all()).toEqual(position >= 25 ? [{name: "世界", slug: "current"}] : []);
+        expect(database.prepare("SELECT item_id, tag_id FROM item_tags").all()).toEqual(position >= 25 ? [{item_id: "item0000001", tag_id: "saved-tag"}] : []);
+        expect(database.prepare("SELECT slug FROM tag_paths ORDER BY slug").all()).toEqual(position >= 25 ? [{slug: "current"}, {slug: "old"}] : []);
         expect(database.prepare(
           "SELECT json_extract(data, '$.title') AS title FROM channels",
         ).get()).toEqual({title: "Saved channel"});

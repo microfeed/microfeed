@@ -38,5 +38,8 @@ export default defineConfig({
   test: {
     include: ["tests/worker/**/*.test.ts"],
     setupFiles: ["./tests/worker/setup.ts"],
+    // D1/workerd integration tests need the same allowance when invoked by
+    // `test`, deployment checks, or CI (including slower Windows runners).
+    testTimeout: 15_000,
   },
 });

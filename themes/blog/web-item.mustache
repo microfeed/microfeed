@@ -3,7 +3,7 @@
   <article class="blog-story">
     <header class="blog-story-header">
       <p class="blog-rubric">Field notes</p>
-      <h1>{{items.0.title}}</h1>
+      <h1>{{items.0.title}}</h1>{{#items.0._microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#items.0._microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/items.0._microfeed.tags}}</ul>{{/items.0._microfeed.tags.length}}
       {{#items.0.content_text}}<p class="blog-story-deck">{{items.0.content_text}}</p>{{/items.0.content_text}}
       <div class="blog-story-meta">
         {{#items.0.authors}}<span>By {{name}}</span>{{/items.0.authors}}

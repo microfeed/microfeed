@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "microfeed.curation",
   "name": "Link Digest",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "microfeed",
   "license": "AGPL-3.0",
   "description": "A link-forward reading list with source annotations, outbound calls to action, and search results that open original destinations.",

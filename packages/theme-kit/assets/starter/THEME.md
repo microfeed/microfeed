@@ -20,11 +20,11 @@ people, coding agents, and CI.
 ## Edit and test loop
 
 1. Read `microfeed-theme.json` and `.microfeed/schemas/theme-context.schema.json`.
-2. Edit the eight declared Mustache/XSL files. Mustache is logicless:
+2. Edit the declared Mustache/XSL files, including optional tag templates. Mustache is logicless:
    variables, sections, inverted sections, and iteration only.
 3. Run `yarn validate`.
 4. Run `yarn test`.
-5. Run `yarn preview` and inspect feed, item, Page, Search, RSS, mobile, and
+5. Run `yarn preview` and inspect feed, item, Page, Search, Tag archive, Tags directory, RSS, mobile, and
    desktop views.
 6. Increment the immutable semantic version before installation.
 
@@ -33,6 +33,14 @@ The render context is the public JSON Feed plus `current_year`,
 It also supplies the current `page`, ordered `navigation_pages`, and Search
 page state when relevant; the generated context schema documents every field.
 On item pages, use `items.0`; the old `item` alias is deprecated.
+
+The optional `webTag` template renders `/tags/<slug>/` with the current tag
+in `_microfeed.tag` and its published items. Without it, microfeed uses this
+theme's `webFeed`. The optional `webTags` template renders `/tags/` with
+`tags.items`, `tags.next_url`, `tags.rss_enabled`, and `tags.json_enabled`;
+without it, microfeed uses the platform directory. Declare each optional path
+in `files` when supplying its template. Tag names and descriptions are plain
+text; render them with escaped Mustache, never triple braces.
 
 Keep shared navigation in Body start when it should render once across Feed,
 Item, Page, and Search. Keep a shared footer and progressive enhancements in

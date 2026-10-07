@@ -51,8 +51,13 @@ function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-const [{stdout: trackedOutput}, {stdout: commitOutput}] = await Promise.all([
+const [{stdout: trackedOutput}, {stdout: deletedOutput}, {stdout: commitOutput}] = await Promise.all([
   run("git", ["ls-files", "-z", "--", ...runtimePaths], {
+    cwd: repositoryRoot,
+    encoding: "buffer",
+    maxBuffer: 16 * 1024 * 1024,
+  }),
+  run("git", ["ls-files", "--deleted", "-z", "--", ...runtimePaths], {
     cwd: repositoryRoot,
     encoding: "buffer",
     maxBuffer: 16 * 1024 * 1024,
@@ -62,10 +67,13 @@ const [{stdout: trackedOutput}, {stdout: commitOutput}] = await Promise.all([
     encoding: "utf8",
   }),
 ]);
+// `ls-files` includes unstaged deletions. Pack the working tree's tracked
+// sources, without pulling in untracked files or stale deleted tests.
+const deletedFiles = new Set(deletedOutput.toString("utf8").split("\0"));
 const files = trackedOutput
   .toString("utf8")
   .split("\0")
-  .filter(Boolean)
+  .filter((filename) => filename && !deletedFiles.has(filename))
   .sort();
 const sourceCommit = commitOutput.trim().toLowerCase();
 if (!/^[0-9a-f]{40}$/u.test(sourceCommit)) {

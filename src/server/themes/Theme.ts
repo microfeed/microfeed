@@ -13,6 +13,7 @@ import {
 import {validateStoredThemePackage} from "@/shared/themes/ThemeValidation";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {manifestSearchItemDestination} from "@/shared/themes/ThemeSearch";
+import {DEFAULT_WEB_TAGS_TEMPLATE} from "@/shared/themes/ThemeTags";
 import {
   BUNDLED_DEFAULT_THEME_BUNDLE,
   BUNDLED_DEFAULT_THEME_MANIFEST,
@@ -195,6 +196,22 @@ export default class Theme {
 
   getWebFeedTmpl(): string {
     return this.template(CODE_FILES.WEB_FEED as ThemeFileKey);
+  }
+
+  getWebTag(): {html: string} {
+    return {html: renderThemeTemplate(this.getWebTagTmpl(), this.context)};
+  }
+
+  getWebTagTmpl(): string {
+    return this.themeBundle?.webTag ?? this.getWebFeedTmpl();
+  }
+
+  getWebTags(): {html: string} {
+    return {html: renderThemeTemplate(this.getWebTagsTmpl(), this.context)};
+  }
+
+  getWebTagsTmpl(): string {
+    return this.themeBundle?.webTags ?? DEFAULT_WEB_TAGS_TEMPLATE;
   }
 
   getWebItem(item: Record<string, unknown>): {html: string} {

@@ -2,9 +2,128 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "tags_active": {
+      "type": "boolean"
+    },
+    "tags": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "rss_url": {
+                "type": "string"
+              },
+              "json_url": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "published_item_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "slug",
+              "url",
+              "rss_url",
+              "json_url",
+              "description",
+              "published_item_count"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "next_url": {
+          "type": "string"
+        },
+        "rss_enabled": {
+          "type": "boolean"
+        },
+        "json_enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "title",
+        "url",
+        "rss_enabled",
+        "json_enabled"
+      ],
+      "additionalProperties": false,
+      "description": "Public tag directory state. items is the current alphabetically sorted page, including empty tags; counts include only published items. Descriptions are plain text: render them with escaped Mustache. next_url is the next directory page, when present. Feed flags respect the site's RSS and JSON Feed settings."
+    },
     "_microfeed": {
       "type": "object",
       "properties": {
+        "tag": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "slug": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "rss_url": {
+              "type": "string"
+            },
+            "json_url": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "published_item_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "slug",
+            "url",
+            "rss_url",
+            "json_url",
+            "description",
+            "published_item_count"
+          ],
+          "additionalProperties": {}
+        },
         "seo": {
           "type": "object",
           "properties": {
@@ -410,6 +529,41 @@
         "_microfeed": {
           "type": "object",
           "properties": {
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "rss_url": {
+                    "type": "string"
+                  },
+                  "json_url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "slug",
+                  "url",
+                  "rss_url",
+                  "json_url"
+                ],
+                "additionalProperties": {}
+              }
+            },
             "seo": {
               "type": "object",
               "properties": {
@@ -687,6 +841,12 @@
         "title": {
           "type": "string"
         },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "url": {
           "type": "string"
         }
@@ -705,6 +865,41 @@
           "_microfeed": {
             "type": "object",
             "properties": {
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "rss_url": {
+                      "type": "string"
+                    },
+                    "json_url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "url",
+                    "rss_url",
+                    "json_url"
+                  ],
+                  "additionalProperties": {}
+                }
+              },
               "seo": {
                 "type": "object",
                 "properties": {
@@ -982,6 +1177,12 @@
           "title": {
             "type": "string"
           },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "url": {
             "type": "string"
           }
@@ -1178,7 +1379,8 @@
                 "type": "string",
                 "enum": [
                   "item",
-                  "page"
+                  "page",
+                  "tag"
                 ]
               },
               "url": {

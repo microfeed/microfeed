@@ -1,4 +1,5 @@
 import {itemUrl as resolvedItemUrl} from "@/shared/ItemUrls";
+import {tagUrls} from "@/shared/Tags";
 import {
   fuzzyTitleMatches,
   itemSearchFtsQuery,
@@ -28,7 +29,7 @@ const HIGHLIGHT_START = "\u0001";
 const HIGHLIGHT_END = "\u0002";
 const FUZZY_CANDIDATE_LIMIT = 250;
 
-export type SearchContentType = "item" | "page";
+export type SearchContentType = "item" | "page" | "tag";
 
 export interface SearchHighlightSegment {
   matched: boolean;
@@ -74,7 +75,8 @@ export interface PageSearchResult extends BaseSearchResult {
   type: "page";
 }
 
-export type ContentSearchResult = ItemSearchResult | PageSearchResult;
+export interface TagSearchResult extends BaseSearchResult { slug: string; type: "tag"; }
+export type ContentSearchResult = ItemSearchResult | PageSearchResult | TagSearchResult;
 
 export interface ContentSearchResponse {
   items: ContentSearchResult[];
@@ -191,7 +193,7 @@ function decodeSearchCursor(
     if (
       cursor.version !== 3 || cursor.fingerprint !== fingerprint ||
       (cursor.phase !== "exact" && cursor.phase !== "fuzzy") ||
-      (cursor.type !== "item" && cursor.type !== "page") ||
+      (cursor.type !== "item" && cursor.type !== "page" && cursor.type !== "tag") ||
       typeof cursor.rank !== "number" || !Number.isFinite(cursor.rank) ||
       typeof cursor.sortAt !== "string" ||
       !Number.isFinite(Date.parse(cursor.sortAt)) ||
@@ -274,12 +276,12 @@ function resultFromRow(
   const common: BaseSearchResult = {
     api_url: urlJoin(
       baseUrl,
-      `${API_BASE_PATH}${row.content_type === "item" ? "items" : "pages"}/${row.id}/`,
+      `${API_BASE_PATH}${row.content_type === "tag" ? "tags/by-id" : row.content_type === "item" ? "items" : "pages"}/${row.id}/`,
     ),
     content_text: row.content_text,
     date_modified: modified.iso,
     date_modified_ms: modified.milliseconds,
-    ...(published
+    ...(published && row.content_type !== "tag"
       ? {
           date_published: published.iso,
           date_published_ms: published.milliseconds,
@@ -299,8 +301,9 @@ function resultFromRow(
     type: row.content_type,
     web_url: row.content_type === "item"
       ? resolvedItemUrl({id: row.id, title: row.title, publicPath: row.public_path as string | undefined}, baseUrl)
-      : publicPageUrl(row.slug, baseUrl),
+      : row.content_type === "tag" ? tagUrls(row.slug, baseUrl).url : publicPageUrl(row.slug, baseUrl),
   };
+  if (row.content_type === "tag") return {...common, slug: row.slug, type: "tag"};
   if (row.content_type === "page") {
     return {
       ...common,
@@ -349,7 +352,7 @@ function parsedRows(rows: Array<Record<string, unknown>>): SearchRow[] {
       ? row.attachment_url
       : null,
     content_text: String(row.content_text ?? ""),
-    content_type: row.content_type === "page" ? "page" : "item",
+    content_type: row.content_type === "tag" ? "tag" : row.content_type === "page" ? "page" : "item",
     highlighted_content: String(row.highlighted_content ?? ""),
     highlighted_title: String(row.highlighted_title ?? row.title ?? ""),
     id: String(row.id ?? ""),
@@ -380,13 +383,13 @@ function contentFilters(options: ItemSearchOptions): {
   );
   const types = [...new Set(options.types ?? ["item"])]
     .filter((type): type is SearchContentType =>
-      type === "item" || type === "page"
+      type === "item" || type === "page" || type === "tag"
     );
   if (types.length === 0) {
     throw new ItemSearchRequestError("Select at least one search type.");
   }
   const clauses = [
-    `d.status IN (${statusValues.map(() => "?").join(", ")})`,
+    `(d.content_type = 'tag' OR d.status IN (${statusValues.map(() => "?").join(", ")}))`,
     `d.content_type IN (${types.map(() => "?").join(", ")})`,
     "NOT (d.content_type = 'page' AND p.slug = ? COLLATE NOCASE)",
   ];
@@ -396,11 +399,11 @@ function contentFilters(options: ItemSearchOptions): {
     DEFAULT_NOT_FOUND_PAGE_SLUG,
   ];
   if (options.datePublishedMsGt !== undefined) {
-    clauses.push("d.published_at > ?");
+    clauses.push("(d.content_type = 'tag' OR d.published_at > ?)");
     bindings.push(msToRFC3339(options.datePublishedMsGt));
   }
   if (options.datePublishedMsLt !== undefined) {
-    clauses.push("d.published_at < ?");
+    clauses.push("(d.content_type = 'tag' OR d.published_at < ?)");
     bindings.push(msToRFC3339(options.datePublishedMsLt));
   }
   return {bindings, sql: clauses.join(" AND ")};
@@ -470,7 +473,7 @@ const SEARCH_SELECT = `
   d.image,
   json_extract(i.data, '$.link') AS item_url,
   json_extract(i.data, '$.mediaFile.url') AS attachment_url,
-  COALESCE(p.slug, '') AS slug,
+  COALESCE(p.slug, d.slug, '') AS slug,
   p.meta_description,
   COALESCE(p.show_in_navigation, 0) AS show_in_navigation,
   COALESCE(p.navigation_label, '') AS navigation_label,

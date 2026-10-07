@@ -27,6 +27,7 @@ import {
   resolveThemeSearchItemUrl,
 } from "../../../src/shared/themes/ThemeSearch";
 import {ThemeValidationError} from "../../../src/shared/themes/ThemeValidation";
+import {tagPreviewContexts, tagTemplate, tagsTemplate} from "../../../src/shared/themes/ThemeTags";
 import {BUILT_IN_FIXTURES} from "./fixtures";
 import {renderThemeKitHelp} from "./help";
 import {
@@ -198,8 +199,10 @@ function contexts(
       });
     }
   }
+  const commonContext = {...context, navigation_pages};
   return {
-    context: {...context, navigation_pages},
+    ...tagPreviewContexts(commonContext),
+    context: commonContext,
     itemContext: {...context, navigation_pages, item: items[0]},
     pageContext: {...context, navigation_pages, page},
     previewResults,
@@ -222,19 +225,26 @@ export function standaloneThemePreviewDocument(
     pageContext,
     previewResults,
     searchContext,
+    tagContext,
+    tagsContext,
   } = contexts(fixture, theme.manifest);
   const templates = {
     feed: [theme.bundle.webFeed, context],
     item: [theme.bundle.webItem, itemContext],
     page: [theme.bundle.webPage ?? theme.bundle.webFeed, pageContext],
     search: [theme.bundle.webSearch ?? theme.bundle.webFeed, searchContext],
+    tag: [tagTemplate(theme.bundle), tagContext],
+    tags: [tagsTemplate(theme.bundle), tagsContext],
   } as const;
   const selected = templates[view as keyof typeof templates] ?? templates.feed;
   const body = renderThemeTemplate(selected[0], selected[1]);
+  const shellContext = view === "tag"
+    ? {...context, _microfeed: tagContext._microfeed, tags_active: true}
+    : view === "tags" ? tagsContext : context;
   const publicSearch = theme.manifest.formatVersion === 2
     ? publicSearchHtml({previewResults})
     : "";
-  return `<!doctype html><html><head>${renderThemeTemplate(theme.bundle.webHeader, context)}</head><body>${renderThemeTemplate(theme.bundle.webBodyStart, context)}${body}${renderThemeTemplate(theme.bundle.webBodyEnd, context)}${publicSearch}</body></html>`;
+  return `<!doctype html><html><head>${renderThemeTemplate(theme.bundle.webHeader, shellContext)}</head><body>${renderThemeTemplate(theme.bundle.webBodyStart, shellContext)}${body}${renderThemeTemplate(theme.bundle.webBodyEnd, shellContext)}${publicSearch}</body></html>`;
 }
 
 async function fixtureEntries(directory: string): Promise<Array<[string, Record<string, unknown>]>> {
@@ -253,7 +263,7 @@ async function test(args: Arguments): Promise<void> {
   );
   const tests: Array<{fixture: string; ok: boolean}> = [];
   for (const [name, fixture] of await fixtureEntries(theme.directory)) {
-    const {context, itemContext, pageContext, searchContext} = contexts(
+    const {context, itemContext, pageContext, searchContext, tagContext, tagsContext} = contexts(
       fixture,
       theme.manifest,
     );
@@ -261,6 +271,8 @@ async function test(args: Arguments): Promise<void> {
       feed: renderThemeTemplate(theme.bundle.webFeed, context),
       header: renderThemeTemplate(theme.bundle.webHeader, context),
       item: renderThemeTemplate(theme.bundle.webItem, itemContext),
+      tag: renderThemeTemplate(tagTemplate(theme.bundle), tagContext),
+      tags: renderThemeTemplate(tagsTemplate(theme.bundle), tagsContext),
       ...(theme.bundle.webPage ? {page: renderThemeTemplate(theme.bundle.webPage, pageContext)} : {}),
       ...(theme.bundle.webSearch ? {search: renderThemeTemplate(theme.bundle.webSearch, searchContext)} : {}),
       rss: renderThemeTemplate(theme.bundle.rssStylesheet, context),
@@ -269,6 +281,8 @@ async function test(args: Arguments): Promise<void> {
       feed: renderThemeTemplate(theme.bundle.webFeed, context),
       header: renderThemeTemplate(theme.bundle.webHeader, context),
       item: renderThemeTemplate(theme.bundle.webItem, itemContext),
+      tag: renderThemeTemplate(tagTemplate(theme.bundle), tagContext),
+      tags: renderThemeTemplate(tagsTemplate(theme.bundle), tagsContext),
       ...(theme.bundle.webPage ? {page: renderThemeTemplate(theme.bundle.webPage, pageContext)} : {}),
       ...(theme.bundle.webSearch ? {search: renderThemeTemplate(theme.bundle.webSearch, searchContext)} : {}),
       rss: renderThemeTemplate(theme.bundle.rssStylesheet, context),
@@ -459,7 +473,7 @@ async function preview(args: Arguments): Promise<void> {
     }
     if (url.pathname === "/") {
       response.setHeader("content-type", "text/html; charset=utf-8");
-      response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>microfeed theme preview</title><style>body{font:14px system-ui;margin:0;background:#eee}header{display:flex;gap:.5rem;padding:.75rem;background:#111;color:#fff;position:sticky;top:0}button{cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 54px);border:0;margin:auto;background:#fff}</style></head><body><header><button data-view="feed">Feed</button><button data-view="item">Item</button>${theme.bundle.webPage ? '<button data-view="page">Page</button><button data-view="search">Search</button>' : ''}<button data-view="rss">RSS</button><button id="viewport">Mobile</button></header><iframe sandbox="allow-scripts" src="/render?view=feed"></iframe><script>const frame=document.querySelector('iframe');document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>frame.src='/render?view='+button.dataset.view);document.querySelector('#viewport').onclick=event=>{const mobile=frame.style.width!=='390px';frame.style.width=mobile?'390px':'100%';event.target.textContent=mobile?'Desktop':'Mobile'}</script></body></html>`);
+      response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>microfeed theme preview</title><style>body{font:14px system-ui;margin:0;background:#eee}header{display:flex;gap:.5rem;padding:.75rem;background:#111;color:#fff;position:sticky;top:0}button{cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 54px);border:0;margin:auto;background:#fff}</style></head><body><header><button data-view="feed">Feed</button><button data-view="item">Item</button>${theme.bundle.webPage ? '<button data-view="page">Page</button><button data-view="search">Search</button>' : ''}<button data-view="tag">Tag archive</button><button data-view="tags">Tags directory</button><button data-view="rss">RSS</button><button id="viewport">Mobile</button></header><iframe sandbox="allow-scripts" src="/render?view=feed"></iframe><script>const frame=document.querySelector('iframe');document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>frame.src='/render?view='+button.dataset.view);document.querySelector('#viewport').onclick=event=>{const mobile=frame.style.width!=='390px';frame.style.width=mobile?'390px':'100%';event.target.textContent=mobile?'Desktop':'Mobile'}</script></body></html>`);
       return;
     }
     const view = url.searchParams.get("view") ?? "feed";

@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "microfeed.blog",
   "name": "Editorial Blog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "microfeed",
   "license": "AGPL-3.0",
   "description": "A typography-focused editorial site for essays, excerpts, bylines, rich-text reading, and strong feature images.",

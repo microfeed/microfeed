@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {preventCloseWhenChanged} from "@/client/BrowserUtils";
 import {showToast} from "@/client/ToastUtils";
@@ -13,6 +13,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {ADMIN_URLS} from "@/shared/StringUtils";
+import {manifestWithTagTemplates} from "@/shared/themes/ThemeTags";
 import {
   DEFAULT_THEME_SEARCH_ITEM_DESTINATION,
   THEME_DESCRIPTION_MAX_LENGTH,
@@ -94,6 +95,7 @@ export default function ThemeDraftEditorApp({
   themeEditorLinks,
 }: Props) {
   const [draft, setDraft] = useState(initial);
+  const savedManifest = useRef(initial.manifest);
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [helpField, setHelpField] = useState<ThemeFieldKey | null>(null);
@@ -126,6 +128,7 @@ export default function ThemeDraftEditorApp({
         headers: {"content-type": "application/json"},
         method: "PUT",
       }));
+      savedManifest.current = saved.manifest;
       setDraft(saved);
       setChanged(false);
       setPreviewKey((value) => value + 1);
@@ -263,7 +266,7 @@ export default function ThemeDraftEditorApp({
         )}
       </details>
     </section>
-    <section className="min-w-0 rounded-[14px] border bg-card p-5 shadow-xs"><ThemeBundleEditor bundle={draft.bundle} links={themeEditorLinks} onChange={(bundle) => {setDraft({...draft, bundle}); setChanged(true);}} /></section>
+    <section className="min-w-0 rounded-[14px] border bg-card p-5 shadow-xs"><ThemeBundleEditor bundle={draft.bundle} links={themeEditorLinks} onChange={(bundle) => {setDraft({...draft, bundle, manifest: manifestWithTagTemplates(draft.manifest, bundle, savedManifest.current)}); setChanged(true);}} /></section>
     <div className="sticky bottom-4 mx-4 flex flex-wrap items-center justify-between gap-2 rounded-[14px] border bg-card/95 p-4 shadow-lg backdrop-blur">
       <Button disabled={busy} variant="destructive" onClick={discard}>
         Discard draft

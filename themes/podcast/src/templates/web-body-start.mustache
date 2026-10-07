@@ -4,6 +4,7 @@
     <span>{{title}}</span>
   </a>
   <nav class="pod-nav" aria-label="Site navigation">
+    <a href="/tags/" data-microfeed-nav-item{{#tags_active}} aria-current="page"{{/tags_active}}>Tags</a>
     {{#navigation_pages}}<a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>{{/navigation_pages}}
   </nav>
   <button class="pod-search-button" type="button" aria-haspopup="dialog" aria-controls="microfeed-search-dialog" data-microfeed-search-open>

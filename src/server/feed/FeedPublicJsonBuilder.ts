@@ -129,7 +129,7 @@ export default class FeedPublicJsonBuilder {
     return publicContent;
   }
 
-  _buildPublicContentMicrofeedExtra(publicContent: any) {
+  _buildPublicContentMicrofeedExtra(_publicContent: any) {
     const channel = this.content.channel || {};
     const subscribeMethods = this.settings.subscribeMethods || {'methods': []};
     const microfeedExtra: Record<string, any> = {
@@ -234,7 +234,7 @@ export default class FeedPublicJsonBuilder {
     if (this.content.items_prev_cursor !== undefined && !this.forOneItem) {
       (microfeedExtra as any)['items_prev_cursor'] = this.content.items_prev_cursor;
       (microfeedExtra as any)['prev_url'] = buildItemPaginationUrl(
-        publicContent['feed_url'],
+        this.request.url,
         {
           legacySort: this.content.items_sort_order,
           order: this.content.items_order,
@@ -255,9 +255,11 @@ export default class FeedPublicJsonBuilder {
     const newItem = {
       id: item.id,
       title: item.title || 'untitled',
+      tags: (item.tags ?? []).map((tag: {name: string}) => tag.name),
     };
     const attachment = {};
     const _microfeed = {
+      tags: (item.tags ?? []).map(({id, name, slug, url, rss_url, json_url}: import("@/shared/Tags").TagRecord) => ({id, name, slug, url, rss_url, json_url})),
       podcast: item.podcast ?? undefined,
       seo: this._publicSeo(item.seo),
       slug: item.urlMode !== "legacy" && item.publicPath ? item.publicPath.slice(3, -1) : undefined,

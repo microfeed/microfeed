@@ -111,6 +111,7 @@ function commandResult(
 
 function itemSearchCommandResult(args: readonly string[]) {
   const command = args.join(" ");
+  if (command.startsWith("d1 execute") && command.includes("sqlite_master")) return commandResult("[]");
   if (
     command.startsWith("d1 execute FEED_DB --local --file ") &&
     command.includes("microfeed-item-search-")
@@ -780,6 +781,7 @@ describe("first-class local instances", () => {
       const command = args.join(" ");
       const itemSearch = itemSearchCommandResult(args);
       if (itemSearch) return itemSearch;
+      if (args[0] === "d1" && args[1] === "execute" && command.includes("sqlite_master")) return commandResult("[]");
       if (command.startsWith("d1 migrations apply FEED_DB --local ")) {
         return commandResult("Migrations applied");
       }

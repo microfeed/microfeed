@@ -6,7 +6,9 @@
   "description": "<p>Conversations with independent makers about the sounds, places, and ideas behind meaningful work.</p>",
   "icon": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microphone_1.jpg",
   "authors": [
-    {"name": "Mara Chen"}
+    {
+      "name": "Mara Chen"
+    }
   ],
   "language": "en",
   "items": [
@@ -18,7 +20,14 @@
       "content_html": "<p>Field recordist <strong>Ren Ito</strong> explains how a familiar street becomes a layered composition before sunrise.</p><h2>In this episode</h2><ul><li>Listening for rhythm in ordinary places</li><li>Building a portable recording kit</li><li>Leaving room for silence</li></ul><blockquote>Good field recordings are invitations to notice more.</blockquote>",
       "date_published": "2026-08-20T14:00:00Z",
       "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microphone_1.jpg",
-      "authors": [{"name": "Mara Chen"}, {"name": "Ren Ito"}],
+      "authors": [
+        {
+          "name": "Mara Chen"
+        },
+        {
+          "name": "Ren Ito"
+        }
+      ],
       "attachments": [
         {
           "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg",
@@ -38,8 +47,30 @@
         "json_url": "https://example.test/json/items/city-wakes/",
         "rss_url": "https://example.test/rss/items/city-wakes/",
         "status": "published",
-        "web_url": "https://example.test/i/city-wakes/"
-      }
+        "web_url": "https://example.test/i/city-wakes/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          },
+          {
+            "id": "preview-unicode",
+            "name": "世界 🌍",
+            "slug": "世界",
+            "url": "https://example.test/tags/%E4%B8%96%E7%95%8C/",
+            "rss_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/rss/",
+            "json_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes",
+        "世界 🌍"
+      ]
     },
     {
       "id": "patient-tools",
@@ -66,8 +97,21 @@
         "json_url": "https://example.test/json/items/patient-tools/",
         "rss_url": "https://example.test/rss/items/patient-tools/",
         "status": "published",
-        "web_url": "https://example.test/i/patient-tools/"
-      }
+        "web_url": "https://example.test/i/patient-tools/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "studio-dispatch",
@@ -91,8 +135,21 @@
         "json_url": "https://example.test/json/items/studio-dispatch/",
         "rss_url": "https://example.test/rss/items/studio-dispatch/",
         "status": "published",
-        "web_url": "https://example.test/i/studio-dispatch/"
-      }
+        "web_url": "https://example.test/i/studio-dispatch/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "listening-room",
@@ -114,8 +171,21 @@
         "json_url": "https://example.test/json/items/listening-room/",
         "rss_url": "https://example.test/rss/items/listening-room/",
         "status": "published",
-        "web_url": "https://example.test/i/listening-room/"
-      }
+        "web_url": "https://example.test/i/listening-room/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "season-guide",
@@ -137,8 +207,21 @@
         "json_url": "https://example.test/json/items/season-guide/",
         "rss_url": "https://example.test/rss/items/season-guide/",
         "status": "published",
-        "web_url": "https://example.test/i/season-guide/"
-      }
+        "web_url": "https://example.test/i/season-guide/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "guest-reading",
@@ -159,14 +242,48 @@
         "json_url": "https://example.test/json/items/guest-reading/",
         "rss_url": "https://example.test/rss/items/guest-reading/",
         "status": "published",
-        "web_url": "https://example.test/i/guest-reading/"
-      }
+        "web_url": "https://example.test/i/guest-reading/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     }
   ],
   "navigation_pages": [
-    {"id": "page-about", "navigation_label": "About", "navigation_order": 10, "slug": "about", "title": "About the show", "url": "https://example.test/about/"},
-    {"id": "page-host", "navigation_label": "Host", "navigation_order": 20, "slug": "host", "title": "Meet the host", "url": "https://example.test/host/"},
-    {"id": "page-contact", "navigation_label": "Contact", "navigation_order": 30, "slug": "contact", "title": "Contact", "url": "https://example.test/contact/"}
+    {
+      "id": "page-about",
+      "navigation_label": "About",
+      "navigation_order": 10,
+      "slug": "about",
+      "title": "About the show",
+      "url": "https://example.test/about/"
+    },
+    {
+      "id": "page-host",
+      "navigation_label": "Host",
+      "navigation_order": 20,
+      "slug": "host",
+      "title": "Meet the host",
+      "url": "https://example.test/host/"
+    },
+    {
+      "id": "page-contact",
+      "navigation_label": "Contact",
+      "navigation_order": 30,
+      "slug": "contact",
+      "title": "Contact",
+      "url": "https://example.test/contact/"
+    }
   ],
   "page": {
     "content_html": "<p><strong>Signal &amp; Story</strong> is a weekly conversation about independent creative work.</p><h2>Listen closely</h2><p>Each episode pairs a thoughtful interview with field sound and a short reading list.</p>",
@@ -188,13 +305,34 @@
   "search": {
     "query": "listening",
     "results": [
-      {"content_text": "Field recordist Ren Ito explains how a familiar street becomes a layered composition before sunrise.", "date_published": "2026-08-20T14:00:00Z", "id": "city-wakes", "title": "The sound of a city waking up", "type": "item", "url": "https://example.test/i/city-wakes/"},
-      {"content_text": "Signal & Story is a weekly conversation about independent creative work.", "date_published": "2026-01-10T09:00:00Z", "id": "page-about", "title": "About the show", "type": "page", "url": "https://example.test/about/"}
+      {
+        "content_text": "Field recordist Ren Ito explains how a familiar street becomes a layered composition before sunrise.",
+        "date_published": "2026-08-20T14:00:00Z",
+        "id": "city-wakes",
+        "title": "The sound of a city waking up",
+        "type": "item",
+        "url": "https://example.test/i/city-wakes/"
+      },
+      {
+        "content_text": "Signal & Story is a weekly conversation about independent creative work.",
+        "date_published": "2026-01-10T09:00:00Z",
+        "id": "page-about",
+        "title": "About the show",
+        "type": "page",
+        "url": "https://example.test/about/"
+      }
     ]
   },
   "_microfeed": {
     "base_url": "https://example.test/",
-    "categories": [{"name": "Arts"}, {"name": "Society & Culture"}],
+    "categories": [
+      {
+        "name": "Arts"
+      },
+      {
+        "name": "Society & Culture"
+      }
+    ],
     "copyright": "© 2026 Signal & Story",
     "items_next_cursor": "older-episodes",
     "items_order": "desc",
@@ -202,8 +340,18 @@
     "microfeed_version": "1.0.0",
     "next_url": "https://example.test/?next_cursor=older-episodes",
     "subscribe_methods": [
-      {"enabled": true, "name": "RSS", "type": "rss", "url": "https://example.test/rss/"},
-      {"enabled": true, "name": "JSON Feed", "type": "json", "url": "https://example.test/json/"}
+      {
+        "enabled": true,
+        "name": "RSS",
+        "type": "rss",
+        "url": "https://example.test/rss/"
+      },
+      {
+        "enabled": true,
+        "name": "JSON Feed",
+        "type": "json",
+        "url": "https://example.test/json/"
+      }
     ],
     "itunes:explicit": false,
     "itunes:title": "Signal & Story",

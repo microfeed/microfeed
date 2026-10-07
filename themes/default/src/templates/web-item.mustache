@@ -6,7 +6,7 @@
   </section>
 
   <section>
-    <h1>{{items.0.title}}</h1>
+    <h1>{{items.0.title}}</h1>{{#items.0._microfeed.tags.length}}<ul class="mf-item-tags" aria-label="Tags">{{#items.0._microfeed.tags}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/items.0._microfeed.tags}}</ul>{{/items.0._microfeed.tags.length}}
     {{#items.0.authors.length}}
     <div class="mb-4 text-sm" aria-label="Authors">
       By {{#items.0.authors}}<span class="mr-2">{{#url}}<a href="{{url}}" rel="author">{{name}}</a>{{/url}}{{^url}}{{name}}{{/url}}</span>{{/items.0.authors}}

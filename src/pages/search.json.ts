@@ -47,7 +47,7 @@ export const GET: APIRoute = async ({request}) => {
         loaded.content.settings?.webGlobalSettings?.publicBucketUrl,
       query,
       statuses: ["published"],
-      types: ["item", "page"],
+      types: ["item", "page", "tag"],
     });
     return jsonResponse({
       items: response.items.map((item) => ({

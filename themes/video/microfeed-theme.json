@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "microfeed.video",
   "name": "Video Channel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "microfeed",
   "license": "AGPL-3.0",
   "description": "A cinematic video channel with poster-led cards, responsive players, theater-style viewing, and production notes.",

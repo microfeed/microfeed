@@ -1,4 +1,6 @@
 import {ContentCustomizationError} from "@/shared/Seo";
+import {TagRequestError, TagConflictError} from "@/shared/Tags";
+import {resolveItemTagAssignment} from "@/server/tags/service";
 import {env} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
@@ -90,7 +92,10 @@ export const headApiFeed: APIRoute = () => publicFeedHead();
 
 function publicSearchResponse(response: ContentSearchResponse) {
   return {
-    items: response.items.map((item) => item.type === "page"
+    items: response.items.map((item) => item.type === "tag" ? {
+      id: item.id, slug: item.slug, title: item.title, content_text: item.content_text,
+      date_modified: item.date_modified, highlights: item.highlights, type: "tag" as const, url: item.web_url,
+    } : item.type === "page"
       ? {
           content_text: item.content_text,
           date_modified: item.date_modified,
@@ -143,7 +148,7 @@ export const searchApiItems: APIRoute = async ({locals, request}) => {
     const fields = [...new Set(parsed.data.fields.split(","))] as ItemSearchField[];
     const statuses = [...new Set(parsed.data.status.split(","))] as ItemSearchStatus[];
     const types = [...new Set(parsed.data.types.split(","))].map((type) =>
-      type === "pages" ? "page" as const : "item" as const
+      type === "tags" ? "tag" as const : type === "pages" ? "page" as const : "item" as const
     );
     const response = await searchContent(locals.feedDb.FEED_DB, request, {
       datePublishedMsGt: parsed.data.date_published_ms_gt,
@@ -659,13 +664,21 @@ const createApiItemUnchecked: APIRoute = async ({locals, request}) => {
   });
 };
 
-export const validateApiItem: APIRoute = async ({request}) => {
+export const validateApiItem: APIRoute = async ({locals, request}) => {
   const parsed = apiItemInputSchema.safeParse(await request.json().catch(
     () => null,
   ));
-  return parsed.success
-    ? jsonResponse({valid: true})
-    : jsonResponse({error: "Invalid item."}, {status: 400});
+  if (!parsed.success) return jsonResponse({error: "Invalid item."}, {status: 400});
+  if (parsed.data.tag_ids !== undefined || parsed.data.tag_slugs !== undefined) {
+    if (!locals.feedDb) return new Response("Feed context unavailable", {status: 500});
+    try {
+      await resolveItemTagAssignment(locals.feedDb.FEED_DB, new URL(request.url).origin, parsed.data);
+    } catch (error) {
+      if (error instanceof TagRequestError) return jsonResponse({error: error.message, field: error.field}, {status: 400});
+      throw error;
+    }
+  }
+  return jsonResponse({valid: true});
 };
 
 export const getApiItem: APIRoute = ({params, request}) =>
@@ -844,6 +857,8 @@ function customizationErrors(handler: APIRoute): APIRoute {
   return async (context) => {
     try { return await handler(context); } catch (error) {
       if (error instanceof ContentCustomizationError) return jsonResponse({error: error.message}, {status: error.status});
+      if (error instanceof TagRequestError) return jsonResponse({error: error.message, field: error.field}, {status: 400});
+      if (error instanceof TagConflictError) return jsonResponse({error: error.message}, {status: 409});
       throw error;
     }
   };

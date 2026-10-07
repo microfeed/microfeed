@@ -8,7 +8,6 @@ import type {
   ThemePreviewFixture,
 } from "./ThemeContract";
 import {THEME_FILE_KEYS} from "./ThemeContract";
-import {THEME_FILE_KEYS_V1} from "./ThemeContract";
 
 export interface ThemeRuntimeMetadata {
   assetBaseUrl: string;
@@ -34,10 +33,7 @@ export function themeContext(
 }
 
 export function parseThemeBundle(bundle: ThemeBundleV1): void {
-  const keys = bundle.webPage !== undefined || bundle.webSearch !== undefined
-    ? THEME_FILE_KEYS
-    : THEME_FILE_KEYS_V1;
-  for (const key of keys) {
+  for (const key of THEME_FILE_KEYS) {
     Mustache.parse(bundle[key] ?? "");
   }
 }

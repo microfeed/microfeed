@@ -47,6 +47,13 @@ its installed microfeed version and event catalog exactly.
 
 ## Enable webhooks
 
+Tag lifecycle events are `tag.created`, `tag.updated`, and `tag.deleted`.
+They contain a tag snapshot and a stable by-ID resource URL. Creating an empty
+tag still creates public metadata. Renaming or deleting a tag emits one tag
+event, not one event per assigned item; count changes do not emit events.
+Adding or removing item memberships uses `item.updated`, with `tags` in
+`changed_fields`. Item lifecycle snapshots include tag references.
+
 ### Local development
 
 From a Git-cloned microfeed source repository with dependencies installed,

@@ -8,7 +8,8 @@ command refuses to overwrite a non-empty directory and does not initialize
 Git.`,
   preview: `Usage: theme-kit preview <directory> [options]
 
-Start an isolated local preview with feed, item, Page, Search, RSS, mobile, and desktop views.
+Start an isolated local preview with feed, item, Page, Search, Tag archive,
+Tags directory, RSS, mobile, and desktop views.
 
 Options:
   --fixture <name-or-file>  Use a built-in fixture name or JSON fixture file
@@ -18,7 +19,8 @@ Without a data option, use the manifest's previewFixture or fall back to the
 built-in minimal fixture.`,
   test: `Usage: theme-kit test <directory> [--json]
 
-Render every built-in and package fixture, verify deterministic output, parse
+Render every built-in and package fixture, including tag archives and tag
+directories (custom templates or their fallbacks), verify deterministic output, parse
 the generated HTML, and validate the rendered RSS XSL stylesheet.`,
   validate: `Usage: theme-kit validate <directory> [--json]
 

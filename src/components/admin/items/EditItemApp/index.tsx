@@ -1,4 +1,5 @@
 import SeoEditor from "@/components/admin/shared/SeoEditor";
+import TagPicker from "@/components/admin/tags/TagPicker";
 import PodcastEditor from "@/components/admin/shared/PodcastEditor";
 import {scrollExpandedAdminSectionIntoView} from "@/client/AdminSectionScroll";
 import {automaticItemSlug, itemUrl} from "@/shared/ItemUrls";
@@ -268,7 +269,11 @@ export default class EditItemApp extends React.Component<Props, any> {
         action: created ? 'edit' : previousState.action,
         seoError: undefined,
         podcastError: undefined,
+        tagError: undefined,
         item: {...previousState.item, ...response?.data?.itemUrl,
+          ...(JSON.stringify(previousState.item.tag_ids) === JSON.stringify(snapshot.item.tag_ids) &&
+              JSON.stringify(previousState.item.tag_slugs) === JSON.stringify(snapshot.item.tag_slugs)
+            ? {tags: response?.data?.itemTags ?? previousState.item.tags, tag_ids: undefined, tag_slugs: undefined} : {}),
           ...(previousState.item.applySlug === snapshot.item.applySlug ? {applySlug: undefined} : {}),
         },
         feed: {
@@ -299,7 +304,7 @@ export default class EditItemApp extends React.Component<Props, any> {
 
   showSaveError(error: any) {
     if (error?.response?.data?.error) this.setState({
-      [String(error.response.data.error).startsWith("podcast.") ? "podcastError" : "seoError"]: error.response.data.error,
+      [String(error.response.data.field).startsWith("tag") ? "tagError" : String(error.response.data.error).startsWith("podcast.") ? "podcastError" : "seoError"]: error.response.data.error,
     });
     if (!error?.response) {
       showToast('Network error. Your changes are still on this page.', 'error');
@@ -350,6 +355,8 @@ export default class EditItemApp extends React.Component<Props, any> {
       this.setState((previousState: any) => ({
         item: {
           ...previousState.item,
+          ...(input.tag_ids !== undefined ? {tag_ids: input.tag_ids, tag_slugs: undefined} : {}),
+          ...(input.tag_slugs !== undefined ? {tag_slugs: input.tag_slugs, tag_ids: undefined} : {}),
           ...(input._microfeed && Object.hasOwn(input._microfeed, "seo")
             ? {seo: mergeOverrides(previousState.item.seo, input._microfeed.seo ?? null)} : {}),
           ...(input._microfeed && Object.hasOwn(input._microfeed, "authors")
@@ -613,6 +620,8 @@ export default class EditItemApp extends React.Component<Props, any> {
                 onChange={(podcast) => this.onUpdateItemMeta({podcast})} />
             </details>
           </div>
+          {this.state.tagError && <p role="alert" className="text-sm text-destructive">{this.state.tagError}</p>}
+          <TagPicker value={item.tag_ids ?? (item.tags ?? []).map((tag: {id: string}) => tag.id)} onChange={tag_ids => this.onUpdateItemMeta({tag_ids, tag_slugs: undefined})} />
           <SeoEditor value={item} channel={feed.channel} itemId={itemId} feed={feed}
             publicBucketUrl={publicBucketUrl} mediaStorage={mediaStorage} error={this.state.seoError}
             onChange={(patch, previousImage) => this.onUpdateItemMeta(patch, {

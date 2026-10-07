@@ -374,7 +374,7 @@ content while retaining pagination.
 
 ## `npx @microfeed/cli item search`
 
-**Purpose:** Search items and Pages through `GET /api/v1/search/`.
+**Purpose:** Search items, Pages, and tags through `GET /api/v1/search/`.
 
 **Changes:** None.
 
@@ -390,7 +390,7 @@ matched.
 
 | Option | Meaning |
 | --- | --- |
-| `--types <types>` | Search `items`, `pages`, or `items,pages`. The default remains `items` for compatibility. |
+| `--types <types>` | Search `items`, `pages`, `tags`, or comma-separated combinations. Defaults to `items`. Status/date filters do not apply to tags. |
 | `--fields <fields>` | Search `title`, `content`, or `title,content`. The default searches both. |
 | `--status <statuses>` | Filter by a comma-separated list of `published`, `unlisted`, or `unpublished`. The default includes all three. |
 | `--date-published-ms-gt <milliseconds>` | Return items published strictly after this Unix timestamp in milliseconds. |
@@ -790,6 +790,38 @@ npx @microfeed/cli media upload ./episode.mp3 \
   --instance <instance-name> \
   --json
 ```
+
+## `npx @microfeed/cli tag`
+
+Manage always-public tags through the authenticated API. Slug lookup is the
+default; `--id <tag-id>` uses a stable ID. Read operations need `content:read`;
+writes need `content:write`.
+
+| Command | Options and effects |
+| --- | --- |
+| `tag list` | `--limit <1-100>`, `--next-cursor <cursor>`; returns `items` and an optional `next_cursor`. |
+| `tag get <slug>` | Read one current slug. Alternatively use `tag get --id <tag-id>`. |
+| `tag create` | Required `--name`; optional `--slug`, `--description`, or `--input <file|->` instead of field flags. Creates public metadata immediately. |
+| `tag update <slug>` | Optional `--name`, `--slug`, `--description`, or `--input <file|->`; alternatively select with `--id`. Omitted fields remain unchanged. |
+| `tag delete <slug>` | Reads the target first, then requires `--confirm <tag-id>` or interactive confirmation. Removes memberships, not items. Alternatively select with `--id`. |
+
+All commands support `--instance <instance-name>` and `--json`. Names are
+unique, trimmed, NFC-normalized, and limited to 50 Unicode code points. The
+API returns the same validation error used by Admin, without truncation. Slugs
+support Unicode, are limited to 100 characters, and stay unchanged on name
+edits. Old public addresses redirect after slug edits; old API slugs return 404.
+
+```console
+npx @microfeed/cli tag create --name "Release notes" --slug releases --json
+npx @microfeed/cli tag get releases --json
+npx @microfeed/cli tag update --id <tag-id> --description "Product updates" --json
+```
+
+Item creation and updates accept repeatable `--tag <slug>` or `--tag-id <id>`
+options, mutually exclusive with each other and `--input`. They replace all
+memberships with existing tags; they never create tags. Omission preserves
+memberships. To clear them, use JSON input `{"tag_slugs":[]}` or
+`{"tag_ids":[]}`. Unknown references reject the complete item write.
 
 ## `npx @microfeed/cli webhook`
 

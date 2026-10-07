@@ -2,6 +2,10 @@ import {createDocument} from "zod-openapi";
 import {
   apiChannelInputSchema,
   apiErrorSchema,
+  apiTagCreateInputSchema,
+  apiTagInputSchema,
+  apiTagOutputSchema,
+  apiTagListResponseSchema,
   apiFeedSchema,
   apiIdempotencyKeySchema,
   apiItemCreateResponseSchema,
@@ -78,6 +82,21 @@ const siteFilePath = z.object({
 const apiKeySecurity = {bearerAuth: [] as string[]};
 const readSecurity = [apiKeySecurity];
 const writeSecurity = [apiKeySecurity];
+const tagListQuery = z.object({limit: z.coerce.number().int().min(1).max(100).default(20), next_cursor: z.string().optional()});
+function tagOperations(byId: boolean) {
+  const path = byId ? z.object({tagId: z.string().min(1)}) : z.object({slug: z.string().min(1)});
+  const suffix = byId ? "ById" : "BySlug";
+  const description = byId ? "Lookup by immutable ID, including after a slug change." : "Lookup by current normalized slug. Historical slugs return 404 in the API.";
+  return {
+    get: {security: readSecurity, operationId: `getTag${suffix}`, summary: `Get a tag ${byId ? "by ID" : "by slug"}`, description, tags: ["Tags"],
+      requestParams: {path}, responses: {"200": success(apiTagOutputSchema), "401": error("Missing or invalid Bearer credential."), "403": error("Requires content:read."), "404": error("Tag not found or API disabled.")}},
+    put: {security: writeSecurity, operationId: `updateTag${suffix}`, summary: "Update a tag", description, tags: ["Tags"],
+      requestParams: {path, header: apiWebhookContextHeadersSchema}, requestBody: {required: true, ...json(apiTagInputSchema)},
+      responses: {"200": success(apiTagOutputSchema), "400": error("Invalid tag input."), "401": error("Missing or invalid Bearer credential."), "403": error("Requires content:write."), "404": error("Tag not found or API disabled."), "409": error("Name or slug already reserved.")}},
+    delete: {security: writeSecurity, operationId: `deleteTag${suffix}`, summary: "Delete a tag", description: "Removes memberships, not items. Historical public URLs return 404.", tags: ["Tags"],
+      requestParams: {path, header: apiWebhookContextHeadersSchema}, responses: {"200": success(z.object({})), "401": error("Missing or invalid Bearer credential."), "403": error("Requires content:write."), "404": error("Tag not found or API disabled.")}},
+  };
+}
 
 export {API_BASE_PATH};
 
@@ -135,15 +154,24 @@ export const OPENAPI_DOCUMENT = createDocument({
     },
   },
   tags: [
+    {name: "Tags", description: "Manage always-public tags and their item memberships."},
     {name: "Feed", description: "Read the complete feed."},
     {name: "Items", description: "Create and manage feed items."},
     {name: "Pages", description: "Create and manage standalone public Pages."},
     {name: "Site Files", description: "Manage editable root-level text files."},
-    {name: "Search", description: "Find items and Pages by title or plain-text content."},
+    {name: "Search", description: "Find items, Pages, and public tags by title or plain-text content."},
     {name: "Channel", description: "Update the primary channel."},
     {name: "Media", description: "Prepare same-origin media uploads."},
   ],
   paths: {
+    "/tags/": {
+      get: {security: readSecurity, operationId: "listTags", summary: "List tags", tags: ["Tags"], requestParams: {query: tagListQuery},
+        responses: {"200": success(apiTagListResponseSchema), "400": error("Invalid list query."), "401": error("Missing or invalid Bearer credential."), "403": error("Requires content:read."), "404": error("API disabled.")}},
+      post: {security: writeSecurity, operationId: "createTag", summary: "Create a public tag", tags: ["Tags"], requestParams: {header: apiWebhookContextHeadersSchema},
+        requestBody: {required: true, ...json(apiTagCreateInputSchema)}, responses: {"201": success(apiTagOutputSchema), "400": error("Invalid tag input."), "401": error("Missing or invalid Bearer credential."), "403": error("Requires content:write."), "404": error("API disabled."), "409": error("Name or slug already reserved.")}},
+    },
+    "/tags/{slug}/": tagOperations(false),
+    "/tags/by-id/{tagId}/": tagOperations(true),
     "/i/{slug}/chapters.json": {
       servers: [{url: "/", description: "Public site"}],
       get: {
@@ -222,7 +250,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         security: writeSecurity,
         operationId: "validateItem",
         summary: "Validate an item",
-        description: "Validates the request with the same schema as item creation without creating content, uploading media, or invalidating caches.",
+        description: "Validates the request with the same schema as item creation and resolves any tag references without creating content, uploading media, or invalidating caches. tag_slugs and tag_ids are mutually exclusive; unknown tags are rejected.",
         tags: ["Items"],
         requestBody: {
           required: true,
@@ -230,7 +258,7 @@ export const OPENAPI_DOCUMENT = createDocument({
         },
         responses: {
           "200": success(apiItemValidationResponseSchema),
-          "400": error("The request body is invalid."),
+          "400": error("The request body is invalid, both tag reference fields are supplied, or a referenced tag does not exist."),
           "401": error("The Bearer credential is missing or invalid."),
         },
       },
@@ -551,9 +579,9 @@ export const OPENAPI_DOCUMENT = createDocument({
       get: {
         security: readSecurity,
         operationId: "searchContent",
-        summary: "Search items and Pages",
+        summary: "Search items, Pages, and tags",
         description:
-          "Searches D1 for non-deleted items and Pages. The types query defaults " +
+          "Searches D1 for non-deleted items, Pages, and public tags. Tag names do not make their items match. Status and publication-date filters apply only to items and Pages. The types query defaults " +
           "to items for backward compatibility. Unquoted terms use AND semantics; " +
           "single- and double-quoted clauses require an exact phrase. Exact " +
           "matches rank before typo-tolerant title matches for word-only queries. " +

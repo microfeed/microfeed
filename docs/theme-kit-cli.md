@@ -111,7 +111,8 @@ theme-kit init <directory>
 ```
 
 Creates a generic theme repository scaffold containing `README.md`, the
-manifest, eight required theme files, schemas, fixtures, local package scripts,
+manifest, eight required theme files plus optional `web-tag.mustache` and
+`web-tags.mustache` templates, schemas, fixtures, local package scripts,
 `THEME.md`, an independent empty `yarn.lock`, project-local Yarn settings, and
 the `develop-microfeed-theme` agent skill plus a `CLAUDE.md` bridge to that
 canonical workflow. The settings preapprove only the official
@@ -137,7 +138,8 @@ theme-kit validate <directory> [--json]
 Loads the complete installable package and validates:
 
 - Manifest format, semantic version, and microfeed compatibility.
-- The six format-v1 or eight format-v2 declared text-file paths and their size limits.
+- The six required format-v1 or eight required format-v2 text files, plus any
+  declared optional `webTag` and `webTags` files, and their size limits.
 - Mustache templates and the complete RSS XSL stylesheet.
 - The optional declared `previewFixture` path, JSON object, and 128 KiB limit.
 - Declared asset paths, symlinks, file types, per-file limits, and total limits.
@@ -169,11 +171,15 @@ Validates the package, then renders these built-in fixtures:
 - `missing_optional`
 - `authors_and_subscriptions`
 - `hostile_html`
+- `public_tags`
+- `tags_empty`
+- `tags_directory`
 
 It then renders every `.json` file under the package's `fixtures/` directory.
 Each case is rendered twice to detect nondeterministic output. The command
-parses feed and item HTML, parses page and search HTML for format-v2 packages,
-and verifies that the rendered RSS stylesheet is valid XML. Themes are trusted
+parses feed, item, tag archive, and tag directory HTML, parses Page and Search
+HTML for format-v2 packages, and verifies that the rendered RSS stylesheet is
+valid XML. Omitted tag slots exercise their normal fallbacks. Themes are trusted
 code, so this command checks output structure and determinism rather than
 sanitizing intentional HTML or JavaScript.
 
@@ -187,8 +193,8 @@ theme-kit preview <directory> [options]
 ```
 
 Starts an isolated server on a random local address and prints the URL to open
-in a browser. The preview provides feed, item, and rendered RSS views, adds
-page and search views for format-v2 packages, and includes a mobile/desktop
+in a browser. The preview provides feed, item, tag archive, tag directory, and
+rendered RSS views, adds Page and Search views for format-v2 packages, and includes a mobile/desktop
 viewport switch. It uses the production theme renderer, serves
 declared assets from a local `/assets/` route, disables caching, and applies a
 sandboxed content security policy.
@@ -202,6 +208,10 @@ When neither option is supplied, preview uses the theme's declared
 `previewFixture`. Packages without one fall back to the built-in `minimal`
 fixture. Use only one data option at a time. `<directory>` defaults to the
 current directory.
+
+Tag views use the fixture's `_microfeed.tag` and `tags` contexts when supplied.
+Otherwise they show representative tag data around the selected items. Preview
+does not query or change an instance's tag assignments.
 
 The server continues running until you stop it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 Previewing never installs or activates the package.

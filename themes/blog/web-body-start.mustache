@@ -16,6 +16,7 @@
   </div>
   <nav class="blog-nav" aria-label="Site navigation">
     <a href="/">Latest</a>
+    <a href="/tags/" data-microfeed-nav-item{{#tags_active}} aria-current="page"{{/tags_active}}>Tags</a>
     {{#navigation_pages}}<a href="{{url}}" data-microfeed-nav-item>{{navigation_label}}</a>{{/navigation_pages}}
   </nav>
 </header>
