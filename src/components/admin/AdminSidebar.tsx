@@ -8,7 +8,6 @@ import {
   PencilIcon,
   PlusIcon,
   SettingsIcon,
-  ServerIcon,
   WebhookIcon,
 } from "lucide-react";
 
@@ -24,6 +23,7 @@ import {cn} from "@/lib/utils";
 import {NAV_ITEMS} from "@/shared/Constants";
 import type {AdminNavItemId} from "@/shared/AdminNavigation";
 import AdminAboutDialog from "./AdminAboutDialog";
+import McpIcon from "./mcp/McpIcon";
 import AdminPublicAccess from "./shared/AdminPublicAccess";
 import type {AdminSidebarData} from "./admin-shell-types";
 
@@ -40,7 +40,7 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.TAGS]: ListIcon,
   [NAV_ITEMS.SITE_FILES]: FileCode2Icon,
   [NAV_ITEMS.API]: Code2Icon,
-  [NAV_ITEMS.MCP]: ServerIcon,
+  [NAV_ITEMS.MCP]: McpIcon,
   [NAV_ITEMS.WEBHOOKS]: WebhookIcon,
   [NAV_ITEMS.SETTINGS]: SettingsIcon,
 };
