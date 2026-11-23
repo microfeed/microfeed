@@ -6,7 +6,8 @@ description: Learn where to publish content, edit channel details, configure set
 The Admin dashboard is the private control room for one microfeed channel. Its
 left navigation stays consistent while the main panel changes for each task.
 
-![The microfeed dashboard home page with public feed links and a completed setup checklist](https://media-cdn.microfeed.org/production/themes/0caa54c6-a365-4d18-94fb-d2b317b966c2/assets/admin-home.png)
+<img width="3400" height="2358" alt="The microfeed dashboard home page with public feed links and a completed setup checklist" src="https://github.com/user-attachments/assets/b772ae48-1bcd-4c3a-b90f-4c9876be3039" />
+
 
 ## Main areas
 
