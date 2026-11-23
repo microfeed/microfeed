@@ -10,6 +10,7 @@ const RESERVED_ADMIN_PATHS = new Set([
   "json",
   "media",
   "media-upload",
+  "mcp",
   "rss",
   "tags",
   "sitemap.xml",
@@ -30,6 +31,8 @@ export function normalizeAdminPath(value?: string | null): string {
   const segment = (value ?? DEFAULT_ADMIN_PATH)
     .trim()
     .replace(/^\/+|\/+$/gu, "");
+  // Existing installations may already use this path; enabling MCP checks it.
+  if (segment === "mcp") return segment;
   return validateAdminPath(segment) ? DEFAULT_ADMIN_PATH : segment;
 }
 

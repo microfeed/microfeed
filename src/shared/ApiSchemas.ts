@@ -572,7 +572,7 @@ export const apiWebhookTestSubjectSchema = apiWebhookSubjectSchema.extend({
 export const apiWebhookContextSchema = z.object({
   causation_id: apiAutomationContextIdSchema.nullable(),
   correlation_id: apiAutomationContextIdSchema,
-  origin: z.enum(["dashboard", "api", "system", "webmcp"]),
+  origin: z.enum(["dashboard", "api", "system", "webmcp", "mcp"]),
   request_id: z.string(),
 }).meta({id: "WebhookContext"});
 
@@ -766,4 +766,21 @@ export const createApiKeyCommandSchema = z.object({
 
 export const renameApiKeyCommandSchema = z.object({
   name: z.string().trim().min(1).max(80),
+});
+
+export const apiMcpSettingsSchema = z.object({enabled: z.boolean()});
+export const apiMcpResourceMetadataSchema = z.object({
+  resource: z.url(), resource_name: z.string(),
+  authorization_servers: z.array(z.url()),
+  bearer_methods_supported: z.array(z.literal("header")),
+  scopes_supported: z.array(z.string()),
+}).meta({id: "McpProtectedResourceMetadata"});
+export const apiMcpMessageSchema = z.object({
+  jsonrpc: z.literal("2.0"), id: z.union([z.string(), z.number()]).optional(),
+  method: z.string().optional(), params: z.record(z.string(), z.unknown()).optional(),
+  result: z.unknown().optional(), error: z.unknown().optional(),
+}).meta({id: "McpJsonRpcMessage"});
+export const apiTagListQuerySchema = z.object({limit: z.coerce.number().int().min(1).max(100).default(20), next_cursor: z.string().optional()});
+export const apiPageListQuerySchema = apiTagListQuerySchema.extend({
+  status: z.string().regex(/^(?:published|unlisted|unpublished)(?:,(?:published|unlisted|unpublished))*$/u).default("published,unlisted,unpublished"),
 });

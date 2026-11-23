@@ -7,7 +7,7 @@ import {
 import {managementCommand} from "@/shared/ManagementCli";
 import {WebhookRequestError, WebhookUnavailableError} from "./validation";
 
-export type WebhookOrigin = "api" | "dashboard" | "system" | "webmcp";
+export type WebhookOrigin = "api" | "dashboard" | "system" | "webmcp" | "mcp";
 
 export interface WebhookEventContext {
   causationId?: string;

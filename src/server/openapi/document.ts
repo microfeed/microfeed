@@ -20,7 +20,7 @@ export const API_LLMS_TEXT = `# microfeed API\n\n` +
   `For interactive work in a signed-in dashboard, compatible browser agents ` +
   `can separately discover experimental, draft-only WebMCP site tools. ` +
   `WebMCP requires the protected dashboard to be open; this API reference ` +
-  `does not expose a remote MCP server. Guide: ` +
+  `also describes the optional remote OAuth MCP server at /mcp/. Guide: ` +
   `https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts\n\n` +
   API_OPERATION_SUMMARY + "\n";
 
@@ -45,11 +45,11 @@ export const API_LLMS_FULL_TEXT = `# microfeed API\n\n` +
   `can separately discover experimental, draft-only WebMCP site tools. ` +
   `Those tools are available only after the agent opens the protected ` +
   `dashboard; this API reference advertises the capability but is not a ` +
-  `remote MCP endpoint. See ` +
+  `remote MCP endpoint. The separate OAuth MCP server is at /mcp/ when enabled. See ` +
   `https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts.\n\n` +
   `The API base path is ${API_BASE_PATH}. Operation paths in the contract ` +
   `are relative ` +
-  `to that base path.\n\n` +
+  `to that base path unless a path supplies its own root server override (MCP and public chapters).\n\n` +
   `API access may be disabled by the instance owner.\n\n` +
   `## Operations\n\n${API_OPERATION_SUMMARY}\n\n` +
   `## Pagination\n\n` +

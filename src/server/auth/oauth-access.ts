@@ -5,11 +5,13 @@ interface OAuthAccessTokenRow {
   disabled: number | boolean | null;
   expiresAt: Date | number | string;
   scopes: string | string[];
+  resource: string | null;
 }
 
 export interface OAuthAccessGrant {
   clientId: string;
   scopes: ReadonlySet<string>;
+  resource: string | null;
 }
 
 function base64Url(bytes: Uint8Array): string {
@@ -57,6 +59,8 @@ function parseScopes(value: OAuthAccessTokenRow["scopes"]): string[] {
 export async function verifyOAuthAccessToken(
   database: D1Database,
   credential: string,
+  expectedResource?: string,
+  allowLegacyResource = true,
 ): Promise<OAuthAccessGrant | null> {
   if (!credential.startsWith(OAUTH_ACCESS_TOKEN_PREFIX)) return null;
   const rawToken = credential.slice(OAUTH_ACCESS_TOKEN_PREFIX.length);
@@ -67,6 +71,7 @@ export async function verifyOAuthAccessToken(
        access_token."clientId" AS "clientId",
        access_token."expiresAt" AS "expiresAt",
        access_token."scopes" AS "scopes",
+       access_token."resource" AS "resource",
        client."disabled" AS "disabled"
      FROM "oauth_access_token" AS access_token
      JOIN "oauth_client" AS client
@@ -75,10 +80,12 @@ export async function verifyOAuthAccessToken(
      LIMIT 1`,
   ).bind(await hashToken(rawToken)).first<OAuthAccessTokenRow>();
 
-  if (!row || Boolean(row.disabled) || timestampMs(row.expiresAt) <= Date.now()) {
+  if (!row || Boolean(row.disabled) || (!Number.isFinite(timestampMs(row.expiresAt)) || timestampMs(row.expiresAt) <= Date.now())) {
     return null;
   }
+  if (row.resource === null ? !allowLegacyResource : row.resource !== expectedResource) return null;
   return {
+    resource: row.resource,
     clientId: row.clientId,
     scopes: new Set(parseScopes(row.scopes)),
   };

@@ -156,6 +156,7 @@ export default defineConfig({
               items: [
                 { label: "Manage content with @microfeed/cli", link: "/automation/cli/" },
                 { label: "Manage content with AI agents", link: "/automation/ai-agents/" },
+                { label: "Connect an AI app with MCP", link: "/automation/mcp/" },
               ],
             },
           ],

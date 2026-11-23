@@ -31,6 +31,7 @@ import {
   hasAdminOwner,
 } from "@/server/auth/admin-owner";
 import {isAdminPasswordSetupPath} from "@/server/auth/password-setup";
+import {isForbiddenFormRequest} from "@/server/auth/request-origin";
 import {
   addLegacyApiDeprecationHeaders,
   decideApiRequest,
@@ -38,6 +39,10 @@ import {
 import {createFeedCrud, loadFeed} from "@/server/feed/feed";
 import {applyWorkerCachePolicy} from "@/server/cache/public-cache";
 import {publicSiteFileResponse} from "@/server/site-files/public";
+
+import {isMcpPath, isMcpMetadataPath} from "@/shared/Mcp";
+import {mcpAvailable} from "@/server/mcp/settings";
+import {mcpResponse, mcpMetadataResponse} from "@/server/mcp/server";
 
 const AUTH_BASE_PATH = "/api/auth";
 function apiNotFoundResponse(): Response {
@@ -109,6 +114,15 @@ const handleRequest = defineMiddleware(async (context, next) => {
   const builtInAuthEnabled = builtInAdminAuthEnabled(
     env.MICROFEED_ADMIN_AUTH_MODE,
   );
+  if (isMcpMetadataPath(pathname)) return mcpMetadataResponse(env, context.request);
+  if (isMcpPath(pathname)) {
+    if (await mcpAvailable(env)) return mcpResponse(env, context.request);
+    // Preserve a pre-existing administrator path or Page while MCP is disabled.
+    const existing = adminPath === "mcp" || await env.FEED_DB.prepare(
+      "SELECT slug FROM page_paths WHERE slug = 'mcp' LIMIT 1",
+    ).first();
+    if (!existing) return apiNotFoundResponse();
+  }
   const canonicalPath = isBetterAuthPath(pathname)
     ? pathname
     : canonicalPathname(pathname);
@@ -362,7 +376,9 @@ const handleRequest = defineMiddleware(async (context, next) => {
 });
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const response = await handleRequest(context, next);
+  const response = isForbiddenFormRequest(context.request, context.isPrerendered)
+    ? new Response(`Cross-site ${context.request.method} form submissions are forbidden`, {status: 403})
+    : await handleRequest(context, next);
   if (!(response instanceof Response)) {
     throw new TypeError("microfeed middleware did not return a response");
   }

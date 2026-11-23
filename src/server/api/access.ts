@@ -150,7 +150,7 @@ export async function decideApiRequest(
   if (!builtInAdminAuthEnabled(adminAuthMode)) {
     return "unauthorized";
   }
-  const grant = await verifyOAuthAccessToken(database, apiKey);
+  const grant = await verifyOAuthAccessToken(database, apiKey, new URL(request.url).origin);
   if (!grant) return "unauthorized";
   return grant.scopes.has(requiredScope)
     ? "allow-integration"

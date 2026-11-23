@@ -31,7 +31,7 @@ const endpoint = {
 };
 
 describe("Webhook Admin", () => {
-  it("places Webhooks after API in the top-level navigation", () => {
+  it("places Webhooks after MCP in the top-level navigation", () => {
     const items = getAdminNavigationItems("admin", NAV_ITEMS.WEBHOOKS, {
       requiredOk: true,
     });
@@ -43,6 +43,7 @@ describe("Webhook Admin", () => {
       "Tags",
       "Site files",
       "API",
+      "MCP Server",
       "Webhooks",
       "Settings",
     ]);

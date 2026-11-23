@@ -96,6 +96,9 @@ describe("Workers Caching response policy", () => {
 
   it.each([
     ["admin", "/secret-admin/", undefined],
+    ["MCP", "/mcp/", undefined],
+    ["MCP alias", "/mcp", undefined],
+    ["MCP discovery", "/.well-known/oauth-protected-resource/mcp/", undefined],
     ["versioned API", "/api/v1/items/", undefined],
     ["legacy API", "/api/items/", undefined],
     ["authentication", "/api/auth/get-session", undefined],

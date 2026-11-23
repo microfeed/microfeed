@@ -3,7 +3,9 @@ title: Manage content with AI agents
 description: Use experimental browser-native WebMCP for visible drafts, or give a local coding agent a broader content task through the credential-safe CLI.
 ---
 
-microfeed supports two interactive agent workflows. Experimental WebMCP lets a
+microfeed supports remote MCP, dashboard WebMCP, and CLI agent workflows.
+[Connect an AI app with MCP](../mcp/) to give a desktop or hosted app
+OAuth-approved access to the content API. Experimental WebMCP lets a
 browser-based agent read content and help with the draft currently open in a
 protected dashboard. `@microfeed/cli` gives a local coding agent the broader
 API-backed workflow for drafts, media, publishing, and other content tasks.

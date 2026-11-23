@@ -86,6 +86,8 @@ export default defineConfig({
   }),
   integrations: [react()],
   output: "server",
+  // The middleware preserves this guard with narrow OAuth machine-endpoint exceptions.
+  security: {checkOrigin: false},
   prefetch: {
     prefetchAll: false,
     defaultStrategy: "hover",

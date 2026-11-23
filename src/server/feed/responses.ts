@@ -7,7 +7,7 @@ import {STATUSES} from "@/shared/Constants";
 import FeedPublicRssBuilder from "@/server/feed/FeedPublicRssBuilder";
 import Theme from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
-import type {FeedContent} from "@/types";
+import type {FeedContent, PublicFeed} from "@/types";
 import {
   isPublicFeedOffline,
   loadPublishedFeed,
@@ -16,7 +16,7 @@ import {jsonResponse} from "@/server/http";
 import {publicSiteFileResponse} from "@/server/site-files/public";
 import {chapterDocument, CHAPTERS_CONTENT_TYPE, type ItemPodcast} from "@/shared/Podcast";
 
-export async function podcastChaptersResponse(request: Request, itemSlug: string): Promise<Response> {
+export async function podcastChaptersData(request: Request, itemSlug: string): Promise<ReturnType<typeof chapterDocument> | Response> {
   const itemId = await resolveItemRoute(env.FEED_DB, itemSlug);
   if (!itemId) return new Response(null, {status: 404});
   const loaded = await loadPublishedFeed(env, request, {
@@ -30,7 +30,13 @@ export async function podcastChaptersResponse(request: Request, itemSlug: string
   if (!podcast?.chapters?.length || subscriptionDisabled(loaded.content, "rss")) {
     return new Response(null, {status: 404});
   }
-  return new Response(request.method === "HEAD" ? null : JSON.stringify(chapterDocument(podcast.chapters)), {
+  return chapterDocument(podcast.chapters);
+}
+
+export async function podcastChaptersResponse(request: Request, itemSlug: string): Promise<Response> {
+  const data = await podcastChaptersData(request, itemSlug);
+  if (data instanceof Response) return data;
+  return new Response(request.method === "HEAD" ? null : JSON.stringify(data), {
     headers: {
       "content-type": `${CHAPTERS_CONTENT_TYPE}; charset=utf-8`,
       "access-control-allow-origin": "*",
@@ -70,13 +76,14 @@ function subscriptionDisabled(content: FeedContent, type: string): boolean {
   );
 }
 
-export async function jsonFeedResponse(
+export async function jsonFeedData(
   request: Request,
   checkSubscription = true,
   itemSlug?: string,
   itemStatuses: number[] = [STATUSES.PUBLISHED, STATUSES.UNLISTED],
   checkAccessPolicy = true,
-): Promise<Response> {
+  searchParams?: URLSearchParams,
+): Promise<PublicFeed | Response> {
   const itemId = itemSlug ? (checkAccessPolicy ? await resolveItemRoute(env.FEED_DB, itemSlug) : getIdFromSlug(itemSlug)) : undefined;
   if (itemSlug && !itemId) {
     return new Response("Not Found", {status: 404});
@@ -89,7 +96,7 @@ export async function jsonFeedResponse(
           "status__in": itemStatuses,
         },
       }
-    : {});
+    : {searchParams});
   const unavailable = checkAccessPolicy ? feedUnavailable(loaded.content) : null;
   if (unavailable) {
     return unavailable;
@@ -104,12 +111,17 @@ export async function jsonFeedResponse(
   if (itemId && loaded.publicFeed.items.length === 0) {
     return new Response("Not Found", {status: 404});
   }
-  return jsonResponse(loaded.publicFeed, {
-    headers: {
-      "access-control-allow-origin": "*",
-      "content-type": "application/json;charset=UTF-8",
-    },
-  });
+  return loaded.publicFeed;
+}
+
+export const JSON_FEED_HEADERS = {
+  "access-control-allow-origin": "*",
+  "content-type": "application/json;charset=UTF-8",
+} as const;
+
+export async function jsonFeedResponse(...args: Parameters<typeof jsonFeedData>): Promise<Response> {
+  const data = await jsonFeedData(...args);
+  return data instanceof Response ? data : jsonResponse(data, {headers: JSON_FEED_HEADERS});
 }
 
 export async function rssFeedResponse(

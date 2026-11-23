@@ -10,6 +10,9 @@ import {
   validConnectionId,
   validPasskeyStepUp,
 } from "@/server/auth/account-security";
+import {mcpAvailable} from "@/server/mcp/settings";
+import {mcpResource} from "@/shared/Mcp";
+import {bindOAuthResponse, oauthBody, normalizeOAuthResource, storedOAuthTokenHash as storedTokenHash, type OAuthResourceBinding} from "@/server/auth/oauth-resource";
 import {createMicrofeedAuth} from "@/server/auth/better-auth";
 import {
   revokeOAuthConnectionTokens,
@@ -60,23 +63,6 @@ function oauthError(description: string): Response {
     {error: "invalid_request", error_description: description},
     {headers: {"cache-control": "no-store"}, status: 400},
   );
-}
-
-function base64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_")
-    .replace(/=+$/u, "");
-}
-
-async function storedTokenHash(token: string, prefix: string): Promise<string | null> {
-  if (!token.startsWith(prefix)) return null;
-  const value = token.slice(prefix.length);
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value),
-  );
-  return base64Url(new Uint8Array(digest));
 }
 
 interface ConnectionTokenReference {
@@ -238,7 +224,18 @@ async function passkeyStepUpError(
 }
 
 export const ALL: APIRoute = async ({request: originalRequest}) => {
-  const prepared = await requestWithOAuthConnection(originalRequest);
+  const originalUrl = new URL(originalRequest.url);
+  let resourceRequest = originalRequest;
+  if (originalUrl.pathname === "/api/auth/oauth2/authorize") {
+    if (originalUrl.searchParams.has("request_uri")) return oauthError("Pushed authorization requests are not supported.");
+    if (originalUrl.searchParams.has("resource")) {
+      if (originalUrl.searchParams.getAll("resource").length !== 1) return oauthError("Request one OAuth resource.");
+      // resource is an extension the provider's query parser otherwise strips.
+      originalUrl.searchParams.set("request_uri", "urn:microfeed:resource-authorization");
+      resourceRequest = new Request(originalUrl, {headers: originalRequest.headers, method: originalRequest.method});
+    }
+  }
+  const prepared = await requestWithOAuthConnection(resourceRequest);
   if (prepared instanceof Response) return prepared;
   const request = prepared.request;
   if (!await hasExactRegisteredRedirect(request)) {
@@ -253,16 +250,35 @@ export const ALL: APIRoute = async ({request: originalRequest}) => {
       },
     );
   }
-  const auth = createMicrofeedAuth(env, request);
+  const enabled = await mcpAvailable(env);
+  const url = new URL(request.url);
+  if (url.pathname === "/api/auth/oauth2/authorize") {
+    try {
+      const resource = normalizeOAuthResource(url.searchParams.get("resource"), url.origin);
+      if (url.searchParams.get("client_id") !== MICROFEED_OAUTH_CLIENT_ID &&
+          (!enabled || resource !== mcpResource(url.origin))) {
+        return oauthError("Enable the MCP server and request its resource URL before authorizing this application.");
+      }
+      if (resource === mcpResource(url.origin) && !enabled) return oauthError("The MCP server is disabled.");
+      if (resource === mcpResource(url.origin) &&
+          (url.searchParams.get("code_challenge_method") !== "S256" || !url.searchParams.get("code_challenge"))) {
+        return oauthError("MCP authorization requires PKCE S256.");
+      }
+    } catch { return oauthError("The requested OAuth resource is invalid."); }
+  }
+  const resourceBinding: OAuthResourceBinding = {};
+  const auth = createMicrofeedAuth(env, request, {mcpEnabled: enabled, resourceBinding});
   const passkeyError = await passkeyStepUpError(request, auth);
   if (passkeyError) return passkeyError;
 
   const connectionRevocation = await officialConnectionRevocation(request);
 
   const path = new URL(request.url).pathname;
-  const handoff = path === "/api/auth/oauth2/consent"
-    ? await oauthConnectionHandoff(request, env.BETTER_AUTH_SECRET)
-    : null;
+  const consentBody = path === "/api/auth/oauth2/consent" ? await oauthBody(request.clone()) : {};
+  const consentQuery = typeof consentBody.oauth_query === "string" ? new URLSearchParams(consentBody.oauth_query) : null;
+  if (consentQuery && consentQuery.get("client_id") !== MICROFEED_OAUTH_CLIENT_ID && !enabled) return oauthError("The MCP server is disabled.");
+  const handoff = consentQuery?.get("client_id") === MICROFEED_OAUTH_CLIENT_ID
+    ? await oauthConnectionHandoff(request, env.BETTER_AUTH_SECRET) : null;
   let consentAccepted = false;
   if (handoff) {
     const body = await request.clone().json().catch(() => null) as {
@@ -281,7 +297,7 @@ export const ALL: APIRoute = async ({request: originalRequest}) => {
     }
   }
 
-  let response = await auth.handler(request);
+  let response = await bindOAuthResponse(env.FEED_DB, request, await auth.handler(request), resourceBinding);
   if (connectionRevocation && response.ok) {
     await revokeOAuthConnectionTokens(
       env.FEED_DB,

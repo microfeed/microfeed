@@ -12,7 +12,10 @@ async function migration(name: string): Promise<string> {
 }
 
 describe("WebMCP webhook-origin migration", () => {
-  it("preserves event history and dependent deliveries", async () => {
+  it.each([
+    ["0022_webmcp_webhook_origin.sql", "webmcp"],
+    ["0027_mcp_webhook_origin.sql", "mcp"],
+  ])("%s preserves event history and dependent deliveries", async (migrationName, origin) => {
     const database = new DatabaseSync(":memory:");
     database.exec(await migration("0017_webhooks.sql"));
     database.exec(await migration("0019_webhook_delivery_budget.sql"));
@@ -40,7 +43,7 @@ describe("WebMCP webhook-origin migration", () => {
     `);
 
     database.exec(
-      `BEGIN IMMEDIATE;\n${await migration("0022_webmcp_webhook_origin.sql")}\nCOMMIT;`,
+      `BEGIN IMMEDIATE;\n${await migration(migrationName)}\nCOMMIT;`,
     );
     expect(database.prepare(
       "SELECT id, origin FROM webhook_events",
@@ -58,7 +61,7 @@ describe("WebMCP webhook-origin migration", () => {
         id, event_type, subject_type, subject_id, payload_json, origin,
         request_id, correlation_id, delivery_count, budget_day
       ) VALUES (?, 'item.created', 'item', 'draft', '{}', ?, 'request', ?, 0, ?)
-    `).run("webmcp-event", "webmcp", "webmcp-event", "2026-08-26"))
+    `).run("agent-event", origin, "agent-event", "2026-08-26"))
       .not.toThrow();
     database.close();
   });
