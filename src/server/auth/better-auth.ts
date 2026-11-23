@@ -2,6 +2,8 @@ import {oauthProvider} from "@better-auth/oauth-provider";
 import {passkey} from "@better-auth/passkey";
 import {betterAuth} from "better-auth";
 import {admin} from "better-auth/plugins";
+import {mcpResource} from "@/shared/Mcp";
+import {oauthBody, validateTokenResource, type OAuthResourceBinding} from "./oauth-resource";
 
 import {oauthConnectionHandoff} from "@/server/auth/account-security";
 import {adminUrl, normalizeAdminPath} from "@/shared/AdminPath";
@@ -20,8 +22,16 @@ const THIRTY_DAYS = 60 * 60 * 24 * 30;
 export function createMicrofeedAuth(
   runtimeEnv: Env,
   request: Request,
+  options: {mcpEnabled?: boolean; resourceBinding?: OAuthResourceBinding} = {},
 ) {
-  const origin = new URL(request.url).origin;
+  const url = new URL(request.url);
+  const origin = url.origin;
+  const tokenBody = url.pathname === "/api/auth/oauth2/token"
+    ? oauthBody(request.clone()) : Promise.resolve({});
+  const authorizationParameters = request.method === "POST" && url.pathname.startsWith("/api/auth/") && url.pathname !== "/api/auth/oauth2/token"
+    ? oauthBody(request.clone()).then(body => typeof body.oauth_query === "string" ? new URLSearchParams(body.oauth_query) : url.searchParams)
+    : Promise.resolve(url.searchParams);
+  const oauthClientId = authorizationParameters.then(params => params.get("client_id"));
   const adminPath = normalizeAdminPath(runtimeEnv.MICROFEED_ADMIN_PATH);
   return betterAuth({
     account: {
@@ -62,8 +72,8 @@ export function createMicrofeedAuth(
       }),
       oauthProvider({
         accessTokenExpiresIn: OAUTH_ACCESS_TOKEN_SECONDS,
-        allowDynamicClientRegistration: false,
-        allowUnauthenticatedClientRegistration: false,
+        allowDynamicClientRegistration: options.mcpEnabled === true,
+        allowUnauthenticatedClientRegistration: options.mcpEnabled === true,
         cachedTrustedClients: new Set([MICROFEED_OAUTH_CLIENT_ID]),
         clientPrivileges: () => true,
         clientRegistrationAllowedScopes: [
@@ -74,6 +84,20 @@ export function createMicrofeedAuth(
         clientRegistrationDefaultScopes: [OAUTH_SCOPES.READ],
         consentPage: adminUrl("api/oauth/consent", adminPath),
         disableJwtPlugin: true,
+        // Resolve the resource-bearing query after the provider validates known fields.
+        requestUriResolver: async ({requestUri, ctx}) => {
+          const original = await authorizationParameters;
+          const resource = original.get("resource");
+          if (resource === null || requestUri !== "urn:microfeed:resource-authorization") return null;
+          return {...ctx.query, request_uri: requestUri, resource,
+            client_id: original.get("client_id") ?? "",
+            redirect_uri: original.get("redirect_uri") ?? "",
+          };
+        },
+        customTokenResponseFields: async info => {
+          await validateTokenResource(runtimeEnv.FEED_DB, request, await tokenBody, info.grantType, (info.verificationValue?.query as {resource?: unknown} | undefined)?.resource, options.mcpEnabled === true, options.resourceBinding ?? {});
+          return {};
+        },
         grantTypes: ["authorization_code", "refresh_token"],
         loginPage: adminUrl("login", adminPath),
         prefix: {
@@ -83,10 +107,9 @@ export function createMicrofeedAuth(
         },
         postLogin: {
           consentReferenceId: async () =>
-            (await oauthConnectionHandoff(
-              request,
-              runtimeEnv.BETTER_AUTH_SECRET,
-            ))?.connectionId,
+            await oauthClientId === MICROFEED_OAUTH_CLIENT_ID
+              ? (await oauthConnectionHandoff(request, runtimeEnv.BETTER_AUTH_SECRET))?.connectionId
+              : undefined,
           page: adminUrl("api/oauth/consent", adminPath),
           shouldRedirect: () => false,
         },
@@ -104,11 +127,12 @@ export function createMicrofeedAuth(
         ],
         silenceWarnings: {oauthAuthServerConfig: true},
         storeTokens: "hashed",
-        validAudiences: [origin],
+        validAudiences: options.mcpEnabled ? [origin, mcpResource(origin), `${origin}/mcp`] : [origin],
       }),
     ],
     rateLimit: {
       customRules: {
+        "/oauth2/register": {max: 5, window: 60},
         "/sign-in/email": {
           max: 5,
           window: 60,

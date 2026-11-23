@@ -48,13 +48,14 @@ export function getFetchItemsParams(
   limit: number | null = null,
   defaultSort?: ItemSort,
   defaultOrder?: ItemOrder,
+  searchParams = new URL(request.url).searchParams,
 ) {
   return {
     defaultOrder,
     defaultSort,
     queryKwargs,
     limit,
-    searchParams: new URL(request.url).searchParams,
+    searchParams,
   };
 }
 

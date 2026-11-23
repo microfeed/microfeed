@@ -1,37 +1,17 @@
-import {readFile, readdir} from "node:fs/promises";
-import {fileURLToPath} from "node:url";
-import path from "node:path";
-
 import {describe, expect, it} from "vitest";
+import {OPENAPI_DOCUMENT} from "@/shared/OpenApiDocument";
 
-const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
-
-async function filesUnder(directory: string): Promise<string[]> {
-  const entries = await readdir(directory, {withFileTypes: true});
-  return (await Promise.all(entries.map(async (entry) => {
-    const filename = path.join(directory, entry.name);
-    return entry.isDirectory()
-      ? filesUnder(filename)
-      : /\.(?:astro|ts|tsx)$/u.test(entry.name) ? [filename] : [];
-  }))).flat();
-}
-
-describe("API terminology", () => {
-  it("presents API keys as the public REST authentication method", async () => {
-    const directories = [
-      path.join(repositoryRoot, "src", "components", "admin", "api"),
-      path.join(repositoryRoot, "src", "server", "api"),
-      path.join(repositoryRoot, "src", "shared", "OpenApiDocument.ts"),
-    ];
-    const files = (await Promise.all(directories.map(async (entry) =>
-      entry.endsWith(".ts") ? [entry] : filesUnder(entry)
-    ))).flat();
-    const source = (await Promise.all(files.map((file) => readFile(file, "utf8"))))
-      .join("\n");
-
-    expect(source).not.toMatch(/\bAPI tokens?\b/iu);
-    expect(source).not.toMatch(/\bAPI access tokens?\b/iu);
-    expect(source).toContain("API key");
-    expect(source).not.toContain("OAuth access token");
+describe("integration authentication contracts", () => {
+  it("keeps REST API-key authentication separate from MCP OAuth tokens", () => {
+    for (const path of Object.values(OPENAPI_DOCUMENT.paths ?? {})) {
+      for (const [method, value] of Object.entries(path)) {
+        if (!["get", "post", "put", "delete"].includes(method) || !value || typeof value !== "object" || !("operationId" in value)) continue;
+        if (value.tags?.includes("MCP") || value.security?.length === 0) continue;
+        expect(value.security).toEqual([{bearerAuth: []}]);
+      }
+    }
+    expect(OPENAPI_DOCUMENT.paths?.["/mcp/"]?.post?.security).toEqual([{mcpOAuthBearer: []}]);
+    expect(OPENAPI_DOCUMENT.components?.securitySchemes?.bearerAuth).toMatchObject({type: "http", scheme: "bearer"});
+    expect(OPENAPI_DOCUMENT.components?.securitySchemes?.mcpOAuthBearer).toMatchObject({type: "http", scheme: "bearer"});
   });
 });

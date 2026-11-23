@@ -54,7 +54,7 @@ describe("API admin pages", () => {
     });
   });
 
-  it("renders explicit four-page API navigation", () => {
+  it("renders API navigation separately from MCP", () => {
     const output = renderToStaticMarkup(React.createElement(AdminApiSidebar, {
       data: {
         activePage: "authentication",
@@ -72,6 +72,7 @@ describe("API admin pages", () => {
     expect(output).toContain("API Authentication");
     expect(output).toContain("API Explorer");
     expect(output).toContain("API Settings");
+    expect(output).not.toContain("MCP Server");
     expect(output).toContain('href="/admin/"');
     expect(output).toContain('aria-current="page"');
   });

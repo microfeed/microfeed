@@ -184,6 +184,7 @@ export const NAV_ITEMS = {
   TAGS: 'tags',
   SITE_FILES: 'site_files',
   API: 'api',
+  MCP: 'mcp',
   WEBHOOKS: 'webhooks',
   SETTINGS: 'settings',
 } as const;
@@ -207,6 +208,9 @@ export const NAV_ITEMS_DICT = {
   },
   [NAV_ITEMS.API]: {
     name: 'API',
+  },
+  [NAV_ITEMS.MCP]: {
+    name: 'MCP Server',
   },
   [NAV_ITEMS.WEBHOOKS]: {
     name: 'Webhooks',

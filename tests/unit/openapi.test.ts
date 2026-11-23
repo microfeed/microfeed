@@ -161,6 +161,7 @@ describe("generated API reference", () => {
   it("documents only current routes and Bearer authentication", () => {
     const specification = JSON.stringify(OPENAPI_DOCUMENT);
     expect(Object.keys(OPENAPI_DOCUMENT.paths ?? {})).toEqual([
+      "/mcp/", "/mcp", "/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp",
       "/tags/",
       "/tags/{slug}/",
       "/tags/by-id/{tagId}/",

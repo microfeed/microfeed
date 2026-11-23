@@ -7,7 +7,7 @@ describe("getAdminNavigationItems", () => {
   it("generates URLs for the configured admin path and marks the active route", () => {
     const items = getAdminNavigationItems(
       "studio",
-      NAV_ITEMS.ALL_ITEMS,
+      NAV_ITEMS.MCP,
       {requiredOk: true},
     );
 
@@ -19,11 +19,12 @@ describe("getAdminNavigationItems", () => {
       [NAV_ITEMS.TAGS, "/studio/tags/"],
       [NAV_ITEMS.SITE_FILES, "/studio/site-files/"],
       [NAV_ITEMS.API, "/studio/api/"],
+      [NAV_ITEMS.MCP, "/studio/mcp/"],
       [NAV_ITEMS.WEBHOOKS, "/studio/webhooks/"],
       [NAV_ITEMS.SETTINGS, "/studio/settings/"],
     ]);
     expect(items.filter((item) => item.active).map((item) => item.id)).toEqual([
-      NAV_ITEMS.ALL_ITEMS,
+      NAV_ITEMS.MCP,
     ]);
   });
 

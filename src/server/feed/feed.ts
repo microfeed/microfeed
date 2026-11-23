@@ -14,6 +14,7 @@ import type {PublicCachePurger} from "@/server/cache/public-cache";
 import ThemeStore from "@/server/themes/ThemeStore";
 
 export interface FeedQuery {
+  searchParams?: URLSearchParams;
   adminProtection?: AdminProtectionStatus;
   includeActiveTheme?: boolean;
   includeItems?: boolean;
@@ -43,6 +44,7 @@ export async function loadFeed(
         query.limit,
         query.itemsSort,
         query.itemsOrder,
+        query.searchParams,
       )
     : null;
   const content = await database.getContent(

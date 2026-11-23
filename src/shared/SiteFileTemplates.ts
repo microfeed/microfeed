@@ -16,7 +16,7 @@ const DEFAULT_LLMS_TEMPLATE = `# {{{title}}}
 
 This site is powered by [microfeed](https://github.com/microfeed/microfeed), an agentic CMS on Cloudflare.
 
-For administrators, the protected dashboard can expose experimental, draft-only [WebMCP site tools](https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts) to a compatible browser agent. The agent discovers them only after it opens the signed-in dashboard; this public file is not a remote MCP endpoint.
+For administrators, the protected dashboard can expose experimental, draft-only [WebMCP site tools](https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts) to a compatible browser agent. The agent discovers them only after it opens the signed-in dashboard; this public file is not a remote MCP endpoint. Instances can separately enable an [OAuth MCP server](https://docs.microfeed.org/automation/mcp/) at /mcp/ for desktop and hosted AI apps.
 
 {{#_site.api_llms_full_url}}
 This site's API is enabled. Learn how to use it at <{{{_site.api_llms_full_url}}}>.

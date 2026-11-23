@@ -18,6 +18,7 @@ const RESERVED_PAGE_SLUGS = new Set([
   "llms.txt",
   "media",
   "media-upload",
+  "mcp",
   "robots.txt",
   "rss",
   "search",

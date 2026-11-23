@@ -37,6 +37,9 @@ after it opens the signed-in, protected dashboard. WebMCP is separate from this
 remote API: API documentation can tell an agent that the capability exists, but
 the tools themselves are available only from the active dashboard page.
 
+For desktop and hosted AI apps, you can separately enable an
+[OAuth MCP server](/automation/mcp/) at `<site-url>/mcp/`.
+
 ## What the API can do
 
 The authenticated API covers these capability groups:

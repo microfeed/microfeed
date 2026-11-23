@@ -33,6 +33,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.join(root, "src"),
+      "astro:middleware": path.join(root, "node_modules/astro/dist/core/middleware/defineMiddleware.js"),
     },
   },
   test: {

@@ -8,6 +8,7 @@ import {
   PencilIcon,
   PlusIcon,
   SettingsIcon,
+  ServerIcon,
   WebhookIcon,
 } from "lucide-react";
 
@@ -39,6 +40,7 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.TAGS]: ListIcon,
   [NAV_ITEMS.SITE_FILES]: FileCode2Icon,
   [NAV_ITEMS.API]: Code2Icon,
+  [NAV_ITEMS.MCP]: ServerIcon,
   [NAV_ITEMS.WEBHOOKS]: WebhookIcon,
   [NAV_ITEMS.SETTINGS]: SettingsIcon,
 };

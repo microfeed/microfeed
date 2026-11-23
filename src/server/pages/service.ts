@@ -465,7 +465,7 @@ export async function updatePage(
   }
   const slug = notFoundPage
     ? DEFAULT_NOT_FOUND_PAGE_SLUG
-    : input.slug === undefined
+    : input.slug === undefined || normalizePageSlug(input.slug) === normalizePageSlug(existingRow.slug)
     ? existingRow.slug
     : validatedSlug(input.slug, options.adminPath);
   const slugChanged = slug !== normalizePageSlug(existingRow.slug);

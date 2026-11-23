@@ -39,7 +39,7 @@ export default function OAuthConsentApp({
     setSubmitting(true);
     setError("");
     try {
-      const result = await authClient.oauth2.consent({accept});
+      const result = await authClient.oauth2.consent({accept, oauth_query: window.location.search.slice(1)});
       if (result.error || !result.data?.url) {
         setError(result.error?.message ?? "Unable to finish authorization.");
         return;
@@ -95,7 +95,7 @@ export default function OAuthConsentApp({
             {requestedScopes.includes(OAUTH_SCOPES.WRITE) && (
               <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
                 <AlertTriangleIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-400" />
-                <p>Write access includes permission to delete items and replace channel content.</p>
+                <p>Write access includes permission to delete items, create and publish content, replace channel content, and manage Pages and Site Files.</p>
               </div>
             )}
             <p className="text-sm text-muted-foreground">

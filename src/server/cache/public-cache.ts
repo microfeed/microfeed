@@ -168,7 +168,9 @@ function validPaginationQuery(url: URL): boolean {
 }
 
 function isSensitivePath(pathname: string, adminPath: string): boolean {
-  return isAdminPathname(pathname, adminPath) ||
+  return pathname === "/mcp" || pathname.startsWith("/mcp/") ||
+    pathname.startsWith("/.well-known/oauth-") ||
+    isAdminPathname(pathname, adminPath) ||
     pathname === "/api" ||
     pathname.startsWith("/api/") ||
     pathname === "/media" ||

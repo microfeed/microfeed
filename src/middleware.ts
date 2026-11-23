@@ -39,6 +39,10 @@ import {createFeedCrud, loadFeed} from "@/server/feed/feed";
 import {applyWorkerCachePolicy} from "@/server/cache/public-cache";
 import {publicSiteFileResponse} from "@/server/site-files/public";
 
+import {isMcpPath, isMcpMetadataPath} from "@/shared/Mcp";
+import {mcpAvailable} from "@/server/mcp/settings";
+import {mcpResponse, mcpMetadataResponse} from "@/server/mcp/server";
+
 const AUTH_BASE_PATH = "/api/auth";
 function apiNotFoundResponse(): Response {
   return new Response("404", {
@@ -109,6 +113,15 @@ const handleRequest = defineMiddleware(async (context, next) => {
   const builtInAuthEnabled = builtInAdminAuthEnabled(
     env.MICROFEED_ADMIN_AUTH_MODE,
   );
+  if (isMcpMetadataPath(pathname)) return mcpMetadataResponse(env, context.request);
+  if (isMcpPath(pathname)) {
+    if (await mcpAvailable(env)) return mcpResponse(env, context.request);
+    // Preserve a pre-existing administrator path or Page while MCP is disabled.
+    const existing = adminPath === "mcp" || await env.FEED_DB.prepare(
+      "SELECT slug FROM page_paths WHERE slug = 'mcp' LIMIT 1",
+    ).first();
+    if (!existing) return apiNotFoundResponse();
+  }
   const canonicalPath = isBetterAuthPath(pathname)
     ? pathname
     : canonicalPathname(pathname);

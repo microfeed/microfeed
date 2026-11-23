@@ -1,6 +1,10 @@
 import {createDocument} from "zod-openapi";
 import {
   apiChannelInputSchema,
+  apiMcpMessageSchema,
+  apiMcpResourceMetadataSchema,
+  apiPageListQuerySchema,
+  apiTagListQuerySchema,
   apiErrorSchema,
   apiTagCreateInputSchema,
   apiTagInputSchema,
@@ -68,13 +72,7 @@ const channelPath = z.object({
 const pagePath = z.object({
   pageId: z.string().min(1).meta({description: "The Page ID."}),
 });
-const pageListQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  next_cursor: z.string().optional(),
-  status: z.string().regex(
-    /^(?:published|unlisted|unpublished)(?:,(?:published|unlisted|unpublished))*$/u,
-  ).default("published,unlisted,unpublished"),
-});
+const pageListQuery = apiPageListQuerySchema;
 const siteFilePath = z.object({
   siteFileId: z.string().min(1).meta({description: "The Site File ID."}),
 });
@@ -82,7 +80,7 @@ const siteFilePath = z.object({
 const apiKeySecurity = {bearerAuth: [] as string[]};
 const readSecurity = [apiKeySecurity];
 const writeSecurity = [apiKeySecurity];
-const tagListQuery = z.object({limit: z.coerce.number().int().min(1).max(100).default(20), next_cursor: z.string().optional()});
+const tagListQuery = apiTagListQuerySchema;
 function tagOperations(byId: boolean) {
   const path = byId ? z.object({tagId: z.string().min(1)}) : z.object({slug: z.string().min(1)});
   const suffix = byId ? "ById" : "BySlug";
@@ -98,6 +96,49 @@ function tagOperations(byId: boolean) {
   };
 }
 
+const mcpSecurity = [{mcpOAuthBearer: [] as string[]}];
+function mcpTransportPath(alias = false) {
+  return {
+    servers: [{url: "/", description: "This microfeed instance"}],
+    post: {
+      operationId: alias ? "mcpRequestWithoutSlash" : "mcpRequest",
+      summary: "Send an MCP message", tags: ["MCP"], security: mcpSecurity,
+      description: "Stateless Streamable HTTP. Enable MCP separately in the dashboard, discover OAuth using the 401 challenge, and obtain a token for the canonical /mcp/ resource. Both /mcp and /mcp/ work without redirects. Tool arguments and permissions are discovered with tools/list; every tool call checks its content scope.",
+      requestParams: {header: z.object({
+        "MCP-Protocol-Version": z.string().optional(),
+        "Mcp-Method": z.string().optional(),
+        "Mcp-Name": z.string().optional(),
+        Accept: z.string().optional(),
+      })},
+      requestBody: {required: true, ...json(apiMcpMessageSchema)},
+      responses: {
+        "200": {description: "JSON-RPC response. Tool domain errors are represented by isError in a successful MCP response.", ...json(apiMcpMessageSchema)},
+        "202": {description: "Notification accepted."},
+        "400": {description: "Malformed message, mismatched routing headers, or unsupported protocol version."},
+        "401": {description: "OAuth access token required; WWW-Authenticate advertises resource_metadata and scope.", headers: z.object({"WWW-Authenticate": z.string()})},
+        "403": {description: "Invalid Origin or insufficient tool scope. Scope challenges include WWW-Authenticate.", headers: z.object({"WWW-Authenticate": z.string()})},
+        "404": {description: "MCP is disabled or built-in administrator authentication is unavailable."},
+        "405": {description: "Unsupported HTTP method."},
+        "406": {description: "Unsupported Accept header."},
+        "413": {description: "Request exceeds the transport body limit."},
+        "415": {description: "Content-Type must be application/json."},
+        "500": {description: "Unexpected server failure."},
+      },
+    },
+  };
+}
+function mcpMetadataPath(alias = false) {
+  return {
+    servers: [{url: "/", description: "This microfeed instance"}],
+    get: {
+      operationId: alias ? "getMcpResourceMetadataByPath" : "getMcpResourceMetadata",
+      summary: "Discover MCP OAuth authorization", tags: ["MCP"], security: [],
+      description: "Public OAuth protected-resource metadata. Trailing-slash forms are accepted directly. Available only while MCP and built-in administrator authentication are enabled.",
+      responses: {"200": success(apiMcpResourceMetadataSchema), "404": {description: "MCP unavailable."}},
+    },
+  };
+}
+
 export {API_BASE_PATH};
 
 export const OPENAPI_DOCUMENT = createDocument({
@@ -110,7 +151,7 @@ export const OPENAPI_DOCUMENT = createDocument({
       "Send an API key using Bearer authentication. A protected dashboard " +
       "can separately expose experimental, draft-only WebMCP site tools to " +
       "compatible browser agents after the signed-in dashboard is opened; " +
-      "WebMCP is not a remote API or MCP server.",
+      "WebMCP is separate from the optional OAuth MCP server at /mcp/.",
     license: {
       name: "GNU Affero General Public License v3.0",
       identifier: "AGPL-3.0-only",
@@ -154,6 +195,7 @@ export const OPENAPI_DOCUMENT = createDocument({
     },
   },
   tags: [
+    {name: "MCP", description: "OAuth-protected Streamable HTTP server, available separately from REST access."},
     {name: "Tags", description: "Manage always-public tags and their item memberships."},
     {name: "Feed", description: "Read the complete feed."},
     {name: "Items", description: "Create and manage feed items."},
@@ -164,6 +206,10 @@ export const OPENAPI_DOCUMENT = createDocument({
     {name: "Media", description: "Prepare same-origin media uploads."},
   ],
   paths: {
+    "/mcp/": mcpTransportPath(),
+    "/mcp": mcpTransportPath(true),
+    "/.well-known/oauth-protected-resource": mcpMetadataPath(),
+    "/.well-known/oauth-protected-resource/mcp": mcpMetadataPath(true),
     "/tags/": {
       get: {security: readSecurity, operationId: "listTags", summary: "List tags", tags: ["Tags"], requestParams: {query: tagListQuery},
         responses: {"200": success(apiTagListResponseSchema), "400": error("Invalid list query."), "401": error("Missing or invalid Bearer credential."), "403": error("Requires content:read."), "404": error("API disabled.")}},
@@ -653,6 +699,7 @@ export const OPENAPI_DOCUMENT = createDocument({
   },
   components: {
     securitySchemes: {
+      mcpOAuthBearer: {type: "http", scheme: "bearer", bearerFormat: "OAuth access token", description: "An OAuth token issued for this instance’s canonical /mcp/ resource. Discover authorization using WWW-Authenticate and protected-resource metadata. API keys are not accepted by MCP."},
       bearerAuth: {
         type: "http",
         scheme: "bearer",

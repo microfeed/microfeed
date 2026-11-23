@@ -3,6 +3,7 @@ import type {APIRoute} from "astro";
 import {env} from "cloudflare:workers";
 
 import {builtInAdminAuthEnabled} from "@/shared/AdminAuth";
+import {mcpAvailable} from "@/server/mcp/settings";
 import {createMicrofeedAuth} from "@/server/auth/better-auth";
 
 export const prerender = false;
@@ -12,6 +13,6 @@ export const GET: APIRoute = async ({request}) => {
     return new Response("404", {status: 404});
   }
   return oauthProviderAuthServerMetadata(
-    createMicrofeedAuth(env, request),
+    createMicrofeedAuth(env, request, {mcpEnabled: await mcpAvailable(env)}),
   )(request);
 };

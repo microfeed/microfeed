@@ -11,7 +11,7 @@ export const OAUTH_SCOPES = {
 } as const;
 
 export const OAUTH_SCOPE_DESCRIPTIONS: Record<string, string> = {
-  [OAUTH_SCOPES.READ]: "Read feeds and items",
+  [OAUTH_SCOPES.READ]: "Read content, Pages, tags, and Site Files",
   [OAUTH_SCOPES.WRITE]:
     "Create, update, and delete content and prepare media uploads",
   [OAUTH_SCOPES.OFFLINE]: "Stay signed in for up to 30 days",

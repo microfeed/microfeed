@@ -1,0 +1,21 @@
+---
+import {env} from "cloudflare:workers";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import McpServerApp from "@/components/admin/mcp/McpServerApp";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {readMcpSettings, mcpEnablementError} from "@/server/mcp/settings";
+import {NAV_ITEMS} from "@/shared/Constants";
+import {normalizeAdminPath} from "@/shared/AdminPath";
+import {mcpResource} from "@/shared/Mcp";
+
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+const [initialSettings, enablementError] = await Promise.all([readMcpSettings(env.FEED_DB), mcpEnablementError(env)]);
+---
+<AdminShell activeNavItem={NAV_ITEMS.MCP} documentTitle="MCP Server | microfeed.org" {feedContent} {onboardingResult} pageTitle="MCP Server">
+  <div class="mx-auto max-w-5xl">
+    <McpServerApp client:only="react" {initialSettings} {enablementError} endpoint={mcpResource(Astro.url.origin)} adminPath={normalizeAdminPath(env.MICROFEED_ADMIN_PATH)}>
+      <AdminPageFallback slot="fallback" kind="settings" />
+    </McpServerApp>
+  </div>
+</AdminShell>
