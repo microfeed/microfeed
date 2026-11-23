@@ -4,9 +4,10 @@ description: Plain-language definitions for the parts of a microfeed installatio
 ---
 
 microfeed is a content management system, or **CMS**. People can use a private
-dashboard to publish content, while coding agents can use the official
-[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Visitors use
-the public site or subscribe to its feeds.
+dashboard to publish content, run CLI commands, or work with an AI assistant
+through WebMCP or a remote MCP server. [Compare the four content-management
+workflows](/content-management/). Visitors use the public site or subscribe
+to its feeds.
 
 You do not need to operate these Cloudflare services separately during normal
 use. Run `npx @microfeed/cli manage` from any folder to create, connect, update,
@@ -46,7 +47,7 @@ name is not a Cloudflare login or website address. The launcher can remember
 several instances without putting state in your current folder; a Git-cloned
 microfeed source repository keeps its own instance state instead.
 
-**Admin dashboard** is the private management area where you create items,
+**Admin UI** is the private dashboard where you create items,
 upload media, and customize the channel. It is separate from the public site.
 
 **Content CLI** is the `microfeed` command exposed by the official
@@ -54,10 +55,19 @@ upload media, and customize the channel. It is separate from the public site.
 people or coding agents manage the same channel through browser authorization
 without reading or printing the credential.
 
-**Content automation** can use three related tools. The authenticated API reads
-or changes content. Webhooks notify an external endpoint when subscribed
-content changes. `@microfeed/cli` wraps API operations in task-oriented commands
-that are easier for a person or local coding agent to use. See [Content
+**WebMCP** lets a compatible browser agent read content and edit the visible
+new or unpublished draft in your protected dashboard. It uses an experimental
+browser API and saves only drafts.
+
+**MCP server** is the remote endpoint included in each microfeed instance.
+Compatible AI assistants connect to `/mcp/` over Streamable HTTP with OAuth
+authentication. After you enable it and approve permissions in the browser,
+it supports reading, creating, editing, publishing, and deleting content.
+
+**Content automation** connects these tools to a task. MCP gives an AI app
+content tools. The authenticated API reads or changes content. Webhooks notify
+an external endpoint when subscribed content changes. `@microfeed/cli` wraps
+API operations in task-oriented terminal commands. See [Content
 automation](/automation/) to choose the right combination.
 
 **Headless** means using microfeed’s feeds or API while another website or app

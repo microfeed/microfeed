@@ -11,6 +11,7 @@ const docs = defineCollection({
       "microfeed-cli.md",
       "theme-kit-cli.md",
       "start-here/**/*.md",
+      "content-management/**/*.md",
       "dashboard/**/*.{md,mdx}",
       "themes/**/*.md",
       "manage/**/*.md",

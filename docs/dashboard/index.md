@@ -22,6 +22,11 @@ categories, language, and description.
 **API** opens a dedicated area for availability, API keys, an interactive
 browser explorer, and public API documentation formats.
 
+**MCP Server** enables OAuth access for compatible AI apps and provides your
+site's `/mcp/` connection URL. It has its own switch and requires built-in
+administrator sign-in. Follow [Connect an AI app with MCP](/automation/mcp/)
+to approve read and write access and try an unpublished draft.
+
 **Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
 whether infrastructure was never provisioned, is enabled, or is disabled with
 its Queue preserved. It summarizes configured endpoints, daily
@@ -46,8 +51,8 @@ Mac or <kbd>Ctrl</kbd>+<kbd>K</kbd> elsewhere. The dialog first shows the five
 most recently updated items; type at least two characters to search titles.
 [**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
 in the user menu manages login identity, passkeys, dashboard sessions, and
-microfeed CLI computer connections. On small screens, the menu button opens
-the sidebar as a drawer.
+MCP app grants and microfeed CLI computer connections. On small screens, the
+menu button opens the sidebar as a drawer.
 
 ## Light and dark dashboard themes
 

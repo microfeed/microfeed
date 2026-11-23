@@ -1,29 +1,34 @@
 ---
 title: Content automation overview
-description: Choose WebMCP, the microfeed API, webhooks, or the agent-friendly CLI for browser agents, local agents, remote services, n8n, Zapier, and other workflows.
+description: Choose MCP, WebMCP, the microfeed API, webhooks, or the content CLI for AI apps, browser agents, terminal tasks, and event-driven services.
 ---
 
-microfeed provides four building blocks for content automation. Use one or
-combine them according to where the automation runs and whether it needs to
-react to changes.
+Connect an AI app, run content commands, or build a service that reacts to
+changes. Choose a connection according to where the automation runs and the
+permissions it needs.
 
-## Compare WebMCP, the API, webhooks, and CLI
+For day-to-day content management, [compare the Admin UI, CLI, WebMCP, and
+MCP server](/content-management/). The connections below also support scripted
+and event-driven workflows.
+
+## Compare automation connections
 
 | Tool | Direction | Use it for | Authentication |
 | --- | --- | --- | --- |
+| **[MCP](./mcp/)** | AI app → microfeed | Let a desktop or hosted AI app search, create, edit, publish, and delete content through named tools. | Browser-approved OAuth read and write scopes. Enable MCP separately in the dashboard. |
 | **API** | Your integration → microfeed | Pull current content and create, update, or delete content. | A named, least-privilege `mf_…` API key. |
 | **Webhooks** | microfeed → your receiver | Receive a push notification whenever subscribed content changes. | A per-endpoint `whsec_…` signing secret verifies the request; it does not grant API access. |
 | **`@microfeed/cli`** | Local terminal or agent → microfeed API | Manage content through task-oriented commands without handling a raw API key. It is a more agent-friendly wrapper around the API. | Browser authorization stored and refreshed by the CLI. |
 | **WebMCP** | Protected dashboard ↔ browser agent | Read Items and Pages, open an editor, and save only the visible new or unpublished draft. | The existing built-in login or Cloudflare Access session; the native browser mediates tool use. |
 
-The API does not notify you when something changes. A webhook announces a
-change but cannot read or modify content. The CLI does not receive webhooks; it
-makes API operations easier and safer for a person or local coding agent.
-WebMCP is a small experimental, in-page tool surface for the active protected
-dashboard; it is not a remote MCP server or a background integration.
+MCP provides tools an AI app can call when you give it a task. The CLI provides
+terminal commands for people and local coding agents. WebMCP exposes
+experimental draft-editing tools in the active protected dashboard. Webhooks
+start a workflow when content changes, and the API lets that workflow fetch
+current state or apply an approved change.
 
 ```text
-API client or CLI ───────── read and write ────────→ microfeed
+MCP app, API client, or CLI ── read and write ─────→ microfeed
 microfeed ─────────── signed change notification ─→ webhook receiver
 ```
 
@@ -82,6 +87,17 @@ Whichever platform you choose:
 6. Use a separate, least-privilege API credential for API actions.
 7. Propagate causation and correlation headers on API writes to prevent loops.
 
+### AI apps: connect with MCP
+
+Enable **MCP Server** and add your site's `/mcp/` URL to a compatible AI app.
+Sign in to microfeed in the browser and approve its permissions. The app can
+then help you find content, save drafts, or manage items, Pages, tags, and Site
+Files. Ask for an unpublished draft when you want to review a result before
+publishing it.
+
+Start with [Connect an AI app with MCP](./mcp/) for client setup, refresh
+access, media preparation, and revocation.
+
 ### Local AI agents: use the CLI
 
 A local coding agent working with a person can use `@microfeed/cli` to search
@@ -103,11 +119,11 @@ unsupported browsers do not load the WebMCP implementation. Publishing,
 deletion, media, configuration, and account operations remain outside this
 surface.
 
-See [Manage content with AI agents](./ai-agents/#use-webmcp-for-visible-drafts)
+See [Edit visible drafts with WebMCP](/content-management/webmcp/)
 for the exact boundary and performance behavior. Use the CLI for a local agent
 that needs to work beyond the active browser editor.
 
-### Remote AI agents and long-running services: use webhooks and the API
+### Event-driven agents and services: use webhooks and the API
 
 A deployed agent that should react asynchronously uses webhooks to learn what
 changed and the API to fetch current state or apply an approved change. It
@@ -124,6 +140,7 @@ interactive local agent using the CLI.
 
 | Component | Permission it needs | What it must not receive |
 | --- | --- | --- |
+| MCP app | Browser-approved content scopes, plus optional refresh access. | A copied dashboard password or API key. |
 | Webhook receiver | Its endpoint signing secret. | A dashboard password; an API key unless the same trusted service also makes API calls. |
 | Local CLI | Browser-granted authorization managed internally by the CLI. | A copied API key, access token, or refresh token in an agent conversation. |
 | API action worker | A named API credential with only the required scopes. | Model-selected credentials or arbitrary destinations. |
@@ -387,7 +404,9 @@ Before production, use the [webhook operations checklist](../webhooks/operations
 ## Next steps
 
 - [Enable, test, or disable webhooks](../webhooks/).
+- [Choose how to manage content](/content-management/).
 - [Connect n8n or Zapier](#automation-platforms-n8n-and-zapier).
+- [Connect an AI app with MCP](./mcp/).
 - [Manage content with `@microfeed/cli`](./cli/).
 - [Manage content with a local AI agent](./ai-agents/).
 - [Build webhook endpoints](../webhooks/endpoints/).

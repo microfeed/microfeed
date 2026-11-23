@@ -1,16 +1,15 @@
 ---
 title: Create and edit items
-description: Publish text, links, images, audio, video, and documents yourself or with a coding agent.
+description: Create, review, and publish items in the Admin UI, or work through the CLI, WebMCP, or remote MCP server.
 ---
 
 An **item** is one entry in your channel. Publishing it can create a public web
 page and add an entry to both RSS and JSON feeds.
 
-You can complete the whole workflow in the visual Admin dashboard. For repeatable or
-agent-driven publishing, the official
-[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) manages the
-same channel after its owner enables the authenticated API. Start with
-[Manage content with the microfeed CLI](/automation/cli/).
+Manage items through the **Admin UI**, **CLI**, **WebMCP**, or **MCP server**.
+Start with [Choose how to manage content](/content-management/) to
+compare them. The steps below explain how to create and publish in the
+dashboard, followed by examples for working with an agent.
 
 ## Create an item
 
@@ -70,6 +69,8 @@ and associated media. Read the target carefully before confirming.
 
 ## Publish with a coding agent
 
+### Use the content CLI
+
 Give the agent a content goal and the root URL of your microfeed site. Do not
 give it an API key or CLI credential. For example:
 
@@ -88,6 +89,27 @@ without printing it. Follow the [guided CLI
 workflow](/automation/cli/), then see the [agent workflow](/automation/ai-agents/)
 and complete [`@microfeed/cli` reference](/microfeed-cli/) for media vocabulary,
 deterministic input, and deletion safeguards.
+
+### Use WebMCP in the browser
+
+Open a new or unpublished item in a protected dashboard, then ask a compatible
+browser agent to edit and save the visible draft. You review and publish it
+yourself. Follow the [WebMCP guide](/content-management/webmcp/) for browser
+requirements and tool limits.
+
+### Use the remote MCP server
+
+Connect your AI assistant using the [MCP setup guide](/automation/mcp/) and
+approve read and write access. Select the integration in your chat and ask it
+to save a draft:
+
+```text
+Turn these notes into an unpublished item on my microfeed. Save it using the
+connected tools and return the item ID. Ask before publishing.
+```
+
+Open **See all items** to review the saved draft. Write access also permits
+publishing and deletion, so make your intended status explicit in the task.
 
 ## Verify distribution
 

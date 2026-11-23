@@ -32,8 +32,11 @@ Open the dashboard URL printed by the CLI. Then:
 ## Publish a test item
 
 Create a clearly labeled test item, preview its public page, and check the RSS
-and JSON feeds. You can publish it yourself in the Admin dashboard. To publish
-with a coding agent, first [enable API access and connect the
+and JSON feeds. You can publish it yourself in the Admin dashboard or
+[connect an AI app with MCP](/automation/mcp/) and ask it to save an
+unpublished draft for review before publishing.
+
+For a terminal-based coding agent, first [enable API access and connect the
 CLI](/automation/cli/), then ask the agent to use the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Inside a
 Git-cloned microfeed source repository with installed dependencies, the agent
@@ -41,7 +44,7 @@ may use `yarn microfeed` as a shortcut; otherwise it should run the published
 `npx @microfeed/cli` command. You remain responsible for browser authorization
 and approval of destructive actions. Delete or unpublish the test when finished.
 
-Next: [compare the dashboard and agent publishing workflows](/dashboard/publish/).
+Next: [choose between Admin UI, CLI, WebMCP, and MCP server](/content-management/).
 
 ## Save the local connection
 
@@ -57,5 +60,6 @@ when local state is unavailable.
 - [Add a custom domain or Cloudflare Access](/manage/domains-and-access/).
 - [Learn the dashboard](/dashboard/).
 - [Enable the authenticated API](/api/authentication/) for an integration.
-- [Choose an API, webhook, or CLI automation workflow](/automation/).
+- [Connect an AI app to your MCP server](/automation/mcp/).
+- [Choose an MCP, API, webhook, or CLI automation workflow](/automation/).
 - [Create a portable snapshot](/manage/backups-and-migrations/).

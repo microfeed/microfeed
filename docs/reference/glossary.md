@@ -97,6 +97,13 @@ site.
 One published unit, such as a post, link, image, audio episode, video, or
 document.
 
+**MCP server**
+An endpoint that gives a compatible AI assistant named content-management
+tools using the Model Context Protocol. Each microfeed instance's optional
+remote server lives at `/mcp/`, uses Streamable HTTP, and authenticates with
+browser-approved OAuth permissions for read and write access.
+See [Connect an AI app with MCP](/automation/mcp/).
+
 **OpenAPI**
 A machine-readable description of an HTTP API. When an instance owner enables
 API access and public API docs, microfeed generates OpenAPI 3.1 JSON and YAML
@@ -130,6 +137,12 @@ place.
 **Worker**
 The Cloudflare application that handles HTTP requests and runs microfeed
 without a traditional server.
+
+**WebMCP**
+An experimental browser API that lets an agent use tools exposed by the
+current page. microfeed's protected dashboard uses it for reading content and
+editing visible drafts. The remote [MCP server](/automation/mcp/) provides a
+separate connection for desktop and hosted AI apps.
 
 **Webhook**
 A signed HTTP notification that announces a versioned microfeed event. A
