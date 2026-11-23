@@ -18,6 +18,34 @@ const textContent = (node: Node): string => "value" in node ? node.value :
   "childNodes" in node ? node.childNodes.map(textContent).join("") : "";
 
 describe("public theme tag discovery", () => {
+  it("ships a portable All tags view with safe content, per-tag subscriptions, empty state, and pagination", async () => {
+    const tag = {id: "unicode", name: "世界 <script>", slug: "世界", description: "<b>Plain text</b>",
+      published_item_count: 0, url: "https://example.test/tags/%E4%B8%96%E7%95%8C/",
+      rss_url: "https://example.test/tags/%E4%B8%96%E7%95%8C/rss/", json_url: "https://example.test/tags/%E4%B8%96%E7%95%8C/json/"};
+    const fixture = {version: "https://jsonfeed.org/version/1.1", title: "Channel identity", items: [],
+      tags: {title: "Tags", url: "https://example.test/tags/", items: [tag],
+        rss_enabled: false, json_enabled: true, next_url: "https://example.test/tags/?next_cursor=next"}};
+    for (const entry of BUNDLED_THEME_CATALOG) {
+      const theme = await loadThemePackage(path.resolve("themes", entry.directory));
+      // Installed themes and isolated previews must not depend on app-only fallback styles.
+      expect(theme.bundle.webTags, entry.key).toBeDefined();
+      const nodes = elements(parse(standaloneThemePreviewDocument(theme, fixture, "tags")));
+      const main = nodes.find(node => node.tagName === "main")!;
+      const links = elements(main).filter(node => node.tagName === "a");
+      expect(links.map(node => attribute(node, "href")), entry.key).toEqual(["/", tag.url, tag.json_url, fixture.tags.next_url]);
+      expect(textContent(main), entry.key).toContain(tag.description);
+      expect(elements(main).some(node => node.tagName === "script" || node.tagName === "b"), entry.key).toBe(false);
+      expect(elements(main).filter(node => node.tagName === "li"), entry.key).toHaveLength(1);
+      expect(textContent(main), entry.key).toContain("0 published items");
+      expect(links.find(node => attribute(node, "rel") === "tag")?.childNodes.map(textContent).join(""), entry.key).toBe(tag.name);
+      const emptyNodes = elements(parse(standaloneThemePreviewDocument(theme, {...fixture,
+        tags: {...fixture.tags, items: [], next_url: undefined}}, "tags")));
+      const emptyMain = emptyNodes.find(node => node.tagName === "main")!;
+      expect(textContent(emptyMain), entry.key).toContain("No tags yet.");
+      expect(elements(emptyMain).filter(node => node.tagName === "li" || node.tagName === "nav"), entry.key).toHaveLength(0);
+    }
+  });
+
   it("renders a simple tag heading, optional escaped description, and feed back link instead of the feed hero", async () => {
     const tag = {id: "topic", name: "A topic", slug: "topic", description: "<b>Plain text description</b>",
       published_item_count: 0, url: "https://example.test/tags/topic/", rss_url: "https://example.test/tags/topic/rss/", json_url: "https://example.test/tags/topic/json/"};
@@ -100,6 +128,13 @@ describe("public theme tag discovery", () => {
       const empty = elements(parse(standaloneThemePreviewDocument(theme, {...fixture, items: [],
         tags: {items: [], title: "Tags", url: "https://example.test/tags/", rss_enabled: true, json_enabled: true}}, "feed")));
       expect(empty.some(node => hasClass(node, "mf-tag-discovery")), directory).toBe(false);
+      const representative = elements(parse(standaloneThemePreviewDocument(theme, {
+        version: "https://jsonfeed.org/version/1.1", title: "Site", items: [],
+      }, "tag")));
+      const sampleDiscovery = representative.find(node => hasClass(node, "mf-tag-discovery"))!;
+      expect(sampleDiscovery, directory).toBeDefined();
+      expect(elements(sampleDiscovery).filter(node => node.tagName === "a").map(node => attribute(node, "href")), directory)
+        .toEqual(["https://example.test/tags/", "https://example.test/tags/featured/"]);
     }
   });
 });

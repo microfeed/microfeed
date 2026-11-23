@@ -103,8 +103,13 @@ export function tagPreviewContexts(context: ThemeContext) {
   };
   const methods = Array.isArray(extra?.subscribe_methods) ? extra.subscribe_methods : [];
   const enabled = (format: string) => !methods.some(method => method.type === format && method.editable === false && method.enabled === false);
+  const navigation = context.tag_navigation ?? previewTagNavigation(context);
   const tagContext: ThemeContext = {
     ...context, site_title: context.site_title ?? context.title, title: tag.name, description: escapeHtml(tag.description),
+    // Fixtures without real tags still need to demonstrate the sample tag's navigation.
+    tag_navigation: navigation.items.length || context.tags
+      ? navigation
+      : tagNavigationContext([tag], `${origin}/tags/`),
     home_page_url: tag.url, feed_url: tag.json_url, tags_active: true,
     _microfeed: {
       base_url: origin, categories: [], microfeed_version: "", ...extra,

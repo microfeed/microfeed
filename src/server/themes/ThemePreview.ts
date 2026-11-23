@@ -161,7 +161,7 @@ export async function themePreviewResponse(
     site_title: publicFeed.title,
     tag_navigation: dataSource === "site"
       ? (await publicThemeNavigation(loaded.database.FEED_DB, request)).tag_navigation
-      : previewContext.tag_navigation,
+      : view === "tag" ? tagContext.tag_navigation : previewContext.tag_navigation,
     ...(view === "tag" ? {tags_active: true} : {}),
     ...(view === "tags" ? {tags_active: true, tags: tagsContext.tags} : {})};
   const shellFeed = view === "tag"

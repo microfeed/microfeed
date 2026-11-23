@@ -2,7 +2,7 @@
 
 This format-v2 package is generated from `src/`. Edit the independent templates, Tailwind CSS, fixture, or TypeScript sources, then run `yarn workspace @microfeed/podcast-theme-source build`, `validate`, and `test`. Increment the immutable manifest version before changing released package bytes.
 
-The installable package has eight generated text slots, one declared preview fixture, and no binary assets. Do not hand-edit generated root templates and do not add image, audio, or video files.
+The installable package has eight required text slots, an optional All tags template, one declared preview fixture, and no binary assets. Do not hand-edit generated root templates and do not add image, audio, or video files.
 
 ## Fixture media
 

@@ -240,7 +240,7 @@ export function standaloneThemePreviewDocument(
   const selected = templates[view as keyof typeof templates] ?? templates.feed;
   const body = renderThemeTemplate(selected[0], selected[1]);
   const shellContext = view === "tag"
-    ? {...context, _microfeed: tagContext._microfeed, tags_active: true}
+    ? {...context, _microfeed: tagContext._microfeed, tag_navigation: tagContext.tag_navigation, tags_active: true}
     : view === "tags" ? tagsContext : context;
   const publicSearch = theme.manifest.formatVersion === 2
     ? publicSearchHtml({previewResults})

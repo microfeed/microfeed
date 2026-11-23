@@ -211,7 +211,7 @@ export default class Theme {
   }
 
   getWebTagsTmpl(): string {
-    return this.themeBundle?.webTags ?? DEFAULT_WEB_TAGS_TEMPLATE;
+    return (this.themeBundle ?? BUNDLED_DEFAULT_THEME_BUNDLE).webTags ?? DEFAULT_WEB_TAGS_TEMPLATE;
   }
 
   getWebItem(item: Record<string, unknown>): {html: string} {

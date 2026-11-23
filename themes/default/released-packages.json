@@ -56,6 +56,10 @@
     {
       "checksumSha256": "e97b7cb4ce1453f1dc10f13500cd63ea5d442208efabb081fb6515b7ea33e0d6",
       "version": "1.1.21"
+    },
+    {
+      "checksumSha256": "746f7d2e032feff1ebe8d260a372f29d2db24a04ac91c7775d81da863004067c",
+      "version": "1.1.22"
     }
   ]
 }

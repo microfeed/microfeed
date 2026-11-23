@@ -16,6 +16,7 @@ import DEFAULT_WEB_FEED from "../../../themes/default/web-feed.mustache?raw";
 import DEFAULT_WEB_ITEM from "../../../themes/default/web-item.mustache?raw";
 import DEFAULT_WEB_PAGE from "../../../themes/default/web-page.mustache?raw";
 import DEFAULT_WEB_SEARCH from "../../../themes/default/web-search.mustache?raw";
+import DEFAULT_WEB_TAGS from "../../../themes/default/web-tags.mustache?raw";
 
 export const BUNDLED_DEFAULT_THEME_ID = "bundled-default-v2";
 
@@ -29,6 +30,7 @@ export const BUNDLED_DEFAULT_THEME_BUNDLE: ThemeBundleV1 = {
   webItem: DEFAULT_WEB_ITEM,
   webPage: DEFAULT_WEB_PAGE,
   webSearch: DEFAULT_WEB_SEARCH,
+  webTags: DEFAULT_WEB_TAGS,
 };
 
 export const BUNDLED_DEFAULT_THEME_MANIFEST = BUNDLED_FALLBACK_THEME.manifest;

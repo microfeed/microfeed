@@ -59,6 +59,8 @@ tags appear below those links. Individual tag pages have a **Browse tags**
 section above the footer, with up to eight tags alphabetically and an **All tags**
 link to `/tags/`. This section does not appear on the feed, item, standalone
 Page, Search, or All tags pages. The top navigation bar does not include tags.
+Each built-in theme includes an All tags layout with its own typography,
+content alignment, and subscription links, including in isolated previews.
 
 An individual tag page starts with the same back link as the item page, the tag
 name, its feed subscription links, and its description when present. Feed

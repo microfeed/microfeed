@@ -2,7 +2,7 @@
 
 This format-v2 package is generated from the independent sources under `src/`. Run `yarn workspace @microfeed/blog-theme-source build`, `validate`, and `test` after editing. Increment the immutable manifest version before changing released bytes.
 
-The portable package has eight generated text slots, one preview fixture, and no binary assets. Do not hand-edit generated root templates.
+The portable package has eight required text slots, an optional All tags template, one preview fixture, and no binary assets. Do not hand-edit generated root templates.
 
 ## Fixture media
 

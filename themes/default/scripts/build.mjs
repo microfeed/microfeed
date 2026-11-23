@@ -60,6 +60,9 @@ const tokenBlock = `<style id="microfeed-design-tokens">
 ${designTokenCss}</style>`;
 
 const sourceDirectory = path.join(root, "src/templates");
+const manifest = JSON.parse(await readText(path.join(root, "microfeed-theme.json")));
+const optionalTemplates = ["webTag", "webTags"]
+  .flatMap(key => manifest.files[key] ? [manifest.files[key]] : []);
 const rssTemplate = await readText(path.join(sourceDirectory, "rss-stylesheet.xsl"));
 const rssStylesMarker = "/* microfeed:compiled-tailwind */";
 if (!rssTemplate.includes(rssStylesMarker)) {
@@ -69,6 +72,9 @@ const rssStyles = `${designTokenCss}\n${css.source}`
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;");
 const files = new Map([
+  ...await Promise.all(optionalTemplates.map(async filename => [
+    filename, await readText(path.join(sourceDirectory, filename)),
+  ])),
   ["web-feed.mustache", await readText(path.join(sourceDirectory, "web-feed.mustache"))],
   ["web-item.mustache", await readText(path.join(sourceDirectory, "web-item.mustache"))],
   ["web-page.mustache", await readText(path.join(sourceDirectory, "web-page.mustache"))],
