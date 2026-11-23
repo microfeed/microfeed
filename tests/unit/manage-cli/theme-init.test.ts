@@ -12,7 +12,7 @@ import type {
   ThemeManifestV1,
   ThemePreviewFixture,
 } from "@/shared/themes/ThemeContract";
-import {BUNDLED_THEME_CATALOG} from "@/shared/themes/BundledThemeCatalog";
+import {BUNDLED_FALLBACK_THEME, BUNDLED_THEME_CATALOG} from "@/shared/themes/BundledThemeCatalog";
 import {themeKitCompatibilityRange} from "@/shared/ThemeKitVersion";
 import {BUILT_IN_FIXTURES} from "../../../packages/theme-kit/src/fixtures";
 import {
@@ -284,13 +284,13 @@ describe("theme repository initialization", () => {
       packageId: "microfeed.default",
       sourceKind: "bundled",
       sourcePath: "bundled:default",
-      version: "1.1.17",
+      version: BUNDLED_FALLBACK_THEME.manifest.version,
     });
     expect(stored.get("microfeed.default")).toMatchObject({
       package_id: "microfeed.default",
       source_kind: "bundled",
       source_path: "bundled:default",
-      version: "1.1.17",
+      version: BUNDLED_FALLBACK_THEME.manifest.version,
     });
     expect([...stored.keys()]).toEqual(BUNDLED_THEME_CATALOG.map(
       ({packageId}) => packageId,
@@ -433,7 +433,7 @@ describe("theme repository initialization", () => {
       expect(stored.get("microfeed.default")).toMatchObject({
         package_id: "microfeed.default",
         source_kind: "bundled",
-        version: "1.1.17",
+        version: BUNDLED_FALLBACK_THEME.manifest.version,
       });
       expect(queries.filter((sql) => sql.includes("INSERT INTO themes")))
         .toHaveLength(BUNDLED_THEME_CATALOG.length);

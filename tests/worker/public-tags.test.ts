@@ -18,6 +18,7 @@ import {webhookGeneratedEnvelope} from "@/shared/WebhookExamples";
 import {characterIndexStatements} from "@/server/items/character-index";
 import {tagFeedResponse} from "@/server/tags/public";
 import {publicTagPage} from "@/server/tags/pages";
+import {publicThemeNavigation} from "@/server/themes/navigation";
 import {createApiKey, updateApiAccessSettings} from "@/server/api/api-keys";
 import {decideApiRequest} from "@/server/api/access";
 import ThemeStore from "@/server/themes/ThemeStore";
@@ -44,6 +45,31 @@ beforeEach(async () => {
 });
 
 describe("public tags", () => {
+  it("provides bounded alphabetical site-wide tag navigation, including empty tags but not deleted tags", async () => {
+    const request = new Request(`${ORIGIN}/i/unrelated-item/`);
+    expect((await publicThemeNavigation(env.FEED_DB, request)).tag_navigation.items).toEqual([]);
+    const removed = await saveTag(env.FEED_DB, ORIGIN, {name: "00 Removed"});
+    await deleteTag(env.FEED_DB, removed);
+    for (let index = 10; index >= 1; index--) {
+      await saveTag(env.FEED_DB, ORIGIN, {name: `${String(index).padStart(2, "0")} Topic`});
+    }
+    const navigation = await publicThemeNavigation(env.FEED_DB, request);
+    expect(navigation.tag_navigation.url).toBe(`${ORIGIN}/tags/`);
+    expect(navigation.tag_navigation.items.map(tag => tag.name)).toEqual(
+      Array.from({length: 8}, (_, index) => `${String(index + 1).padStart(2, "0")} Topic`),
+    );
+    expect(navigation.tag_navigation.items[0]).toMatchObject({slug: "01-topic", url: `${ORIGIN}/tags/01-topic/`});
+    const allTags = await publicTagPage(new Request(`${ORIGIN}/tags/`), "");
+    if (allTags instanceof Response) throw new Error("Expected an All tags page");
+    expect(allTags.bodyEnd).not.toContain("mf-tag-discovery");
+    expect(allTags.bodyHtml).toContain("09 Topic");
+    const tagPage = await publicTagPage(new Request(`${ORIGIN}/tags/01-topic/`), "01-topic");
+    if (tagPage instanceof Response) throw new Error("Expected an individual tag page");
+    expect(tagPage.bodyEnd).toContain("mf-tag-discovery");
+    expect(tagPage.bodyEnd).not.toContain("09 Topic");
+    expect(tagPage.bodyEnd).not.toContain("00 Removed");
+  });
+
   it("renders custom tag slots with filtered items, directory pagination, and the site's shell", async () => {
     const store = new ThemeStore(env.FEED_DB);
     const savedSubscriptions = (await db.getContent()).settings?.subscribeMethods ?? {};

@@ -2,6 +2,52 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "site_title": {
+      "description": "The site's title on tag views, for the item-style link back to the feed. The current tag name remains in _microfeed.tag.name and title.",
+      "type": "string"
+    },
+    "tag_navigation": {
+      "description": "Website-only tag navigation available in every public HTML slot. Up to eight tags in normalized alphabetical order, including empty tags, and the All tags URL. Render names with escaped Mustache. An empty items array hides the discovery section.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "slug",
+              "url"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "items",
+        "url"
+      ],
+      "additionalProperties": false
+    },
     "tags_active": {
       "type": "boolean"
     },
@@ -77,7 +123,7 @@
         "json_enabled"
       ],
       "additionalProperties": false,
-      "description": "Public tag directory state. items is the current alphabetically sorted page, including empty tags; counts include only published items. Descriptions are plain text: render them with escaped Mustache. next_url is the next directory page, when present. Feed flags respect the site's RSS and JSON Feed settings."
+      "description": "All tags page state. items is the current alphabetically sorted page, including empty tags; counts include only published items. Descriptions are plain text: render them with escaped Mustache. next_url is the next All tags page, when present. Feed flags respect the site's RSS and JSON Feed settings."
     },
     "_microfeed": {
       "type": "object",

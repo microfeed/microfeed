@@ -8,7 +8,8 @@ import type {
 } from "@/shared/themes/ThemeContract";
 import {themeRssPreviewDocument} from "@/shared/themes/RssPreview";
 import {themeContext} from "@/shared/themes/ThemeRenderer";
-import {tagPreviewContexts} from "@/shared/themes/ThemeTags";
+import {previewTagNavigation, tagPreviewContexts} from "@/shared/themes/ThemeTags";
+import {publicThemeNavigation} from "@/server/themes/navigation";
 import {
   publicSearchHtml,
   type PublicSearchResult,
@@ -151,10 +152,16 @@ export async function themePreviewResponse(
       url: new URL("/projects/", request.url).toString(),
     },
   ];
-  const {tagContext, tagsContext} = tagPreviewContexts(themeContext(publicFeed, {
+  const previewContext = themeContext(publicFeed, {
     assetBaseUrl, packageId: storedTheme.packageId, version: storedTheme.version,
-  }));
+  });
+  previewContext.tag_navigation ??= previewTagNavigation(previewContext);
+  const {tagContext, tagsContext} = tagPreviewContexts(previewContext);
   const extraContext = {navigation_pages: navigationPages,
+    site_title: publicFeed.title,
+    tag_navigation: dataSource === "site"
+      ? (await publicThemeNavigation(loaded.database.FEED_DB, request)).tag_navigation
+      : previewContext.tag_navigation,
     ...(view === "tag" ? {tags_active: true} : {}),
     ...(view === "tags" ? {tags_active: true, tags: tagsContext.tags} : {})};
   const shellFeed = view === "tag"

@@ -1,8 +1,15 @@
 <main class="mf-feed mf-tag-archive">
   {{#_microfeed.tag}}
-  <h1>{{name}}</h1>
-  {{#description}}<p>{{description}}</p>{{/description}}
-  <p>{{published_item_count}} published items</p>
+  <header class="mf-tag-header">
+    <a href="/">← {{site_title}}{{^site_title}}Back to feed{{/site_title}}</a>
+    <h1>{{name}}</h1>
+    {{#_microfeed.subscribe_methods.length}}
+    <nav class="mf-tag-subscriptions" aria-label="Tag feeds">
+      {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+    </nav>
+    {{/_microfeed.subscribe_methods.length}}
+    {{#description}}<p class="mf-tag-description">{{description}}</p>{{/description}}
+  </header>
   {{/_microfeed.tag}}
   {{^items}}<p>No posts yet.</p>{{/items}}
   {{#items}}
@@ -12,7 +19,7 @@
     {{{content_html}}}
   </article>
   {{/items}}
-  {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+
   <nav aria-label="Item pagination">
     {{#_microfeed.prev_url}}<a href="{{_microfeed.prev_url}}">Previous</a>{{/_microfeed.prev_url}}
     {{#_microfeed.next_url}}<a href="{{_microfeed.next_url}}">Next</a>{{/_microfeed.next_url}}

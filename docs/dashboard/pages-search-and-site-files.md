@@ -131,7 +131,7 @@ microfeed creates three generated defaults:
   Published Pages, and recent Published items, and links to the instance API
   guide when API access and public API docs are enabled.
 - `sitemap.xml` contains the home page, Published Pages, Published items, the
-  tag directory and tag archives, and
+  All tags page and tag pages, and
   supported image/video metadata.
 
 Saving a generated file with Published visibility switches it to an override.

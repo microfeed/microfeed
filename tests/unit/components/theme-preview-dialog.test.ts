@@ -74,7 +74,7 @@ describe("theme preview dialog", () => {
     tree = render();
     expect(find(tree, busy).props["aria-busy"]).toBe(false);
 
-    for (const [label, view] of [["Tag archive", "tag"], ["Tags directory", "tags"], ["RSS", "rss"]]) {
+    for (const [label, view] of [["Tag page", "tag"], ["All tags", "tags"], ["RSS", "rss"]]) {
       find(tree, element => element.type === Button && element.props.children === label).props.onClick();
       tree = render();
       const frame = find(tree, element => element.type === "iframe");

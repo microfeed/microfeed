@@ -20,8 +20,8 @@ const VIEW_LABELS: Record<PreviewView, string> = {
   page: "Page",
   search: "Search",
   rss: "RSS",
-  tag: "Tag archive",
-  tags: "Tags directory",
+  tag: "Tag page",
+  tags: "All tags",
 };
 
 const VIEWPORT_LABELS: Record<PreviewViewport, string> = {

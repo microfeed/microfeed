@@ -19,8 +19,8 @@ Both formats support two additional optional tag slots:
 | `webItem` | Render one item page. |
 | `webPage` | Render a standalone Page, including the editable default 404 Page. |
 | `webSearch` | Render the complete `/search/` results page. |
-| `webTag` (optional) | Render one tag archive; otherwise use this theme's `webFeed`. |
-| `webTags` (optional) | Render the tag directory; otherwise use microfeed's directory markup. |
+| `webTag` (optional) | **Tag page**: published items with one tag at `/tags/<slug>/`; otherwise use this theme's `webFeed`. |
+| `webTags` (optional) | **All tags**: the list at `/tags/`; otherwise use microfeed's list markup. |
 | `webHeader` | Insert markup before `</head>`. |
 | `webBodyStart` | Insert markup immediately after `<body>`. |
 | `webBodyEnd` | Insert markup immediately before `</body>`. |
@@ -120,7 +120,7 @@ in `_microfeed.tag` provides `id`, `name`, `slug`, plain-text `description`,
 
 If `webTag` is omitted, microfeed uses **this theme's `webFeed`**, not the
 bundled default theme's feed template. If `webTags` is omitted, it renders the
-platform directory inside the existing theme shell. Both are optional in
+platform's All tags page inside the existing theme shell. Both are optional in
 formats v1 and v2; older packages need no changes. An explicitly empty
 template is respected rather than falling back. Declare the path and supply
 the file together; optional templates have the same syntax and size limits
@@ -130,17 +130,17 @@ and participate in the immutable package checksum.
 
 | Field | Meaning |
 | --- | --- |
-| `tags.title`, `tags.url` | Directory heading and canonical directory address. |
+| `tags.title`, `tags.url` | All tags heading and canonical page address. |
 | `tags.items` | The current page of alphabetically sorted tag records, including empty tags. Records have the same fields as `_microfeed.tag`. |
-| `tags.next_url` | The next directory page, if present. Use this supplied URL. |
+| `tags.next_url` | The next All tags page, if present. Use this supplied URL. |
 | `tags.rss_enabled`, `tags.json_enabled` | Whether the site's corresponding feeds are enabled. |
 
 The platform computes published-item counts, pagination, routing, redirects,
 and metadata. Themes control presentation. Shared header and footer slots
-retain the site's identity; directory and current-tag context are also
+retain the site's identity; All tags and current-tag context are also
 available to the shared shell.
 
-For example, a custom directory template can use:
+For example, a custom All tags template can use:
 
 ```html
 <main>
@@ -162,8 +162,8 @@ For example, a custom directory template can use:
 ```
 
 Names and descriptions are plain text. Always render them with escaped
-Mustache, not triple braces. In Admin drafts, choose **Tag archive** or
-**Tags directory**, then **Create custom template**; **Use fallback template**
+Mustache, not triple braces. In Admin drafts, choose **Tag page** or
+**All tags**, then **Create custom template**; **Use fallback template**
 removes that override from the draft. The isolated Admin and theme-kit previews
 include both tag views and use representative tags when fixture data supplies none.
 
@@ -179,10 +179,30 @@ outside the item link to avoid nested anchors:
 {{/_microfeed.tags.length}}
 ```
 
-On item pages, use `items.0._microfeed.tags`. Add a `/tags/` link alongside
-`navigation_pages`. The optional `tags_active` flag identifies directory and
-archive views. Search results may have `type: "tag"`; their URL always opens
-the local tag archive, independently of `searchItemDestination`.
+On item pages, use `items.0._microfeed.tags`. Built-in themes keep feed cards
+and top navigation free of tags, using the Browse tags section below instead.
+On tag views, `site_title` retains the site's name for the item-style back link.
+The optional `tags_active` flag identifies the All tags and
+individual tag views. Search results may have `type: "tag"`; their URL always opens
+the local tag page, independently of `searchItemDestination`.
+
+Every public HTML slot also receives `tag_navigation.items` (up to eight tags
+in normalized alphabetical order, including empty tags) and
+`tag_navigation.url` (the All tags URL). This website-only navigation is not
+limited to tags on the current item or feed page and does not alter JSON Feed
+or RSS. Built-in themes render it above the footer only on individual tag
+pages, and hide it on other views or when there are no tags. Custom themes
+can use the same pattern in **Body end**:
+
+```html
+{{#_microfeed.tag}}{{#tag_navigation.items.length}}
+<section aria-label="Browse tags">
+  <h2>Browse tags</h2>
+  {{#tag_navigation.items}}<a href="{{url}}" rel="tag">{{name}}</a>{{/tag_navigation.items}}
+  <a href="{{tag_navigation.url}}">All tags</a>
+</section>
+{{/tag_navigation.items.length}}{{/_microfeed.tag}}
+```
 
 ## Connect public search
 
@@ -268,7 +288,7 @@ available inside the isolated preview.
 A generated repository includes JSON Schemas under `.microfeed/schemas/`, a
 representative package fixture, and built-in test fixtures for empty, minimal,
 rich, paginated, media-heavy, missing-optional, multi-author, hostile-rich-
-HTML, and tag content, including empty and paginated tag directories.
+HTML, and tag content, including empty and paginated All tags pages.
 
 Package limits are:
 

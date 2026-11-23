@@ -54,6 +54,6 @@ export async function tagFeedResponse(request: Request, slug: string, format: "r
 
 export function tagListCursor(request: Request) {
   const cursor = new URL(request.url).searchParams.get("next_cursor") ?? undefined;
-  if (cursor && cursor.length > 200) throw new TagRequestError("Invalid tag directory cursor.");
+  if (cursor && cursor.length > 200) throw new TagRequestError("Invalid All tags page cursor.");
   return cursor;
 }

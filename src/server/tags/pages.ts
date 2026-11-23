@@ -6,7 +6,7 @@ import {escapeHtml} from "@/shared/StringUtils";
 import {TagRequestError} from "@/shared/Tags";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
-import {navigationPages} from "@/server/pages/service";
+import {publicThemeNavigation} from "@/server/themes/navigation";
 import {resolveMetadata} from "@/server/seo/metadata";
 import {loadTagFeed, tagListCursor} from "./public";
 import {listTags} from "./service";
@@ -46,7 +46,7 @@ export async function publicTagPage(request: Request, path: string) {
       throw error;
     }
   }
-  const extra = {navigation_pages: await navigationPages(env.FEED_DB, request), tags_active: true,
+  const extra = {...await publicThemeNavigation(env.FEED_DB, request), tags_active: true, site_title: loaded.publicFeed.title,
     ...(directoryContext ? {tags: directoryContext} : {})};
   const theme = new Theme(shell, settings, null, activeTheme, assets, extra);
   const shared = new Theme(shell, settings, CODE_TYPES.SHARED, activeTheme, assets, extra);

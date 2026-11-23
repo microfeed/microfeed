@@ -1,6 +1,32 @@
 import {escapeHtml} from "../Html";
 import type {TagRecord} from "../Tags";
+import {normalizedTagKey} from "../Tags";
 import {THEME_OPTIONAL_FILE_KEYS, THEME_OPTIONAL_FILE_PATHS, type ThemeBundleV1, type ThemeContext, type ThemeManifestV1, type ThemeTagDirectory} from "./ThemeContract";
+
+export const TAG_NAVIGATION_LIMIT = 8;
+
+export function tagNavigationContext(
+  items: Array<Pick<TagRecord, "id" | "name" | "slug" | "url">>, url: string,
+) {
+  return {items: [...new Map(items.map(tag => [tag.id, {
+    id: tag.id, name: tag.name, slug: tag.slug, url: tag.url,
+  }])).values()].slice(0, TAG_NAVIGATION_LIMIT), url};
+}
+
+/** Standalone previews derive navigation from their supplied fixture, not live data. */
+export function previewTagNavigation(context: ThemeContext) {
+  let origin = "https://example.test";
+  try {origin = new URL(context._microfeed?.base_url || context.home_page_url || origin).origin;}
+  catch { /* Partial fixtures may omit an absolute site URL. */ }
+  const tags = context.tags?.items ?? [
+    ...(context._microfeed?.tag ? [context._microfeed.tag] : []),
+    ...(context.items ?? []).flatMap(item => item._microfeed?.tags ?? []),
+  ];
+  return tagNavigationContext([...tags].sort((left, right) => {
+    const a = normalizedTagKey(left.name); const b = normalizedTagKey(right.name);
+    return a < b ? -1 : a > b ? 1 : 0;
+  }), `${origin}/tags/`);
+}
 
 // The platform fallback is also used by previews and optional Admin templates.
 export const DEFAULT_WEB_TAGS_TEMPLATE = `<main class="mf-tags-directory">
@@ -78,7 +104,7 @@ export function tagPreviewContexts(context: ThemeContext) {
   const methods = Array.isArray(extra?.subscribe_methods) ? extra.subscribe_methods : [];
   const enabled = (format: string) => !methods.some(method => method.type === format && method.editable === false && method.enabled === false);
   const tagContext: ThemeContext = {
-    ...context, title: tag.name, description: escapeHtml(tag.description),
+    ...context, site_title: context.site_title ?? context.title, title: tag.name, description: escapeHtml(tag.description),
     home_page_url: tag.url, feed_url: tag.json_url, tags_active: true,
     _microfeed: {
       base_url: origin, categories: [], microfeed_version: "", ...extra,

@@ -621,7 +621,11 @@ export default class EditItemApp extends React.Component<Props, any> {
             </details>
           </div>
           {this.state.tagError && <p role="alert" className="text-sm text-destructive">{this.state.tagError}</p>}
-          <TagPicker value={item.tag_ids ?? (item.tags ?? []).map((tag: {id: string}) => tag.id)} onChange={tag_ids => this.onUpdateItemMeta({tag_ids, tag_slugs: undefined})} />
+          <TagPicker
+            value={item.tag_ids ?? (item.tags ?? []).map((tag: {id: string}) => tag.id)}
+            selectedTags={item.tags ?? []}
+            onChange={tag_ids => this.onUpdateItemMeta({tag_ids, tag_slugs: undefined})}
+          />
           <SeoEditor value={item} channel={feed.channel} itemId={itemId} feed={feed}
             publicBucketUrl={publicBucketUrl} mediaStorage={mediaStorage} error={this.state.seoError}
             onChange={(patch, previousImage) => this.onUpdateItemMeta(patch, {

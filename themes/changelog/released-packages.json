@@ -8,6 +8,22 @@
     {
       "checksumSha256": "8e65a29048c839fcf9b8b32a2e74c0cd2bec67355b74897c5146ea6cdda162a1",
       "version": "1.0.1"
+    },
+    {
+      "checksumSha256": "d14e3b27ee2dd27d327b5e8fe7a2f138f798c489515ed957a252a00132812172",
+      "version": "1.0.2"
+    },
+    {
+      "checksumSha256": "475b6921dae1a05928ff96b718aadadcea536702861692bde16dcc864eb0d79c",
+      "version": "1.0.3"
+    },
+    {
+      "checksumSha256": "77a0576d9d8311988c87f1b501f278c5b71035853c94cf190c79ff2ca3ba9f78",
+      "version": "1.0.4"
+    },
+    {
+      "checksumSha256": "9a05a1cca13dae8125b62d06ea6c9969c711a86696f9f2c4933945324690b76d",
+      "version": "1.0.5"
     }
   ]
 }

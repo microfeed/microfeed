@@ -109,7 +109,7 @@ describe("bundled theme packages", () => {
     expect(bodyStart).toContain("data-microfeed-search-open");
     expect(bodyStart).not.toContain("data-microfeed-search-input");
     expect(bodyStart).not.toContain("data-microfeed-search-results");
-    expect(feed).not.toContain('class="mf-back-link"');
+    expect(Mustache.render(feed, {items: []})).not.toContain('class="mf-back-link"');
     for (const template of [item, page, search]) {
       expect(template).toContain('class="mf-back-link"');
       expect(template).toContain('<div class="icon-arrow-left">{{title}}</div>');
@@ -205,7 +205,7 @@ describe("bundled theme packages", () => {
       formatVersion: 2,
       packageId: "microfeed.default",
       previewFixture: "fixtures/editorial.json",
-      version: "1.1.17",
+      version: "1.1.21",
     });
     expect(fixture.items[0]).toMatchObject({
       _microfeed: {is_audio: true},

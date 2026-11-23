@@ -18,8 +18,8 @@ const FILE_LABELS: Record<ThemeFileKey, string> = {
   webItem: "Item",
   webPage: "Page",
   webSearch: "Search",
-  webTag: "Tag archive",
-  webTags: "Tags directory",
+  webTag: "Tag page",
+  webTags: "All tags",
 };
 
 export const THEME_EDITOR_FILE_KEYS: readonly ThemeFileKey[] = [
@@ -93,13 +93,13 @@ export const THEME_FILE_HELP: Record<ThemeFileKey, ThemeFileHelp> = {
     exampleUrlKey: "webSearchUrl",
   },
   webTag: {
-    description: "Edits one public tag archive. It receives the current tag in _microfeed.tag and the published items assigned to it. Without this optional template, the theme's Feed template is used.",
-    exampleLabel: "Open tags directory",
+    description: "Edits one public tag page. It receives the current tag in _microfeed.tag and the published items assigned to it. Without this optional template, the theme's Feed template is used.",
+    exampleLabel: "Browse all tags",
     exampleUrlKey: "webTagsUrl",
   },
   webTags: {
-    description: "Edits the public tags directory. It receives tags.items, tags.next_url, and feed availability flags. Without this optional template, microfeed renders its default directory.",
-    exampleLabel: "Open tags directory",
+    description: "Edits the All tags page: a list of every public tag. It receives tags.items, tags.next_url, and feed availability flags. Without this optional template, microfeed renders its default list of tags.",
+    exampleLabel: "Browse all tags",
     exampleUrlKey: "webTagsUrl",
   },
 };

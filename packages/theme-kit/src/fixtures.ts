@@ -1,7 +1,7 @@
 export const BUILT_IN_FIXTURES: Record<string, Record<string, unknown>> = {
   public_tags: {
     version: "https://jsonfeed.org/version/1.1",
-    title: "Public tag archive",
+    title: "Public tag page",
     home_page_url: "https://example.test/tags/世界/",
     feed_url: "https://example.test/tags/世界/json/",
     items: [{id: "tagged", title: "A tagged item", tags: ["世界 🌍"], _microfeed: {
@@ -19,11 +19,11 @@ export const BUILT_IN_FIXTURES: Record<string, Record<string, unknown>> = {
     items: [],
   },
   tags_empty: {
-    version: "https://jsonfeed.org/version/1.1", title: "Empty tag directory", home_page_url: "https://example.test/", items: [],
+    version: "https://jsonfeed.org/version/1.1", title: "Empty All tags page", home_page_url: "https://example.test/", items: [],
     tags: {title: "Tags", url: "https://example.test/tags/", items: [], rss_enabled: true, json_enabled: true},
   },
   tags_directory: {
-    version: "https://jsonfeed.org/version/1.1", title: "Tag directory site", home_page_url: "https://example.test/", items: [],
+    version: "https://jsonfeed.org/version/1.1", title: "All tags example site", home_page_url: "https://example.test/", items: [],
     tags: {title: "Tags", url: "https://example.test/tags/", rss_enabled: false, json_enabled: true,
       next_url: "https://example.test/tags/?next_cursor=next",
       items: [{id: "directory-tag", name: "世界 <b> 🌍", slug: "世界", description: "<script>Plain-text description</script>", published_item_count: 0,

@@ -232,7 +232,7 @@ export const themeTagDirectorySchema = z.object({
   rss_enabled: z.boolean(),
   json_enabled: z.boolean(),
 }).meta({
-  description: "Public tag directory state. items is the current alphabetically sorted page, including empty tags; counts include only published items. Descriptions are plain text: render them with escaped Mustache. next_url is the next directory page, when present. Feed flags respect the site's RSS and JSON Feed settings.",
+  description: "All tags page state. items is the current alphabetically sorted page, including empty tags; counts include only published items. Descriptions are plain text: render them with escaped Mustache. next_url is the next All tags page, when present. Feed flags respect the site's RSS and JSON Feed settings.",
 });
 
 const themeItemExtraSchema = z.object({
@@ -375,6 +375,11 @@ const themeSearchResultSchema = z.object({
 }).loose();
 
 export const themeContextSchema = z.object({
+  site_title: z.string().optional().meta({description: "The site's title on tag views, for the item-style link back to the feed. The current tag name remains in _microfeed.tag.name and title."}),
+  tag_navigation: z.object({
+    items: z.array(themeTagSchema.pick({id: true, name: true, slug: true, url: true})).max(8),
+    url: z.string(),
+  }).optional().meta({description: "Website-only tag navigation available in every public HTML slot. Up to eight tags in normalized alphabetical order, including empty tags, and the All tags URL. Render names with escaped Mustache. An empty items array hides the discovery section."}),
   tags_active: z.boolean().optional(),
   tags: themeTagDirectorySchema.optional(),
   _microfeed: themeFeedExtraSchema.optional(),

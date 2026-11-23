@@ -7,7 +7,7 @@ Open **Settings → Website appearance & code** to choose between two ways to
 customize the public site:
 
 - **Manage versioned themes** controls the structure and design of feed, item,
-  Page, Search, tag archive, tag directory, and RSS views.
+  Page, Search, tag page, All tags page, and RSS views.
 - **Edit shared HTML code across web pages** adds the same HTML, CSS, or
   JavaScript around whichever theme is active.
 
@@ -84,8 +84,8 @@ Open **Settings → Themes** and select **Create new version** on the theme you
 want to change:
 
 1. Edit any of the theme slots and save the draft repeatedly.
-2. Open the isolated preview for feed, item, Page, Search, tag archive, tag
-   directory, and RSS at mobile and desktop widths.
+2. Open the isolated preview for feed, item, Page, Search, Tag page,
+   All tags, and RSS at mobile and desktop widths.
 3. Choose a new semantic version, such as `1.2.1`.
 4. Select **Install** to create an immutable, inactive version.
 5. Preview the installed version and activate it only after approval.
@@ -112,11 +112,11 @@ Admin intentionally exposes only supported theme metadata, behavior settings,
 and text slots—not raw manifest JSON or packaged file, asset, and package
 identity fields.
 
-**Tag archive** and **Tags directory** are optional slots in both format v1
+**Tag page** and **All tags** are optional slots in both format v1
 and v2 themes. Select **Create custom template** to start from the current
 fallback, then edit and preview it. **Use fallback template** removes that
-draft override: archives reuse the theme's own Feed template, while the
-directory uses microfeed's markup inside the theme shell. These actions affect
+draft override: tag pages reuse the theme's own Feed template, while the
+All tags page uses microfeed's markup inside the theme shell. These actions affect
 only the draft; save, install, and activate a new version separately.
 
 The bundled Default theme exposes a readable `microfeed-design-tokens` block

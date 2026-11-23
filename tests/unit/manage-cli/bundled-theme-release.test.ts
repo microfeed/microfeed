@@ -128,10 +128,10 @@ describe("bundled theme release registry", () => {
 
     await expect(recordBundledThemeRelease(directory, "podcast")).resolves
       .toMatchObject({
-        identity: {packageId: "microfeed.podcast", version: "1.0.1"},
+        identity: {packageId: "microfeed.podcast", version: BUNDLED_THEME_CATALOG.find(entry => entry.key === "podcast")!.manifest.version},
         recorded: true,
       });
     await expect(verifyBundledThemeRelease(directory, "podcast")).resolves
-      .toMatchObject({packageId: "microfeed.podcast", version: "1.0.1"});
+      .toMatchObject({packageId: "microfeed.podcast", version: BUNDLED_THEME_CATALOG.find(entry => entry.key === "podcast")!.manifest.version});
   });
 });

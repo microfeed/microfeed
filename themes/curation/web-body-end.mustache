@@ -1,3 +1,14 @@
+{{#_microfeed.tag}}{{#tag_navigation.items.length}}
+<section class="mf-tag-discovery" aria-label="Browse tags">
+  <div class="mf-tag-discovery-heading">
+    <h2>Browse tags</h2>
+    <a href="{{tag_navigation.url}}">All tags →</a>
+  </div>
+  <ul class="mf-item-tags">
+    {{#tag_navigation.items}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/tag_navigation.items}}
+  </ul>
+</section>
+{{/tag_navigation.items.length}}{{/_microfeed.tag}}
 <footer class="dig-footer"><p>{{#_microfeed.copyright}}{{_microfeed.copyright}}{{/_microfeed.copyright}}{{^_microfeed.copyright}}© {{current_year}} {{title}}{{/_microfeed.copyright}}</p><p>A small, annotated internet · <a href="https://www.microfeed.org/">Powered by microfeed</a></p></footer>
 
 <script>(function(){var e=[`system`,`light`,`dark`];function t(t){return e.includes(t)?t:`system`}function n(e){let t=e===`dark`||e===`system`&&window.matchMedia(`(prefers-color-scheme: dark)`).matches;document.documentElement.classList.toggle(`dark`,t),document.documentElement.dataset.themePreference=e,document.documentElement.dataset.colorMode=t?`dark`:`light`,document.documentElement.style.colorScheme=t?`dark`:`light`}function r(){let e=document.querySelector(`[data-theme-menu]`),r=Array.from(document.querySelectorAll(`[data-theme-option]`)),i=t(document.documentElement.dataset.themePreference??null),a=e=>{i=e,n(e);for(let t of r)t.setAttribute(`aria-checked`,String(t.dataset.themeOption===e))};for(let n of r)n.addEventListener(`click`,()=>{let r=t(n.dataset.themeOption??null);try{window.localStorage.setItem(`microfeed-public-theme`,r)}catch{}a(r),e&&(e.open=!1)});window.matchMedia(`(prefers-color-scheme: dark)`).addEventListener(`change`,()=>{i===`system`&&n(i)}),a(i)}document.readyState===`loading`?document.addEventListener(`DOMContentLoaded`,r,{once:!0}):r()})();</script>

@@ -177,7 +177,7 @@ Validates the package, then renders these built-in fixtures:
 
 It then renders every `.json` file under the package's `fixtures/` directory.
 Each case is rendered twice to detect nondeterministic output. The command
-parses feed, item, tag archive, and tag directory HTML, parses Page and Search
+parses feed, item, tag page, and All tags page HTML, parses Page and Search
 HTML for format-v2 packages, and verifies that the rendered RSS stylesheet is
 valid XML. Omitted tag slots exercise their normal fallbacks. Themes are trusted
 code, so this command checks output structure and determinism rather than
@@ -193,7 +193,7 @@ theme-kit preview <directory> [options]
 ```
 
 Starts an isolated server on a random local address and prints the URL to open
-in a browser. The preview provides feed, item, tag archive, tag directory, and
+in a browser. The preview provides feed, item, tag page, All tags page, and
 rendered RSS views, adds Page and Search views for format-v2 packages, and includes a mobile/desktop
 viewport switch. It uses the production theme renderer, serves
 declared assets from a local `/assets/` route, disables caching, and applies a

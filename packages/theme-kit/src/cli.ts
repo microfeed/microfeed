@@ -27,7 +27,7 @@ import {
   resolveThemeSearchItemUrl,
 } from "../../../src/shared/themes/ThemeSearch";
 import {ThemeValidationError} from "../../../src/shared/themes/ThemeValidation";
-import {tagPreviewContexts, tagTemplate, tagsTemplate} from "../../../src/shared/themes/ThemeTags";
+import {previewTagNavigation, tagPreviewContexts, tagTemplate, tagsTemplate} from "../../../src/shared/themes/ThemeTags";
 import {BUILT_IN_FIXTURES} from "./fixtures";
 import {renderThemeKitHelp} from "./help";
 import {
@@ -93,6 +93,7 @@ function contexts(
     packageId: manifest.packageId,
     version: manifest.version,
   });
+  context.tag_navigation ??= previewTagNavigation(context);
   const items = context.items;
   const previewPublishedAt = items
     .map((item) => stringValue(item.date_published))
@@ -473,7 +474,7 @@ async function preview(args: Arguments): Promise<void> {
     }
     if (url.pathname === "/") {
       response.setHeader("content-type", "text/html; charset=utf-8");
-      response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>microfeed theme preview</title><style>body{font:14px system-ui;margin:0;background:#eee}header{display:flex;gap:.5rem;padding:.75rem;background:#111;color:#fff;position:sticky;top:0}button{cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 54px);border:0;margin:auto;background:#fff}</style></head><body><header><button data-view="feed">Feed</button><button data-view="item">Item</button>${theme.bundle.webPage ? '<button data-view="page">Page</button><button data-view="search">Search</button>' : ''}<button data-view="tag">Tag archive</button><button data-view="tags">Tags directory</button><button data-view="rss">RSS</button><button id="viewport">Mobile</button></header><iframe sandbox="allow-scripts" src="/render?view=feed"></iframe><script>const frame=document.querySelector('iframe');document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>frame.src='/render?view='+button.dataset.view);document.querySelector('#viewport').onclick=event=>{const mobile=frame.style.width!=='390px';frame.style.width=mobile?'390px':'100%';event.target.textContent=mobile?'Desktop':'Mobile'}</script></body></html>`);
+      response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>microfeed theme preview</title><style>body{font:14px system-ui;margin:0;background:#eee}header{display:flex;gap:.5rem;padding:.75rem;background:#111;color:#fff;position:sticky;top:0}button{cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 54px);border:0;margin:auto;background:#fff}</style></head><body><header><button data-view="feed">Feed</button><button data-view="item">Item</button>${theme.bundle.webPage ? '<button data-view="page">Page</button><button data-view="search">Search</button>' : ''}<button data-view="tag">Tag page</button><button data-view="tags">All tags</button><button data-view="rss">RSS</button><button id="viewport">Mobile</button></header><iframe sandbox="allow-scripts" src="/render?view=feed"></iframe><script>const frame=document.querySelector('iframe');document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>frame.src='/render?view='+button.dataset.view);document.querySelector('#viewport').onclick=event=>{const mobile=frame.style.width!=='390px';frame.style.width=mobile?'390px':'100%';event.target.textContent=mobile?'Desktop':'Mobile'}</script></body></html>`);
       return;
     }
     const view = url.searchParams.get("view") ?? "feed";

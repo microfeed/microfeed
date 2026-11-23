@@ -3,8 +3,8 @@ import {DEFAULT_NOT_FOUND_PAGE_SLUG} from "@/shared/Pages";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import Theme, {themeSupportsPagesAndSearch} from "@/server/themes/Theme";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
+import {publicThemeNavigation} from "@/server/themes/navigation";
 import {
-  navigationPages,
   resolvePagePath,
   type ResolvedPagePath,
 } from "./service";
@@ -65,7 +65,8 @@ export async function loadPublicPageRoute(
   if (!resolved) return {kind: "not-found"};
   const fallback = !requested;
 
-  const navigation = await navigationPages(loaded.database.FEED_DB, request);
+  const extraContext = await publicThemeNavigation(loaded.database.FEED_DB, request);
+  const navigation = extraContext.navigation_pages;
   const webSettings = loaded.content.settings?.webGlobalSettings ?? {};
   const assetBaseUrl = themeAssetBaseUrl(
     runtimeEnv,
@@ -74,7 +75,6 @@ export async function loadPublicPageRoute(
     loaded.content.activeTheme?.bundle.assets,
     webSettings.publicBucketUrl,
   );
-  const extraContext = {navigation_pages: navigation};
   const theme = new Theme(
     loaded.publicFeed,
     loaded.content.settings,

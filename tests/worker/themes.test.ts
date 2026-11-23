@@ -17,6 +17,7 @@ import {
   THEME_MAX_DRAFTS,
 } from "@/shared/themes/ThemeContract";
 import {manifestWithTagTemplates} from "@/shared/themes/ThemeTags";
+import {BUNDLED_FALLBACK_THEME} from "@/shared/themes/BundledThemeCatalog";
 
 function packageData(packageId: string, version = "1.0.0"):
   {bundle: ThemeBundleV1; manifest: ThemeManifestV1} {
@@ -173,7 +174,7 @@ describe("versioned theme storage", () => {
       id: "bundled-default-v2",
       packageId: "microfeed.default",
       sourceKind: "bundled",
-      version: "1.1.17",
+      version: BUNDLED_FALLBACK_THEME.manifest.version,
     });
     expect(loaded.content.themeMigrationCompleted).toBe(true);
   });
@@ -411,7 +412,7 @@ describe("versioned theme storage", () => {
     });
     expect(searched.builtInGroups[0]).toMatchObject({
       catalogKey: "default",
-      currentVersion: "1.1.17",
+      currentVersion: BUNDLED_FALLBACK_THEME.manifest.version,
       packageId: "microfeed.default",
       source: "bundled:default",
     });

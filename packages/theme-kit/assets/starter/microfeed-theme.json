@@ -3,7 +3,7 @@
   "formatVersion": 2,
   "packageId": "example.my-theme",
   "name": "My microfeed theme",
-  "version": "0.1.2",
+  "version": "0.1.6",
   "author": "Your name",
   "license": "AGPL-3.0",
   "description": "A flexible starting point for a custom microfeed website.",

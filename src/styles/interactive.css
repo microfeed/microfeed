@@ -16,7 +16,7 @@ label:has(input[type="radio"]:not(:disabled)) {
 }
 
 .mf-tags-page h1 { overflow-wrap: anywhere; }
-.mf-tags-directory { max-width: 70rem; margin: auto; padding: 2rem 1rem; color: var(--mf-text, inherit); }
+.mf-tags-directory { box-sizing: border-box; min-width: 0; max-width: min(100%, 70rem); margin: auto; padding: 2rem 1rem; color: var(--mf-text, inherit); }
 .mf-tags-directory > ul { list-style: none; padding: 0; }
 .mf-tags-directory > ul > li { padding: 1rem 0; border-bottom: 1px solid var(--mf-border, currentColor); }
 .mf-tags-directory h1 { font-size: 2rem; margin-bottom: 1rem; }
