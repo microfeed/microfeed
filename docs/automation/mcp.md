@@ -45,6 +45,15 @@ the requested access before approving it.
 This release supports desktop and hosted connections. Direct requests from
 apps running on another browser origin are blocked.
 
+New connections request `content:read` and `content:write` by default so the app
+can create items after you approve. An app can explicitly request read-only
+access. For refresh tokens, also request `offline_access` in the app's OAuth
+settings. If an existing connection was registered with only read access,
+create a new connection with read and write scopes; existing grants are not
+expanded automatically. In ChatGPT or Codex's custom MCP dialog, use
+**Advanced OAuth settings** to set the default scopes to
+`content:read content:write offline_access` before creating the connection.
+
 ## Available operations and permissions
 
 The tools cover the existing content API: feed reads, search, items, Pages,

@@ -44,7 +44,7 @@ export default function OAuthConsentApp({
         setError(result.error?.message ?? "Unable to finish authorization.");
         return;
       }
-      window.location.assign(result.data.url);
+      // The auth client's redirect plugin follows this response exactly once.
     } catch {
       setError("Unable to finish authorization. Please try again.");
     } finally {

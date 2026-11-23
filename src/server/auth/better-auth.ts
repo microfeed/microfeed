@@ -2,7 +2,7 @@ import {oauthProvider} from "@better-auth/oauth-provider";
 import {passkey} from "@better-auth/passkey";
 import {betterAuth} from "better-auth";
 import {admin} from "better-auth/plugins";
-import {mcpResource} from "@/shared/Mcp";
+import {MCP_DEFAULT_SCOPES, mcpResource} from "@/shared/Mcp";
 import {oauthBody, validateTokenResource, type OAuthResourceBinding} from "./oauth-resource";
 
 import {oauthConnectionHandoff} from "@/server/auth/account-security";
@@ -81,7 +81,7 @@ export function createMicrofeedAuth(
           OAUTH_SCOPES.WRITE,
           OAUTH_SCOPES.OFFLINE,
         ],
-        clientRegistrationDefaultScopes: [OAUTH_SCOPES.READ],
+        clientRegistrationDefaultScopes: MCP_DEFAULT_SCOPES,
         consentPage: adminUrl("api/oauth/consent", adminPath),
         disableJwtPlugin: true,
         // Resolve the resource-bearing query after the provider validates known fields.

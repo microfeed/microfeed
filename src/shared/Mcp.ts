@@ -1,5 +1,8 @@
+import {OAUTH_SCOPES} from "./OAuth";
+
 export const MCP_PATH = "/mcp/";
 export const MCP_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
+export const MCP_DEFAULT_SCOPES = [OAUTH_SCOPES.READ, OAUTH_SCOPES.WRITE];
 
 export interface McpSettings {
   enabled: boolean;

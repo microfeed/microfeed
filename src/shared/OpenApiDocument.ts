@@ -103,7 +103,7 @@ function mcpTransportPath(alias = false) {
     post: {
       operationId: alias ? "mcpRequestWithoutSlash" : "mcpRequest",
       summary: "Send an MCP message", tags: ["MCP"], security: mcpSecurity,
-      description: "Stateless Streamable HTTP. Enable MCP separately in the dashboard, discover OAuth using the 401 challenge, and obtain a token for the canonical /mcp/ resource. Both /mcp and /mcp/ work without redirects. Tool arguments and permissions are discovered with tools/list; every tool call checks its content scope.",
+      description: "Stateless Streamable HTTP. Enable MCP separately in the dashboard, discover OAuth using the 401 challenge, and obtain a token for the canonical /mcp/ resource. New connections request content:read and content:write by default; clients may explicitly request read-only access. Both /mcp and /mcp/ work without redirects. Tool arguments and permissions are discovered with tools/list; every tool call checks its content scope.",
       requestParams: {header: z.object({
         "MCP-Protocol-Version": z.string().optional(),
         "Mcp-Method": z.string().optional(),

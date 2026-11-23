@@ -31,6 +31,7 @@ import {
   hasAdminOwner,
 } from "@/server/auth/admin-owner";
 import {isAdminPasswordSetupPath} from "@/server/auth/password-setup";
+import {isForbiddenFormRequest} from "@/server/auth/request-origin";
 import {
   addLegacyApiDeprecationHeaders,
   decideApiRequest,
@@ -375,7 +376,9 @@ const handleRequest = defineMiddleware(async (context, next) => {
 });
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const response = await handleRequest(context, next);
+  const response = isForbiddenFormRequest(context.request, context.isPrerendered)
+    ? new Response(`Cross-site ${context.request.method} form submissions are forbidden`, {status: 403})
+    : await handleRequest(context, next);
   if (!(response instanceof Response)) {
     throw new TypeError("microfeed middleware did not return a response");
   }

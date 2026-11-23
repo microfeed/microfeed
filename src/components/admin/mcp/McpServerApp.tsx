@@ -53,7 +53,7 @@ export default function McpServerApp({initialSettings, endpoint, adminPath, enab
     </Card>
     <Card><CardHeader><CardTitle>Connect an app</CardTitle></CardHeader><CardContent className="grid gap-4 text-sm leading-6">
       <ol className="list-decimal space-y-2 pl-5"><li>Enable the MCP server.</li><li>Add the server URL to your desktop or hosted AI app using Streamable HTTP.</li><li>Sign in to this microfeed in the browser and review the permissions before choosing Allow.</li></ol>
-      <p>Read permission allows content lookup. Write permission includes creating, publishing, updating, and deleting items, Pages, tags, and Site Files. Media tools prepare uploads; your app uploads the bytes separately.</p>
+      <p>New connections request read and write access so your app can create items after you approve. Read permission allows content lookup. Write permission includes creating, publishing, updating, and deleting items, Pages, tags, and Site Files. Media tools prepare uploads; your app uploads the bytes separately.</p>
       <p>Manage and revoke connections in <a className="underline underline-offset-4" href={adminUrl("account", adminPath)}>Account settings → App access</a>. Turning off the MCP server immediately blocks MCP requests.</p>
       <p>Direct calls from apps on other browser origins are blocked. Dashboard WebMCP tools remain separate.</p>
       <a className="underline underline-offset-4" href="https://docs.microfeed.org/automation/mcp/" target="_blank" rel="noopener noreferrer">MCP connection guide</a>

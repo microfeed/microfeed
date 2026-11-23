@@ -4,7 +4,7 @@ import {createFeedCrud, loadFeed} from "@/server/feed/feed";
 import {verifyOAuthAccessToken} from "@/server/auth/oauth-access";
 import {mcpAvailable} from "./settings";
 import {MCP_TOOLS} from "./tools";
-import {MCP_RESOURCE_METADATA_PATH, mcpResource} from "@/shared/Mcp";
+import {MCP_DEFAULT_SCOPES, MCP_RESOURCE_METADATA_PATH, mcpResource} from "@/shared/Mcp";
 import {MICROFEED_VERSION} from "@/shared/Version";
 import {OAUTH_SCOPES} from "@/shared/OAuth";
 import {apiMcpResourceMetadataSchema, apiWebhookContextHeadersSchema} from "@/shared/ApiSchemas";
@@ -42,7 +42,7 @@ export async function mcpResponse(runtimeEnv: Env, request: Request): Promise<Re
   const grant = credential ? await verifyOAuthAccessToken(runtimeEnv.FEED_DB, credential, mcpResource(origin), false) : null;
   if (!grant) return new Response("Unauthorized", {
     status: 401,
-    headers: {"www-authenticate": `Bearer resource_metadata="${metadataUrl}", scope="content:read"`},
+    headers: {"www-authenticate": `Bearer resource_metadata="${metadataUrl}", scope="${MCP_DEFAULT_SCOPES.join(" ")}"`},
   });
   if (![OAUTH_SCOPES.READ, OAUTH_SCOPES.WRITE].some(scope => grant.scopes.has(scope))) {
     return new Response("Forbidden", {status: 403, headers: {"www-authenticate": `Bearer error="insufficient_scope", resource_metadata="${metadataUrl}", scope="content:read"`}});

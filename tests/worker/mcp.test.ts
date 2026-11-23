@@ -45,7 +45,10 @@ const localFetch: typeof fetch = async (input, init) => {
   if (isMcpPath(path)) return mcpResponse(env, req);
   if (isMcpMetadataPath(path)) return mcpMetadataResponse(env, req);
   if (path === "/.well-known/oauth-authorization-server/api/auth") return route(metadataRoute, req);
-  if (path.startsWith("/api/auth/")) return route(authRoute, req);
+  if (path.startsWith("/api/auth/")) {
+    const context = {request: req, url: new URL(req.url), params: {}, locals: {}} as APIContext;
+    return await onRequest(context, async () => route(authRoute, req)) as Response;
+  }
   return new Response("404", {status: 404});
 };
 
@@ -107,6 +110,7 @@ async function connection(scopes = "content:read content:write offline_access", 
   expect(consent.status).toBe(200);
   const callback = new URL((await consent.json() as {url: string}).url);
   expect(callback.searchParams.get("state")).toBe("mcp-test-state");
+  expect(callback.searchParams.get("iss")).toBe(`${ORIGIN}/api/auth`);
   const storedResource = await env.FEED_DB.prepare("SELECT json_extract(value, '$.query.resource') AS resource FROM auth_verification WHERE json_valid(value) AND json_extract(value, '$.type') = 'authorization_code' LIMIT 1").first<{resource: string}>();
   expect(storedResource?.resource).toBe(RESOURCE);
   const exchangeFetch: typeof fetch = async (input, init) => {
@@ -145,6 +149,7 @@ describe("OAuth MCP server", () => {
       expect(response.status).toBe(401);
       expect(response.headers.get("location")).toBeNull();
       expect(response.headers.get("www-authenticate")).toContain("resource_metadata=");
+      expect(response.headers.get("www-authenticate")).toContain('scope="content:read content:write"');
     }
     const metadata = await mcpMetadataResponse(env, request("/.well-known/oauth-protected-resource/mcp/"));
     expect(await metadata.json()).toMatchObject({resource: RESOURCE, authorization_servers: [`${ORIGIN}/api/auth`], scopes_supported: ["content:read", "content:write"]});
@@ -160,6 +165,19 @@ describe("OAuth MCP server", () => {
       expect(response.status).toBe(isMcpPath(path) ? 401 : 200);
       expect(response.headers.get("cache-control")).toBe("private, no-store");
       expect(response.headers.get("location")).toBeNull();
+    }
+  });
+
+  it("registers read and write access by default while preserving explicit read-only requests", async () => {
+    await updateMcpSettings(env, {enabled: true});
+    for (const scope of [undefined, "content:read"]) {
+      const registered = await route(authRoute, request("/api/auth/oauth2/register", {
+        method: "POST", headers: {"content-type": "application/json"},
+        body: JSON.stringify({client_name: "Scope defaults", redirect_uris: ["https://client.example/callback"], token_endpoint_auth_method: "none", scope}),
+      }));
+      const metadata = await registered.json();
+      expect(registered.ok).toBe(true);
+      expect(metadata).toMatchObject({scope: scope ?? "content:read content:write"});
     }
   });
 
