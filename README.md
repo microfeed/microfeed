@@ -98,7 +98,8 @@ microfeed provides a simple yet powerful [admin dashboard](https://docs.microfee
 where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-<img src="https://github.com/user-attachments/assets/c09752ab-b59f-47ae-9fae-029895c2b6a4" width="100%" alt="Dashboard home">
+<img width="3400" height="2358" alt="Dashboard home" src="https://github.com/user-attachments/assets/c3836bb9-a4db-4554-8007-c2fa42d3ee44" />
+
 
 Each instance includes a remote [MCP server](https://docs.microfeed.org/automation/mcp/)
 for compatible AI assistants such as ChatGPT, Claude, Gemini, and Codex.
