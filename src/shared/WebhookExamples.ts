@@ -10,6 +10,7 @@ import {
 
 export type WebhookExampleSourceKind =
   | "channel"
+  | "tag"
   | "item"
   | "page"
   | "page_navigation"
@@ -26,6 +27,9 @@ export interface WebhookEventDefinition {
 }
 
 const descriptions: Record<WebhookEventType, Omit<WebhookEventDefinition, "type">> = {
+  "tag.created": {description: "A public tag was created.", group: "Tags", name: "Tag created", sourceKind: "tag"},
+  "tag.updated": {description: "A tag name, slug, or description changed. Membership changes use item.updated.", group: "Tags", name: "Tag updated", sourceKind: "tag"},
+  "tag.deleted": {description: "A tag was deleted; items are preserved. The object is its last snapshot.", group: "Tags", name: "Tag deleted", sourceKind: "tag"},
   "channel.updated": {
     description: "The primary channel's public metadata changed.",
     group: "Channel",
@@ -219,6 +223,7 @@ export function webhookItemSnapshot(
       }]
     : undefined);
   return definedEntries([
+    ["tags", Array.isArray(item.tags) ? item.tags.map(tag => ({id: tag.id, name: tag.name, slug: tag.slug})) : []],
     ["_microfeed", item._microfeed ?? definedEntries([
       ["seo", item.seo],
       ["podcast", item.podcast],
@@ -415,6 +420,13 @@ function previousStatus(type: WebhookEventType): string | null {
 }
 
 function exampleObject(type: WebhookEventType): Record<string, unknown> {
+  if (type.startsWith("tag.")) return {
+    id: "tag_example", name: "Announcements", slug: "announcements", description: "Product news.",
+    date_created: timestamp, date_modified: timestamp, published_item_count: 2,
+    url: "https://feed.example.com/tags/announcements/",
+    rss_url: "https://feed.example.com/tags/announcements/rss/",
+    json_url: "https://feed.example.com/tags/announcements/json/",
+  };
   if (type === "channel.updated") {
     return {
       _microfeed: {copyright: "© 2026 Example Publisher"},
@@ -531,6 +543,7 @@ function exampleApiPath(
   if (type === "page.navigation_updated") return undefined;
   if (subjectType === "channel") return "/api/v1/channels/primary/";
   if (subjectType === "item") return `/api/v1/items/${subjectId}/`;
+  if (subjectType === "tag") return `/api/v1/tags/by-id/${subjectId}/`;
   if (subjectType === "page") return `/api/v1/pages/${subjectId}/`;
   if (subjectType === "site_file") return `/api/v1/site-files/${subjectId}/`;
   return undefined;

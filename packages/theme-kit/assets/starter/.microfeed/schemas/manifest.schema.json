@@ -99,6 +99,16 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 240
+            },
+            "webTag": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webTags": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
             }
           },
           "required": [
@@ -224,6 +234,16 @@
               "maxLength": 240
             },
             "webItem": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webTag": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "webTags": {
               "type": "string",
               "minLength": 1,
               "maxLength": 240

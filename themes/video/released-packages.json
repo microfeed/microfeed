@@ -4,6 +4,30 @@
     {
       "checksumSha256": "f60312affc48806eecd68e86f99266367051a4af781bb84342857aaf3c47d334",
       "version": "1.0.0"
+    },
+    {
+      "checksumSha256": "8d8eed2172b4b081178c2c1b63d828b11192fe19c6ae75f704cc007a6b6a5aa3",
+      "version": "1.0.1"
+    },
+    {
+      "checksumSha256": "9c71148cbc2d0074b4d85cd9aeca3a46a9572a513c5a267813d9f6b803d0b55e",
+      "version": "1.0.2"
+    },
+    {
+      "checksumSha256": "944aeddb5ad7cfdccdff87ed07e982a3e9ffcb12e87c06c5b16540b7de4d0eb5",
+      "version": "1.0.3"
+    },
+    {
+      "checksumSha256": "28a61bc3e16282220a5cfbe5f0a62c86cc124430c00e8d7f3f62472120422ae6",
+      "version": "1.0.4"
+    },
+    {
+      "checksumSha256": "8ca95dd62129d06dbe9045b2d1e9a30953c6eb97afe4534a7145108d0052f3ee",
+      "version": "1.0.5"
+    },
+    {
+      "checksumSha256": "51fa9be82675af1d5edab924fafb416ab1c42b21c7e6b333cbe954d337b0d9c9",
+      "version": "1.0.6"
     }
   ]
 }

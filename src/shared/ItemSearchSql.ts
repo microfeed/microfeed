@@ -1,4 +1,4 @@
-import {CREATE_CHARACTER_SEARCH_SQL, DROP_CHARACTER_SEARCH_SQL} from "./CharacterSearchSql";
+import {createCharacterSearchSql, DROP_CHARACTER_SEARCH_SQL} from "./CharacterSearchSql";
 
 export const SITE_SEARCH_VIRTUAL_TABLE_PREFIXES = [
   "site_search_bigram",
@@ -19,6 +19,9 @@ UPDATE site_search_metadata
 SET ready = 0, normalized_at = NULL
 WHERE id = 1;
 ${DROP_CHARACTER_SEARCH_SQL}
+DROP TRIGGER IF EXISTS tags_site_search_after_insert;
+DROP TRIGGER IF EXISTS tags_site_search_after_update;
+DROP TRIGGER IF EXISTS tags_site_search_after_delete;
 DROP TRIGGER IF EXISTS items_site_search_after_insert;
 DROP TRIGGER IF EXISTS items_site_search_after_update;
 DROP TRIGGER IF EXISTS items_site_search_after_delete;
@@ -33,8 +36,8 @@ DROP TABLE IF EXISTS site_search_title_trigram;
 DELETE FROM site_search_documents;
 `;
 
-export const CREATE_SITE_SEARCH_INDEX_SQL = `
-${CREATE_CHARACTER_SEARCH_SQL}
+export function createSiteSearchIndexSql(includeTags = true): string { return `
+${createCharacterSearchSql(includeTags)}
 CREATE VIRTUAL TABLE IF NOT EXISTS site_search_exact USING fts5(
   content_type UNINDEXED,
   content_id UNINDEXED,
@@ -162,6 +165,23 @@ SELECT
   content_text, pub_date, updated_at, json_extract(data, '$.image')
 FROM items
 WHERE status != 3;
+${includeTags ? `
+CREATE TRIGGER IF NOT EXISTS tags_site_search_after_insert AFTER INSERT ON tags
+WHEN NEW.deleted_at IS NULL BEGIN
+  INSERT INTO site_search_documents (content_type, content_id, status, title, content_text, published_at, updated_at, slug)
+  VALUES ('tag', NEW.id, 1, NEW.name, NEW.description, NEW.created_at, NEW.updated_at, NEW.slug);
+END;
+CREATE TRIGGER IF NOT EXISTS tags_site_search_after_update AFTER UPDATE ON tags BEGIN
+  DELETE FROM site_search_documents WHERE content_type = 'tag' AND content_id = OLD.id;
+  INSERT INTO site_search_documents (content_type, content_id, status, title, content_text, published_at, updated_at, slug)
+  SELECT 'tag', NEW.id, 1, NEW.name, NEW.description, NEW.created_at, NEW.updated_at, NEW.slug WHERE NEW.deleted_at IS NULL;
+END;
+CREATE TRIGGER IF NOT EXISTS tags_site_search_after_delete AFTER DELETE ON tags BEGIN
+  DELETE FROM site_search_documents WHERE content_type = 'tag' AND content_id = OLD.id;
+END;
+INSERT INTO site_search_documents (content_type, content_id, status, title, content_text, published_at, updated_at, slug)
+SELECT 'tag', id, 1, name, description, created_at, updated_at, slug FROM tags WHERE deleted_at IS NULL;
+` : ""}
 INSERT INTO site_search_documents (
   content_type, content_id, status, title, content_text,
   published_at, updated_at, image
@@ -171,7 +191,8 @@ SELECT
   published_at, updated_at, NULL
 FROM pages
 WHERE status != 3 AND slug != '404' COLLATE NOCASE;
-`;
+`; }
+export const CREATE_SITE_SEARCH_INDEX_SQL = createSiteSearchIndexSql();
 
 // Keep the old names while deployment and snapshot callers migrate. Their
 // behavior now prepares the unified site search corpus.

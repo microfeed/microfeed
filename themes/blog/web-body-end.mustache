@@ -1,3 +1,14 @@
+{{#_microfeed.tag}}{{#tag_navigation.items.length}}
+<section class="mf-tag-discovery" aria-label="Browse tags">
+  <div class="mf-tag-discovery-heading">
+    <h2>Browse tags</h2>
+    <a href="{{tag_navigation.url}}">All tags →</a>
+  </div>
+  <ul class="mf-item-tags">
+    {{#tag_navigation.items}}<li><a rel="tag" href="{{url}}">{{name}}</a></li>{{/tag_navigation.items}}
+  </ul>
+</section>
+{{/tag_navigation.items.length}}{{/_microfeed.tag}}
 <footer class="blog-footer">
   <strong>{{title}}</strong>
   <span>{{#_microfeed.copyright}}{{_microfeed.copyright}}{{/_microfeed.copyright}}{{^_microfeed.copyright}}© {{current_year}}{{/_microfeed.copyright}}</span>

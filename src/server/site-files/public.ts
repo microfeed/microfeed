@@ -2,6 +2,7 @@ import {hasOtherCanonical} from "@/server/seo/metadata";
 import {escapeHtml} from "@/shared/StringUtils";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {listPages} from "@/server/pages/service";
+import {tagsForSiteFile} from "@/server/tags/service";
 import {defaultSiteFileTemplate} from "@/shared/SiteFileTemplates";
 import {SITE_FILE_TEMPLATE_COLLECTION_LIMIT} from "@/shared/SiteFiles";
 import {ITEM_ORDERS, ITEM_SORTS} from "@/shared/ItemPagination";
@@ -49,6 +50,7 @@ async function llmsContent(
     "## Site feeds",
     "",
     `- Website: ${new URL("/", request.url)}`,
+    `- Tags: ${new URL("/tags/", request.url)}`,
     `- JSON Feed: ${new URL("/json/", request.url)}`,
     `- RSS Feed: ${new URL("/rss/", request.url)}`,
   ];
@@ -90,6 +92,10 @@ async function sitemapContent(
     xml += `<image:image><image:loc>${escapeHtml(feed.icon)}</image:loc></image:image>`;
   }
   xml += "</url>";
+  xml += `<url><loc>${escapeHtml(String(new URL("/tags/", request.url)))}</loc></url>`;
+  for (const tag of await tagsForSiteFile(loaded.database.FEED_DB, new URL(request.url).origin, SITE_FILE_TEMPLATE_COLLECTION_LIMIT)) {
+    xml += `<url><loc>${escapeHtml(tag.url)}</loc><lastmod>${escapeHtml(tag.date_modified)}</lastmod></url>`;
+  }
   for (const page of pages.items) {
     xml += `<url><loc>${escapeHtml(page.url)}</loc>`;
     xml += `<lastmod>${escapeHtml(page.date_modified)}</lastmod></url>`;

@@ -14,6 +14,8 @@ import {
   isReservedThemePackageId,
   LEGACY_THEME_DESCRIPTION_MAX_LENGTH,
   THEME_DESCRIPTION_MAX_LENGTH,
+  THEME_MAX_TEMPLATE_BYTES,
+  THEME_MAX_TEXT_BYTES,
 } from "@/shared/themes/ThemeContract";
 import {
   ThemeValidationError,
@@ -80,6 +82,31 @@ function v2Package(searchItemDestination?: "attachment" | "url" | "web") {
 }
 
 describe("theme contract", () => {
+  it("accepts optional tag templates in both formats without changing existing packages", () => {
+    for (const source of [{manifest: manifest(), bundle: bundle()}, v2Package()]) {
+      expect(validateThemePackage(source.manifest, source.bundle)).toEqual(source);
+      const files = {...source.manifest.files, webTag: "tag.mustache", webTags: "tags.mustache"};
+      const content = {...source.bundle, webTag: "{{_microfeed.tag.name}}", webTags: "{{#tags.items}}{{name}}{{/tags.items}}"};
+      const validated = validateThemePackage({...source.manifest, files}, content);
+      expect(validated.bundle).toMatchObject({webTag: content.webTag, webTags: content.webTags});
+      expect(canonicalThemePackage(validated.manifest, content)).not.toBe(canonicalThemePackage(source.manifest, source.bundle));
+      expect(validateStoredThemePackage({...source.manifest, files}, content).bundle.webTags).toBe(content.webTags);
+    }
+  });
+
+  it("validates declarations, syntax, paths, and size limits for optional templates", () => {
+    const source = v2Package();
+    const withTag = {...source.manifest, files: {...source.manifest.files, webTag: "tag.mustache"}};
+    expect(() => validateThemePackage(withTag, source.bundle)).toThrow("bundle.webTag");
+    expect(() => validateThemePackage(source.manifest, {...source.bundle, webTag: "custom"})).toThrow("Declare the optional template path");
+    expect(() => validateThemePackage({...withTag, files: {...withTag.files, webTag: "../tag.mustache"}}, {...source.bundle, webTag: "custom"})).toThrow("Path traversal");
+    expect(() => validateThemePackage(withTag, {...source.bundle, webTag: "{{#unclosed}}"})).toThrow("Invalid Mustache syntax");
+    expect(() => validateThemePackage(withTag, {...source.bundle, webTag: "x".repeat(THEME_MAX_TEMPLATE_BYTES + 1)})).toThrow("131072-byte limit");
+    const large = {...source.bundle, webFeed: "x".repeat(THEME_MAX_TEMPLATE_BYTES), webItem: "x".repeat(THEME_MAX_TEMPLATE_BYTES), webHeader: "x".repeat(THEME_MAX_TEMPLATE_BYTES), webTag: "x".repeat(THEME_MAX_TEMPLATE_BYTES)};
+    expect(() => validateThemePackage(withTag, large)).toThrow(`${THEME_MAX_TEXT_BYTES}-byte limit`);
+    expect(validateThemePackage(withTag, {...source.bundle, webTag: ""}).bundle.webTag).toBe("");
+  });
+
   it("reserves microfeed package IDs for bundled themes", () => {
     expect(isReservedThemePackageId("microfeed.default")).toBe(true);
     expect(isReservedThemePackageId("microfeed.future-theme")).toBe(true);

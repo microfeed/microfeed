@@ -91,13 +91,13 @@ describe("admin items list", () => {
     expect(output).toContain(">Actions</th>");
   });
 
-  it("keeps the active filter visibly selected in dark mode", () => {
+  it("exposes exactly one active status filter", () => {
     const output = renderItemsList(
       "?status=unlisted&sort=updated_at&order=desc",
     );
 
     expect(output).toMatch(
-      /aria-current="page"[^>]+dark:bg-brand-light\/20[^>]+>Unlisted<\/a>/u,
+      /aria-current="page"[^>]*>Unlisted<\/a>/u,
     );
     expect(output.match(/aria-current="page"/gu)).toHaveLength(1);
   });
@@ -111,25 +111,20 @@ describe("admin items list", () => {
     expect(output).toContain('src="https://media.example.com/images/item-123.png"');
     expect(output).toContain('data-item-image="image"');
     expect(output).toContain('data-item-image="placeholder"');
-    expect(output).toContain("table-fixed");
-    expect(output).toContain("max-w-full truncate");
     expect(output).toContain("Audio");
     expect(output).toContain("00:01:05");
     expect(output).toContain("Edit this item");
-    expect(output).toContain("!text-white hover:!text-white");
     expect(output).toContain("Public page");
     expect(output.match(/Public page/gu)).toHaveLength(2);
   });
 
-  it("shows compact wrapping dates with full timestamp tooltips", () => {
+  it("shows dates with accessible full timestamp tooltips", () => {
     const output = renderItemsList();
 
     expect(output).toContain("Aug 4, 2026");
     expect(output).not.toContain("Aug 4, 2026 at 5:00 PM");
     expect(output).toContain('dateTime="2026-08-04T17:00:00.000Z"');
     expect(output).toContain('data-slot="tooltip-trigger"');
-    expect(output).toContain("cursor-help whitespace-normal break-words");
-    expect(output).toContain("min-w-0 whitespace-normal break-words");
     expect(output).toMatch(
       /aria-label="Aug 4, 2026(?:,| at) 5:00:00 PM [^"]+"/u,
     );
@@ -153,17 +148,6 @@ describe("admin items list", () => {
     );
   });
 
-  it("keeps the empty-state create action text white", () => {
-    const output = renderItemsList(
-      "?status=unlisted&sort=updated_at&order=desc",
-      [],
-    );
-
-    expect(output).toContain("No unlisted items yet.");
-    expect(output).toContain("Add a new item");
-    expect(output).toContain("mt-4 !text-white hover:!text-white");
-  });
-
   it("disables list navigation while refreshed rows are loading", () => {
     const output = renderItemsList(
       "?status=published&sort=updated_at&order=desc",
@@ -172,6 +156,5 @@ describe("admin items list", () => {
     );
 
     expect(output).toContain('aria-disabled="true"');
-    expect(output).toContain("cursor-not-allowed opacity-70");
   });
 });

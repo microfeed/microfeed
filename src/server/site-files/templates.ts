@@ -1,4 +1,5 @@
 import {hasOtherCanonical} from "@/server/seo/metadata";
+import {tagsForSiteFile} from "@/server/tags/service";
 import {SyntaxValidator} from "fast-xml-validator";
 
 import {resolveApiAccessSettings} from "@/shared/Api";
@@ -159,6 +160,7 @@ export async function renderSiteFileForRequest(
     itemTemplateContext(item, index, feedItems.length)
   );
   const origin = new URL(request.url).origin;
+  const tags = await tagsForSiteFile(database.FEED_DB, origin, SITE_FILE_TEMPLATE_COLLECTION_LIMIT);
   const homePageUrl = input.allowLargeGeneratedSitemap ? new URL("/", origin).toString() : publicFeed.home_page_url ?? new URL("/", origin).toString();
   const apiLlmsFullUrl = siteFileApiLlmsFullUrl(feedContent, request);
   const context: Record<string, unknown> = {
@@ -166,6 +168,7 @@ export async function renderSiteFileForRequest(
     home_page_url: homePageUrl,
     items,
     pages,
+    tags,
     _site: {
       ...(apiLlmsFullUrl ? {api_llms_full_url: apiLlmsFullUrl} : {}),
       filename: input.filename,
@@ -177,6 +180,7 @@ export async function renderSiteFileForRequest(
       origin,
       rss_feed_url: new URL("/rss/", origin).toString(),
       sitemap_url: new URL("/sitemap.xml", origin).toString(),
+      tags_url: new URL("/tags/", origin).toString(),
     },
   };
   const content = renderSiteFileTemplate(input.template, context);

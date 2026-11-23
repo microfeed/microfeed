@@ -1,4 +1,26 @@
 import * as z from "zod";
+import {tagNameError, tagSlugError} from "./Tags";
+
+export const apiTagNameSchema = z.string().trim().superRefine((value, context) => {
+    const error = tagNameError(value);
+    if (error) context.addIssue({code: "custom", message: error});
+  })
+  .meta({description: "A unique tag name, at most 50 Unicode code points after NFC normalization and trimming."});
+export const apiTagInputSchema = z.object({
+  name: apiTagNameSchema.optional(),
+  slug: z.string().refine(value => !tagSlugError(value), "Invalid tag slug.").optional(),
+  description: z.string().max(10000).optional().meta({description: "An optional plain-text description."}),
+}).meta({id: "TagInput"});
+export const apiTagCreateInputSchema = apiTagInputSchema.extend({name: apiTagNameSchema}).meta({id: "TagCreateInput"});
+export const apiTagOutputSchema = z.object({
+  id: z.string(), name: apiTagNameSchema, slug: z.string(), description: z.string(),
+  date_created: z.iso.datetime(), date_modified: z.iso.datetime(),
+  published_item_count: z.number().int().nonnegative(), url: z.url(), rss_url: z.url(), json_url: z.url(),
+}).meta({id: "Tag"});
+export const apiTagListResponseSchema = z.object({items: z.array(apiTagOutputSchema), next_cursor: z.string().optional()})
+  .meta({id: "TagListResponse"});
+export const apiTagReferenceSchema = apiTagOutputSchema.pick({id: true, name: true, slug: true, url: true, rss_url: true, json_url: true})
+  .meta({id: "TagReference"});
 import {channelPodcastSchema, itemPodcastSchema, podcastChapterDocumentSchema} from "./Podcast";
 import "zod-openapi";
 
@@ -68,6 +90,7 @@ export const apiAttachmentOutputSchema = apiAttachmentSchema.extend({
 }).meta({id: "AttachmentOutput"});
 
 export const apiItemMicrofeedSchema = z.object({
+  tags: z.array(apiTagReferenceSchema).optional(),
   podcast: itemPodcastSchema.nullable().optional().meta({
     description: "Podcast episode fields: transcripts, ordered chapters, people, and license. Omitted properties are preserved on update; null clears a property. Empty people and a cleared license inherit channel defaults. Chapters are also served as application/json+chapters at /i/{id}/chapters.json for published or unlisted items.",
   }),
@@ -85,6 +108,8 @@ export const apiItemLinkSchema = z.union([z.url(), z.literal("")]).nullable().op
 });
 
 export const apiItemInputSchema = z.object({
+  tag_slugs: z.array(z.string().min(1)).optional().meta({description: "Replace tags by current slug. Omitted preserves; [] clears. Mutually exclusive with tag_ids. Unknown tags reject the entire write."}),
+  tag_ids: z.array(z.string().min(1)).optional().meta({description: "Replace tags by stable ID. Mutually exclusive with tag_slugs."}),
   _microfeed: apiItemMicrofeedSchema.optional(),
   attachment: apiAttachmentSchema.optional().meta({
     description: "Compatibility input alias for attachments[0]. Prefer attachments.",
@@ -124,6 +149,7 @@ export const apiItemValidationResponseSchema = z.object({
 }).meta({id: "ItemValidationResponse"});
 
 export const apiItemOutputSchema = apiItemInputSchema.extend({
+  tags: z.array(z.string()).optional().meta({description: "JSON Feed tag names. Stable references are in _microfeed.tags."}),
   authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
   attachments: z.array(apiAttachmentOutputSchema).optional(),
   content_text: z.string(),
@@ -332,7 +358,11 @@ export const apiSearchPageSchema = apiPageOutputSchema.omit({
 }).loose()).meta({id: "SearchPage"});
 
 export const apiSearchResponseSchema = z.object({
-  items: z.array(z.union([apiSearchItemSchema, apiSearchPageSchema])),
+  items: z.array(z.union([apiSearchItemSchema, apiSearchPageSchema, z.object({
+    type: z.literal("tag"), id: z.string(), slug: z.string(), title: z.string(),
+    content_text: z.string(), date_modified: z.iso.datetime(), url: z.url(),
+    highlights: z.object({title: z.array(apiSearchHighlightSegmentSchema), content_text: z.array(apiSearchHighlightSegmentSchema)}),
+  }).meta({id: "SearchTag"})])),
   next_cursor: z.string().optional(),
 }).meta({id: "SearchResponse"});
 
@@ -362,17 +392,13 @@ export const apiSearchQuerySchema = z.object({
   ).default("published,unlisted,unpublished").meta({
     description: "Comma-separated content statuses. Deleted content is never searched.",
   }),
-  types: z.enum([
-    "items",
-    "pages",
-    "items,pages",
-    "pages,items",
-  ]).default("items").meta({
-    description: "Content types to search. The default preserves item-only behavior.",
+  types: z.string().regex(/^(?:items|pages|tags)(?:,(?:items|pages|tags))*$/u).default("items").meta({
+    description: "Comma-separated items, pages, and/or tags. Defaults to items. Status/date filters apply only to items and Pages, not tags.",
   }),
 });
 
 export const apiFeedMicrofeedSchema = z.object({
+  tag: apiTagOutputSchema.optional(),
   podcast: channelPodcastSchema.nullable().optional(),
   seo: seoSchema.nullable().optional(),
   publisher: publisherIdentitySchema.nullable().optional(),
@@ -520,7 +546,7 @@ export const apiWebhookSiteSchema = z.object({
 export const apiWebhookSubjectSchema = z.object({
   api_path: z.string().optional(),
   id: z.string(),
-  type: z.enum(["channel", "item", "page", "site_file", "theme", "webhook"]),
+  type: z.enum(["channel", "item", "page", "tag", "site_file", "theme", "webhook"]),
 }).meta({id: "WebhookSubject"});
 
 export const apiWebhookChannelSubjectSchema = apiWebhookSubjectSchema.extend({
@@ -529,6 +555,7 @@ export const apiWebhookChannelSubjectSchema = apiWebhookSubjectSchema.extend({
 export const apiWebhookItemSubjectSchema = apiWebhookSubjectSchema.extend({
   type: z.literal("item"),
 }).meta({id: "WebhookItemSubject"});
+export const apiWebhookTagSubjectSchema = apiWebhookSubjectSchema.extend({type: z.literal("tag")}).meta({id: "WebhookTagSubject"});
 export const apiWebhookPageSubjectSchema = apiWebhookSubjectSchema.extend({
   type: z.literal("page"),
 }).meta({id: "WebhookPageSubject"});
@@ -575,6 +602,7 @@ export const apiWebhookChannelSnapshotSchema = z.object({
 }).meta({id: "WebhookChannelSnapshot"});
 
 export const apiWebhookItemSnapshotSchema = z.object({
+  tags: z.array(apiTagReferenceSchema.pick({id: true, name: true, slug: true})).optional(),
   _microfeed: apiItemMicrofeedSchema.extend({seo: webhookSeoSchema.nullable().optional()}).meta({id: "WebhookItemMicrofeed"}).optional(),
   language: languageOverrideSchema.nullable().optional(),
   authors: z.array(identitySchema.pick({name: true, url: true})).optional(),
@@ -697,7 +725,11 @@ const webhookVariant = <T extends typeof WEBHOOK_EVENT_TYPES[number]>(
   data: z.ZodType,
 ) => apiWebhookEventBaseSchema.extend({data, subject, type: z.literal(type)});
 
+const apiWebhookTagDataSchema = webhookDataSchema("WebhookTagData", apiTagOutputSchema, z.null());
 export const apiWebhookEventSchema = z.discriminatedUnion("type", [
+  webhookVariant("tag.created", apiWebhookTagSubjectSchema, apiWebhookTagDataSchema),
+  webhookVariant("tag.updated", apiWebhookTagSubjectSchema, apiWebhookTagDataSchema),
+  webhookVariant("tag.deleted", apiWebhookTagSubjectSchema, apiWebhookTagDataSchema),
   webhookVariant("channel.updated", apiWebhookChannelSubjectSchema, apiWebhookChannelDataSchema),
   webhookVariant("item.created", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),
   webhookVariant("item.updated", apiWebhookItemSubjectSchema, apiWebhookItemDataSchema),

@@ -39,8 +39,30 @@
         "json_url": "https://example.test/json/items/audio-field-recording/",
         "rss_url": "https://example.test/rss/items/audio-field-recording/",
         "status": "published",
-        "web_url": "https://example.test/i/audio-field-recording/"
-      }
+        "web_url": "https://example.test/i/audio-field-recording/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          },
+          {
+            "id": "preview-unicode",
+            "name": "世界 🌍",
+            "slug": "世界",
+            "url": "https://example.test/tags/%E4%B8%96%E7%95%8C/",
+            "rss_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/rss/",
+            "json_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes",
+        "世界 🌍"
+      ]
     },
     {
       "id": "running-water-video",
@@ -63,8 +85,21 @@
         "json_url": "https://example.test/json/items/running-water-video/",
         "rss_url": "https://example.test/rss/items/running-water-video/",
         "status": "published",
-        "web_url": "https://example.test/i/running-water-video/"
-      }
+        "web_url": "https://example.test/i/running-water-video/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "field-notebook",
@@ -86,8 +121,21 @@
         "json_url": "https://example.test/json/items/field-notebook/",
         "rss_url": "https://example.test/rss/items/field-notebook/",
         "status": "published",
-        "web_url": "https://example.test/i/field-notebook/"
-      }
+        "web_url": "https://example.test/i/field-notebook/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "field-guide",
@@ -109,8 +157,21 @@
         "json_url": "https://example.test/json/items/field-guide/",
         "rss_url": "https://example.test/rss/items/field-guide/",
         "status": "published",
-        "web_url": "https://example.test/i/field-guide/"
-      }
+        "web_url": "https://example.test/i/field-guide/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "reading-list",
@@ -131,8 +192,21 @@
         "json_url": "https://example.test/json/items/reading-list/",
         "rss_url": "https://example.test/rss/items/reading-list/",
         "status": "published",
-        "web_url": "https://example.test/i/reading-list/"
-      }
+        "web_url": "https://example.test/i/reading-list/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "plain-text-note",
@@ -146,8 +220,21 @@
         "json_url": "https://example.test/json/items/plain-text-note/",
         "rss_url": "https://example.test/rss/items/plain-text-note/",
         "status": "published",
-        "web_url": "https://example.test/i/plain-text-note/"
-      }
+        "web_url": "https://example.test/i/plain-text-note/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     }
   ],
   "navigation_pages": [

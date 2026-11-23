@@ -67,6 +67,8 @@ const apiAccessDetails = [
 ] as const;
 
 const itemInputOptions = [
+  option("--tag <slug>", "Assign an existing public tag; repeat for multiple tags. Do not combine with --tag-id or --input."),
+  option("--tag-id <id>", "Assign by stable tag ID; repeat for multiple tags. Use JSON tag_ids: [] to clear all tags."),
   option("--title <text>", "Set the item title."),
   option("--content-html <html>", "Set the HTML body."),
   option(
@@ -97,6 +99,14 @@ const itemInputOptions = [
 ] as const;
 
 export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
+  {path: ["tag"], summary: "Manage always-public tags.", usage: "yarn microfeed tag list|get|create|update|delete [options]", options: [instanceOption, jsonOption],
+    details: ["Creating a tag publishes its name and description immediately, even when it has no published items. Tag names use at most 50 Unicode code points.", "Use the current slug by default or --id for stable lookup. Deletion removes memberships, not items, and requires the exact tag ID."],
+    examples: ["yarn microfeed tag create --name Announcements --json", "yarn microfeed tag get announcements --json"],
+    subcommands: ["list", "get", "create", "update", "delete"].map(name => ({name, description: `${name} tags.`}))},
+  ...["list", "get", "create", "update", "delete"].map(name => ({path: ["tag", name], summary: `${name} public tags.`, usage: `yarn microfeed tag ${name}${name === "get" || name === "update" || name === "delete" ? " [<slug>|--id <tag-id>]" : ""} [options]`,
+    options: [...(name === "list" ? [option("--limit <number>", "Return 1–100 tags."), option("--next-cursor <cursor>", "Continue listing.")] : name === "create" ? [] : [option("--id <tag-id>", "Use the immutable ID instead of a slug.")]),
+      ...(name === "create" || name === "update" ? [option("--name <text>", "Unique name; at most 50 Unicode code points."), option("--slug <slug>", "Set a Unicode URL slug; changing the name alone preserves the slug."), option("--description <text>", "Plain-text description."), option("--input <file|->", "Read a JSON object instead of field flags.")] : []),
+      ...(name === "delete" ? [option("--confirm <tag-id>", "Confirm deletion with the exact stable tag ID.")] : []), instanceOption, jsonOption], details: [], examples: []})),
   {
     details: [
       "Copies the exact microfeed release bundled with @microfeed/cli into a private, persistent cache and runs its repository-owned management CLI. It never checks out source into the current project.",
@@ -419,7 +429,7 @@ export const CLI_HELP_TOPICS: readonly CliHelpTopic[] = [
       ),
       option(
         "--types <types>",
-        "Search items, pages, or items,pages. Defaults to items for compatibility.",
+        "Search items, pages, tags, or a comma-separated combination. Defaults to items. Status/date filters do not apply to tags.",
       ),
       option(
         "--date-published-ms-gt <milliseconds>",
@@ -718,6 +728,7 @@ export function renderCliHelp(
     {syntax: "logout", description: "Revoke this computer's tokens and remove its saved instance."},
     {syntax: "instances", description: "List, select, or locally remove saved instances."},
     {syntax: "item", description: "List, search, read, create, update, or delete items."},
+    {syntax: "tag", description: "Manage public tags by slug or stable ID."},
     {syntax: "media", description: "Upload standalone media for rich content or later API use."},
     {syntax: "api", description: "Call one relative /api/v1/ REST operation."},
   ];

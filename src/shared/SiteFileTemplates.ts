@@ -28,6 +28,7 @@ Learn all the ins and outs of microfeed at <https://docs.microfeed.org/>.
 - Website: {{{home_page_url}}}
 - JSON Feed: {{{_site.json_feed_url}}}
 - RSS Feed: {{{_site.rss_feed_url}}}
+- Public tags: {{{_site.tags_url}}}
 {{#_site.has_pages}}
 
 ## Pages
@@ -60,6 +61,10 @@ const DEFAULT_SITEMAP_TEMPLATE = `<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>{{date_modified}}</lastmod>
   </url>
 {{/pages}}
+  <url><loc>{{_site.tags_url}}</loc></url>
+{{#tags}}
+  <url><loc>{{url}}</loc><lastmod>{{date_modified}}</lastmod></url>
+{{/tags}}
 {{#items}}
   <url>
     <loc>{{_site.web_url}}</loc>

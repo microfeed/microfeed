@@ -5,7 +5,11 @@
   "feed_url": "https://example.test/json/",
   "description": "Short documentaries about places, craft, and the people who keep looking closely.",
   "icon": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
-  "authors": [{"name": "Lumen Studio"}],
+  "authors": [
+    {
+      "name": "Lumen Studio"
+    }
+  ],
   "language": "en-US",
   "items": [
     {
@@ -16,9 +20,50 @@
       "content_text": "A quiet field film about water, repetition, and the last light of the day.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/2/24/A_lush_verdant_landscape.jpg",
       "date_published": "2026-08-20T18:00:00Z",
-      "authors": [{"name": "Inez Park"}],
-      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm","mime_type":"video/webm","size_in_bytes":1915000,"duration_in_seconds":3}],
-      "_microfeed": {"date_published_short":"Aug 20, 2026","duration_hhmmss":"00:03","is_video":true,"json_url":"https://example.test/json/items/night-water/","rss_url":"https://example.test/rss/items/night-water/","status":"published","web_url":"https://example.test/i/night-water/"}
+      "authors": [
+        {
+          "name": "Inez Park"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm",
+          "mime_type": "video/webm",
+          "size_in_bytes": 1915000,
+          "duration_in_seconds": 3
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 20, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/night-water/",
+        "rss_url": "https://example.test/rss/items/night-water/",
+        "status": "published",
+        "web_url": "https://example.test/i/night-water/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          },
+          {
+            "id": "preview-unicode",
+            "name": "世界 🌍",
+            "slug": "世界",
+            "url": "https://example.test/tags/%E4%B8%96%E7%95%8C/",
+            "rss_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/rss/",
+            "json_url": "https://example.test/tags/%E4%B8%96%E7%95%8C/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes",
+        "世界 🌍"
+      ]
     },
     {
       "id": "city-blue-hour",
@@ -28,9 +73,41 @@
       "content_text": "Windows, crossings, and small gestures from a city moving into night.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/4/46/City_at_Night_%28Unsplash%29.jpg",
       "date_published": "2026-08-15T17:00:00Z",
-      "authors": [{"name": "Mara Ellis"}],
-      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm","mime_type":"video/webm","size_in_bytes":1915000,"duration_in_seconds":3}],
-      "_microfeed": {"date_published_short":"Aug 15, 2026","duration_hhmmss":"00:03","is_video":true,"json_url":"https://example.test/json/items/city-blue-hour/","rss_url":"https://example.test/rss/items/city-blue-hour/","status":"published","web_url":"https://example.test/i/city-blue-hour/"}
+      "authors": [
+        {
+          "name": "Mara Ellis"
+        }
+      ],
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RunningWater.webm",
+          "mime_type": "video/webm",
+          "size_in_bytes": 1915000,
+          "duration_in_seconds": 3
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 15, 2026",
+        "duration_hhmmss": "00:03",
+        "is_video": true,
+        "json_url": "https://example.test/json/items/city-blue-hour/",
+        "rss_url": "https://example.test/rss/items/city-blue-hour/",
+        "status": "published",
+        "web_url": "https://example.test/i/city-blue-hour/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "location-notebook",
@@ -40,7 +117,26 @@
       "content_text": "Five practical notes on composition, ambient light, and knowing when not to move the camera.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Architecture_photography.jpg",
       "date_published": "2026-08-10T16:00:00Z",
-      "_microfeed": {"date_published_short":"Aug 10, 2026","json_url":"https://example.test/json/items/location-notebook/","rss_url":"https://example.test/rss/items/location-notebook/","status":"published","web_url":"https://example.test/i/location-notebook/"}
+      "_microfeed": {
+        "date_published_short": "Aug 10, 2026",
+        "json_url": "https://example.test/json/items/location-notebook/",
+        "rss_url": "https://example.test/rss/items/location-notebook/",
+        "status": "published",
+        "web_url": "https://example.test/i/location-notebook/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "ridge-contact-sheet",
@@ -50,8 +146,33 @@
       "content_text": "Reference stills collected while scouting the next field film.",
       "image": "https://upload.wikimedia.org/wikipedia/commons/9/94/Mountain_and_Landscape.jpg",
       "date_published": "2026-08-04T15:00:00Z",
-      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/9/94/Mountain_and_Landscape.jpg","mime_type":"image/jpeg"}],
-      "_microfeed": {"date_published_short":"Aug 4, 2026","is_image":true,"json_url":"https://example.test/json/items/ridge-contact-sheet/","rss_url":"https://example.test/rss/items/ridge-contact-sheet/","status":"published","web_url":"https://example.test/i/ridge-contact-sheet/"}
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Mountain_and_Landscape.jpg",
+          "mime_type": "image/jpeg"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Aug 4, 2026",
+        "is_image": true,
+        "json_url": "https://example.test/json/items/ridge-contact-sheet/",
+        "rss_url": "https://example.test/rss/items/ridge-contact-sheet/",
+        "status": "published",
+        "web_url": "https://example.test/i/ridge-contact-sheet/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "sound-check",
@@ -60,8 +181,36 @@
       "content_html": "<p>A raw location recording from the morning before production.</p>",
       "content_text": "A raw location recording from the morning before production.",
       "date_published": "2026-07-30T14:00:00Z",
-      "attachments": [{"url":"https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg","mime_type":"audio/ogg","size_in_bytes":1092440,"duration_in_seconds":31}],
-      "_microfeed": {"date_published_short":"Jul 30, 2026","duration_hhmmss":"00:31","is_audio":true,"json_url":"https://example.test/json/items/sound-check/","rss_url":"https://example.test/rss/items/sound-check/","status":"published","web_url":"https://example.test/i/sound-check/"}
+      "attachments": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Swale.ogg",
+          "mime_type": "audio/ogg",
+          "size_in_bytes": 1092440,
+          "duration_in_seconds": 31
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Jul 30, 2026",
+        "duration_hhmmss": "00:31",
+        "is_audio": true,
+        "json_url": "https://example.test/json/items/sound-check/",
+        "rss_url": "https://example.test/rss/items/sound-check/",
+        "status": "published",
+        "web_url": "https://example.test/i/sound-check/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     },
     {
       "id": "screening-guide",
@@ -70,17 +219,132 @@
       "content_html": "<p>A printable guide for hosting a small screening and conversation.</p>",
       "content_text": "A printable guide for hosting a small screening and conversation.",
       "date_published": "2026-07-23T13:00:00Z",
-      "attachments": [{"url":"https://example.test/media/lumen-screening-guide.pdf","mime_type":"application/pdf"}],
-      "_microfeed": {"date_published_short":"Jul 23, 2026","is_document":true,"json_url":"https://example.test/json/items/screening-guide/","rss_url":"https://example.test/rss/items/screening-guide/","status":"published","web_url":"https://example.test/i/screening-guide/"}
+      "attachments": [
+        {
+          "url": "https://example.test/media/lumen-screening-guide.pdf",
+          "mime_type": "application/pdf"
+        }
+      ],
+      "_microfeed": {
+        "date_published_short": "Jul 23, 2026",
+        "is_document": true,
+        "json_url": "https://example.test/json/items/screening-guide/",
+        "rss_url": "https://example.test/rss/items/screening-guide/",
+        "status": "published",
+        "web_url": "https://example.test/i/screening-guide/",
+        "tags": [
+          {
+            "id": "preview-tag",
+            "name": "Field notes",
+            "slug": "field-notes",
+            "url": "https://example.test/tags/field-notes/",
+            "rss_url": "https://example.test/tags/field-notes/rss/",
+            "json_url": "https://example.test/tags/field-notes/json/"
+          }
+        ]
+      },
+      "tags": [
+        "Field notes"
+      ]
     }
   ],
   "navigation_pages": [
-    {"id":"page-about","navigation_label":"About","navigation_order":1,"slug":"about","title":"About Lumen","url":"https://example.test/about/"},
-    {"id":"page-films","navigation_label":"Films","navigation_order":2,"slug":"films","title":"Film archive","url":"https://example.test/films/"},
-    {"id":"page-contact","navigation_label":"Contact","navigation_order":3,"slug":"contact","title":"Contact","url":"https://example.test/contact/"}
+    {
+      "id": "page-about",
+      "navigation_label": "About",
+      "navigation_order": 1,
+      "slug": "about",
+      "title": "About Lumen",
+      "url": "https://example.test/about/"
+    },
+    {
+      "id": "page-films",
+      "navigation_label": "Films",
+      "navigation_order": 2,
+      "slug": "films",
+      "title": "Film archive",
+      "url": "https://example.test/films/"
+    },
+    {
+      "id": "page-contact",
+      "navigation_label": "Contact",
+      "navigation_order": 3,
+      "slug": "contact",
+      "title": "Contact",
+      "url": "https://example.test/contact/"
+    }
   ],
-  "page": {"id":"page-about","title":"About Lumen","slug":"about","content_html":"<p>Lumen is an independent studio making patient films about place and craft.</p><h2>Watch with attention</h2><p>Every production is designed to work on a phone, a projector, or anywhere in between.</p>","content_text":"Lumen is an independent studio making patient films about place and craft.","date_created":"2026-01-01T00:00:00Z","date_modified":"2026-08-01T00:00:00Z","date_published":"2026-08-01T00:00:00Z","is_not_found_page":false,"meta_description":"About Lumen Channel","navigation_label":"About","navigation_order":1,"show_in_navigation":true,"status":"published","url":"https://example.test/about/"},
-  "search": {"query":"water","results":[{"id":"night-water","title":"Night water: a study in motion","type":"item","url":"https://example.test/i/night-water/","date_published":"2026-08-20T18:00:00Z","content_text":"A quiet field film about water, repetition, and the last light of the day."},{"id":"page-about","title":"About Lumen","type":"page","url":"https://example.test/about/","content_text":"Lumen is an independent studio making patient films about place and craft."}]},
-  "_microfeed": {"base_url":"https://example.test/","categories":[{"name":"Documentary"},{"name":"Field Notes"}],"copyright":"© 2026 Lumen Studio","description_text":"Short documentaries about places, craft, and the people who keep looking closely.","items_next_cursor":"older-films","items_order":"desc","items_sort":"published_at","items_sort_order":"Newest first","microfeed_version":"1.0.5","next_url":"https://example.test/?next_cursor=older-films","subscribe_methods":[{"enabled":true,"id":"rss","name":"RSS","type":"rss","url":"https://example.test/rss/"},{"enabled":true,"id":"json","name":"JSON Feed","type":"json","url":"https://example.test/json/"}]},
+  "page": {
+    "id": "page-about",
+    "title": "About Lumen",
+    "slug": "about",
+    "content_html": "<p>Lumen is an independent studio making patient films about place and craft.</p><h2>Watch with attention</h2><p>Every production is designed to work on a phone, a projector, or anywhere in between.</p>",
+    "content_text": "Lumen is an independent studio making patient films about place and craft.",
+    "date_created": "2026-01-01T00:00:00Z",
+    "date_modified": "2026-08-01T00:00:00Z",
+    "date_published": "2026-08-01T00:00:00Z",
+    "is_not_found_page": false,
+    "meta_description": "About Lumen Channel",
+    "navigation_label": "About",
+    "navigation_order": 1,
+    "show_in_navigation": true,
+    "status": "published",
+    "url": "https://example.test/about/"
+  },
+  "search": {
+    "query": "water",
+    "results": [
+      {
+        "id": "night-water",
+        "title": "Night water: a study in motion",
+        "type": "item",
+        "url": "https://example.test/i/night-water/",
+        "date_published": "2026-08-20T18:00:00Z",
+        "content_text": "A quiet field film about water, repetition, and the last light of the day."
+      },
+      {
+        "id": "page-about",
+        "title": "About Lumen",
+        "type": "page",
+        "url": "https://example.test/about/",
+        "content_text": "Lumen is an independent studio making patient films about place and craft."
+      }
+    ]
+  },
+  "_microfeed": {
+    "base_url": "https://example.test/",
+    "categories": [
+      {
+        "name": "Documentary"
+      },
+      {
+        "name": "Field Notes"
+      }
+    ],
+    "copyright": "© 2026 Lumen Studio",
+    "description_text": "Short documentaries about places, craft, and the people who keep looking closely.",
+    "items_next_cursor": "older-films",
+    "items_order": "desc",
+    "items_sort": "published_at",
+    "items_sort_order": "Newest first",
+    "microfeed_version": "1.0.5",
+    "next_url": "https://example.test/?next_cursor=older-films",
+    "subscribe_methods": [
+      {
+        "enabled": true,
+        "id": "rss",
+        "name": "RSS",
+        "type": "rss",
+        "url": "https://example.test/rss/"
+      },
+      {
+        "enabled": true,
+        "id": "json",
+        "name": "JSON Feed",
+        "type": "json",
+        "url": "https://example.test/json/"
+      }
+    ]
+  },
   "current_year": 2026
 }

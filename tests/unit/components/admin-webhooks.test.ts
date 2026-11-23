@@ -40,6 +40,7 @@ describe("Webhook Admin", () => {
       "Edit channel",
       "See all items",
       "Pages",
+      "Tags",
       "Site files",
       "API",
       "Webhooks",

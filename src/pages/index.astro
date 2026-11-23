@@ -7,7 +7,7 @@ import Theme from "@/server/themes/Theme";
 import PublicLayout from "../layouts/PublicLayout.astro";
 import {loadPublishedFeed, shouldHidePublicWeb} from "@/server/feed/feed";
 import {themeAssetBaseUrl} from "@/server/themes/ThemeAssets";
-import {navigationPages} from "@/server/pages/service";
+import {publicThemeNavigation} from "@/server/themes/navigation";
 
 const loaded = await loadPublishedFeed(env, Astro.request, {
   includeActiveTheme: true,
@@ -30,8 +30,7 @@ const assetBaseUrl = themeAssetBaseUrl(
   loaded.content.activeTheme?.bundle.assets,
   webSettings.publicBucketUrl,
 );
-const navigation = await navigationPages(loaded.database.FEED_DB, Astro.request);
-const extraContext = {navigation_pages: navigation};
+const extraContext = await publicThemeNavigation(loaded.database.FEED_DB, Astro.request);
 const theme = new Theme(
   loaded.publicFeed,
   loaded.content.settings,

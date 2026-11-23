@@ -21,6 +21,7 @@ const RESERVED_PAGE_SLUGS = new Set([
   "robots.txt",
   "rss",
   "search",
+  "tags",
   "sitemap.xml",
 ]);
 

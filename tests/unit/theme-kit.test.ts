@@ -44,6 +44,24 @@ afterEach(async () => {
 });
 
 describe("@microfeed/theme-kit package loading", () => {
+  it("loads, validates, and previews optional tag slots with the same fallbacks as production", async () => {
+    const theme = await loadThemePackage(await themeDirectory());
+    const fixture = {items: [{id: "one", title: "Published"}], title: "Site identity", home_page_url: "https://example.test/", version: "https://jsonfeed.org/version/1.1"};
+    theme.bundle.webTag = "<main>archive: {{_microfeed.tag.name}} {{items.0.title}}</main>";
+    theme.bundle.webTags = "<main>directory: {{#tags.items}}{{name}}{{/tags.items}}</main>";
+    expect(standaloneThemePreviewDocument(theme, fixture, "tag")).toContain("archive: Featured Published");
+    expect(standaloneThemePreviewDocument(theme, fixture, "tags")).toContain("directory: Featured");
+    delete theme.bundle.webTag;
+    delete theme.bundle.webTags;
+    theme.bundle.webFeed = "<main>feed fallback {{title}}</main>";
+    expect(standaloneThemePreviewDocument(theme, fixture, "tag")).toContain("feed fallback Featured");
+    expect(standaloneThemePreviewDocument(theme, fixture, "tags")).toContain('class="mf-tags-directory"');
+
+    const directory = await themeDirectory();
+    await writeFile(path.join(directory, "web-tag.mustache"), "{{#unclosed}}");
+    await expect(loadThemePackage(directory)).rejects.toThrow("Invalid Mustache syntax");
+  });
+
   it("preserves channel images and media metadata in JSON Feed RSS previews", () => {
     const rss = jsonFeedFixtureToRss({
       version: "https://jsonfeed.org/version/1.1",

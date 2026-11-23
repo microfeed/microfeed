@@ -181,6 +181,7 @@ export const NAV_ITEMS = {
   EDIT_CHANNEL: 'edit_channel',
   ALL_ITEMS: 'all_items',
   PAGES: 'pages',
+  TAGS: 'tags',
   SITE_FILES: 'site_files',
   API: 'api',
   WEBHOOKS: 'webhooks',
@@ -188,6 +189,7 @@ export const NAV_ITEMS = {
 } as const;
 
 export const NAV_ITEMS_DICT = {
+  [NAV_ITEMS.TAGS]: {name: 'Tags'},
   [NAV_ITEMS.ADMIN_HOME]: {
     name: 'Home',
   },

@@ -2,7 +2,7 @@
 
 This format-v2 package is generated from the independent sources under `src/`. Run `yarn workspace @microfeed/photo-theme-source build`, `validate`, and `test` after editing. Increment the immutable manifest version before changing released bytes.
 
-The portable package has eight generated text slots, a theme-specific preview fixture, and no packaged binary assets. Gallery cards are normal focusable links to large Item views so they work with keyboards and assistive technology without a custom lightbox.
+The portable package has eight required text slots, an optional All tags template, a theme-specific preview fixture, and no packaged binary assets. Gallery cards are normal focusable links to large Item views so they work with keyboards and assistive technology without a custom lightbox.
 
 ## Fixture media
 

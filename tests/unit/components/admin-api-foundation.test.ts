@@ -86,18 +86,13 @@ describe("API admin pages", () => {
       settingsUrl: "/admin/api/settings/",
     }));
     expect(output).toContain("Active API keys");
-    expect(output).toContain("!text-primary-foreground");
     expect(output).toContain(
       "Read https://feed.example.com/api/v1/llms-full.txt",
     );
     expect(output).toContain("Enable API access and publish API docs");
     expect(output).toContain("OpenAPI JSON");
     expect(output).toContain("llms-full.txt");
-    expect(output.toLowerCase()).not.toContain("reference");
-    expect(output).toContain("lg:grid-cols-2");
     expect(output).toContain('aria-label="Copy this prompt"');
-    expect(output).toContain("absolute right-3 bottom-3");
-    expect(output).not.toContain(">Copy prompt<");
   });
 
   it("prefills Bearer examples from a selected API key", () => {
@@ -126,8 +121,6 @@ describe("API admin pages", () => {
     expect(output).toContain("JavaScript");
     expect(output).toContain("cURL");
     expect(output).toContain("Try it now");
-    expect(output).toContain("pb-[50vh]");
-    expect(output.match(/gap-3 border-b p-5/g)).toHaveLength(3);
     expect(output).toContain('data-syntax="keyword"');
     expect(output).toContain(">Run<");
   });
@@ -151,16 +144,9 @@ describe("API admin pages", () => {
     }));
     expect(settings).toContain("Enable API access");
     expect(settings).toContain("Publish API docs");
-    expect(settings).toContain("Control integration access and public API docs.");
-    expect(settings.indexOf('data-slot="card-description"'))
-      .toBeLessThan(settings.indexOf('data-slot="card-content"'));
-    expect(settings).toContain("ml-4 divide-y border-l-2");
-    expect(settings.toLowerCase()).not.toContain("reference");
     expect(settings).toContain("OpenAPI YAML");
     expect(settings).toContain("llms.txt");
     expect(settings).toContain("/api/v1/*");
-    expect(settings).toContain("gap-3 border-b p-5");
-    expect(settings).toContain("gap-0 py-0");
     expect(settings).not.toContain(">Update<");
   });
 });

@@ -81,9 +81,17 @@ function isSiteFilePath(pathname: string): boolean {
   return /^\/[a-z0-9][a-z0-9._-]*\.[a-z0-9]+$/u.test(pathname);
 }
 
+function isTagPath(pathname: string): boolean {
+  return /^\/tags\/(?:[^/]+\/(?:rss\/|json\/)?)?$/u.test(pathname);
+}
+
+function isTagWebPath(pathname: string): boolean {
+  return /^\/tags\/(?:[^/]+\/)?$/u.test(pathname);
+}
+
 function isPublicPagePath(pathname: string): boolean {
   return PUBLIC_PAGE_PATHS.has(pathname) || isItemPath(pathname) ||
-    isStandalonePagePath(pathname) || isSiteFilePath(pathname);
+    isStandalonePagePath(pathname) || isSiteFilePath(pathname) || isTagPath(pathname);
 }
 
 function isPublicAssetPath(pathname: string): boolean {
@@ -106,12 +114,17 @@ function isFeedContentPath(pathname: string): boolean {
 function isThemePath(pathname: string): boolean {
   return pathname === "/" || pathname === "/rss/stylesheet/" ||
     /^\/i\/[^/]+\/$/u.test(pathname) ||
-    isStandalonePagePath(pathname) || pathname === "/search/";
+    isStandalonePagePath(pathname) || pathname === "/search/" || isTagWebPath(pathname);
 }
 
 function validPaginationQuery(url: URL): boolean {
   if (!url.search) return true;
-  if (!PAGINATED_PUBLIC_PATHS.has(url.pathname)) return false;
+  if (url.pathname === "/tags/") {
+    const entries = [...url.searchParams.entries()];
+    return entries.length === 1 && entries[0]![0] === "next_cursor" &&
+      entries[0]![1].length > 0 && entries[0]![1].length <= 200;
+  }
+  if (!PAGINATED_PUBLIC_PATHS.has(url.pathname) && !isTagPath(url.pathname)) return false;
 
   const entries = [...url.searchParams.entries()];
   if (
@@ -171,19 +184,19 @@ function isSensitivePath(pathname: string, adminPath: string): boolean {
 export function publicCacheTagsForPath(pathname: string): string[] {
   const tags = new Set<string>([PUBLIC_CACHE_TAGS.PUBLIC]);
   const siteFilePath = isSiteFilePath(pathname);
-  if (isFeedContentPath(pathname) || siteFilePath) {
+  if (isFeedContentPath(pathname) || siteFilePath || isTagPath(pathname)) {
     tags.add(PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY);
   }
   if (
     pathname === "/" || pathname === "/json/" || pathname === "/rss/" ||
-    pathname === "/sitemap.xml" || pathname === "/llms.txt" || siteFilePath || isItemPath(pathname)
+    pathname === "/sitemap.xml" || pathname === "/llms.txt" || siteFilePath || isItemPath(pathname) || isTagPath(pathname)
   ) {
     tags.add(PUBLIC_CACHE_TAGS.ITEMS);
   }
   if (
     pathname === "/" || /^\/i\/[^/]+\/$/u.test(pathname) ||
     isStandalonePagePath(pathname) || pathname === "/search/" ||
-    pathname === "/llms.txt" || pathname === "/sitemap.xml" || siteFilePath
+    pathname === "/llms.txt" || pathname === "/sitemap.xml" || siteFilePath || isTagWebPath(pathname)
   ) {
     tags.add(PUBLIC_CACHE_TAGS.PAGES);
   }

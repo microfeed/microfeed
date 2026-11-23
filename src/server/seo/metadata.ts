@@ -32,18 +32,19 @@ export interface MetadataInput {
   item?: Content;
   origin: string;
   headHtml: string;
+  archive?: {title: string; description: string; url: string};
 }
 
 /** One resolver owns generated metadata and precedence for both public editors. */
-export async function resolveMetadata({feed, item, origin, headHtml}: MetadataInput) {
+export async function resolveMetadata({feed, item, origin, headHtml, archive}: MetadataInput) {
   const seo: Seo = (item ?? feed)._microfeed?.seo ?? {};
-  const localUrl = item?._microfeed?.web_url ?? new URL("/", origin).href;
+  const localUrl = archive?.url ?? item?._microfeed?.web_url ?? new URL("/", origin).href;
   const configuredCanonical = item ? canonicalItemLink(item.url, localUrl) : undefined;
   let canonical = configuredCanonical || localUrl;
-  const title = seo.title || item?.title || feed.title || "Untitled";
-  const description = seo.description || defaultSeoDescription(item
+  const title = archive?.title ?? (seo.title || item?.title || feed.title || "Untitled");
+  const description = archive?.description ?? (seo.description || defaultSeoDescription(item
     ? item.content_text ?? htmlToPlainText(item.content_html ?? "")
-    : feed._microfeed?.description_text ?? htmlToPlainText(feed.description ?? ""));
+    : feed._microfeed?.description_text ?? htmlToPlainText(feed.description ?? "")));
   const language = item?.language || feed.language || "en";
   const inheritedImage = effectiveSocialImage(feed, item);
   const image = inheritedImage?.url ? {...inheritedImage, url: new URL(inheritedImage.url, origin).href} : undefined;
@@ -63,6 +64,7 @@ export async function resolveMetadata({feed, item, origin, headHtml}: MetadataIn
     if (image.alt) defaults.set("twitter:image:alt", image.alt);
   }
   const explicit = new Set<string>();
+  if (archive) ["title", "description", "canonical", "og:title", "og:description", "og:url", "twitter:title", "twitter:description"].forEach(key => explicit.add(key));
   if (seo.title) ["title", "og:title", "twitter:title"].forEach((key) => explicit.add(key));
   if (seo.description) ["description", "og:description", "twitter:description"].forEach((key) => explicit.add(key));
   if (item) ["canonical", "og:url"].forEach((key) => explicit.add(key));

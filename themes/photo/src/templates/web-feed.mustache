@@ -1,4 +1,17 @@
 <main class="photo-main">
+  {{#_microfeed.tag}}
+  <header class="mf-tag-header">
+    <div class="photo-item-topline"><a href="/">← Contact sheet</a></div>
+    <h1>{{name}}</h1>
+    {{#_microfeed.subscribe_methods.length}}
+    <nav class="mf-tag-subscriptions" aria-label="Tag feeds">
+      {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+    </nav>
+    {{/_microfeed.subscribe_methods.length}}
+    {{#description}}<p class="mf-tag-description">{{description}}</p>{{/description}}
+  </header>
+  {{/_microfeed.tag}}
+  {{^_microfeed.tag}}
   <section class="photo-intro">
     <div>
       <p class="photo-kicker">Visual journal</p>
@@ -11,6 +24,7 @@
     </div>
   </section>
 
+  {{/_microfeed.tag}}
   <section aria-labelledby="photo-latest">
     <div class="photo-section-heading"><h2 id="photo-latest">Recent work</h2><span>Open any frame for the full story</span></div>
     {{^items.length}}<div class="photo-empty"><span aria-hidden="true">▧</span><h3>The contact sheet is empty.</h3><p>New photographs will appear here when published.</p></div>{{/items.length}}
@@ -25,6 +39,7 @@
             <span>{{_microfeed.date_published_short}}{{#_microfeed.duration_hhmmss}} · {{_microfeed.duration_hhmmss}}{{/_microfeed.duration_hhmmss}}</span>
           </span>
         </a>
+
       </article>
       {{/items}}
     </div>

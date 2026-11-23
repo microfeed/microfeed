@@ -1,0 +1,16 @@
+<main class="mf-tags-directory">
+  {{#tags}}
+  <h1>{{title}}</h1>
+  <ul>
+    {{#items}}
+    <li>
+      <h2><a rel="tag" href="{{url}}">{{name}}</a></h2>
+      <p>{{description}}</p>
+      <p>{{published_item_count}} published items{{#rss_enabled}} · <a href="{{rss_url}}">RSS</a>{{/rss_enabled}}{{#json_enabled}} · <a href="{{json_url}}">JSON Feed</a>{{/json_enabled}}</p>
+    </li>
+    {{/items}}
+  </ul>
+  {{^items}}<p>No tags yet.</p>{{/items}}
+  {{#next_url}}<nav aria-label="Tag pagination"><a href="{{next_url}}">Next tags</a></nav>{{/next_url}}
+  {{/tags}}
+</main>

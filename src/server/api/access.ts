@@ -37,6 +37,8 @@ function integrationSuffix(suffix: string, legacy: boolean): boolean {
     /^channels\/[^/]+\/$/u.test(suffix) ||
     suffix === "media_files/presigned_urls/" ||
     (!legacy && (
+      suffix === "tags/" || /^tags\/[^/]+\/$/u.test(suffix) ||
+      /^tags\/by-id\/[^/]+\/$/u.test(suffix) ||
       suffix === "search/" ||
       suffix === "pages/" ||
       suffix === "pages/validate/" ||

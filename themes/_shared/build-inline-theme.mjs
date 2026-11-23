@@ -62,7 +62,10 @@ export async function buildInlineTheme({
   }
 
   const sourceDirectory = path.join(root, "src/templates");
-  const sources = new Map(await Promise.all(TEMPLATE_FILENAMES.map(
+  const manifest = JSON.parse(await readFile(path.join(root, "microfeed-theme.json"), "utf8"));
+  const optionalTemplates = ["webTag", "webTags"]
+    .flatMap(key => manifest.files[key] ? [manifest.files[key]] : []);
+  const sources = new Map(await Promise.all([...TEMPLATE_FILENAMES, ...optionalTemplates].map(
     async (filename) => [
       filename,
       normalizeNewlines(
@@ -81,6 +84,7 @@ export async function buildInlineTheme({
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;");
   const files = new Map([
+    ...optionalTemplates.map(filename => [filename, sources.get(filename)]),
     ["web-feed.mustache", sources.get("web-feed.mustache")],
     ["web-item.mustache", sources.get("web-item.mustache")],
     ["web-page.mustache", sources.get("web-page.mustache")],

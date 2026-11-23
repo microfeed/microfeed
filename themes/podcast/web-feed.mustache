@@ -1,4 +1,17 @@
 <main class="pod-main">
+  {{#_microfeed.tag}}
+  <header class="mf-tag-header">
+    <a class="pod-back" href="/">← All episodes</a>
+    <h1>{{name}}</h1>
+    {{#_microfeed.subscribe_methods.length}}
+    <nav class="mf-tag-subscriptions" aria-label="Tag feeds">
+      {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+    </nav>
+    {{/_microfeed.subscribe_methods.length}}
+    {{#description}}<p class="mf-tag-description">{{description}}</p>{{/description}}
+  </header>
+  {{/_microfeed.tag}}
+  {{^_microfeed.tag}}
   <section class="pod-hero">
     <div class="pod-cover-wrap">
       {{#icon}}<img class="pod-cover" src="{{icon}}" alt="{{title}} cover art" loading="eager" />{{/icon}}
@@ -17,6 +30,7 @@
     </div>
   </section>
 
+  {{/_microfeed.tag}}
   <section class="pod-episodes" aria-labelledby="latest-episodes">
     <div class="pod-section-heading">
       <p>From the archive</p>

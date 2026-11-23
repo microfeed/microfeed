@@ -10,7 +10,7 @@ import {
 } from "./events";
 import type {DatabaseMutationCommit} from "@/server/mutation";
 
-type WebhookContentKind = "item" | "page" | "site_file";
+type WebhookContentKind = "item" | "page" | "site_file" | "tag";
 
 function statusName(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -28,6 +28,7 @@ function contentSnapshot(
 ): Record<string, unknown> {
   if (kind === "item") return webhookItemSnapshot(object);
   if (kind === "page") return webhookPageSnapshot(object);
+  if (kind === "tag") return object;
   return webhookSiteFileSnapshot(object);
 }
 

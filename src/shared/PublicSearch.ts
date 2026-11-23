@@ -7,7 +7,7 @@ export type PublicSearchResult = Record<string, unknown> & {
   };
   id?: string;
   title: string;
-  type: "item" | "page";
+  type: "item" | "page" | "tag";
   url: string;
 };
 
@@ -33,7 +33,7 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     </div>
     {{PREVIEW_NOTICE}}
     <div class="mf-public-search__input-row">
-      <input id="microfeed-search-dialog-input" name="q" type="search" placeholder="Search items and pages" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
+      <input id="microfeed-search-dialog-input" name="q" type="search" placeholder="Search items, pages, and tags" autocomplete="off" data-microfeed-search-input data-microfeed-search-preview-initial />
       <button type="submit">
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         <span>Search</span>
@@ -387,7 +387,7 @@ const PUBLIC_SEARCH_TEMPLATE = `<dialog id="microfeed-search-dialog" class="mf-p
     }
     for (const item of items) {
       const link = document.createElement("a");
-      const resultType = item.type === "page" ? "page" : "item";
+      const resultType = item.type === "tag" ? "tag" : item.type === "page" ? "page" : "item";
       link.className = "mf-public-search-result";
       link.href = item.url;
       link.setAttribute("data-microfeed-search-result-type", resultType);

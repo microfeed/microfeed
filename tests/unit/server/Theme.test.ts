@@ -10,6 +10,7 @@ import type {
   ThemeBundleV1,
   ThemeManifestV1,
 } from "@/shared/themes/ThemeContract";
+import {tagDirectoryContext} from "@/shared/themes/ThemeTags";
 
 const manifest: ThemeManifestV1 = {
   assets: [],
@@ -82,6 +83,27 @@ afterEach(() => {
 });
 
 describe("production theme selection", () => {
+  it("uses the installed feed and safe default directory when optional slots are absent", () => {
+    const tags = tagDirectoryContext([], "https://example.test/tags/");
+    const theme = new Theme(feed, settings, null, stored(), "", {tags});
+    expect(theme.getWebTag().html).toBe("installed Feed title test.installed");
+    expect(theme.getWebTags().html).toContain("No tags yet.");
+    expect(theme.getWebTags().html).not.toContain("installed Feed title");
+  });
+
+  it("uses declared tag slots, preserves the common shell, and honors intentional empty templates", () => {
+    const custom = stored({
+      manifest: {...manifest, files: {...manifest.files, webTag: "tag.mustache", webTags: "tags.mustache"}},
+      bundle: {...bundle, webTag: "tag {{_microfeed.tag.name}}", webTags: "directory {{tags.title}}"},
+    });
+    const theme = new Theme({...feed, _microfeed: {tag: {name: "World"}}}, settings, null, custom, "", {tags: tagDirectoryContext([], "/tags/")});
+    expect(theme.getWebTag().html).toBe("tag World");
+    expect(theme.getWebTags().html).toBe("directory Tags");
+    expect(theme.getWebBodyStart().html).toBe("installed-start");
+    expect(new Theme(feed, settings, null, {...custom, bundle: {...custom.bundle, webTag: "", webTags: ""}}).getWebTag().html).toBe("");
+    expect(new Theme(feed, settings, null, {...custom, bundle: {...custom.bundle, webTag: "", webTags: ""}}).getWebTags().html).toBe("");
+  });
+
   it("renders current_year in every installed Mustache template", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2027-01-01T00:00:00.000Z"));

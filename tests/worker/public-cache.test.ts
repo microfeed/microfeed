@@ -77,6 +77,23 @@ describe("Workers Caching response policy", () => {
     ]);
   });
 
+  it("caches tag directories, archives, and feeds with membership and shell invalidation", () => {
+    const cursor = encodeItemCursor(1_800_000_000_000, ITEM_ID);
+    for (const path of ["/tags/", "/tags/?next_cursor=caf%C3%A9", "/tags/%E4%B8%96%E7%95%8C/", `/tags/topic/rss/?next_cursor=${cursor}`, "/tags/topic/json/"]) {
+      const response = policy(path);
+      expect(response.headers.get("cloudflare-cdn-cache-control")).toBe(PUBLIC_CACHE_EDGE_CONTROL);
+      expect(response.headers.get("cache-tag")?.split(",")).toEqual(expect.arrayContaining([
+        PUBLIC_CACHE_TAGS.PUBLIC, PUBLIC_CACHE_TAGS.CHANNEL_PRIMARY, PUBLIC_CACHE_TAGS.ITEMS,
+      ]));
+    }
+    expect(policy("/tags/topic/").headers.get("cache-tag")?.split(",")).toEqual(expect.arrayContaining([
+      PUBLIC_CACHE_TAGS.PAGES, PUBLIC_CACHE_TAGS.THEME_CURRENT,
+    ]));
+    for (const path of ["/tags/?sort=updated_at", "/tags/topic/?nonce=unknown", "/tags/?next_cursor=x&next_cursor=y", "/tags/?next_cursor=" + "x".repeat(201)]) {
+      expect(policy(path).headers.get("cloudflare-cdn-cache-control")).toBe("no-store");
+    }
+  });
+
   it.each([
     ["admin", "/secret-admin/", undefined],
     ["versioned API", "/api/v1/items/", undefined],

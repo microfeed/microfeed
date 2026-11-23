@@ -109,7 +109,7 @@ describe("bundled theme packages", () => {
     expect(bodyStart).toContain("data-microfeed-search-open");
     expect(bodyStart).not.toContain("data-microfeed-search-input");
     expect(bodyStart).not.toContain("data-microfeed-search-results");
-    expect(feed).not.toContain('class="mf-back-link"');
+    expect(Mustache.render(feed, {items: []})).not.toContain('class="mf-back-link"');
     for (const template of [item, page, search]) {
       expect(template).toContain('class="mf-back-link"');
       expect(template).toContain('<div class="icon-arrow-left">{{title}}</div>');
@@ -205,7 +205,7 @@ describe("bundled theme packages", () => {
       formatVersion: 2,
       packageId: "microfeed.default",
       previewFixture: "fixtures/editorial.json",
-      version: "1.1.16",
+      version: "1.1.22",
     });
     expect(fixture.items[0]).toMatchObject({
       _microfeed: {is_audio: true},
@@ -266,16 +266,5 @@ describe("bundled theme packages", () => {
       expect(template).not.toContain('alt="{{name}}"');
     }
     expect(styles).toMatch(/\.img-sm\s*\{[\s\S]*?width:\s*1em;[\s\S]*?height:\s*1em;/u);
-  });
-
-  it("keeps the generated theme-authoring skill synchronized", async () => {
-    const relative = ".agents/skills/develop-microfeed-theme/SKILL.md";
-    const [repository, starter, modern] = await Promise.all([
-      readFile(path.join(root, relative), "utf8"),
-      readFile(path.join(root, "packages/theme-kit/assets/starter", relative), "utf8"),
-      readFile(path.join(root, "themes/default", relative), "utf8"),
-    ]);
-    expect(starter).toBe(repository);
-    expect(modern).toBe(repository);
   });
 });

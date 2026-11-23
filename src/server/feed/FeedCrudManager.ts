@@ -42,6 +42,9 @@ export default class FeedCrudManager {
 
   _publicToInternalSchemaForItem(item: any): Record<string, any> {
     const internalSchema: Record<string, any> = {};
+    for (const field of ["tag_slugs", "tag_ids"]) {
+      if (Object.hasOwn(item, field)) internalSchema[field] = item[field];
+    }
     const attachment = item.attachment ?? item.attachments?.[0];
 
     if (Object.hasOwn(item, "language")) internalSchema.language = item.language || undefined;

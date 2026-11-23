@@ -588,6 +588,7 @@ describe("CloudflareClient", () => {
   });
 
   it("discovers compatible microfeed Workers without changing Cloudflare", async () => {
+    let discoveredAdminPath = "private-admin";
     const runner = vi.fn<CommandRunner>(async (_executable, args) => {
       const command = args.join(" ");
       if (command === "auth token --json") {
@@ -645,7 +646,7 @@ describe("CloudflareClient", () => {
           },
           {
             name: "MICROFEED_ADMIN_PATH",
-            text: "private-admin",
+            text: discoveredAdminPath,
             type: "plain_text",
           },
           {
@@ -693,6 +694,9 @@ describe("CloudflareClient", () => {
       expect.stringContaining("/accounts/account-id/workers/scripts"),
       {headers: {Authorization: "Bearer oauth-token"}},
     );
+    discoveredAdminPath = " /tags/ ";
+    await expect(new CloudflareClient(runner).discoverMicrofeedWorkers({id: "account-id", name: "Personal"}))
+      .resolves.toEqual([expect.objectContaining({adminPath: "tags"})]);
   });
 
   it("discovers a content-only Worker from D1 and saved R2 variables", async () => {
@@ -912,9 +916,8 @@ describe("CloudflareClient", () => {
   });
 
   it("uses the selected instance config for migrations and deployment", async () => {
-    const runner = vi.fn<CommandRunner>().mockResolvedValue(commandResult(
-      "https://art-of-war.example.workers.dev",
-    ));
+    const runner = vi.fn<CommandRunner>().mockImplementation(async (_executable, args) =>
+      commandResult(args[0] === "d1" && args[1] === "execute" ? "[]" : "https://art-of-war.example.workers.dev"));
     const config: MicrofeedConfig = {
       accountId: "account-id",
       adminPath: "admin",
@@ -938,8 +941,8 @@ describe("CloudflareClient", () => {
     const sourceCommit = "0123456789abcdef0123456789abcdef01234567";
     await cloudflare.deploy(config, undefined, sourceCommit);
 
-    const migrationArgs = runner.mock.calls[0]?.[1] ?? [];
-    const deployArgs = runner.mock.calls[1]?.[1] ?? [];
+    const migrationArgs = runner.mock.calls.find(([, args]) => args[1] === "migrations")?.[1] ?? [];
+    const deployArgs = runner.mock.calls.find(([, args]) => args[0] === "deploy")?.[1] ?? [];
     expect(migrationArgs).toContain("--config");
     expect(migrationArgs.join(" ")).toContain(
       nodePath.join(".microfeed", "instances", "art-of-war", "wrangler.jsonc"),

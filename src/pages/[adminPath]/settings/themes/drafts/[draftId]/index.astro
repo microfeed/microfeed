@@ -52,6 +52,7 @@ if (draft) {
       : new URL("/json/", Astro.url).toString(),
     rssFeedUrl: new URL("/rss/", Astro.url).toString(),
     webFeedUrl: new URL("/", Astro.url).toString(),
+    webTagsUrl: new URL("/tags/", Astro.url).toString(),
     ...(typeof exampleItemUrl === "string"
       ? {webItemUrl: exampleItemUrl}
       : {}),

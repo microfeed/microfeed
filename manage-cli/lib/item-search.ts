@@ -3,7 +3,7 @@ import {tmpdir} from "node:os";
 import path from "node:path";
 
 import {
-  CREATE_ITEM_SEARCH_INDEX_SQL,
+  createSiteSearchIndexSql,
   DROP_ITEM_SEARCH_INDEX_SQL,
 } from "@/shared/ItemSearchSql";
 import {ITEM_CONTENT_TEXT_REVISION} from "@/shared/ItemSearch";
@@ -116,10 +116,14 @@ export async function rebuildItemSearchIndexes(
   config: MicrofeedConfig,
   options: ItemSearchOptions = {},
 ): Promise<void> {
+  // Snapshot export may operate on a supported pre-tag database. Rebuild that
+  // database's indexes without referencing tables or columns it does not have.
+  const tags = await cloudflare.queryD1(config,
+    "SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'tags'", options);
   await executeTemporarySql(
     cloudflare,
     config,
-    `${DROP_ITEM_SEARCH_INDEX_SQL}\n${CREATE_ITEM_SEARCH_INDEX_SQL}`,
+    `${DROP_ITEM_SEARCH_INDEX_SQL}\n${createSiteSearchIndexSql(tags.length > 0)}`,
     options,
   );
 }
@@ -247,7 +251,7 @@ export async function normalizeCharacterSearchContent(
       options);
     if (!rows.length) break;
     for (const row of rows) {
-      if ((row.content_type !== "item" && row.content_type !== "page") ||
+      if ((row.content_type !== "item" && row.content_type !== "page" && row.content_type !== "tag") ||
         typeof row.content_id !== "string" || typeof row.generation !== "string" ||
         typeof row.title !== "string" || typeof row.content_text !== "string") {
         throw new Error("D1 returned an invalid character search source row.");

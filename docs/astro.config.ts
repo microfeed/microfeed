@@ -78,6 +78,7 @@ export default defineConfig({
           items: [
             { label: "Dashboard tour", link: "/dashboard/" },
             { label: "Create and edit items", link: "/dashboard/publish/" },
+            { label: "Public tags", link: "/dashboard/tags/" },
             { label: "Edit channel", link: "/dashboard/edit-channel/" },
             { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
             { label: "Themes and website code", link: "/dashboard/themes/" },

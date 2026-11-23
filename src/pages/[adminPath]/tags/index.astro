@@ -1,0 +1,11 @@
+---
+import TagsApp from "@/components/admin/tags/TagsApp";
+import AdminPageFallback from "@/components/admin/AdminPageFallback.astro";
+import AdminShell from "@/layouts/AdminShell.astro";
+import {NAV_ITEMS} from "@/shared/Constants";
+const {feedContent, onboardingResult} = Astro.locals;
+if (!feedContent || !onboardingResult) throw new Error("Admin feed context was not initialized.");
+---
+<AdminShell activeNavItem={NAV_ITEMS.TAGS} documentTitle="Tags | microfeed.org" {feedContent} {onboardingResult} pageTitle="Tags">
+  <TagsApp client:only="react"><AdminPageFallback slot="fallback" kind="list" /></TagsApp>
+</AdminShell>

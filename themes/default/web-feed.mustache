@@ -1,4 +1,17 @@
 <main>
+  {{#_microfeed.tag}}
+  <header class="mf-tag-header">
+    <section class="mf-back-link"><a href="/"><div class="icon-arrow-left">{{site_title}}{{^site_title}}Back to feed{{/site_title}}</div></a></section>
+    <h1>{{name}}</h1>
+    {{#_microfeed.subscribe_methods.length}}
+    <nav class="mf-tag-subscriptions" aria-label="Tag feeds">
+      {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+    </nav>
+    {{/_microfeed.subscribe_methods.length}}
+    {{#description}}<p class="mf-tag-description">{{description}}</p>{{/description}}
+  </header>
+  {{/_microfeed.tag}}
+  {{^_microfeed.tag}}
   <section>
     <h1>{{title}}</h1>
     <div class="flex">
@@ -45,6 +58,7 @@
   </section>
   {{/description}}
 
+  {{/_microfeed.tag}}
   <section>
     <h2 class="border-b">
       Latest
@@ -61,6 +75,7 @@
           {{title}}
           <span class="icon-arrow-right"></span>
         </a>
+
         <div class="text-sm">
           {{_microfeed.date_published_short}}
 

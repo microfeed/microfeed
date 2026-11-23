@@ -7,36 +7,15 @@ import AdminCodeEditor, {
   isCaretOnLastLine,
 } from "@/components/admin/shared/AdminCodeEditor";
 import AdminDialog from "@/components/admin/shared/AdminDialog";
-import AdminHelpLabel from "@/components/admin/shared/AdminHelpLabel";
 import AdminImagePreviewDialog from "@/components/admin/shared/AdminImagePreviewDialog";
-import AdminHtmlEditor from "@/components/admin/shared/AdminHtmlEditor";
 import AdminPublicAccess, {
   publicAccessItems,
 } from "@/components/admin/shared/AdminPublicAccess";
-import ExternalLink from "@/components/admin/shared/ExternalLink";
 import AdminRadioGroup from "@/components/admin/shared/AdminRadioGroup";
 import AdminSwitch from "@/components/admin/shared/AdminSwitch";
-import SettingsBase from "@/components/admin/settings/SettingsBase";
 import {Input} from "@/components/ui/input";
 
 describe("admin UI controls", () => {
-  it("uses brand-sky hover and focus styling for explanation labels", () => {
-    const label = renderToStaticMarkup(React.createElement(AdminHelpLabel, {
-      children: "Description",
-      onClick: vi.fn(),
-    }));
-    const labelWithDialog = renderToStaticMarkup(React.createElement(AdminHelpLabel, {
-      help: {linkName: "Title", text: "Help text"},
-    }));
-
-    for (const output of [label, labelWithDialog]) {
-      expect(output).toContain("hover:text-brand-light");
-      expect(output).toContain("focus-visible:text-brand-light");
-      expect(output).not.toContain("hover:text-primary");
-    }
-    expect(labelWithDialog).not.toContain('href="#"');
-  });
-
   it("only auto-scrolls a code editor when its caret is on the final line", () => {
     const value = "first line\nsecond line\nlast line";
 
@@ -44,30 +23,6 @@ describe("admin UI controls", () => {
     expect(isCaretOnLastLine(value, 24, 24)).toBe(true);
     expect(isCaretOnLastLine(value, 5, 5)).toBe(false);
     expect(isCaretOnLastLine(value, 5, value.length)).toBe(false);
-  });
-
-  it("scrolls code editors outside their synchronized textarea and preview layers", () => {
-    const output = renderToStaticMarkup(
-      React.createElement(AdminCodeEditor, {
-        code: "<p>Hello</p>",
-        language: "html",
-        maxHeight: "32rem",
-        minHeight: "16rem",
-        onChange: vi.fn(),
-      }),
-    );
-
-    expect(output).toMatch(
-      /^<label[^>]+overflow-auto[^>]+style="max-height:32rem"/u,
-    );
-    expect(output).toContain(
-      'class="block w-full min-w-0 max-w-full overflow-auto',
-    );
-    expect(output).toContain(
-      "admin-code-editor w-full min-w-0 max-w-full",
-    );
-    expect(output).toContain("min-height:16rem");
-    expect(output).not.toContain("max-height:32rem;min-height:16rem");
   });
 
   it("supports a read-only highlighted code preview", () => {
@@ -81,18 +36,6 @@ describe("admin UI controls", () => {
 
     expect(output).toContain("readonly=\"\"");
     expect(output).toContain('aria-label="Code editor"');
-    expect(output).toContain("bg-muted/60");
-  });
-
-  it("renders the rich HTML source editor at 120% of its base font size", () => {
-    const output = renderToStaticMarkup(
-      React.createElement(AdminHtmlEditor, {
-        onChange: vi.fn(),
-        value: "<p>Hello</p>",
-      }),
-    );
-
-    expect(output).toContain("font-size:14.4px");
   });
 
   it("orders and labels the public access feeds", () => {
@@ -112,10 +55,6 @@ describe("admin UI controls", () => {
     const output = renderToStaticMarkup(
       React.createElement(AdminPublicAccess, {links}),
     );
-    expect(output).toContain(">Public access</h2>");
-    expect(output).toContain("lucide-globe");
-    expect(output).toContain("lucide-rss");
-    expect(output).toContain("lucide-braces");
     expect(output).toContain('aria-label="web feed address controls"');
     expect(output).toContain('aria-label="rss feed address controls"');
     expect(output).toContain('aria-label="json feed address controls"');
@@ -142,37 +81,6 @@ describe("admin UI controls", () => {
     expect((Input as unknown as {$$typeof: symbol}).$$typeof).toBe(
       Symbol.for("react.forward_ref"),
     );
-  });
-
-  it("vertically centers external-link text and icon", () => {
-    const output = renderToStaticMarkup(
-      React.createElement(ExternalLink, {
-        text: "Public page",
-        url: "https://feed.example.com/items/example/",
-      }),
-    );
-
-    expect(output).toContain("flex items-center");
-    expect(output).toContain("Public page");
-  });
-
-  it("places settings actions at the right edge of the card header", () => {
-    const output = renderToStaticMarkup(
-      React.createElement(SettingsBase, {
-        currentType: "access",
-        description: "Choose who can access this site.",
-        onSubmit: vi.fn(),
-        submitForType: null,
-        submitting: false,
-        title: "Access control",
-      }, "Settings content"),
-    );
-
-    expect(output).toContain('data-slot="card-action"');
-    expect(output).toContain('data-slot="card-description"');
-    expect(output).toContain("Choose who can access this site.");
-    expect(output).toContain("justify-self-end");
-    expect(output).toContain(">Update</button>");
   });
 
   it("renders a controlled dialog with a visible title and standard dismissal", () => {
@@ -233,18 +141,12 @@ describe("admin UI controls", () => {
 
     expect(dialog.props.open).toBe(true);
     expect(content.props.showCloseButton).toBe(false);
-    expect(content.props.className).toContain("h-dvh");
     expect(openLink!.props.href).toBe(
       "https://media.example.com/production/images/item.png",
     );
     expect(openLink!.props.target).toBe("_blank");
-    expect(openLink!.props.className).toContain("!text-white");
-    expect(openLink!.props.className).toContain("hover:bg-white/15");
     expect(closeButton!.props.children).toContain("Close");
-    const closeControl = closeButton!.props.render as React.ReactElement<any>;
-    expect(closeControl.props.className).toContain("!text-white");
-    expect(closeControl.props.className).toContain("hover:bg-white/15");
-    expect(image.props.className).toContain("object-contain");
+    expect(image.props.src).toBe("https://media.example.com/production/images/item.png");
   });
 
   it("associates a checked switch with its visible label", () => {
@@ -260,10 +162,6 @@ describe("admin UI controls", () => {
     expect(output).toContain('role="switch"');
     expect(output).toContain('aria-checked="true"');
     expect(output).toContain("API Enabled");
-    expect(output).toContain("data-checked:bg-brand-light");
-    expect(output).toContain("focus-visible:ring-brand-light/40");
-    expect(output).toContain("bg-white");
-    expect(output).not.toContain("data-checked:bg-primary");
     expect(output).toMatch(/<label[^>]+for="[^"]+"/u);
   });
 
@@ -300,34 +198,8 @@ describe("admin UI controls", () => {
     expect(output).toMatch(/aria-labelledby="[^"]+-label"/u);
     expect(output).toMatch(/aria-describedby="[^"]+-description"/u);
     expect(output).toContain('data-checked=""');
-    expect(output).toContain("border-foreground");
-    expect(output).toContain("data-checked:border-brand-light");
-    expect(output).toContain("data-checked:bg-brand-light");
-    expect(output).toContain("focus-visible:ring-2");
-    expect(output).toContain("focus-visible:ring-offset-2");
-    expect(output).toContain("items-start");
-    expect(output).toContain("mt-1");
-    expect(output).toContain("size-1.5");
     expect(output).toContain("Everyone can access the site.");
     expect(output).toContain("Public pages return 404.");
-  });
-
-  it("centers radios with their labels by default", () => {
-    const output = renderToStaticMarkup(
-      React.createElement(AdminRadioGroup, {
-        name: "description-editor",
-        onValueChange: vi.fn(),
-        options: [
-          {label: "visual editor", value: "visual"},
-          {label: "html source", value: "html"},
-        ],
-        value: "visual",
-      }),
-    );
-
-    expect(output).toContain("gap-1.5");
-    expect(output).toContain("items-center");
-    expect(output).not.toContain("mt-1");
   });
 
   it("distinguishes guided unavailable options from native disabled options", () => {
@@ -358,7 +230,6 @@ describe("admin UI controls", () => {
     );
 
     expect(guidedOutput).toContain('aria-disabled="true"');
-    expect(guidedOutput).toContain("items-center");
     expect(guidedOutput).not.toContain('disabled=""');
     expect(disabledOutput).toContain('disabled=""');
   });

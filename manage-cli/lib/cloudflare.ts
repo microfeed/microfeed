@@ -974,9 +974,10 @@ export class CloudflareClient {
               adminAuthMode: normalizeAdminAuthMode(
                 variables.get("MICROFEED_ADMIN_AUTH_MODE"),
               ),
-              adminPath: normalizeAdminPath(
-                variables.get("MICROFEED_ADMIN_PATH"),
-              ),
+              // Preserve a legacy collision so connect/deploy can report it,
+              // rather than silently falling back to a different dashboard path.
+              adminPath: variables.get("MICROFEED_ADMIN_PATH")?.trim().replace(/^\/+|\/+$/gu, "") === "tags"
+                ? "tags" : normalizeAdminPath(variables.get("MICROFEED_ADMIN_PATH")),
               customDomains: (domainsByWorker.get(workerName) ?? [])
                 .sort((left, right) => left.localeCompare(right)),
               d1: {id: d1Id, name: d1Name},
@@ -1599,6 +1600,7 @@ export class CloudflareClient {
   }
 
   async applyMigrations(config: MicrofeedConfig): Promise<void> {
+    await this.assertPublicTagsRoute(config);
     const accountId = cloudflareAccountId(config);
     await runWrangler(
       this.runner,
@@ -1613,6 +1615,19 @@ export class CloudflareClient {
       ],
       {env: accountEnvironment(accountId)},
     );
+  }
+
+  async assertPublicTagsRoute(config: MicrofeedConfig, options: {local?: boolean; persistTo?: string} = {}): Promise<void> {
+    if (config.adminPath === "tags") throw new Error("The admin path /tags/ conflicts with public tags. Choose another path before upgrading.");
+    const tables = await this.queryD1(config, "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('pages', 'page_paths')", options);
+    const names = new Set(tables.map(row => row.name));
+    const selects = [
+      ...(names.has("pages") ? ["SELECT id AS id, slug FROM pages WHERE slug = 'tags' COLLATE NOCASE"] : []),
+      ...(names.has("page_paths") ? ["SELECT page_id AS id, slug FROM page_paths WHERE slug = 'tags' COLLATE NOCASE"] : []),
+    ];
+    if (!selects.length) return;
+    const conflicts = await this.queryD1(config, selects.join(" UNION "), options);
+    if (conflicts.length) throw new Error(`Public tags require /tags/, which is reserved by Page or alias ${conflicts.map(row => String(row.id)).join(", ")}. Resolve that path conflict before upgrading. No Page or alias was renamed or removed.`);
   }
 
   async queryD1(
@@ -1856,6 +1871,7 @@ export class CloudflareClient {
     config: MicrofeedConfig,
     persistTo = localPersistencePath(config),
   ): Promise<void> {
+    await this.assertPublicTagsRoute(config, {local: true, persistTo});
     await runWrangler(
       this.runner,
       [

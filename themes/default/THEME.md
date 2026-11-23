@@ -1,6 +1,6 @@
 # Develop the bundled default theme
 
-Read `microfeed-theme.json` and the schemas in `.microfeed/schemas/` before editing. The installed package is the eight generated format v2 files in this directory; source templates, Tailwind CSS, and vanilla TypeScript live under `src/`.
+Read `microfeed-theme.json` and the schemas in `.microfeed/schemas/` before editing. The installed package has eight required format v2 files and an optional All tags template in this directory; source templates, Tailwind CSS, and vanilla TypeScript live under `src/`.
 
 Before changing Pages, shared navigation, or public search, read the bundled [public-site contract](./.agents/skills/develop-microfeed-theme/references/public-site.md). It documents the platform/theme ownership boundary, all stable hooks and styling tokens, and the required desktop, mobile, Search, and 404 preview checks.
 

@@ -1,4 +1,5 @@
 import {ContentCustomizationError} from "@/shared/Seo";
+import {TagRequestError} from "@/shared/Tags";
 import {cache, env, waitUntil} from "cloudflare:workers";
 import type {APIRoute} from "astro";
 
@@ -117,6 +118,7 @@ export async function updateAdminFeed(
     });
   } catch (error) {
     if (error instanceof ContentCustomizationError) return jsonResponse({error: error.message}, {status: error.status});
+    if (error instanceof TagRequestError) return jsonResponse({error: error.message, field: error.field}, {status: 400});
     throw error;
   }
   scheduleBestEffortMediaDeletion(
@@ -125,7 +127,7 @@ export async function updateAdminFeed(
     schedule,
     runtimeEnv.FEED_DB,
   );
-  return jsonResponse(updatedFeed.item ? {itemUrl: {publicPath: updatedFeed.item.publicPath, urlMode: updatedFeed.item.urlMode, urlFrozen: updatedFeed.item.urlFrozen}} : {});
+  return jsonResponse(updatedFeed.item ? {itemTags: updatedFeed.item.tags ?? [], itemUrl: {publicPath: updatedFeed.item.publicPath, urlMode: updatedFeed.item.urlMode, urlFrozen: updatedFeed.item.urlFrozen}} : {});
 }
 
 export const POST: APIRoute = async ({request}) =>

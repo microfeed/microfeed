@@ -1,4 +1,5 @@
 import FeedDb from "@/server/feed/FeedDb";
+import {getTag, listTags} from "@/server/tags/service";
 import {getPageById, listPages} from "@/server/pages/service";
 import {getSiteFileById, listSiteFiles} from "@/server/site-files/service";
 import ThemeStore from "@/server/themes/ThemeStore";
@@ -84,6 +85,11 @@ export async function listWebhookExplorerSubjects(
     ? searchValue.trim().toLocaleLowerCase()
     : "";
   if (definition.sourceKind === "webhook") return [];
+  if (definition.sourceKind === "tag") {
+    const page = await listTags(runtimeEnv.FEED_DB, new URL(request.url).origin, 100);
+    return page.items.filter(tag => includesSearch([tag.id, tag.name, tag.slug], query)).slice(0, 50)
+      .map(tag => ({id: tag.id, label: tag.name, description: `/tags/${tag.slug}/`}));
+  }
   if (definition.sourceKind === "channel") {
     return [{id: "primary", label: "Primary channel"}];
   }
@@ -153,6 +159,11 @@ async function currentSnapshot(
     entry.type === selection.eventType
   )!;
   const subjectId = selection.subjectId;
+  if (definition.sourceKind === "tag") {
+    const tag = subjectId ? await getTag(runtimeEnv.FEED_DB, new URL(request.url).origin, subjectId, true) : null;
+    if (!tag) throw new WebhookRequestError("Choose an existing tag.");
+    return {...tag};
+  }
   if (definition.sourceKind === "webhook") {
     throw new WebhookRequestError(
       "webhook.test uses its generated connection-test snapshot.",

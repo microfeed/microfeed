@@ -1,4 +1,17 @@
 <main class="blog-main">
+  {{#_microfeed.tag}}
+  <header class="mf-tag-header">
+    <a class="blog-back" href="/">← Back to the journal</a>
+    <h1>{{name}}</h1>
+    {{#_microfeed.subscribe_methods.length}}
+    <nav class="mf-tag-subscriptions" aria-label="Tag feeds">
+      {{#_microfeed.subscribe_methods}}<a href="{{url}}">{{name}}</a>{{/_microfeed.subscribe_methods}}
+    </nav>
+    {{/_microfeed.subscribe_methods.length}}
+    {{#description}}<p class="mf-tag-description">{{description}}</p>{{/description}}
+  </header>
+  {{/_microfeed.tag}}
+  {{^_microfeed.tag}}
   <section class="blog-intro">
     <p class="blog-rubric">Ideas for a more thoughtful web</p>
     <h1>{{title}}</h1>
@@ -9,6 +22,7 @@
     </div>
   </section>
 
+  {{/_microfeed.tag}}
   <section class="blog-articles" aria-labelledby="blog-latest">
     <div class="blog-section-rule"><h2 id="blog-latest">Latest stories</h2><span>Issue 08 · {{current_year}}</span></div>
     {{^items.length}}<div class="blog-empty"><p>Edition forthcoming.</p><h3>No stories have been published yet.</h3></div>{{/items.length}}

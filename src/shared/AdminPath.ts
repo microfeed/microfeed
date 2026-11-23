@@ -11,6 +11,7 @@ const RESERVED_ADMIN_PATHS = new Set([
   "media",
   "media-upload",
   "rss",
+  "tags",
   "sitemap.xml",
 ]);
 

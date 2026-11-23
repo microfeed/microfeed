@@ -1,0 +1,28 @@
+<main class="chg-main mf-all-tags">
+  <a class="chg-back" href="/">← {{title}}</a>
+  <header class="mf-all-tags-heading">
+    <h1>All tags</h1>
+    <p>Browse topics and subscribe to the ones you follow.</p>
+  </header>
+  {{#tags}}
+  {{#items.length}}
+  <ul class="mf-tags-list" role="list">
+    {{#items}}
+    <li class="mf-tags-entry">
+      <div class="mf-tags-copy">
+        <h2><a class="mf-tags-name" rel="tag" href="{{url}}">{{name}}</a></h2>
+        {{#description}}<p class="mf-tags-description">{{description}}</p>{{/description}}
+        <p class="mf-tags-count">{{published_item_count}} published items</p>
+      </div>
+      <div class="mf-tags-feeds">
+        {{#rss_enabled}}<a href="{{rss_url}}" aria-label="{{name}} RSS feed">RSS</a>{{/rss_enabled}}
+        {{#json_enabled}}<a href="{{json_url}}" aria-label="{{name}} JSON feed">JSON Feed</a>{{/json_enabled}}
+      </div>
+    </li>
+    {{/items}}
+  </ul>
+  {{/items.length}}
+  {{^items.length}}<p class="mf-tags-empty">No tags yet.</p>{{/items.length}}
+  {{#next_url}}<nav class="mf-tags-pagination" aria-label="Tag pagination"><a href="{{next_url}}">More tags →</a></nav>{{/next_url}}
+  {{/tags}}
+</main>

@@ -323,13 +323,7 @@ export function getIdFromSlug(slug: any) {
   return itemId;
 }
 
-export function escapeHtml(htmlStr: any) {
-  return htmlStr.replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+export {escapeHtml} from "./Html";
 
 export function unescapeHtml(htmlStr: any) {
   const namedEntities: Record<string, string> = {

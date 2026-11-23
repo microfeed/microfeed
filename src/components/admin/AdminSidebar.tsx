@@ -36,6 +36,7 @@ const navigationIcons: Record<AdminNavItemId, typeof HomeIcon> = {
   [NAV_ITEMS.EDIT_CHANNEL]: PencilIcon,
   [NAV_ITEMS.ALL_ITEMS]: ListIcon,
   [NAV_ITEMS.PAGES]: FileTextIcon,
+  [NAV_ITEMS.TAGS]: ListIcon,
   [NAV_ITEMS.SITE_FILES]: FileCode2Icon,
   [NAV_ITEMS.API]: Code2Icon,
   [NAV_ITEMS.WEBHOOKS]: WebhookIcon,

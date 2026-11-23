@@ -112,3 +112,40 @@ audio { width: 100%; accent-color: var(--mf-accent); }
   .vid-footer { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { .vid-poster > img { transition: none; } }
+
+.mf-item-tags{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;margin:.65rem 0;padding:0;font-size:.85rem}.mf-item-tags li{margin:0;max-width:100%}.mf-item-tags a{display:inline-block;padding:.15rem .5rem;border:1px solid var(--mf-border);border-radius:1rem;color:var(--mf-accent);overflow-wrap:anywhere;cursor:pointer}.mf-item-tags a:focus-visible{outline:2px solid var(--mf-accent);outline-offset:2px}
+.mf-item-tags a::before, .mf-tags-name::before { content: ""; display: inline-block; width: 1em; height: 1em; margin-inline-end: .3em; vertical-align: -.15em; background-color: currentColor; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%203h8l10%2010-8%208L3%2011Z%22%2F%3E%3Ccircle%20cx%3D%227.5%22%20cy%3D%227.5%22%20r%3D%221.5%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat; }
+
+.mf-tag-discovery { box-sizing: border-box; width: 100%; max-width: 70rem; margin: 2rem auto; padding: 1.5rem 0; border-top: 1px solid var(--mf-border); color: var(--mf-text); }
+.mf-tag-discovery-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+.mf-tag-discovery h2 { margin: 0; font-size: 1rem; font-weight: 650; }
+.mf-tag-discovery-heading a { color: var(--mf-accent); font-size: .875rem; text-decoration: none; cursor: pointer; }
+.mf-tag-discovery a:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 3px; }
+.mf-tag-discovery .mf-item-tags { margin-bottom: 0; }
+
+.mf-tag-header { margin: 0 0 2rem; padding: 0; }
+
+.mf-tag-header h1 { margin: 0; font-size: clamp(1.75rem, 5vw, 2.5rem); line-height: 1.2; overflow-wrap: anywhere; }
+.mf-tag-description { margin: .75rem 0 0; color: var(--mf-muted); white-space: pre-line; overflow-wrap: anywhere; }
+.mf-tag-subscriptions { display: flex; flex-wrap: wrap; gap: .75rem; width: 100%; max-width: 70rem; box-sizing: border-box; margin: .75rem 0; padding: 0; font-size: .875rem; }
+
+/* Portable All tags layout: also works in isolated theme previews. */
+.mf-all-tags { box-sizing: border-box; min-width: 0; padding-block: 2rem 5rem; }
+.mf-all-tags > a, .mf-all-tags > .mf-back-link { margin: 0 0 2rem; }
+.mf-all-tags-heading h1 { margin: 0; font-family: inherit; font-size: clamp(2.25rem, 6vw, 4rem); line-height: 1.1; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.mf-all-tags-heading > p { margin: .75rem 0 0; color: var(--mf-muted); }
+.mf-tags-list { display: grid; margin: 2.5rem 0 0; padding: 0; border-top: 1px solid var(--mf-border); list-style: none; }
+.mf-tags-entry { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; min-width: 0; padding: 1.5rem 0; border-bottom: 1px solid var(--mf-border); }
+.mf-tags-copy { flex: 1 1 18rem; min-width: 0; }
+.mf-tags-entry h2 { margin: 0; font-family: inherit; font-size: clamp(1.25rem, 3vw, 1.75rem); line-height: 1.25; }
+.mf-tags-name { color: var(--mf-text); text-decoration: none; overflow-wrap: anywhere; }
+.mf-tags-name:hover { color: var(--mf-accent); }
+.mf-tags-description { max-width: 60ch; margin: .5rem 0 0; color: var(--mf-muted); white-space: pre-line; overflow-wrap: anywhere; }
+.mf-tags-count { margin: .65rem 0 0; color: var(--mf-muted); font-size: .8rem; }
+.mf-tags-feeds { display: flex; flex-wrap: wrap; gap: .5rem; max-width: 100%; }
+.mf-tags-feeds a, .mf-tags-pagination a { display: inline-flex; align-items: center; min-height: 2.5rem; box-sizing: border-box; padding: .4rem .75rem; border: 1px solid var(--mf-border); border-radius: .5rem; color: var(--mf-accent); font-size: .875rem; text-decoration: none; }
+.mf-tags-feeds a:hover, .mf-tags-pagination a:hover { background: var(--mf-surface); }
+.mf-all-tags a:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 4px; }
+.mf-tags-empty { margin: 2.5rem 0 0; padding: 2rem 0; border-block: 1px solid var(--mf-border); color: var(--mf-muted); }
+.mf-tags-pagination { margin-top: 2rem; }
+.mf-tag-discovery { width: min(92rem, calc(100% - 2rem)); max-width: none; }

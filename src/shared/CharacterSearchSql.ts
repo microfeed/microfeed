@@ -26,7 +26,7 @@ BEGIN ${remove} END;
 `;
 }
 
-export const CREATE_CHARACTER_SEARCH_SQL = `
+export function createCharacterSearchSql(includeTags = true): string { return `
 CREATE TABLE IF NOT EXISTS site_search_character_state (
   content_type TEXT NOT NULL,
   content_id TEXT NOT NULL,
@@ -62,14 +62,39 @@ AFTER DELETE ON site_search_character_chunks BEGIN
 END;
 ${sourceTriggers("item")}
 ${sourceTriggers("page")}
+${includeTags ? `
+CREATE TRIGGER IF NOT EXISTS tags_character_search_insert AFTER INSERT ON tags
+WHEN NEW.deleted_at IS NULL BEGIN
+  INSERT INTO site_search_character_state (content_type, content_id, generation, revision)
+  VALUES ('tag', NEW.id, lower(hex(randomblob(16))), 0);
+END;
+CREATE TRIGGER IF NOT EXISTS tags_character_search_update AFTER UPDATE ON tags BEGIN
+  DELETE FROM site_search_character_chunks WHERE content_type = 'tag' AND content_id = OLD.id;
+  DELETE FROM site_search_character_state WHERE content_type = 'tag' AND content_id = OLD.id;
+  INSERT INTO site_search_character_state (content_type, content_id, generation, revision)
+  SELECT 'tag', NEW.id, lower(hex(randomblob(16))), 0 WHERE NEW.deleted_at IS NULL;
+END;
+CREATE TRIGGER IF NOT EXISTS tags_character_search_delete AFTER DELETE ON tags BEGIN
+  DELETE FROM site_search_character_chunks WHERE content_type = 'tag' AND content_id = OLD.id;
+  DELETE FROM site_search_character_state WHERE content_type = 'tag' AND content_id = OLD.id;
+END;
+` : ""}
 INSERT OR IGNORE INTO site_search_character_state (content_type, content_id, generation, revision)
 SELECT 'item', id, lower(hex(randomblob(16))), 0 FROM items WHERE status != 3;
 INSERT OR IGNORE INTO site_search_character_state (content_type, content_id, generation, revision)
 SELECT 'page', id, lower(hex(randomblob(16))), 0 FROM pages
 WHERE status != 3 AND slug != '404' COLLATE NOCASE;
-`;
+${includeTags ? `
+INSERT OR IGNORE INTO site_search_character_state (content_type, content_id, generation, revision)
+SELECT 'tag', id, lower(hex(randomblob(16))), 0 FROM tags WHERE deleted_at IS NULL;
+` : ""}
+`; }
+export const CREATE_CHARACTER_SEARCH_SQL = createCharacterSearchSql();
 
 export const DROP_CHARACTER_SEARCH_SQL = `
+DROP TRIGGER IF EXISTS tags_character_search_insert;
+DROP TRIGGER IF EXISTS tags_character_search_update;
+DROP TRIGGER IF EXISTS tags_character_search_delete;
 DROP TRIGGER IF EXISTS items_character_search_insert;
 DROP TRIGGER IF EXISTS items_character_search_update;
 DROP TRIGGER IF EXISTS items_character_search_delete;

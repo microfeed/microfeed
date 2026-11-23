@@ -111,7 +111,7 @@ describe("public search modal", () => {
   it("uses a polished attached search control", () => {
     const source = publicSearchHtml();
 
-    expect(source).toContain('placeholder="Search items and pages"');
+    expect(source).toContain('placeholder="Search items, pages, and tags"');
     expect(source).toMatch(/\.mf-public-search__input-row\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?overflow: hidden;/u);
     expect(source).toMatch(/\.mf-public-search__input-row button\[type="submit"\]\s*\{[\s\S]*?background: var\(--mf-accent, #0969da\);/u);
     expect(source).toMatch(/\.mf-public-search__results\s*\{[\s\S]*?margin-top: 1rem;/u);
