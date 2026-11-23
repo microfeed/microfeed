@@ -40,7 +40,7 @@ the dashboard updates it to the publication time. A date you chose yourself is
 preserved. If public visibility is enabled, use the external link to inspect the
 page.
 
-<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 24 26 PM" src="https://github.com/user-attachments/assets/b088d2f7-c360-4776-a9a5-6787dfc5e281" />
+<img width="3400" height="2358" alt="Screenshot 2026-11-23 at 3 54 03 PM" src="https://github.com/user-attachments/assets/46deda95-e346-4859-9895-648d33f4edf4" />
 
 
 ## Upload media
@@ -129,7 +129,7 @@ same autosave as other item fields. SEO title and description affect the page's
 head metadata; the visible title and article body stay unchanged. Clearing an
 override restores its fallback.
 
-<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 25 33 PM" src="https://github.com/user-attachments/assets/7e53c776-f5e2-46f2-a10a-47628515c94f" />
+<img width="3400" height="2358" alt="Screenshot 2026-11-23 at 3 55 40 PM" src="https://github.com/user-attachments/assets/95aaf1ff-e118-428c-a664-23aa5f2aec88" />
 
 
 New items use `/i/{slug}/`. Automatic slugs follow draft titles and freeze when
