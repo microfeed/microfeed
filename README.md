@@ -98,7 +98,7 @@ microfeed provides a simple yet powerful [admin dashboard](https://docs.microfee
 where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-<img width="3400" height="2358" alt="Dashboard home" src="https://github.com/user-attachments/assets/c3836bb9-a4db-4554-8007-c2fa42d3ee44" />
+<img width="3400" height="2358" alt="Dashboard home" src="https://github.com/user-attachments/assets/faedf9e4-59aa-4802-847d-41f2c2ba9581" />
 
 
 Each instance includes a remote [MCP server](https://docs.microfeed.org/automation/mcp/)
