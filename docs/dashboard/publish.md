@@ -1,16 +1,15 @@
 ---
 title: Create and edit items
-description: Publish text, links, images, audio, video, and documents yourself or with a coding agent.
+description: Create, review, and publish items in the Admin UI, or work through the CLI, WebMCP, or remote MCP server.
 ---
 
 An **item** is one entry in your channel. Publishing it can create a public web
 page and add an entry to both RSS and JSON feeds.
 
-You can complete the whole workflow in the visual Admin dashboard. For repeatable or
-agent-driven publishing, the official
-[`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) manages the
-same channel after its owner enables the authenticated API. Start with
-[Manage content with the microfeed CLI](/automation/cli/).
+Manage items through the **Admin UI**, **CLI**, **WebMCP**, or **MCP server**.
+Start with [Choose how to manage content](/content-management/) to
+compare them. The steps below explain how to create and publish in the
+dashboard, followed by examples for working with an agent.
 
 ## Create an item
 
@@ -41,7 +40,7 @@ the dashboard updates it to the publication time. A date you chose yourself is
 preserved. If public visibility is enabled, use the external link to inspect the
 page.
 
-<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 24 26 PM" src="https://github.com/user-attachments/assets/b088d2f7-c360-4776-a9a5-6787dfc5e281" />
+<img width="3400" height="2358" alt="Screenshot 2026-11-23 at 3 54 03 PM" src="https://github.com/user-attachments/assets/46deda95-e346-4859-9895-648d33f4edf4" />
 
 
 ## Upload media
@@ -70,6 +69,8 @@ and associated media. Read the target carefully before confirming.
 
 ## Publish with a coding agent
 
+### Use the content CLI
+
 Give the agent a content goal and the root URL of your microfeed site. Do not
 give it an API key or CLI credential. For example:
 
@@ -89,6 +90,27 @@ workflow](/automation/cli/), then see the [agent workflow](/automation/ai-agents
 and complete [`@microfeed/cli` reference](/microfeed-cli/) for media vocabulary,
 deterministic input, and deletion safeguards.
 
+### Use WebMCP in the browser
+
+Open a new or unpublished item in a protected dashboard, then ask a compatible
+browser agent to edit and save the visible draft. You review and publish it
+yourself. Follow the [WebMCP guide](/content-management/webmcp/) for browser
+requirements and tool limits.
+
+### Use the remote MCP server
+
+Connect your AI assistant using the [MCP setup guide](/automation/mcp/) and
+approve read and write access. Select the integration in your chat and ask it
+to save a draft:
+
+```text
+Turn these notes into an unpublished item on my microfeed. Save it using the
+connected tools and return the item ID. Ask before publishing.
+```
+
+Open **See all items** to review the saved draft. Write access also permits
+publishing and deletion, so make your intended status explicit in the task.
+
 ## Verify distribution
 
 After publishing, check:
@@ -107,7 +129,7 @@ same autosave as other item fields. SEO title and description affect the page's
 head metadata; the visible title and article body stay unchanged. Clearing an
 override restores its fallback.
 
-<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 25 33 PM" src="https://github.com/user-attachments/assets/7e53c776-f5e2-46f2-a10a-47628515c94f" />
+<img width="3400" height="2358" alt="Screenshot 2026-11-23 at 3 55 40 PM" src="https://github.com/user-attachments/assets/95aaf1ff-e118-428c-a664-23aa5f2aec88" />
 
 
 New items use `/i/{slug}/`. Automatic slugs follow draft titles and freeze when

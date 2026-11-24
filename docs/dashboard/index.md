@@ -6,7 +6,8 @@ description: Learn where to publish content, edit channel details, configure set
 The Admin dashboard is the private control room for one microfeed channel. Its
 left navigation stays consistent while the main panel changes for each task.
 
-![The microfeed dashboard home page with public feed links and a completed setup checklist](https://media-cdn.microfeed.org/production/themes/0caa54c6-a365-4d18-94fb-d2b317b966c2/assets/admin-home.png)
+<img width="3400" height="2358" alt="The microfeed dashboard home page with public feed links and a completed setup checklist" src="https://github.com/user-attachments/assets/b772ae48-1bcd-4c3a-b90f-4c9876be3039" />
+
 
 ## Main areas
 
@@ -21,6 +22,11 @@ categories, language, and description.
 
 **API** opens a dedicated area for availability, API keys, an interactive
 browser explorer, and public API documentation formats.
+
+**MCP Server** enables OAuth access for compatible AI apps and provides your
+site's `/mcp/` connection URL. It has its own switch and requires built-in
+administrator sign-in. Follow [Connect an AI app with MCP](/automation/mcp/)
+to approve read and write access and try an unpublished draft.
 
 **Webhooks** opens Overview, Endpoints, Event explorer, and Deliveries. It shows
 whether infrastructure was never provisioned, is enabled, or is disabled with
@@ -46,8 +52,8 @@ Mac or <kbd>Ctrl</kbd>+<kbd>K</kbd> elsewhere. The dialog first shows the five
 most recently updated items; type at least two characters to search titles.
 [**Account settings**](/manage/domains-and-access/#change-your-built-in-login)
 in the user menu manages login identity, passkeys, dashboard sessions, and
-microfeed CLI computer connections. On small screens, the menu button opens
-the sidebar as a drawer.
+MCP app grants and microfeed CLI computer connections. On small screens, the
+menu button opens the sidebar as a drawer.
 
 ## Light and dark dashboard themes
 

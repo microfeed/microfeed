@@ -166,8 +166,10 @@ page keeps owner-specific security controls separate from site-wide settings:
   Keep the password as the recovery path if that address changes.
 - **Active sessions** reviews built-in dashboard sessions and signs out other
   browsers. Cloudflare Access sessions remain managed in Cloudflare Zero Trust.
-- **App access** reviews each computer connected through microfeed CLI. Revoke
-  one computer without affecting the others, or revoke every CLI connection.
+- **App access** reviews OAuth grants for MCP apps and each computer connected
+  through microfeed CLI. Revoke an MCP app's access, one CLI computer, or all
+  connections for a CLI application. See [MCP access and
+  revocation](/automation/mcp/#revoke-access-or-disable-mcp) for AI app connections.
 
 Account settings are unavailable when the dashboard has no built-in login or
 Cloudflare Access identity. Initial setup and forgotten-password recovery stay

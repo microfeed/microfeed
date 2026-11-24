@@ -69,7 +69,7 @@ only configured fields:
 | Content license | Channel and item | `podcast:license` |
 | Feed import lock | Channel | `podcast:locked` |
 
-<img width="1770" height="1094" alt="Screenshot 2026-09-22 at 1 23 29 PM" src="https://github.com/user-attachments/assets/c6abc778-97f9-4160-9a92-72a5ec58e166" />
+<img width="3400" height="2358" alt="Screenshot 2026-11-23 at 3 52 28 PM" src="https://github.com/user-attachments/assets/1414d6cf-99c1-4f37-ba83-0a62184f47e9" />
 
 
 JSON Feed and the authenticated API expose these values under

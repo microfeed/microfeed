@@ -13,7 +13,7 @@ not intentionally time out the webhook request while a model runs.
 
 For n8n and Zapier, monitor both microfeed delivery history and the platform or
 verification gateway. See the [automation-platform
-comparison](../automation/#automation-platforms-n8n-and-zapier) for where
+comparison](/automation/#automation-platforms-n8n-and-zapier) for where
 acknowledgment, signature verification, and downstream retries belong.
 
 ## Delivery states

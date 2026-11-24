@@ -26,19 +26,19 @@ documentation](https://www.microfeed.org/api/v1/). It includes request and
 response schemas, authentication requirements, and examples for API operations
 and webhook events.
 
-If you want a coding agent to publish content, start with the official
-[microfeed CLI guide](../automation/cli/) instead of creating and sharing an API key. Build
-directly against the REST API when you are integrating another application or
-service.
+For AI-assisted content tasks, choose the connection that fits your app:
 
-For interactive draft editing, a compatible browser agent can instead discover
-microfeed's experimental [WebMCP site tools](../automation/ai-agents/#use-webmcp-for-visible-drafts)
-after it opens the signed-in, protected dashboard. WebMCP is separate from this
-remote API: API documentation can tell an agent that the capability exists, but
-the tools themselves are available only from the active dashboard page.
+- [Connect an AI app with MCP](../automation/mcp/) for named content tools
+  with browser-approved OAuth permissions. MCP has its own dashboard switch
+  and can work while REST API access is disabled.
+- [Use the microfeed CLI](../automation/cli/) for content commands from a
+  terminal or local coding agent.
+- [Use experimental dashboard WebMCP](/content-management/webmcp/)
+  for help with the visible draft in a compatible, signed-in browser.
 
-For desktop and hosted AI apps, you can separately enable an
-[OAuth MCP server](/automation/mcp/) at `<site-url>/mcp/`.
+Build directly against the REST API when you are integrating another
+application or service. For a comparison that also includes the Admin UI,
+see [Choose how to manage content](/content-management/).
 
 ## What the API can do
 
@@ -123,6 +123,7 @@ receiver code and local signed testing.
 
 ## Choose your next step
 
+- [Connect an AI app with MCP](../automation/mcp/).
 - [Enable API access or create an API key](./authentication/).
 - [Build an API integration](./build-and-test/).
 - [Connect n8n or Zapier](../automation/#automation-platforms-n8n-and-zapier).

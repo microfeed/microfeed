@@ -16,6 +16,8 @@
     ·    
     <a href="https://www.microfeed.org/api/"><b>API</b></a>   
     ·
+    <a href="https://docs.microfeed.org/automation/mcp/"><b>MCP</b></a>
+    ·
     <a href="https://www.npmjs.com/package/@microfeed/cli"><b>CLI</b></a>
     ·        
     <a href="https://github.com/microfeed/microfeed/issues/new?assignees=&labels=bug"><b>Report Bug</b></a>
@@ -30,8 +32,10 @@ With microfeed, you can easily publish a variety of content such as audios, vide
 and external URLs to a feed in the form of web, RSS, and JSON. It's the perfect solution for tech-savvy individuals who
 want to self-host their own CMS without having to run their own servers.
 
-Publish content yourself in [the built-in admin dashboard](https://docs.microfeed.org/dashboard/), or let an AI agent
-manage it through the official [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli).
+Manage content through the [Admin UI](https://docs.microfeed.org/dashboard/),
+the official [CLI](https://www.npmjs.com/package/@microfeed/cli),
+experimental browser [WebMCP](https://docs.microfeed.org/content-management/webmcp/),
+or each instance's remote [MCP server](https://docs.microfeed.org/automation/mcp/).
 
 microfeed is built by [Listen Notes](https://www.listennotes.com/) and is hosted on Cloudflare's [Workers](https://workers.cloudflare.com/),
 [R2](https://www.cloudflare.com/products/r2/), and [D1](https://developers.cloudflare.com/d1/).
@@ -48,6 +52,7 @@ If you have any questions or feedback, please don't hesitate to reach out to us 
   * [Different ways to deploy](#different-ways-to-deploy)
   * [Advanced](#advanced)
 * [✍️ Start publishing](#%EF%B8%8F-start-publishing)
+  * [Connect an AI app with MCP](#connect-an-ai-app-with-mcp)
 * [✨ Features](#-features)
 * [💻 FAQs](#-faqs)
 * [💪 Contributions](#-contributions)
@@ -66,7 +71,7 @@ microfeed makes it easy for individuals to self-host their own feed on Cloudflar
 * a personal website with custom links
 * a content curation feed of external news article urls
 * a marketing site with updates and press coverage (e.g., [microfeed.org](https://www.microfeed.org/))
-* a headless CMS with a GUI dashboard, RSS Feed, JSON Feed, API, Webhooks, and [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Explore the public demo’s [interactive API docs](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
+* a headless CMS with a GUI dashboard, RSS Feed, JSON Feed, API, [MCP server](https://docs.microfeed.org/automation/mcp/), Webhooks, and [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli). Explore the public demo’s [interactive API docs](https://www.microfeed.org/api/v1/), [OpenAPI JSON](https://www.microfeed.org/api/v1/openapi.json) and [YAML](https://www.microfeed.org/api/v1/openapi.yaml), or agent-ready [llms.txt](https://www.microfeed.org/api/v1/llms.txt) and [llms-full.txt](https://www.microfeed.org/api/v1/llms-full.txt).
 * a themeable publishing platform with immutable D1-backed versions, isolated Admin drafts and previews, GitHub installation through `npx @microfeed/cli manage theme`, and the standalone [`@microfeed/theme-kit`](https://www.npmjs.com/package/@microfeed/theme-kit) authoring CLI.
 * standalone public Pages, credential-free typeahead search with Command/Ctrl-K, and editable generated `robots.txt`, `llms.txt`, and `sitemap.xml` files.
 * a list of domain names for sale (e.g., [ListenHost.com](https://www.listenhost.com/)...)
@@ -93,9 +98,17 @@ microfeed provides a simple yet powerful [admin dashboard](https://docs.microfee
 where you create and edit posts, upload media files, and customize how
 your site looks. If you've used WordPress before, you'll find it familiar.
 
-<img src="https://github.com/user-attachments/assets/c09752ab-b59f-47ae-9fae-029895c2b6a4" width="100%" alt="Dashboard home">
+<img width="3400" height="2358" alt="Dashboard home" src="https://github.com/user-attachments/assets/c3836bb9-a4db-4554-8007-c2fa42d3ee44" />
 
-For agentic content management, the official
+
+Each instance includes a remote [MCP server](https://docs.microfeed.org/automation/mcp/)
+for compatible AI assistants such as ChatGPT, Claude, Gemini, and Codex.
+It uses Streamable HTTP with OAuth authentication. Enable it, connect with your
+site's `/mcp/` URL, then sign in and approve permissions in your browser. With
+write access, assistants can create drafts, publish items, and manage Pages,
+tags, and Site Files.
+
+For terminal-based content management, the official
 [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) lets a local
 AI agent create, update, and delete items; upload media files like images, audios, videos and documents. 
 Run it from any folder with `npx @microfeed/cli`. If you have Git-cloned the
@@ -161,31 +174,41 @@ reference](https://docs.microfeed.org/manage-cli/).
 ## ✍️ Start publishing
 
 Once initialization is complete, your microfeed instance is ready to use.
-Choose the publishing workflow that fits the task:
+Choose one of four ways to manage content:
 
-* **For people:** use the microfeed [admin
-  dashboard](https://docs.microfeed.org/dashboard/) to create, edit, or delete
-  posts; upload audio, video, images, and other media files when R2 is enabled;
-  use external URLs in content-only mode; [customize themes and shared website
-  code](https://docs.microfeed.org/dashboard/themes/); and choose [Public,
-  Headless, or Offline site access](https://docs.microfeed.org/dashboard/customize/).
-* **For browser AI agents:** a dashboard protected by built-in login or
-  Cloudflare Access automatically exposes experimental, draft-only
-  [WebMCP](https://docs.microfeed.org/automation/ai-agents/#use-webmcp-for-visible-drafts)
-  tools when the browser provides the native API. Unsupported browsers and
-  public pages do not load the implementation.
-* **For local AI agents:** use the official
-  [`@microfeed/cli`](https://www.npmjs.com/package/@microfeed/cli) to manage the
-  same content through browser-authorized access after you enable the API. The
-  agent may start login, but you sign in and approve permissions in the
-  browser. See the [guided CLI workflow](https://docs.microfeed.org/automation/cli/)
-  or the complete [`@microfeed/cli`
-  reference](https://docs.microfeed.org/microfeed-cli/).
+| Workflow | Use it for |
+| --- | --- |
+| **[Admin UI](https://docs.microfeed.org/dashboard/)** | Create, edit, upload media, review drafts, and publish in the visual dashboard. |
+| **[CLI](https://docs.microfeed.org/automation/cli/)** | Run content commands yourself or give a local coding agent a task through `@microfeed/cli`. Requires API access and browser authorization. |
+| **[WebMCP](https://docs.microfeed.org/content-management/webmcp/)** | Let a compatible browser agent read content and edit the visible new or unpublished draft in a protected dashboard. Experimental and draft-only. |
+| **[MCP server](https://docs.microfeed.org/automation/mcp/)** | Connect an AI assistant to your instance's remote `/mcp/` endpoint over Streamable HTTP with OAuth read/write permissions. Enable it separately in the dashboard. |
+
+See [Choose how to manage content](https://docs.microfeed.org/content-management/)
+for requirements and setup links.
 
 Use `npx @microfeed/cli` from any folder. If the agent is already working in a
 Git-cloned microfeed source repository whose dependencies are installed, it
 can use `yarn microfeed` as a shortcut to the repository's local CLI version.
 Never paste an API key or CLI credential into an agent conversation.
+
+### Connect an AI app with MCP
+
+1. Sign in to your dashboard using built-in administrator login.
+2. Open **MCP Server**, turn on **Enable MCP server**, and copy the URL,
+   such as `https://feed.example.com/mcp/`.
+3. Add that URL to your app as an OAuth MCP server using **Streamable HTTP**,
+   then sign in and approve the requested permissions.
+
+Select the connected integration in your app and try:
+
+```text
+Create an unpublished draft titled "My next post" from the notes below.
+Return its item ID so I can review it in microfeed. Ask before publishing.
+```
+
+MCP starts disabled and has its own switch. See the
+[MCP connection guide](https://docs.microfeed.org/automation/mcp/) for client
+setup, refresh access, media uploads, troubleshooting, and revocation.
 
 ### Change the public theme
 
@@ -232,8 +255,10 @@ same published content.
 | Website, RSS, and JSON Feed | Reach browsers, podcast and feed readers, developer tools, and AI agents without publishing the same item repeatedly. |
 | [Podcast-specific fields](https://docs.microfeed.org/dashboard/media-and-feeds/#podcast-fields-in-feeds) | Add transcripts, chapters with JSON import, hosts and guests, support links, content licenses, and advisory feed import locks, with Podcasting 2.0 RSS tags and JSON Feed fields. |
 | [SEO / GEO](https://docs.microfeed.org/dashboard/publish/#customize-metadata-and-the-item-url) | Customize search titles, descriptions, social images, publisher and author identities, and stable item URLs, with search and social previews and structured data. |
-| Friendly admin dashboard | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
-| Experimental WebMCP site tools | Let a compatible browser agent automatically discover read and draft-only editing tools after it opens the signed-in dashboard. WebMCP does not expose a remote MCP server or add runtime work to public pages. |
+| [Admin UI](https://docs.microfeed.org/dashboard/) | Create and edit posts, upload media, control visibility, manage settings, and preview changes in the browser. |
+| [Content CLI](https://docs.microfeed.org/automation/cli/) | Run task-oriented content commands from a terminal or local coding agent with browser-authorized access. |
+| [Experimental WebMCP](https://docs.microfeed.org/content-management/webmcp/) | Let a compatible browser agent discover read and draft-only editing tools in the signed-in dashboard. |
+| [Remote MCP server](https://docs.microfeed.org/automation/mcp/) | Connect AI assistants over Streamable HTTP with OAuth read/write access to items, Pages, tags, channel details, media preparation, and Site Files. |
 | Headless CMS and content automation | Read and update content through the API, receive signed change notifications through webhooks, and give local AI agents a friendlier workflow through `@microfeed/cli`. |
 | Versioned themes | Edit safely in Admin or install community themes from GitHub, preview inactive versions, and activate or roll back explicitly. |
 | Your data on your Cloudflare account | Keep content metadata in D1 and optional media and theme assets in R2 under infrastructure you control. |

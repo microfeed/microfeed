@@ -1,53 +1,19 @@
 ---
 title: Manage content with AI agents
-description: Use experimental browser-native WebMCP for visible drafts, or give a local coding agent a broader content task through the credential-safe CLI.
+description: Connect an AI app over MCP, use the content CLI from a coding agent, or edit visible drafts with experimental dashboard WebMCP.
 ---
 
-microfeed supports remote MCP, dashboard WebMCP, and CLI agent workflows.
-[Connect an AI app with MCP](../mcp/) to give a desktop or hosted app
-OAuth-approved access to the content API. Experimental WebMCP lets a
-browser-based agent read content and help with the draft currently open in a
-protected dashboard. `@microfeed/cli` gives a local coding agent the broader
-API-backed workflow for drafts, media, publishing, and other content tasks.
+microfeed has four [ways to manage content](/content-management/).
+Choose the connection that fits where you or your agent work.
 
-## Use WebMCP for visible drafts
+| Workflow | Start here |
+| --- | --- |
+| Work directly in a visual editor | Use the [Admin UI](/dashboard/). |
+| Give a coding agent a task in a local terminal | [Use the content CLI](../cli/) with browser-authorized access. |
+| Help with the draft visible in a compatible browser | Use experimental [WebMCP](#use-webmcp-for-visible-drafts). |
+| Ask an AI assistant to find content, create drafts, or publish | [Connect it to your site's remote MCP server](../mcp/). |
 
-[WebMCP](https://webmachinelearning.github.io/webmcp/) is an experimental web
-platform proposal. A page can expose structured JavaScript tools to an agent in
-the same browser through `document.modelContext`. It is not a remote MCP server
-and does not replace microfeed's API, OAuth, CLI, OpenAPI document, or
-`llms.txt` files.
-
-microfeed activates its WebMCP tools automatically only when both conditions
-are true:
-
-- the current browser provides the native `document.modelContext` API; and
-- the dashboard is protected by built-in login or Cloudflare Access.
-
-There is no microfeed setting to enable. Public themed pages do not load or run
-WebMCP code. An unsupported browser performs one feature check and downloads no
-WebMCP implementation or validation chunk. A supported protected dashboard
-loads the small tool registry only in that browser session; the server does no
-polling or background work.
-
-The dashboard exposes tools to list and read Items and Pages, open a new Item
-or Page editor, and save the visible new or unpublished editor as a draft. A
-save merges only supplied editorial fields with the editor's current state and
-always persists an unpublished result. The tool disappears when the visible
-content is published, unlisted, deleted, or the default 404 Page. The server
-rechecks stored and resulting status before accepting every WebMCP write.
-
-WebMCP cannot publish, delete, upload media, manage Site Files or themes, read
-API keys, change account settings, or configure webhooks. Use the dashboard or
-the authenticated CLI/API workflow for those operations. Webhook events caused
-by an accepted draft save use `context.origin: "webmcp"`, so an automation can
-distinguish them from dashboard and API writes.
-
-Because the browser API remains experimental, tool discovery currently
-requires a Chrome WebMCP development or origin-trial environment. Browsers
-without the native API degrade silently.
-
-## Use the CLI for broader content tasks
+## Use the CLI from a terminal
 
 Use `@microfeed/cli` when a person asks a local coding agent to work across
 content, upload media, or publish. The CLI wraps the API in task-oriented
@@ -58,7 +24,7 @@ available for browser consent and destructive confirmation. A persistent
 service that reacts asynchronously should instead follow [Build webhook
 endpoints](/webhooks/endpoints/) and the `build-microfeed-automation` skill.
 
-## Give the agent an outcome, not a credential
+### Give the agent an outcome, not a credential
 
 Include the site, the content outcome, and the approval boundary in the prompt:
 
@@ -83,7 +49,7 @@ compatible coding agents can discover the `.agents/skills/` copy directly.
 You do not need to install or paste the skill into the prompt when the agent is
 already working inside that source repository.
 
-## Keep browser authorization human-controlled
+### Keep browser authorization human-controlled
 
 An agent may start `npx @microfeed/cli login <site-url>`, but the administrator
 must sign in and approve or deny permissions in the browser. The agent must not
@@ -95,7 +61,7 @@ into the prompt. In CI, supply `MICROFEED_API_KEY` through the secret manager
 and instruct the agent to reference the variable without reading or printing
 it.
 
-## Choose the operation that matches the request
+### Choose the operation that matches the request
 
 Ask the agent to inspect current content before writing and to use structured
 JSON output. Media vocabulary matters:
@@ -114,3 +80,33 @@ The CLI deliberately has no generic yes flag.
 Continue with [Manage content with `@microfeed/cli`](/automation/cli/) for the guided
 human workflow and the [`@microfeed/cli` reference](/microfeed-cli/) for the
 complete command and output contract.
+
+## Use WebMCP for visible drafts
+
+A compatible browser agent can discover tools in your signed-in, protected
+dashboard to read Items and Pages, open an editor, and save the visible new
+or unpublished draft. Publishing, deletion, media uploads, and Site File
+management require another content workflow.
+
+Follow [Edit visible drafts with WebMCP](/content-management/webmcp/) for
+browser requirements, tool limits, and how draft saves run.
+
+## Connect an AI app with MCP
+
+Each instance includes a remote MCP server using Streamable HTTP and OAuth.
+Enable **MCP Server** in your dashboard, then add your site's `/mcp/` URL to
+a compatible AI assistant such as ChatGPT, Claude, Gemini, or Codex. Sign in
+to microfeed in the browser and approve the requested permissions.
+
+With read and write access, the assistant can work with items, Pages, tags,
+channel details, media preparation, and Site Files. Select the connected
+integration in your chat and give it a concrete task:
+
+```text
+Find my three most recent items about gardening. Use them to suggest a follow-up
+post, then save my chosen idea as an unpublished draft. Return the saved item ID
+and ask before publishing.
+```
+
+Review the draft in **See all items**. Follow the [MCP connection guide](../mcp/)
+for setup, scopes, media uploads, revocation, and repeated reconnect prompts.

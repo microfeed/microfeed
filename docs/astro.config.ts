@@ -74,16 +74,25 @@ export default defineConfig({
           ],
         },
         {
-          label: "Dashboard",
+          label: "Content management",
           items: [
-            { label: "Dashboard tour", link: "/dashboard/" },
-            { label: "Create and edit items", link: "/dashboard/publish/" },
-            { label: "Public tags", link: "/dashboard/tags/" },
-            { label: "Edit channel", link: "/dashboard/edit-channel/" },
-            { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
-            { label: "Themes and website code", link: "/dashboard/themes/" },
-            { label: "Pages, search, and Site Files", link: "/dashboard/pages-search-and-site-files/" },
-            { label: "Site access", link: "/dashboard/customize/" },
+            { label: "Choose a workflow", link: "/content-management/" },
+            {
+              label: "Admin UI",
+              items: [
+                { label: "Dashboard tour", link: "/dashboard/" },
+                { label: "Create and edit items", link: "/dashboard/publish/" },
+                { label: "Public tags", link: "/dashboard/tags/" },
+                { label: "Edit channel", link: "/dashboard/edit-channel/" },
+                { label: "Media and feeds", link: "/dashboard/media-and-feeds/" },
+                { label: "Themes and website code", link: "/dashboard/themes/" },
+                { label: "Pages, search, and Site Files", link: "/dashboard/pages-search-and-site-files/" },
+                { label: "Site access", link: "/dashboard/customize/" },
+              ],
+            },
+            { label: "CLI", link: "/automation/cli/" },
+            { label: "WebMCP", link: "/content-management/webmcp/" },
+            { label: "MCP server", link: "/automation/mcp/" },
           ],
         },
         {
@@ -151,14 +160,7 @@ export default defineConfig({
                 { label: "Connect microfeed to Zapier", link: "/automation/platforms/zapier/" },
               ],
             },
-            {
-              label: "@microfeed/cli and AI agents",
-              items: [
-                { label: "Manage content with @microfeed/cli", link: "/automation/cli/" },
-                { label: "Manage content with AI agents", link: "/automation/ai-agents/" },
-                { label: "Connect an AI app with MCP", link: "/automation/mcp/" },
-              ],
-            },
+            { label: "AI agent workflows", link: "/automation/ai-agents/" },
           ],
         },
         {
@@ -183,8 +185,8 @@ export default defineConfig({
           description:
             "microfeed is an open-source CMS that publishes one collection as a website, RSS feed, and JSON Feed from the owner's Cloudflare account.",
           details:
-            "Use the Installation guides for deployment workflows. Use the management CLI reference for site-management commands, the WebMCP guide for browser-based draft editing, and the @microfeed/cli reference for broader content commands and safety rules.",
-          promote: ["index", "start-here/**", "manage-cli", "microfeed-cli", "theme-kit-cli"],
+            "Use the Installation guides for deployment and the management CLI reference for site administration. Content management has four workflows: Admin UI, CLI, experimental browser WebMCP, and each instance's remote MCP server using Streamable HTTP and OAuth.",
+          promote: ["index", "start-here/**", "content-management/**", "automation/mcp", "manage-cli", "microfeed-cli", "theme-kit-cli"],
           demote: ["contribute/**"],
           customSets: [
             {
@@ -200,15 +202,15 @@ export default defineConfig({
               paths: ["api/index", "api/authentication", "api/build-and-test"],
             },
             {
-              label: "Manage content with WebMCP, @microfeed/cli, and AI agents",
+              label: "Content management: Admin UI, CLI, WebMCP, and MCP server",
               description:
-                "Use draft-only WebMCP site tools in a signed-in dashboard, or follow the guided CLI workflow and complete content-management command reference.",
-              paths: ["automation/cli", "automation/ai-agents", "microfeed-cli"],
+                "Choose a visual dashboard, terminal commands, experimental browser draft tools, or remote MCP tools for AI assistants using Streamable HTTP and OAuth.",
+              paths: ["content-management/**", "dashboard/index", "dashboard/publish", "automation/cli", "automation/mcp", "automation/ai-agents", "microfeed-cli"],
             },
             {
               label: "Build content automations and integrations",
               description:
-                "Choose APIs, webhooks, or the CLI; connect n8n and Zapier; build secure webhook endpoints; and operate production automations.",
+                "Choose MCP, the API, webhooks, or the CLI; connect n8n and Zapier; build secure webhook endpoints; and operate production automations.",
               paths: ["automation/**", "webhooks/**", "api/index", "api/authentication", "microfeed-cli"],
             },
             {
